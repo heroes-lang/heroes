@@ -181,60 +181,58 @@ void h_ffiaconstructionnamestheintegerarmandcompares_main(void);
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 void h_ffiaconstructionnamestheintegerarmandcompares_main(void) {
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    SA h0_m; SA h1_b; SA h2_p; SA h3_q; HERO_NODEBUG SA t1, t2, t7, t8, t10, t12, t13, t14, t15; HERO_NODEBUG int32_t t3, t4, t5, t6, t11; HERO_NODEBUG float t9; HERO_NODEBUG bool t16; HERO_ENTRY_STOP; goto bb0;
+    SA h0_m; SA h1_b; SA h2_p; SA h3_q; HERO_NODEBUG SA t1, t6, t7, t9, t11, t12, t13, t14; HERO_NODEBUG int32_t t2, t3, t4, t5, t10; HERO_NODEBUG float t8; HERO_NODEBUG bool t15; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 bb0:
     t1 = make_sa();
 #line 21 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h0_m = t1;
-    t2 = h0_m;
+    t2 = h0_m.i;
 #line 22 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    t3 = t2.i;
-#line 22 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    hero_print_int(t3);
+    hero_print_int(t2);
 #line 22 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     hero_print_end();
-    t4 = INT64_C(2);
+    t3 = INT64_C(2);
 #line 23 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    t5 = INT64_C(1069547520);
+    t4 = INT64_C(1069547520);
 #line 23 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    t6 = INT64_C(4);
+    t5 = INT64_C(4);
 #line 23 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    t7 = (SA){.kind = t4, .i = t5, .x = t6};
+    t6 = (SA){.kind = t3, .i = t4, .x = t5};
 #line 23 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    h1_b = t7;
-    t8 = h1_b;
+    h1_b = t6;
+    t7 = h1_b;
 #line 24 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    t9 = sa_f(t8);
+    t8 = sa_f(t7);
 #line 24 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    hero_print_f32(t9);
+    hero_print_f32(t8);
 #line 24 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     hero_print_end();
-    t10 = h1_b;
+    t9 = h1_b;
 #line 25 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    t11 = sa_x(t10);
+    t10 = sa_x(t9);
 #line 25 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    hero_print_int(t11);
+    hero_print_int(t10);
 #line 25 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     hero_print_end();
-    t12 = make_sa();
+    t11 = make_sa();
 #line 26 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    h2_p = t12;
-    t13 = make_sa();
+    h2_p = t11;
+    t12 = make_sa();
 #line 27 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    h3_q = t13;
-    t14 = h2_p;
+    h3_q = t12;
+    t13 = h2_p;
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    t15 = h3_q;
+    t14 = h3_q;
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    t16 = h_ffiaconstructionnamestheintegerarmandcompares_SA_eq(&t14, &t15);
+    t15 = h_ffiaconstructionnamestheintegerarmandcompares_SA_eq(&t13, &t14);
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    hero_print_bool(t16);
+    hero_print_bool(t15);
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     hero_print_end();
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     return;
-#line 238 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 236 "ffiaconstructionnamestheintegerarmandcompares.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamestheintegerarmandcompares_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

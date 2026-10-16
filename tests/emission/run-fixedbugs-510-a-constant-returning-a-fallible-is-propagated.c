@@ -351,26 +351,26 @@ bb5:
 #line 17 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 void h_fixedbugs510aconstantreturningafallibleispropagated_main(void) {
 #line 17 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = {0}, h2_s0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t13, t14, t19, t20, t22, t25, t29, t30, t31, t32, t33, t34; int64_t h3_q; HeroFailure h4_e = {0}; HERO_NODEBUG int64_t t1, t4, t5, t10, t12, t15, t16, t18, t21, t23, t24; HERO_NODEBUG bool t6, t17; HERO_NODEBUG HeroFailure t8, t26, t27, t35; HERO_NODEBUG h_0fn_305159eb t11; HERO_NODEBUG HeroStr t28; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = {0}, h2_s0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t13, t14, t19, t20, t22, t25, t28, t29, t30, t31, t32, t33; int64_t h3_q; HeroFailure h4_e = {0}; HERO_NODEBUG int64_t t1, t4, t5, t10, t12, t15, t16, t18, t21, t23, t24; HERO_NODEBUG bool t6, t17; HERO_NODEBUG HeroFailure t8, t26, t34; HERO_NODEBUG h_0fn_305159eb t11; HERO_NODEBUG HeroStr t27; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 bb0:
     t1 = INT64_C(8);
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t2 = h_fixedbugs510aconstantreturningafallibleispropagated_quarter(t1);
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    t29 = h5_own5;
+    t28 = h5_own5;
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h5_own5 = t2;
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    h_0opt_e201354_release(&t29);
+    h_0opt_e201354_release(&t28);
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    t30 = h0_f0;
+    t29 = h0_f0;
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h_0opt_e201354_retain(&t2);
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h0_f0 = t2;
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    h_0opt_e201354_release(&t30);
+    h_0opt_e201354_release(&t29);
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t3 = h0_f0;
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
@@ -397,19 +397,19 @@ bb1:
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t13 = t11(t12);
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    t31 = h6_own6;
+    t30 = h6_own6;
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h6_own6 = t13;
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    h_0opt_e201354_release(&t31);
+    h_0opt_e201354_release(&t30);
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    t32 = h1_f1;
+    t31 = h1_f1;
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h_0opt_e201354_retain(&t13);
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h1_f1 = t13;
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    h_0opt_e201354_release(&t32);
+    h_0opt_e201354_release(&t31);
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t14 = h1_f1;
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
@@ -427,19 +427,19 @@ bb1:
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t19 = h_fixedbugs510aconstantreturningafallibleispropagated_quarter(t18);
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    t33 = h7_own7;
+    t32 = h7_own7;
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h7_own7 = t19;
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    h_0opt_e201354_release(&t33);
+    h_0opt_e201354_release(&t32);
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    t34 = h2_s0;
+    t33 = h2_s0;
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h_0opt_e201354_retain(&t19);
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h2_s0 = t19;
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    h_0opt_e201354_release(&t34);
+    h_0opt_e201354_release(&t33);
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t20 = h2_s0;
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
@@ -493,24 +493,22 @@ bb5:
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t26 = t25.as.err;
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    t35 = h4_e;
+    t34 = h4_e;
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     hero_failure_retain(&t26);
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     h4_e = t26;
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    hero_failure_release(&t35);
+    hero_failure_release(&t34);
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    t27 = h4_e;
+    t27 = h4_e.code;
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    t28 = t27.code;
-#line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
-    hero_print_str(t28);
+    hero_print_str(t27);
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     goto bb3;
-#line 514 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 512 "fixedbugs510aconstantreturningafallibleispropagated.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

@@ -120,9 +120,16 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 )
         .load ld =>
             if !target.is_err()
+                # A field read in place (`ir/in_place.hero`) is a field read:
+                # a `ptr` a C member declares `const T *` is cast as
+                # `access.field_read` casts it (panel 083).
+                cast: str @= ""
+
+                if ld.place.path.length > 0 && is_ptr(c, ty: inst.ty)
+                    cast @ "(void *)"
                 writer.line(
                     @w,
-                    text: "    " + byte_copy.assignment(w, c, decls, ty: inst.ty, target: target.must(), value: aggregate.place(c, s, decls, f, at: ld.place))
+                    text: "    " + byte_copy.assignment(w, c, decls, ty: inst.ty, target: target.must(), value: cast + aggregate.place(c, s, decls, f, at: ld.place))
                 )
         .store st =>
             # A store whose place ends in an index is copy-on-write, and
@@ -335,6 +342,14 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
 # aggregate fallback.
 function reference(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, value: i64, keep: bool)
     release.named(@w, c, names, ty: containers.value_type(f, value), name: mangle.value(value), keep: keep)
+
+# Whether `ty` is the opaque pointer.
+function is_ptr(c: state.Checked, ty: i64) -> bool
+    return match table.get(c.types, ty)
+        .ptr                                                       => true
+        .int_ty | .float_ty | .bool | .str | .cstr | .unit         => false
+        .array | .fixed | .map | .fallible | .function_ty | .named => false
+        .case_ty | .failure | .generic | .error                    => false
 
 ## Tests
 

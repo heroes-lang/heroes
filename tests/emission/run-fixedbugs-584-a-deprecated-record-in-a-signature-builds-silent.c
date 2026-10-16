@@ -149,15 +149,13 @@ void h_fixedbugs584adeprecatedrecordinasignaturebuildssilent_main(void);
 #line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
 int64_t h_fixedbugs584adeprecatedrecordinasignaturebuildssilent_first(struct old_pair h0_p) {
 #line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
-    HERO_NODEBUG struct old_pair t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
 bb0:
-    t1 = h0_p;
+    t1 = h0_p.a;
 #line 19 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
-    t2 = t1.a;
-#line 19 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
-    return t2;
-#line 161 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
+    return t1;
+#line 159 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
 }
 
 #line 21 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
@@ -177,7 +175,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
     return;
-#line 181 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
+#line 179 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs584adeprecatedrecordinasignaturebuildssilent_OldPair_eq(const struct old_pair *a, const struct old_pair *b) {
     if (!(a->a == b->a)) return false;

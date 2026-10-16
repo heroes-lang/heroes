@@ -174,7 +174,7 @@ void h_ffiaconstructionnamesananonymousstructwhole_main(void);
 #line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 void h_ffiaconstructionnamesananonymousstructwhole_main(void) {
 #line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    SB h0_b; SB h1_c; HERO_NODEBUG int32_t t1, t6, t8, t9, t10; HERO_NODEBUG int16_t t2, t3, t13, t15; HERO_NODEBUG SB t4, t5, t7, t11, t12, t14; HERO_ENTRY_STOP; goto bb0;
+    SB h0_b; SB h1_c; HERO_NODEBUG int32_t t1, t6, t8, t9, t10; HERO_NODEBUG int16_t t2, t3, t12, t13; HERO_NODEBUG SB t4, t5, t7, t11; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 bb0:
     t1 = INT64_C(1);
@@ -207,23 +207,19 @@ bb0:
     t11 = (SB){.kind = t9, .i = t10};
 #line 24 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     h1_c = t11;
-    t12 = h1_c;
+    t12 = h1_c.lo;
 #line 25 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    t13 = t12.lo;
-#line 25 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_int(t13);
+    hero_print_int(t12);
 #line 25 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     hero_print_end();
-    t14 = h1_c;
+    t13 = h1_c.hi;
 #line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    t15 = t14.hi;
-#line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_int(t15);
+    hero_print_int(t13);
 #line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     hero_print_end();
 #line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     return;
-#line 227 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 223 "ffiaconstructionnamesananonymousstructwhole.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesananonymousstructwhole_SB_eq(const SB *a, const SB *b) {
     if (!(a->kind == b->kind)) return false;

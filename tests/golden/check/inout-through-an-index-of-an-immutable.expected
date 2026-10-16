@@ -1,1 +1,1 @@
-tests/golden/check/inout-through-an-index-of-an-immutable.hero:13:10: error[not_mutable]: `bs` is a parameter without `@`, so it cannot be written — mark it `@bs` in the signature and at every call site (copy in, copy out)
+tests/golden/check/inout-through-an-index-of-an-immutable.hero:13:10: error[not_mutable]: `bs` is a parameter without `@`, so it cannot be written — mark it `@bs` in the signature and at every call site, and the function works on the caller's place itself

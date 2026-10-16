@@ -105,47 +105,39 @@ void h_specthedocumentsownexample_main(void);
 #line 29 "tests/golden/run/spec-the-documents-own-example.hero"
 int64_t h_specthedocumentsownexample_dist2(h_specthedocumentsownexample_Point h0_a, h_specthedocumentsownexample_Point h1_b) {
 #line 29 "tests/golden/run/spec-the-documents-own-example.hero"
-    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG h_specthedocumentsownexample_Point t1, t3, t6, t8; HERO_NODEBUG int64_t t2, t4, t5, t7, t9, t10, t11, t12, t13, t14, t15, t16, t17; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/spec-the-documents-own-example.hero"
 bb0:
-    t1 = h1_b;
+    t1 = h1_b.f_x;
 #line 30 "tests/golden/run/spec-the-documents-own-example.hero"
-    t2 = t1.f_x;
+    t2 = h0_a.f_x;
 #line 30 "tests/golden/run/spec-the-documents-own-example.hero"
-    t3 = h0_a;
+    if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 30 "tests/golden/run/spec-the-documents-own-example.hero"
-    t4 = t3.f_x;
-#line 30 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_sub_overflow(t2, t4, &t5)) hero_panic_overflow();
-#line 30 "tests/golden/run/spec-the-documents-own-example.hero"
-    h2_dx = t5;
-    t6 = h1_b;
+    h2_dx = t3;
+    t4 = h1_b.f_y;
 #line 31 "tests/golden/run/spec-the-documents-own-example.hero"
-    t7 = t6.f_y;
+    t5 = h0_a.f_y;
 #line 31 "tests/golden/run/spec-the-documents-own-example.hero"
-    t8 = h0_a;
+    if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow();
 #line 31 "tests/golden/run/spec-the-documents-own-example.hero"
-    t9 = t8.f_y;
-#line 31 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_sub_overflow(t7, t9, &t10)) hero_panic_overflow();
-#line 31 "tests/golden/run/spec-the-documents-own-example.hero"
-    h3_dy = t10;
-    t11 = h2_dx;
+    h3_dy = t6;
+    t7 = h2_dx;
 #line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    t12 = h2_dx;
+    t8 = h2_dx;
 #line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_mul_overflow(t11, t12, &t13)) hero_panic_overflow();
+    if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow();
 #line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    t14 = h3_dy;
+    t10 = h3_dy;
 #line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    t15 = h3_dy;
+    t11 = h3_dy;
 #line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow();
+    if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow();
 #line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
+    if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow();
 #line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    return t17;
-#line 149 "specthedocumentsownexample.c"
+    return t13;
+#line 141 "specthedocumentsownexample.c"
 }
 
 #line 40 "tests/golden/run/spec-the-documents-own-example.hero"
@@ -173,7 +165,7 @@ bb0:
     hero_print_end();
 #line 41 "tests/golden/run/spec-the-documents-own-example.hero"
     return;
-#line 177 "specthedocumentsownexample.c"
+#line 169 "specthedocumentsownexample.c"
 }
 HERO_TU_LOCAL bool h_specthedocumentsownexample_Point_eq(const h_specthedocumentsownexample_Point *a, const h_specthedocumentsownexample_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

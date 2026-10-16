@@ -215,46 +215,42 @@ bb0:
 #line 14 "examples/shapes/geom/point.hero"
 int64_t h_geompoint_span(h_geompoint_Point h0_from, h_geompoint_Point h1_to) {
 #line 14 "examples/shapes/geom/point.hero"
-    int64_t h2_dx; HERO_NODEBUG int64_t h3_ret0, t2, t4, t5, t6, t7, t9, t10, t11, t12, t13; HERO_NODEBUG h_geompoint_Point t1, t3; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_dx; HERO_NODEBUG int64_t h3_ret0, t1, t2, t3, t4, t5, t7, t8, t9, t10, t11; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
 #line 14 "examples/shapes/geom/point.hero"
 bb0:
-    t1 = h1_to;
+    t1 = h1_to.f_x;
 #line 15 "examples/shapes/geom/point.hero"
-    t2 = t1.f_x;
+    t2 = h0_from.f_x;
 #line 15 "examples/shapes/geom/point.hero"
-    t3 = h0_from;
+    if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 15 "examples/shapes/geom/point.hero"
-    t4 = t3.f_x;
-#line 15 "examples/shapes/geom/point.hero"
-    if (__builtin_sub_overflow(t2, t4, &t5)) hero_panic_overflow();
-#line 15 "examples/shapes/geom/point.hero"
-    h2_dx = t5;
+    h2_dx = t3;
 #line 17 "examples/shapes/geom/point.hero"
-    t6 = h2_dx;
+    t4 = h2_dx;
 #line 17 "examples/shapes/geom/point.hero"
-    t7 = INT64_C(0);
+    t5 = INT64_C(0);
 #line 17 "examples/shapes/geom/point.hero"
-    t8 = t6 < t7;
+    t6 = t4 < t5;
 #line 17 "examples/shapes/geom/point.hero"
-    if (t8) goto bb2; else goto bb3;
+    if (t6) goto bb2; else goto bb3;
 #line 17 "examples/shapes/geom/point.hero"
 bb1:
 #line 19 "examples/shapes/geom/point.hero"
-    t12 = h2_dx;
+    t10 = h2_dx;
 #line 19 "examples/shapes/geom/point.hero"
-    h3_ret0 = t12;
+    h3_ret0 = t10;
 #line 19 "examples/shapes/geom/point.hero"
     goto bb4;
 #line 19 "examples/shapes/geom/point.hero"
 bb2:
 #line 18 "examples/shapes/geom/point.hero"
-    t9 = INT64_C(0);
+    t7 = INT64_C(0);
 #line 18 "examples/shapes/geom/point.hero"
-    t10 = h2_dx;
+    t8 = h2_dx;
 #line 18 "examples/shapes/geom/point.hero"
-    if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow();
+    if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
 #line 18 "examples/shapes/geom/point.hero"
-    h3_ret0 = t11;
+    h3_ret0 = t9;
 #line 18 "examples/shapes/geom/point.hero"
     goto bb4;
 #line 18 "examples/shapes/geom/point.hero"
@@ -263,9 +259,9 @@ bb3:
     goto bb1;
 #line 18 "examples/shapes/geom/point.hero"
 bb4:
-#line 267 "main.c"
-    t13 = h3_ret0;
-    return t13;
+#line 263 "main.c"
+    t11 = h3_ret0;
+    return t11;
 }
 
 #line 10 "examples/shapes/geom/area.hero"
@@ -289,7 +285,7 @@ bb0:
     if (__builtin_mul_overflow(t3, t6, &t7)) hero_panic_overflow();
 #line 11 "examples/shapes/geom/area.hero"
     return t7;
-#line 293 "main.c"
+#line 289 "main.c"
 }
 
 #line 13 "examples/shapes/geom/area.hero"
@@ -317,45 +313,37 @@ bb0:
     if (__builtin_mul_overflow(t1, t8, &t9)) hero_panic_overflow();
 #line 14 "examples/shapes/geom/area.hero"
     return t9;
-#line 321 "main.c"
+#line 317 "main.c"
 }
 
 #line 18 "examples/shapes/geom/area.hero"
 int64_t h_geomarea_height(h_geompoint_Point h0_a, h_geompoint_Point h1_b) {
 #line 18 "examples/shapes/geom/area.hero"
-    h_geompoint_Point h2_swapped_a; h_geompoint_Point h3_swapped_b; HERO_NODEBUG h_geompoint_Point t1, t3, t5, t6, t8, t10, t11, t12; HERO_NODEBUG int64_t t2, t4, t7, t9, t13; HERO_ENTRY_STOP; goto bb0;
+    h_geompoint_Point h2_swapped_a; h_geompoint_Point h3_swapped_b; HERO_NODEBUG int64_t t1, t2, t4, t5, t9; HERO_NODEBUG h_geompoint_Point t3, t6, t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 18 "examples/shapes/geom/area.hero"
 bb0:
-    t1 = h0_a;
+    t1 = h0_a.f_y;
 #line 19 "examples/shapes/geom/area.hero"
-    t2 = t1.f_y;
+    t2 = h0_a.f_x;
 #line 19 "examples/shapes/geom/area.hero"
-    t3 = h0_a;
+    t3 = (h_geompoint_Point){.f_x = t1, .f_y = t2};
 #line 19 "examples/shapes/geom/area.hero"
-    t4 = t3.f_x;
-#line 19 "examples/shapes/geom/area.hero"
-    t5 = (h_geompoint_Point){.f_x = t2, .f_y = t4};
-#line 19 "examples/shapes/geom/area.hero"
-    h2_swapped_a = t5;
-    t6 = h1_b;
+    h2_swapped_a = t3;
+    t4 = h1_b.f_y;
 #line 20 "examples/shapes/geom/area.hero"
-    t7 = t6.f_y;
+    t5 = h1_b.f_x;
 #line 20 "examples/shapes/geom/area.hero"
-    t8 = h1_b;
+    t6 = (h_geompoint_Point){.f_x = t4, .f_y = t5};
 #line 20 "examples/shapes/geom/area.hero"
-    t9 = t8.f_x;
-#line 20 "examples/shapes/geom/area.hero"
-    t10 = (h_geompoint_Point){.f_x = t7, .f_y = t9};
-#line 20 "examples/shapes/geom/area.hero"
-    h3_swapped_b = t10;
-    t11 = h2_swapped_a;
+    h3_swapped_b = t6;
+    t7 = h2_swapped_a;
 #line 21 "examples/shapes/geom/area.hero"
-    t12 = h3_swapped_b;
+    t8 = h3_swapped_b;
 #line 21 "examples/shapes/geom/area.hero"
-    t13 = h_geompoint_span(t11, t12);
+    t9 = h_geompoint_span(t7, t8);
 #line 21 "examples/shapes/geom/area.hero"
-    return t13;
-#line 359 "main.c"
+    return t9;
+#line 347 "main.c"
 }
 
 #line 14 "examples/shapes/render/ascii.hero"
@@ -433,7 +421,7 @@ bb1:
     h5_own5 = t20;
 #line 17 "examples/shapes/render/ascii.hero"
     hero_str_decref(t23);
-#line 437 "main.c"
+#line 425 "main.c"
     hero_str_incref(t20);
     h_0opt_fbbb698_release(hero_slot_escape(&h3_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h4_own4));
@@ -444,7 +432,7 @@ bb2:
     t16 = h3_f0;
 #line 17 "examples/shapes/render/ascii.hero"
     t17 = t16.as.err;
-#line 448 "main.c"
+#line 436 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 }
@@ -533,7 +521,7 @@ bb3:
     h7_own7 = t17;
 #line 27 "examples/shapes/render/ascii.hero"
     hero_str_decref(t22);
-#line 537 "main.c"
+#line 525 "main.c"
     hero_str_incref(t17);
     hero_array_release_at(&h2_rows);
     hero_str_release_at(&h4_own4);
@@ -556,7 +544,7 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 36 "examples/shapes/render/ascii.hero"
     return t3;
-#line 560 "main.c"
+#line 548 "main.c"
 }
 
 #line 12 "examples/shapes/render/scale.hero"
@@ -568,7 +556,7 @@ bb0:
     t1 = INT64_C(3);
 #line 13 "examples/shapes/render/scale.hero"
     return t1;
-#line 572 "main.c"
+#line 560 "main.c"
 }
 
 #line 19 "examples/shapes/scale.hero"
@@ -580,7 +568,7 @@ bb0:
     t1 = INT64_C(10);
 #line 20 "examples/shapes/scale.hero"
     return t1;
-#line 584 "main.c"
+#line 572 "main.c"
 }
 HERO_TU_LOCAL bool h_geompoint_Point_eq(const h_geompoint_Point *a, const h_geompoint_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

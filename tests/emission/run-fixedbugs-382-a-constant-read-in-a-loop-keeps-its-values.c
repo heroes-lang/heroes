@@ -422,7 +422,7 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 int64_t h_fixedbugs382aconstantreadinaloopkeepsitsvalues_measure(h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape h0_s) {
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    HERO_NODEBUG h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape h1_s0, t1, t2, t5; HERO_NODEBUG int64_t h2_r0, t3, t4, t8, t9; h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape_c_line h3_l; HERO_NODEBUG h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape_c_line t6, t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape h1_s0, t1, t2, t5; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t8; h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape_c_line h3_l; HERO_NODEBUG h_fixedbugs382aconstantreadinaloopkeepsitsvalues_Shape_c_line t6; HERO_ENTRY_STOP; goto bb0;
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 bb0:
     t1 = h0_s;
@@ -445,9 +445,9 @@ bb0:
 #line 39 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 bb1:
 #line 39 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t9 = h2_r0;
+    t8 = h2_r0;
 #line 39 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    return t9;
+    return t8;
 #line 39 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
 bb2:
     t4 = INT64_C(1);
@@ -464,14 +464,12 @@ bb3:
 #line 41 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     h3_l = t6;
 #line 41 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t7 = h3_l;
-#line 41 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    t8 = t7.f_n;
+    t7 = h3_l.f_n;
 #line 39 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
-    h2_r0 = t8;
+    h2_r0 = t7;
 #line 39 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     goto bb1;
-#line 475 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 473 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
 }
 
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
@@ -778,7 +776,7 @@ bb3:
     hero_print_int(t83);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-read-in-a-loop-keeps-its-values.hero"
     hero_print_end();
-#line 782 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
+#line 780 "fixedbugs382aconstantreadinaloopkeepsitsvalues.c"
     hero_array_release_at(&h5_here);
     hero_array_release_at(&h6_own6);
     hero_array_release_at(&h7_own7);

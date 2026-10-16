@@ -1,0 +1,56 @@
+# Which field reads are read from the place itself (panel 215's R3, ratified
+# 2026-10-16; design.md §4.8): `p.n` lowered as one `load` of the place `p.n`,
+# `(*p).f_n` in C, where it was a `load` of the whole `p` into a temporary and
+# a field of that copy. § 9 says the callee works on the caller's place
+# itself, and the copy made it false of the emitted C at `-O0`: a record
+# holding a lock was copied, lock and all, to read one field (the sitting's
+# critic, § 4). The same held of a local cell, which C may hold the address
+# of too, so every place is read so, a parameter's and a local's alike.
+#
+# A path of fields alone, rooted in a local or a parameter, each field found
+# on its record: an index keeps its own instruction and its bound check, and
+# a module's name, a constant, a call or any other value is not a place.
+#
+# **And never a read whose value is a fixed array.** C gives a `T[N]` no
+# storage, so the emitter spells such a value where it is used
+# (`emit/storageless.hero`): read in place, it would read the place at its
+# use rather than at the read, after any write between them, `f(x.b,
+# g(@x))` handing `f` the array `g` wrote. Found at this landing, when the
+# first build of it left fifteen programs naming a temporary nothing
+# declared, exit 2; such a read keeps the whole value's read and the field
+# of that copy, whose spelling `storageless.hero` knows.
+
+use ast
+use source
+use resolved
+use check/state
+use check/table
+use ir/layout
+
+# Whether `id` is a field read through a path of fields alone, rooted in a
+# local or a parameter, each field found: the read `place` spells whole.
+function read(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+    match a.exprs[id].kind
+        .name =>
+            match r.uses[id]
+                .local                                  => return true
+                .top | .builtin | .module | .unresolved => return false
+        .field f =>
+            match table.get(c.types, c.expr_types[id])
+                .fixed                                                    => return false
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => _ = 0
+                .array | .map | .fallible | .function_ty | .named         => _ = 0
+                .case_ty | .failure | .generic | .error                   => _ = 0
+
+            match r.uses[f.base]
+                .module                                => return false
+                .local | .top | .builtin | .unresolved => _ = 0
+
+            if layout.field_index(decls, c, s, owner: c.expr_types[f.base], name: f.name).is_err()
+                return false
+            return read(a, r, c, s, decls, id: f.base)
+        .field_name | .index | .int_lit | .float_lit | .str_lit | .interp | .char_lit => return false
+        .bool_lit | .null_ptr | .hole | .unary | .binary | .call | .method            => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error   => return false
+
+    return false

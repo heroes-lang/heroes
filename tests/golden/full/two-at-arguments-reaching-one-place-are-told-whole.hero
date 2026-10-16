@@ -1,0 +1,21 @@
+# Panel 215's R3, 2026-10-16: two `@` arguments reaching one place, told
+# whole, its note and its two fixes with it. The message says what § 9 now
+# says, the function working on the caller's place itself, where it said
+# each argument copies out; and its first fix is the one that holds for
+# every value, the two places made different, since a copy is refused for a
+# record whose C struct holds a lock (`ffi_lock_copied`, R2). No case pinned
+# the note or the fixes until this one.
+
+record Pair
+    a: i64
+    b: i64
+
+function swap(@x: i64, @y: i64)
+    t = x
+    x @ y
+    y @ t
+
+function main()
+    p: Pair @= Pair(a: 1, b: 2)
+    swap(x: @p.a, y: @p.a)  #~ aliased_mutable_arguments
+    print(p.a, p.b)

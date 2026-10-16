@@ -282,7 +282,7 @@ void h_fficountedbyastatedextent_main(void) {
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 #define h1_pair (*hero_lend_h1_pair)
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    struct held h0_h; struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair"); HERO_NODEBUG struct held t1, t5, t10, t15, t17, t21, t26, t31, t33, t37, t42, t44, t48, t53, t55, t59, t64, t69; HERO_NODEBUG void *t4, *t20, *t36, *t47, *t58; HERO_NODEBUG int64_t t7, t12, t16, t23, t28, t32, t39, t43, t50, t54, t61, t66, t70; HERO_NODEBUG uint8_t t8, t13, t24, t29, t40, t51, t62, t67; HERO_NODEBUG HeroStr t9, t14, t25, t30, t41, t52, t63, t68, t76; HERO_NODEBUG int32_t t71, t72, t75, t78; HERO_NODEBUG struct pair t73, t74, t77; HERO_ENTRY_STOP; goto bb0;
+    struct held h0_h; struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair"); HERO_NODEBUG struct held t1, t5, t10, t16, t20, t25, t31, t35, t41, t45, t51, t55, t60; HERO_NODEBUG void *t4, *t19, *t34, *t44, *t54; HERO_NODEBUG int64_t t7, t12, t15, t22, t27, t30, t37, t40, t47, t50, t57, t62, t65; HERO_NODEBUG uint8_t t8, t13, t23, t28, t38, t48, t58, t63; HERO_NODEBUG HeroStr t9, t14, t24, t29, t39, t49, t59, t64, t70; HERO_NODEBUG int32_t t66, t67, t69, t71; HERO_NODEBUG struct pair t68; HERO_ENTRY_STOP; goto bb0;
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 bb0:
     t1 = h_fficountedbyastatedextent_zero();
@@ -311,9 +311,7 @@ bb0:
 #line 34 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     t14 = HERO_STR_LIT(hero_str_20);
 #line 34 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t15 = h0_h;
-#line 34 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t16 = t15.after;
+    t15 = h0_h.after;
 #line 34 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_int(t8);
 #line 34 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
@@ -323,156 +321,148 @@ bb0:
 #line 34 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_str(t14);
 #line 34 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t16);
+    hero_print_int(t15);
 #line 34 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_end();
-    t17 = h_fficountedbyastatedextent_zero();
+    t16 = h_fficountedbyastatedextent_zero();
 #line 35 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    h0_h = t17;
-    t20 = (void *)(h0_h.buf);
+    h0_h = t16;
+    t19 = (void *)(h0_h.buf);
 #line 36 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(HELD_LEN) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_const p HELD_LEN 1597 1608 16 bytes unsigned char *");
 #line 36 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(unsigned char *)0) == 1 || ((uint64_t)(HELD_LEN) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(unsigned char *)0))), "heroes-ffi-extent-stated fill16_const p HELD_LEN 1597 1608 16 unit unsigned char *");
 #line 36 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    (void)fill16_const(t20);
-    t21 = h0_h;
+    (void)fill16_const(t19);
+    t20 = h0_h;
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t23 = INT64_C(0);
+    t22 = INT64_C(0);
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t24 = t21.buf[((uint64_t)(t23) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t23))];
+    t23 = t20.buf[((uint64_t)(t22) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t22))];
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t25 = HERO_STR_LIT(hero_str_20);
+    t24 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t26 = h0_h;
+    t25 = h0_h;
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t28 = INT64_C(15);
+    t27 = INT64_C(15);
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t29 = t26.buf[((uint64_t)(t28) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t28))];
+    t28 = t25.buf[((uint64_t)(t27) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t27))];
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t30 = HERO_STR_LIT(hero_str_20);
+    t29 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t31 = h0_h;
+    t30 = h0_h.after;
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t32 = t31.after;
+    hero_print_int(t23);
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t24);
+    hero_print_str(t24);
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_str(t25);
+    hero_print_int(t28);
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t29);
+    hero_print_str(t29);
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_str(t30);
-#line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t32);
+    hero_print_int(t30);
 #line 37 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_end();
-    t33 = h_fficountedbyastatedextent_zero();
+    t31 = h_fficountedbyastatedextent_zero();
 #line 38 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    h0_h = t33;
-    t36 = (void *)(h0_h.buf);
+    h0_h = t31;
+    t34 = (void *)(h0_h.buf);
 #line 39 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_under p 1_6 1695 1706 16 bytes unsigned char *");
 #line 39 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(unsigned char *)0) == 1 || ((uint64_t)(16) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(unsigned char *)0))), "heroes-ffi-extent-stated fill16_under p 1_6 1695 1706 16 unit unsigned char *");
 #line 39 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    (void)fill16_under(t36);
-    t37 = h0_h;
+    (void)fill16_under(t34);
+    t35 = h0_h;
 #line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t39 = INT64_C(15);
+    t37 = INT64_C(15);
 #line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t40 = t37.buf[((uint64_t)(t39) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t39))];
+    t38 = t35.buf[((uint64_t)(t37) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t37))];
 #line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t41 = HERO_STR_LIT(hero_str_20);
+    t39 = HERO_STR_LIT(hero_str_20);
 #line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t42 = h0_h;
+    t40 = h0_h.after;
 #line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t43 = t42.after;
+    hero_print_int(t38);
+#line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    hero_print_str(t39);
 #line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_int(t40);
 #line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_str(t41);
-#line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t43);
-#line 40 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_end();
-    t44 = h_fficountedbyastatedextent_zero();
+    t41 = h_fficountedbyastatedextent_zero();
 #line 41 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    h0_h = t44;
-    t47 = (void *)(h0_h.buf);
+    h0_h = t41;
+    t44 = (void *)(h0_h.buf);
 #line 42 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_hex p 0x10 1776 1787 16 bytes void *");
 #line 42 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(16) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))), "heroes-ffi-extent-stated fill16_hex p 0x10 1776 1787 16 unit void *");
 #line 42 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    (void)fill16_hex(t47);
-    t48 = h0_h;
+    (void)fill16_hex(t44);
+    t45 = h0_h;
 #line 43 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t50 = INT64_C(15);
+    t47 = INT64_C(15);
 #line 43 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t51 = t48.buf[((uint64_t)(t50) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t50))];
+    t48 = t45.buf[((uint64_t)(t47) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t47))];
 #line 43 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t52 = HERO_STR_LIT(hero_str_20);
+    t49 = HERO_STR_LIT(hero_str_20);
 #line 43 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t53 = h0_h;
+    t50 = h0_h.after;
 #line 43 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t54 = t53.after;
+    hero_print_int(t48);
 #line 43 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t51);
+    hero_print_str(t49);
 #line 43 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_str(t52);
-#line 43 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t54);
+    hero_print_int(t50);
 #line 43 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_end();
-    t55 = h_fficountedbyastatedextent_zero();
+    t51 = h_fficountedbyastatedextent_zero();
 #line 44 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    h0_h = t55;
-    t58 = (void *)(h0_h.buf);
+    h0_h = t51;
+    t54 = (void *)(h0_h.buf);
 #line 45 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(int32_t *)0) != 1 || ((uint64_t)(4) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill_ints4 p 4 1857 1868 16 bytes int32_t *");
 #line 45 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(int32_t *)0) == 1 || ((uint64_t)(4) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int32_t *)0))), "heroes-ffi-extent-stated fill_ints4 p 4 1857 1868 16 unit int32_t *");
 #line 45 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    (void)fill_ints4(t58);
-    t59 = h0_h;
+    (void)fill_ints4(t54);
+    t55 = h0_h;
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t61 = INT64_C(0);
+    t57 = INT64_C(0);
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t62 = t59.buf[((uint64_t)(t61) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t61))];
+    t58 = t55.buf[((uint64_t)(t57) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t57))];
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t63 = HERO_STR_LIT(hero_str_20);
+    t59 = HERO_STR_LIT(hero_str_20);
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t64 = h0_h;
+    t60 = h0_h;
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t66 = INT64_C(12);
+    t62 = INT64_C(12);
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t67 = t64.buf[((uint64_t)(t66) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t66))];
+    t63 = t60.buf[((uint64_t)(t62) >= UINT64_C(16) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t62))];
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t68 = HERO_STR_LIT(hero_str_20);
+    t64 = HERO_STR_LIT(hero_str_20);
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t69 = h0_h;
+    t65 = h0_h.after;
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t70 = t69.after;
+    hero_print_int(t58);
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t62);
+    hero_print_str(t59);
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_str(t63);
+    hero_print_int(t63);
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t67);
+    hero_print_str(t64);
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_str(t68);
-#line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t70);
+    hero_print_int(t65);
 #line 46 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_end();
-    t71 = INT64_C(0);
+    t66 = INT64_C(0);
 #line 47 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t72 = INT64_C(0);
+    t67 = INT64_C(0);
 #line 47 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t73 = (struct pair){.a = t71, .b = t72};
+    t68 = (struct pair){.a = t66, .b = t67};
 #line 47 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    h1_pair = t73;
+    h1_pair = t68;
     _Static_assert(sizeof(*(struct pair *)0) != 1 || ((uint64_t)(1) <= (uint64_t)sizeof(h1_pair)), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 bytes struct pair *");
 #line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(struct pair *)0) == 1 || ((uint64_t)(1) <= (uint64_t)(sizeof(h1_pair) / sizeof(*(struct pair *)0))), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 unit struct pair *");
@@ -482,28 +472,24 @@ bb0:
     hero_pad_fill(&h1_pair, sizeof(struct pair), 1, hero_pad_g_2, hero_pad_n_2);
 #line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     (void)fill_pair(&h1_pair);
-    t74 = h1_pair;
+    t69 = h1_pair.a;
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t75 = t74.a;
+    t70 = HERO_STR_LIT(hero_str_20);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t76 = HERO_STR_LIT(hero_str_20);
+    t71 = h1_pair.b;
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t77 = h1_pair;
+    hero_print_int(t69);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    t78 = t77.b;
+    hero_print_str(t70);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t75);
-#line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_str(t76);
-#line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    hero_print_int(t78);
+    hero_print_int(t71);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_end();
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_lend_local_give(hero_lend_h1_pair);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return;
-#line 507 "fficountedbyastatedextent.c"
+#line 493 "fficountedbyastatedextent.c"
 }
 #undef h1_pair
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b) {

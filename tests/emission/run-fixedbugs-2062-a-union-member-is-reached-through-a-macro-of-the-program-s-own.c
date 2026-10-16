@@ -192,7 +192,7 @@ void h_fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown_main(void
 #line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
 #define h0_t (*hero_lend_h0_t)
 #line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
-    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.main", "t"); HERO_NODEBUG int32_t t1, t2, t4, t6; HERO_NODEBUG struct tagged t3, t5; HERO_ENTRY_STOP; goto bb0;
+    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.main", "t"); HERO_NODEBUG int32_t t1, t2, t4, t5; HERO_NODEBUG struct tagged t3; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
 bb0:
     t1 = INT64_C(2);
@@ -211,18 +211,16 @@ bb0:
     hero_print_int(t4);
 #line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
     hero_print_end();
-    t5 = h0_t;
+    t5 = h0_t.fd;
 #line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
-    t6 = t5.fd;
-#line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
-    hero_print_int(t6);
+    hero_print_int(t5);
 #line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
     hero_lend_local_give(hero_lend_h0_t);
 #line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
     return;
-#line 226 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
+#line 224 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
 }
 #undef h0_t
 HERO_TU_LOCAL bool h_fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown_Tagged_eq(const struct tagged *a, const struct tagged *b) {

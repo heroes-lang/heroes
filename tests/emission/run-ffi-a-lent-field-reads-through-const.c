@@ -187,7 +187,7 @@ bb0:
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 void h_ffialentfieldreadsthroughconst_main(void) {
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
-    Slot h0_t; __attribute__((unused)) Slot h1_u; HERO_NODEBUG Slot t1, t7, t9, t24; HERO_NODEBUG const void *t4, *t21; HERO_NODEBUG int64_t t5, t6, t8, t13, t17, t18, t22, t23, t25; HERO_NODEBUG void *t12, *t16; HERO_ENTRY_STOP; goto bb0;
+    Slot h0_t; __attribute__((unused)) Slot h1_u; HERO_NODEBUG Slot t1, t7, t9; HERO_NODEBUG const void *t4, *t21; HERO_NODEBUG int64_t t5, t6, t8, t13, t17, t18, t22, t23, t24; HERO_NODEBUG void *t12, *t16; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 bb0:
 #line 29 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
@@ -254,16 +254,14 @@ bb0:
     hero_print_int(t23);
 #line 40 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     hero_print_end();
-    t24 = h0_t;
+    t24 = h0_t.id;
 #line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
-    t25 = t24.id;
-#line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
-    hero_print_int(t25);
+    hero_print_int(t24);
 #line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     hero_print_end();
 #line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     return;
-#line 267 "ffialentfieldreadsthroughconst.c"
+#line 265 "ffialentfieldreadsthroughconst.c"
 }
 HERO_TU_LOCAL bool h_ffialentfieldreadsthroughconst_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;

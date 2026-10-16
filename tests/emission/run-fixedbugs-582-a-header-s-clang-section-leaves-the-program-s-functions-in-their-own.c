@@ -244,15 +244,13 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) {
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG h_fixedbugs582pair_Pair t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
-    t1 = h0_p;
+    t1 = h0_p.f_b;
 #line 21 "tests/golden/run/fixedbugs582/pair.hero"
-    t2 = t1.f_b;
-#line 21 "tests/golden/run/fixedbugs582/pair.hero"
-    return t2;
-#line 256 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+    return t1;
+#line 254 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
@@ -268,13 +266,13 @@ bb0:
     t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}};
 #line 24 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 272 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 270 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) {
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0, t1, t2, t5, t18; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t9, t10, t14, t16, t26, t27; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0, t3, t4, t11, t12, t17, t21, t23, t24, t25; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6, t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t13; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t19, t20, t22; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0, t1, t2, t5, t17; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t8, t9, t13, t15, t23, t24; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0, t3, t4, t10, t11, t16, t19, t20, t21, t22; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t12; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t18; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = h0_s;
@@ -311,80 +309,74 @@ bb3:
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     h2_f = t6;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t7 = h2_f;
+    t7 = h2_f.f_f;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t8 = t7.f_f;
+    t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t7};
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t8};
+    t23 = h6_own6;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t26 = h6_own6;
+    h6_own6 = t8;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h6_own6 = t9;
+    h_0opt_e201354_release(&t23);
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h_0opt_e201354_release(&t26);
+    t24 = h3_f0;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t27 = h3_f0;
+    h_0opt_e201354_retain(&t8);
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h_0opt_e201354_retain(&t9);
+    h3_f0 = t8;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h3_f0 = t9;
+    h_0opt_e201354_release(&t24);
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h_0opt_e201354_release(&t27);
+    t9 = h3_f0;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t10 = h3_f0;
+    t10 = t9.tag;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t11 = t10.tag;
+    t11 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t12 = INT64_C(0);
+    t12 = t10 == t11;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t13 = t11 == t12;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    if (t13) goto bb5; else goto bb6;
+    if (t12) goto bb5; else goto bb6;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
 bb4:
-    t18 = h1_s0;
+    t17 = h1_s0;
 #line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    t19 = t18.as.c_rect;
+    t18 = t17.as.c_rect;
 #line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    h4_r = t19;
+    h4_r = t18;
 #line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    t20 = h4_r;
+    t19 = h4_r.f_w;
 #line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    t21 = t20.f_w;
+    t20 = h4_r.f_h;
 #line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    t22 = h4_r;
+    if (__builtin_mul_overflow(t19, t20, &t21)) hero_panic_overflow();
 #line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    t23 = t22.f_h;
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    if (__builtin_mul_overflow(t21, t23, &t24)) hero_panic_overflow();
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    h5_ret0 = t24;
+    h5_ret0 = t21;
 #line 30 "tests/golden/run/fixedbugs582/pair.hero"
     goto bb7;
 #line 30 "tests/golden/run/fixedbugs582/pair.hero"
 bb5:
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t16 = h3_f0;
+    t15 = h3_f0;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t17 = t16.as.ok;
+    t16 = t15.as.ok;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h5_ret0 = t17;
+    h5_ret0 = t16;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     goto bb7;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
 bb6:
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t14 = h3_f0;
+    t13 = h3_f0;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t15 = t14.as.err;
-#line 381 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
-    hero_panic_must(t15);
+    t14 = t13.as.err;
+#line 373 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+    hero_panic_must(t14);
     hero_unreachable();
 bb7:
-    t25 = h5_ret0;
+    t22 = h5_ret0;
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     h_0opt_e201354_release(hero_slot_escape(&h6_own6));
-    return t25;
+    return t22;
 }
 HERO_TU_LOCAL bool h_fixedbugs582pair_Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b) {
     if (!(a->f_a == b->f_a)) return false;

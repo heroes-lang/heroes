@@ -223,7 +223,7 @@ void h_main_main(void);
 #line 103 "examples/raylib/main.hero"
 void h_main_main(void) {
 #line 103 "examples/raylib/main.hero"
-    Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; HERO_NODEBUG uint32_t t1, t30, t31; HERO_NODEBUG HeroStr t2, t27; HERO_NODEBUG int32_t t3, t4, t5, t12, t16, t32, t33, t34, t35, t41; HERO_NODEBUG uint8_t t6, t7, t8, t9; HERO_NODEBUG Color t10, t11, t13, t15; HERO_NODEBUG float t14, t17, t18, t20, t21, t23, t26, t29, t42, t43, t44, t45, t47, t48, t52, t53; HERO_NODEBUG Vector2 t19, t22, t24, t25, t28, t49, t54; HERO_NODEBUG AutomationEvent t37, t38; HERO_NODEBUG int64_t t40; HERO_NODEBUG Rectangle t46, t50, t55; HERO_NODEBUG bool t51, t56; HERO_ENTRY_STOP; goto bb0;
+    Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; HERO_NODEBUG uint32_t t1, t28, t29; HERO_NODEBUG HeroStr t2, t26; HERO_NODEBUG int32_t t3, t4, t5, t12, t16, t30, t31, t32, t33, t39; HERO_NODEBUG uint8_t t6, t7, t8, t9; HERO_NODEBUG Color t10, t11, t13, t15; HERO_NODEBUG float t14, t17, t18, t20, t21, t23, t25, t27, t40, t41, t42, t43, t45, t46, t50, t51; HERO_NODEBUG Vector2 t19, t22, t24, t47, t52; HERO_NODEBUG AutomationEvent t35, t36; HERO_NODEBUG int64_t t38; HERO_NODEBUG Rectangle t44, t48, t53; HERO_NODEBUG bool t49, t54; HERO_ENTRY_STOP; goto bb0;
 #line 103 "examples/raylib/main.hero"
 bb0:
     t1 = UINT64_C(7);
@@ -289,89 +289,85 @@ bb0:
 #line 111 "examples/raylib/main.hero"
     h1_mid = t24;
 #line 116 "examples/raylib/main.hero"
-    t25 = h1_mid;
+    t25 = h1_mid.x;
 #line 116 "examples/raylib/main.hero"
-    t26 = t25.x;
+    t26 = HERO_STR_LIT(hero_str_20);
 #line 116 "examples/raylib/main.hero"
-    t27 = HERO_STR_LIT(hero_str_20);
+    t27 = h1_mid.y;
 #line 116 "examples/raylib/main.hero"
-    t28 = h1_mid;
+    hero_print_f32(t25);
 #line 116 "examples/raylib/main.hero"
-    t29 = t28.y;
+    hero_print_str(t26);
 #line 116 "examples/raylib/main.hero"
-    hero_print_f32(t26);
-#line 116 "examples/raylib/main.hero"
-    hero_print_str(t27);
-#line 116 "examples/raylib/main.hero"
-    hero_print_f32(t29);
+    hero_print_f32(t27);
 #line 116 "examples/raylib/main.hero"
     hero_print_end();
 #line 120 "examples/raylib/main.hero"
-    t30 = UINT64_C(0);
+    t28 = UINT64_C(0);
 #line 120 "examples/raylib/main.hero"
-    t31 = UINT64_C(0);
+    t29 = UINT64_C(0);
 #line 120 "examples/raylib/main.hero"
-    t32 = INT64_C(10);
+    t30 = INT64_C(10);
 #line 120 "examples/raylib/main.hero"
-    t33 = INT64_C(20);
+    t31 = INT64_C(20);
 #line 120 "examples/raylib/main.hero"
-    t34 = INT64_C(30);
+    t32 = INT64_C(30);
 #line 120 "examples/raylib/main.hero"
-    t35 = INT64_C(40);
+    t33 = INT64_C(40);
 #line 120 "examples/raylib/main.hero"
-    t37 = (AutomationEvent){.frame = t30, .type = t31, .params = {t32, t33, t34, t35}};
+    t35 = (AutomationEvent){.frame = t28, .type = t29, .params = {t30, t31, t32, t33}};
 #line 120 "examples/raylib/main.hero"
-    h2_event = t37;
-    t38 = h2_event;
+    h2_event = t35;
+    t36 = h2_event;
 #line 121 "examples/raylib/main.hero"
-    t40 = INT64_C(2);
+    t38 = INT64_C(2);
 #line 121 "examples/raylib/main.hero"
-    t41 = t38.params[((uint64_t)(t40) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t40))];
+    t39 = t36.params[((uint64_t)(t38) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t38))];
 #line 121 "examples/raylib/main.hero"
-    hero_print_int(t41);
+    hero_print_int(t39);
 #line 121 "examples/raylib/main.hero"
     hero_print_end();
 #line 123 "examples/raylib/main.hero"
-    t42 = 0x0p+0;
+    t40 = 0x0p+0;
 #line 123 "examples/raylib/main.hero"
-    t43 = 0x0p+0;
+    t41 = 0x0p+0;
 #line 123 "examples/raylib/main.hero"
-    t44 = 0x1.4p+3;
+    t42 = 0x1.4p+3;
 #line 123 "examples/raylib/main.hero"
-    t45 = 0x1.4p+3;
+    t43 = 0x1.4p+3;
 #line 123 "examples/raylib/main.hero"
-    t46 = (Rectangle){.x = t42, .y = t43, .width = t44, .height = t45};
+    t44 = (Rectangle){.x = t40, .y = t41, .width = t42, .height = t43};
 #line 123 "examples/raylib/main.hero"
-    h3_box = t46;
-    t47 = 0x1.4p+2;
+    h3_box = t44;
+    t45 = 0x1.4p+2;
 #line 124 "examples/raylib/main.hero"
-    t48 = 0x1.4p+2;
+    t46 = 0x1.4p+2;
 #line 124 "examples/raylib/main.hero"
-    t49 = (Vector2){.x = t47, .y = t48};
+    t47 = (Vector2){.x = t45, .y = t46};
 #line 124 "examples/raylib/main.hero"
-    t50 = h3_box;
+    t48 = h3_box;
 #line 124 "examples/raylib/main.hero"
-    t51 = CheckCollisionPointRec(t49, t50);
+    t49 = CheckCollisionPointRec(t47, t48);
 #line 124 "examples/raylib/main.hero"
-    hero_print_bool(t51);
+    hero_print_bool(t49);
 #line 124 "examples/raylib/main.hero"
     hero_print_end();
-    t52 = 0x1.9p+5;
+    t50 = 0x1.9p+5;
 #line 125 "examples/raylib/main.hero"
-    t53 = 0x1.4p+2;
+    t51 = 0x1.4p+2;
 #line 125 "examples/raylib/main.hero"
-    t54 = (Vector2){.x = t52, .y = t53};
+    t52 = (Vector2){.x = t50, .y = t51};
 #line 125 "examples/raylib/main.hero"
-    t55 = h3_box;
+    t53 = h3_box;
 #line 125 "examples/raylib/main.hero"
-    t56 = CheckCollisionPointRec(t54, t55);
+    t54 = CheckCollisionPointRec(t52, t53);
 #line 125 "examples/raylib/main.hero"
-    hero_print_bool(t56);
+    hero_print_bool(t54);
 #line 125 "examples/raylib/main.hero"
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 375 "main.c"
+#line 371 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

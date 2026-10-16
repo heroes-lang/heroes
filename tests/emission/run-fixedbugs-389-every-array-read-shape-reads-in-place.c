@@ -209,7 +209,7 @@ bb4:
 #line 24 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
 void h_fixedbugs389everyarrayreadshapereadsinplace_main(void) {
 #line 24 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_grid = {0}; h_fixedbugs389everyarrayreadshapereadsinplace_Bag h2_bag = {0}; HeroArrayHeader * h3_words = {0}; HeroArrayHeader * h4_flags = {0}; HeroArrayHeader * h5_small = {0}; HeroArrayHeader * h6_empty = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *t6, *t7, *t10, *t13, *t20, *t23, *t24, *t25, *t27, *t33, *t37, *t43, *t46, *t49, *t52, *t56, *t57, *t62, *t63, *t68, *t69, *t72, *t73, *t75, *t76, *t77, *t78, *t79, *t80, *t81, *t84, *t85, *t86, *t87, *t88, *t89, *t90, *t91; HERO_NODEBUG h_fixedbugs389everyarrayreadshapereadsinplace_Bag h12_own12 = {0}, t35, t36, t40, t82, t83; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t8, t9, t11, t12, t14, t15, t18, t19, t21, t22, t26, t28, t29, t30, t31, t32, t38, t39, t42, t44, t45, t47, t50, t53, t58, t64, t70, t74; HERO_NODEBUG bool t16, t60, t61, t65; HERO_NODEBUG HeroStr t17, t34, t41, t48, t51, t54, t55, t59; HERO_NODEBUG uint8_t t66, t67, t71; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_grid = {0}; h_fixedbugs389everyarrayreadshapereadsinplace_Bag h2_bag = {0}; HeroArrayHeader * h3_words = {0}; HeroArrayHeader * h4_flags = {0}; HeroArrayHeader * h5_small = {0}; HeroArrayHeader * h6_empty = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *t6, *t7, *t10, *t13, *t20, *t23, *t24, *t25, *t27, *t33, *t36, *t41, *t44, *t47, *t50, *t54, *t55, *t60, *t61, *t66, *t67, *t70, *t71, *t73, *t74, *t75, *t76, *t77, *t78, *t79, *t82, *t83, *t84, *t85, *t86, *t87, *t88, *t89; HERO_NODEBUG h_fixedbugs389everyarrayreadshapereadsinplace_Bag h12_own12 = {0}, t35, t80, t81; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t8, t9, t11, t12, t14, t15, t18, t19, t21, t22, t26, t28, t29, t30, t31, t32, t37, t38, t40, t42, t43, t45, t48, t51, t56, t62, t68, t72; HERO_NODEBUG bool t16, t58, t59, t63; HERO_NODEBUG HeroStr t17, t34, t39, t46, t49, t52, t53, t57; HERO_NODEBUG uint8_t t64, t65, t69; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
 bb0:
     t1 = INT64_C(3);
@@ -234,19 +234,19 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_push_owned(&t6, &t5);
 #line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t75 = h7_own7;
+    t73 = h7_own7;
 #line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h7_own7 = t6;
 #line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_decref(t75);
+    hero_array_decref(t73);
 #line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t76 = h0_xs;
+    t74 = h0_xs;
 #line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_incref(t6);
 #line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h0_xs = t6;
 #line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_decref(t76);
+    hero_array_decref(t74);
 #line 28 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t7 = h0_xs;
 #line 28 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
@@ -286,11 +286,11 @@ bb1:
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_push_owned(&t20, &t19);
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t77 = h8_own8;
+    t75 = h8_own8;
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h8_own8 = t20;
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_decref(t77);
+    hero_array_decref(t75);
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t21 = INT64_C(3);
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
@@ -302,11 +302,11 @@ bb1:
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_push_owned(&t23, &t22);
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t78 = h9_own9;
+    t76 = h9_own9;
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h9_own9 = t23;
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_decref(t78);
+    hero_array_decref(t76);
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t24 = hero_array_new(&hero_desc_array, 2);
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
@@ -314,19 +314,19 @@ bb1:
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_push_owned(&t24, &t23);
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t79 = h10_own10;
+    t77 = h10_own10;
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h10_own10 = t24;
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_decref(t79);
+    hero_array_decref(t77);
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t80 = h1_grid;
+    t78 = h1_grid;
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_incref(t24);
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h1_grid = t24;
 #line 34 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_decref(t80);
+    hero_array_decref(t78);
     t25 = h1_grid;
 #line 35 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t26 = INT64_C(1);
@@ -354,11 +354,11 @@ bb1:
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_push_owned(&t33, &t32);
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t81 = h11_own11;
+    t79 = h11_own11;
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h11_own11 = t33;
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_decref(t81);
+    hero_array_decref(t79);
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t34 = HERO_STR_LIT(hero_str_62);
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
@@ -368,199 +368,195 @@ bb1:
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t35 = (h_fixedbugs389everyarrayreadshapereadsinplace_Bag){.f_items = t33, .f_name = t34};
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t82 = h12_own12;
+    t80 = h12_own12;
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h12_own12 = t35;
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(&t82);
+    h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(&t80);
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t83 = h2_bag;
+    t81 = h2_bag;
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h_fixedbugs389everyarrayreadshapereadsinplace_Bag_retain(&t35);
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h2_bag = t35;
 #line 36 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(&t83);
-    t36 = h2_bag;
+    h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(&t81);
+    t36 = h2_bag.f_items;
 #line 37 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t37 = t36.f_items;
+    t37 = INT64_C(2);
 #line 37 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t38 = INT64_C(2);
+    t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t36 + 1))[t37]);
 #line 37 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t39 = ((void)((t37 == NULL || t38 < 0 || t38 >= t37->len) ? ((void)hero_array_at(t37, t38), hero_unreachable()) : (void)0), (void)(t37->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t37 + 1))[t38]);
+    t39 = h2_bag.f_name;
 #line 37 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t40 = h2_bag;
+    hero_print_int(t38);
 #line 37 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t41 = t40.f_name;
-#line 37 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_int(t39);
-#line 37 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_str(t41);
+    hero_print_str(t39);
 #line 37 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_print_end();
 #line 40 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t42 = INT64_C(3);
+    t40 = INT64_C(3);
 #line 40 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_unshare(&(h0_xs));
 #line 40 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h_fixedbugs389everyarrayreadshapereadsinplace_bump(&(*((void)((h0_xs == NULL || t42 < 0 || t42 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t42), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t42)));
-    t43 = h0_xs;
+    h_fixedbugs389everyarrayreadshapereadsinplace_bump(&(*((void)((h0_xs == NULL || t40 < 0 || t40 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t40), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t40)));
+    t41 = h0_xs;
 #line 41 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t44 = INT64_C(3);
+    t42 = INT64_C(3);
 #line 41 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t45 = ((void)((t43 == NULL || t44 < 0 || t44 >= t43->len) ? ((void)hero_array_at(t43, t44), hero_unreachable()) : (void)0), (void)(t43->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t43 + 1))[t44]);
+    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t41 + 1))[t42]);
 #line 41 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_print_int(t43);
+#line 41 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_print_end();
+#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t44 = h0_xs;
+#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len);
+#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t46 = HERO_STR_LIT(hero_str_20);
+#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t47 = h0_xs;
+#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t48 = ((void)(t47 == NULL ? ((void)hero_array_len(t47), hero_unreachable()) : (void)0), t47->len);
+#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t49 = HERO_STR_LIT(hero_str_20);
+#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t50 = h0_xs;
+#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t51 = h_fixedbugs389everyarrayreadshapereadsinplace_total(t50);
+#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_print_int(t45);
-#line 41 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_end();
 #line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t46 = h0_xs;
+    hero_print_str(t46);
 #line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t47 = ((void)(t46 == NULL ? ((void)hero_array_len(t46), hero_unreachable()) : (void)0), t46->len);
+    hero_print_int(t48);
 #line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t48 = HERO_STR_LIT(hero_str_20);
+    hero_print_str(t49);
 #line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t49 = h0_xs;
-#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t50 = ((void)(t49 == NULL ? ((void)hero_array_len(t49), hero_unreachable()) : (void)0), t49->len);
-#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t51 = HERO_STR_LIT(hero_str_20);
-#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t52 = h0_xs;
-#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t53 = h_fixedbugs389everyarrayreadshapereadsinplace_total(t52);
-#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_int(t47);
-#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_str(t48);
-#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_int(t50);
-#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_str(t51);
-#line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_int(t53);
+    hero_print_int(t51);
 #line 44 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_print_end();
 #line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t54 = HERO_STR_LIT(hero_str_61);
+    t52 = HERO_STR_LIT(hero_str_61);
 #line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t55 = HERO_STR_LIT(hero_str_3289);
+    t53 = HERO_STR_LIT(hero_str_3289);
 #line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t56 = hero_array_new(&hero_desc_str, 2);
+    t54 = hero_array_new(&hero_desc_str, 2);
 #line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_push_owned(&t56, &t54);
+    hero_array_push_owned(&t54, &t52);
 #line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_push_owned(&t56, &t55);
+    hero_array_push_owned(&t54, &t53);
 #line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t84 = h13_own13;
+    t82 = h13_own13;
 #line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h13_own13 = t56;
+    h13_own13 = t54;
 #line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_decref(t82);
+#line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t83 = h3_words;
+#line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_incref(t54);
+#line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    h3_words = t54;
+#line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_decref(t83);
+    t55 = h3_words;
+#line 48 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t56 = INT64_C(1);
+#line 48 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t55 + 1))[t56]);
+#line 48 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_print_str(t57);
+#line 48 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_print_end();
+    t58 = true;
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t59 = false;
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t60 = hero_array_new(&hero_desc_bool, 2);
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_push_owned(&t60, &t58);
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_push_owned(&t60, &t59);
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t84 = h14_own14;
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    h14_own14 = t60;
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_decref(t84);
-#line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t85 = h3_words;
-#line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_incref(t56);
-#line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h3_words = t56;
-#line 47 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t85 = h4_flags;
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_incref(t60);
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    h4_flags = t60;
+#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_decref(t85);
-    t57 = h3_words;
-#line 48 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t58 = INT64_C(1);
-#line 48 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? ((void)hero_array_at(t57, t58), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t57 + 1))[t58]);
-#line 48 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_str(t59);
-#line 48 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t61 = h4_flags;
+#line 50 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t62 = INT64_C(1);
+#line 50 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t63 = ((void)((t61 == NULL || t62 < 0 || t62 >= t61->len) ? ((void)hero_array_at(t61, t62), hero_unreachable()) : (void)0), (void)(t61->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t61 + 1))[t62]);
+#line 50 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_print_bool(t63);
+#line 50 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_print_end();
-    t60 = true;
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t61 = false;
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t62 = hero_array_new(&hero_desc_bool, 2);
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_push_owned(&t62, &t60);
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_push_owned(&t62, &t61);
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t86 = h14_own14;
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h14_own14 = t62;
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t64 = UINT64_C(255);
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t65 = UINT64_C(7);
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t66 = hero_array_new(&hero_desc_u8, 2);
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_push_owned(&t66, &t64);
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_push_owned(&t66, &t65);
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t86 = h15_own15;
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    h15_own15 = t66;
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_decref(t86);
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t87 = h4_flags;
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_incref(t62);
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h4_flags = t62;
-#line 49 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t87 = h5_small;
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_incref(t66);
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    h5_small = t66;
+#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_decref(t87);
-    t63 = h4_flags;
-#line 50 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t64 = INT64_C(1);
-#line 50 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? ((void)hero_array_at(t63, t64), hero_unreachable()) : (void)0), (void)(t63->elem->size != sizeof(bool) ? hero_unreachable() : (void)0), ((bool const *)(const void *)(t63 + 1))[t64]);
-#line 50 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_bool(t65);
-#line 50 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t67 = h5_small;
+#line 52 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t68 = INT64_C(0);
+#line 52 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t69 = ((void)((t67 == NULL || t68 < 0 || t68 >= t67->len) ? ((void)hero_array_at(t67, t68), hero_unreachable()) : (void)0), (void)(t67->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t67 + 1))[t68]);
+#line 52 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_print_int(t69);
+#line 52 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_print_end();
-    t66 = UINT64_C(255);
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t67 = UINT64_C(7);
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t68 = hero_array_new(&hero_desc_u8, 2);
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_push_owned(&t68, &t66);
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_push_owned(&t68, &t67);
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t88 = h15_own15;
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h15_own15 = t68;
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t70 = hero_array_new(&hero_desc_int, 1);
+#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t88 = h16_own16;
+#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    h16_own16 = t70;
+#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_decref(t88);
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t89 = h5_small;
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_incref(t68);
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h5_small = t68;
-#line 51 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    t89 = h6_empty;
+#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    hero_array_incref(t70);
+#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    h6_empty = t70;
+#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_decref(t89);
-    t69 = h5_small;
-#line 52 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t70 = INT64_C(0);
-#line 52 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? ((void)hero_array_at(t69, t70), hero_unreachable()) : (void)0), (void)(t69->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t69 + 1))[t70]);
-#line 52 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_int(t71);
-#line 52 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_end();
-    t72 = hero_array_new(&hero_desc_int, 1);
-#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t90 = h16_own16;
-#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h16_own16 = t72;
-#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_decref(t90);
-#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t91 = h6_empty;
-#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_incref(t72);
-#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h6_empty = t72;
-#line 53 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_array_decref(t91);
-    t73 = h6_empty;
+    t71 = h6_empty;
 #line 54 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);
+    t72 = ((void)(t71 == NULL ? ((void)hero_array_len(t71), hero_unreachable()) : (void)0), t71->len);
 #line 54 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    hero_print_int(t74);
+    hero_print_int(t72);
 #line 54 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_print_end();
-#line 564 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 560 "fixedbugs389everyarrayreadshapereadsinplace.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_grid);
     h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(hero_slot_escape(&h2_bag));
@@ -592,7 +588,7 @@ bb2:
 bb3:
 #line 31 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     goto bb1;
-#line 596 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 592 "fixedbugs389everyarrayreadshapereadsinplace.c"
 }
 HERO_TU_LOCAL void h_fixedbugs389everyarrayreadshapereadsinplace_Bag_retain(const h_fixedbugs389everyarrayreadshapereadsinplace_Bag *v) {
     hero_array_incref(v->f_items);

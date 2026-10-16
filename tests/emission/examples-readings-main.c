@@ -322,109 +322,97 @@ bb0:
 #line 42 "examples/readings/main.hero"
 bool h_main_answered(h_main_Reading h0_r) {
 #line 42 "examples/readings/main.hero"
-    HERO_NODEBUG h_main_Reading t1; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 42 "examples/readings/main.hero"
 bb0:
-    t1 = h0_r;
+    t1 = h0_r.f_raw;
 #line 43 "examples/readings/main.hero"
-    t2 = t1.f_raw;
+    t2 = h_main_MISSING();
 #line 43 "examples/readings/main.hero"
-    t3 = h_main_MISSING();
+    t3 = t1 != t2;
 #line 43 "examples/readings/main.hero"
-    t4 = t2 != t3;
-#line 43 "examples/readings/main.hero"
-    return t4;
-#line 338 "main.c"
+    return t3;
+#line 336 "main.c"
 }
 
 #line 45 "examples/readings/main.hero"
 bool h_main_too_warm(h_main_Reading h0_r) {
 #line 45 "examples/readings/main.hero"
-    HERO_NODEBUG h_main_Reading t1; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 45 "examples/readings/main.hero"
 bb0:
-    t1 = h0_r;
+    t1 = h0_r.f_raw;
 #line 46 "examples/readings/main.hero"
-    t2 = t1.f_raw;
+    t2 = INT64_C(200);
 #line 46 "examples/readings/main.hero"
-    t3 = INT64_C(200);
+    t3 = t1 > t2;
 #line 46 "examples/readings/main.hero"
-    t4 = t2 > t3;
-#line 46 "examples/readings/main.hero"
-    return t4;
-#line 356 "main.c"
+    return t3;
+#line 352 "main.c"
 }
 
 #line 48 "examples/readings/main.hero"
 bool h_main_blazing(h_main_Reading h0_r) {
 #line 48 "examples/readings/main.hero"
-    HERO_NODEBUG h_main_Reading t1; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 48 "examples/readings/main.hero"
 bb0:
-    t1 = h0_r;
+    t1 = h0_r.f_raw;
 #line 49 "examples/readings/main.hero"
-    t2 = t1.f_raw;
+    t2 = INT64_C(400);
 #line 49 "examples/readings/main.hero"
-    t3 = INT64_C(400);
+    t3 = t1 > t2;
 #line 49 "examples/readings/main.hero"
-    t4 = t2 > t3;
-#line 49 "examples/readings/main.hero"
-    return t4;
-#line 374 "main.c"
+    return t3;
+#line 368 "main.c"
 }
 
 #line 51 "examples/readings/main.hero"
 bool h_main_plausible(h_main_Reading h0_r) {
 #line 51 "examples/readings/main.hero"
-    HERO_NODEBUG bool h1_b0, t4, t8, t9; HERO_NODEBUG h_main_Reading t1, t5; HERO_NODEBUG int64_t t2, t3, t6, t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 51 "examples/readings/main.hero"
 bb0:
-    t1 = h0_r;
+    t1 = h0_r.f_raw;
 #line 52 "examples/readings/main.hero"
-    t2 = t1.f_raw;
+    t2 = INT64_C(0);
 #line 52 "examples/readings/main.hero"
-    t3 = INT64_C(0);
+    t3 = t1 > t2;
 #line 52 "examples/readings/main.hero"
-    t4 = t2 > t3;
+    h1_b0 = t3;
 #line 52 "examples/readings/main.hero"
-    h1_b0 = t4;
-#line 52 "examples/readings/main.hero"
-    if (t4) goto bb1; else goto bb2;
+    if (t3) goto bb1; else goto bb2;
 #line 52 "examples/readings/main.hero"
 bb1:
 #line 52 "examples/readings/main.hero"
-    t5 = h0_r;
+    t4 = h0_r.f_raw;
 #line 52 "examples/readings/main.hero"
-    t6 = t5.f_raw;
+    t5 = INT64_C(500);
 #line 52 "examples/readings/main.hero"
-    t7 = INT64_C(500);
+    t6 = t4 < t5;
 #line 52 "examples/readings/main.hero"
-    t8 = t6 < t7;
-#line 52 "examples/readings/main.hero"
-    h1_b0 = t8;
+    h1_b0 = t6;
 #line 52 "examples/readings/main.hero"
     goto bb2;
 #line 52 "examples/readings/main.hero"
 bb2:
 #line 52 "examples/readings/main.hero"
-    t9 = h1_b0;
+    t7 = h1_b0;
 #line 52 "examples/readings/main.hero"
-    return t9;
-#line 414 "main.c"
+    return t7;
+#line 404 "main.c"
 }
 
 #line 54 "examples/readings/main.hero"
 int64_t h_main_tenths_of(h_main_Reading h0_r) {
 #line 54 "examples/readings/main.hero"
-    HERO_NODEBUG h_main_Reading t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 54 "examples/readings/main.hero"
 bb0:
-    t1 = h0_r;
+    t1 = h0_r.f_raw;
 #line 55 "examples/readings/main.hero"
-    t2 = t1.f_raw;
-#line 55 "examples/readings/main.hero"
-    return t2;
-#line 428 "main.c"
+    return t1;
+#line 416 "main.c"
 }
 
 #line 60 "examples/readings/main.hero"
@@ -440,54 +428,50 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 61 "examples/readings/main.hero"
     return t3;
-#line 444 "main.c"
+#line 432 "main.c"
 }
 
 #line 63 "examples/readings/main.hero"
 HeroStr h_main_label(h_main_Reading h0_r) {
 #line 63 "examples/readings/main.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t2, t3, t4, t7, t8, t9, t10, t11; HERO_NODEBUG h_main_Reading t1, t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t1, t2, t3, t5, t6, t7, t8, t9; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 63 "examples/readings/main.hero"
 bb0:
-    t1 = h0_r;
+    t1 = h0_r.f_day;
 #line 64 "examples/readings/main.hero"
-    t2 = t1.f_day;
+    t2 = HERO_STR_LIT(hero_str_20);
 #line 64 "examples/readings/main.hero"
-    t3 = HERO_STR_LIT(hero_str_20);
+    t3 = hero_str_concat(t1, t2);
 #line 64 "examples/readings/main.hero"
-    t4 = hero_str_concat(t2, t3);
+    t7 = h1_own1;
 #line 64 "examples/readings/main.hero"
-    t9 = h1_own1;
+    h1_own1 = t3;
 #line 64 "examples/readings/main.hero"
-    h1_own1 = t4;
+    hero_str_decref(t7);
+#line 64 "examples/readings/main.hero"
+    t4 = h0_r.f_raw;
+#line 64 "examples/readings/main.hero"
+    t5 = h_scale_tenths(t4);
+#line 64 "examples/readings/main.hero"
+    t8 = h2_own2;
+#line 64 "examples/readings/main.hero"
+    h2_own2 = t5;
+#line 64 "examples/readings/main.hero"
+    hero_str_decref(t8);
+#line 64 "examples/readings/main.hero"
+    t6 = hero_str_concat(t3, t5);
+#line 64 "examples/readings/main.hero"
+    t9 = h3_own3;
+#line 64 "examples/readings/main.hero"
+    h3_own3 = t6;
 #line 64 "examples/readings/main.hero"
     hero_str_decref(t9);
-#line 64 "examples/readings/main.hero"
-    t5 = h0_r;
-#line 64 "examples/readings/main.hero"
-    t6 = t5.f_raw;
-#line 64 "examples/readings/main.hero"
-    t7 = h_scale_tenths(t6);
-#line 64 "examples/readings/main.hero"
-    t10 = h2_own2;
-#line 64 "examples/readings/main.hero"
-    h2_own2 = t7;
-#line 64 "examples/readings/main.hero"
-    hero_str_decref(t10);
-#line 64 "examples/readings/main.hero"
-    t8 = hero_str_concat(t4, t7);
-#line 64 "examples/readings/main.hero"
-    t11 = h3_own3;
-#line 64 "examples/readings/main.hero"
-    h3_own3 = t8;
-#line 64 "examples/readings/main.hero"
-    hero_str_decref(t11);
-#line 486 "main.c"
-    hero_str_incref(t8);
+#line 470 "main.c"
+    hero_str_incref(t6);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
-    return t8;
+    return t6;
 }
 
 #line 66 "examples/readings/main.hero"
@@ -760,7 +744,7 @@ bb1:
     hero_print_int(t60);
 #line 95 "examples/readings/main.hero"
     hero_print_end();
-#line 764 "main.c"
+#line 748 "main.c"
     hero_array_release_at(&h0_all_week);
     hero_array_release_at(&h1_good);
     h_0opt_b79796d_release(hero_slot_escape(&h3_f0));
@@ -783,7 +767,7 @@ bb2:
     t27 = h3_f0;
 #line 80 "examples/readings/main.hero"
     t28 = t27.as.err;
-#line 787 "main.c"
+#line 771 "main.c"
     hero_panic_must(t28);
     hero_unreachable();
 }
@@ -791,28 +775,28 @@ bb2:
 #line 97 "examples/readings/main.hero"
 int64_t h_main_plus_if_answered(int64_t h0_acc, int64_t h1_item) {
 #line 97 "examples/readings/main.hero"
-    h_main_Reading h2_one = {0}; HERO_NODEBUG int64_t h3_ret0, t2, t6, t8, t9, t10, t11; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12; HERO_NODEBUG h_main_Reading t3, t4, t7, t13; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
+    h_main_Reading h2_one = {0}; HERO_NODEBUG int64_t h3_ret0, t2, t6, t7, t8, t9, t10; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t11; HERO_NODEBUG h_main_Reading t3, t4, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 97 "examples/readings/main.hero"
 bb0:
     t1 = h_main_week();
 #line 98 "examples/readings/main.hero"
-    t12 = h4_own4;
+    t11 = h4_own4;
 #line 98 "examples/readings/main.hero"
     h4_own4 = t1;
 #line 98 "examples/readings/main.hero"
-    hero_array_decref(t12);
+    hero_array_decref(t11);
 #line 98 "examples/readings/main.hero"
     t2 = h1_item;
 #line 98 "examples/readings/main.hero"
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_main_Reading) ? hero_unreachable() : (void)0), ((h_main_Reading const *)(const void *)(t1 + 1))[t2]);
 #line 98 "examples/readings/main.hero"
-    t13 = h2_one;
+    t12 = h2_one;
 #line 98 "examples/readings/main.hero"
     h_main_Reading_retain(&t3);
 #line 98 "examples/readings/main.hero"
     h2_one = t3;
 #line 98 "examples/readings/main.hero"
-    h_main_Reading_release(&t13);
+    h_main_Reading_release(&t12);
 #line 100 "examples/readings/main.hero"
     t4 = h2_one;
 #line 100 "examples/readings/main.hero"
@@ -822,9 +806,9 @@ bb0:
 #line 100 "examples/readings/main.hero"
 bb1:
 #line 102 "examples/readings/main.hero"
-    t10 = h0_acc;
+    t9 = h0_acc;
 #line 102 "examples/readings/main.hero"
-    h3_ret0 = t10;
+    h3_ret0 = t9;
 #line 102 "examples/readings/main.hero"
     goto bb4;
 #line 102 "examples/readings/main.hero"
@@ -832,13 +816,11 @@ bb2:
 #line 101 "examples/readings/main.hero"
     t6 = h0_acc;
 #line 101 "examples/readings/main.hero"
-    t7 = h2_one;
+    t7 = h2_one.f_raw;
 #line 101 "examples/readings/main.hero"
-    t8 = t7.f_raw;
+    if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow();
 #line 101 "examples/readings/main.hero"
-    if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow();
-#line 101 "examples/readings/main.hero"
-    h3_ret0 = t9;
+    h3_ret0 = t8;
 #line 101 "examples/readings/main.hero"
     goto bb4;
 #line 101 "examples/readings/main.hero"
@@ -847,11 +829,11 @@ bb3:
     goto bb1;
 #line 101 "examples/readings/main.hero"
 bb4:
-#line 851 "main.c"
-    t11 = h3_ret0;
+#line 833 "main.c"
+    t10 = h3_ret0;
     h_main_Reading_release(hero_slot_escape(&h2_one));
     hero_array_release_at(&h4_own4);
-    return t11;
+    return t10;
 }
 
 #line 15 "examples/readings/scale.hero"
@@ -969,7 +951,7 @@ bb3:
     goto bb1;
 #line 17 "examples/readings/scale.hero"
 bb4:
-#line 973 "main.c"
+#line 955 "main.c"
     t23 = h3_ret0;
     hero_str_incref(t23);
     hero_str_release_at(&h4_own4);
@@ -1033,7 +1015,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 1037 "main.c"
+#line 1019 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -1129,7 +1111,7 @@ bb3:
 bb4:
 #line 48 "<heroes library>"
     t20 = h2_out;
-#line 1133 "main.c"
+#line 1115 "main.c"
     hero_array_incref(t20);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -1149,7 +1131,7 @@ bb6:
 bb7:
 #line 47 "<heroes library>"
     goto bb5;
-#line 1153 "main.c"
+#line 1135 "main.c"
 }
 
 #line 36 "<heroes library>"
@@ -1243,7 +1225,7 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 1247 "main.c"
+#line 1229 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -1327,7 +1309,7 @@ bb3:
 bb4:
 #line 62 "<heroes library>"
     t18 = h3_total;
-#line 1331 "main.c"
+#line 1313 "main.c"
     hero_array_release_at(&h4_xs0);
     return t18;
 }
@@ -1452,7 +1434,7 @@ bb7:
     goto bb5;
 #line 69 "<heroes library>"
 bb8:
-#line 1456 "main.c"
+#line 1438 "main.c"
     t21 = h5_ret0;
     h_0opt_b79796d_retain(&t21);
     hero_array_release_at(&h2_xs0);
@@ -1558,7 +1540,7 @@ bb7:
     goto bb5;
 #line 77 "<heroes library>"
 bb8:
-#line 1562 "main.c"
+#line 1544 "main.c"
     t18 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     h_main_Reading_release(hero_slot_escape(&h4_x));
@@ -1663,7 +1645,7 @@ bb7:
     goto bb5;
 #line 85 "<heroes library>"
 bb8:
-#line 1667 "main.c"
+#line 1649 "main.c"
     t19 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     h_main_Reading_release(hero_slot_escape(&h4_x));
@@ -1767,7 +1749,7 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 1771 "main.c"
+#line 1753 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);

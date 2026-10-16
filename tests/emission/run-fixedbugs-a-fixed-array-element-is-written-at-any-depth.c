@@ -224,16 +224,16 @@ HeroArrayHeader * h_library_args(void);
 #line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 void h_fixedbugsafixedarrayelementiswrittenatanydepth_main(void) {
 #line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    int64_t h0_k; struct outer h1_o; struct holder h2_r; HeroArrayHeader * h3_xs = {0}; HeroArrayHeader * h4_ys = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t110, *t111, *t115, *t122, *t129, *t135, *t136, *t137, *t138; HERO_NODEBUG int64_t t2, t3, t4, t5, t6, t7, t10, t11, t12, t18, t19, t20, t21, t22, t23, t24, t27, t28, t29, t30, t31, t32, t33, t36, t39, t40, t44, t47, t48, t52, t55, t56, t62, t63, t64, t66, t67, t69, t70, t74, t75, t76, t77, t80, t82, t86, t88, t92, t94, t97, t98, t99, t100, t101, t104, t105, t106, t107, t112, t113, t114, t116, t119, t120, t123, t126, t127, t130, t133, t134; HERO_NODEBUG struct row t9, t14, t26, t37, t45, t53; HERO_NODEBUG int32_t t16, t59; HERO_NODEBUG struct outer t17, t34, t42, t50, t58, t61; HERO_NODEBUG HeroStr t41, t49, t57, t60, t83, t89, t95, t121, t128; HERO_NODEBUG struct cell t65, t68, t71, t81, t87, t93; HERO_NODEBUG struct holder t73, t78, t84, t90, t96; HERO_NODEBUG struct nums t103, t109, t117, t124, t131; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_k; struct outer h1_o; struct holder h2_r; HeroArrayHeader * h3_xs = {0}; HeroArrayHeader * h4_ys = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t109, *t110, *t114, *t121, *t128, *t134, *t135, *t136, *t137; HERO_NODEBUG int64_t t2, t3, t4, t5, t6, t7, t10, t11, t12, t18, t19, t20, t21, t22, t23, t24, t27, t28, t29, t30, t31, t32, t33, t36, t39, t40, t44, t47, t48, t52, t55, t56, t61, t62, t63, t65, t66, t68, t69, t73, t74, t75, t76, t79, t81, t85, t87, t91, t93, t96, t97, t98, t99, t100, t103, t104, t105, t106, t111, t112, t113, t115, t118, t119, t122, t125, t126, t129, t132, t133; HERO_NODEBUG struct row t9, t14, t26, t37, t45, t53; HERO_NODEBUG int32_t t16, t58; HERO_NODEBUG struct outer t17, t34, t42, t50, t60; HERO_NODEBUG HeroStr t41, t49, t57, t59, t82, t88, t94, t120, t127; HERO_NODEBUG struct cell t64, t67, t70, t80, t86, t92; HERO_NODEBUG struct holder t72, t77, t83, t89, t95; HERO_NODEBUG struct nums t102, t108, t116, t123, t130; HERO_ENTRY_STOP; goto bb0;
 #line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 bb0:
     t1 = h_library_args();
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t135 = h5_own5;
+    t134 = h5_own5;
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h5_own5 = t1;
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_array_decref(t135);
+    hero_array_decref(t134);
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
@@ -333,15 +333,13 @@ bb0:
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t57 = HERO_STR_LIT(hero_str_20);
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t58 = h1_o;
+    t58 = h1_o.tail;
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t59 = t58.tail;
+    t59 = HERO_STR_LIT(hero_str_62fc778b);
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t60 = HERO_STR_LIT(hero_str_62fc778b);
+    t60 = h1_o;
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t61 = h1_o;
-#line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t62 = outer_sum(t61);
+    t61 = outer_sum(t60);
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_int(t40);
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
@@ -355,198 +353,198 @@ bb0:
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_str(t57);
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_int(t59);
+    hero_print_int(t58);
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_str(t60);
+    hero_print_str(t59);
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_int(t62);
+    hero_print_int(t61);
 #line 45 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_end();
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t63 = INT64_C(1);
+    t62 = INT64_C(1);
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t64 = INT64_C(2);
+    t63 = INT64_C(2);
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t65 = (struct cell){.v = t63, .w = t64};
+    t64 = (struct cell){.v = t62, .w = t63};
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t66 = INT64_C(3);
+    t65 = INT64_C(3);
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t67 = INT64_C(4);
+    t66 = INT64_C(4);
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t68 = (struct cell){.v = t66, .w = t67};
+    t67 = (struct cell){.v = t65, .w = t66};
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t69 = INT64_C(5);
+    t68 = INT64_C(5);
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t70 = INT64_C(6);
+    t69 = INT64_C(6);
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t71 = (struct cell){.v = t69, .w = t70};
+    t70 = (struct cell){.v = t68, .w = t69};
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t73 = (struct holder){.xs = {t65, t68, t71}};
+    t72 = (struct holder){.xs = {t64, t67, t70}};
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    h2_r = t73;
-    t74 = INT64_C(1);
+    h2_r = t72;
+    t73 = INT64_C(1);
 #line 48 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t75 = INT64_C(33);
+    t74 = INT64_C(33);
 #line 48 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    h2_r.xs[((uint64_t)(t74) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t74))].v = t75;
-    t76 = h0_k;
+    h2_r.xs[((uint64_t)(t73) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t73))].v = t74;
+    t75 = h0_k;
 #line 49 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t77 = INT64_C(66);
+    t76 = INT64_C(66);
 #line 49 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    h2_r.xs[((uint64_t)(t76) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t76))].w = t77;
-    t78 = h2_r;
+    h2_r.xs[((uint64_t)(t75) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t75))].w = t76;
+    t77 = h2_r;
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t80 = INT64_C(1);
+    t79 = INT64_C(1);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t81 = t78.xs[((uint64_t)(t80) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t80))];
+    t80 = t77.xs[((uint64_t)(t79) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t79))];
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t82 = t81.v;
+    t81 = t80.v;
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t83 = HERO_STR_LIT(hero_str_20);
+    t82 = HERO_STR_LIT(hero_str_20);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t84 = h2_r;
+    t83 = h2_r;
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t86 = INT64_C(1);
+    t85 = INT64_C(1);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t87 = t84.xs[((uint64_t)(t86) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t86))];
+    t86 = t83.xs[((uint64_t)(t85) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t85))];
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t88 = t87.w;
+    t87 = t86.w;
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t89 = HERO_STR_LIT(hero_str_20);
+    t88 = HERO_STR_LIT(hero_str_20);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t90 = h2_r;
+    t89 = h2_r;
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t92 = INT64_C(2);
+    t91 = INT64_C(2);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t93 = t90.xs[((uint64_t)(t92) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t92))];
+    t92 = t89.xs[((uint64_t)(t91) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t91))];
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t94 = t93.w;
+    t93 = t92.w;
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t95 = HERO_STR_LIT(hero_str_62fc778b);
+    t94 = HERO_STR_LIT(hero_str_62fc778b);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t96 = h2_r;
+    t95 = h2_r;
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t97 = holder_sum(t96);
+    t96 = holder_sum(t95);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_int(t82);
+    hero_print_int(t81);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_str(t83);
+    hero_print_str(t82);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_int(t88);
+    hero_print_int(t87);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_str(t89);
+    hero_print_str(t88);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_int(t94);
+    hero_print_int(t93);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_str(t95);
+    hero_print_str(t94);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_int(t97);
+    hero_print_int(t96);
 #line 50 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_end();
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t98 = INT64_C(1);
+    t97 = INT64_C(1);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t99 = INT64_C(2);
+    t98 = INT64_C(2);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t100 = INT64_C(3);
+    t99 = INT64_C(3);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t101 = INT64_C(4);
+    t100 = INT64_C(4);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t103 = (struct nums){.a = {t98, t99, t100, t101}};
+    t102 = (struct nums){.a = {t97, t98, t99, t100}};
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t104 = INT64_C(5);
+    t103 = INT64_C(5);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t105 = INT64_C(6);
+    t104 = INT64_C(6);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t106 = INT64_C(7);
+    t105 = INT64_C(7);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t107 = INT64_C(8);
+    t106 = INT64_C(8);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t109 = (struct nums){.a = {t104, t105, t106, t107}};
+    t108 = (struct nums){.a = {t103, t104, t105, t106}};
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t110 = hero_array_new(&h_fixedbugsafixedarrayelementiswrittenatanydepth_Nums_desc, 2);
+    t109 = hero_array_new(&h_fixedbugsafixedarrayelementiswrittenatanydepth_Nums_desc, 2);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_array_push_owned(&t110, &t103);
+    hero_array_push_owned(&t109, &t102);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_array_push_owned(&t110, &t109);
+    hero_array_push_owned(&t109, &t108);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t136 = h6_own6;
+    t135 = h6_own6;
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    h6_own6 = t110;
+    h6_own6 = t109;
+#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    hero_array_decref(t135);
+#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    t136 = h3_xs;
+#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    hero_array_incref(t109);
+#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    h3_xs = t109;
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_array_decref(t136);
-#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t137 = h3_xs;
-#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    t110 = h3_xs;
+#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    t137 = h4_ys;
+#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_array_incref(t110);
-#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    h3_xs = t110;
-#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    h4_ys = t110;
+#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_array_decref(t137);
-    t111 = h3_xs;
-#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t138 = h4_ys;
-#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_array_incref(t111);
-#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    h4_ys = t111;
-#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_array_decref(t138);
-    t112 = INT64_C(1);
+    t111 = INT64_C(1);
 #line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t113 = h0_k;
+    t112 = h0_k;
 #line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t114 = INT64_C(70);
+    t113 = INT64_C(70);
 #line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_array_unshare(&(h3_xs));
 #line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    (*((void)((h3_xs == NULL || t112 < 0 || t112 >= h3_xs->len) ? ((void)hero_array_at_mut(h3_xs, t112), hero_unreachable()) : (void)0), (void)(h3_xs->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), (struct nums *)(void *)(h3_xs + 1) + t112)).a[((uint64_t)(t113) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t113))] = t114;
-    t115 = h3_xs;
+    (*((void)((h3_xs == NULL || t111 < 0 || t111 >= h3_xs->len) ? ((void)hero_array_at_mut(h3_xs, t111), hero_unreachable()) : (void)0), (void)(h3_xs->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), (struct nums *)(void *)(h3_xs + 1) + t111)).a[((uint64_t)(t112) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t112))] = t113;
+    t114 = h3_xs;
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t116 = INT64_C(1);
+    t115 = INT64_C(1);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t117 = ((void)((t115 == NULL || t116 < 0 || t116 >= t115->len) ? ((void)hero_array_at(t115, t116), hero_unreachable()) : (void)0), (void)(t115->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t115 + 1))[t116]);
+    t116 = ((void)((t114 == NULL || t115 < 0 || t115 >= t114->len) ? ((void)hero_array_at(t114, t115), hero_unreachable()) : (void)0), (void)(t114->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t114 + 1))[t115]);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t119 = INT64_C(2);
+    t118 = INT64_C(2);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t120 = t117.a[((uint64_t)(t119) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t119))];
+    t119 = t116.a[((uint64_t)(t118) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t118))];
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t121 = HERO_STR_LIT(hero_str_20);
+    t120 = HERO_STR_LIT(hero_str_20);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t122 = h4_ys;
+    t121 = h4_ys;
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t123 = INT64_C(1);
+    t122 = INT64_C(1);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t124 = ((void)((t122 == NULL || t123 < 0 || t123 >= t122->len) ? ((void)hero_array_at(t122, t123), hero_unreachable()) : (void)0), (void)(t122->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t122 + 1))[t123]);
+    t123 = ((void)((t121 == NULL || t122 < 0 || t122 >= t121->len) ? ((void)hero_array_at(t121, t122), hero_unreachable()) : (void)0), (void)(t121->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t121 + 1))[t122]);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t126 = INT64_C(2);
+    t125 = INT64_C(2);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t127 = t124.a[((uint64_t)(t126) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t126))];
+    t126 = t123.a[((uint64_t)(t125) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t125))];
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t128 = HERO_STR_LIT(hero_str_20);
+    t127 = HERO_STR_LIT(hero_str_20);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t129 = h3_xs;
+    t128 = h3_xs;
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t130 = INT64_C(0);
+    t129 = INT64_C(0);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t131 = ((void)((t129 == NULL || t130 < 0 || t130 >= t129->len) ? ((void)hero_array_at(t129, t130), hero_unreachable()) : (void)0), (void)(t129->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t129 + 1))[t130]);
+    t130 = ((void)((t128 == NULL || t129 < 0 || t129 >= t128->len) ? ((void)hero_array_at(t128, t129), hero_unreachable()) : (void)0), (void)(t128->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), ((struct nums const *)(const void *)(t128 + 1))[t129]);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t133 = INT64_C(2);
+    t132 = INT64_C(2);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    t134 = t131.a[((uint64_t)(t133) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t133))];
+    t133 = t130.a[((uint64_t)(t132) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t132))];
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_int(t120);
+    hero_print_int(t119);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_str(t121);
+    hero_print_str(t120);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_int(t127);
+    hero_print_int(t126);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_str(t128);
+    hero_print_str(t127);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    hero_print_int(t134);
+    hero_print_int(t133);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_end();
-#line 550 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 548 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_release_at(&h3_xs);
     hero_array_release_at(&h4_ys);
     hero_array_release_at(&h5_own5);
@@ -614,7 +612,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 618 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 616 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

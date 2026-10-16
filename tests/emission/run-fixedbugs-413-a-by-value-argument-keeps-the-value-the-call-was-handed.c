@@ -119,7 +119,7 @@ void h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_main(void);
 #line 28 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_rewrite(h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P *ph0_p, h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P h1_q) {
 #line 28 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t2, t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t2; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(5);
@@ -127,12 +127,10 @@ bb0:
     t2 = (h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P){.f_a = t1};
 #line 29 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     (*ph0_p) = t2;
-    t3 = h1_q;
+    t3 = h1_q.f_a;
 #line 30 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t4 = t3.f_a;
-#line 30 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    return t4;
-#line 136 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+    return t3;
+#line 134 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
@@ -157,7 +155,7 @@ bb0:
     t3 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t2 + 1))[t3]);
-#line 161 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 159 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_release_at(&h2_own2);
     return t4;
 }
@@ -165,7 +163,7 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_field(HeroArrayHeader * *ph0_items, h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h1_q) {
 #line 36 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h2_own2 = {0}, t3, t7; HERO_NODEBUG int64_t t1, t2, t5, t6; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t6; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(0);
@@ -173,24 +171,22 @@ bb0:
     t2 = INT64_C(7);
 #line 37 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_array_set(&((*ph0_items)), t1, &t2);
-    t3 = h1_q;
+    t3 = h1_q.f_items;
 #line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(&t3);
+    hero_array_incref(t3);
 #line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t7 = h2_own2;
+    t6 = h2_own2;
 #line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     h2_own2 = t3;
 #line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t7);
+    hero_array_decref(t6);
 #line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t4 = t3.f_items;
+    t4 = INT64_C(0);
 #line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t5 = INT64_C(0);
-#line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
-#line 192 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h2_own2));
-    return t6;
+    t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? ((void)hero_array_at(t3, t4), hero_unreachable()) : (void)0), (void)(t3->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t3 + 1))[t4]);
+#line 188 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+    hero_array_release_at(&h2_own2);
+    return t5;
 }
 
 #line 40 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
@@ -217,7 +213,7 @@ bb0:
     t4 = INT64_C(0);
 #line 42 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? ((void)hero_array_at(t3, t4), hero_unreachable()) : (void)0), (void)(t3->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t3 + 1))[t4]);
-#line 221 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 217 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_release_at(&h2_own2);
     return t5;
 }
@@ -264,7 +260,7 @@ bb0:
     t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
 #line 46 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     if (__builtin_add_overflow(t6, t9, &t10)) hero_panic_overflow();
-#line 268 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 264 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_release_at(&h2_own2);
     return t10;
 }
@@ -288,13 +284,13 @@ bb0:
     hero_array_decref(t2);
 #line 49 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     return t3;
-#line 292 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 288 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 void h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_main(void) {
 #line 51 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P h0_x; HeroArrayHeader * h1_xs = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h2_f = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h3_r = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h4_z = {0}; HeroArrayHeader * h5_ws = {0}; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *h7_own7 = {0}, *h9_own9 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *t8, *t16, *t19, *t24, *t32, *t37, *t42, *t46, *t51, *t56, *t60, *t63, *t72, *t75, *t76, *t77, *t80, *t83, *t86, *t87; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, t25, t28, t31, t38, t41, t45, t52, t55, t59, t78, t79, t81, t82, t84, t85; HERO_NODEBUG int64_t t1, t4, t7, t10, t13, t15, t17, t20, t21, t22, t23, t26, t27, t29, t33, t34, t35, t36, t39, t40, t43, t47, t48, t49, t50, t53, t54, t57, t61, t62, t65, t68, t70, t73, t74; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t2, t3, t6; HERO_NODEBUG HeroStr t5, t18, t30, t44, t58, t71; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P h0_x; HeroArrayHeader * h1_xs = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h2_f = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h3_r = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h4_z = {0}; HeroArrayHeader * h5_ws = {0}; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *h7_own7 = {0}, *h9_own9 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *t7, *t15, *t18, *t23, *t30, *t35, *t39, *t42, *t47, *t51, *t54, *t57, *t66, *t69, *t70, *t71, *t74, *t77, *t80, *t81; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, t24, t27, t36, t48, t72, t73, t75, t76, t78, t79; HERO_NODEBUG int64_t t1, t4, t6, t9, t12, t14, t16, t19, t20, t21, t22, t25, t26, t28, t31, t32, t33, t34, t37, t38, t40, t43, t44, t45, t46, t49, t50, t52, t55, t56, t59, t62, t64, t67, t68; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t2, t3; HERO_NODEBUG HeroStr t5, t17, t29, t41, t53, t65; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(1);
@@ -308,297 +304,285 @@ bb0:
 #line 53 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t5 = HERO_STR_LIT(hero_str_20);
 #line 53 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t6 = h0_x;
-#line 53 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t7 = t6.f_a;
+    t6 = h0_x.f_a;
 #line 53 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_int(t4);
 #line 53 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_str(t5);
 #line 53 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t7);
+    hero_print_int(t6);
 #line 53 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_end();
-    t8 = hero_array_new(&hero_desc_int, 1);
+    t7 = hero_array_new(&hero_desc_int, 1);
 #line 54 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t75 = h6_own6;
+    t69 = h6_own6;
 #line 54 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h6_own6 = t8;
+    h6_own6 = t7;
 #line 54 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_decref(t75);
+    hero_array_decref(t69);
 #line 54 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t76 = h1_xs;
+    t70 = h1_xs;
 #line 54 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_incref(t8);
+    hero_array_incref(t7);
 #line 54 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h1_xs = t8;
+    h1_xs = t7;
 #line 54 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_decref(t76);
-    t10 = INT64_C(1);
+    hero_array_decref(t70);
+    t9 = INT64_C(1);
 #line 55 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&h1_xs, &t10);
-    t13 = INT64_C(2);
+    hero_array_push_owned(&h1_xs, &t9);
+    t12 = INT64_C(2);
 #line 56 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&h1_xs, &t13);
-    t15 = INT64_C(0);
+    hero_array_push_owned(&h1_xs, &t12);
+    t14 = INT64_C(0);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t16 = h1_xs;
+    t15 = h1_xs;
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_incref(t16);
+    hero_array_incref(t15);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_array_unshare(&(h1_xs));
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t17 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_element(&(*((void)((h1_xs == NULL || t15 < 0 || t15 >= h1_xs->len) ? ((void)hero_array_at_mut(h1_xs, t15), hero_unreachable()) : (void)0), (void)(h1_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h1_xs + 1) + t15)), t16);
+    t16 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_element(&(*((void)((h1_xs == NULL || t14 < 0 || t14 >= h1_xs->len) ? ((void)hero_array_at_mut(h1_xs, t14), hero_unreachable()) : (void)0), (void)(h1_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h1_xs + 1) + t14)), t15);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_decref(t16);
+    hero_array_decref(t15);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t18 = HERO_STR_LIT(hero_str_20);
+    t17 = HERO_STR_LIT(hero_str_20);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t19 = h1_xs;
+    t18 = h1_xs;
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t20 = INT64_C(0);
+    t19 = INT64_C(0);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
+    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t17);
+    hero_print_int(t16);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_str(t18);
+    hero_print_str(t17);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t21);
+    hero_print_int(t20);
 #line 57 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_end();
-    t22 = INT64_C(1);
+    t21 = INT64_C(1);
 #line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t23 = INT64_C(2);
+    t22 = INT64_C(2);
 #line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t24 = hero_array_new(&hero_desc_int, 2);
+    t23 = hero_array_new(&hero_desc_int, 2);
 #line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&t24, &t22);
+    hero_array_push_owned(&t23, &t21);
 #line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&t24, &t23);
+    hero_array_push_owned(&t23, &t22);
 #line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t77 = h7_own7;
+    t71 = h7_own7;
 #line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h7_own7 = t24;
+    h7_own7 = t23;
 #line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_decref(t71);
+#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_incref(t23);
+#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t24 = (h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B){.f_items = t23};
+#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t72 = h8_own8;
+#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h8_own8 = t24;
+#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t72);
+#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t73 = h2_f;
+#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(&t24);
+#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h2_f = t24;
+#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t73);
+    t25 = INT64_C(1);
+#line 59 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t26 = INT64_C(3);
+#line 59 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_set(&(h2_f.f_items), t25, &t26);
+    t27 = h2_f;
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(&t27);
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t28 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_field(&h2_f.f_items, t27);
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t27);
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t29 = HERO_STR_LIT(hero_str_20);
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t30 = h2_f.f_items;
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t31 = INT64_C(0);
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t30 + 1))[t31]);
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_print_int(t28);
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_print_str(t29);
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_print_int(t32);
+#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_print_end();
+    t33 = INT64_C(1);
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t34 = INT64_C(2);
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t35 = hero_array_new(&hero_desc_int, 2);
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_push_owned(&t35, &t33);
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_push_owned(&t35, &t34);
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t74 = h9_own9;
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h9_own9 = t35;
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_decref(t74);
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_incref(t35);
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t36 = (h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B){.f_items = t35};
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t75 = h10_own10;
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h10_own10 = t36;
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t75);
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t76 = h3_r;
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(&t36);
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h3_r = t36;
+#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t76);
+    t37 = INT64_C(1);
+#line 62 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t38 = INT64_C(3);
+#line 62 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_set(&(h3_r.f_items), t37, &t38);
+    t39 = h3_r.f_items;
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_incref(t39);
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t40 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_record(&h3_r, t39);
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_decref(t39);
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t41 = HERO_STR_LIT(hero_str_20);
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t42 = h3_r.f_items;
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t43 = INT64_C(0);
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t44 = ((void)((t42 == NULL || t43 < 0 || t43 >= t42->len) ? ((void)hero_array_at(t42, t43), hero_unreachable()) : (void)0), (void)(t42->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t42 + 1))[t43]);
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_print_int(t40);
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_print_str(t41);
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_print_int(t44);
+#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_print_end();
+    t45 = INT64_C(1);
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t46 = INT64_C(2);
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t47 = hero_array_new(&hero_desc_int, 2);
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_push_owned(&t47, &t45);
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_push_owned(&t47, &t46);
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t77 = h11_own11;
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h11_own11 = t47;
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_array_decref(t77);
-#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_incref(t24);
-#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t25 = (h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B){.f_items = t24};
-#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t78 = h8_own8;
-#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h8_own8 = t25;
-#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_incref(t47);
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t48 = (h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B){.f_items = t47};
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t78 = h12_own12;
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h12_own12 = t48;
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t78);
-#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t79 = h2_f;
-#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(&t25);
-#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h2_f = t25;
-#line 58 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t79 = h4_z;
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(&t48);
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    h4_z = t48;
+#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t79);
-    t26 = INT64_C(1);
-#line 59 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t27 = INT64_C(3);
-#line 59 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_set(&(h2_f.f_items), t26, &t27);
-    t28 = h2_f;
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(&t28);
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t29 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_field(&h2_f.f_items, t28);
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t28);
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t30 = HERO_STR_LIT(hero_str_20);
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t31 = h2_f;
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t32 = t31.f_items;
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t33 = INT64_C(0);
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t32 + 1))[t33]);
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t29);
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_str(t30);
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t34);
-#line 60 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_end();
-    t35 = INT64_C(1);
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t36 = INT64_C(2);
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t37 = hero_array_new(&hero_desc_int, 2);
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&t37, &t35);
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&t37, &t36);
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t80 = h9_own9;
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h9_own9 = t37;
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_decref(t80);
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_incref(t37);
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t38 = (h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B){.f_items = t37};
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t81 = h10_own10;
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h10_own10 = t38;
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t81);
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t82 = h3_r;
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(&t38);
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h3_r = t38;
-#line 61 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t82);
-    t39 = INT64_C(1);
-#line 62 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t40 = INT64_C(3);
-#line 62 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_set(&(h3_r.f_items), t39, &t40);
-    t41 = h3_r;
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t42 = t41.f_items;
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_incref(t42);
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t43 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_record(&h3_r, t42);
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_decref(t42);
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t44 = HERO_STR_LIT(hero_str_20);
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t45 = h3_r;
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t46 = t45.f_items;
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t47 = INT64_C(0);
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? ((void)hero_array_at(t46, t47), hero_unreachable()) : (void)0), (void)(t46->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t46 + 1))[t47]);
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t43);
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_str(t44);
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t48);
-#line 63 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_end();
     t49 = INT64_C(1);
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t50 = INT64_C(2);
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t51 = hero_array_new(&hero_desc_int, 2);
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&t51, &t49);
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&t51, &t50);
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t83 = h11_own11;
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h11_own11 = t51;
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_decref(t83);
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+#line 65 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    t50 = INT64_C(3);
+#line 65 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
+    hero_array_set(&(h4_z.f_items), t49, &t50);
+    t51 = h4_z.f_items;
+#line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_array_incref(t51);
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t52 = (h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B){.f_items = t51};
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t84 = h12_own12;
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h12_own12 = t52;
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t84);
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t85 = h4_z;
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(&t52);
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h4_z = t52;
-#line 64 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&t85);
-    t53 = INT64_C(1);
-#line 65 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t54 = INT64_C(3);
-#line 65 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_set(&(h4_z.f_items), t53, &t54);
-    t55 = h4_z;
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t56 = t55.f_items;
+    t52 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_replace(&h4_z, t51);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_incref(t56);
+    hero_array_decref(t51);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t57 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_replace(&h4_z, t56);
+    t53 = HERO_STR_LIT(hero_str_20);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_decref(t56);
+    t54 = h4_z.f_items;
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t58 = HERO_STR_LIT(hero_str_20);
+    t55 = INT64_C(0);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t59 = h4_z;
+    t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? ((void)hero_array_at(t54, t55), hero_unreachable()) : (void)0), (void)(t54->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t54 + 1))[t55]);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t60 = t59.f_items;
+    hero_print_int(t52);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t61 = INT64_C(0);
+    hero_print_str(t53);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t62 = ((void)((t60 == NULL || t61 < 0 || t61 >= t60->len) ? ((void)hero_array_at(t60, t61), hero_unreachable()) : (void)0), (void)(t60->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t60 + 1))[t61]);
-#line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t57);
-#line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_str(t58);
-#line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t62);
+    hero_print_int(t56);
 #line 66 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_end();
-    t63 = hero_array_new(&hero_desc_int, 1);
+    t57 = hero_array_new(&hero_desc_int, 1);
 #line 67 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t86 = h13_own13;
+    t80 = h13_own13;
 #line 67 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h13_own13 = t63;
+    h13_own13 = t57;
 #line 67 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_decref(t86);
+    hero_array_decref(t80);
 #line 67 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t87 = h5_ws;
+    t81 = h5_ws;
 #line 67 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_incref(t63);
+    hero_array_incref(t57);
 #line 67 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h5_ws = t63;
+    h5_ws = t57;
 #line 67 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_decref(t87);
-    t65 = INT64_C(1);
+    hero_array_decref(t81);
+    t59 = INT64_C(1);
 #line 68 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&h5_ws, &t65);
-    t68 = INT64_C(2);
+    hero_array_push_owned(&h5_ws, &t59);
+    t62 = INT64_C(2);
 #line 69 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_array_push_owned(&h5_ws, &t68);
-    t70 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_through(&h5_ws);
+    hero_array_push_owned(&h5_ws, &t62);
+    t64 = h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_through(&h5_ws);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t71 = HERO_STR_LIT(hero_str_20);
+    t65 = HERO_STR_LIT(hero_str_20);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t72 = h5_ws;
+    t66 = h5_ws;
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t73 = INT64_C(0);
+    t67 = INT64_C(0);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? ((void)hero_array_at(t72, t73), hero_unreachable()) : (void)0), (void)(t72->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t72 + 1))[t73]);
+    t68 = ((void)((t66 == NULL || t67 < 0 || t67 >= t66->len) ? ((void)hero_array_at(t66, t67), hero_unreachable()) : (void)0), (void)(t66->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t66 + 1))[t67]);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t70);
+    hero_print_int(t64);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_str(t71);
+    hero_print_str(t65);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    hero_print_int(t74);
+    hero_print_int(t68);
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_end();
-#line 602 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
+#line 586 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
     hero_array_release_at(&h1_xs);
     h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h2_f));
     h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h3_r));

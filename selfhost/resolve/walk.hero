@@ -391,7 +391,7 @@ test "an @ argument is held to the rule of the left of @"
     r = walked("function f(@n: i64)\n    n @ n + 1\n\nfunction g(x: i64)\n    f(@x)\n")
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "not_mutable"
-    assert r.out.diagnostics[0].message == "`x` is a parameter without `@`, so it cannot be written — mark it `@x` in the signature and at every call site (copy in, copy out)"
+    assert r.out.diagnostics[0].message == "`x` is a parameter without `@`, so it cannot be written — mark it `@x` in the signature and at every call site, and the function works on the caller's place itself"
 
 test "an @ argument through an index writes the root, reads the index, and is clean on a cell"
     r = walked(
@@ -419,7 +419,7 @@ test "two @ arguments of one call may not name one cell"
     )
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "aliased_mutable_arguments"
-    assert r.out.diagnostics[0].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
+    assert r.out.diagnostics[0].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: the function would work on one place under two names, and a write through either would change what the other reads"
     assert r.out.diagnostics[0].fixes.len() == 2
     assert r.out.diagnostics[0].fixes[0].certainty == .guess
     assert r.out.diagnostics[0].fixes[1].certainty == .guess
@@ -430,7 +430,7 @@ test "one field twice and one literal index twice are the same refusal"
     )
     assert field.out.diagnostics.len() == 1
     assert field.out.diagnostics[0].code == "aliased_mutable_arguments"
-    assert field.out.diagnostics[0].message == "`p.x` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
+    assert field.out.diagnostics[0].message == "`p.x` overlaps this call's `a` argument — two `@` arguments may not reach one value: the function would work on one place under two names, and a write through either would change what the other reads"
     index = walked(
         "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @= [0, 0]\n    shift(a: @xs[0], b: @xs[0])\n    print(xs[0])\n"
     )
@@ -482,8 +482,8 @@ test "three @ arguments of one cell are two findings"
         "function bump(@a: i64, @b: i64, @c: i64)\n    a @ a + 1\n    b @ b + 10\n    c @ c + 100\n\nfunction g()\n    n: i64 @= 0\n    bump(a: @n, b: @n, c: @n)\n    print(n)\n"
     )
     assert r.out.diagnostics.len() == 2
-    assert r.out.diagnostics[0].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
-    assert r.out.diagnostics[1].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
+    assert r.out.diagnostics[0].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: the function would work on one place under two names, and a write through either would change what the other reads"
+    assert r.out.diagnostics[1].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: the function would work on one place under two names, and a write through either would change what the other reads"
 
 # Two cells are two places, and an unlabelled call says so without a label.
 test "distinct cells are clean and an unlabelled pair names no label"
@@ -495,7 +495,7 @@ test "distinct cells are clean and an unlabelled pair names no label"
         "function shift(@a: i64, @b: str)\n    a @ a + 1\n    b @ b + \"x\"\n\nfunction g()\n    n: i64 @= 0\n    shift(@n, @n)\n    print(n)\n"
     )
     assert bare.out.diagnostics.len() == 1
-    assert bare.out.diagnostics[0].message == "`n` overlaps an earlier `@` argument of this call — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
+    assert bare.out.diagnostics[0].message == "`n` overlaps an earlier `@` argument of this call — two `@` arguments may not reach one value: the function would work on one place under two names, and a write through either would change what the other reads"
 
 # A nested call is NOT this rule: `outer(@n, k: bump(@n))` keeps both
 # mutations, measured at three shapes, because a call's copy-in happens after

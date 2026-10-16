@@ -1392,7 +1392,7 @@ bb0:
 #line 182 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
 void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_main(void) {
 #line 182 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h0_a; __builtin_memset(&h0_a, 0, sizeof h0_a); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h1_b; __builtin_memset(&h1_b, 0, sizeof h1_b); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h2_c; __builtin_memset(&h2_c, 0, sizeof h2_c); HeroMapHeader * h3_seen; __builtin_memset(&h3_seen, 0, sizeof h3_seen); HERO_NODEBUG h_0opt_e201354 h4_f0, h6_f1, h14_own14, h15_own15, t23, t24, t28, t34, t35, t39, t159, t160, t161, t162; __builtin_memset(&h4_f0, 0, sizeof h4_f0); HERO_NODEBUG int64_t h5_r0, h7_r1, t2, t5, t8, t18, t20, t25, t26, t29, t30, t31, t36, t37, t40, t41, t42, t45, t47, t48, t49, t54, t55, t56, t59, t61, t145, t147; __builtin_memset(&h6_f1, 0, sizeof h6_f1); HeroArrayHeader * h8_copies; __builtin_memset(&h8_copies, 0, sizeof h8_copies); int64_t h9_k; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h10_own10, h11_own11, h12_own12, t3, t6, t9, t10, t11, t13, t14, t17, t19, t22, t33, t52, t57, t62, t104, t148, t149, t151, t152, t153, t154, t155, t156, t166; __builtin_memset(&h10_own10, 0, sizeof h10_own10); __builtin_memset(&h11_own11, 0, sizeof h11_own11); __builtin_memset(&h12_own12, 0, sizeof h12_own12); HERO_NODEBUG HeroMapHeader *h13_own13, *t16, *t21, *t32, *t43, *t157, *t158; __builtin_memset(&h13_own13, 0, sizeof h13_own13); __builtin_memset(&h14_own14, 0, sizeof h14_own14); __builtin_memset(&h15_own15, 0, sizeof h15_own15); HERO_NODEBUG HeroArrayHeader *h16_own16, *h17_own17, *t44, *t46, *t58, *t60, *t146, *t163, *t164, *t165; __builtin_memset(&h16_own16, 0, sizeof h16_own16); __builtin_memset(&h17_own17, 0, sizeof h17_own17); HERO_NODEBUG HeroStr t1, t4, t7, t103; HERO_NODEBUG bool t12, t15, t27, t38, t50, t150; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 t63, t105; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 t64, t106; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 t65, t107; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 t66, t108; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 t67, t109; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 t68, t110; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 t69, t111; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 t70, t112; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 t71, t113; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 t72, t114; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 t73, t115; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 t74, t116; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 t75, t117; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 t76, t118; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 t77, t119; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 t78, t120; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 t79, t121; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 t80, t122; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 t81, t123; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 t82, t124; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 t83, t125; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 t84, t126; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 t85, t127; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 t86, t128; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 t87, t129; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 t88, t130; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 t89, t131; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 t90, t132; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 t91, t133; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 t92, t134; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 t93, t135; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 t94, t136; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 t95, t137; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 t96, t138; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 t97, t139; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 t98, t140; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 t99, t141; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 t100, t142; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 t101, t143; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 t102, t144; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h0_a; __builtin_memset(&h0_a, 0, sizeof h0_a); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h1_b; __builtin_memset(&h1_b, 0, sizeof h1_b); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h2_c; __builtin_memset(&h2_c, 0, sizeof h2_c); HeroMapHeader * h3_seen; __builtin_memset(&h3_seen, 0, sizeof h3_seen); HERO_NODEBUG h_0opt_e201354 h4_f0, h6_f1, h14_own14, h15_own15, t23, t24, t28, t34, t35, t39, t118, t119, t120, t121; __builtin_memset(&h4_f0, 0, sizeof h4_f0); HERO_NODEBUG int64_t h5_r0, h7_r1, t2, t5, t8, t18, t20, t25, t26, t29, t30, t31, t36, t37, t40, t41, t42, t45, t47, t48, t49, t54, t55, t56, t59, t61, t104, t106; __builtin_memset(&h6_f1, 0, sizeof h6_f1); HeroArrayHeader * h8_copies; __builtin_memset(&h8_copies, 0, sizeof h8_copies); int64_t h9_k; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h10_own10, h11_own11, h12_own12, t3, t6, t9, t10, t11, t13, t14, t17, t19, t22, t33, t52, t57, t62, t107, t108, t110, t111, t112, t113, t114, t115, t125; __builtin_memset(&h10_own10, 0, sizeof h10_own10); __builtin_memset(&h11_own11, 0, sizeof h11_own11); __builtin_memset(&h12_own12, 0, sizeof h12_own12); HERO_NODEBUG HeroMapHeader *h13_own13, *t16, *t21, *t32, *t43, *t116, *t117; __builtin_memset(&h13_own13, 0, sizeof h13_own13); __builtin_memset(&h14_own14, 0, sizeof h14_own14); __builtin_memset(&h15_own15, 0, sizeof h15_own15); HERO_NODEBUG HeroArrayHeader *h16_own16, *h17_own17, *t44, *t46, *t58, *t60, *t105, *t122, *t123, *t124; __builtin_memset(&h16_own16, 0, sizeof h16_own16); __builtin_memset(&h17_own17, 0, sizeof h17_own17); HERO_NODEBUG HeroStr t1, t4, t7, t103; HERO_NODEBUG bool t12, t15, t27, t38, t50, t109; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 t63; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 t64; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 t65; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 t66; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 t67; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 t68; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 t69; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 t70; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 t71; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 t72; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 t73; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 t74; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 t75; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 t76; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 t77; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 t78; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 t79; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 t80; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 t81; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 t82; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 t83; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 t84; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 t85; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 t86; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 t87; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 t88; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 t89; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 t90; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 t91; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 t92; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 t93; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 t94; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 t95; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 t96; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 t97; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 t98; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 t99; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 t100; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 t101; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 t102; HERO_ENTRY_STOP; goto bb0;
 #line 182 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_78);
@@ -1401,57 +1401,57 @@ bb0:
 #line 183 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t3 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_chain(t1, t2);
 #line 183 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t151, (h10_own10));
+    HERO_COPY_HELD(t110, (h10_own10));
 #line 183 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h10_own10, (t3));
 #line 183 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t151);
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t110);
 #line 183 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t152, (h0_a));
+    HERO_COPY_HELD(t111, (h0_a));
 #line 183 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_retain(&t3);
 #line 183 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h0_a, (t3));
 #line 183 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t152);
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t111);
     t4 = HERO_STR_LIT(hero_str_78);
 #line 184 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t5 = INT64_C(1);
 #line 184 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t6 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_chain(t4, t5);
 #line 184 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t153, (h11_own11));
+    HERO_COPY_HELD(t112, (h11_own11));
 #line 184 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h11_own11, (t6));
 #line 184 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t153);
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t112);
 #line 184 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t154, (h1_b));
+    HERO_COPY_HELD(t113, (h1_b));
 #line 184 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_retain(&t6);
 #line 184 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h1_b, (t6));
 #line 184 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t154);
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t113);
     t7 = HERO_STR_LIT(hero_str_79);
 #line 185 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t8 = INT64_C(2);
 #line 185 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t9 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_chain(t7, t8);
 #line 185 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t155, (h12_own12));
+    HERO_COPY_HELD(t114, (h12_own12));
 #line 185 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h12_own12, (t9));
 #line 185 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t155);
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t114);
 #line 185 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t156, (h2_c));
+    HERO_COPY_HELD(t115, (h2_c));
 #line 185 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_retain(&t9);
 #line 185 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h2_c, (t9));
 #line 185 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t156);
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t115);
     HERO_COPY_HELD(t10, (h0_a));
 #line 186 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(t11, (h1_b));
@@ -1471,19 +1471,19 @@ bb0:
     hero_print_end();
     t16 = hero_map_new(&h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_desc, &hero_desc_int, 0);
 #line 187 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    t157 = h13_own13;
+    t116 = h13_own13;
 #line 187 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h13_own13 = t16;
 #line 187 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    hero_map_decref(t157);
+    hero_map_decref(t116);
 #line 187 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    t158 = h3_seen;
+    t117 = h3_seen;
 #line 187 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     hero_map_incref(t16);
 #line 187 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h3_seen = t16;
 #line 187 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    hero_map_decref(t158);
+    hero_map_decref(t117);
     HERO_COPY_HELD(t17, (h0_a));
 #line 188 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t18 = INT64_C(10);
@@ -1516,19 +1516,19 @@ bb0:
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     }
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t159, (h14_own14));
+    HERO_COPY_HELD(t118, (h14_own14));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h14_own14, (t23));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_0opt_e201354_release(&t159);
+    h_0opt_e201354_release(&t118);
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t160, (h4_f0));
+    HERO_COPY_HELD(t119, (h4_f0));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h_0opt_e201354_retain(&t23);
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h4_f0, (t23));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_0opt_e201354_release(&t160);
+    h_0opt_e201354_release(&t119);
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(t24, (h4_f0));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
@@ -1584,19 +1584,19 @@ bb3:
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     }
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t161, (h15_own15));
+    HERO_COPY_HELD(t120, (h15_own15));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h15_own15, (t34));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_0opt_e201354_release(&t161);
+    h_0opt_e201354_release(&t120);
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t162, (h6_f1));
+    HERO_COPY_HELD(t121, (h6_f1));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h_0opt_e201354_retain(&t34);
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h6_f1, (t34));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_0opt_e201354_release(&t162);
+    h_0opt_e201354_release(&t121);
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(t35, (h6_f1));
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
@@ -1634,11 +1634,11 @@ bb6:
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t44 = hero_map_keys(t43);
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    t163 = h16_own16;
+    t122 = h16_own16;
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h16_own16 = t44;
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    hero_array_decref(t163);
+    hero_array_decref(t122);
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len);
 #line 190 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
@@ -1651,19 +1651,19 @@ bb6:
     hero_print_end();
     t46 = hero_array_new(&h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_desc, 1);
 #line 191 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    t164 = h17_own17;
+    t123 = h17_own17;
 #line 191 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h17_own17 = t46;
 #line 191 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    hero_array_decref(t164);
+    hero_array_decref(t123);
 #line 191 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    t165 = h8_copies;
+    t124 = h8_copies;
 #line 191 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     hero_array_incref(t46);
 #line 191 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h8_copies = t46;
 #line 191 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    hero_array_decref(t165);
+    hero_array_decref(t124);
     t47 = INT64_C(0);
 #line 192 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h9_k = t47;
@@ -1698,13 +1698,13 @@ bb9:
 #line 198 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(t57, (h2_c));
 #line 198 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t166, (h1_b));
+    HERO_COPY_HELD(t125, (h1_b));
 #line 198 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_retain(&t57);
 #line 198 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     HERO_COPY_HELD(h1_b, (t57));
 #line 198 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t166);
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(&t125);
 #line 200 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t58 = h8_copies;
 #line 200 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
@@ -1796,109 +1796,27 @@ bb9:
     HERO_COPY_HELD(t102, (t101.f_inner));
 #line 201 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     t103 = t102.f_s;
-    HERO_COPY_HELD(t104, (h1_b));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t105, (t104.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t106, (t105.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t107, (t106.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t108, (t107.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t109, (t108.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t110, (t109.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t111, (t110.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t112, (t111.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t113, (t112.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t114, (t113.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t115, (t114.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t116, (t115.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t117, (t116.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t118, (t117.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t119, (t118.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t120, (t119.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t121, (t120.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t122, (t121.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t123, (t122.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t124, (t123.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t125, (t124.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t126, (t125.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t127, (t126.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t128, (t127.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t129, (t128.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t130, (t129.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t131, (t130.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t132, (t131.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t133, (t132.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t134, (t133.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t135, (t134.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t136, (t135.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t137, (t136.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t138, (t137.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t139, (t138.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t140, (t139.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t141, (t140.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t142, (t141.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t143, (t142.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t144, (t143.f_inner));
-#line 202 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    t145 = t144.f_n;
-    t146 = h8_copies;
+    t104 = h1_b.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_inner.f_n;
+    t105 = h8_copies;
 #line 203 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    t147 = INT64_C(0);
+    t106 = INT64_C(0);
 #line 203 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    t148 = ((void)((t146 == NULL || t147 < 0 || t147 >= t146->len) ? ((void)hero_array_at(t146, t147), hero_unreachable()) : (void)0), (void)(t146->elem->size != sizeof(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40) ? hero_unreachable() : (void)0), ((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 const *)(const void *)(t146 + 1))[t147]);
+    t107 = ((void)((t105 == NULL || t106 < 0 || t106 >= t105->len) ? ((void)hero_array_at(t105, t106), hero_unreachable()) : (void)0), (void)(t105->elem->size != sizeof(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40) ? hero_unreachable() : (void)0), ((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 const *)(const void *)(t105 + 1))[t106]);
 #line 203 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    HERO_COPY_HELD(t149, (h0_a));
+    HERO_COPY_HELD(t108, (h0_a));
 #line 203 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    t150 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_eq(&t148, &t149);
+    t109 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_eq(&t107, &t108);
 #line 199 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     hero_print_int(t59);
 #line 199 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     hero_print_str(t103);
 #line 199 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    hero_print_int(t145);
+    hero_print_int(t104);
 #line 199 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-    hero_print_bool(t150);
+    hero_print_bool(t109);
 #line 199 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
     hero_print_end();
-#line 1902 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
+#line 1820 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(hero_slot_escape(&h0_a));
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(hero_slot_escape(&h1_b));
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40_release(hero_slot_escape(&h2_c));

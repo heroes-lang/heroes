@@ -182,171 +182,167 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 #line 37 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 void h_fficonstpointer_main(void) {
 #line 37 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    Handle h0_h; void * h1_p; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h6_own6 = {0}, t10, t11, t15, t17, t43, t44; void * h3_b; HERO_NODEBUG h_0opt_f87774a h4_f1 = {0}, h5_f2 = {0}, h7_own7 = {0}, h8_own8 = {0}, t24, t25, t29, t31, t34, t35, t39, t41, t45, t46, t47, t48; HERO_NODEBUG Handle t1, t2, t8; HERO_NODEBUG void *t3, *t4, *t5, *t19, *t20, *t21; HERO_NODEBUG bool t6, t14, t22, t28, t38; HERO_NODEBUG HeroStr t7, t32, t42; HERO_NODEBUG int32_t t9; HERO_NODEBUG int64_t t12, t13, t18, t26, t27, t36, t37; HERO_NODEBUG HeroFailure t16, t30, t40; HERO_NODEBUG const char *t23, *t33; HERO_ENTRY_STOP; goto bb0;
+    Handle h0_h; void * h1_p; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h6_own6 = {0}, t8, t9, t13, t15, t41, t42; void * h3_b; HERO_NODEBUG h_0opt_f87774a h4_f1 = {0}, h5_f2 = {0}, h7_own7 = {0}, h8_own8 = {0}, t22, t23, t27, t29, t32, t33, t37, t39, t43, t44, t45, t46; HERO_NODEBUG Handle t1; HERO_NODEBUG void *t2, *t3, *t4, *t17, *t18, *t19; HERO_NODEBUG bool t5, t12, t20, t26, t36; HERO_NODEBUG HeroStr t6, t30, t40; HERO_NODEBUG int32_t t7; HERO_NODEBUG int64_t t10, t11, t16, t24, t25, t34, t35; HERO_NODEBUG HeroFailure t14, t28, t38; HERO_NODEBUG const char *t21, *t31; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 bb0:
     t1 = get_handle();
 #line 38 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h0_h = t1;
-    t2 = h0_h;
+    t2 = (void *)h0_h.pMethods;
 #line 39 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t3 = (void *)t2.pMethods;
-#line 39 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h1_p = t3;
-    t4 = h1_p;
+    h1_p = t2;
+    t3 = h1_p;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t5 = ((void *)0);
+    t4 = ((void *)0);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t6 = t4 == t5;
+    t5 = t3 == t4;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t7 = HERO_STR_LIT(hero_str_20);
+    t6 = HERO_STR_LIT(hero_str_20);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t8 = h0_h;
+    t7 = h0_h.id;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t9 = t8.id;
+    t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t7};
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t9};
+    t41 = h6_own6;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t43 = h6_own6;
+    h6_own6 = t8;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h6_own6 = t10;
+    h_0opt_e201354_release(&t41);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h_0opt_e201354_release(&t43);
+    t42 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t44 = h2_f0;
+    h_0opt_e201354_retain(&t8);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h_0opt_e201354_retain(&t10);
+    h2_f0 = t8;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h2_f0 = t10;
+    h_0opt_e201354_release(&t42);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h_0opt_e201354_release(&t44);
+    t9 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t11 = h2_f0;
+    t10 = t9.tag;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t12 = t11.tag;
+    t11 = INT64_C(0);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t13 = INT64_C(0);
+    t12 = t10 == t11;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t14 = t12 == t13;
-#line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    if (t14) goto bb1; else goto bb2;
+    if (t12) goto bb1; else goto bb2;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 bb1:
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t17 = h2_f0;
+    t15 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t18 = t17.as.ok;
+    t16 = t15.as.ok;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_bool(t6);
+    hero_print_bool(t5);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_str(t7);
+    hero_print_str(t6);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_int(t18);
+    hero_print_int(t16);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_end();
-    t19 = (void *)get_blob();
+    t17 = (void *)get_blob();
 #line 41 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h3_b = t19;
-    t20 = h3_b;
+    h3_b = t17;
+    t18 = h3_b;
 #line 42 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t21 = ((void *)0);
+    t19 = ((void *)0);
 #line 42 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t22 = t20 == t21;
+    t20 = t18 == t19;
 #line 42 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_bool(t22);
+    hero_print_bool(t20);
 #line 42 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_end();
-    t23 = (const char *)get_name();
+    t21 = (const char *)get_name();
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t24 = h_library_validated(t23);
+    t22 = h_library_validated(t21);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t45 = h7_own7;
+    t43 = h7_own7;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h7_own7 = t24;
+    h7_own7 = t22;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h_0opt_f87774a_release(&t45);
+    h_0opt_f87774a_release(&t43);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t46 = h4_f1;
+    t44 = h4_f1;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h_0opt_f87774a_retain(&t24);
+    h_0opt_f87774a_retain(&t22);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h4_f1 = t24;
+    h4_f1 = t22;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h_0opt_f87774a_release(&t46);
+    h_0opt_f87774a_release(&t44);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t25 = h4_f1;
+    t23 = h4_f1;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t26 = t25.tag;
+    t24 = t23.tag;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t27 = INT64_C(0);
+    t25 = INT64_C(0);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t28 = t26 == t27;
+    t26 = t24 == t25;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    if (t28) goto bb3; else goto bb4;
+    if (t26) goto bb3; else goto bb4;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 bb2:
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t15 = h2_f0;
+    t13 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t16 = t15.as.err;
-#line 293 "fficonstpointer.c"
-    hero_panic_must(t16);
+    t14 = t13.as.err;
+#line 289 "fficonstpointer.c"
+    hero_panic_must(t14);
     hero_unreachable();
 bb3:
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t31 = h4_f1;
+    t29 = h4_f1;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t32 = t31.as.ok;
+    t30 = t29.as.ok;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_str(t32);
+    hero_print_str(t30);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_end();
-    t33 = (const char *)get_utext();
+    t31 = (const char *)get_utext();
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t34 = h_library_validated(t33);
+    t32 = h_library_validated(t31);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t47 = h8_own8;
+    t45 = h8_own8;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h8_own8 = t34;
+    h8_own8 = t32;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h_0opt_f87774a_release(&t47);
+    h_0opt_f87774a_release(&t45);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t48 = h5_f2;
+    t46 = h5_f2;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h_0opt_f87774a_retain(&t34);
+    h_0opt_f87774a_retain(&t32);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h5_f2 = t34;
+    h5_f2 = t32;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    h_0opt_f87774a_release(&t48);
+    h_0opt_f87774a_release(&t46);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t35 = h5_f2;
+    t33 = h5_f2;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t36 = t35.tag;
+    t34 = t33.tag;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t37 = INT64_C(0);
+    t35 = INT64_C(0);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t38 = t36 == t37;
+    t36 = t34 == t35;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    if (t38) goto bb5; else goto bb6;
+    if (t36) goto bb5; else goto bb6;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 bb4:
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t29 = h4_f1;
+    t27 = h4_f1;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t30 = t29.as.err;
-#line 338 "fficonstpointer.c"
-    hero_panic_must(t30);
+    t28 = t27.as.err;
+#line 334 "fficonstpointer.c"
+    hero_panic_must(t28);
     hero_unreachable();
 bb5:
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t41 = h5_f2;
+    t39 = h5_f2;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t42 = t41.as.ok;
+    t40 = t39.as.ok;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    hero_print_str(t42);
+    hero_print_str(t40);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_end();
-#line 350 "fficonstpointer.c"
+#line 346 "fficonstpointer.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h5_f2));
@@ -356,11 +352,11 @@ bb5:
     return;
 bb6:
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t39 = h5_f2;
+    t37 = h5_f2;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
-    t40 = t39.as.err;
-#line 363 "fficonstpointer.c"
-    hero_panic_must(t40);
+    t38 = t37.as.err;
+#line 359 "fficonstpointer.c"
+    hero_panic_must(t38);
     hero_unreachable();
 }
 
@@ -368,7 +364,7 @@ bb6:
 int64_t h_library_HERO_STR_OK(void) {
 #line 123 "<heroes library>"
     return HERO_STR_OK;
-#line 372 "fficonstpointer.c"
+#line 368 "fficonstpointer.c"
 }
 
 #line 153 "<heroes library>"
@@ -490,7 +486,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 494 "fficonstpointer.c"
+#line 490 "fficonstpointer.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

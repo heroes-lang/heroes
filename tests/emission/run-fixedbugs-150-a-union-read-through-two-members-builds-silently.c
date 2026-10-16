@@ -167,29 +167,25 @@ void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void);
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void) {
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
-    W h0_w; HERO_NODEBUG W t1, t2, t4; HERO_NODEBUG int32_t t3; HERO_NODEBUG uint32_t t5; HERO_ENTRY_STOP; goto bb0;
+    W h0_w; HERO_NODEBUG W t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG uint32_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 bb0:
     t1 = make_w();
 #line 21 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     h0_w = t1;
-    t2 = h0_w;
+    t2 = h0_w.i;
 #line 22 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
-    t3 = t2.i;
-#line 22 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
-    hero_print_int(t3);
+    hero_print_int(t2);
 #line 22 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     hero_print_end();
-    t4 = h0_w;
+    t3 = h0_w.n;
 #line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
-    t5 = t4.n;
-#line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
-    hero_print_int(t5);
+    hero_print_int(t3);
 #line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     return;
-#line 193 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 189 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_W_eq(const W *a, const W *b) {
     if (!(a->i == b->i)) return false;

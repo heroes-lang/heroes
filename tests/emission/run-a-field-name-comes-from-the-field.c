@@ -270,89 +270,85 @@ bb0:
 #line 33 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 HeroStr h_afieldnamecomesfromthefield_point_json(h_afieldnamecomesfromthefield_Point h0_p) {
 #line 33 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t4, t5, t8, t10, t12, t13, t14, t15, t16, t17, t18, t21, t22, t23; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t9, *t11, *t19, *t20; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t2, t6; HERO_NODEBUG int64_t t3, t7; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t3, t4, t6, t8, t10, t11, t12, t13, t14, t15, t16, t19, t20, t21; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t7, *t9, *t17, *t18; HERO_NODEBUG int64_t t2, t5; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_78);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t2 = h0_p;
+    t2 = h0_p.f_x;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t3 = t2.f_x;
+    t3 = h_afieldnamecomesfromthefield_pair_num(t1, t2);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t4 = h_afieldnamecomesfromthefield_pair_num(t1, t3);
+    t15 = h2_own2;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t17 = h2_own2;
+    h2_own2 = t3;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h2_own2 = t4;
+    hero_str_decref(t15);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t17);
+    t4 = HERO_STR_LIT(hero_str_79);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t5 = HERO_STR_LIT(hero_str_79);
+    t5 = h0_p.f_y;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t6 = h0_p;
+    t6 = h_afieldnamecomesfromthefield_pair_num(t4, t5);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t7 = t6.f_y;
+    t16 = h3_own3;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t8 = h_afieldnamecomesfromthefield_pair_num(t5, t7);
+    h3_own3 = t6;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t18 = h3_own3;
+    hero_str_decref(t16);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h3_own3 = t8;
+    t7 = hero_array_new(&hero_desc_str, 2);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t18);
+    hero_array_push_owned(&t7, &t3);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t9 = hero_array_new(&hero_desc_str, 2);
+    hero_array_push_owned(&t7, &t6);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_push_owned(&t9, &t4);
+    t17 = h4_own4;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_push_owned(&t9, &t8);
+    h4_own4 = t7;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t19 = h4_own4;
+    hero_array_decref(t17);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h4_own4 = t9;
+    t18 = h1_parts;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_decref(t19);
+    hero_array_incref(t7);
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t20 = h1_parts;
+    h1_parts = t7;
 #line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_incref(t9);
-#line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h1_parts = t9;
-#line 34 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_decref(t20);
-    t10 = HERO_STR_LIT(hero_str_7b);
+    hero_array_decref(t18);
+    t8 = HERO_STR_LIT(hero_str_7b);
 #line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t11 = h1_parts;
+    t9 = h1_parts;
 #line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t12 = HERO_STR_LIT(hero_str_2c);
+    t10 = HERO_STR_LIT(hero_str_2c);
 #line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t13 = hero_str_join(t11, t12);
+    t11 = hero_str_join(t9, t10);
 #line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t21 = h5_own5;
+    t19 = h5_own5;
 #line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h5_own5 = t13;
+    h5_own5 = t11;
+#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    hero_str_decref(t19);
+#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t12 = hero_str_concat(t8, t11);
+#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t20 = h6_own6;
+#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    h6_own6 = t12;
+#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    hero_str_decref(t20);
+#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t13 = HERO_STR_LIT(hero_str_7d);
+#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t14 = hero_str_concat(t12, t13);
+#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t21 = h7_own7;
+#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    h7_own7 = t14;
 #line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
     hero_str_decref(t21);
-#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t14 = hero_str_concat(t10, t13);
-#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t22 = h6_own6;
-#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h6_own6 = t14;
-#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t22);
-#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t15 = HERO_STR_LIT(hero_str_7d);
-#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t16 = hero_str_concat(t14, t15);
-#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t23 = h7_own7;
-#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h7_own7 = t16;
-#line 35 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t23);
-#line 355 "afieldnamecomesfromthefield.c"
-    hero_str_incref(t16);
+#line 351 "afieldnamecomesfromthefield.c"
+    hero_str_incref(t14);
     hero_array_release_at(&h1_parts);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -360,145 +356,139 @@ bb0:
     hero_str_release_at(&h5_own5);
     hero_str_release_at(&h6_own6);
     hero_str_release_at(&h7_own7);
-    return t16;
+    return t14;
 }
 
 #line 37 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 HeroStr h_afieldnamecomesfromthefield_room_json(h_afieldnamecomesfromthefield_Room h0_r) {
 #line 37 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t1, t3, t4, t5, t8, t9, t10, t11, t12, t15, t16, t18, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t35, t36, t37; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h9_own9 = {0}, *t17, *t19, *t20, *t32, *t33, *t34; HERO_NODEBUG h_afieldnamecomesfromthefield_Room t2, t6, t13; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t14; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t1, t2, t3, t4, t6, t7, t8, t9, t10, t12, t13, t15, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t32, t33, t34; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h9_own9 = {0}, *t14, *t16, *t17, *t29, *t30, *t31; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t11; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 bb0:
 #line 39 "tests/golden/run/a-field-name-comes-from-the-field.hero"
     t1 = HERO_STR_LIT(hero_str_ed6f72f);
 #line 39 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t2 = h0_r;
+    t2 = h0_r.f_name;
 #line 39 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t3 = t2.f_name;
+    t3 = h_afieldnamecomesfromthefield_pair_str(t1, t2);
 #line 39 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t4 = h_afieldnamecomesfromthefield_pair_str(t1, t3);
+    t23 = h2_own2;
 #line 39 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t26 = h2_own2;
+    h2_own2 = t3;
 #line 39 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h2_own2 = t4;
-#line 39 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    hero_str_decref(t23);
+    t4 = HERO_STR_LIT(hero_str_370bff92);
+#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t5 = h0_r.f_width;
+#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t6 = h_afieldnamecomesfromthefield_pair_num(t4, t5);
+#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t24 = h3_own3;
+#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    h3_own3 = t6;
+#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    hero_str_decref(t24);
+    t7 = HERO_STR_LIT(hero_str_3217);
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t8 = h_afieldnamecomesfromthefield_quoted(t7);
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t25 = h4_own4;
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    h4_own4 = t8;
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    hero_str_decref(t25);
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t9 = HERO_STR_LIT(hero_str_3a);
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t10 = hero_str_concat(t8, t9);
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t26 = h5_own5;
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    h5_own5 = t10;
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
     hero_str_decref(t26);
-    t5 = HERO_STR_LIT(hero_str_370bff92);
-#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t6 = h0_r;
-#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t7 = t6.f_width;
-#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t8 = h_afieldnamecomesfromthefield_pair_num(t5, t7);
-#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t27 = h3_own3;
-#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h3_own3 = t8;
-#line 40 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t11 = h0_r.f_at;
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t12 = h_afieldnamecomesfromthefield_point_json(t11);
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    t27 = h6_own6;
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
+    h6_own6 = t12;
+#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
     hero_str_decref(t27);
-    t9 = HERO_STR_LIT(hero_str_3217);
 #line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t10 = h_afieldnamecomesfromthefield_quoted(t9);
+    t13 = hero_str_concat(t10, t12);
 #line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t28 = h4_own4;
+    t28 = h7_own7;
 #line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h4_own4 = t10;
+    h7_own7 = t13;
 #line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
     hero_str_decref(t28);
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t11 = HERO_STR_LIT(hero_str_3a);
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t12 = hero_str_concat(t10, t11);
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t29 = h5_own5;
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h5_own5 = t12;
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t29);
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t13 = h0_r;
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t14 = t13.f_at;
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t15 = h_afieldnamecomesfromthefield_point_json(t14);
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t30 = h6_own6;
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h6_own6 = t15;
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t30);
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t16 = hero_str_concat(t12, t15);
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t31 = h7_own7;
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h7_own7 = t16;
-#line 41 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t31);
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t17 = hero_array_new(&hero_desc_str, 3);
+    t14 = hero_array_new(&hero_desc_str, 3);
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_push_owned(&t17, &t4);
+    hero_array_push_owned(&t14, &t3);
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_push_owned(&t17, &t8);
+    hero_array_push_owned(&t14, &t6);
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_push_owned(&t17, &t16);
+    hero_array_push_owned(&t14, &t13);
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t32 = h8_own8;
+    t29 = h8_own8;
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h8_own8 = t17;
+    h8_own8 = t14;
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_decref(t32);
+    hero_array_decref(t29);
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t33 = h1_parts;
+    t30 = h1_parts;
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_incref(t17);
+    hero_array_incref(t14);
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h1_parts = t17;
+    h1_parts = t14;
 #line 38 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_decref(t33);
+    hero_array_decref(t30);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t18 = HERO_STR_LIT(hero_str_7b);
+    t15 = HERO_STR_LIT(hero_str_7b);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t19 = h1_parts;
+    t16 = h1_parts;
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t20 = hero_array_sort(t19);
+    t17 = hero_array_sort(t16);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t34 = h9_own9;
+    t31 = h9_own9;
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h9_own9 = t20;
+    h9_own9 = t17;
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_array_decref(t34);
+    hero_array_decref(t31);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t21 = HERO_STR_LIT(hero_str_2c);
+    t18 = HERO_STR_LIT(hero_str_2c);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t22 = hero_str_join(t20, t21);
+    t19 = hero_str_join(t17, t18);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t35 = h10_own10;
+    t32 = h10_own10;
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h10_own10 = t22;
+    h10_own10 = t19;
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t35);
+    hero_str_decref(t32);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t23 = hero_str_concat(t18, t22);
+    t20 = hero_str_concat(t15, t19);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t36 = h11_own11;
+    t33 = h11_own11;
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h11_own11 = t23;
+    h11_own11 = t20;
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t36);
+    hero_str_decref(t33);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t24 = HERO_STR_LIT(hero_str_7d);
+    t21 = HERO_STR_LIT(hero_str_7d);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t25 = hero_str_concat(t23, t24);
+    t22 = hero_str_concat(t20, t21);
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    t37 = h12_own12;
+    t34 = h12_own12;
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h12_own12 = t25;
+    h12_own12 = t22;
 #line 43 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    hero_str_decref(t37);
-#line 501 "afieldnamecomesfromthefield.c"
-    hero_str_incref(t25);
+    hero_str_decref(t34);
+#line 491 "afieldnamecomesfromthefield.c"
+    hero_str_incref(t22);
     hero_array_release_at(&h1_parts);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -511,7 +501,7 @@ bb0:
     hero_str_release_at(&h10_own10);
     hero_str_release_at(&h11_own11);
     hero_str_release_at(&h12_own12);
-    return t25;
+    return t22;
 }
 
 #line 45 "tests/golden/run/a-field-name-comes-from-the-field.hero"
@@ -621,7 +611,7 @@ bb0:
     hero_print_bool(t19);
 #line 55 "tests/golden/run/a-field-name-comes-from-the-field.hero"
     hero_print_end();
-#line 625 "afieldnamecomesfromthefield.c"
+#line 615 "afieldnamecomesfromthefield.c"
     h_afieldnamecomesfromthefield_Room_release(hero_slot_escape(&h0_r));
     hero_array_release_at(&h1_names);
     h_afieldnamecomesfromthefield_Room_release(hero_slot_escape(&h2_own2));

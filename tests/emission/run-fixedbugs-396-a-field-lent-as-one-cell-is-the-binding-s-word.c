@@ -175,7 +175,7 @@ void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void);
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void) {
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    struct cell h0_b; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t15, t20; HERO_NODEBUG int64_t t10, t19, t23; HERO_NODEBUG struct cell t11, t14, t17, t22; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13, t16, t21; HERO_ENTRY_STOP; goto bb0;
+    struct cell h0_b; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t14, t19; HERO_NODEBUG int64_t t10, t18, t21; HERO_NODEBUG struct cell t11, t16; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13, t15, t20; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 bb0:
     t1 = UINT64_C(0);
@@ -203,42 +203,38 @@ bb0:
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     t13 = HERO_STR_LIT(hero_str_20);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    t14 = h0_b;
+    t14 = h0_b.m;
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    t15 = t14.m;
+    t15 = HERO_STR_LIT(hero_str_20);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    t16 = HERO_STR_LIT(hero_str_20);
+    t16 = h0_b;
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    t17 = h0_b;
+    t18 = INT64_C(6);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    t19 = INT64_C(6);
+    t19 = t16.rest[((uint64_t)(t18) >= UINT64_C(7) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t18))];
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    t20 = t17.rest[((uint64_t)(t19) >= UINT64_C(7) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t19))];
+    t20 = HERO_STR_LIT(hero_str_20);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    t21 = HERO_STR_LIT(hero_str_20);
-#line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    t22 = h0_b;
-#line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    t23 = t22.after;
+    t21 = h0_b.after;
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     hero_print_int(t12);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     hero_print_str(t13);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    hero_print_int(t15);
+    hero_print_int(t14);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    hero_print_str(t16);
+    hero_print_str(t15);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    hero_print_int(t20);
+    hero_print_int(t19);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    hero_print_str(t21);
+    hero_print_str(t20);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    hero_print_int(t23);
+    hero_print_int(t21);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     return;
-#line 242 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 238 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->m == b->m)) return false;

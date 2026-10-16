@@ -185,7 +185,7 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 void h_fixedbugs395acountreadatruntimepastcsunitaborts_main(void) {
 #line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    struct held h0_h; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG int64_t t18, t21, t27, t29; HERO_NODEBUG struct held t19, t20, t28; HERO_NODEBUG void *t24; HERO_NODEBUG uint64_t t25, t26; HERO_ENTRY_STOP; goto bb0;
+    struct held h0_h; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG int64_t t18, t20, t26, t27; HERO_NODEBUG struct held t19; HERO_NODEBUG void *t23; HERO_NODEBUG uint64_t t24, t25; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 bb0:
     t1 = UINT64_C(0);
@@ -225,36 +225,32 @@ bb0:
     t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18};
 #line 17 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     h0_h = t19;
-    t20 = h0_h;
+    t20 = h0_h.after;
 #line 18 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    t21 = t20.after;
-#line 18 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    hero_print_int(t21);
+    hero_print_int(t20);
 #line 18 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     hero_print_end();
-    t24 = (void *)(h0_h.buf);
+    t23 = (void *)(h0_h.buf);
 #line 19 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    t25 = UINT64_C(4);
+    t24 = UINT64_C(4);
 #line 19 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    t26 = h_fixedbugs395acountreadatruntimepastcsunitaborts_at_run_time(t25);
+    t25 = h_fixedbugs395acountreadatruntimepastcsunitaborts_at_run_time(t24);
 #line 19 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    if ((uint64_t)(t26) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))) hero_panic(sizeof(*(int *)0) == 1 ? "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero:19: `fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero:19: `fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `int *` points at");
+    if ((uint64_t)(t25) > (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))) hero_panic(sizeof(*(int *)0) == 1 ? "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero:19: `fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time" : "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero:19: `fill_ints` was given an extent past the 16 bytes of the field lent to it, read from `n` at run time and counted in what the header's `int *` points at");
 #line 19 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    t27 = fill_ints(t24, t26);
+    t26 = fill_ints(t23, t25);
 #line 19 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
+    hero_print_int(t26);
+#line 19 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
+    hero_print_end();
+    t27 = h0_h.after;
+#line 20 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     hero_print_int(t27);
-#line 19 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    hero_print_end();
-    t28 = h0_h;
-#line 20 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    t29 = t28.after;
-#line 20 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    hero_print_int(t29);
 #line 20 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     return;
-#line 258 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
+#line 254 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs395acountreadatruntimepastcsunitaborts_Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;

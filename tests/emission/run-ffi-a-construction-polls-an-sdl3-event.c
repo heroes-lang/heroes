@@ -498,7 +498,7 @@ void h_ffiaconstructionpollsansdl3event_main(void) {
 #line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 #define h6_got (*hero_lend_h6_got)
 #line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent"); bool h1_found; int32_t h2_code; uint32_t h3_keyed; int64_t h4_tries; HERO_NODEBUG bool h5_b0, h7_b1, t2, t12, t13, t17, t18, t21, t22, t25, t29, t30, t31, t41, t45; SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got"); HERO_NODEBUG uint32_t t1, t3, t4, t6, t15, t23, t27, t28, t37, t43, t44; HERO_NODEBUG uint64_t t5; HERO_NODEBUG int32_t t7, t14, t34, t42; HERO_NODEBUG void *t8, *t9; HERO_NODEBUG SDL_UserEvent t10, t33; HERO_NODEBUG SDL_Event t11, t24, t26, t32, t35; HERO_NODEBUG int64_t t16, t19, t20, t38, t39, t40; HERO_NODEBUG SDL_CommonEvent t36; HERO_ENTRY_STOP; goto bb0;
+    SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent"); bool h1_found; int32_t h2_code; uint32_t h3_keyed; int64_t h4_tries; HERO_NODEBUG bool h5_b0, h7_b1, t2, t12, t13, t17, t18, t21, t22, t25, t28, t29, t30, t36, t40; SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got"); HERO_NODEBUG uint32_t t1, t3, t4, t6, t15, t23, t26, t27, t32, t38, t39; HERO_NODEBUG uint64_t t5; HERO_NODEBUG int32_t t7, t14, t31, t37; HERO_NODEBUG void *t8, *t9; HERO_NODEBUG SDL_UserEvent t10; HERO_NODEBUG SDL_Event t11, t24; HERO_NODEBUG int64_t t16, t19, t20, t33, t34, t35; HERO_ENTRY_STOP; goto bb0;
 #line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb0:
     t1 = UINT64_C(16384);
@@ -582,23 +582,23 @@ bb2:
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb3:
 #line 66 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t41 = h1_found;
+    t36 = h1_found;
 #line 66 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    hero_print_bool(t41);
+    hero_print_bool(t36);
 #line 66 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_end();
-    t42 = h2_code;
+    t37 = h2_code;
 #line 67 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    hero_print_int(t42);
+    hero_print_int(t37);
 #line 67 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_end();
-    t43 = h3_keyed;
+    t38 = h3_keyed;
 #line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t44 = UINT64_C(32768);
+    t39 = UINT64_C(32768);
 #line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t45 = t43 == t44;
+    t40 = t38 == t39;
 #line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    hero_print_bool(t45);
+    hero_print_bool(t40);
 #line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_end();
     (void)SDL_Quit();
@@ -629,61 +629,51 @@ bb5:
 #line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb6:
 #line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t38 = h4_tries;
+    t33 = h4_tries;
 #line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t39 = INT64_C(1);
+    t34 = INT64_C(1);
 #line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow();
+    if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow();
 #line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    h4_tries = t40;
+    h4_tries = t35;
 #line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb1;
 #line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb7:
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t26 = h6_got;
+    t26 = h6_got.type;
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t27 = t26.type;
+    t27 = UINT64_C(32768);
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t28 = UINT64_C(32768);
+    t28 = t26 == t27;
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t29 = t27 == t28;
-#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    h7_b1 = t29;
+    h7_b1 = t28;
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb8;
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb8:
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t30 = h7_b1;
+    t29 = h7_b1;
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    if (t30) goto bb9; else goto bb10;
+    if (t29) goto bb9; else goto bb10;
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb9:
-    t31 = true;
+    t30 = true;
 #line 61 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    h1_found = t31;
-    t32 = h6_got;
+    h1_found = t30;
+    t31 = h6_got.user.code;
 #line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t33 = t32.user;
-#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t34 = t33.code;
-#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    h2_code = t34;
-    t35 = h6_got;
+    h2_code = t31;
+    t32 = h6_got.common.type;
 #line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t36 = t35.common;
-#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t37 = t36.type;
-#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    h3_keyed = t37;
+    h3_keyed = t32;
 #line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
 #line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb10:
 #line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
-#line 687 "ffiaconstructionpollsansdl3event.c"
+#line 677 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got

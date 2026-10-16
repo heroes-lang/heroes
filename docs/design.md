@@ -1427,6 +1427,15 @@ and on return the value is copied back. **Aliasing is not reintroduced** — nob
 else's memory — and the `@` at the call site preserves locality: you can see on the line that this
 argument will change. This is Swift's `inout`, which exists for exactly this reason.
 
+**Stated in the specification as the place itself, since 2026-10-16** (panel 215's R3, ratified
+that day): § 9 says *the callee works on the caller's place itself*, which is what the emitted C
+has done since panel 196's R1, an `@` parameter being a pointer to the caller's place, and since
+panel 215's landing a field is read through it in place too (`ir/in_place.hero`). The two
+statements agree on every program this language accepts, because two `@` arguments may never
+reach one place (below): copy in, copy out is the model the refusal is argued from, and the place
+itself is what a reader, and C, sees. Why the sentence changed is the sitting's own file,
+`docs/panel/215-a-group-records-padding-is-zeroed-where-c-receives-it-a-record-holding-a-lock-is-refused-as-a-value-and-rest-zeros-sentences-say-what-c-reads.md`.
+
 **Why this was added.** Value semantics (4.10) forced the parser to invent a `Step` record just to
 thread a position through recursive descent — seven lines of struct plus `step.pos` scattered
 everywhere, and forgetting to propagate `pos` was a *silent* bug. With `@` parameters, the four

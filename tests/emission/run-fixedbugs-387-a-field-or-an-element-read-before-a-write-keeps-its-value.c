@@ -314,16 +314,16 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
 void h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_main(void) {
 #line 34 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag h0_b = {0}; HeroArrayHeader * h1_held = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h7_f2 = {0}, h14_own14 = {0}, h21_own21 = {0}, h28_own28 = {0}, t17, t18, t22, t24, t42, t43, t47, t49, t73, t74, t78, t80, t96, t97, t106, t107, t117, t118; h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag h3_c = {0}; HeroArrayHeader * h5_g = {0}; HeroArrayHeader * h6_row = {0}; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h15_own15 = {0}, *h23_own23 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *t1, *t4, *t8, *t9, *t11, *t15, *t29, *t54, *t55, *t60, *t62, *t63, *t65, *t69, *t71, *t86, *t89, *t90, *t91, *t92, *t93, *t98, *t109, *t110, *t111, *t112, *t113, *t114, *t115, *t116; HERO_NODEBUG h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag h9_own9 = {0}, h12_own12 = {0}, h13_own13 = {0}, h16_own16 = {0}, h18_own18 = {0}, h20_own20 = {0}, t3, t10, t14, t31, t35, t39, t87, t88, t94, t95, t99, t100, t103, t105; HERO_NODEBUG HeroStr h17_own17 = {0}, h19_own19 = {0}, h22_own22 = {0}, t2, t30, t32, t33, t34, t36, t38, t40, t53, t101, t102, t104, t108; HERO_NODEBUG int64_t t6, t12, t13, t16, t19, t20, t25, t26, t27, t28, t37, t41, t44, t45, t50, t51, t52, t57, t64, t66, t67, t68, t70, t72, t75, t76, t81, t82, t83, t84, t85; HERO_NODEBUG bool t21, t46, t77; HERO_NODEBUG HeroFailure t23, t48, t79; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag h0_b = {0}; HeroArrayHeader * h1_held = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h7_f2 = {0}, h14_own14 = {0}, h21_own21 = {0}, h28_own28 = {0}, t15, t16, t20, t22, t38, t39, t43, t45, t69, t70, t74, t76, t92, t93, t102, t103, t113, t114; h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag h3_c = {0}; HeroArrayHeader * h5_g = {0}; HeroArrayHeader * h6_row = {0}; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h15_own15 = {0}, *h23_own23 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *t1, *t4, *t8, *t9, *t10, *t13, *t27, *t50, *t51, *t56, *t58, *t59, *t61, *t65, *t67, *t82, *t85, *t86, *t87, *t88, *t89, *t90, *t91, *t94, *t105, *t106, *t107, *t108, *t109, *t110, *t111, *t112; HERO_NODEBUG h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag h9_own9 = {0}, h16_own16 = {0}, t3, t29, t83, t84, t95, t96; HERO_NODEBUG HeroStr h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h22_own22 = {0}, t2, t28, t30, t31, t32, t33, t35, t36, t49, t97, t98, t99, t100, t101, t104; HERO_NODEBUG int64_t t6, t11, t12, t14, t17, t18, t23, t24, t25, t26, t34, t37, t40, t41, t46, t47, t48, t53, t60, t62, t63, t64, t66, t68, t71, t72, t77, t78, t79, t80, t81; HERO_NODEBUG bool t19, t42, t73; HERO_NODEBUG HeroFailure t21, t44, t75; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t86 = h8_own8;
+    t82 = h8_own8;
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h8_own8 = t1;
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t86);
+    hero_array_decref(t82);
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t2 = HERO_STR_LIT(hero_str_0);
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
@@ -333,423 +333,415 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t3 = (h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag){.f_xs = t1, .f_name = t2};
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t87 = h9_own9;
+    t83 = h9_own9;
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h9_own9 = t3;
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t87);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t83);
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t88 = h0_b;
+    t84 = h0_b;
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_retain(&t3);
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h0_b = t3;
 #line 35 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t88);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t84);
     t4 = hero_array_new(&hero_desc_int, 1);
 #line 36 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t89 = h10_own10;
+    t85 = h10_own10;
 #line 36 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h10_own10 = t4;
 #line 36 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t89);
+    hero_array_decref(t85);
 #line 36 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t90 = h1_held;
+    t86 = h1_held;
 #line 36 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_array_incref(t4);
 #line 36 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h1_held = t4;
 #line 36 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t90);
+    hero_array_decref(t86);
     t6 = INT64_C(5);
 #line 37 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_array_push_owned(&h1_held, &t6);
     t8 = h1_held;
 #line 38 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t91 = h0_b.f_xs;
+    t87 = h0_b.f_xs;
 #line 38 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_array_incref(t8);
 #line 38 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h0_b.f_xs = t8;
 #line 38 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t91);
+    hero_array_decref(t87);
     t9 = hero_array_new(&hero_desc_int, 1);
 #line 39 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t92 = h11_own11;
+    t88 = h11_own11;
 #line 39 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h11_own11 = t9;
 #line 39 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t92);
+    hero_array_decref(t88);
 #line 39 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t93 = h1_held;
+    t89 = h1_held;
 #line 39 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_array_incref(t9);
 #line 39 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h1_held = t9;
 #line 39 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t93);
-    t10 = h0_b;
+    hero_array_decref(t89);
+    t10 = h0_b.f_xs;
 #line 40 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_retain(&t10);
+    hero_array_incref(t10);
 #line 40 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t94 = h12_own12;
+    t90 = h12_own12;
 #line 40 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     h12_own12 = t10;
 #line 40 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t94);
+    hero_array_decref(t90);
 #line 40 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t11 = t10.f_xs;
+    t11 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&h0_b.f_xs);
 #line 40 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t12 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&h0_b.f_xs);
+    t12 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_total(t10, t11);
 #line 40 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t13 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_total(t11, t12);
-#line 40 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_print_int(t13);
+    hero_print_int(t12);
 #line 40 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_print_end();
-    t14 = h0_b;
+    t13 = h0_b.f_xs;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_retain(&t14);
+    hero_array_incref(t13);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t95 = h13_own13;
+    t91 = h13_own13;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h13_own13 = t14;
+    h13_own13 = t13;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t95);
+    hero_array_decref(t91);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t15 = t14.f_xs;
+    t14 = INT64_C(4);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t16 = INT64_C(4);
+    t15 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_half(t14);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t17 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_half(t16);
+    t92 = h14_own14;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t96 = h14_own14;
+    h14_own14 = t15;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h14_own14 = t17;
+    h_0opt_e201354_release(&t92);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_0opt_e201354_release(&t96);
+    t93 = h2_f0;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t97 = h2_f0;
+    h_0opt_e201354_retain(&t15);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_0opt_e201354_retain(&t17);
+    h2_f0 = t15;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h2_f0 = t17;
+    h_0opt_e201354_release(&t93);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_0opt_e201354_release(&t97);
+    t16 = h2_f0;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t18 = h2_f0;
+    t17 = t16.tag;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t19 = t18.tag;
+    t18 = INT64_C(0);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t20 = INT64_C(0);
+    t19 = t17 == t18;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t21 = t19 == t20;
-#line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    if (t21) goto bb1; else goto bb2;
+    if (t19) goto bb1; else goto bb2;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
 bb1:
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t24 = h2_f0;
+    t22 = h2_f0;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t25 = t24.as.ok;
+    t23 = t22.as.ok;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t26 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&h0_b.f_xs);
+    t24 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&h0_b.f_xs);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow();
+    if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow();
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t28 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_total(t15, t27);
+    t26 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_total(t13, t25);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_print_int(t28);
+    hero_print_int(t26);
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_print_end();
-    t29 = hero_array_new(&hero_desc_int, 1);
+    t27 = hero_array_new(&hero_desc_int, 1);
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t98 = h15_own15;
+    t94 = h15_own15;
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h15_own15 = t29;
+    h15_own15 = t27;
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t98);
+    hero_array_decref(t94);
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t30 = HERO_STR_LIT(hero_str_0);
+    t28 = HERO_STR_LIT(hero_str_0);
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_incref(t29);
+    hero_array_incref(t27);
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_str_incref(t30);
+    hero_str_incref(t28);
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t31 = (h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag){.f_xs = t29, .f_name = t30};
+    t29 = (h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag){.f_xs = t27, .f_name = t28};
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t99 = h16_own16;
+    t95 = h16_own16;
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h16_own16 = t31;
+    h16_own16 = t29;
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t99);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t95);
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t100 = h3_c;
+    t96 = h3_c;
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_retain(&t31);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_retain(&t29);
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h3_c = t31;
+    h3_c = t29;
 #line 42 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t100);
-    t32 = HERO_STR_LIT(hero_str_3205);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t96);
+    t30 = HERO_STR_LIT(hero_str_3205);
 #line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t33 = HERO_STR_LIT(hero_str_330d);
+    t31 = HERO_STR_LIT(hero_str_330d);
 #line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t34 = hero_str_concat(t32, t33);
+    t32 = hero_str_concat(t30, t31);
 #line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t101 = h17_own17;
+    t97 = h17_own17;
 #line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h17_own17 = t34;
+    h17_own17 = t32;
 #line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    hero_str_decref(t97);
+#line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    t98 = h3_c.f_name;
+#line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    hero_str_incref(t32);
+#line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    h3_c.f_name = t32;
+#line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    hero_str_decref(t98);
+    t33 = h3_c.f_name;
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    hero_str_incref(t33);
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    t99 = h18_own18;
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    h18_own18 = t33;
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    hero_str_decref(t99);
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    t34 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_rename(&h3_c.f_name);
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    t35 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_said(t33, t34);
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    t100 = h19_own19;
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    h19_own19 = t35;
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    hero_str_decref(t100);
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    hero_print_str(t35);
+#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    hero_print_end();
+    t36 = h3_c.f_name;
+#line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    hero_str_incref(t36);
+#line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    t101 = h20_own20;
+#line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
+    h20_own20 = t36;
+#line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_str_decref(t101);
-#line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t102 = h3_c.f_name;
-#line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_str_incref(t34);
-#line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h3_c.f_name = t34;
-#line 43 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_str_decref(t102);
-    t35 = h3_c;
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_retain(&t35);
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t103 = h18_own18;
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h18_own18 = t35;
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t103);
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t36 = t35.f_name;
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t37 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_rename(&h3_c.f_name);
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t38 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_said(t36, t37);
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t104 = h19_own19;
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h19_own19 = t38;
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_str_decref(t104);
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_print_str(t38);
-#line 44 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_print_end();
-    t39 = h3_c;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_retain(&t39);
+    t37 = INT64_C(4);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t105 = h20_own20;
+    t38 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_half(t37);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h20_own20 = t39;
+    t102 = h21_own21;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&t105);
+    h21_own21 = t38;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t40 = t39.f_name;
+    h_0opt_e201354_release(&t102);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t41 = INT64_C(4);
+    t103 = h4_f1;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t42 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_half(t41);
+    h_0opt_e201354_retain(&t38);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t106 = h21_own21;
+    h4_f1 = t38;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h21_own21 = t42;
+    h_0opt_e201354_release(&t103);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_0opt_e201354_release(&t106);
+    t39 = h4_f1;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t107 = h4_f1;
+    t40 = t39.tag;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_0opt_e201354_retain(&t42);
+    t41 = INT64_C(0);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h4_f1 = t42;
+    t42 = t40 == t41;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_0opt_e201354_release(&t107);
-#line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t43 = h4_f1;
-#line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t44 = t43.tag;
-#line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t45 = INT64_C(0);
-#line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t46 = t44 == t45;
-#line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    if (t46) goto bb3; else goto bb4;
+    if (t42) goto bb3; else goto bb4;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
 bb2:
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t22 = h2_f0;
+    t20 = h2_f0;
 #line 41 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t23 = t22.as.err;
-#line 584 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
-    hero_panic_must(t23);
+    t21 = t20.as.err;
+#line 576 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
+    hero_panic_must(t21);
     hero_unreachable();
 bb3:
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t49 = h4_f1;
+    t45 = h4_f1;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t50 = t49.as.ok;
+    t46 = t45.as.ok;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t51 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_rename(&h3_c.f_name);
+    t47 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_rename(&h3_c.f_name);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    if (__builtin_add_overflow(t50, t51, &t52)) hero_panic_overflow();
+    if (__builtin_add_overflow(t46, t47, &t48)) hero_panic_overflow();
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t53 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_said(t40, t52);
+    t49 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_said(t36, t48);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t108 = h22_own22;
+    t104 = h22_own22;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h22_own22 = t53;
+    h22_own22 = t49;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_str_decref(t108);
+    hero_str_decref(t104);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_print_str(t53);
+    hero_print_str(t49);
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_print_end();
-    t54 = hero_array_new(&hero_desc_array, 1);
+    t50 = hero_array_new(&hero_desc_array, 1);
 #line 46 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t109 = h23_own23;
+    t105 = h23_own23;
 #line 46 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h23_own23 = t54;
+    h23_own23 = t50;
 #line 46 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t109);
+    hero_array_decref(t105);
 #line 46 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t110 = h5_g;
+    t106 = h5_g;
 #line 46 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_incref(t54);
+    hero_array_incref(t50);
 #line 46 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h5_g = t54;
+    h5_g = t50;
 #line 46 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t110);
-    t55 = hero_array_new(&hero_desc_int, 1);
+    hero_array_decref(t106);
+    t51 = hero_array_new(&hero_desc_int, 1);
 #line 47 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t111 = h24_own24;
+    t107 = h24_own24;
 #line 47 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h24_own24 = t55;
+    h24_own24 = t51;
 #line 47 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t111);
+    hero_array_decref(t107);
 #line 47 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t112 = h6_row;
+    t108 = h6_row;
 #line 47 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_incref(t55);
+    hero_array_incref(t51);
 #line 47 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h6_row = t55;
+    h6_row = t51;
 #line 47 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t112);
-    t57 = INT64_C(7);
+    hero_array_decref(t108);
+    t53 = INT64_C(7);
 #line 48 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_push_owned(&h6_row, &t57);
-    t60 = h6_row;
+    hero_array_push_owned(&h6_row, &t53);
+    t56 = h6_row;
 #line 49 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_push_owned(&h5_g, &t60);
-    t62 = hero_array_new(&hero_desc_int, 1);
+    hero_array_push_owned(&h5_g, &t56);
+    t58 = hero_array_new(&hero_desc_int, 1);
 #line 50 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t113 = h25_own25;
+    t109 = h25_own25;
 #line 50 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h25_own25 = t62;
+    h25_own25 = t58;
 #line 50 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t113);
+    hero_array_decref(t109);
 #line 50 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t114 = h6_row;
+    t110 = h6_row;
 #line 50 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_incref(t62);
+    hero_array_incref(t58);
 #line 50 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h6_row = t62;
+    h6_row = t58;
 #line 50 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t114);
-    t63 = h5_g;
+    hero_array_decref(t110);
+    t59 = h5_g;
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_incref(t63);
+    hero_array_incref(t59);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t115 = h26_own26;
+    t111 = h26_own26;
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h26_own26 = t63;
+    h26_own26 = t59;
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t115);
+    hero_array_decref(t111);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t64 = INT64_C(0);
+    t60 = INT64_C(0);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? ((void)hero_array_at(t63, t64), hero_unreachable()) : (void)0), (void)(t63->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t63 + 1))[t64]);
+    t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t59 + 1))[t60]);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t66 = INT64_C(0);
+    t62 = INT64_C(0);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_array_unshare(&(h5_g));
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t67 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&(*((void)((h5_g == NULL || t66 < 0 || t66 >= h5_g->len) ? ((void)hero_array_at_mut(h5_g, t66), hero_unreachable()) : (void)0), (void)(h5_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h5_g + 1) + t66)));
+    t63 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&(*((void)((h5_g == NULL || t62 < 0 || t62 >= h5_g->len) ? ((void)hero_array_at_mut(h5_g, t62), hero_unreachable()) : (void)0), (void)(h5_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h5_g + 1) + t62)));
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t68 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_total(t65, t67);
+    t64 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_total(t61, t63);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_print_int(t68);
+    hero_print_int(t64);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_print_end();
-    t69 = h5_g;
+    t65 = h5_g;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_incref(t69);
+    hero_array_incref(t65);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t116 = h27_own27;
+    t112 = h27_own27;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h27_own27 = t69;
+    h27_own27 = t65;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_array_decref(t116);
+    hero_array_decref(t112);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t70 = INT64_C(0);
+    t66 = INT64_C(0);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t71 = ((void)((t69 == NULL || t70 < 0 || t70 >= t69->len) ? ((void)hero_array_at(t69, t70), hero_unreachable()) : (void)0), (void)(t69->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t69 + 1))[t70]);
+    t67 = ((void)((t65 == NULL || t66 < 0 || t66 >= t65->len) ? ((void)hero_array_at(t65, t66), hero_unreachable()) : (void)0), (void)(t65->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t65 + 1))[t66]);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t72 = INT64_C(4);
+    t68 = INT64_C(4);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t73 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_half(t72);
+    t69 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_half(t68);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t117 = h28_own28;
+    t113 = h28_own28;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h28_own28 = t73;
+    h28_own28 = t69;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_0opt_e201354_release(&t117);
+    h_0opt_e201354_release(&t113);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t118 = h7_f2;
+    t114 = h7_f2;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_0opt_e201354_retain(&t73);
+    h_0opt_e201354_retain(&t69);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h7_f2 = t73;
+    h7_f2 = t69;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    h_0opt_e201354_release(&t118);
+    h_0opt_e201354_release(&t114);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t74 = h7_f2;
+    t70 = h7_f2;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t75 = t74.tag;
+    t71 = t70.tag;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t76 = INT64_C(0);
+    t72 = INT64_C(0);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t77 = t75 == t76;
+    t73 = t71 == t72;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    if (t77) goto bb5; else goto bb6;
+    if (t73) goto bb5; else goto bb6;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
 bb4:
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t47 = h4_f1;
+    t43 = h4_f1;
 #line 45 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t48 = t47.as.err;
-#line 731 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
-    hero_panic_must(t48);
+    t44 = t43.as.err;
+#line 723 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
+    hero_panic_must(t44);
     hero_unreachable();
 bb5:
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t80 = h7_f2;
+    t76 = h7_f2;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t81 = t80.as.ok;
+    t77 = t76.as.ok;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t82 = INT64_C(0);
+    t78 = INT64_C(0);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_array_unshare(&(h5_g));
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t83 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&(*((void)((h5_g == NULL || t82 < 0 || t82 >= h5_g->len) ? ((void)hero_array_at_mut(h5_g, t82), hero_unreachable()) : (void)0), (void)(h5_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h5_g + 1) + t82)));
+    t79 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&(*((void)((h5_g == NULL || t78 < 0 || t78 >= h5_g->len) ? ((void)hero_array_at_mut(h5_g, t78), hero_unreachable()) : (void)0), (void)(h5_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h5_g + 1) + t78)));
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    if (__builtin_add_overflow(t81, t83, &t84)) hero_panic_overflow();
+    if (__builtin_add_overflow(t77, t79, &t80)) hero_panic_overflow();
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t85 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_total(t71, t84);
+    t81 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_total(t67, t80);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    hero_print_int(t85);
+    hero_print_int(t81);
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_print_end();
-#line 753 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
+#line 745 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
     h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h0_b));
     hero_array_release_at(&h1_held);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -762,15 +754,15 @@ bb5:
     h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h9_own9));
     hero_array_release_at(&h10_own10);
     hero_array_release_at(&h11_own11);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h12_own12));
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h13_own13));
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
     h_0opt_e201354_release(hero_slot_escape(&h14_own14));
     hero_array_release_at(&h15_own15);
     h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h16_own16));
     hero_str_release_at(&h17_own17);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h18_own18));
+    hero_str_release_at(&h18_own18);
     hero_str_release_at(&h19_own19);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h20_own20));
+    hero_str_release_at(&h20_own20);
     h_0opt_e201354_release(hero_slot_escape(&h21_own21));
     hero_str_release_at(&h22_own22);
     hero_array_release_at(&h23_own23);
@@ -782,11 +774,11 @@ bb5:
     return;
 bb6:
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t78 = h7_f2;
+    t74 = h7_f2;
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t79 = t78.as.err;
-#line 789 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
-    hero_panic_must(t79);
+    t75 = t74.as.err;
+#line 781 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
+    hero_panic_must(t75);
     hero_unreachable();
 }
 HERO_TU_LOCAL void h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_retain(const h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag *v) {

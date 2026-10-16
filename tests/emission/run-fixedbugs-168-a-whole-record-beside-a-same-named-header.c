@@ -166,7 +166,7 @@ void h_fixedbugs168awholerecordbesideasamenamedheader_main(void);
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 void h_fixedbugs168awholerecordbesideasamenamedheader_main(void) {
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    E h0_p; E h1_q; HERO_NODEBUG int32_t t1, t3, t9; HERO_NODEBUG E t2, t4, t5, t6, t8; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
+    E h0_p; E h1_q; HERO_NODEBUG int32_t t1, t3, t8; HERO_NODEBUG E t2, t4, t5, t6; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 bb0:
     t1 = INT64_C(1);
@@ -188,16 +188,14 @@ bb0:
     hero_print_bool(t7);
 #line 22 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     hero_print_end();
-    t8 = h0_p;
+    t8 = h0_p.x;
 #line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    t9 = t8.x;
-#line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    hero_print_int(t9);
+    hero_print_int(t8);
 #line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     return;
-#line 201 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 199 "fixedbugs168awholerecordbesideasamenamedheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_E_eq(const E *a, const E *b) {
     if (!(a->x == b->x)) return false;

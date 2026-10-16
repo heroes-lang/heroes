@@ -234,71 +234,47 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 #line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void) {
 #line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    struct line h0_l; struct line h1_f; HERO_NODEBUG struct line t1, t2, t5, t8, t11, t14, t15, t18; HERO_NODEBUG struct pt t3, t6, t9, t12, t16, t19; HERO_NODEBUG int32_t t4, t7, t10, t13, t17, t20, t21; HERO_ENTRY_STOP; goto bb0;
+    struct line h0_l; struct line h1_f; HERO_NODEBUG struct line t1, t6; HERO_NODEBUG int32_t t2, t3, t4, t5, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 bb0:
     t1 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT();
 #line 17 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     h0_l = t1;
-    t2 = h0_l;
+    t2 = h0_l.a.x;
 #line 18 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t3 = t2.a;
+    hero_print_int(t2);
 #line 18 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t4 = t3.x;
-#line 18 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
+    hero_print_end();
+    t3 = h0_l.a.y;
+#line 19 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
+    hero_print_int(t3);
+#line 19 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
+    hero_print_end();
+    t4 = h0_l.b.x;
+#line 20 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     hero_print_int(t4);
-#line 18 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_end();
-    t5 = h0_l;
-#line 19 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t6 = t5.a;
-#line 19 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t7 = t6.y;
-#line 19 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_int(t7);
-#line 19 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_end();
-    t8 = h0_l;
-#line 20 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t9 = t8.b;
-#line 20 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t10 = t9.x;
-#line 20 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_int(t10);
 #line 20 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     hero_print_end();
-    t11 = h0_l;
+    t5 = h0_l.b.y;
 #line 21 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t12 = t11.b;
-#line 21 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t13 = t12.y;
-#line 21 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_int(t13);
+    hero_print_int(t5);
 #line 21 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     hero_print_end();
-    t14 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT();
+    t6 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT();
 #line 22 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    h1_f = t14;
-    t15 = h1_f;
+    h1_f = t6;
+    t7 = h1_f.a.x;
 #line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t16 = t15.a;
+    t8 = h1_f.b.y;
 #line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t17 = t16.x;
+    if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow();
 #line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t18 = h1_f;
-#line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t19 = t18.b;
-#line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t20 = t19.y;
-#line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    if (__builtin_add_overflow(t17, t20, &t21)) hero_panic_overflow();
-#line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_int(t21);
+    hero_print_int(t9);
 #line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     return;
-#line 302 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 278 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

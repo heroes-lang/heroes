@@ -390,7 +390,7 @@ bb0:
 #line 53 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
 void h_fixedbugs261abuildertablegrowsinplace_main(void) {
 #line 53 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    h_fixedbugs261abuildertablegrowsinplace_Grid h0_g = {0}; HeroStr h1_x = {0}; HeroStr h2_y = {0}; HeroStr h3_z = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h6_own6 = {0}, *t3, *t5, *t15, *t18, *t22, *t25, *t28, *t30; HERO_NODEBUG h_fixedbugs261abuildertablegrowsinplace_Row h5_own5 = {0}, t4, t17, t24, t29; HERO_NODEBUG h_fixedbugs261abuildertablegrowsinplace_Grid h7_own7 = {0}, t6, t14, t21, t31, t32; HERO_NODEBUG int64_t t1, t2, t10, t16, t19, t20, t23, t26, t27; HERO_NODEBUG HeroStr t7, t8, t9, t11, t12, t13, t33, t34, t35; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs261abuildertablegrowsinplace_Grid h0_g = {0}; HeroStr h1_x = {0}; HeroStr h2_y = {0}; HeroStr h3_z = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h6_own6 = {0}, *t3, *t5, *t14, *t17, *t20, *t23, *t26, *t28; HERO_NODEBUG h_fixedbugs261abuildertablegrowsinplace_Row h5_own5 = {0}, t4, t16, t22, t27; HERO_NODEBUG h_fixedbugs261abuildertablegrowsinplace_Grid h7_own7 = {0}, t6, t29, t30; HERO_NODEBUG int64_t t1, t2, t10, t15, t18, t19, t21, t24, t25; HERO_NODEBUG HeroStr t7, t8, t9, t11, t12, t13, t31, t32, t33; HERO_ENTRY_STOP; goto bb0;
 #line 53 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
 bb0:
     t1 = INT64_C(0);
@@ -403,76 +403,76 @@ bb0:
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_array_push_owned(&t3, &t2);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t28 = h4_own4;
+    t26 = h4_own4;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h4_own4 = t3;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    hero_array_decref(t28);
+    hero_array_decref(t26);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_array_incref(t3);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t4 = (h_fixedbugs261abuildertablegrowsinplace_Row){.f_cells = t3};
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t29 = h5_own5;
+    t27 = h5_own5;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h5_own5 = t4;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    h_fixedbugs261abuildertablegrowsinplace_Row_release(&t29);
+    h_fixedbugs261abuildertablegrowsinplace_Row_release(&t27);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t5 = hero_array_new(&h_fixedbugs261abuildertablegrowsinplace_Row_desc, 1);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_array_push_owned(&t5, &t4);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t30 = h6_own6;
+    t28 = h6_own6;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h6_own6 = t5;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    hero_array_decref(t30);
+    hero_array_decref(t28);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_array_incref(t5);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t6 = (h_fixedbugs261abuildertablegrowsinplace_Grid){.f_rows = t5};
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t31 = h7_own7;
+    t29 = h7_own7;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h7_own7 = t6;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    h_fixedbugs261abuildertablegrowsinplace_Grid_release(&t31);
+    h_fixedbugs261abuildertablegrowsinplace_Grid_release(&t29);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t32 = h0_g;
+    t30 = h0_g;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h_fixedbugs261abuildertablegrowsinplace_Grid_retain(&t6);
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h0_g = t6;
 #line 54 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    h_fixedbugs261abuildertablegrowsinplace_Grid_release(&t32);
+    h_fixedbugs261abuildertablegrowsinplace_Grid_release(&t30);
     t7 = HERO_STR_LIT(hero_str_78);
 #line 55 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t33 = h1_x;
+    t31 = h1_x;
 #line 55 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_str_incref(t7);
 #line 55 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h1_x = t7;
 #line 55 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    hero_str_decref(t33);
+    hero_str_decref(t31);
     t8 = HERO_STR_LIT(hero_str_79);
 #line 56 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t34 = h2_y;
+    t32 = h2_y;
 #line 56 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_str_incref(t8);
 #line 56 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h2_y = t8;
 #line 56 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    hero_str_decref(t34);
+    hero_str_decref(t32);
     t9 = HERO_STR_LIT(hero_str_7a);
 #line 57 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t35 = h3_z;
+    t33 = h3_z;
 #line 57 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_str_incref(t9);
 #line 57 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h3_z = t9;
 #line 57 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    hero_str_decref(t35);
+    hero_str_decref(t33);
     t10 = INT64_C(4);
 #line 58 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     h_fixedbugs261abuildertablegrowsinplace_fill(&h0_g, &h1_x, &h2_y, &h3_z, t10);
@@ -482,33 +482,29 @@ bb0:
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     t13 = h3_z;
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t14 = h0_g;
+    t14 = h0_g.f_rows;
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t15 = t14.f_rows;
+    t15 = INT64_C(0);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t16 = INT64_C(0);
+    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs261abuildertablegrowsinplace_Row const *)(const void *)(t14 + 1))[t15]);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs261abuildertablegrowsinplace_Row const *)(const void *)(t15 + 1))[t16]);
+    t17 = t16.f_cells;
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t18 = t17.f_cells;
+    t18 = INT64_C(0);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t19 = INT64_C(0);
+    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]);
+    t20 = h0_g.f_rows;
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t21 = h0_g;
+    t21 = INT64_C(0);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t22 = t21.f_rows;
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs261abuildertablegrowsinplace_Row const *)(const void *)(t20 + 1))[t21]);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t23 = INT64_C(0);
+    t23 = t22.f_cells;
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs261abuildertablegrowsinplace_Row const *)(const void *)(t22 + 1))[t23]);
+    t24 = INT64_C(1);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t25 = t24.f_cells;
-#line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t26 = INT64_C(1);
-#line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t25 + 1))[t26]);
+    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_print_str(t11);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
@@ -516,12 +512,12 @@ bb0:
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_print_str(t13);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    hero_print_int(t20);
+    hero_print_int(t19);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
-    hero_print_int(t27);
+    hero_print_int(t25);
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_print_end();
-#line 525 "fixedbugs261abuildertablegrowsinplace.c"
+#line 521 "fixedbugs261abuildertablegrowsinplace.c"
     h_fixedbugs261abuildertablegrowsinplace_Grid_release(hero_slot_escape(&h0_g));
     hero_str_release_at(&h1_x);
     hero_str_release_at(&h2_y);

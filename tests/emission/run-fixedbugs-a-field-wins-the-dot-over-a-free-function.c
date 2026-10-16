@@ -143,7 +143,7 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_g(h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_h, int64_t h1_n) {
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    HERO_NODEBUG int64_t t1, t2, t3, t5, t6; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb0:
     t1 = h1_n;
@@ -152,14 +152,12 @@ bb0:
 #line 49 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 49 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    t4 = h0_h;
+    t4 = h0_h.f_tag;
 #line 49 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    t5 = t4.f_tag;
+    if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 49 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    if (__builtin_add_overflow(t3, t5, &t6)) hero_panic_overflow();
-#line 49 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    return t6;
-#line 163 "fixedbugsafieldwinsthedotoverafreefunction.c"
+    return t5;
+#line 161 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
@@ -252,7 +250,7 @@ bb3:
     hero_print_end();
 #line 59 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     goto bb1;
-#line 256 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 254 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b) {
     if (!(a->f_tag == b->f_tag)) return false;

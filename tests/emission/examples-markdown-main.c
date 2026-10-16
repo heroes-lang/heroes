@@ -297,24 +297,24 @@ void h_library_exit(int64_t h0_code);
 #line 20 "examples/markdown/main.hero"
 void h_main_main(void) {
 #line 20 "examples/markdown/main.hero"
-    HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, h5_own5 = {0}, t11, t12, t14, t26, t32, t33; HeroFailure h2_e = {0}; HeroStr h3_source = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t2, *t8, *t17, *t29, *t30, *t31; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t6, t10, t16, t19, t20, t21, t22, t24, t25, t27, t28, t35, t36, t37, t38; HERO_NODEBUG int64_t t3, t4, t7, t9, t13, t18; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t15, t23, t34; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, h5_own5 = {0}, t11, t12, t14, t25, t31, t32; HeroFailure h2_e = {0}; HeroStr h3_source = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t2, *t8, *t17, *t28, *t29, *t30; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t6, t10, t16, t19, t20, t21, t22, t23, t24, t26, t27, t34, t35, t36, t37; HERO_NODEBUG int64_t t3, t4, t7, t9, t13, t18; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t15, t33; HERO_ENTRY_STOP; goto bb0;
 #line 20 "examples/markdown/main.hero"
 bb0:
     t1 = h_library_args();
 #line 21 "examples/markdown/main.hero"
-    t30 = h4_own4;
+    t29 = h4_own4;
 #line 21 "examples/markdown/main.hero"
     h4_own4 = t1;
 #line 21 "examples/markdown/main.hero"
-    hero_array_decref(t30);
+    hero_array_decref(t29);
 #line 21 "examples/markdown/main.hero"
-    t31 = h0_given;
+    t30 = h0_given;
 #line 21 "examples/markdown/main.hero"
     hero_array_incref(t1);
 #line 21 "examples/markdown/main.hero"
     h0_given = t1;
 #line 21 "examples/markdown/main.hero"
-    hero_array_decref(t31);
+    hero_array_decref(t30);
 #line 23 "examples/markdown/main.hero"
     t2 = h0_given;
 #line 23 "examples/markdown/main.hero"
@@ -336,19 +336,19 @@ bb1:
 #line 27 "examples/markdown/main.hero"
     t11 = h_library_read_file(t10);
 #line 27 "examples/markdown/main.hero"
-    t32 = h5_own5;
+    t31 = h5_own5;
 #line 27 "examples/markdown/main.hero"
     h5_own5 = t11;
 #line 27 "examples/markdown/main.hero"
-    h_0opt_f87774a_release(&t32);
+    h_0opt_f87774a_release(&t31);
 #line 27 "examples/markdown/main.hero"
-    t33 = h1_s0;
+    t32 = h1_s0;
 #line 27 "examples/markdown/main.hero"
     h_0opt_f87774a_retain(&t11);
 #line 27 "examples/markdown/main.hero"
     h1_s0 = t11;
 #line 27 "examples/markdown/main.hero"
-    h_0opt_f87774a_release(&t33);
+    h_0opt_f87774a_release(&t32);
 #line 27 "examples/markdown/main.hero"
     t12 = h1_s0;
 #line 27 "examples/markdown/main.hero"
@@ -401,13 +401,13 @@ bb5:
 #line 28 "examples/markdown/main.hero"
     t15 = t14.as.err;
 #line 28 "examples/markdown/main.hero"
-    t34 = h2_e;
+    t33 = h2_e;
 #line 28 "examples/markdown/main.hero"
     hero_failure_retain(&t15);
 #line 28 "examples/markdown/main.hero"
     h2_e = t15;
 #line 28 "examples/markdown/main.hero"
-    hero_failure_release(&t34);
+    hero_failure_release(&t33);
 #line 28 "examples/markdown/main.hero"
     t16 = HERO_STR_LIT(hero_str_2d78c599);
 #line 28 "examples/markdown/main.hero"
@@ -419,59 +419,57 @@ bb5:
 #line 28 "examples/markdown/main.hero"
     t20 = hero_str_concat(t16, t19);
 #line 28 "examples/markdown/main.hero"
-    t35 = h6_own6;
+    t34 = h6_own6;
 #line 28 "examples/markdown/main.hero"
     h6_own6 = t20;
 #line 28 "examples/markdown/main.hero"
-    hero_str_decref(t35);
+    hero_str_decref(t34);
 #line 28 "examples/markdown/main.hero"
     t21 = HERO_STR_LIT(hero_str_1dce);
 #line 28 "examples/markdown/main.hero"
     t22 = hero_str_concat(t20, t21);
 #line 28 "examples/markdown/main.hero"
-    t36 = h7_own7;
+    t35 = h7_own7;
 #line 28 "examples/markdown/main.hero"
     h7_own7 = t22;
 #line 28 "examples/markdown/main.hero"
+    hero_str_decref(t35);
+#line 28 "examples/markdown/main.hero"
+    t23 = h2_e.code;
+#line 28 "examples/markdown/main.hero"
+    t24 = hero_str_concat(t22, t23);
+#line 28 "examples/markdown/main.hero"
+    t36 = h8_own8;
+#line 28 "examples/markdown/main.hero"
+    h8_own8 = t24;
+#line 28 "examples/markdown/main.hero"
     hero_str_decref(t36);
 #line 28 "examples/markdown/main.hero"
-    t23 = h2_e;
-#line 28 "examples/markdown/main.hero"
-    t24 = t23.code;
-#line 28 "examples/markdown/main.hero"
-    t25 = hero_str_concat(t22, t24);
-#line 28 "examples/markdown/main.hero"
-    t37 = h8_own8;
-#line 28 "examples/markdown/main.hero"
-    h8_own8 = t25;
-#line 28 "examples/markdown/main.hero"
-    hero_str_decref(t37);
-#line 28 "examples/markdown/main.hero"
-    h_main_stop(t25);
+    h_main_stop(t24);
 #line 28 "examples/markdown/main.hero"
     goto bb4;
 #line 28 "examples/markdown/main.hero"
 bb6:
-    t26 = h1_s0;
+    t25 = h1_s0;
 #line 29 "examples/markdown/main.hero"
-    t27 = t26.as.ok;
+    t26 = t25.as.ok;
 #line 29 "examples/markdown/main.hero"
-    t38 = h3_source;
+    t37 = h3_source;
 #line 29 "examples/markdown/main.hero"
-    hero_str_incref(t27);
+    hero_str_incref(t26);
 #line 29 "examples/markdown/main.hero"
-    h3_source = t27;
+    h3_source = t26;
 #line 29 "examples/markdown/main.hero"
-    hero_str_decref(t38);
+    hero_str_decref(t37);
 #line 29 "examples/markdown/main.hero"
-    t28 = h3_source;
+    t27 = h3_source;
 #line 29 "examples/markdown/main.hero"
-    t29 = h0_given;
+    t28 = h0_given;
 #line 29 "examples/markdown/main.hero"
-    h_main_show(t28, t29);
+    h_main_show(t27, t28);
 #line 29 "examples/markdown/main.hero"
     goto bb4;
-#line 475 "main.c"
+#line 473 "main.c"
 }
 
 #line 31 "examples/markdown/main.hero"
@@ -492,7 +490,7 @@ bb0:
     hero_unreachable();
 #line 33 "examples/markdown/main.hero"
     return;
-#line 496 "main.c"
+#line 494 "main.c"
 }
 
 #line 35 "examples/markdown/main.hero"
@@ -532,7 +530,7 @@ bb0:
     if (t6) goto bb2; else goto bb3;
 #line 38 "examples/markdown/main.hero"
 bb1:
-#line 536 "main.c"
+#line 534 "main.c"
     hero_array_release_at(&h2_document);
     hero_array_release_at(&h4_xs0);
     hero_str_release_at(&h6_line);
@@ -653,40 +651,40 @@ bb8:
 bb9:
 #line 39 "examples/markdown/main.hero"
     goto bb1;
-#line 657 "main.c"
+#line 655 "main.c"
 }
 
 #line 50 "examples/markdown/main.hero"
 HeroArrayHeader * h_main_headings(HeroArrayHeader * h0_document) {
 #line 50 "examples/markdown/main.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h8_own8 = {0}, *t1, *t2, *t5, *t8, *t39, *t40, *t41, *t42; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t13, t19, t20, t21, t24, t25, t36, t37, t38; h_blocks_Block h4_b = {0}; HERO_NODEBUG h_blocks_Block h5_s0 = {0}, t10, t11, t12, t14, t43, t44; h_blocks_Block_c_heading h6_h = {0}; HERO_NODEBUG h_0opt_fbbb698 h7_f0 = {0}, h9_own9 = {0}, t22, t23, t27, t29, t46, t47; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, t17, t31, t33, t34, t48, t49; HERO_NODEBUG bool t7, t26; HERO_NODEBUG h_blocks_Block_c_heading t15, t18, t32, t45; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG uint64_t t30; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h8_own8 = {0}, *t1, *t2, *t5, *t8, *t37, *t38, *t39, *t40; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t13, t18, t19, t20, t23, t24, t34, t35, t36; h_blocks_Block h4_b = {0}; HERO_NODEBUG h_blocks_Block h5_s0 = {0}, t10, t11, t12, t14, t41, t42; h_blocks_Block_c_heading h6_h = {0}; HERO_NODEBUG h_0opt_fbbb698 h7_f0 = {0}, h9_own9 = {0}, t21, t22, t26, t28, t44, t45; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, t17, t30, t31, t32, t46, t47; HERO_NODEBUG bool t7, t25; HERO_NODEBUG h_blocks_Block_c_heading t15, t43; HERO_NODEBUG HeroFailure t27; HERO_NODEBUG uint64_t t29; HERO_ENTRY_STOP; goto bb0;
 #line 50 "examples/markdown/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 51 "examples/markdown/main.hero"
-    t40 = h8_own8;
+    t38 = h8_own8;
 #line 51 "examples/markdown/main.hero"
     h8_own8 = t1;
 #line 51 "examples/markdown/main.hero"
-    hero_array_decref(t40);
+    hero_array_decref(t38);
 #line 51 "examples/markdown/main.hero"
-    t41 = h1_out;
+    t39 = h1_out;
 #line 51 "examples/markdown/main.hero"
     hero_array_incref(t1);
 #line 51 "examples/markdown/main.hero"
     h1_out = t1;
 #line 51 "examples/markdown/main.hero"
-    hero_array_decref(t41);
+    hero_array_decref(t39);
 #line 53 "examples/markdown/main.hero"
     t2 = h0_document;
 #line 53 "examples/markdown/main.hero"
-    t42 = h2_xs0;
+    t40 = h2_xs0;
 #line 53 "examples/markdown/main.hero"
     hero_array_incref(t2);
 #line 53 "examples/markdown/main.hero"
     h2_xs0 = t2;
 #line 53 "examples/markdown/main.hero"
-    hero_array_decref(t42);
+    hero_array_decref(t40);
 #line 53 "examples/markdown/main.hero"
     t3 = INT64_C(0);
 #line 53 "examples/markdown/main.hero"
@@ -714,22 +712,22 @@ bb2:
 #line 53 "examples/markdown/main.hero"
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_blocks_Block) ? hero_unreachable() : (void)0), ((h_blocks_Block const *)(const void *)(t8 + 1))[t9]);
 #line 53 "examples/markdown/main.hero"
-    t43 = h4_b;
+    t41 = h4_b;
 #line 53 "examples/markdown/main.hero"
     h_blocks_Block_retain(&t10);
 #line 53 "examples/markdown/main.hero"
     h4_b = t10;
 #line 53 "examples/markdown/main.hero"
-    h_blocks_Block_release(&t43);
+    h_blocks_Block_release(&t41);
     t11 = h4_b;
 #line 54 "examples/markdown/main.hero"
-    t44 = h5_s0;
+    t42 = h5_s0;
 #line 54 "examples/markdown/main.hero"
     h_blocks_Block_retain(&t11);
 #line 54 "examples/markdown/main.hero"
     h5_s0 = t11;
 #line 54 "examples/markdown/main.hero"
-    h_blocks_Block_release(&t44);
+    h_blocks_Block_release(&t42);
 #line 54 "examples/markdown/main.hero"
     t12 = h5_s0;
 #line 54 "examples/markdown/main.hero"
@@ -757,21 +755,21 @@ bb2:
 #line 54 "examples/markdown/main.hero"
 bb3:
 #line 53 "examples/markdown/main.hero"
-    t36 = h3_i0;
+    t34 = h3_i0;
 #line 53 "examples/markdown/main.hero"
-    t37 = INT64_C(1);
+    t35 = INT64_C(1);
 #line 53 "examples/markdown/main.hero"
-    if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow();
+    if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow();
 #line 53 "examples/markdown/main.hero"
-    h3_i0 = t38;
+    h3_i0 = t36;
 #line 53 "examples/markdown/main.hero"
     goto bb1;
 #line 53 "examples/markdown/main.hero"
 bb4:
 #line 60 "examples/markdown/main.hero"
-    t39 = h1_out;
-#line 774 "main.c"
-    hero_array_incref(t39);
+    t37 = h1_out;
+#line 772 "main.c"
+    hero_array_incref(t37);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
     h_blocks_Block_release(hero_slot_escape(&h4_b));
@@ -782,7 +780,7 @@ bb4:
     h_0opt_fbbb698_release(hero_slot_escape(&h9_own9));
     hero_str_release_at(&h10_own10);
     hero_str_release_at(&h11_own11);
-    return t39;
+    return t37;
 bb5:
     goto bb3;
 bb6:
@@ -791,56 +789,54 @@ bb6:
 #line 55 "examples/markdown/main.hero"
     t15 = t14.as.c_heading;
 #line 55 "examples/markdown/main.hero"
-    t45 = h6_h;
+    t43 = h6_h;
 #line 55 "examples/markdown/main.hero"
     h_blocks_Block_c_heading_retain(&t15);
 #line 55 "examples/markdown/main.hero"
     h6_h = t15;
 #line 55 "examples/markdown/main.hero"
-    h_blocks_Block_c_heading_release(&t45);
+    h_blocks_Block_c_heading_release(&t43);
     t17 = HERO_STR_LIT(hero_str_1080);
 #line 56 "examples/markdown/main.hero"
-    t18 = h6_h;
+    t18 = h6_h.f_level;
 #line 56 "examples/markdown/main.hero"
-    t19 = t18.f_level;
+    t19 = INT64_C(1);
 #line 56 "examples/markdown/main.hero"
-    t20 = INT64_C(1);
+    if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow();
 #line 56 "examples/markdown/main.hero"
-    if (__builtin_sub_overflow(t19, t20, &t21)) hero_panic_overflow();
+    if (t20 >= 0LL) {
 #line 56 "examples/markdown/main.hero"
-    if (t21 >= 0LL) {
-#line 56 "examples/markdown/main.hero"
-        t22 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t21};
+        t21 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t20};
 #line 56 "examples/markdown/main.hero"
     } else {
 #line 56 "examples/markdown/main.hero"
-        t22 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
+        t21 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
 #line 56 "examples/markdown/main.hero"
     }
 #line 56 "examples/markdown/main.hero"
-    t46 = h9_own9;
+    t44 = h9_own9;
 #line 56 "examples/markdown/main.hero"
-    h9_own9 = t22;
+    h9_own9 = t21;
 #line 56 "examples/markdown/main.hero"
-    h_0opt_fbbb698_release(&t46);
+    h_0opt_fbbb698_release(&t44);
 #line 56 "examples/markdown/main.hero"
-    t47 = h7_f0;
+    t45 = h7_f0;
 #line 56 "examples/markdown/main.hero"
-    h_0opt_fbbb698_retain(&t22);
+    h_0opt_fbbb698_retain(&t21);
 #line 56 "examples/markdown/main.hero"
-    h7_f0 = t22;
+    h7_f0 = t21;
 #line 56 "examples/markdown/main.hero"
-    h_0opt_fbbb698_release(&t47);
+    h_0opt_fbbb698_release(&t45);
 #line 56 "examples/markdown/main.hero"
-    t23 = h7_f0;
+    t22 = h7_f0;
 #line 56 "examples/markdown/main.hero"
-    t24 = t23.tag;
+    t23 = t22.tag;
 #line 56 "examples/markdown/main.hero"
-    t25 = INT64_C(0);
+    t24 = INT64_C(0);
 #line 56 "examples/markdown/main.hero"
-    t26 = t24 == t25;
+    t25 = t23 == t24;
 #line 56 "examples/markdown/main.hero"
-    if (t26) goto bb8; else goto bb9;
+    if (t25) goto bb8; else goto bb9;
 #line 56 "examples/markdown/main.hero"
 bb7:
 #line 56 "examples/markdown/main.hero"
@@ -848,40 +844,38 @@ bb7:
 #line 56 "examples/markdown/main.hero"
 bb8:
 #line 56 "examples/markdown/main.hero"
-    t29 = h7_f0;
+    t28 = h7_f0;
 #line 56 "examples/markdown/main.hero"
-    t30 = t29.as.ok;
+    t29 = t28.as.ok;
 #line 56 "examples/markdown/main.hero"
-    t31 = hero_str_repeat(t17, t30);
+    t30 = hero_str_repeat(t17, t29);
 #line 56 "examples/markdown/main.hero"
-    t48 = h10_own10;
+    t46 = h10_own10;
 #line 56 "examples/markdown/main.hero"
-    h10_own10 = t31;
+    h10_own10 = t30;
 #line 56 "examples/markdown/main.hero"
-    hero_str_decref(t48);
+    hero_str_decref(t46);
 #line 56 "examples/markdown/main.hero"
-    t32 = h6_h;
+    t31 = h6_h.f_text;
 #line 56 "examples/markdown/main.hero"
-    t33 = t32.f_text;
+    t32 = hero_str_concat(t30, t31);
 #line 56 "examples/markdown/main.hero"
-    t34 = hero_str_concat(t31, t33);
+    t47 = h11_own11;
 #line 56 "examples/markdown/main.hero"
-    t49 = h11_own11;
+    h11_own11 = t32;
 #line 56 "examples/markdown/main.hero"
-    h11_own11 = t34;
-#line 56 "examples/markdown/main.hero"
-    hero_str_decref(t49);
+    hero_str_decref(t47);
 #line 55 "examples/markdown/main.hero"
-    hero_array_push_owned(&h1_out, &t34);
+    hero_array_push_owned(&h1_out, &t32);
 #line 55 "examples/markdown/main.hero"
     goto bb5;
 #line 55 "examples/markdown/main.hero"
 bb9:
-    t27 = h7_f0;
+    t26 = h7_f0;
 #line 56 "examples/markdown/main.hero"
-    t28 = t27.as.err;
-#line 884 "main.c"
-    hero_panic_must(t28);
+    t27 = t26.as.err;
+#line 878 "main.c"
+    hero_panic_must(t27);
     hero_unreachable();
 }
 
@@ -900,7 +894,7 @@ bb0:
     if (t3) goto bb2; else goto bb3;
 #line 68 "examples/markdown/main.hero"
 bb1:
-#line 904 "main.c"
+#line 898 "main.c"
     hero_str_release_at(&h1_own1);
     return;
 bb2:
@@ -940,7 +934,7 @@ bb3:
     hero_print_end();
 #line 71 "examples/markdown/main.hero"
     goto bb1;
-#line 944 "main.c"
+#line 938 "main.c"
 }
 
 #line 34 "examples/markdown/blocks.hero"
@@ -1056,7 +1050,7 @@ bb6:
 bb7:
 #line 47 "examples/markdown/blocks.hero"
     t36 = h1_out;
-#line 1060 "main.c"
+#line 1054 "main.c"
     hero_array_incref(t36);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h4_own4);
@@ -1088,7 +1082,7 @@ bb8:
 bb9:
 #line 46 "examples/markdown/blocks.hero"
     goto bb7;
-#line 1092 "main.c"
+#line 1086 "main.c"
 }
 
 #line 49 "examples/markdown/blocks.hero"
@@ -1144,7 +1138,7 @@ bb4:
     t11 = h1_b0;
 #line 50 "examples/markdown/blocks.hero"
     return t11;
-#line 1148 "main.c"
+#line 1142 "main.c"
 }
 
 #line 53 "examples/markdown/blocks.hero"
@@ -1252,7 +1246,7 @@ bb8:
     h5_own5 = t32;
 #line 64 "examples/markdown/blocks.hero"
     hero_str_decref(t33);
-#line 1256 "main.c"
+#line 1250 "main.c"
     hero_str_incref(t32);
     hero_str_release_at(&h5_own5);
     return t32;
@@ -1279,7 +1273,7 @@ bb10:
     t25 = h4_b1;
 #line 61 "examples/markdown/blocks.hero"
     if (t25) goto bb7; else goto bb8;
-#line 1283 "main.c"
+#line 1277 "main.c"
 }
 
 #line 66 "examples/markdown/blocks.hero"
@@ -1339,7 +1333,7 @@ bb3:
     goto bb1;
 #line 68 "examples/markdown/blocks.hero"
 bb4:
-#line 1343 "main.c"
+#line 1337 "main.c"
     t14 = h2_ret0;
     hero_str_release_at(&h3_own3);
     return t14;
@@ -1409,7 +1403,7 @@ bb5:
     t11 = h3_b0;
 #line 75 "examples/markdown/blocks.hero"
     if (t11) goto bb2; else goto bb3;
-#line 1413 "main.c"
+#line 1407 "main.c"
 }
 
 #line 80 "examples/markdown/blocks.hero"
@@ -1500,7 +1494,7 @@ bb7:
     t17 = h2_b0;
 #line 83 "examples/markdown/blocks.hero"
     if (t17) goto bb2; else goto bb3;
-#line 1504 "main.c"
+#line 1498 "main.c"
 }
 
 #line 89 "examples/markdown/blocks.hero"
@@ -1619,7 +1613,7 @@ bb10:
     goto bb4;
 #line 95 "examples/markdown/blocks.hero"
 bb11:
-#line 1623 "main.c"
+#line 1617 "main.c"
     t27 = h4_ret0;
     return t27;
 }
@@ -1743,7 +1737,7 @@ bb10:
     goto bb6;
 #line 106 "examples/markdown/blocks.hero"
 bb11:
-#line 1747 "main.c"
+#line 1741 "main.c"
     t29 = h4_ret0;
     return t29;
 }
@@ -1862,7 +1856,7 @@ bb3:
 bb4:
 #line 115 "examples/markdown/blocks.hero"
     t34 = h2_v;
-#line 1866 "main.c"
+#line 1860 "main.c"
     hero_array_release_at(&h3_xs0);
     h_0opt_e201354_release(hero_slot_escape(&h6_f0));
     hero_array_release_at(&h7_own7);
@@ -1885,7 +1879,7 @@ bb6:
     t26 = h6_f0;
 #line 113 "examples/markdown/blocks.hero"
     t27 = t26.as.err;
-#line 1889 "main.c"
+#line 1883 "main.c"
     hero_panic_must(t27);
     hero_unreachable();
 }
@@ -1919,7 +1913,7 @@ bb0:
     h3_own3 = t6;
 #line 118 "examples/markdown/blocks.hero"
     hero_str_decref(t8);
-#line 1923 "main.c"
+#line 1917 "main.c"
     hero_str_incref(t6);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -2085,7 +2079,7 @@ bb16:
     goto bb8;
 #line 127 "examples/markdown/blocks.hero"
 bb17:
-#line 2089 "main.c"
+#line 2083 "main.c"
     t32 = h6_ret0;
     return t32;
 }
@@ -2180,7 +2174,7 @@ bb2:
 bb3:
 #line 180 "examples/markdown/blocks.hero"
     t166 = h2_out;
-#line 2184 "main.c"
+#line 2178 "main.c"
     hero_array_incref(t166);
     hero_array_release_at(&h1_lines);
     hero_array_release_at(&h2_out);
@@ -2796,7 +2790,7 @@ bb33:
     t149 = h11_b2;
 #line 174 "examples/markdown/blocks.hero"
     if (t149) goto bb30; else goto bb31;
-#line 2800 "main.c"
+#line 2794 "main.c"
 }
 
 #line 15 "examples/markdown/render.hero"
@@ -2924,7 +2918,7 @@ bb5:
     t12 = h2_f0;
 #line 17 "examples/markdown/render.hero"
     t13 = t12.as.err;
-#line 2928 "main.c"
+#line 2922 "main.c"
     hero_panic_must(t13);
     hero_unreachable();
 bb6:
@@ -2950,7 +2944,7 @@ bb7:
     t25 = h3_f1;
 #line 18 "examples/markdown/render.hero"
     t26 = t25.as.err;
-#line 2954 "main.c"
+#line 2948 "main.c"
     hero_panic_must(t26);
     hero_unreachable();
 bb8:
@@ -3061,7 +3055,7 @@ bb3:
 bb4:
 #line 26 "examples/markdown/render.hero"
     t19 = h2_out;
-#line 3065 "main.c"
+#line 3059 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -3074,18 +3068,18 @@ bb4:
 #line 29 "examples/markdown/render.hero"
 HeroArrayHeader * h_render_lines_of(h_blocks_Block h0_b) {
 #line 29 "examples/markdown/render.hero"
-    HERO_NODEBUG h_blocks_Block h1_s0 = {0}, t1, t2, t4, t14, t19, t26, t39, t46, t57; HERO_NODEBUG HeroArrayHeader *h2_r0 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h18_own18 = {0}, *h20_own20 = {0}, *h21_own21 = {0}, *h23_own23 = {0}, *t13, *t18, *t25, *t38, *t45, *t49, *t51, *t55, *t56, *t60, *t61, *t63, *t64, *t67, *t68, *t74, *t75, *t78, *t79, *t81, *t82, *t84, *t85; h_blocks_Block_c_heading h3_h = {0}; h_blocks_Block_c_paragraph h4_p = {0}; h_blocks_Block_c_bullet h5_x = {0}; h_blocks_Block_c_numbered h6_x = {0}; h_blocks_Block_c_quote h7_q = {0}; h_blocks_Block_c_code h8_c = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, h22_own22 = {0}, t7, t11, t12, t17, t21, t23, t24, t28, t31, t32, t33, t34, t36, t37, t41, t43, t44, t50, t52, t54, t59, t66, t70, t71, t72, t73, t77, t83; HERO_NODEBUG int64_t t3, t9, t30; HERO_NODEBUG h_blocks_Block_c_heading t5, t6, t8, t10, t58; HERO_NODEBUG h_blocks_Block_c_paragraph t15, t16, t62; HERO_NODEBUG h_blocks_Block_c_bullet t20, t22, t65; HERO_NODEBUG h_blocks_Block_c_numbered t27, t29, t35, t69; HERO_NODEBUG h_blocks_Block_c_quote t40, t42, t76; HERO_NODEBUG h_blocks_Block_c_code t47, t48, t80; HERO_NODEBUG uint64_t t53; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_blocks_Block h1_s0 = {0}, t1, t2, t4, t11, t15, t21, t32, t38, t48; HERO_NODEBUG HeroArrayHeader *h2_r0 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h18_own18 = {0}, *h20_own20 = {0}, *h21_own21 = {0}, *h23_own23 = {0}, *t10, *t14, *t20, *t31, *t37, *t40, *t42, *t46, *t47, *t51, *t52, *t54, *t55, *t58, *t59, *t65, *t66, *t69, *t70, *t72, *t73, *t75, *t76; h_blocks_Block_c_heading h3_h = {0}; h_blocks_Block_c_paragraph h4_p = {0}; h_blocks_Block_c_bullet h5_x = {0}; h_blocks_Block_c_numbered h6_x = {0}; h_blocks_Block_c_quote h7_q = {0}; h_blocks_Block_c_code h8_c = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, h22_own22 = {0}, t6, t8, t9, t13, t17, t18, t19, t23, t25, t26, t27, t28, t29, t30, t34, t35, t36, t41, t43, t45, t50, t57, t61, t62, t63, t64, t68, t74; HERO_NODEBUG int64_t t3, t7, t24; HERO_NODEBUG h_blocks_Block_c_heading t5, t49; HERO_NODEBUG h_blocks_Block_c_paragraph t12, t53; HERO_NODEBUG h_blocks_Block_c_bullet t16, t56; HERO_NODEBUG h_blocks_Block_c_numbered t22, t60; HERO_NODEBUG h_blocks_Block_c_quote t33, t67; HERO_NODEBUG h_blocks_Block_c_code t39, t71; HERO_NODEBUG uint64_t t44; HERO_ENTRY_STOP; goto bb0;
 #line 29 "examples/markdown/render.hero"
 bb0:
     t1 = h0_b;
 #line 30 "examples/markdown/render.hero"
-    t57 = h1_s0;
+    t48 = h1_s0;
 #line 30 "examples/markdown/render.hero"
     h_blocks_Block_retain(&t1);
 #line 30 "examples/markdown/render.hero"
     h1_s0 = t1;
 #line 30 "examples/markdown/render.hero"
-    h_blocks_Block_release(&t57);
+    h_blocks_Block_release(&t48);
 #line 30 "examples/markdown/render.hero"
     t2 = h1_s0;
 #line 30 "examples/markdown/render.hero"
@@ -3113,9 +3107,9 @@ bb0:
 #line 30 "examples/markdown/render.hero"
 bb1:
 #line 30 "examples/markdown/render.hero"
-    t56 = h2_r0;
-#line 3118 "main.c"
-    hero_array_incref(t56);
+    t47 = h2_r0;
+#line 3112 "main.c"
+    hero_array_incref(t47);
     h_blocks_Block_release(hero_slot_escape(&h1_s0));
     hero_array_release_at(&h2_r0);
     h_blocks_Block_c_heading_release(hero_slot_escape(&h3_h));
@@ -3139,347 +3133,329 @@ bb1:
     hero_array_release_at(&h21_own21);
     hero_str_release_at(&h22_own22);
     hero_array_release_at(&h23_own23);
-    return t56;
+    return t47;
 bb2:
 #line 31 "examples/markdown/render.hero"
     t4 = h1_s0;
 #line 31 "examples/markdown/render.hero"
     t5 = t4.as.c_heading;
 #line 31 "examples/markdown/render.hero"
-    t58 = h3_h;
+    t49 = h3_h;
 #line 31 "examples/markdown/render.hero"
     h_blocks_Block_c_heading_retain(&t5);
 #line 31 "examples/markdown/render.hero"
     h3_h = t5;
 #line 31 "examples/markdown/render.hero"
-    h_blocks_Block_c_heading_release(&t58);
+    h_blocks_Block_c_heading_release(&t49);
 #line 31 "examples/markdown/render.hero"
-    t6 = h3_h;
+    t6 = h3_h.f_text;
 #line 31 "examples/markdown/render.hero"
-    t7 = t6.f_text;
+    t7 = h3_h.f_level;
 #line 31 "examples/markdown/render.hero"
-    t8 = h3_h;
+    t8 = h3_h.f_text;
 #line 31 "examples/markdown/render.hero"
-    t9 = t8.f_level;
+    t9 = h_render_underline(t7, t8);
 #line 31 "examples/markdown/render.hero"
-    t10 = h3_h;
+    t50 = h9_own9;
 #line 31 "examples/markdown/render.hero"
-    t11 = t10.f_text;
+    h9_own9 = t9;
 #line 31 "examples/markdown/render.hero"
-    t12 = h_render_underline(t9, t11);
+    hero_str_decref(t50);
 #line 31 "examples/markdown/render.hero"
-    t59 = h9_own9;
+    t10 = hero_array_new(&hero_desc_str, 2);
 #line 31 "examples/markdown/render.hero"
-    h9_own9 = t12;
+    hero_array_push_owned(&t10, &t6);
 #line 31 "examples/markdown/render.hero"
-    hero_str_decref(t59);
+    hero_array_push_owned(&t10, &t9);
 #line 31 "examples/markdown/render.hero"
-    t13 = hero_array_new(&hero_desc_str, 2);
+    t51 = h10_own10;
 #line 31 "examples/markdown/render.hero"
-    hero_array_push_owned(&t13, &t7);
+    h10_own10 = t10;
 #line 31 "examples/markdown/render.hero"
-    hero_array_push_owned(&t13, &t12);
-#line 31 "examples/markdown/render.hero"
-    t60 = h10_own10;
-#line 31 "examples/markdown/render.hero"
-    h10_own10 = t13;
-#line 31 "examples/markdown/render.hero"
-    hero_array_decref(t60);
+    hero_array_decref(t51);
 #line 30 "examples/markdown/render.hero"
-    t61 = h2_r0;
+    t52 = h2_r0;
 #line 30 "examples/markdown/render.hero"
-    hero_array_incref(t13);
+    hero_array_incref(t10);
 #line 30 "examples/markdown/render.hero"
-    h2_r0 = t13;
+    h2_r0 = t10;
 #line 30 "examples/markdown/render.hero"
-    hero_array_decref(t61);
+    hero_array_decref(t52);
 #line 30 "examples/markdown/render.hero"
     goto bb1;
 #line 30 "examples/markdown/render.hero"
 bb3:
 #line 32 "examples/markdown/render.hero"
-    t14 = h1_s0;
+    t11 = h1_s0;
 #line 32 "examples/markdown/render.hero"
-    t15 = t14.as.c_paragraph;
+    t12 = t11.as.c_paragraph;
 #line 32 "examples/markdown/render.hero"
-    t62 = h4_p;
+    t53 = h4_p;
 #line 32 "examples/markdown/render.hero"
-    h_blocks_Block_c_paragraph_retain(&t15);
+    h_blocks_Block_c_paragraph_retain(&t12);
 #line 32 "examples/markdown/render.hero"
-    h4_p = t15;
+    h4_p = t12;
 #line 32 "examples/markdown/render.hero"
-    h_blocks_Block_c_paragraph_release(&t62);
+    h_blocks_Block_c_paragraph_release(&t53);
 #line 32 "examples/markdown/render.hero"
-    t16 = h4_p;
+    t13 = h4_p.f_text;
 #line 32 "examples/markdown/render.hero"
-    t17 = t16.f_text;
+    t14 = hero_array_new(&hero_desc_str, 1);
 #line 32 "examples/markdown/render.hero"
-    t18 = hero_array_new(&hero_desc_str, 1);
+    hero_array_push_owned(&t14, &t13);
 #line 32 "examples/markdown/render.hero"
-    hero_array_push_owned(&t18, &t17);
+    t54 = h11_own11;
 #line 32 "examples/markdown/render.hero"
-    t63 = h11_own11;
+    h11_own11 = t14;
 #line 32 "examples/markdown/render.hero"
-    h11_own11 = t18;
-#line 32 "examples/markdown/render.hero"
-    hero_array_decref(t63);
+    hero_array_decref(t54);
 #line 30 "examples/markdown/render.hero"
-    t64 = h2_r0;
+    t55 = h2_r0;
 #line 30 "examples/markdown/render.hero"
-    hero_array_incref(t18);
+    hero_array_incref(t14);
 #line 30 "examples/markdown/render.hero"
-    h2_r0 = t18;
+    h2_r0 = t14;
 #line 30 "examples/markdown/render.hero"
-    hero_array_decref(t64);
+    hero_array_decref(t55);
 #line 30 "examples/markdown/render.hero"
     goto bb1;
 #line 30 "examples/markdown/render.hero"
 bb4:
 #line 33 "examples/markdown/render.hero"
-    t19 = h1_s0;
+    t15 = h1_s0;
 #line 33 "examples/markdown/render.hero"
-    t20 = t19.as.c_bullet;
+    t16 = t15.as.c_bullet;
 #line 33 "examples/markdown/render.hero"
-    t65 = h5_x;
+    t56 = h5_x;
 #line 33 "examples/markdown/render.hero"
-    h_blocks_Block_c_bullet_retain(&t20);
+    h_blocks_Block_c_bullet_retain(&t16);
 #line 33 "examples/markdown/render.hero"
-    h5_x = t20;
+    h5_x = t16;
 #line 33 "examples/markdown/render.hero"
-    h_blocks_Block_c_bullet_release(&t65);
+    h_blocks_Block_c_bullet_release(&t56);
 #line 33 "examples/markdown/render.hero"
-    t21 = HERO_STR_LIT(hero_str_4522a1e);
+    t17 = HERO_STR_LIT(hero_str_4522a1e);
 #line 33 "examples/markdown/render.hero"
-    t22 = h5_x;
+    t18 = h5_x.f_text;
 #line 33 "examples/markdown/render.hero"
-    t23 = t22.f_text;
+    t19 = hero_str_concat(t17, t18);
 #line 33 "examples/markdown/render.hero"
-    t24 = hero_str_concat(t21, t23);
+    t57 = h12_own12;
 #line 33 "examples/markdown/render.hero"
-    t66 = h12_own12;
+    h12_own12 = t19;
 #line 33 "examples/markdown/render.hero"
-    h12_own12 = t24;
+    hero_str_decref(t57);
 #line 33 "examples/markdown/render.hero"
-    hero_str_decref(t66);
+    t20 = hero_array_new(&hero_desc_str, 1);
 #line 33 "examples/markdown/render.hero"
-    t25 = hero_array_new(&hero_desc_str, 1);
+    hero_array_push_owned(&t20, &t19);
 #line 33 "examples/markdown/render.hero"
-    hero_array_push_owned(&t25, &t24);
+    t58 = h13_own13;
 #line 33 "examples/markdown/render.hero"
-    t67 = h13_own13;
+    h13_own13 = t20;
 #line 33 "examples/markdown/render.hero"
-    h13_own13 = t25;
-#line 33 "examples/markdown/render.hero"
-    hero_array_decref(t67);
+    hero_array_decref(t58);
 #line 30 "examples/markdown/render.hero"
-    t68 = h2_r0;
+    t59 = h2_r0;
 #line 30 "examples/markdown/render.hero"
-    hero_array_incref(t25);
+    hero_array_incref(t20);
 #line 30 "examples/markdown/render.hero"
-    h2_r0 = t25;
+    h2_r0 = t20;
 #line 30 "examples/markdown/render.hero"
-    hero_array_decref(t68);
+    hero_array_decref(t59);
 #line 30 "examples/markdown/render.hero"
     goto bb1;
 #line 30 "examples/markdown/render.hero"
 bb5:
 #line 34 "examples/markdown/render.hero"
-    t26 = h1_s0;
+    t21 = h1_s0;
 #line 34 "examples/markdown/render.hero"
-    t27 = t26.as.c_numbered;
+    t22 = t21.as.c_numbered;
 #line 34 "examples/markdown/render.hero"
-    t69 = h6_x;
+    t60 = h6_x;
 #line 34 "examples/markdown/render.hero"
-    h_blocks_Block_c_numbered_retain(&t27);
+    h_blocks_Block_c_numbered_retain(&t22);
 #line 34 "examples/markdown/render.hero"
-    h6_x = t27;
+    h6_x = t22;
 #line 34 "examples/markdown/render.hero"
-    h_blocks_Block_c_numbered_release(&t69);
+    h_blocks_Block_c_numbered_release(&t60);
 #line 34 "examples/markdown/render.hero"
-    t28 = HERO_STR_LIT(hero_str_1080);
+    t23 = HERO_STR_LIT(hero_str_1080);
 #line 34 "examples/markdown/render.hero"
-    t29 = h6_x;
+    t24 = h6_x.f_n;
 #line 34 "examples/markdown/render.hero"
-    t30 = t29.f_n;
+    t25 = hero_int_to_str(t24);
 #line 34 "examples/markdown/render.hero"
-    t31 = hero_int_to_str(t30);
+    t61 = h14_own14;
 #line 34 "examples/markdown/render.hero"
-    t70 = h14_own14;
+    h14_own14 = t25;
 #line 34 "examples/markdown/render.hero"
-    h14_own14 = t31;
+    hero_str_decref(t61);
 #line 34 "examples/markdown/render.hero"
-    hero_str_decref(t70);
+    t26 = hero_str_concat(t23, t25);
 #line 34 "examples/markdown/render.hero"
-    t32 = hero_str_concat(t28, t31);
+    t62 = h15_own15;
 #line 34 "examples/markdown/render.hero"
-    t71 = h15_own15;
+    h15_own15 = t26;
 #line 34 "examples/markdown/render.hero"
-    h15_own15 = t32;
+    hero_str_decref(t62);
 #line 34 "examples/markdown/render.hero"
-    hero_str_decref(t71);
+    t27 = HERO_STR_LIT(hero_str_17aa);
 #line 34 "examples/markdown/render.hero"
-    t33 = HERO_STR_LIT(hero_str_17aa);
+    t28 = hero_str_concat(t26, t27);
 #line 34 "examples/markdown/render.hero"
-    t34 = hero_str_concat(t32, t33);
+    t63 = h16_own16;
 #line 34 "examples/markdown/render.hero"
-    t72 = h16_own16;
+    h16_own16 = t28;
 #line 34 "examples/markdown/render.hero"
-    h16_own16 = t34;
+    hero_str_decref(t63);
 #line 34 "examples/markdown/render.hero"
-    hero_str_decref(t72);
+    t29 = h6_x.f_text;
 #line 34 "examples/markdown/render.hero"
-    t35 = h6_x;
+    t30 = hero_str_concat(t28, t29);
 #line 34 "examples/markdown/render.hero"
-    t36 = t35.f_text;
+    t64 = h17_own17;
 #line 34 "examples/markdown/render.hero"
-    t37 = hero_str_concat(t34, t36);
+    h17_own17 = t30;
 #line 34 "examples/markdown/render.hero"
-    t73 = h17_own17;
+    hero_str_decref(t64);
 #line 34 "examples/markdown/render.hero"
-    h17_own17 = t37;
+    t31 = hero_array_new(&hero_desc_str, 1);
 #line 34 "examples/markdown/render.hero"
-    hero_str_decref(t73);
+    hero_array_push_owned(&t31, &t30);
 #line 34 "examples/markdown/render.hero"
-    t38 = hero_array_new(&hero_desc_str, 1);
+    t65 = h18_own18;
 #line 34 "examples/markdown/render.hero"
-    hero_array_push_owned(&t38, &t37);
+    h18_own18 = t31;
 #line 34 "examples/markdown/render.hero"
-    t74 = h18_own18;
-#line 34 "examples/markdown/render.hero"
-    h18_own18 = t38;
-#line 34 "examples/markdown/render.hero"
-    hero_array_decref(t74);
+    hero_array_decref(t65);
 #line 30 "examples/markdown/render.hero"
-    t75 = h2_r0;
+    t66 = h2_r0;
 #line 30 "examples/markdown/render.hero"
-    hero_array_incref(t38);
+    hero_array_incref(t31);
 #line 30 "examples/markdown/render.hero"
-    h2_r0 = t38;
+    h2_r0 = t31;
 #line 30 "examples/markdown/render.hero"
-    hero_array_decref(t75);
+    hero_array_decref(t66);
 #line 30 "examples/markdown/render.hero"
     goto bb1;
 #line 30 "examples/markdown/render.hero"
 bb6:
 #line 35 "examples/markdown/render.hero"
-    t39 = h1_s0;
+    t32 = h1_s0;
 #line 35 "examples/markdown/render.hero"
-    t40 = t39.as.c_quote;
+    t33 = t32.as.c_quote;
 #line 35 "examples/markdown/render.hero"
-    t76 = h7_q;
+    t67 = h7_q;
 #line 35 "examples/markdown/render.hero"
-    h_blocks_Block_c_quote_retain(&t40);
+    h_blocks_Block_c_quote_retain(&t33);
 #line 35 "examples/markdown/render.hero"
-    h7_q = t40;
+    h7_q = t33;
 #line 35 "examples/markdown/render.hero"
-    h_blocks_Block_c_quote_release(&t76);
+    h_blocks_Block_c_quote_release(&t67);
 #line 35 "examples/markdown/render.hero"
-    t41 = HERO_STR_LIT(hero_str_4525414);
+    t34 = HERO_STR_LIT(hero_str_4525414);
 #line 35 "examples/markdown/render.hero"
-    t42 = h7_q;
+    t35 = h7_q.f_text;
 #line 35 "examples/markdown/render.hero"
-    t43 = t42.f_text;
+    t36 = hero_str_concat(t34, t35);
 #line 35 "examples/markdown/render.hero"
-    t44 = hero_str_concat(t41, t43);
+    t68 = h19_own19;
 #line 35 "examples/markdown/render.hero"
-    t77 = h19_own19;
+    h19_own19 = t36;
 #line 35 "examples/markdown/render.hero"
-    h19_own19 = t44;
+    hero_str_decref(t68);
 #line 35 "examples/markdown/render.hero"
-    hero_str_decref(t77);
+    t37 = hero_array_new(&hero_desc_str, 1);
 #line 35 "examples/markdown/render.hero"
-    t45 = hero_array_new(&hero_desc_str, 1);
+    hero_array_push_owned(&t37, &t36);
 #line 35 "examples/markdown/render.hero"
-    hero_array_push_owned(&t45, &t44);
+    t69 = h20_own20;
 #line 35 "examples/markdown/render.hero"
-    t78 = h20_own20;
+    h20_own20 = t37;
 #line 35 "examples/markdown/render.hero"
-    h20_own20 = t45;
-#line 35 "examples/markdown/render.hero"
-    hero_array_decref(t78);
+    hero_array_decref(t69);
 #line 30 "examples/markdown/render.hero"
-    t79 = h2_r0;
+    t70 = h2_r0;
 #line 30 "examples/markdown/render.hero"
-    hero_array_incref(t45);
+    hero_array_incref(t37);
 #line 30 "examples/markdown/render.hero"
-    h2_r0 = t45;
+    h2_r0 = t37;
 #line 30 "examples/markdown/render.hero"
-    hero_array_decref(t79);
+    hero_array_decref(t70);
 #line 30 "examples/markdown/render.hero"
     goto bb1;
 #line 30 "examples/markdown/render.hero"
 bb7:
 #line 36 "examples/markdown/render.hero"
-    t46 = h1_s0;
+    t38 = h1_s0;
 #line 36 "examples/markdown/render.hero"
-    t47 = t46.as.c_code;
+    t39 = t38.as.c_code;
 #line 36 "examples/markdown/render.hero"
-    t80 = h8_c;
+    t71 = h8_c;
 #line 36 "examples/markdown/render.hero"
-    h_blocks_Block_c_code_retain(&t47);
+    h_blocks_Block_c_code_retain(&t39);
 #line 36 "examples/markdown/render.hero"
-    h8_c = t47;
+    h8_c = t39;
 #line 36 "examples/markdown/render.hero"
-    h_blocks_Block_c_code_release(&t80);
+    h_blocks_Block_c_code_release(&t71);
 #line 36 "examples/markdown/render.hero"
-    t48 = h8_c;
+    t40 = h8_c.f_body;
 #line 36 "examples/markdown/render.hero"
-    t49 = t48.f_body;
+    t41 = HERO_STR_LIT(hero_str_4522500);
 #line 36 "examples/markdown/render.hero"
-    t50 = HERO_STR_LIT(hero_str_4522500);
+    t42 = h_render_indent(t40, t41);
 #line 36 "examples/markdown/render.hero"
-    t51 = h_render_indent(t49, t50);
+    t72 = h21_own21;
 #line 36 "examples/markdown/render.hero"
-    t81 = h21_own21;
+    h21_own21 = t42;
 #line 36 "examples/markdown/render.hero"
-    h21_own21 = t51;
-#line 36 "examples/markdown/render.hero"
-    hero_array_decref(t81);
+    hero_array_decref(t72);
 #line 30 "examples/markdown/render.hero"
-    t82 = h2_r0;
+    t73 = h2_r0;
 #line 30 "examples/markdown/render.hero"
-    hero_array_incref(t51);
+    hero_array_incref(t42);
 #line 30 "examples/markdown/render.hero"
-    h2_r0 = t51;
+    h2_r0 = t42;
 #line 30 "examples/markdown/render.hero"
-    hero_array_decref(t82);
+    hero_array_decref(t73);
 #line 30 "examples/markdown/render.hero"
     goto bb1;
 #line 30 "examples/markdown/render.hero"
 bb8:
 #line 37 "examples/markdown/render.hero"
-    t52 = HERO_STR_LIT(hero_str_2d);
+    t43 = HERO_STR_LIT(hero_str_2d);
 #line 37 "examples/markdown/render.hero"
-    t53 = UINT64_C(60);
+    t44 = UINT64_C(60);
 #line 37 "examples/markdown/render.hero"
-    t54 = hero_str_repeat(t52, t53);
+    t45 = hero_str_repeat(t43, t44);
 #line 37 "examples/markdown/render.hero"
-    t83 = h22_own22;
+    t74 = h22_own22;
 #line 37 "examples/markdown/render.hero"
-    h22_own22 = t54;
+    h22_own22 = t45;
 #line 37 "examples/markdown/render.hero"
-    hero_str_decref(t83);
+    hero_str_decref(t74);
 #line 37 "examples/markdown/render.hero"
-    t55 = hero_array_new(&hero_desc_str, 1);
+    t46 = hero_array_new(&hero_desc_str, 1);
 #line 37 "examples/markdown/render.hero"
-    hero_array_push_owned(&t55, &t54);
+    hero_array_push_owned(&t46, &t45);
 #line 37 "examples/markdown/render.hero"
-    t84 = h23_own23;
+    t75 = h23_own23;
 #line 37 "examples/markdown/render.hero"
-    h23_own23 = t55;
+    h23_own23 = t46;
 #line 37 "examples/markdown/render.hero"
-    hero_array_decref(t84);
+    hero_array_decref(t75);
 #line 30 "examples/markdown/render.hero"
-    t85 = h2_r0;
+    t76 = h2_r0;
 #line 30 "examples/markdown/render.hero"
-    hero_array_incref(t55);
+    hero_array_incref(t46);
 #line 30 "examples/markdown/render.hero"
-    h2_r0 = t55;
+    h2_r0 = t46;
 #line 30 "examples/markdown/render.hero"
-    hero_array_decref(t85);
+    hero_array_decref(t76);
 #line 30 "examples/markdown/render.hero"
     goto bb1;
-#line 3483 "main.c"
+#line 3459 "main.c"
 }
 
 #line 41 "examples/markdown/render.hero"
@@ -3525,7 +3501,7 @@ bb0:
 bb1:
 #line 42 "examples/markdown/render.hero"
     t8 = h2_r0;
-#line 3529 "main.c"
+#line 3505 "main.c"
     h_blocks_Block_release(hero_slot_escape(&h1_s0));
     return t8;
 bb2:
@@ -3559,7 +3535,7 @@ bb5:
     h2_r0 = t7;
 #line 42 "examples/markdown/render.hero"
     goto bb1;
-#line 3563 "main.c"
+#line 3539 "main.c"
 }
 
 #line 51 "examples/markdown/render.hero"
@@ -3602,7 +3578,7 @@ bb2:
     t10 = h3_b0;
 #line 53 "examples/markdown/render.hero"
     return t10;
-#line 3606 "main.c"
+#line 3582 "main.c"
 }
 
 #line 60 "examples/markdown/render.hero"
@@ -3838,7 +3814,7 @@ bb15:
     goto bb13;
 #line 74 "examples/markdown/render.hero"
 bb16:
-#line 3842 "main.c"
+#line 3818 "main.c"
     t55 = h7_ret0;
     hero_str_incref(t55);
     hero_array_release_at(&h1_out);
@@ -3874,7 +3850,7 @@ bb0:
     h2_own2 = t3;
 #line 79 "examples/markdown/render.hero"
     hero_str_decref(t5);
-#line 3878 "main.c"
+#line 3854 "main.c"
     hero_str_incref(t3);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -3884,183 +3860,157 @@ bb0:
 #line 17 "examples/markdown/inline.hero"
 bool h_inline_at_end(h_inline_Scan h0_s) {
 #line 17 "examples/markdown/inline.hero"
-    HERO_NODEBUG h_inline_Scan t1, t3; HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroStr t4; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 17 "examples/markdown/inline.hero"
 bb0:
-    t1 = h0_s;
+    t1 = h0_s.f_pos;
 #line 18 "examples/markdown/inline.hero"
-    t2 = t1.f_pos;
+    t2 = h0_s.f_text;
 #line 18 "examples/markdown/inline.hero"
-    t3 = h0_s;
+    t3 = hero_str_len(t2);
 #line 18 "examples/markdown/inline.hero"
-    t4 = t3.f_text;
+    t4 = t1 >= t3;
 #line 18 "examples/markdown/inline.hero"
-    t5 = hero_str_len(t4);
-#line 18 "examples/markdown/inline.hero"
-    t6 = t2 >= t5;
-#line 18 "examples/markdown/inline.hero"
-    return t6;
-#line 3904 "main.c"
+    return t4;
+#line 3876 "main.c"
 }
 
 #line 20 "examples/markdown/inline.hero"
 uint8_t h_inline_here(h_inline_Scan h0_s) {
 #line 20 "examples/markdown/inline.hero"
-    HERO_NODEBUG h_inline_Scan t1, t3; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t4; HERO_NODEBUG uint8_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 20 "examples/markdown/inline.hero"
 bb0:
-    t1 = h0_s;
+    t1 = h0_s.f_text;
 #line 21 "examples/markdown/inline.hero"
-    t2 = t1.f_text;
+    t2 = h0_s.f_pos;
 #line 21 "examples/markdown/inline.hero"
-    t3 = h0_s;
+    t3 = ((void)((t1.ptr == NULL || t2 < 0 || t2 >= t1.len) ? ((void)hero_str_byte(t1, t2), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t1.ptr[t2]);
 #line 21 "examples/markdown/inline.hero"
-    t4 = t3.f_pos;
-#line 21 "examples/markdown/inline.hero"
-    t5 = ((void)((t2.ptr == NULL || t4 < 0 || t4 >= t2.len) ? ((void)hero_str_byte(t2, t4), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t4]);
-#line 21 "examples/markdown/inline.hero"
-    return t5;
-#line 3924 "main.c"
+    return t3;
+#line 3892 "main.c"
 }
 
 #line 23 "examples/markdown/inline.hero"
 void h_inline_advance(h_inline_Scan *ph0_s) {
 #line 23 "examples/markdown/inline.hero"
-    HERO_NODEBUG h_inline_Scan t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 23 "examples/markdown/inline.hero"
 bb0:
-    t1 = (*ph0_s);
+    t1 = (*ph0_s).f_pos;
 #line 24 "examples/markdown/inline.hero"
-    t2 = t1.f_pos;
+    t2 = INT64_C(1);
 #line 24 "examples/markdown/inline.hero"
-    t3 = INT64_C(1);
+    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 24 "examples/markdown/inline.hero"
-    if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow();
-#line 24 "examples/markdown/inline.hero"
-    (*ph0_s).f_pos = t4;
+    (*ph0_s).f_pos = t3;
 #line 24 "examples/markdown/inline.hero"
     return;
-#line 3944 "main.c"
+#line 3910 "main.c"
 }
 
 #line 26 "examples/markdown/inline.hero"
 void h_inline_skip(h_inline_Scan *ph0_s, int64_t h1_n) {
 #line 26 "examples/markdown/inline.hero"
-    HERO_NODEBUG h_inline_Scan t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 26 "examples/markdown/inline.hero"
 bb0:
-    t1 = (*ph0_s);
+    t1 = (*ph0_s).f_pos;
 #line 27 "examples/markdown/inline.hero"
-    t2 = t1.f_pos;
+    t2 = h1_n;
 #line 27 "examples/markdown/inline.hero"
-    t3 = h1_n;
+    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 27 "examples/markdown/inline.hero"
-    if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow();
-#line 27 "examples/markdown/inline.hero"
-    (*ph0_s).f_pos = t4;
+    (*ph0_s).f_pos = t3;
 #line 27 "examples/markdown/inline.hero"
     return;
-#line 3964 "main.c"
+#line 3928 "main.c"
 }
 
 #line 31 "examples/markdown/inline.hero"
 HeroStr h_inline_one(h_inline_Scan h0_s) {
 #line 31 "examples/markdown/inline.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t9, t10; HERO_NODEBUG h_inline_Scan t1, t3, t5; HERO_NODEBUG int64_t t4, t6, t7, t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t6, t7; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 31 "examples/markdown/inline.hero"
 bb0:
-    t1 = h0_s;
+    t1 = h0_s.f_text;
 #line 32 "examples/markdown/inline.hero"
-    t2 = t1.f_text;
+    t2 = h0_s.f_pos;
 #line 32 "examples/markdown/inline.hero"
-    t3 = h0_s;
+    t3 = h0_s.f_pos;
 #line 32 "examples/markdown/inline.hero"
-    t4 = t3.f_pos;
+    t4 = INT64_C(1);
 #line 32 "examples/markdown/inline.hero"
-    t5 = h0_s;
+    if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 32 "examples/markdown/inline.hero"
-    t6 = t5.f_pos;
+    t6 = hero_str_slice(t1, t2, t5);
 #line 32 "examples/markdown/inline.hero"
-    t7 = INT64_C(1);
+    t7 = h1_own1;
 #line 32 "examples/markdown/inline.hero"
-    if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow();
+    h1_own1 = t6;
 #line 32 "examples/markdown/inline.hero"
-    t9 = hero_str_slice(t2, t4, t8);
-#line 32 "examples/markdown/inline.hero"
-    t10 = h1_own1;
-#line 32 "examples/markdown/inline.hero"
-    h1_own1 = t9;
-#line 32 "examples/markdown/inline.hero"
-    hero_str_decref(t10);
-#line 3996 "main.c"
-    hero_str_incref(t9);
+    hero_str_decref(t7);
+#line 3954 "main.c"
+    hero_str_incref(t6);
     hero_str_release_at(&h1_own1);
-    return t9;
+    return t6;
 }
 
 #line 36 "examples/markdown/inline.hero"
 bool h_inline_opens_with(h_inline_Scan h0_s, HeroStr h1_word) {
 #line 36 "examples/markdown/inline.hero"
-    int64_t h2_stop; HERO_NODEBUG bool h3_ret0, t10, t11, t19, t20; HERO_NODEBUG HeroStr h4_own4 = {0}, t3, t8, t13, t17, t18, t21; HERO_NODEBUG h_inline_Scan t1, t7, t12, t14; HERO_NODEBUG int64_t t2, t4, t5, t6, t9, t15, t16; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_stop; HERO_NODEBUG bool h3_ret0, t8, t9, t15, t16; HERO_NODEBUG HeroStr h4_own4 = {0}, t2, t6, t10, t13, t14, t17; HERO_NODEBUG int64_t t1, t3, t4, t5, t7, t11, t12; HERO_ENTRY_STOP; goto bb0;
 #line 36 "examples/markdown/inline.hero"
 bb0:
-    t1 = h0_s;
+    t1 = h0_s.f_pos;
 #line 37 "examples/markdown/inline.hero"
-    t2 = t1.f_pos;
+    t2 = h1_word;
 #line 37 "examples/markdown/inline.hero"
-    t3 = h1_word;
+    t3 = hero_str_len(t2);
 #line 37 "examples/markdown/inline.hero"
-    t4 = hero_str_len(t3);
+    if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow();
 #line 37 "examples/markdown/inline.hero"
-    if (__builtin_add_overflow(t2, t4, &t5)) hero_panic_overflow();
-#line 37 "examples/markdown/inline.hero"
-    h2_stop = t5;
+    h2_stop = t4;
 #line 39 "examples/markdown/inline.hero"
-    t6 = h2_stop;
+    t5 = h2_stop;
 #line 39 "examples/markdown/inline.hero"
-    t7 = h0_s;
+    t6 = h0_s.f_text;
 #line 39 "examples/markdown/inline.hero"
-    t8 = t7.f_text;
+    t7 = hero_str_len(t6);
 #line 39 "examples/markdown/inline.hero"
-    t9 = hero_str_len(t8);
+    t8 = t5 > t7;
 #line 39 "examples/markdown/inline.hero"
-    t10 = t6 > t9;
-#line 39 "examples/markdown/inline.hero"
-    if (t10) goto bb2; else goto bb3;
+    if (t8) goto bb2; else goto bb3;
 #line 39 "examples/markdown/inline.hero"
 bb1:
 #line 41 "examples/markdown/inline.hero"
-    t12 = h0_s;
+    t10 = h0_s.f_text;
 #line 41 "examples/markdown/inline.hero"
-    t13 = t12.f_text;
+    t11 = h0_s.f_pos;
 #line 41 "examples/markdown/inline.hero"
-    t14 = h0_s;
+    t12 = h2_stop;
 #line 41 "examples/markdown/inline.hero"
-    t15 = t14.f_pos;
+    t13 = hero_str_slice(t10, t11, t12);
 #line 41 "examples/markdown/inline.hero"
-    t16 = h2_stop;
+    t17 = h4_own4;
 #line 41 "examples/markdown/inline.hero"
-    t17 = hero_str_slice(t13, t15, t16);
+    h4_own4 = t13;
 #line 41 "examples/markdown/inline.hero"
-    t21 = h4_own4;
+    hero_str_decref(t17);
 #line 41 "examples/markdown/inline.hero"
-    h4_own4 = t17;
+    t14 = h1_word;
 #line 41 "examples/markdown/inline.hero"
-    hero_str_decref(t21);
+    t15 = hero_str_eq(t13, t14);
 #line 41 "examples/markdown/inline.hero"
-    t18 = h1_word;
-#line 41 "examples/markdown/inline.hero"
-    t19 = hero_str_eq(t17, t18);
-#line 41 "examples/markdown/inline.hero"
-    h3_ret0 = t19;
+    h3_ret0 = t15;
 #line 41 "examples/markdown/inline.hero"
     goto bb4;
 #line 41 "examples/markdown/inline.hero"
 bb2:
 #line 40 "examples/markdown/inline.hero"
-    t11 = false;
+    t9 = false;
 #line 40 "examples/markdown/inline.hero"
-    h3_ret0 = t11;
+    h3_ret0 = t9;
 #line 40 "examples/markdown/inline.hero"
     goto bb4;
 #line 40 "examples/markdown/inline.hero"
@@ -4069,10 +4019,10 @@ bb3:
     goto bb1;
 #line 40 "examples/markdown/inline.hero"
 bb4:
-#line 4073 "main.c"
-    t20 = h3_ret0;
+#line 4023 "main.c"
+    t16 = h3_ret0;
     hero_str_release_at(&h4_own4);
-    return t20;
+    return t16;
 }
 
 #line 44 "examples/markdown/inline.hero"
@@ -4152,7 +4102,7 @@ bb3:
     h6_own6 = t34;
 #line 59 "examples/markdown/inline.hero"
     hero_str_decref(t39);
-#line 4156 "main.c"
+#line 4106 "main.c"
     hero_str_incref(t34);
     h_inline_Scan_release(hero_slot_escape(&h1_s));
     hero_array_release_at(&h2_out);
@@ -4250,120 +4200,118 @@ bb12:
     h_inline_advance(&h1_s);
 #line 57 "examples/markdown/inline.hero"
     goto bb4;
-#line 4254 "main.c"
+#line 4204 "main.c"
 }
 
 #line 67 "examples/markdown/inline.hero"
 HeroStr h_inline_link(h_inline_Scan *ph0_s) {
 #line 67 "examples/markdown/inline.hero"
-    int64_t h1_opened; HeroArrayHeader * h2_label = {0}; HERO_NODEBUG bool h3_b0, h4_b1, h6_b2, t5, t6, t10, t11, t17, t21, t25, t26, t31, t32, t36, t37, t43; HeroArrayHeader * h5_target = {0}; HERO_NODEBUG HeroStr h7_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, t14, t19, t28, t40, t45, t47, t48, t49, t50, t51, t53, t54, t55, t56, t57, t58, t61, t62, t65, t66, t67, t68, t69, t70, t71, t72, t73; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h11_own11 = {0}, *t3, *t29, *t46, *t52, *t59, *t60, *t63, *t64; HERO_NODEBUG h_inline_Scan t1, t4, t7, t13, t16, t20, t22, t30, t33, t39, t42; HERO_NODEBUG int64_t t2, t18, t27, t44; HERO_NODEBUG uint8_t t8, t9, t23, t24, t34, t35; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_opened; HeroArrayHeader * h2_label = {0}; HERO_NODEBUG bool h3_b0, h4_b1, h6_b2, t4, t5, t9, t10, t16, t20, t24, t25, t30, t31, t35, t36, t42; HeroArrayHeader * h5_target = {0}; HERO_NODEBUG HeroStr h7_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, t13, t18, t27, t39, t44, t46, t47, t48, t49, t50, t52, t53, t54, t55, t56, t57, t60, t61, t64, t65, t66, t67, t68, t69, t70, t71, t72; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h11_own11 = {0}, *t2, *t28, *t45, *t51, *t58, *t59, *t62, *t63; HERO_NODEBUG int64_t t1, t17, t26, t43; HERO_NODEBUG h_inline_Scan t3, t6, t12, t15, t19, t21, t29, t32, t38, t41; HERO_NODEBUG uint8_t t7, t8, t22, t23, t33, t34; HERO_ENTRY_STOP; goto bb0;
 #line 67 "examples/markdown/inline.hero"
 bb0:
-    t1 = (*ph0_s);
+    t1 = (*ph0_s).f_pos;
 #line 68 "examples/markdown/inline.hero"
-    t2 = t1.f_pos;
-#line 68 "examples/markdown/inline.hero"
-    h1_opened = t2;
+    h1_opened = t1;
     h_inline_advance(&(*ph0_s));
-    t3 = hero_array_new(&hero_desc_str, 1);
+    t2 = hero_array_new(&hero_desc_str, 1);
 #line 70 "examples/markdown/inline.hero"
-    t59 = h8_own8;
+    t58 = h8_own8;
 #line 70 "examples/markdown/inline.hero"
-    h8_own8 = t3;
+    h8_own8 = t2;
+#line 70 "examples/markdown/inline.hero"
+    hero_array_decref(t58);
+#line 70 "examples/markdown/inline.hero"
+    t59 = h2_label;
+#line 70 "examples/markdown/inline.hero"
+    hero_array_incref(t2);
+#line 70 "examples/markdown/inline.hero"
+    h2_label = t2;
 #line 70 "examples/markdown/inline.hero"
     hero_array_decref(t59);
-#line 70 "examples/markdown/inline.hero"
-    t60 = h2_label;
-#line 70 "examples/markdown/inline.hero"
-    hero_array_incref(t3);
-#line 70 "examples/markdown/inline.hero"
-    h2_label = t3;
-#line 70 "examples/markdown/inline.hero"
-    hero_array_decref(t60);
 #line 70 "examples/markdown/inline.hero"
     goto bb1;
 #line 70 "examples/markdown/inline.hero"
 bb1:
 #line 72 "examples/markdown/inline.hero"
-    t4 = (*ph0_s);
+    t3 = (*ph0_s);
 #line 72 "examples/markdown/inline.hero"
-    t5 = h_inline_at_end(t4);
+    t4 = h_inline_at_end(t3);
 #line 72 "examples/markdown/inline.hero"
-    t6 = !t5;
+    t5 = !t4;
 #line 72 "examples/markdown/inline.hero"
-    h3_b0 = t6;
+    h3_b0 = t5;
 #line 72 "examples/markdown/inline.hero"
-    if (t6) goto bb4; else goto bb5;
+    if (t5) goto bb4; else goto bb5;
 #line 72 "examples/markdown/inline.hero"
 bb2:
-    t13 = (*ph0_s);
+    t12 = (*ph0_s);
 #line 73 "examples/markdown/inline.hero"
-    t14 = h_inline_one(t13);
+    t13 = h_inline_one(t12);
 #line 73 "examples/markdown/inline.hero"
-    t61 = h9_own9;
+    t60 = h9_own9;
 #line 73 "examples/markdown/inline.hero"
-    h9_own9 = t14;
+    h9_own9 = t13;
 #line 73 "examples/markdown/inline.hero"
-    hero_str_decref(t61);
+    hero_str_decref(t60);
 #line 73 "examples/markdown/inline.hero"
-    hero_array_push_owned(&h2_label, &t14);
+    hero_array_push_owned(&h2_label, &t13);
     h_inline_advance(&(*ph0_s));
 #line 74 "examples/markdown/inline.hero"
     goto bb1;
 #line 74 "examples/markdown/inline.hero"
 bb3:
 #line 76 "examples/markdown/inline.hero"
-    t16 = (*ph0_s);
+    t15 = (*ph0_s);
 #line 76 "examples/markdown/inline.hero"
-    t17 = h_inline_at_end(t16);
+    t16 = h_inline_at_end(t15);
 #line 76 "examples/markdown/inline.hero"
-    if (t17) goto bb7; else goto bb8;
+    if (t16) goto bb7; else goto bb8;
 #line 76 "examples/markdown/inline.hero"
 bb4:
 #line 72 "examples/markdown/inline.hero"
-    t7 = (*ph0_s);
+    t6 = (*ph0_s);
 #line 72 "examples/markdown/inline.hero"
-    t8 = h_inline_here(t7);
+    t7 = h_inline_here(t6);
 #line 72 "examples/markdown/inline.hero"
-    t9 = UINT64_C(93);
+    t8 = UINT64_C(93);
 #line 72 "examples/markdown/inline.hero"
-    t10 = t8 != t9;
+    t9 = t7 != t8;
 #line 72 "examples/markdown/inline.hero"
-    h3_b0 = t10;
+    h3_b0 = t9;
 #line 72 "examples/markdown/inline.hero"
     goto bb5;
 #line 72 "examples/markdown/inline.hero"
 bb5:
 #line 72 "examples/markdown/inline.hero"
-    t11 = h3_b0;
+    t10 = h3_b0;
 #line 72 "examples/markdown/inline.hero"
-    if (t11) goto bb2; else goto bb3;
+    if (t10) goto bb2; else goto bb3;
 #line 72 "examples/markdown/inline.hero"
 bb6:
 #line 78 "examples/markdown/inline.hero"
     h_inline_advance(&(*ph0_s));
 #line 80 "examples/markdown/inline.hero"
-    t20 = (*ph0_s);
+    t19 = (*ph0_s);
 #line 80 "examples/markdown/inline.hero"
-    t21 = h_inline_at_end(t20);
+    t20 = h_inline_at_end(t19);
 #line 80 "examples/markdown/inline.hero"
-    h4_b1 = t21;
+    h4_b1 = t20;
 #line 80 "examples/markdown/inline.hero"
-    if (t21) goto bb11; else goto bb10;
+    if (t20) goto bb11; else goto bb10;
 #line 80 "examples/markdown/inline.hero"
 bb7:
 #line 77 "examples/markdown/inline.hero"
-    t18 = h1_opened;
+    t17 = h1_opened;
 #line 77 "examples/markdown/inline.hero"
-    t19 = h_inline_give_up(&(*ph0_s), t18);
+    t18 = h_inline_give_up(&(*ph0_s), t17);
 #line 77 "examples/markdown/inline.hero"
-    t62 = h10_own10;
+    t61 = h10_own10;
 #line 77 "examples/markdown/inline.hero"
-    h10_own10 = t19;
+    h10_own10 = t18;
 #line 77 "examples/markdown/inline.hero"
-    hero_str_decref(t62);
+    hero_str_decref(t61);
 #line 77 "examples/markdown/inline.hero"
-    h7_ret0 = t19;
+    h7_ret0 = t18;
 #line 77 "examples/markdown/inline.hero"
     goto bb22;
 #line 77 "examples/markdown/inline.hero"
@@ -4374,56 +4322,56 @@ bb8:
 bb9:
 #line 82 "examples/markdown/inline.hero"
     h_inline_advance(&(*ph0_s));
-    t29 = hero_array_new(&hero_desc_str, 1);
+    t28 = hero_array_new(&hero_desc_str, 1);
 #line 83 "examples/markdown/inline.hero"
-    t63 = h11_own11;
+    t62 = h11_own11;
 #line 83 "examples/markdown/inline.hero"
-    h11_own11 = t29;
+    h11_own11 = t28;
+#line 83 "examples/markdown/inline.hero"
+    hero_array_decref(t62);
+#line 83 "examples/markdown/inline.hero"
+    t63 = h5_target;
+#line 83 "examples/markdown/inline.hero"
+    hero_array_incref(t28);
+#line 83 "examples/markdown/inline.hero"
+    h5_target = t28;
 #line 83 "examples/markdown/inline.hero"
     hero_array_decref(t63);
-#line 83 "examples/markdown/inline.hero"
-    t64 = h5_target;
-#line 83 "examples/markdown/inline.hero"
-    hero_array_incref(t29);
-#line 83 "examples/markdown/inline.hero"
-    h5_target = t29;
-#line 83 "examples/markdown/inline.hero"
-    hero_array_decref(t64);
 #line 83 "examples/markdown/inline.hero"
     goto bb14;
 #line 83 "examples/markdown/inline.hero"
 bb10:
 #line 80 "examples/markdown/inline.hero"
-    t22 = (*ph0_s);
+    t21 = (*ph0_s);
 #line 80 "examples/markdown/inline.hero"
-    t23 = h_inline_here(t22);
+    t22 = h_inline_here(t21);
 #line 80 "examples/markdown/inline.hero"
-    t24 = UINT64_C(40);
+    t23 = UINT64_C(40);
 #line 80 "examples/markdown/inline.hero"
-    t25 = t23 != t24;
+    t24 = t22 != t23;
 #line 80 "examples/markdown/inline.hero"
-    h4_b1 = t25;
+    h4_b1 = t24;
 #line 80 "examples/markdown/inline.hero"
     goto bb11;
 #line 80 "examples/markdown/inline.hero"
 bb11:
 #line 80 "examples/markdown/inline.hero"
-    t26 = h4_b1;
+    t25 = h4_b1;
 #line 80 "examples/markdown/inline.hero"
-    if (t26) goto bb12; else goto bb13;
+    if (t25) goto bb12; else goto bb13;
 #line 80 "examples/markdown/inline.hero"
 bb12:
-    t27 = h1_opened;
+    t26 = h1_opened;
 #line 81 "examples/markdown/inline.hero"
-    t28 = h_inline_give_up(&(*ph0_s), t27);
+    t27 = h_inline_give_up(&(*ph0_s), t26);
 #line 81 "examples/markdown/inline.hero"
-    t65 = h12_own12;
+    t64 = h12_own12;
 #line 81 "examples/markdown/inline.hero"
-    h12_own12 = t28;
+    h12_own12 = t27;
 #line 81 "examples/markdown/inline.hero"
-    hero_str_decref(t65);
+    hero_str_decref(t64);
 #line 81 "examples/markdown/inline.hero"
-    h7_ret0 = t28;
+    h7_ret0 = t27;
 #line 81 "examples/markdown/inline.hero"
     goto bb22;
 #line 81 "examples/markdown/inline.hero"
@@ -4433,140 +4381,140 @@ bb13:
 #line 81 "examples/markdown/inline.hero"
 bb14:
 #line 85 "examples/markdown/inline.hero"
-    t30 = (*ph0_s);
+    t29 = (*ph0_s);
 #line 85 "examples/markdown/inline.hero"
-    t31 = h_inline_at_end(t30);
+    t30 = h_inline_at_end(t29);
 #line 85 "examples/markdown/inline.hero"
-    t32 = !t31;
+    t31 = !t30;
 #line 85 "examples/markdown/inline.hero"
-    h6_b2 = t32;
+    h6_b2 = t31;
 #line 85 "examples/markdown/inline.hero"
-    if (t32) goto bb17; else goto bb18;
+    if (t31) goto bb17; else goto bb18;
 #line 85 "examples/markdown/inline.hero"
 bb15:
-    t39 = (*ph0_s);
+    t38 = (*ph0_s);
 #line 86 "examples/markdown/inline.hero"
-    t40 = h_inline_one(t39);
+    t39 = h_inline_one(t38);
 #line 86 "examples/markdown/inline.hero"
-    t66 = h13_own13;
+    t65 = h13_own13;
 #line 86 "examples/markdown/inline.hero"
-    h13_own13 = t40;
+    h13_own13 = t39;
 #line 86 "examples/markdown/inline.hero"
-    hero_str_decref(t66);
+    hero_str_decref(t65);
 #line 86 "examples/markdown/inline.hero"
-    hero_array_push_owned(&h5_target, &t40);
+    hero_array_push_owned(&h5_target, &t39);
     h_inline_advance(&(*ph0_s));
 #line 87 "examples/markdown/inline.hero"
     goto bb14;
 #line 87 "examples/markdown/inline.hero"
 bb16:
 #line 89 "examples/markdown/inline.hero"
-    t42 = (*ph0_s);
+    t41 = (*ph0_s);
 #line 89 "examples/markdown/inline.hero"
-    t43 = h_inline_at_end(t42);
+    t42 = h_inline_at_end(t41);
 #line 89 "examples/markdown/inline.hero"
-    if (t43) goto bb20; else goto bb21;
+    if (t42) goto bb20; else goto bb21;
 #line 89 "examples/markdown/inline.hero"
 bb17:
 #line 85 "examples/markdown/inline.hero"
-    t33 = (*ph0_s);
+    t32 = (*ph0_s);
 #line 85 "examples/markdown/inline.hero"
-    t34 = h_inline_here(t33);
+    t33 = h_inline_here(t32);
 #line 85 "examples/markdown/inline.hero"
-    t35 = UINT64_C(41);
+    t34 = UINT64_C(41);
 #line 85 "examples/markdown/inline.hero"
-    t36 = t34 != t35;
+    t35 = t33 != t34;
 #line 85 "examples/markdown/inline.hero"
-    h6_b2 = t36;
+    h6_b2 = t35;
 #line 85 "examples/markdown/inline.hero"
     goto bb18;
 #line 85 "examples/markdown/inline.hero"
 bb18:
 #line 85 "examples/markdown/inline.hero"
-    t37 = h6_b2;
+    t36 = h6_b2;
 #line 85 "examples/markdown/inline.hero"
-    if (t37) goto bb15; else goto bb16;
+    if (t36) goto bb15; else goto bb16;
 #line 85 "examples/markdown/inline.hero"
 bb19:
 #line 91 "examples/markdown/inline.hero"
     h_inline_advance(&(*ph0_s));
-    t46 = h2_label;
+    t45 = h2_label;
 #line 92 "examples/markdown/inline.hero"
-    t47 = HERO_STR_LIT(hero_str_0);
+    t46 = HERO_STR_LIT(hero_str_0);
 #line 92 "examples/markdown/inline.hero"
-    t48 = hero_str_join(t46, t47);
+    t47 = hero_str_join(t45, t46);
 #line 92 "examples/markdown/inline.hero"
-    t67 = h14_own14;
+    t66 = h14_own14;
 #line 92 "examples/markdown/inline.hero"
-    h14_own14 = t48;
+    h14_own14 = t47;
+#line 92 "examples/markdown/inline.hero"
+    hero_str_decref(t66);
+#line 92 "examples/markdown/inline.hero"
+    t48 = h_inline_plain(t47);
+#line 92 "examples/markdown/inline.hero"
+    t67 = h15_own15;
+#line 92 "examples/markdown/inline.hero"
+    h15_own15 = t48;
 #line 92 "examples/markdown/inline.hero"
     hero_str_decref(t67);
 #line 92 "examples/markdown/inline.hero"
-    t49 = h_inline_plain(t48);
+    t49 = HERO_STR_LIT(hero_str_1088);
 #line 92 "examples/markdown/inline.hero"
-    t68 = h15_own15;
+    t50 = hero_str_concat(t48, t49);
 #line 92 "examples/markdown/inline.hero"
-    h15_own15 = t49;
+    t68 = h16_own16;
+#line 92 "examples/markdown/inline.hero"
+    h16_own16 = t50;
 #line 92 "examples/markdown/inline.hero"
     hero_str_decref(t68);
 #line 92 "examples/markdown/inline.hero"
-    t50 = HERO_STR_LIT(hero_str_1088);
+    t51 = h5_target;
 #line 92 "examples/markdown/inline.hero"
-    t51 = hero_str_concat(t49, t50);
+    t52 = HERO_STR_LIT(hero_str_0);
 #line 92 "examples/markdown/inline.hero"
-    t69 = h16_own16;
+    t53 = hero_str_join(t51, t52);
 #line 92 "examples/markdown/inline.hero"
-    h16_own16 = t51;
+    t69 = h17_own17;
+#line 92 "examples/markdown/inline.hero"
+    h17_own17 = t53;
 #line 92 "examples/markdown/inline.hero"
     hero_str_decref(t69);
 #line 92 "examples/markdown/inline.hero"
-    t52 = h5_target;
+    t54 = hero_str_concat(t50, t53);
 #line 92 "examples/markdown/inline.hero"
-    t53 = HERO_STR_LIT(hero_str_0);
+    t70 = h18_own18;
 #line 92 "examples/markdown/inline.hero"
-    t54 = hero_str_join(t52, t53);
-#line 92 "examples/markdown/inline.hero"
-    t70 = h17_own17;
-#line 92 "examples/markdown/inline.hero"
-    h17_own17 = t54;
+    h18_own18 = t54;
 #line 92 "examples/markdown/inline.hero"
     hero_str_decref(t70);
 #line 92 "examples/markdown/inline.hero"
-    t55 = hero_str_concat(t51, t54);
+    t55 = HERO_STR_LIT(hero_str_29);
 #line 92 "examples/markdown/inline.hero"
-    t71 = h18_own18;
+    t56 = hero_str_concat(t54, t55);
 #line 92 "examples/markdown/inline.hero"
-    h18_own18 = t55;
+    t71 = h19_own19;
+#line 92 "examples/markdown/inline.hero"
+    h19_own19 = t56;
 #line 92 "examples/markdown/inline.hero"
     hero_str_decref(t71);
 #line 92 "examples/markdown/inline.hero"
-    t56 = HERO_STR_LIT(hero_str_29);
-#line 92 "examples/markdown/inline.hero"
-    t57 = hero_str_concat(t55, t56);
-#line 92 "examples/markdown/inline.hero"
-    t72 = h19_own19;
-#line 92 "examples/markdown/inline.hero"
-    h19_own19 = t57;
-#line 92 "examples/markdown/inline.hero"
-    hero_str_decref(t72);
-#line 92 "examples/markdown/inline.hero"
-    h7_ret0 = t57;
+    h7_ret0 = t56;
 #line 92 "examples/markdown/inline.hero"
     goto bb22;
 #line 92 "examples/markdown/inline.hero"
 bb20:
 #line 90 "examples/markdown/inline.hero"
-    t44 = h1_opened;
+    t43 = h1_opened;
 #line 90 "examples/markdown/inline.hero"
-    t45 = h_inline_give_up(&(*ph0_s), t44);
+    t44 = h_inline_give_up(&(*ph0_s), t43);
 #line 90 "examples/markdown/inline.hero"
-    t73 = h20_own20;
+    t72 = h20_own20;
 #line 90 "examples/markdown/inline.hero"
-    h20_own20 = t45;
+    h20_own20 = t44;
 #line 90 "examples/markdown/inline.hero"
-    hero_str_decref(t73);
+    hero_str_decref(t72);
 #line 90 "examples/markdown/inline.hero"
-    h7_ret0 = t45;
+    h7_ret0 = t44;
 #line 90 "examples/markdown/inline.hero"
     goto bb22;
 #line 90 "examples/markdown/inline.hero"
@@ -4575,9 +4523,9 @@ bb21:
     goto bb19;
 #line 90 "examples/markdown/inline.hero"
 bb22:
-#line 4579 "main.c"
-    t58 = h7_ret0;
-    hero_str_incref(t58);
+#line 4527 "main.c"
+    t57 = h7_ret0;
+    hero_str_incref(t57);
     hero_array_release_at(&h2_label);
     hero_array_release_at(&h5_target);
     hero_array_release_at(&h8_own8);
@@ -4593,7 +4541,7 @@ bb22:
     hero_str_release_at(&h18_own18);
     hero_str_release_at(&h19_own19);
     hero_str_release_at(&h20_own20);
-    return t58;
+    return t57;
 }
 
 #line 94 "examples/markdown/inline.hero"
@@ -4610,7 +4558,7 @@ bb0:
 #line 95 "examples/markdown/inline.hero"
     (*ph0_s).f_pos = t3;
     t4 = HERO_STR_LIT(hero_str_5b);
-#line 4614 "main.c"
+#line 4562 "main.c"
     hero_str_incref(t4);
     return t4;
 }
@@ -4667,7 +4615,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 4671 "main.c"
+#line 4619 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -4678,28 +4626,28 @@ bb3:
 int64_t h_library_HERO_OS_OK(void) {
 #line 109 "<heroes library>"
     return HERO_OS_OK;
-#line 4682 "main.c"
+#line 4630 "main.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
 #line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
-#line 4689 "main.c"
+#line 4637 "main.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
 #line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
-#line 4696 "main.c"
+#line 4644 "main.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
 #line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
-#line 4703 "main.c"
+#line 4651 "main.c"
 }
 
 #line 167 "<heroes library>"
@@ -4933,7 +4881,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 4937 "main.c"
+#line 4885 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -5012,7 +4960,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 5016 "main.c"
+#line 4964 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -5031,7 +4979,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 5035 "main.c"
+#line 4983 "main.c"
 }
 HERO_TU_LOCAL void h_blocks_Block_c_heading_retain(const h_blocks_Block_c_heading *v) {
     hero_str_incref(v->f_text);

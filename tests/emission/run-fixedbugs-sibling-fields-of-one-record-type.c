@@ -185,7 +185,7 @@ void h_fixedbugssiblingfieldsofonerecordtype_main(void);
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 void h_fixedbugssiblingfieldsofonerecordtype_main(void) {
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    Pair h0_p; HERO_NODEBUG int64_t t1, t6, t10; HERO_NODEBUG Pair t2, t3, t7, t11, t14; HERO_NODEBUG Inner t4, t8, t12, t15; HERO_NODEBUG Slot *t5, *t9, *t13, *t16; HERO_NODEBUG HeroStr t17; HERO_ENTRY_STOP; goto bb0;
+    Pair h0_p; HERO_NODEBUG int64_t t1, t4, t6; HERO_NODEBUG Pair t2; HERO_NODEBUG Slot *t3, *t5, *t7, *t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 bb0:
     t1 = INT64_C(7);
@@ -197,74 +197,58 @@ bb0:
     hero_handle_acquired(t2.b.s, "slot_close");
 #line 43 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     h0_p = t2;
-    t3 = h0_p;
+    t3 = h0_p.a.s;
 #line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    t4 = t3.a;
+    hero_handle_alive(t3, "the argument `s` of `slot_value`");
 #line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    t5 = t4.s;
+    t4 = slot_value(t3);
 #line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    hero_print_int(t4);
+#line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    hero_print_end();
+    t5 = h0_p.b.s;
+#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_handle_alive(t5, "the argument `s` of `slot_value`");
-#line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t6 = slot_value(t5);
-#line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_print_int(t6);
-#line 44 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_print_end();
-    t7 = h0_p;
-#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    t8 = t7.b;
-#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    t9 = t8.s;
-#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_alive(t9, "the argument `s` of `slot_value`");
-#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    t10 = slot_value(t9);
-#line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_print_int(t10);
 #line 45 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_print_end();
-    t11 = h0_p;
-#line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    t12 = t11.a;
-#line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    t13 = t12.s;
+    t7 = h0_p.a.s;
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     {
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_alive(t13, "the argument `s` of `slot_close`");
+    hero_handle_alive(t7, "the argument `s` of `slot_close`");
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t13, "slot_close", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t7, "slot_close", NULL);
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    (void)slot_close(t13);
+    (void)slot_close(t7);
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    if (hero_handle_ended(t13, hero_life_0_0) && h0_p.a.s == t13) h0_p.a.s = hero_handle_dead();
+    if (hero_handle_ended(t7, hero_life_0_0) && h0_p.a.s == t7) h0_p.a.s = hero_handle_dead();
 #line 46 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     }
-    t14 = h0_p;
-#line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    t15 = t14.b;
-#line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    t16 = t15.s;
+    t8 = h0_p.b.s;
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     {
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_handle_alive(t16, "the argument `s` of `slot_close`");
+    hero_handle_alive(t8, "the argument `s` of `slot_close`");
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t16, "slot_close", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "slot_close", NULL);
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    (void)slot_close(t16);
+    (void)slot_close(t8);
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    if (hero_handle_ended(t16, hero_life_0_0) && h0_p.b.s == t16) h0_p.b.s = hero_handle_dead();
+    if (hero_handle_ended(t8, hero_life_0_0) && h0_p.b.s == t8) h0_p.b.s = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     }
-    t17 = HERO_STR_LIT(hero_str_455ecde8);
+    t9 = HERO_STR_LIT(hero_str_455ecde8);
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    hero_print_str(t17);
+    hero_print_str(t9);
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     hero_print_end();
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     return;
-#line 268 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 252 "fixedbugssiblingfieldsofonerecordtype.c"
 }
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

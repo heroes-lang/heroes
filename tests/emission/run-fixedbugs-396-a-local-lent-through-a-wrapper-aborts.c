@@ -195,7 +195,7 @@ void h_fixedbugs396alocallentthroughawrapperaborts_main(void) {
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 #define h1_m (*hero_lend_h1_m)
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p; uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m"); HERO_NODEBUG uint8_t t1, t4, t10; HERO_NODEBUG int64_t t2, t7, t13; HERO_NODEBUG h_fixedbugs396alocallentthroughawrapperaborts_Pair t3, t6, t12; HERO_NODEBUG HeroStr t5, t9, t11; HERO_NODEBUG int32_t t8; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p; uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m"); HERO_NODEBUG uint8_t t1, t4, t9; HERO_NODEBUG int64_t t2, t6, t11; HERO_NODEBUG h_fixedbugs396alocallentthroughawrapperaborts_Pair t3; HERO_NODEBUG HeroStr t5, t8, t10; HERO_NODEBUG int32_t t7; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 bb0:
     t1 = UINT64_C(0);
@@ -210,44 +210,40 @@ bb0:
     h1_m = t4;
     t5 = HERO_STR_LIT(hero_str_750951cb);
 #line 25 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t6 = h0_p;
-#line 25 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t7 = t6.f_b;
+    t6 = h0_p.f_b;
 #line 25 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     hero_print_str(t5);
 #line 25 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_int(t7);
+    hero_print_int(t6);
 #line 25 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     hero_print_end();
-    t8 = h_fixedbugs396alocallentthroughawrapperaborts_outer(&h1_m);
+    t7 = h_fixedbugs396alocallentthroughawrapperaborts_outer(&h1_m);
 #line 26 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_int(t8);
+    hero_print_int(t7);
 #line 26 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     hero_print_end();
-    t9 = HERO_STR_LIT(hero_str_5687795c);
+    t8 = HERO_STR_LIT(hero_str_5687795c);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t10 = h1_m;
+    t9 = h1_m;
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t11 = HERO_STR_LIT(hero_str_20);
+    t10 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t12 = h0_p;
+    t11 = h0_p.f_b;
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t13 = t12.f_b;
+    hero_print_str(t8);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_str(t9);
+    hero_print_int(t9);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_int(t10);
+    hero_print_str(t10);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_str(t11);
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_int(t13);
+    hero_print_int(t11);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     hero_lend_local_give(hero_lend_h1_m);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return;
-#line 251 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 247 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 #undef h1_m
 HERO_TU_LOCAL bool h_fixedbugs396alocallentthroughawrapperaborts_Pair_eq(const h_fixedbugs396alocallentthroughawrapperaborts_Pair *a, const h_fixedbugs396alocallentthroughawrapperaborts_Pair *b) {

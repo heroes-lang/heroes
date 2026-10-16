@@ -293,7 +293,7 @@ void h_ffithepaddingcreadsiszero_work(void) {
 #line 48 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 #define h4_handed (*hero_lend_h4_handed)
 #line 48 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    struct cd h0_a; h_ffithepaddingcreadsiszero_Holder h1_held; HeroArrayHeader * h2_pairs = {0}; struct cd *const hero_lend_h3_made = (struct cd *)hero_lend_local(sizeof(struct cd), "ffithepaddingcreadsiszero.work", "made"); struct cd *const hero_lend_h4_handed = (struct cd *)hero_lend_local(sizeof(struct cd), "ffithepaddingcreadsiszero.work", "handed"); HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t20, *t40, *t41; HERO_NODEBUG int8_t t1, t7, t10; HERO_NODEBUG double t2, t6, t11; HERO_NODEBUG struct cd t3, t4, t5, t12, t16, t17, t18, t19, t21, t22, t23, t25, t26; HERO_NODEBUG struct tp t8, t9; HERO_NODEBUG struct ocd t13, t14; HERO_NODEBUG h_ffithepaddingcreadsiszero_Holder t15, t24; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t28, t30, t32, t34, t36, t38; HERO_NODEBUG int32_t t29, t31, t33, t35, t37, t39; HERO_ENTRY_STOP; goto bb0;
+    struct cd h0_a; h_ffithepaddingcreadsiszero_Holder h1_held; HeroArrayHeader * h2_pairs = {0}; struct cd *const hero_lend_h3_made = (struct cd *)hero_lend_local(sizeof(struct cd), "ffithepaddingcreadsiszero.work", "made"); struct cd *const hero_lend_h4_handed = (struct cd *)hero_lend_local(sizeof(struct cd), "ffithepaddingcreadsiszero.work", "handed"); HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t20, *t39, *t40; HERO_NODEBUG int8_t t1, t7, t10; HERO_NODEBUG double t2, t6, t11; HERO_NODEBUG struct cd t3, t4, t5, t12, t16, t17, t18, t19, t21, t22, t23, t24, t25; HERO_NODEBUG struct tp t8, t9; HERO_NODEBUG struct ocd t13, t14; HERO_NODEBUG h_ffithepaddingcreadsiszero_Holder t15; HERO_NODEBUG bool t26; HERO_NODEBUG HeroStr t27, t29, t31, t33, t35, t37; HERO_NODEBUG int32_t t28, t30, t32, t34, t36, t38; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
 bb0:
     t1 = INT64_C(1);
@@ -360,19 +360,19 @@ bb0:
 #line 55 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     hero_array_push_owned(&t20, &t19);
 #line 55 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t40 = h5_own5;
+    t39 = h5_own5;
 #line 55 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     h5_own5 = t20;
 #line 55 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_array_decref(t40);
+    hero_array_decref(t39);
 #line 55 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t41 = h2_pairs;
+    t40 = h2_pairs;
 #line 55 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     hero_array_incref(t20);
 #line 55 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     h2_pairs = t20;
 #line 55 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_array_decref(t41);
+    hero_array_decref(t40);
     t21 = cd_made();
 #line 56 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     h3_made = t21;
@@ -382,26 +382,24 @@ bb0:
 #line 57 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     h4_handed = t23;
 #line 59 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t24 = h1_held;
+    t24 = h1_held.f_h;
 #line 59 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t25 = t24.f_h;
+    t25 = h0_a;
 #line 59 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t26 = h0_a;
-#line 59 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t27 = h_ffithepaddingcreadsiszero_Cd_eq(&t25, &t26);
-    t28 = HERO_STR_LIT(hero_str_20);
+    t26 = h_ffithepaddingcreadsiszero_Cd_eq(&t24, &t25);
+    t27 = HERO_STR_LIT(hero_str_20);
     hero_pad_fill(&h1_held.f_h, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0);
 #line 61 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t29 = cd_pad(&h1_held.f_h);
-    t30 = HERO_STR_LIT(hero_str_20);
+    t28 = cd_pad(&h1_held.f_h);
+    t29 = HERO_STR_LIT(hero_str_20);
     hero_pad_fill(&h1_held.f_t, sizeof(struct tp), 1, hero_pad_g_1, hero_pad_n_1);
 #line 63 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t31 = tp_pad(&h1_held.f_t);
-    t32 = HERO_STR_LIT(hero_str_20);
+    t30 = tp_pad(&h1_held.f_t);
+    t31 = HERO_STR_LIT(hero_str_20);
     hero_pad_fill(&h1_held.f_o, sizeof(struct ocd), 1, hero_pad_g_2, hero_pad_n_2);
 #line 65 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t33 = ocd_pad(&h1_held.f_o);
-    t34 = HERO_STR_LIT(hero_str_20);
+    t32 = ocd_pad(&h1_held.f_o);
+    t33 = HERO_STR_LIT(hero_str_20);
     {
 #line 67 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(const struct cd *)0), struct cd) && sizeof(struct cd) == sizeof(struct cd)), "heroes-ffi-buffer cds_pad p 1293 1294 Cd const struct cd *");
@@ -412,48 +410,48 @@ bb0:
 #line 67 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     hero_pad_fill(hero_lend_b21_0, sizeof(struct cd), (size_t)hero_lend_e21_0, hero_pad_g_0, hero_pad_n_0);
 #line 67 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t35 = cds_pad((void *)hero_lend_b21_0);
+    t34 = cds_pad((void *)hero_lend_b21_0);
 #line 67 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     h2_pairs = hero_lend_give(h2_pairs, hero_lend_b21_0, hero_lend_e21_0);
 #line 67 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     }
-    t36 = HERO_STR_LIT(hero_str_20);
-    t37 = h_ffithepaddingcreadsiszero_handed_on(&h4_handed);
-    t38 = HERO_STR_LIT(hero_str_20);
+    t35 = HERO_STR_LIT(hero_str_20);
+    t36 = h_ffithepaddingcreadsiszero_handed_on(&h4_handed);
+    t37 = HERO_STR_LIT(hero_str_20);
     hero_lend_local_name(hero_lend_h3_made, "cd_pad", "p");
 #line 71 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     hero_pad_fill(&h3_made, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0);
 #line 71 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    t39 = cd_pad(&h3_made);
+    t38 = cd_pad(&h3_made);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_bool(t27);
+    hero_print_bool(t26);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_str(t28);
+    hero_print_str(t27);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_int(t29);
+    hero_print_int(t28);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_str(t30);
+    hero_print_str(t29);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_int(t31);
+    hero_print_int(t30);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_str(t32);
+    hero_print_str(t31);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_int(t33);
+    hero_print_int(t32);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_str(t34);
+    hero_print_str(t33);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_int(t35);
+    hero_print_int(t34);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_str(t36);
+    hero_print_str(t35);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_int(t37);
+    hero_print_int(t36);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_str(t38);
+    hero_print_str(t37);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
-    hero_print_int(t39);
+    hero_print_int(t38);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     hero_print_end();
-#line 457 "ffithepaddingcreadsiszero.c"
+#line 455 "ffithepaddingcreadsiszero.c"
     hero_array_release_at(&h2_pairs);
     hero_array_release_at(&h5_own5);
     hero_lend_local_give(hero_lend_h4_handed);
@@ -473,7 +471,7 @@ bb0:
     h_ffithepaddingcreadsiszero_work();
 #line 76 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     return;
-#line 477 "ffithepaddingcreadsiszero.c"
+#line 475 "ffithepaddingcreadsiszero.c"
 }
 HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Cd_eq(const struct cd *a, const struct cd *b) {
     if (!(a->c == b->c)) return false;

@@ -199,7 +199,7 @@ function unused(name: str, kind: resolved.LocalKind, writes: i64, span: token.Sp
 # about it.
 function not_mutable(name: str, kind: resolved.LocalKind, span: token.Span) -> diag.Diagnostic
     message = match kind
-        .param => "`" + name + "` is a parameter without `@`, so it cannot be written — mark it `@" + name + "` in the signature and at every call site (copy in, copy out)"
+        .param => "`" + name + "` is a parameter without `@`, so it cannot be written — mark it `@" + name + "` in the signature and at every call site, and the function works on the caller's place itself"
         .loop_var => "`" + name + "` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop"
         .payload => "`" + name + "` is bound by the pattern, and a pattern binding is not a cell — bind what you need with `@` outside the `match`"
         .bind | .cell => "`" + name + "` was bound with `=`, which binds once, forever — a cell is declared `" + name + " @= <value>`"

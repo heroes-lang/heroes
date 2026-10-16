@@ -274,18 +274,18 @@ bb4:
 #line 84 "examples/binarytrees/main.hero"
 int64_t h_main_checked(h_main_Tree h0_t) {
 #line 84 "examples/binarytrees/main.hero"
-    HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t11, t17, t21; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t10, t12, t13, t16, t18, t19, t20; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_Tree_c_branch t6, t8, t14, t22; HERO_NODEBUG HeroArrayHeader *t9, *t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t10, t15, t19; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t9, t11, t12, t14, t16, t17, t18; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_Tree_c_branch t6, t20; HERO_NODEBUG HeroArrayHeader *t8, *t13; HERO_ENTRY_STOP; goto bb0;
 #line 84 "examples/binarytrees/main.hero"
 bb0:
     t1 = h0_t;
 #line 85 "examples/binarytrees/main.hero"
-    t21 = h1_s0;
+    t19 = h1_s0;
 #line 85 "examples/binarytrees/main.hero"
     h_main_Tree_retain(&t1);
 #line 85 "examples/binarytrees/main.hero"
     h1_s0 = t1;
 #line 85 "examples/binarytrees/main.hero"
-    h_main_Tree_release(&t21);
+    h_main_Tree_release(&t19);
 #line 85 "examples/binarytrees/main.hero"
     t2 = h1_s0;
 #line 85 "examples/binarytrees/main.hero"
@@ -303,11 +303,11 @@ bb0:
 #line 85 "examples/binarytrees/main.hero"
 bb1:
 #line 85 "examples/binarytrees/main.hero"
-    t20 = h2_r0;
+    t18 = h2_r0;
 #line 308 "main.c"
     h_main_Tree_release(hero_slot_escape(&h1_s0));
     h_main_Tree_c_branch_release(hero_slot_escape(&h3_b));
-    return t20;
+    return t18;
 bb2:
 #line 86 "examples/binarytrees/main.hero"
     t4 = INT64_C(1);
@@ -322,61 +322,57 @@ bb3:
 #line 87 "examples/binarytrees/main.hero"
     t6 = t5.as.c_branch;
 #line 87 "examples/binarytrees/main.hero"
-    t22 = h3_b;
+    t20 = h3_b;
 #line 87 "examples/binarytrees/main.hero"
     h_main_Tree_c_branch_retain(&t6);
 #line 87 "examples/binarytrees/main.hero"
     h3_b = t6;
 #line 87 "examples/binarytrees/main.hero"
-    h_main_Tree_c_branch_release(&t22);
+    h_main_Tree_c_branch_release(&t20);
 #line 87 "examples/binarytrees/main.hero"
     t7 = INT64_C(1);
 #line 87 "examples/binarytrees/main.hero"
-    t8 = h3_b;
+    t8 = h3_b.f_halves;
 #line 87 "examples/binarytrees/main.hero"
-    t9 = t8.f_halves;
+    t9 = INT64_C(0);
 #line 87 "examples/binarytrees/main.hero"
-    t10 = INT64_C(0);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t8 + 1))[t9]);
 #line 87 "examples/binarytrees/main.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t9 + 1))[t10]);
+    t11 = h_main_checked(t10);
 #line 87 "examples/binarytrees/main.hero"
-    t12 = h_main_checked(t11);
+    if (__builtin_add_overflow(t7, t11, &t12)) hero_panic_overflow();
 #line 87 "examples/binarytrees/main.hero"
-    if (__builtin_add_overflow(t7, t12, &t13)) hero_panic_overflow();
+    t13 = h3_b.f_halves;
 #line 87 "examples/binarytrees/main.hero"
-    t14 = h3_b;
+    t14 = INT64_C(1);
 #line 87 "examples/binarytrees/main.hero"
-    t15 = t14.f_halves;
+    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t13 + 1))[t14]);
 #line 87 "examples/binarytrees/main.hero"
-    t16 = INT64_C(1);
+    t16 = h_main_checked(t15);
 #line 87 "examples/binarytrees/main.hero"
-    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t15 + 1))[t16]);
-#line 87 "examples/binarytrees/main.hero"
-    t18 = h_main_checked(t17);
-#line 87 "examples/binarytrees/main.hero"
-    if (__builtin_add_overflow(t13, t18, &t19)) hero_panic_overflow();
+    if (__builtin_add_overflow(t12, t16, &t17)) hero_panic_overflow();
 #line 85 "examples/binarytrees/main.hero"
-    h2_r0 = t19;
+    h2_r0 = t17;
 #line 85 "examples/binarytrees/main.hero"
     goto bb1;
-#line 363 "main.c"
+#line 359 "main.c"
 }
 
 #line 91 "examples/binarytrees/main.hero"
 int64_t h_main_depth_of(h_main_Tree h0_t) {
 #line 91 "examples/binarytrees/main.hero"
-    HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t11, t15; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t10, t12, t13, t14; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_Tree_c_branch t6, t8, t16; HERO_NODEBUG HeroArrayHeader *t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t10, t14; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t9, t11, t12, t13; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_Tree_c_branch t6, t15; HERO_NODEBUG HeroArrayHeader *t8; HERO_ENTRY_STOP; goto bb0;
 #line 91 "examples/binarytrees/main.hero"
 bb0:
     t1 = h0_t;
 #line 92 "examples/binarytrees/main.hero"
-    t15 = h1_s0;
+    t14 = h1_s0;
 #line 92 "examples/binarytrees/main.hero"
     h_main_Tree_retain(&t1);
 #line 92 "examples/binarytrees/main.hero"
     h1_s0 = t1;
 #line 92 "examples/binarytrees/main.hero"
-    h_main_Tree_release(&t15);
+    h_main_Tree_release(&t14);
 #line 92 "examples/binarytrees/main.hero"
     t2 = h1_s0;
 #line 92 "examples/binarytrees/main.hero"
@@ -394,11 +390,11 @@ bb0:
 #line 92 "examples/binarytrees/main.hero"
 bb1:
 #line 92 "examples/binarytrees/main.hero"
-    t14 = h2_r0;
-#line 399 "main.c"
+    t13 = h2_r0;
+#line 395 "main.c"
     h_main_Tree_release(hero_slot_escape(&h1_s0));
     h_main_Tree_c_branch_release(hero_slot_escape(&h3_b));
-    return t14;
+    return t13;
 bb2:
 #line 93 "examples/binarytrees/main.hero"
     t4 = INT64_C(0);
@@ -413,49 +409,47 @@ bb3:
 #line 94 "examples/binarytrees/main.hero"
     t6 = t5.as.c_branch;
 #line 94 "examples/binarytrees/main.hero"
-    t16 = h3_b;
+    t15 = h3_b;
 #line 94 "examples/binarytrees/main.hero"
     h_main_Tree_c_branch_retain(&t6);
 #line 94 "examples/binarytrees/main.hero"
     h3_b = t6;
 #line 94 "examples/binarytrees/main.hero"
-    h_main_Tree_c_branch_release(&t16);
+    h_main_Tree_c_branch_release(&t15);
 #line 94 "examples/binarytrees/main.hero"
     t7 = INT64_C(1);
 #line 94 "examples/binarytrees/main.hero"
-    t8 = h3_b;
+    t8 = h3_b.f_halves;
 #line 94 "examples/binarytrees/main.hero"
-    t9 = t8.f_halves;
+    t9 = INT64_C(0);
 #line 94 "examples/binarytrees/main.hero"
-    t10 = INT64_C(0);
+    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t8 + 1))[t9]);
 #line 94 "examples/binarytrees/main.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t9 + 1))[t10]);
+    t11 = h_main_depth_of(t10);
 #line 94 "examples/binarytrees/main.hero"
-    t12 = h_main_depth_of(t11);
-#line 94 "examples/binarytrees/main.hero"
-    if (__builtin_add_overflow(t7, t12, &t13)) hero_panic_overflow();
+    if (__builtin_add_overflow(t7, t11, &t12)) hero_panic_overflow();
 #line 92 "examples/binarytrees/main.hero"
-    h2_r0 = t13;
+    h2_r0 = t12;
 #line 92 "examples/binarytrees/main.hero"
     goto bb1;
-#line 442 "main.c"
+#line 436 "main.c"
 }
 
 #line 101 "examples/binarytrees/main.hero"
 bool h_main_balanced(h_main_Tree h0_t) {
 #line 101 "examples/binarytrees/main.hero"
-    HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t10, t15, t21, t26, t31; HERO_NODEBUG bool h2_r0, h4_b0, h5_b1, t4, t11, t16, t17, t28, t29, t30; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG int64_t t3, t9, t14, t20, t22, t25, t27; HERO_NODEBUG h_main_Tree_c_branch t6, t7, t12, t18, t23, t32; HERO_NODEBUG HeroArrayHeader *t8, *t13, *t19, *t24; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t9, t13, t18, t22, t27; HERO_NODEBUG bool h2_r0, h4_b0, h5_b1, t4, t10, t14, t15, t24, t25, t26; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG int64_t t3, t8, t12, t17, t19, t21, t23; HERO_NODEBUG h_main_Tree_c_branch t6, t28; HERO_NODEBUG HeroArrayHeader *t7, *t11, *t16, *t20; HERO_ENTRY_STOP; goto bb0;
 #line 101 "examples/binarytrees/main.hero"
 bb0:
     t1 = h0_t;
 #line 102 "examples/binarytrees/main.hero"
-    t31 = h1_s0;
+    t27 = h1_s0;
 #line 102 "examples/binarytrees/main.hero"
     h_main_Tree_retain(&t1);
 #line 102 "examples/binarytrees/main.hero"
     h1_s0 = t1;
 #line 102 "examples/binarytrees/main.hero"
-    h_main_Tree_release(&t31);
+    h_main_Tree_release(&t27);
 #line 102 "examples/binarytrees/main.hero"
     t2 = h1_s0;
 #line 102 "examples/binarytrees/main.hero"
@@ -473,11 +467,11 @@ bb0:
 #line 102 "examples/binarytrees/main.hero"
 bb1:
 #line 102 "examples/binarytrees/main.hero"
-    t30 = h2_r0;
-#line 478 "main.c"
+    t26 = h2_r0;
+#line 472 "main.c"
     h_main_Tree_release(hero_slot_escape(&h1_s0));
     h_main_Tree_c_branch_release(hero_slot_escape(&h3_b));
-    return t30;
+    return t26;
 bb2:
 #line 103 "examples/binarytrees/main.hero"
     t4 = true;
@@ -492,88 +486,80 @@ bb3:
 #line 104 "examples/binarytrees/main.hero"
     t6 = t5.as.c_branch;
 #line 104 "examples/binarytrees/main.hero"
-    t32 = h3_b;
+    t28 = h3_b;
 #line 104 "examples/binarytrees/main.hero"
     h_main_Tree_c_branch_retain(&t6);
 #line 104 "examples/binarytrees/main.hero"
     h3_b = t6;
 #line 104 "examples/binarytrees/main.hero"
-    h_main_Tree_c_branch_release(&t32);
+    h_main_Tree_c_branch_release(&t28);
 #line 104 "examples/binarytrees/main.hero"
-    t7 = h3_b;
+    t7 = h3_b.f_halves;
 #line 104 "examples/binarytrees/main.hero"
-    t8 = t7.f_halves;
+    t8 = INT64_C(0);
 #line 104 "examples/binarytrees/main.hero"
-    t9 = INT64_C(0);
+    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t7 + 1))[t8]);
 #line 104 "examples/binarytrees/main.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t8 + 1))[t9]);
+    t10 = h_main_balanced(t9);
 #line 104 "examples/binarytrees/main.hero"
-    t11 = h_main_balanced(t10);
+    h5_b1 = t10;
 #line 104 "examples/binarytrees/main.hero"
-    h5_b1 = t11;
-#line 104 "examples/binarytrees/main.hero"
-    if (t11) goto bb4; else goto bb5;
+    if (t10) goto bb4; else goto bb5;
 #line 104 "examples/binarytrees/main.hero"
 bb4:
 #line 104 "examples/binarytrees/main.hero"
-    t12 = h3_b;
+    t11 = h3_b.f_halves;
 #line 104 "examples/binarytrees/main.hero"
-    t13 = t12.f_halves;
+    t12 = INT64_C(1);
 #line 104 "examples/binarytrees/main.hero"
-    t14 = INT64_C(1);
+    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t11 + 1))[t12]);
 #line 104 "examples/binarytrees/main.hero"
-    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t13 + 1))[t14]);
+    t14 = h_main_balanced(t13);
 #line 104 "examples/binarytrees/main.hero"
-    t16 = h_main_balanced(t15);
-#line 104 "examples/binarytrees/main.hero"
-    h5_b1 = t16;
+    h5_b1 = t14;
 #line 104 "examples/binarytrees/main.hero"
     goto bb5;
 #line 104 "examples/binarytrees/main.hero"
 bb5:
 #line 104 "examples/binarytrees/main.hero"
-    t17 = h5_b1;
+    t15 = h5_b1;
 #line 104 "examples/binarytrees/main.hero"
-    h4_b0 = t17;
+    h4_b0 = t15;
 #line 104 "examples/binarytrees/main.hero"
-    if (t17) goto bb6; else goto bb7;
+    if (t15) goto bb6; else goto bb7;
 #line 104 "examples/binarytrees/main.hero"
 bb6:
 #line 104 "examples/binarytrees/main.hero"
-    t18 = h3_b;
+    t16 = h3_b.f_halves;
 #line 104 "examples/binarytrees/main.hero"
-    t19 = t18.f_halves;
+    t17 = INT64_C(0);
 #line 104 "examples/binarytrees/main.hero"
-    t20 = INT64_C(0);
+    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t16 + 1))[t17]);
 #line 104 "examples/binarytrees/main.hero"
-    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t19 + 1))[t20]);
+    t19 = h_main_depth_of(t18);
 #line 104 "examples/binarytrees/main.hero"
-    t22 = h_main_depth_of(t21);
+    t20 = h3_b.f_halves;
 #line 104 "examples/binarytrees/main.hero"
-    t23 = h3_b;
+    t21 = INT64_C(1);
 #line 104 "examples/binarytrees/main.hero"
-    t24 = t23.f_halves;
+    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t20 + 1))[t21]);
 #line 104 "examples/binarytrees/main.hero"
-    t25 = INT64_C(1);
+    t23 = h_main_depth_of(t22);
 #line 104 "examples/binarytrees/main.hero"
-    t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(h_main_Tree) ? hero_unreachable() : (void)0), ((h_main_Tree const *)(const void *)(t24 + 1))[t25]);
+    t24 = t19 == t23;
 #line 104 "examples/binarytrees/main.hero"
-    t27 = h_main_depth_of(t26);
-#line 104 "examples/binarytrees/main.hero"
-    t28 = t22 == t27;
-#line 104 "examples/binarytrees/main.hero"
-    h4_b0 = t28;
+    h4_b0 = t24;
 #line 104 "examples/binarytrees/main.hero"
     goto bb7;
 #line 104 "examples/binarytrees/main.hero"
 bb7:
 #line 104 "examples/binarytrees/main.hero"
-    t29 = h4_b0;
+    t25 = h4_b0;
 #line 102 "examples/binarytrees/main.hero"
-    h2_r0 = t29;
+    h2_r0 = t25;
 #line 102 "examples/binarytrees/main.hero"
     goto bb1;
-#line 577 "main.c"
+#line 563 "main.c"
 }
 
 #line 109 "examples/binarytrees/main.hero"
@@ -700,7 +686,7 @@ bb3:
     hero_print_int(t49);
 #line 134 "examples/binarytrees/main.hero"
     hero_print_end();
-#line 704 "main.c"
+#line 690 "main.c"
     h_main_Tree_release(hero_slot_escape(&h0_long_lived));
     h_main_Tree_release(hero_slot_escape(&h5_own5));
     h_main_Tree_release(hero_slot_escape(&h6_own6));
@@ -776,7 +762,7 @@ bb6:
     h1_depth = t44;
 #line 132 "examples/binarytrees/main.hero"
     goto bb1;
-#line 780 "main.c"
+#line 766 "main.c"
 }
 HERO_TU_LOCAL void h_main_Tree_c_branch_retain(const h_main_Tree_c_branch *v) {
     hero_array_incref(v->f_halves);

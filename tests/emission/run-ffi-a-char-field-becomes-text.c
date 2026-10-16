@@ -191,7 +191,7 @@ void h_ffiacharfieldbecomestext_main(void);
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 void h_ffiacharfieldbecomestext_main(void) {
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    Tag h0_t; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, h5_f3 = {0}, h7_s0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t23, t24, t28, t30, t34, t35, t39, t41, t65, t66, t70, t72, t77, t78, t82, t84, t109, t110, t112, t116, t131, t132, t133, t134, t135, t136, t137, t138, t139, t140; Tag h3_full; Tag h6_bad; HeroStr h8_text = {0}; HeroFailure h9_e = {0}; HERO_NODEBUG h_0opt_e201354 h10_f4 = {0}, h16_own16 = {0}, t122, t123, t127, t129, t141, t142; HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8, t43, t44, t45, t46, t47, t48, t49, t50, t87, t88, t89, t90, t91, t92, t93, t94; HERO_NODEBUG uint8_t t10, t11, t12, t13, t14, t15, t16, t17, t52, t53, t54, t55, t56, t57, t58, t59, t96, t97, t98, t99, t100, t101, t102, t103; HERO_NODEBUG int32_t t19, t61, t105, t121; HERO_NODEBUG Tag t20, t21, t32, t62, t63, t75, t106, t107, t120; HERO_NODEBUG int64_t t25, t26, t36, t37, t67, t68, t79, t80, t111, t124, t125, t130; HERO_NODEBUG bool t27, t38, t69, t81, t126; HERO_NODEBUG HeroFailure t29, t40, t71, t83, t117, t118, t128, t144; HERO_NODEBUG HeroStr t31, t42, t73, t74, t85, t86, t113, t114, t115, t119, t143; HERO_ENTRY_STOP; goto bb0;
+    Tag h0_t; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, h5_f3 = {0}, h7_s0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t23, t24, t28, t30, t34, t35, t39, t41, t65, t66, t70, t72, t77, t78, t82, t84, t109, t110, t112, t116, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139; Tag h3_full; Tag h6_bad; HeroStr h8_text = {0}; HeroFailure h9_e = {0}; HERO_NODEBUG h_0opt_e201354 h10_f4 = {0}, h16_own16 = {0}, t121, t122, t126, t128, t140, t141; HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8, t43, t44, t45, t46, t47, t48, t49, t50, t87, t88, t89, t90, t91, t92, t93, t94; HERO_NODEBUG uint8_t t10, t11, t12, t13, t14, t15, t16, t17, t52, t53, t54, t55, t56, t57, t58, t59, t96, t97, t98, t99, t100, t101, t102, t103; HERO_NODEBUG int32_t t19, t61, t105, t120; HERO_NODEBUG Tag t20, t21, t32, t62, t63, t75, t106, t107, t119; HERO_NODEBUG int64_t t25, t26, t36, t37, t67, t68, t79, t80, t111, t123, t124, t129; HERO_NODEBUG bool t27, t38, t69, t81, t125; HERO_NODEBUG HeroFailure t29, t40, t71, t83, t117, t127, t143; HERO_NODEBUG HeroStr t31, t42, t73, t74, t85, t86, t113, t114, t115, t118, t142; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 bb0:
 #line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -251,19 +251,19 @@ bb0:
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     }
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t131 = h11_own11;
+    t130 = h11_own11;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h11_own11 = t23;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t131);
+    h_0opt_f87774a_release(&t130);
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t132 = h1_f0;
+    t131 = h1_f0;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h_0opt_f87774a_retain(&t23);
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h1_f0 = t23;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t132);
+    h_0opt_f87774a_release(&t131);
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t24 = h1_f0;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -305,19 +305,19 @@ bb1:
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     }
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t133 = h12_own12;
+    t132 = h12_own12;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h12_own12 = t34;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t133);
+    h_0opt_f87774a_release(&t132);
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t134 = h2_f1;
+    t133 = h2_f1;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h_0opt_f87774a_retain(&t34);
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h2_f1 = t34;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t134);
+    h_0opt_f87774a_release(&t133);
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t35 = h2_f1;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -404,19 +404,19 @@ bb3:
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     }
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t135 = h13_own13;
+    t134 = h13_own13;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h13_own13 = t65;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t135);
+    h_0opt_f87774a_release(&t134);
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t136 = h4_f2;
+    t135 = h4_f2;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h_0opt_f87774a_retain(&t65);
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h4_f2 = t65;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t136);
+    h_0opt_f87774a_release(&t135);
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t66 = h4_f2;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -468,19 +468,19 @@ bb5:
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     }
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t137 = h14_own14;
+    t136 = h14_own14;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h14_own14 = t77;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t137);
+    h_0opt_f87774a_release(&t136);
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t138 = h5_f3;
+    t137 = h5_f3;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h_0opt_f87774a_retain(&t77);
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h5_f3 = t77;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t138);
+    h_0opt_f87774a_release(&t137);
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t78 = h5_f3;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -574,19 +574,19 @@ bb7:
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     }
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t139 = h15_own15;
+    t138 = h15_own15;
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h15_own15 = t109;
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t139);
+    h_0opt_f87774a_release(&t138);
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t140 = h7_s0;
+    t139 = h7_s0;
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h_0opt_f87774a_retain(&t109);
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h7_s0 = t109;
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t140);
+    h_0opt_f87774a_release(&t139);
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t110 = h7_s0;
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -612,35 +612,35 @@ bb8:
     hero_unreachable();
 bb9:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t120 = h0_t;
+    t119 = h0_t;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t121 = tag_id(t120);
+    t120 = tag_id(t119);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t122 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t121};
+    t121 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t120};
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t141 = h16_own16;
+    t140 = h16_own16;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h16_own16 = t122;
+    h16_own16 = t121;
+#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
+    h_0opt_e201354_release(&t140);
+#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
+    t141 = h10_f4;
+#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
+    h_0opt_e201354_retain(&t121);
+#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
+    h10_f4 = t121;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h_0opt_e201354_release(&t141);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t142 = h10_f4;
+    t122 = h10_f4;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_e201354_retain(&t122);
+    t123 = t122.tag;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h10_f4 = t122;
+    t124 = INT64_C(0);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_e201354_release(&t142);
+    t125 = t123 == t124;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t123 = h10_f4;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t124 = t123.tag;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t125 = INT64_C(0);
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t126 = t124 == t125;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    if (t126) goto bb12; else goto bb13;
+    if (t125) goto bb12; else goto bb13;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 bb10:
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -648,13 +648,13 @@ bb10:
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t113 = t112.as.ok;
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t143 = h8_text;
+    t142 = h8_text;
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     hero_str_incref(t113);
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h8_text = t113;
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_str_decref(t143);
+    hero_str_decref(t142);
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t114 = HERO_STR_LIT(hero_str_6044c9d2);
 #line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -673,19 +673,17 @@ bb11:
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t117 = t116.as.err;
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t144 = h9_e;
+    t143 = h9_e;
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     hero_failure_retain(&t117);
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h9_e = t117;
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_failure_release(&t144);
+    hero_failure_release(&t143);
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t118 = h9_e;
+    t118 = h9_e.code;
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t119 = t118.code;
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t119);
+    hero_print_str(t118);
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     hero_print_end();
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -693,14 +691,14 @@ bb11:
 #line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 bb12:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t129 = h10_f4;
+    t128 = h10_f4;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t130 = t129.as.ok;
+    t129 = t128.as.ok;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_int(t130);
+    hero_print_int(t129);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     hero_print_end();
-#line 704 "ffiacharfieldbecomestext.c"
+#line 702 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f2));
@@ -718,11 +716,11 @@ bb12:
     return;
 bb13:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t127 = h10_f4;
+    t126 = h10_f4;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t128 = t127.as.err;
-#line 725 "ffiacharfieldbecomestext.c"
-    hero_panic_must(t128);
+    t127 = t126.as.err;
+#line 723 "ffiacharfieldbecomestext.c"
+    hero_panic_must(t127);
     hero_unreachable();
 }
 HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_Tag_eq(const Tag *a, const Tag *b) {

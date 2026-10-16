@@ -190,7 +190,7 @@ void h_fixedbugs156recordsbesidebitfieldsbuild_main(void);
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) {
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    BF h0_built; UNNAMED h1_u; HERO_NODEBUG BF t1, t4, t5; HERO_NODEBUG int32_t t2, t3, t6, t7, t8, t15, t17, t18; HERO_NODEBUG UNNAMED t9, t10, t11, t14; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG ZEROW t16; HERO_ENTRY_STOP; goto bb0;
+    BF h0_built; UNNAMED h1_u; HERO_NODEBUG BF t1, t4; HERO_NODEBUG int32_t t2, t3, t5, t6, t7, t13, t15, t16; HERO_NODEBUG UNNAMED t8, t9, t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG ZEROW t14; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 bb0:
     t1 = make_bf();
@@ -205,48 +205,44 @@ bb0:
     t4 = (BF){.kind = t3};
 #line 24 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     h0_built = t4;
-    t5 = h0_built;
+    t5 = h0_built.kind;
 #line 25 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    t6 = t5.kind;
-#line 25 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    hero_print_int(t6);
+    hero_print_int(t5);
 #line 25 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     hero_print_end();
-    t7 = INT64_C(1);
+    t6 = INT64_C(1);
 #line 26 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    t8 = INT64_C(2);
+    t7 = INT64_C(2);
 #line 26 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    t9 = (UNNAMED){.a = t7, .b = t8};
+    t8 = (UNNAMED){.a = t6, .b = t7};
 #line 26 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    h1_u = t9;
-    t10 = h1_u;
+    h1_u = t8;
+    t9 = h1_u;
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    t11 = make_unnamed();
+    t10 = make_unnamed();
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    t12 = h_fixedbugs156recordsbesidebitfieldsbuild_UNNAMED_eq(&t10, &t11);
+    t11 = h_fixedbugs156recordsbesidebitfieldsbuild_UNNAMED_eq(&t9, &t10);
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    t13 = HERO_STR_LIT(hero_str_20);
+    t12 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    t14 = h1_u;
+    t13 = h1_u.b;
+#line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
+    t14 = make_zerow();
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t15 = t14.b;
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    t16 = make_zerow();
+    if (__builtin_add_overflow(t13, t15, &t16)) hero_panic_overflow();
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    t17 = t16.b;
+    hero_print_bool(t11);
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    if (__builtin_add_overflow(t15, t17, &t18)) hero_panic_overflow();
+    hero_print_str(t12);
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    hero_print_bool(t12);
-#line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    hero_print_str(t13);
-#line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    hero_print_int(t18);
+    hero_print_int(t16);
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     return;
-#line 250 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 246 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b) {
     hero_panic("h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq: a partial record has no structural equality");

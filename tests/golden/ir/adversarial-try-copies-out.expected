@@ -44,13 +44,13 @@ function advance_over(@r: Reader, s: str) -> i64?
     bb0  entry
         $t1: str = load s
         $t2: i64? = call heroes parsed($t1)
-        $t24: i64? = load $own5
+        $t23: i64? = load $own5
         store $own5 <- $t2
-        decref $t24
-        $t25: i64? = load $f0
+        decref $t23
+        $t24: i64? = load $f0
         incref $t2
         store $f0 <- $t2
-        decref $t25
+        decref $t24
         $t3: i64? = load $f0
         $t4: i64 = tag $t3
         $t5: i64 = const 0
@@ -69,41 +69,40 @@ function advance_over(@r: Reader, s: str) -> i64?
         $t8: the error (`code`, `msg`) = payload $t7 .err
         incref $t8
         $t9: i64? = construct err($t8)
-        $t26: i64? = load $own6
+        $t25: i64? = load $own6
         store $own6 <- $t9
-        decref $t26
+        decref $t25
         store $ret0 <- $t9
         jump bb6
     bb3  if: join    preds bb5
-        $t17: Reader = load r
-        $t18: i64 = field $t17.pos
-        $t19: i64 = load n
-        $t20: i64 = add! $t18, $t19
-        store r.pos <- $t20
-        $t21: i64 = load n
-        $t22: i64? = construct ok($t21)
-        $t27: i64? = load $own7
-        store $own7 <- $t22
-        decref $t27
-        store $ret0 <- $t22
+        $t17: i64 = load r.pos
+        $t18: i64 = load n
+        $t19: i64 = add! $t17, $t18
+        store r.pos <- $t19
+        $t20: i64 = load n
+        $t21: i64? = construct ok($t20)
+        $t26: i64? = load $own7
+        store $own7 <- $t21
+        decref $t26
+        store $ret0 <- $t21
         jump bb6
     bb4  if: then    preds bb1
         $t15: i64 = const 0
         $t16: i64? = construct ok($t15)
-        $t28: i64? = load $own8
+        $t27: i64? = load $own8
         store $own8 <- $t16
-        decref $t28
+        decref $t27
         store $ret0 <- $t16
         jump bb6
     bb5  if: else    preds bb1
         jump bb3
     bb6  exit    preds bb2, bb3, bb4
         copyout r
-        $t23: i64? = load $ret0
-        incref $t23
+        $t22: i64? = load $ret0
+        incref $t22
         decref_slot $f0
         decref_slot $own5
         decref_slot $own6
         decref_slot $own7
         decref_slot $own8
-        return $t23
+        return $t22

@@ -354,7 +354,7 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
 void h_fixedbugs382everyarrayprimitivereadsastaticconstant_main(void) {
 #line 38 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    int64_t h0_total; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h29_own29 = {0}, *h30_own30 = {0}, *h31_own31 = {0}, *h32_own32 = {0}, *h33_own33 = {0}, *h34_own34 = {0}, *h35_own35 = {0}, *h36_own36 = {0}, *h37_own37 = {0}, *h38_own38 = {0}, *h39_own39 = {0}, *h40_own40 = {0}, *h41_own41 = {0}, *h42_own42 = {0}, *h44_own44 = {0}, *h45_own45 = {0}, *h46_own46 = {0}, *h47_own47 = {0}, *h48_own48 = {0}, *h49_own49 = {0}, *h50_own50 = {0}, *h51_own51 = {0}, *h53_own53 = {0}, *h54_own54 = {0}, *h55_own55 = {0}, *h56_own56 = {0}, *h57_own57 = {0}, *h59_own59 = {0}, *h60_own60 = {0}, *h62_own62 = {0}, *h63_own63 = {0}, *h65_own65 = {0}, *t2, *t5, *t8, *t19, *t22, *t26, *t30, *t32, *t41, *t44, *t45, *t48, *t49, *t51, *t52, *t56, *t57, *t61, *t64, *t67, *t70, *t72, *t75, *t77, *t79, *t83, *t85, *t88, *t92, *t104, *t108, *t111, *t114, *t118, *t124, *t127, *t131, *t133, *t137, *t140, *t144, *t146, *t148, *t149, *t150, *t151, *t153, *t157, *t159, *t162, *t166, *t168, *t169, *t172, *t174, *t178, *t181, *t193, *t214, *t217, *t218, *t219, *t220, *t221, *t222, *t223, *t224, *t225, *t226, *t227, *t228, *t229, *t230, *t231, *t232, *t233, *t234, *t235, *t236, *t237, *t238, *t239, *t240, *t241, *t242, *t243, *t244, *t247, *t248, *t249, *t250, *t251, *t252, *t253, *t254, *t255, *t256, *t259, *t260, *t261, *t262, *t263, *t264, *t267, *t268, *t271, *t272, *t275; HERO_NODEBUG int64_t h2_i0, h12_r0, h14_r1, t1, t3, t4, t6, t9, t10, t11, t12, t13, t14, t15, t16, t17, t20, t23, t24, t27, t28, t31, t33, t34, t35, t36, t37, t38, t39, t40, t53, t54, t58, t59, t62, t63, t65, t66, t68, t71, t73, t76, t80, t81, t86, t89, t91, t96, t97, t102, t112, t113, t115, t116, t119, t120, t122, t125, t128, t129, t132, t135, t138, t141, t142, t145, t154, t155, t158, t160, t161, t163, t164, t167, t173, t175, t180, t184, t185, t188, t189, t190, t196, t197, t200, t201, t202, t208, t209, t215, t216; int64_t h3_d; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h11_f1 = {0}, h13_f2 = {0}, h43_own43 = {0}, h64_own64 = {0}, h66_own66 = {0}, t94, t95, t99, t101, t182, t183, t187, t194, t195, t199, t245, t246, t273, t274, t276, t277; HeroArrayHeader * h5_xs = {0}; HeroArrayHeader * h6_ys = {0}; h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder h7_h = {0}; HeroArrayHeader * h8_both = {0}; HeroMapHeader * h9_seen = {0}; HeroMapHeader * h10_named = {0}; HERO_NODEBUG h_0opt_2270cbe7 h15_f3 = {0}, h67_own67 = {0}, t206, t207, t211, t213, t278, t279; HERO_NODEBUG h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder h52_own52 = {0}, t147, t152, t257, t258; HERO_NODEBUG HeroMapHeader *h58_own58 = {0}, *h61_own61 = {0}, *t171, *t176, *t179, *t192, *t204, *t265, *t266, *t269, *t270; HERO_NODEBUG bool t7, t42, t46, t50, t98, t106, t110, t170, t186, t198, t210; HERO_NODEBUG HeroStr t18, t21, t25, t29, t43, t47, t55, t60, t69, t74, t82, t87, t103, t107, t117, t126, t130, t139, t143, t156, t165, t177, t191, t203, t205; HERO_NODEBUG h_0fn_48ac9712 t78; HERO_NODEBUG h_0fn_3d242f50 t84, t93, t105, t109; HERO_NODEBUG h_0fn_6ca17148 t90; HERO_NODEBUG HeroFailure t100, t212; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_total; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h29_own29 = {0}, *h30_own30 = {0}, *h31_own31 = {0}, *h32_own32 = {0}, *h33_own33 = {0}, *h34_own34 = {0}, *h35_own35 = {0}, *h36_own36 = {0}, *h37_own37 = {0}, *h38_own38 = {0}, *h39_own39 = {0}, *h40_own40 = {0}, *h41_own41 = {0}, *h42_own42 = {0}, *h44_own44 = {0}, *h45_own45 = {0}, *h46_own46 = {0}, *h47_own47 = {0}, *h48_own48 = {0}, *h49_own49 = {0}, *h50_own50 = {0}, *h51_own51 = {0}, *h53_own53 = {0}, *h54_own54 = {0}, *h55_own55 = {0}, *h56_own56 = {0}, *h57_own57 = {0}, *h59_own59 = {0}, *h60_own60 = {0}, *h62_own62 = {0}, *h63_own63 = {0}, *h65_own65 = {0}, *t2, *t5, *t8, *t19, *t22, *t26, *t30, *t32, *t41, *t44, *t45, *t48, *t49, *t51, *t52, *t56, *t57, *t61, *t64, *t67, *t70, *t72, *t75, *t77, *t79, *t83, *t85, *t88, *t92, *t104, *t108, *t111, *t114, *t118, *t124, *t127, *t131, *t133, *t137, *t140, *t144, *t146, *t148, *t149, *t150, *t151, *t152, *t156, *t158, *t161, *t165, *t167, *t168, *t171, *t173, *t177, *t180, *t192, *t213, *t216, *t217, *t218, *t219, *t220, *t221, *t222, *t223, *t224, *t225, *t226, *t227, *t228, *t229, *t230, *t231, *t232, *t233, *t234, *t235, *t236, *t237, *t238, *t239, *t240, *t241, *t242, *t243, *t246, *t247, *t248, *t249, *t250, *t251, *t252, *t253, *t254, *t255, *t258, *t259, *t260, *t261, *t262, *t263, *t266, *t267, *t270, *t271, *t274; HERO_NODEBUG int64_t h2_i0, h12_r0, h14_r1, t1, t3, t4, t6, t9, t10, t11, t12, t13, t14, t15, t16, t17, t20, t23, t24, t27, t28, t31, t33, t34, t35, t36, t37, t38, t39, t40, t53, t54, t58, t59, t62, t63, t65, t66, t68, t71, t73, t76, t80, t81, t86, t89, t91, t96, t97, t102, t112, t113, t115, t116, t119, t120, t122, t125, t128, t129, t132, t135, t138, t141, t142, t145, t153, t154, t157, t159, t160, t162, t163, t166, t172, t174, t179, t183, t184, t187, t188, t189, t195, t196, t199, t200, t201, t207, t208, t214, t215; int64_t h3_d; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h11_f1 = {0}, h13_f2 = {0}, h43_own43 = {0}, h64_own64 = {0}, h66_own66 = {0}, t94, t95, t99, t101, t181, t182, t186, t193, t194, t198, t244, t245, t272, t273, t275, t276; HeroArrayHeader * h5_xs = {0}; HeroArrayHeader * h6_ys = {0}; h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder h7_h = {0}; HeroArrayHeader * h8_both = {0}; HeroMapHeader * h9_seen = {0}; HeroMapHeader * h10_named = {0}; HERO_NODEBUG h_0opt_2270cbe7 h15_f3 = {0}, h67_own67 = {0}, t205, t206, t210, t212, t277, t278; HERO_NODEBUG h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder h52_own52 = {0}, t147, t256, t257; HERO_NODEBUG HeroMapHeader *h58_own58 = {0}, *h61_own61 = {0}, *t170, *t175, *t178, *t191, *t203, *t264, *t265, *t268, *t269; HERO_NODEBUG bool t7, t42, t46, t50, t98, t106, t110, t169, t185, t197, t209; HERO_NODEBUG HeroStr t18, t21, t25, t29, t43, t47, t55, t60, t69, t74, t82, t87, t103, t107, t117, t126, t130, t139, t143, t155, t164, t176, t190, t202, t204; HERO_NODEBUG h_0fn_48ac9712 t78; HERO_NODEBUG h_0fn_3d242f50 t84, t93, t105, t109; HERO_NODEBUG h_0fn_6ca17148 t90; HERO_NODEBUG HeroFailure t100, t211; HERO_ENTRY_STOP; goto bb0;
 #line 38 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
 bb0:
     t1 = INT64_C(0);
@@ -363,19 +363,19 @@ bb0:
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t2 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t217 = h16_own16;
+    t216 = h16_own16;
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h16_own16 = t2;
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t217);
+    hero_array_decref(t216);
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t218 = h1_xs0;
+    t217 = h1_xs0;
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_incref(t2);
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h1_xs0 = t2;
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t218);
+    hero_array_decref(t217);
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t3 = INT64_C(0);
 #line 41 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -434,11 +434,11 @@ bb4:
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t19 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t219 = h17_own17;
+    t218 = h17_own17;
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h17_own17 = t19;
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t219);
+    hero_array_decref(t218);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -446,11 +446,11 @@ bb4:
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t22 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t220 = h18_own18;
+    t219 = h18_own18;
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h18_own18 = t22;
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t220);
+    hero_array_decref(t219);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t23 = INT64_C(7);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -460,11 +460,11 @@ bb4:
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t26 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t221 = h19_own19;
+    t220 = h19_own19;
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h19_own19 = t26;
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t221);
+    hero_array_decref(t220);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t27 = INT64_C(0);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -474,11 +474,11 @@ bb4:
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t30 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t222 = h20_own20;
+    t221 = h20_own20;
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h20_own20 = t30;
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t222);
+    hero_array_decref(t221);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t31 = ((void)(t30 == NULL ? ((void)hero_array_len(t30), hero_unreachable()) : (void)0), t30->len);
 #line 44 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -503,11 +503,11 @@ bb4:
     hero_print_end();
     t32 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t223 = h21_own21;
+    t222 = h21_own21;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h21_own21 = t32;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t223);
+    hero_array_decref(t222);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t33 = INT64_C(3);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -543,11 +543,11 @@ bb4:
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_push_owned(&t41, &t40);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t224 = h22_own22;
+    t223 = h22_own22;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h22_own22 = t41;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t224);
+    hero_array_decref(t223);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t42 = hero_array_eq(t32, t41);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -555,19 +555,19 @@ bb4:
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t44 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t225 = h23_own23;
+    t224 = h23_own23;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h23_own23 = t44;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t225);
+    hero_array_decref(t224);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t45 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_handed();
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t226 = h24_own24;
+    t225 = h24_own24;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h24_own24 = t45;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t226);
+    hero_array_decref(t225);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t46 = hero_array_eq(t44, t45);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -575,19 +575,19 @@ bb4:
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t48 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t227 = h25_own25;
+    t226 = h25_own25;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h25_own25 = t48;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t227);
+    hero_array_decref(t226);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t49 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t228 = h26_own26;
+    t227 = h26_own26;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h26_own26 = t49;
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t228);
+    hero_array_decref(t227);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t50 = !hero_array_eq(t48, t49);
 #line 45 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -604,19 +604,19 @@ bb4:
     hero_print_end();
     t51 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t229 = h27_own27;
+    t228 = h27_own27;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h27_own27 = t51;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t229);
+    hero_array_decref(t228);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t52 = hero_array_sort(t51);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t230 = h28_own28;
+    t229 = h28_own28;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h28_own28 = t52;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t230);
+    hero_array_decref(t229);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t53 = INT64_C(0);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -626,19 +626,19 @@ bb4:
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t56 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t231 = h29_own29;
+    t230 = h29_own29;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h29_own29 = t56;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t231);
+    hero_array_decref(t230);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t57 = hero_array_sort(t56);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t232 = h30_own30;
+    t231 = h30_own30;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h30_own30 = t57;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t232);
+    hero_array_decref(t231);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t58 = INT64_C(7);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -648,11 +648,11 @@ bb4:
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t61 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t233 = h31_own31;
+    t232 = h31_own31;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h31_own31 = t61;
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t233);
+    hero_array_decref(t232);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t62 = INT64_C(0);
 #line 46 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -671,11 +671,11 @@ bb4:
     hero_print_end();
     t64 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t234 = h32_own32;
+    t233 = h32_own32;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h32_own32 = t64;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t234);
+    hero_array_decref(t233);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t65 = INT64_C(2);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -683,11 +683,11 @@ bb4:
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t67 = hero_array_slice(t64, t65, t66);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t235 = h33_own33;
+    t234 = h33_own33;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h33_own33 = t67;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t235);
+    hero_array_decref(t234);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t68 = ((void)(t67 == NULL ? ((void)hero_array_len(t67), hero_unreachable()) : (void)0), t67->len);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -695,21 +695,21 @@ bb4:
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t70 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t236 = h34_own34;
+    t235 = h34_own34;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h34_own34 = t70;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t236);
+    hero_array_decref(t235);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t71 = INT64_C(10);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t72 = hero_array_push(t70, &t71);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t237 = h35_own35;
+    t236 = h35_own35;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h35_own35 = t72;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t237);
+    hero_array_decref(t236);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t73 = ((void)(t72 == NULL ? ((void)hero_array_len(t72), hero_unreachable()) : (void)0), t72->len);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -717,11 +717,11 @@ bb4:
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t75 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t238 = h36_own36;
+    t237 = h36_own36;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h36_own36 = t75;
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t238);
+    hero_array_decref(t237);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t76 = ((void)(t75 == NULL ? ((void)hero_array_len(t75), hero_unreachable()) : (void)0), t75->len);
 #line 47 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -738,21 +738,21 @@ bb4:
     hero_print_end();
     t77 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t239 = h37_own37;
+    t238 = h37_own37;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h37_own37 = t77;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t239);
+    hero_array_decref(t238);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t78 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_twice;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t79 = h_library_map_37f8817a(t77, t78);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t240 = h38_own38;
+    t239 = h38_own38;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h38_own38 = t79;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t240);
+    hero_array_decref(t239);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t80 = INT64_C(5);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -762,21 +762,21 @@ bb4:
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t83 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t241 = h39_own39;
+    t240 = h39_own39;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h39_own39 = t83;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t241);
+    hero_array_decref(t240);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t84 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_odd;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t85 = h_library_filter_1b9a87(t83, t84);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t242 = h40_own40;
+    t241 = h40_own40;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h40_own40 = t85;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t242);
+    hero_array_decref(t241);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t86 = ((void)(t85 == NULL ? ((void)hero_array_len(t85), hero_unreachable()) : (void)0), t85->len);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -784,11 +784,11 @@ bb4:
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t88 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t243 = h41_own41;
+    t242 = h41_own41;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h41_own41 = t88;
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t243);
+    hero_array_decref(t242);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t89 = INT64_C(0);
 #line 48 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -809,29 +809,29 @@ bb4:
     hero_print_end();
     t92 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t244 = h42_own42;
+    t243 = h42_own42;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h42_own42 = t92;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t244);
+    hero_array_decref(t243);
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t93 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_big;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t94 = h_library_find_1b9a87(t92, t93);
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t245 = h43_own43;
+    t244 = h43_own43;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h43_own43 = t94;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_0opt_e201354_release(&t245);
+    h_0opt_e201354_release(&t244);
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t246 = h4_f0;
+    t245 = h4_f0;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h_0opt_e201354_retain(&t94);
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h4_f0 = t94;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_0opt_e201354_release(&t246);
+    h_0opt_e201354_release(&t245);
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t95 = h4_f0;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -853,11 +853,11 @@ bb5:
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t104 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t247 = h44_own44;
+    t246 = h44_own44;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h44_own44 = t104;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t247);
+    hero_array_decref(t246);
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t105 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_big;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -867,11 +867,11 @@ bb5:
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t108 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t248 = h45_own45;
+    t247 = h45_own45;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h45_own45 = t108;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t248);
+    hero_array_decref(t247);
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t109 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_odd;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -891,19 +891,19 @@ bb5:
 #line 52 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t111 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 52 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t249 = h46_own46;
+    t248 = h46_own46;
 #line 52 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h46_own46 = t111;
 #line 52 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t249);
+    hero_array_decref(t248);
 #line 52 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t250 = h5_xs;
+    t249 = h5_xs;
 #line 52 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_incref(t111);
 #line 52 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h5_xs = t111;
 #line 52 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t250);
+    hero_array_decref(t249);
     t112 = INT64_C(0);
 #line 53 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t113 = INT64_C(99);
@@ -919,11 +919,11 @@ bb5:
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t118 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t251 = h47_own47;
+    t250 = h47_own47;
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h47_own47 = t118;
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t251);
+    hero_array_decref(t250);
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t119 = INT64_C(0);
 #line 54 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -956,11 +956,11 @@ bb5:
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t131 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t252 = h48_own48;
+    t251 = h48_own48;
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h48_own48 = t131;
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t252);
+    hero_array_decref(t251);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t132 = ((void)(t131 == NULL ? ((void)hero_array_len(t131), hero_unreachable()) : (void)0), t131->len);
 #line 57 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -977,19 +977,19 @@ bb5:
     hero_print_end();
     t133 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
 #line 58 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t253 = h49_own49;
+    t252 = h49_own49;
 #line 58 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h49_own49 = t133;
 #line 58 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t253);
+    hero_array_decref(t252);
 #line 58 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t254 = h6_ys;
+    t253 = h6_ys;
 #line 58 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_incref(t133);
 #line 58 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h6_ys = t133;
 #line 58 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t254);
+    hero_array_decref(t253);
     t135 = INT64_C(8);
 #line 59 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_push_owned(&h6_ys, &t135);
@@ -1009,11 +1009,11 @@ bb5:
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t144 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t255 = h50_own50;
+    t254 = h50_own50;
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h50_own50 = t144;
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t255);
+    hero_array_decref(t254);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t145 = ((void)(t144 == NULL ? ((void)hero_array_len(t144), hero_unreachable()) : (void)0), t144->len);
 #line 60 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1031,52 +1031,52 @@ bb5:
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t146 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t256 = h51_own51;
+    t255 = h51_own51;
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h51_own51 = t146;
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t256);
+    hero_array_decref(t255);
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_incref(t146);
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t147 = (h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder){.f_xs = t146};
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t257 = h52_own52;
+    t256 = h52_own52;
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h52_own52 = t147;
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_release(&t257);
+    h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_release(&t256);
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t258 = h7_h;
+    t257 = h7_h;
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_retain(&t147);
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h7_h = t147;
 #line 63 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_release(&t258);
+    h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_release(&t257);
     t148 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t259 = h53_own53;
+    t258 = h53_own53;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h53_own53 = t148;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t259);
+    hero_array_decref(t258);
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t149 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t260 = h54_own54;
+    t259 = h54_own54;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h54_own54 = t149;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t260);
+    hero_array_decref(t259);
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t150 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t261 = h55_own55;
+    t260 = h55_own55;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h55_own55 = t150;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t261);
+    hero_array_decref(t260);
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t151 = hero_array_new(&hero_desc_array, 3);
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -1086,371 +1086,369 @@ bb5:
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_push_owned(&t151, &t150);
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t262 = h56_own56;
+    t261 = h56_own56;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h56_own56 = t151;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t262);
+    hero_array_decref(t261);
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t263 = h8_both;
+    t262 = h8_both;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_incref(t151);
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h8_both = t151;
 #line 64 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_array_decref(t262);
+    t152 = h7_h.f_xs;
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t153 = INT64_C(2);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t154 = ((void)((t152 == NULL || t153 < 0 || t153 >= t152->len) ? ((void)hero_array_at(t152, t153), hero_unreachable()) : (void)0), (void)(t152->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t152 + 1))[t153]);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t155 = HERO_STR_LIT(hero_str_20);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t156 = h8_both;
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t157 = INT64_C(2);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t158 = ((void)((t156 == NULL || t157 < 0 || t157 >= t156->len) ? ((void)hero_array_at(t156, t157), hero_unreachable()) : (void)0), (void)(t156->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t156 + 1))[t157]);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t159 = INT64_C(4);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t160 = ((void)((t158 == NULL || t159 < 0 || t159 >= t158->len) ? ((void)hero_array_at(t158, t159), hero_unreachable()) : (void)0), (void)(t158->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t158 + 1))[t159]);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t161 = h8_both;
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t162 = ((void)(t161 == NULL ? ((void)hero_array_len(t161), hero_unreachable()) : (void)0), t161->len);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    if (__builtin_add_overflow(t160, t162, &t163)) hero_panic_overflow();
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t164 = HERO_STR_LIT(hero_str_20);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t165 = h8_both;
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t166 = INT64_C(1);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t167 = ((void)((t165 == NULL || t166 < 0 || t166 >= t165->len) ? ((void)hero_array_at(t165, t166), hero_unreachable()) : (void)0), (void)(t165->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t165 + 1))[t166]);
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t168 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t263 = h57_own57;
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h57_own57 = t168;
+#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_decref(t263);
-    t152 = h7_h;
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t153 = t152.f_xs;
+    t169 = hero_array_eq(t167, t168);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t154 = INT64_C(2);
+    hero_print_int(t154);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t155 = ((void)((t153 == NULL || t154 < 0 || t154 >= t153->len) ? ((void)hero_array_at(t153, t154), hero_unreachable()) : (void)0), (void)(t153->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t153 + 1))[t154]);
+    hero_print_str(t155);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t156 = HERO_STR_LIT(hero_str_20);
+    hero_print_int(t163);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t157 = h8_both;
+    hero_print_str(t164);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t158 = INT64_C(2);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t159 = ((void)((t157 == NULL || t158 < 0 || t158 >= t157->len) ? ((void)hero_array_at(t157, t158), hero_unreachable()) : (void)0), (void)(t157->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t157 + 1))[t158]);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t160 = INT64_C(4);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t161 = ((void)((t159 == NULL || t160 < 0 || t160 >= t159->len) ? ((void)hero_array_at(t159, t160), hero_unreachable()) : (void)0), (void)(t159->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t159 + 1))[t160]);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t162 = h8_both;
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t163 = ((void)(t162 == NULL ? ((void)hero_array_len(t162), hero_unreachable()) : (void)0), t162->len);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    if (__builtin_add_overflow(t161, t163, &t164)) hero_panic_overflow();
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t165 = HERO_STR_LIT(hero_str_20);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t166 = h8_both;
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t167 = INT64_C(1);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t168 = ((void)((t166 == NULL || t167 < 0 || t167 >= t166->len) ? ((void)hero_array_at(t166, t167), hero_unreachable()) : (void)0), (void)(t166->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t166 + 1))[t167]);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t169 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t264 = h57_own57;
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h57_own57 = t169;
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t264);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t170 = hero_array_eq(t168, t169);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_int(t155);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_str(t156);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_int(t164);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_str(t165);
-#line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_bool(t170);
+    hero_print_bool(t169);
 #line 65 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_end();
-    t171 = hero_map_new(&hero_desc_array, &hero_desc_int, 0);
+    t170 = hero_map_new(&hero_desc_array, &hero_desc_int, 0);
 #line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t265 = h58_own58;
+    t264 = h58_own58;
 #line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h58_own58 = t171;
+    h58_own58 = t170;
+#line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_map_decref(t264);
+#line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t265 = h9_seen;
+#line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_map_incref(t170);
+#line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h9_seen = t170;
 #line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_map_decref(t265);
-#line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t266 = h9_seen;
-#line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_map_incref(t171);
-#line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h9_seen = t171;
-#line 66 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_map_decref(t266);
-    t172 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
+    t171 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_ONE();
 #line 67 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t267 = h59_own59;
+    t266 = h59_own59;
 #line 67 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h59_own59 = t172;
+    h59_own59 = t171;
 #line 67 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_array_decref(t266);
+#line 67 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t172 = INT64_C(1);
+#line 67 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_map_set(&(h9_seen), &t171, &t172);
+    t173 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
+#line 68 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t267 = h60_own60;
+#line 68 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h60_own60 = t173;
+#line 68 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_decref(t267);
-#line 67 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t173 = INT64_C(1);
-#line 67 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_map_set(&(h9_seen), &t172, &t173);
-    t174 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 68 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t268 = h60_own60;
+    t174 = INT64_C(2);
 #line 68 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h60_own60 = t174;
-#line 68 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t268);
-#line 68 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t175 = INT64_C(2);
-#line 68 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_map_set(&(h9_seen), &t174, &t175);
-    t176 = hero_map_new(&hero_desc_str, &hero_desc_array, 0);
+    hero_map_set(&(h9_seen), &t173, &t174);
+    t175 = hero_map_new(&hero_desc_str, &hero_desc_array, 0);
 #line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t269 = h61_own61;
+    t268 = h61_own61;
 #line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h61_own61 = t176;
+    h61_own61 = t175;
+#line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_map_decref(t268);
+#line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t269 = h10_named;
+#line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_map_incref(t175);
+#line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h10_named = t175;
 #line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_map_decref(t269);
-#line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t270 = h10_named;
-#line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_map_incref(t176);
-#line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h10_named = t176;
-#line 69 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_map_decref(t270);
-    t177 = HERO_STR_LIT(hero_str_64);
+    t176 = HERO_STR_LIT(hero_str_64);
 #line 70 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t178 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
+    t177 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 70 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t271 = h62_own62;
+    t270 = h62_own62;
 #line 70 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h62_own62 = t178;
+    h62_own62 = t177;
 #line 70 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_array_decref(t270);
+#line 70 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_array_incref(t177);
+#line 70 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_map_set(&(h10_named), &t176, &t177);
+    t178 = h9_seen;
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t179 = INT64_C(7);
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t180 = hero_array_new(&hero_desc_int, 1);
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    hero_array_push_owned(&t180, &t179);
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t271 = h63_own63;
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h63_own63 = t180;
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_array_decref(t271);
-#line 70 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_incref(t178);
-#line 70 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_map_set(&(h10_named), &t177, &t178);
-    t179 = h9_seen;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t180 = INT64_C(7);
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t181 = hero_array_new(&hero_desc_int, 1);
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_push_owned(&t181, &t180);
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t272 = h63_own63;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h63_own63 = t181;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t272);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     {
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t179, &t181);
+      HERO_NODEBUG const void *found = hero_map_find(t178, &t180);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
       if (found == NULL) {
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-        t182 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t181 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
       } else {
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-        t182 = (h_0opt_e201354){.tag = INT64_C(0)};
+        t181 = (h_0opt_e201354){.tag = INT64_C(0)};
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-        (&hero_desc_int)->copy(&t182.as.ok, found);
+        (&hero_desc_int)->copy(&t181.as.ok, found);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
       }
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     }
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t273 = h64_own64;
+    t272 = h64_own64;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h64_own64 = t182;
+    h64_own64 = t181;
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h_0opt_e201354_release(&t272);
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t273 = h11_f1;
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h_0opt_e201354_retain(&t181);
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h11_f1 = t181;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h_0opt_e201354_release(&t273);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t274 = h11_f1;
+    t182 = h11_f1;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_0opt_e201354_retain(&t182);
+    t183 = t182.tag;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h11_f1 = t182;
+    t184 = INT64_C(0);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_0opt_e201354_release(&t274);
+    t185 = t183 == t184;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t183 = h11_f1;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t184 = t183.tag;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t185 = INT64_C(0);
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t186 = t184 == t185;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    if (t186) goto bb7; else goto bb8;
+    if (t185) goto bb7; else goto bb8;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
 bb6:
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t99 = h4_f0;
 #line 49 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     t100 = t99.as.err;
-#line 1284 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+#line 1282 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_panic_must(t100);
     hero_unreachable();
 bb7:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t187 = h11_f1;
+    t186 = h11_f1;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t188 = t187.as.ok;
+    t187 = t186.as.ok;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h12_r0 = t188;
+    h12_r0 = t187;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     goto bb9;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
 bb8:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t189 = INT64_C(0);
+    t188 = INT64_C(0);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h12_r0 = t189;
+    h12_r0 = t188;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     goto bb9;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
 bb9:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t190 = h12_r0;
+    t189 = h12_r0;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t191 = HERO_STR_LIT(hero_str_20);
+    t190 = HERO_STR_LIT(hero_str_20);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t192 = h9_seen;
+    t191 = h9_seen;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t193 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
+    t192 = h_fixedbugs382everyarrayprimitivereadsastaticconstant_DIGITS();
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t275 = h65_own65;
+    t274 = h65_own65;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h65_own65 = t193;
+    h65_own65 = t192;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_array_decref(t275);
+    hero_array_decref(t274);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     {
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t192, &t193);
+      HERO_NODEBUG const void *found = hero_map_find(t191, &t192);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
       if (found == NULL) {
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-        t194 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t193 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
       } else {
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-        t194 = (h_0opt_e201354){.tag = INT64_C(0)};
+        t193 = (h_0opt_e201354){.tag = INT64_C(0)};
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-        (&hero_desc_int)->copy(&t194.as.ok, found);
+        (&hero_desc_int)->copy(&t193.as.ok, found);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
       }
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     }
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t276 = h66_own66;
+    t275 = h66_own66;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h66_own66 = t194;
+    h66_own66 = t193;
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h_0opt_e201354_release(&t275);
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t276 = h13_f2;
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h_0opt_e201354_retain(&t193);
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h13_f2 = t193;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h_0opt_e201354_release(&t276);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t277 = h13_f2;
+    t194 = h13_f2;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_0opt_e201354_retain(&t194);
+    t195 = t194.tag;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h13_f2 = t194;
+    t196 = INT64_C(0);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_0opt_e201354_release(&t277);
+    t197 = t195 == t196;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t195 = h13_f2;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t196 = t195.tag;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t197 = INT64_C(0);
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t198 = t196 == t197;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    if (t198) goto bb10; else goto bb11;
+    if (t197) goto bb10; else goto bb11;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
 bb10:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t199 = h13_f2;
+    t198 = h13_f2;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t200 = t199.as.ok;
+    t199 = t198.as.ok;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h14_r1 = t200;
+    h14_r1 = t199;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     goto bb12;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
 bb11:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t201 = INT64_C(0);
+    t200 = INT64_C(0);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h14_r1 = t201;
+    h14_r1 = t200;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     goto bb12;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
 bb12:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t202 = h14_r1;
+    t201 = h14_r1;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t203 = HERO_STR_LIT(hero_str_20);
+    t202 = HERO_STR_LIT(hero_str_20);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t204 = h10_named;
+    t203 = h10_named;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t205 = HERO_STR_LIT(hero_str_64);
+    t204 = HERO_STR_LIT(hero_str_64);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     {
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t204, &t205);
+      HERO_NODEBUG const void *found = hero_map_find(t203, &t204);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
       if (found == NULL) {
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-        t206 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t205 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
       } else {
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-        t206 = (h_0opt_2270cbe7){.tag = INT64_C(0)};
+        t205 = (h_0opt_2270cbe7){.tag = INT64_C(0)};
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-        (&hero_desc_array)->copy(&t206.as.ok, found);
+        (&hero_desc_array)->copy(&t205.as.ok, found);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
       }
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     }
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t278 = h67_own67;
+    t277 = h67_own67;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h67_own67 = t206;
+    h67_own67 = t205;
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h_0opt_2270cbe7_release(&t277);
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    t278 = h15_f3;
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h_0opt_2270cbe7_retain(&t205);
+#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
+    h15_f3 = t205;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     h_0opt_2270cbe7_release(&t278);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t279 = h15_f3;
+    t206 = h15_f3;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_0opt_2270cbe7_retain(&t206);
+    t207 = t206.tag;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h15_f3 = t206;
+    t208 = INT64_C(0);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    h_0opt_2270cbe7_release(&t279);
+    t209 = t207 == t208;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t207 = h15_f3;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t208 = t207.tag;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t209 = INT64_C(0);
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t210 = t208 == t209;
-#line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    if (t210) goto bb13; else goto bb14;
+    if (t209) goto bb13; else goto bb14;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
 bb13:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t213 = h15_f3;
+    t212 = h15_f3;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t214 = t213.as.ok;
+    t213 = t212.as.ok;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t215 = INT64_C(1);
+    t214 = INT64_C(1);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t216 = ((void)((t214 == NULL || t215 < 0 || t215 >= t214->len) ? ((void)hero_array_at(t214, t215), hero_unreachable()) : (void)0), (void)(t214->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t214 + 1))[t215]);
+    t215 = ((void)((t213 == NULL || t214 < 0 || t214 >= t213->len) ? ((void)hero_array_at(t213, t214), hero_unreachable()) : (void)0), (void)(t213->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t213 + 1))[t214]);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_int(t190);
+    hero_print_int(t189);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_str(t191);
+    hero_print_str(t190);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_int(t202);
+    hero_print_int(t201);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_str(t203);
+    hero_print_str(t202);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    hero_print_int(t216);
+    hero_print_int(t215);
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_end();
-#line 1454 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+#line 1452 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_release_at(&h1_xs0);
     h_0opt_e201354_release(hero_slot_escape(&h4_f0));
     hero_array_release_at(&h5_xs);
@@ -1517,11 +1515,11 @@ bb13:
     return;
 bb14:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t211 = h15_f3;
+    t210 = h15_f3;
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
-    t212 = t211.as.err;
-#line 1524 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
-    hero_panic_must(t212);
+    t211 = t210.as.err;
+#line 1522 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+    hero_panic_must(t211);
     hero_unreachable();
 }
 
@@ -1610,7 +1608,7 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 1614 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+#line 1612 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -1701,7 +1699,7 @@ bb3:
 bb4:
 #line 48 "<heroes library>"
     t20 = h2_out;
-#line 1705 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+#line 1703 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_incref(t20);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -1720,7 +1718,7 @@ bb6:
 bb7:
 #line 47 "<heroes library>"
     goto bb5;
-#line 1724 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+#line 1722 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
 }
 
 #line 58 "<heroes library>"
@@ -1798,7 +1796,7 @@ bb3:
 bb4:
 #line 62 "<heroes library>"
     t18 = h3_total;
-#line 1802 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+#line 1800 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_release_at(&h4_xs0);
     return t18;
 }
@@ -1915,7 +1913,7 @@ bb7:
     goto bb5;
 #line 69 "<heroes library>"
 bb8:
-#line 1919 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+#line 1917 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     t21 = h5_ret0;
     h_0opt_e201354_retain(&t21);
     hero_array_release_at(&h2_xs0);
@@ -2014,7 +2012,7 @@ bb7:
     goto bb5;
 #line 77 "<heroes library>"
 bb8:
-#line 2018 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+#line 2016 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     t18 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     return t18;
@@ -2112,7 +2110,7 @@ bb7:
     goto bb5;
 #line 85 "<heroes library>"
 bb8:
-#line 2116 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
+#line 2114 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     t19 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     return t19;

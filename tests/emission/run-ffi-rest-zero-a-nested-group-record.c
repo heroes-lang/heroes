@@ -253,77 +253,65 @@ void h_ffirestzeroanestedgrouprecord_main(void) {
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 #define h1_b (*hero_lend_h1_b)
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    struct outer *const hero_lend_h0_a = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "a"); struct outer *const hero_lend_h1_b = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "b"); HERO_NODEBUG struct outer t1, t2, t5, t10, t11, t14; HERO_NODEBUG int32_t t3, t7, t12, t16; HERO_NODEBUG HeroStr t4, t8, t13, t17; HERO_NODEBUG SA t6, t15; HERO_NODEBUG int64_t t9, t18; HERO_ENTRY_STOP; goto bb0;
+    struct outer *const hero_lend_h0_a = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "a"); struct outer *const hero_lend_h1_b = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "b"); HERO_NODEBUG struct outer t1, t7; HERO_NODEBUG int32_t t2, t4, t8, t10; HERO_NODEBUG HeroStr t3, t5, t9, t11; HERO_NODEBUG int64_t t6, t12; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 bb0:
     (void)dirty();
     t1 = h_ffirestzeroanestedgrouprecord_left_out();
 #line 26 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     h0_a = t1;
-    t2 = h0_a;
+    t2 = h0_a.k;
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t3 = t2.k;
+    t3 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t4 = HERO_STR_LIT(hero_str_20);
+    t4 = h0_a.inner.kind;
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t5 = h0_a;
-#line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t6 = t5.inner;
-#line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t7 = t6.kind;
-#line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t8 = HERO_STR_LIT(hero_str_20);
+    t5 = HERO_STR_LIT(hero_str_20);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_lend_local_name(hero_lend_h0_a, "outer_union", "o");
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_pad_fill(&h0_a, sizeof(struct outer), 1, hero_pad_g_1, hero_pad_n_1);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t9 = outer_union(&h0_a);
+    t6 = outer_union(&h0_a);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    hero_print_int(t3);
+    hero_print_int(t2);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    hero_print_str(t4);
+    hero_print_str(t3);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    hero_print_int(t7);
+    hero_print_int(t4);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    hero_print_str(t8);
+    hero_print_str(t5);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    hero_print_int(t9);
+    hero_print_int(t6);
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_print_end();
     (void)dirty();
-    t10 = h_ffirestzeroanestedgrouprecord_built();
+    t7 = h_ffirestzeroanestedgrouprecord_built();
 #line 29 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    h1_b = t10;
-    t11 = h1_b;
+    h1_b = t7;
+    t8 = h1_b.k;
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t12 = t11.k;
+    t9 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t13 = HERO_STR_LIT(hero_str_20);
+    t10 = h1_b.inner.kind;
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t14 = h1_b;
-#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t15 = t14.inner;
-#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t16 = t15.kind;
-#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t17 = HERO_STR_LIT(hero_str_20);
+    t11 = HERO_STR_LIT(hero_str_20);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_lend_local_name(hero_lend_h1_b, "outer_union", "o");
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_pad_fill(&h1_b, sizeof(struct outer), 1, hero_pad_g_1, hero_pad_n_1);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    t18 = outer_union(&h1_b);
+    t12 = outer_union(&h1_b);
+#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_print_int(t8);
+#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_print_str(t9);
+#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_print_int(t10);
+#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_print_str(t11);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_print_int(t12);
-#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    hero_print_str(t13);
-#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    hero_print_int(t16);
-#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    hero_print_str(t17);
-#line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    hero_print_int(t18);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     hero_print_end();
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
@@ -332,7 +320,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return;
-#line 336 "ffirestzeroanestedgrouprecord.c"
+#line 324 "ffirestzeroanestedgrouprecord.c"
 }
 #undef h0_a
 #undef h1_b

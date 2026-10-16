@@ -304,11 +304,11 @@ function aliased_mutable_arguments(name: str, first: str?, span: token.Span) -> 
         other @ "this call's `" + first.must() + "` argument"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "aliased_mutable_arguments",
-        message: "`" + name + "` overlaps " + other + " — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last",
+        message: "`" + name + "` overlaps " + other + " — two `@` arguments may not reach one value: the function would work on one place under two names, and a write through either would change what the other reads",
         span: span
     )
     d.notes @ d.notes.push(
-        "with two copies of one place landing back on it the call's answer would depend on the copy-out order, and that is what `no aliasing exists among the values this language owns` rules out (panel 010)"
+        "one place under two names inside the function is the aliasing `no aliasing exists among the values this language owns` rules out (panel 010), and with it the call's answer would depend on the order its writes land in"
     )
 
     # The two places made different comes first, since it holds for every

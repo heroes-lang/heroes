@@ -1,8 +1,9 @@
 # An `@` parameter nothing writes or ends is refused (panel 210's R1, ratified
 # 2026-10-11; spec § 5, *a cell nothing re-binds or an `@` parameter nothing
-# writes or ends (section 13)*; design.md §4.8 copy in, copy out). Its
-# copy-out hands every caller back the value it passed, so the `@` at the
-# signature and at each call promises a change nothing makes.
+# writes or ends (section 13)*; spec § 9, the function works on the
+# caller's place itself, panel 215's R3). Every caller's place comes back
+# exactly as it was lent, so the `@` at the signature and at each call
+# promises a change nothing makes.
 #
 # What counts as a write is the resolver's: `@` to it, a field or an element;
 # an `@` argument; a `.ptr()` lend C writes through; a `consumes` or
@@ -76,7 +77,7 @@ function wildcard(@r: state.Resolver, s: source.Source, param: ast.Param)
         return
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "never_rebound",
-        message: "`_` binds nothing, so an `@` on it marks a parameter nothing can write — its copy-out hands every caller back the value it passed: remove the `@` here and at every call",
+        message: "`_` binds nothing, so an `@` on it marks a parameter nothing can write — every caller's place would come back exactly as it was lent: remove the `@` here and at every call",
         span: param.name
     )
     marker = marker_before(s, param.name)
@@ -93,7 +94,7 @@ function told(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Res
     name = source.span_text(s, local.name)
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "never_rebound",
-        message: "`" + name + "` is an `@` parameter and nothing writes it — its copy-out hands every caller back the value it passed: write `" + name + "` where the body meant to change it, or remove the `@` here and at every call",
+        message: "`" + name + "` is an `@` parameter and nothing writes it — every caller's place comes back exactly as it was lent: write `" + name + "` where the body meant to change it, or remove the `@` here and at every call",
         span: local.name
     )
     back = written_back(a, s, decls, out: out, at: at)

@@ -106,25 +106,21 @@ void h_sugarnamedargs_main(void);
 #line 9 "tests/golden/ir/sugar-named-args.hero"
 h_sugarnamedargs_Point h_sugarnamedargs_moved(h_sugarnamedargs_Point h0_p, int64_t h1_by) {
 #line 9 "tests/golden/ir/sugar-named-args.hero"
-    HERO_NODEBUG h_sugarnamedargs_Point t1, t5, t7; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG h_sugarnamedargs_Point t5; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/ir/sugar-named-args.hero"
 bb0:
-    t1 = h0_p;
+    t1 = h0_p.f_x;
 #line 10 "tests/golden/ir/sugar-named-args.hero"
-    t2 = t1.f_x;
+    t2 = h1_by;
 #line 10 "tests/golden/ir/sugar-named-args.hero"
-    t3 = h1_by;
+    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 10 "tests/golden/ir/sugar-named-args.hero"
-    if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow();
+    t4 = h0_p.f_y;
 #line 10 "tests/golden/ir/sugar-named-args.hero"
-    t5 = h0_p;
+    t5 = (h_sugarnamedargs_Point){.f_x = t3, .f_y = t4};
 #line 10 "tests/golden/ir/sugar-named-args.hero"
-    t6 = t5.f_y;
-#line 10 "tests/golden/ir/sugar-named-args.hero"
-    t7 = (h_sugarnamedargs_Point){.f_x = t4, .f_y = t6};
-#line 10 "tests/golden/ir/sugar-named-args.hero"
-    return t7;
-#line 128 "sugarnamedargs.c"
+    return t5;
+#line 124 "sugarnamedargs.c"
 }
 
 #line 12 "tests/golden/ir/sugar-named-args.hero"
@@ -140,7 +136,7 @@ bb0:
     if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 13 "tests/golden/ir/sugar-named-args.hero"
     return t3;
-#line 144 "sugarnamedargs.c"
+#line 140 "sugarnamedargs.c"
 }
 
 #line 15 "tests/golden/ir/sugar-named-args.hero"
@@ -160,7 +156,7 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/ir/sugar-named-args.hero"
     return;
-#line 164 "sugarnamedargs.c"
+#line 160 "sugarnamedargs.c"
 }
 HERO_TU_LOCAL bool h_sugarnamedargs_Point_eq(const h_sugarnamedargs_Point *a, const h_sugarnamedargs_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

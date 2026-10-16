@@ -188,7 +188,7 @@ int64_t h_fixedbugs559wide_doubled(int64_t h0_x);
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main(void) {
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    S h0_s; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t11, t12, t16, t18, t21, t22; HERO_NODEBUG int32_t t1, t2, t7, t9, t10; HERO_NODEBUG S t3, t6, t8; HERO_NODEBUG int64_t t4, t5, t13, t14, t19, t20; HERO_NODEBUG bool t15; HERO_NODEBUG HeroFailure t17; HERO_ENTRY_STOP; goto bb0;
+    S h0_s; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t9, t10, t14, t16, t19, t20; HERO_NODEBUG int32_t t1, t2, t6, t7, t8; HERO_NODEBUG S t3; HERO_NODEBUG int64_t t4, t5, t11, t12, t17, t18; HERO_NODEBUG bool t13; HERO_NODEBUG HeroFailure t15; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 bb0:
     t1 = INT64_C(1);
@@ -202,64 +202,60 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     t5 = h_fixedbugs559wide_doubled(t4);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t6 = h0_s;
+    t6 = h0_s.a;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t7 = t6.a;
+    t7 = h0_s.b;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t8 = h0_s;
+    if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow();
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t9 = t8.b;
+    t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t8};
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow();
+    t19 = h2_own2;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t11 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t10};
+    h2_own2 = t9;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t21 = h2_own2;
+    h_0opt_e201354_release(&t19);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    h2_own2 = t11;
+    t20 = h1_f0;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    h_0opt_e201354_release(&t21);
+    h_0opt_e201354_retain(&t9);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t22 = h1_f0;
+    h1_f0 = t9;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    h_0opt_e201354_retain(&t11);
+    h_0opt_e201354_release(&t20);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    h1_f0 = t11;
+    t10 = h1_f0;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    h_0opt_e201354_release(&t22);
+    t11 = t10.tag;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t12 = h1_f0;
+    t12 = INT64_C(0);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t13 = t12.tag;
+    t13 = t11 == t12;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t14 = INT64_C(0);
-#line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t15 = t13 == t14;
-#line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    if (t15) goto bb1; else goto bb2;
+    if (t13) goto bb1; else goto bb2;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 bb1:
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t18 = h1_f0;
+    t16 = h1_f0;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t19 = t18.as.ok;
+    t17 = t16.as.ok;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    if (__builtin_add_overflow(t5, t19, &t20)) hero_panic_overflow();
+    if (__builtin_add_overflow(t5, t17, &t18)) hero_panic_overflow();
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    hero_print_int(t20);
+    hero_print_int(t18);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     hero_print_end();
-#line 253 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 249 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return;
 bb2:
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t16 = h1_f0;
+    t14 = h1_f0;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    t17 = t16.as.err;
-#line 262 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
-    hero_panic_must(t17);
+    t15 = t14.as.err;
+#line 258 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+    hero_panic_must(t15);
     hero_unreachable();
 }
 
@@ -274,7 +270,7 @@ bb0:
     t2 = twice(t1);
 #line 8 "tests/golden/run/fixedbugs559/wide.hero"
     return t2;
-#line 278 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 274 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;

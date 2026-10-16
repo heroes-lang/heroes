@@ -45,13 +45,13 @@ function step(@r: Reader, xs: [i64]) -> i64?
     bb0  entry
         $t1: [i64] = load xs
         $t2: i64? = call heroes first_of($t1)
-        $t19: i64? = load $own5
+        $t18: i64? = load $own5
         store $own5 <- $t2
-        decref $t19
-        $t20: i64? = load $f0
+        decref $t18
+        $t19: i64? = load $f0
         incref $t2
         store $f0 <- $t2
-        decref $t20
+        decref $t19
         $t3: i64? = load $f0
         $t4: i64 = tag $t3
         $t5: i64 = const 0
@@ -61,34 +61,33 @@ function step(@r: Reader, xs: [i64]) -> i64?
         $t10: i64? = load $f0
         $t11: i64 = payload $t10 .ok
         store v <- $t11
-        $t12: Reader = load r
-        $t13: i64 = field $t12.pos
-        $t14: i64 = const 1
-        $t15: i64 = add! $t13, $t14
-        store r.pos <- $t15
-        $t16: i64 = load v
-        $t17: i64? = construct ok($t16)
-        $t21: i64? = load $own6
-        store $own6 <- $t17
-        decref $t21
-        store $ret0 <- $t17
+        $t12: i64 = load r.pos
+        $t13: i64 = const 1
+        $t14: i64 = add! $t12, $t13
+        store r.pos <- $t14
+        $t15: i64 = load v
+        $t16: i64? = construct ok($t15)
+        $t20: i64? = load $own6
+        store $own6 <- $t16
+        decref $t20
+        store $ret0 <- $t16
         jump bb3
     bb2  ?: propagate    preds bb0
         $t7: i64? = load $f0
         $t8: the error (`code`, `msg`) = payload $t7 .err
         incref $t8
         $t9: i64? = construct err($t8)
-        $t22: i64? = load $own7
+        $t21: i64? = load $own7
         store $own7 <- $t9
-        decref $t22
+        decref $t21
         store $ret0 <- $t9
         jump bb3
     bb3  exit    preds bb1, bb2
         copyout r
-        $t18: i64? = load $ret0
-        incref $t18
+        $t17: i64? = load $ret0
+        incref $t17
         decref_slot $f0
         decref_slot $own5
         decref_slot $own6
         decref_slot $own7
-        return $t18
+        return $t17

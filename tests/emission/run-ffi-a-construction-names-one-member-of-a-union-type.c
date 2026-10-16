@@ -168,7 +168,7 @@ void h_ffiaconstructionnamesonememberofauniontype_main(void);
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 void h_ffiaconstructionnamesonememberofauniontype_main(void) {
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    UT h0_u; HERO_NODEBUG float t1; HERO_NODEBUG UT t2, t3, t5; HERO_NODEBUG int32_t t4, t6; HERO_ENTRY_STOP; goto bb0;
+    UT h0_u; HERO_NODEBUG float t1; HERO_NODEBUG UT t2, t3; HERO_NODEBUG int32_t t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 bb0:
     t1 = 0x1.8p+0;
@@ -183,16 +183,14 @@ bb0:
     hero_print_int(t4);
 #line 18 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     hero_print_end();
-    t5 = h0_u;
+    t5 = h0_u.i;
 #line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    t6 = t5.i;
-#line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    hero_print_int(t6);
+    hero_print_int(t5);
 #line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     hero_print_end();
 #line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     return;
-#line 196 "ffiaconstructionnamesonememberofauniontype.c"
+#line 194 "ffiaconstructionnamesonememberofauniontype.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_UT_eq(const UT *a, const UT *b) {
     if (!(a->i == b->i)) return false;

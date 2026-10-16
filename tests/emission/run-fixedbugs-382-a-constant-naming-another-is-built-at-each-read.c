@@ -403,7 +403,7 @@ bb3:
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
 void h_fixedbugs382aconstantnaminganotherisbuiltateachread_main(void) {
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    int64_t h0_total; int64_t h1_at; HERO_NODEBUG h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape h2_s0 = {0}, t52, t53, t55, t102; h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line h3_l = {0}; HeroArrayHeader * h4_copy = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *t7, *t11, *t15, *t19, *t25, *t34, *t36, *t37, *t40, *t41, *t44, *t48, *t50, *t58, *t63, *t64, *t66, *t70, *t72, *t76, *t78, *t82, *t86, *t88, *t91, *t92, *t93, *t94, *t95, *t96, *t97, *t98, *t99, *t100, *t101, *t103, *t104, *t105, *t106, *t108; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t9, t10, t12, t13, t14, t16, t17, t18, t20, t21, t22, t23, t24, t26, t27, t28, t29, t30, t31, t32, t35, t45, t46, t49, t51, t54, t59, t60, t67, t68, t69, t71, t73, t74, t77, t79, t80, t83, t84, t87, t89, t90; HERO_NODEBUG bool t5, t38, t42, t65; HERO_NODEBUG HeroStr t33, t39, t43, t47, t61, t75, t81, t85; HERO_NODEBUG h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line t56, t57, t62, t107; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_total; int64_t h1_at; HERO_NODEBUG h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape h2_s0 = {0}, t52, t53, t55, t100; h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line h3_l = {0}; HeroArrayHeader * h4_copy = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *t7, *t11, *t15, *t19, *t25, *t34, *t36, *t37, *t40, *t41, *t44, *t48, *t50, *t57, *t61, *t62, *t64, *t68, *t70, *t74, *t76, *t80, *t84, *t86, *t89, *t90, *t91, *t92, *t93, *t94, *t95, *t96, *t97, *t98, *t99, *t101, *t102, *t103, *t104, *t106; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t9, t10, t12, t13, t14, t16, t17, t18, t20, t21, t22, t23, t24, t26, t27, t28, t29, t30, t31, t32, t35, t45, t46, t49, t51, t54, t58, t59, t65, t66, t67, t69, t71, t72, t75, t77, t78, t81, t82, t85, t87, t88; HERO_NODEBUG bool t5, t38, t42, t63; HERO_NODEBUG HeroStr t33, t39, t43, t47, t60, t73, t79, t83; HERO_NODEBUG h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line t56, t105; HERO_ENTRY_STOP; goto bb0;
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
 bb0:
     t1 = INT64_C(0);
@@ -430,11 +430,11 @@ bb2:
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t7 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_OUTER();
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t91 = h5_own5;
+    t89 = h5_own5;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h5_own5 = t7;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t91);
+    hero_array_decref(t89);
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t8 = h1_at;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -456,11 +456,11 @@ bb2:
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t15 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_ALIAS();
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t92 = h6_own6;
+    t90 = h6_own6;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h6_own6 = t15;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t92);
+    hero_array_decref(t90);
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t16 = INT64_C(0);
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -470,11 +470,11 @@ bb2:
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t19 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_SCALED();
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t93 = h7_own7;
+    t91 = h7_own7;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h7_own7 = t19;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t93);
+    hero_array_decref(t91);
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t20 = h1_at;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -492,11 +492,11 @@ bb2:
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t25 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_PICK();
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t94 = h8_own8;
+    t92 = h8_own8;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h8_own8 = t25;
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t94);
+    hero_array_decref(t92);
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t26 = INT64_C(1);
 #line 43 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -523,11 +523,11 @@ bb3:
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t34 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_OUTER();
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t95 = h9_own9;
+    t93 = h9_own9;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h9_own9 = t34;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t95);
+    hero_array_decref(t93);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t35 = INT64_C(1);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -535,11 +535,11 @@ bb3:
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t37 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_INNER();
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t96 = h10_own10;
+    t94 = h10_own10;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h10_own10 = t37;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t96);
+    hero_array_decref(t94);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t38 = hero_array_eq(t36, t37);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -547,19 +547,19 @@ bb3:
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t40 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_ALIAS();
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t97 = h11_own11;
+    t95 = h11_own11;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h11_own11 = t40;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t97);
+    hero_array_decref(t95);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t41 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_INNER();
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t98 = h12_own12;
+    t96 = h12_own12;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h12_own12 = t41;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t98);
+    hero_array_decref(t96);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t42 = hero_array_eq(t40, t41);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -567,11 +567,11 @@ bb3:
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t44 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_SCALED();
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t99 = h13_own13;
+    t97 = h13_own13;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h13_own13 = t44;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t99);
+    hero_array_decref(t97);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t45 = INT64_C(0);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -581,11 +581,11 @@ bb3:
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t48 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_PICK();
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t100 = h14_own14;
+    t98 = h14_own14;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h14_own14 = t48;
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t100);
+    hero_array_decref(t98);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t49 = ((void)(t48 == NULL ? ((void)hero_array_len(t48), hero_unreachable()) : (void)0), t48->len);
 #line 46 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -611,23 +611,23 @@ bb3:
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t50 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_SHAPES();
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t101 = h15_own15;
+    t99 = h15_own15;
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h15_own15 = t50;
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t101);
+    hero_array_decref(t99);
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t51 = INT64_C(0);
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? ((void)hero_array_at(t50, t51), hero_unreachable()) : (void)0), (void)(t50->elem->size != sizeof(h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape const *)(const void *)(t50 + 1))[t51]);
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t102 = h2_s0;
+    t100 = h2_s0;
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_retain(&t52);
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h2_s0 = t52;
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_release(&t102);
+    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_release(&t100);
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t53 = h2_s0;
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -643,97 +643,97 @@ bb3:
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
 bb4:
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t66 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_OUTER();
+    t64 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_OUTER();
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t103 = h16_own16;
+    t101 = h16_own16;
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    h16_own16 = t66;
+    h16_own16 = t64;
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t103);
+    hero_array_decref(t101);
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t104 = h4_copy;
+    t102 = h4_copy;
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_incref(t66);
+    hero_array_incref(t64);
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    h4_copy = t66;
+    h4_copy = t64;
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t104);
-    t67 = INT64_C(0);
+    hero_array_decref(t102);
+    t65 = INT64_C(0);
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t68 = INT64_C(0);
+    t66 = INT64_C(0);
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t69 = INT64_C(9);
+    t67 = INT64_C(9);
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     hero_array_unshare(&(h4_copy));
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_set(&((*((void)((h4_copy == NULL || t67 < 0 || t67 >= h4_copy->len) ? ((void)hero_array_at_mut(h4_copy, t67), hero_unreachable()) : (void)0), (void)(h4_copy->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h4_copy + 1) + t67))), t68, &t69);
-    t70 = h4_copy;
+    hero_array_set(&((*((void)((h4_copy == NULL || t65 < 0 || t65 >= h4_copy->len) ? ((void)hero_array_at_mut(h4_copy, t65), hero_unreachable()) : (void)0), (void)(h4_copy->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h4_copy + 1) + t65))), t66, &t67);
+    t68 = h4_copy;
+#line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
+    t69 = INT64_C(0);
+#line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
+    t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? ((void)hero_array_at(t68, t69), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t68 + 1))[t69]);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t71 = INT64_C(0);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t72 = ((void)((t70 == NULL || t71 < 0 || t71 >= t70->len) ? ((void)hero_array_at(t70, t71), hero_unreachable()) : (void)0), (void)(t70->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t70 + 1))[t71]);
+    t72 = ((void)((t70 == NULL || t71 < 0 || t71 >= t70->len) ? ((void)hero_array_at(t70, t71), hero_unreachable()) : (void)0), (void)(t70->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t70 + 1))[t71]);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t73 = INT64_C(0);
+    t73 = HERO_STR_LIT(hero_str_20);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t74 = ((void)((t72 == NULL || t73 < 0 || t73 >= t72->len) ? ((void)hero_array_at(t72, t73), hero_unreachable()) : (void)0), (void)(t72->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t72 + 1))[t73]);
+    t74 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_OUTER();
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t75 = HERO_STR_LIT(hero_str_20);
+    t103 = h17_own17;
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t76 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_OUTER();
+    h17_own17 = t74;
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t105 = h17_own17;
+    hero_array_decref(t103);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    h17_own17 = t76;
+    t75 = INT64_C(0);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t105);
+    t76 = ((void)((t74 == NULL || t75 < 0 || t75 >= t74->len) ? ((void)hero_array_at(t74, t75), hero_unreachable()) : (void)0), (void)(t74->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t74 + 1))[t75]);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t77 = INT64_C(0);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t78 = ((void)((t76 == NULL || t77 < 0 || t77 >= t76->len) ? ((void)hero_array_at(t76, t77), hero_unreachable()) : (void)0), (void)(t76->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t76 + 1))[t77]);
+    t78 = ((void)((t76 == NULL || t77 < 0 || t77 >= t76->len) ? ((void)hero_array_at(t76, t77), hero_unreachable()) : (void)0), (void)(t76->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t76 + 1))[t77]);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t79 = INT64_C(0);
+    t79 = HERO_STR_LIT(hero_str_20);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t80 = ((void)((t78 == NULL || t79 < 0 || t79 >= t78->len) ? ((void)hero_array_at(t78, t79), hero_unreachable()) : (void)0), (void)(t78->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t78 + 1))[t79]);
+    t80 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_INNER();
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t81 = HERO_STR_LIT(hero_str_20);
+    t104 = h18_own18;
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t82 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_INNER();
+    h18_own18 = t80;
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t106 = h18_own18;
+    hero_array_decref(t104);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    h18_own18 = t82;
+    t81 = INT64_C(0);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t106);
+    t82 = ((void)((t80 == NULL || t81 < 0 || t81 >= t80->len) ? ((void)hero_array_at(t80, t81), hero_unreachable()) : (void)0), (void)(t80->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t80 + 1))[t81]);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t83 = INT64_C(0);
+    t83 = HERO_STR_LIT(hero_str_20);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t84 = ((void)((t82 == NULL || t83 < 0 || t83 >= t82->len) ? ((void)hero_array_at(t82, t83), hero_unreachable()) : (void)0), (void)(t82->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t82 + 1))[t83]);
+    t84 = h4_copy;
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t85 = HERO_STR_LIT(hero_str_20);
+    t85 = INT64_C(1);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t86 = h4_copy;
+    t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? ((void)hero_array_at(t84, t85), hero_unreachable()) : (void)0), (void)(t84->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t84 + 1))[t85]);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t87 = INT64_C(1);
+    t87 = INT64_C(0);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t88 = ((void)((t86 == NULL || t87 < 0 || t87 >= t86->len) ? ((void)hero_array_at(t86, t87), hero_unreachable()) : (void)0), (void)(t86->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t86 + 1))[t87]);
+    t88 = ((void)((t86 == NULL || t87 < 0 || t87 >= t86->len) ? ((void)hero_array_at(t86, t87), hero_unreachable()) : (void)0), (void)(t86->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t86 + 1))[t87]);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t89 = INT64_C(0);
+    hero_print_int(t72);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t90 = ((void)((t88 == NULL || t89 < 0 || t89 >= t88->len) ? ((void)hero_array_at(t88, t89), hero_unreachable()) : (void)0), (void)(t88->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t88 + 1))[t89]);
+    hero_print_str(t73);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_int(t74);
+    hero_print_int(t78);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_str(t75);
+    hero_print_str(t79);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_int(t80);
+    hero_print_int(t82);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_str(t81);
+    hero_print_str(t83);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_int(t84);
-#line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_str(t85);
-#line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_int(t90);
+    hero_print_int(t88);
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     hero_print_end();
 #line 740 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
@@ -762,48 +762,44 @@ bb5:
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t56 = t55.as.c_line;
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t107 = h3_l;
+    t105 = h3_l;
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line_retain(&t56);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     h3_l = t56;
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line_release(&t107);
+    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line_release(&t105);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t57 = h3_l;
+    t57 = h3_l.f_pts;
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t58 = t57.f_pts;
+    t58 = INT64_C(1);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t59 = INT64_C(1);
+    t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? ((void)hero_array_at(t57, t58), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t57 + 1))[t58]);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? ((void)hero_array_at(t58, t59), hero_unreachable()) : (void)0), (void)(t58->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t58 + 1))[t59]);
+    t60 = HERO_STR_LIT(hero_str_20);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t61 = HERO_STR_LIT(hero_str_20);
+    t61 = h3_l.f_pts;
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t62 = h3_l;
+    t62 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_INNER();
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t63 = t62.f_pts;
+    t106 = h19_own19;
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t64 = h_fixedbugs382aconstantnaminganotherisbuiltateachread_INNER();
+    h19_own19 = t62;
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t108 = h19_own19;
+    hero_array_decref(t106);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    h19_own19 = t64;
+    t63 = hero_array_eq(t61, t62);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_decref(t108);
+    hero_print_int(t59);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    t65 = hero_array_eq(t63, t64);
+    hero_print_str(t60);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_int(t60);
-#line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_str(t61);
-#line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_print_bool(t65);
+    hero_print_bool(t63);
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     hero_print_end();
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     goto bb4;
-#line 807 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
+#line 803 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
 }
 HERO_TU_LOCAL void h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line_retain(const h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line *v) {
     hero_array_incref(v->f_pts);

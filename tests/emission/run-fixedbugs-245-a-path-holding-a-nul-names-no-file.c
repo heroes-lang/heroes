@@ -322,34 +322,34 @@ bb4:
 #line 30 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 void h_fixedbugs245apathholdinganulnamesnofile_main(void) {
 #line 30 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    HERO_NODEBUG h_0opt_a8ea2 h0_f0 = {0}, h5_s1 = {0}, h9_own9 = {0}, h15_own15 = {0}, t3, t4, t8, t39, t40, t43, t63, t64, t72, t73; HeroStr h1_path = {0}; HERO_NODEBUG h_0opt_f87774a h2_s0 = {0}, h7_f1 = {0}, h14_own14 = {0}, h17_own17 = {0}, t22, t23, t25, t29, t53, t54, t58, t60, t70, t71, t77, t78; HeroStr h3_text = {0}; HeroFailure h4_e = {0}; HeroFailure h6_e = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h16_own16 = {0}, t1, t2, t12, t13, t14, t15, t16, t17, t18, t20, t21, t26, t27, t28, t31, t33, t34, t36, t37, t38, t42, t45, t47, t48, t50, t51, t52, t61, t62, t65, t66, t67, t68, t69, t74, t76; HERO_NODEBUG int64_t t5, t6, t19, t24, t41, t55, t56; HERO_NODEBUG bool t7, t57; HERO_NODEBUG HeroFailure t9, t30, t32, t35, t44, t46, t49, t59, t75, t79; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_a8ea2 h0_f0 = {0}, h5_s1 = {0}, h9_own9 = {0}, h15_own15 = {0}, t3, t4, t8, t37, t38, t41, t59, t60, t68, t69; HeroStr h1_path = {0}; HERO_NODEBUG h_0opt_f87774a h2_s0 = {0}, h7_f1 = {0}, h14_own14 = {0}, h17_own17 = {0}, t22, t23, t25, t29, t49, t50, t54, t56, t66, t67, t73, t74; HeroStr h3_text = {0}; HeroFailure h4_e = {0}; HeroFailure h6_e = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h16_own16 = {0}, t1, t2, t12, t13, t14, t15, t16, t17, t18, t20, t21, t26, t27, t28, t31, t32, t33, t34, t35, t36, t40, t43, t44, t45, t46, t47, t48, t57, t58, t61, t62, t63, t64, t65, t70, t72; HERO_NODEBUG int64_t t5, t6, t19, t24, t39, t51, t52; HERO_NODEBUG bool t7, t53; HERO_NODEBUG HeroFailure t9, t30, t42, t55, t71, t75; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 bb0:
     t1 = h_fixedbugs245apathholdinganulnamesnofile_VICTIM();
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t62 = h8_own8;
+    t58 = h8_own8;
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h8_own8 = t1;
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_str_decref(t62);
+    hero_str_decref(t58);
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t2 = HERO_STR_LIT(hero_str_2000a5bc);
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t3 = h_library_write_file(t1, t2);
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t63 = h9_own9;
+    t59 = h9_own9;
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h9_own9 = t3;
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_a8ea2_release(&t63);
+    h_0opt_a8ea2_release(&t59);
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t64 = h0_f0;
+    t60 = h0_f0;
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h_0opt_a8ea2_retain(&t3);
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h0_f0 = t3;
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_a8ea2_release(&t64);
+    h_0opt_a8ea2_release(&t60);
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t4 = h0_f0;
 #line 31 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
@@ -364,45 +364,45 @@ bb0:
 bb1:
     t12 = h_fixedbugs245apathholdinganulnamesnofile_VICTIM();
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t65 = h10_own10;
+    t61 = h10_own10;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h10_own10 = t12;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_str_decref(t65);
+    hero_str_decref(t61);
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t13 = h_fixedbugs245apathholdinganulnamesnofile_zero();
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t66 = h11_own11;
+    t62 = h11_own11;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h11_own11 = t13;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_str_decref(t66);
+    hero_str_decref(t62);
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t14 = hero_str_concat(t12, t13);
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t67 = h12_own12;
+    t63 = h12_own12;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h12_own12 = t14;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_str_decref(t67);
+    hero_str_decref(t63);
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t15 = HERO_STR_LIT(hero_str_78);
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t16 = hero_str_concat(t14, t15);
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t68 = h13_own13;
+    t64 = h13_own13;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h13_own13 = t16;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_str_decref(t68);
+    hero_str_decref(t64);
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t69 = h1_path;
+    t65 = h1_path;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_str_incref(t16);
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h1_path = t16;
 #line 32 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_str_decref(t69);
+    hero_str_decref(t65);
     t17 = HERO_STR_LIT(hero_str_e9f2171);
 #line 33 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t18 = h1_path;
@@ -423,19 +423,19 @@ bb1:
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t22 = h_library_read_file(t21);
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t70 = h14_own14;
+    t66 = h14_own14;
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h14_own14 = t22;
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_f87774a_release(&t70);
+    h_0opt_f87774a_release(&t66);
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t71 = h2_s0;
+    t67 = h2_s0;
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h_0opt_f87774a_retain(&t22);
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h2_s0 = t22;
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_f87774a_release(&t71);
+    h_0opt_f87774a_release(&t67);
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t23 = h2_s0;
 #line 35 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
@@ -461,31 +461,31 @@ bb2:
     hero_unreachable();
 bb3:
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t37 = h1_path;
+    t35 = h1_path;
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t38 = HERO_STR_LIT(hero_str_73e3c680);
+    t36 = HERO_STR_LIT(hero_str_73e3c680);
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t39 = h_library_write_file(t37, t38);
+    t37 = h_library_write_file(t35, t36);
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t72 = h15_own15;
+    t68 = h15_own15;
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h15_own15 = t39;
+    h15_own15 = t37;
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_a8ea2_release(&t72);
+    h_0opt_a8ea2_release(&t68);
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t73 = h5_s1;
+    t69 = h5_s1;
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_a8ea2_retain(&t39);
+    h_0opt_a8ea2_retain(&t37);
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h5_s1 = t39;
+    h5_s1 = t37;
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_a8ea2_release(&t73);
+    h_0opt_a8ea2_release(&t69);
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t40 = h5_s1;
+    t38 = h5_s1;
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t41 = t40.tag;
+    t39 = t38.tag;
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    switch (t41) {
+    switch (t39) {
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
         case 0: goto bb7;
 #line 39 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
@@ -501,13 +501,13 @@ bb4:
 #line 36 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t26 = t25.as.ok;
 #line 36 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t74 = h3_text;
+    t70 = h3_text;
 #line 36 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_str_incref(t26);
 #line 36 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h3_text = t26;
 #line 36 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_str_decref(t74);
+    hero_str_decref(t70);
 #line 36 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t27 = HERO_STR_LIT(hero_str_3b3613a3);
 #line 36 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
@@ -526,33 +526,29 @@ bb5:
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t30 = t29.as.err;
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t75 = h4_e;
+    t71 = h4_e;
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_failure_retain(&t30);
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     h4_e = t30;
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_failure_release(&t75);
+    hero_failure_release(&t71);
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     t31 = HERO_STR_LIT(hero_str_7aec4445);
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t32 = h4_e;
+    t32 = h4_e.code;
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t33 = t32.code;
+    t33 = HERO_STR_LIT(hero_str_1dce);
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t34 = HERO_STR_LIT(hero_str_1dce);
-#line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t35 = h4_e;
-#line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t36 = t35.msg;
+    t34 = h4_e.msg;
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_print_str(t31);
+#line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
+    hero_print_str(t32);
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_print_str(t33);
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_print_str(t34);
-#line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_print_str(t36);
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_print_end();
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
@@ -560,84 +556,80 @@ bb5:
 #line 37 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 bb6:
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t51 = HERO_STR_LIT(hero_str_6a006abf);
+    t47 = HERO_STR_LIT(hero_str_6a006abf);
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t52 = h_fixedbugs245apathholdinganulnamesnofile_VICTIM();
+    t48 = h_fixedbugs245apathholdinganulnamesnofile_VICTIM();
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t76 = h16_own16;
+    t72 = h16_own16;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h16_own16 = t52;
+    h16_own16 = t48;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_str_decref(t76);
+    hero_str_decref(t72);
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t53 = h_library_read_file(t52);
+    t49 = h_library_read_file(t48);
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t77 = h17_own17;
+    t73 = h17_own17;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h17_own17 = t53;
+    h17_own17 = t49;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_f87774a_release(&t77);
+    h_0opt_f87774a_release(&t73);
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t78 = h7_f1;
+    t74 = h7_f1;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_f87774a_retain(&t53);
+    h_0opt_f87774a_retain(&t49);
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h7_f1 = t53;
+    h7_f1 = t49;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h_0opt_f87774a_release(&t78);
+    h_0opt_f87774a_release(&t74);
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t54 = h7_f1;
+    t50 = h7_f1;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t55 = t54.tag;
+    t51 = t50.tag;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t56 = INT64_C(0);
+    t52 = INT64_C(0);
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t57 = t55 == t56;
+    t53 = t51 == t52;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    if (t57) goto bb9; else goto bb10;
+    if (t53) goto bb9; else goto bb10;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 bb7:
 #line 40 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t42 = HERO_STR_LIT(hero_str_47f7d71c);
+    t40 = HERO_STR_LIT(hero_str_47f7d71c);
 #line 40 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_print_str(t42);
+    hero_print_str(t40);
 #line 40 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_print_end();
 #line 40 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     goto bb6;
 #line 40 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 bb8:
-    t43 = h5_s1;
+    t41 = h5_s1;
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t44 = t43.as.err;
+    t42 = t41.as.err;
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t79 = h6_e;
+    t75 = h6_e;
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_failure_retain(&t44);
+    hero_failure_retain(&t42);
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    h6_e = t44;
+    h6_e = t42;
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_failure_release(&t79);
+    hero_failure_release(&t75);
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t45 = HERO_STR_LIT(hero_str_42b9daeb);
+    t43 = HERO_STR_LIT(hero_str_42b9daeb);
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t46 = h6_e;
+    t44 = h6_e.code;
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t47 = t46.code;
+    t45 = HERO_STR_LIT(hero_str_1dce);
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t48 = HERO_STR_LIT(hero_str_1dce);
+    t46 = h6_e.msg;
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t49 = h6_e;
+    hero_print_str(t43);
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t50 = t49.msg;
+    hero_print_str(t44);
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_print_str(t45);
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_print_str(t47);
-#line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_print_str(t48);
-#line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_print_str(t50);
+    hero_print_str(t46);
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_print_end();
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
@@ -645,16 +637,16 @@ bb8:
 #line 41 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 bb9:
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t60 = h7_f1;
+    t56 = h7_f1;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t61 = t60.as.ok;
+    t57 = t56.as.ok;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_print_str(t51);
+    hero_print_str(t47);
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    hero_print_str(t61);
+    hero_print_str(t57);
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
     hero_print_end();
-#line 658 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 650 "fixedbugs245apathholdinganulnamesnofile.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_path);
     h_0opt_f87774a_release(hero_slot_escape(&h2_s0));
@@ -676,11 +668,11 @@ bb9:
     return;
 bb10:
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t58 = h7_f1;
+    t54 = h7_f1;
 #line 43 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    t59 = t58.as.err;
-#line 683 "fixedbugs245apathholdinganulnamesnofile.c"
-    hero_panic_must(t59);
+    t55 = t54.as.err;
+#line 675 "fixedbugs245apathholdinganulnamesnofile.c"
+    hero_panic_must(t55);
     hero_unreachable();
 }
 
@@ -688,28 +680,28 @@ bb10:
 int64_t h_library_HERO_OS_OK(void) {
 #line 109 "<heroes library>"
     return HERO_OS_OK;
-#line 692 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 684 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
 #line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
-#line 699 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 691 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
 #line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
-#line 706 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 698 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
 #line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
-#line 713 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 705 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 167 "<heroes library>"
@@ -943,7 +935,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 947 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 939 "fixedbugs245apathholdinganulnamesnofile.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1070,7 +1062,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1074 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 1066 "fixedbugs245apathholdinganulnamesnofile.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

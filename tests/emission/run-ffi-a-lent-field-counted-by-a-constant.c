@@ -208,7 +208,7 @@ int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 void h_ffialentfieldcountedbyaconstant_main(void) {
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    Sl h0_s; int64_t h1_k; __attribute__((unused)) Both h2_b; HERO_NODEBUG Sl t1, t34; HERO_NODEBUG void *t4, *t9, *t14, *t22, *t27, *t31; HERO_NODEBUG int64_t t5, t6, t10, t11, t15, t16, t17, t18, t19, t23, t24, t28, t32, t33, t35, t40, t41; HERO_NODEBUG Both t36; HERO_NODEBUG const void *t39; HERO_ENTRY_STOP; goto bb0;
+    Sl h0_s; int64_t h1_k; __attribute__((unused)) Both h2_b; HERO_NODEBUG Sl t1; HERO_NODEBUG void *t4, *t9, *t14, *t22, *t27, *t31; HERO_NODEBUG int64_t t5, t6, t10, t11, t15, t16, t17, t18, t19, t23, t24, t28, t32, t33, t34, t39, t40; HERO_NODEBUG Both t35; HERO_NODEBUG const void *t38; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 bb0:
     t1 = sl_make();
@@ -296,33 +296,31 @@ bb0:
     hero_print_int(t33);
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     hero_print_end();
-    t34 = h0_s;
+    t34 = h0_s.id;
 #line 45 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    t35 = t34.id;
-#line 45 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    hero_print_int(t35);
+    hero_print_int(t34);
 #line 45 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     hero_print_end();
 #line 48 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    t36 = both_make();
+    t35 = both_make();
 #line 48 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    h2_b = t36;
-    t39 = (const void *)(h2_b.name);
+    h2_b = t35;
+    t38 = (const void *)(h2_b.name);
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    t40 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN();
+    t39 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN();
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h2_b.name)), "heroes-ffi-extent sum_n p n 2122 2134 2139 2150 8");
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h2_b.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 2122 2134 2139 2150 8 const void *");
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    t41 = sum_n(t39, t40);
+    t40 = sum_n(t38, t39);
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    hero_print_int(t41);
+    hero_print_int(t40);
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     hero_print_end();
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     return;
-#line 326 "ffialentfieldcountedbyaconstant.c"
+#line 324 "ffialentfieldcountedbyaconstant.c"
 }
 HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_Sl_eq(const Sl *a, const Sl *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;

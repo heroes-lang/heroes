@@ -434,7 +434,7 @@ void h_fixedbugs413arecordcknowsbyitsaddress_main(void) {
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 #define h8_copy (*hero_lend_h8_copy)
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    struct keeper *const hero_lend_h0_k = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "k"); HeroArrayHeader * h1_ks = {0}; HeroArrayHeader * h2_ws = {0}; struct pair h3_p; __attribute__((unused)) struct wrap h4_w; struct keeper *const hero_lend_h5_a = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "a"); struct keeper *const hero_lend_h6_b = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "b"); struct keeper *const hero_lend_h7_d = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "d"); struct keeper *const hero_lend_h8_copy = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "copy"); HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h10_own10 = {0}, *t8, *t20, *t66, *t71, *t76, *t88, *t89, *t90, *t91; HERO_NODEBUG struct keeper t1, t5, t6, t7, t15, t18, t33, t38, t47, t51, t68, t79, t84; HERO_NODEBUG int32_t t2, t4, t10, t13, t22, t25, t28, t31, t35, t37, t39, t41, t43, t46, t48, t50, t53, t55, t59, t62, t65, t85, t87; HERO_NODEBUG HeroStr t3, t11, t23, t29, t36, t40, t44, t49, t54, t57, t60, t63, t70, t75, t81, t86; HERO_NODEBUG int64_t t9, t12, t14, t17, t21, t24, t27, t30, t32, t42, t45, t52, t56, t58, t61, t64, t67, t69, t72, t74, t77, t80, t83; HERO_NODEBUG struct wrap t16, t19, t34, t73, t78; HERO_NODEBUG struct pair t26, t82; HERO_ENTRY_STOP; goto bb0;
+    struct keeper *const hero_lend_h0_k = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "k"); HeroArrayHeader * h1_ks = {0}; HeroArrayHeader * h2_ws = {0}; struct pair h3_p; __attribute__((unused)) struct wrap h4_w; struct keeper *const hero_lend_h5_a = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "a"); struct keeper *const hero_lend_h6_b = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "b"); struct keeper *const hero_lend_h7_d = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "d"); struct keeper *const hero_lend_h8_copy = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "copy"); HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h10_own10 = {0}, *t8, *t20, *t66, *t71, *t76, *t87, *t88, *t89, *t90; HERO_NODEBUG struct keeper t1, t5, t6, t7, t15, t18, t33, t38, t47, t51, t68, t79, t83; HERO_NODEBUG int32_t t2, t4, t10, t13, t22, t25, t28, t31, t35, t37, t39, t41, t43, t46, t48, t50, t53, t55, t59, t62, t65, t84, t86; HERO_NODEBUG HeroStr t3, t11, t23, t29, t36, t40, t44, t49, t54, t57, t60, t63, t70, t75, t81, t85; HERO_NODEBUG int64_t t9, t12, t14, t17, t21, t24, t27, t30, t32, t42, t45, t52, t56, t58, t61, t64, t67, t69, t72, t74, t77, t80, t82; HERO_NODEBUG struct wrap t16, t19, t34, t73, t78; HERO_NODEBUG struct pair t26; HERO_ENTRY_STOP; goto bb0;
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb0:
     t1 = (struct keeper){0};
@@ -483,19 +483,19 @@ bb0:
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_push_owned(&t8, &t7);
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    t88 = h9_own9;
+    t87 = h9_own9;
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h9_own9 = t8;
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    hero_array_decref(t88);
+    hero_array_decref(t87);
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    t89 = h1_ks;
+    t88 = h1_ks;
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_incref(t8);
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h1_ks = t8;
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    hero_array_decref(t89);
+    hero_array_decref(t88);
     t9 = INT64_C(1);
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h1_ks));
@@ -543,19 +543,19 @@ bb0:
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_push_owned(&t20, &t19);
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    t90 = h10_own10;
+    t89 = h10_own10;
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h10_own10 = t20;
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    hero_array_decref(t90);
+    hero_array_decref(t89);
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    t91 = h2_ws;
+    t90 = h2_ws;
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_incref(t20);
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h2_ws = t20;
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    hero_array_decref(t91);
+    hero_array_decref(t90);
     t21 = INT64_C(1);
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h2_ws));
@@ -803,9 +803,7 @@ bb0:
 #line 73 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t81 = HERO_STR_LIT(hero_str_20);
 #line 73 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    t82 = h3_p;
-#line 73 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    t83 = t82.after;
+    t82 = h3_p.after;
 #line 73 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_int(t69);
 #line 73 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -819,34 +817,34 @@ bb0:
 #line 73 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_str(t81);
 #line 73 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    hero_print_int(t83);
+    hero_print_int(t82);
 #line 73 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_end();
-    t84 = h0_k;
+    t83 = h0_k;
 #line 74 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    h8_copy = t84;
+    h8_copy = t83;
     hero_lend_local_name(hero_lend_h8_copy, "keep_use", "k");
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_pad_fill(&h8_copy, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    t85 = keep_use(&h8_copy);
+    t84 = keep_use(&h8_copy);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    t86 = HERO_STR_LIT(hero_str_20);
+    t85 = HERO_STR_LIT(hero_str_20);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_lend_local_name(hero_lend_h0_k, "keep_use", "k");
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_pad_fill(&h0_k, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    t87 = keep_use(&h0_k);
+    t86 = keep_use(&h0_k);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    hero_print_int(t85);
+    hero_print_int(t84);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    hero_print_str(t86);
+    hero_print_str(t85);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    hero_print_int(t87);
+    hero_print_int(t86);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_end();
-#line 850 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 848 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h1_ks);
     hero_array_release_at(&h2_ws);
     hero_array_release_at(&h9_own9);
@@ -916,7 +914,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 920 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 918 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

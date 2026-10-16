@@ -269,8 +269,8 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
   inheritance, no overloading, no default values, no user variadics, no
   anonymous functions.
 - Mutable parameters are marked `@` in the signature and at the call site:
-  `function advance(@l: Lex)` … `advance(@l)`. Semantics: copy in, copy
-  out (copy-out always happens, including on early return and `?`). UFCS does
+  `function advance(@l: Lex)` … `advance(@l)`. Semantics: the callee works on
+  the caller's place itself. UFCS does
   not apply when the first parameter is `@`.
 - Top-level functions are values: `xs.fold(0, add)`.
 - Generics: on functions only, no constraints, always inferred, never written
@@ -380,13 +380,15 @@ unless the header writes it after the word struct, which `tag` gives:
 `record FileStat tag stat partial`. A
 field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed
 array of one: `i32[4]`, never a `[T]`; build one with `[a, b, c, d]`, as many
-elements as the type says. End a construction with `rest: zero` and every field
-sharing no byte with one it names is zero; only a group's record has it. A
-bit-field is none of these: leave it to `partial`.
+elements as the type says. A bit-field is none of these: leave it to `partial`.
 `record Font partial` names only some, and its size stays C's, not the field
-list's. A field in a C union, named or anonymous, shares its bytes with the
-union's other members: a record names one or more of each union, reads any, and
-is built naming exactly one, or none when it ends with `rest: zero`, an
+list's. End a construction with `rest: zero` and every field sharing no byte
+with one it names is zero, those `partial` leaves out included; only a group's
+record has it. A field is a name C reads as `s.name`: an anonymous union's or
+struct's member, or a header macro's. Where C reads `s.u.n`, `u` is the field,
+typed by the record of its union's typedef, or left to `partial`. A union's
+members share its bytes: a record names one or more of each union, reads any,
+and is built naming exactly one, or none when it ends with `rest: zero`, an
 anonymous struct's fields counting as one.
 Comparing a `partial` record, or one holding a union's field that is not an
 integer, pointer or array of them as wide as the union, and using it as a map

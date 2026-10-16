@@ -181,7 +181,7 @@ void h_ffilentonanoutparameter_main(void) {
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 #define h1_s (*hero_lend_h1_s)
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3; HERO_NODEBUG HeroStr t4, t11; HERO_NODEBUG int64_t t6, t7, t10, t13; HERO_NODEBUG struct span t8, t9, t12; HERO_ENTRY_STOP; goto bb0;
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3; HERO_NODEBUG HeroStr t4, t10; HERO_NODEBUG int64_t t6, t7, t9, t11; HERO_NODEBUG struct span t8; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 bb0:
     t1 = INT64_C(0);
@@ -216,21 +216,17 @@ bb0:
     hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0);
 #line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     (void)widen(&h1_s);
-    t9 = h1_s;
+    t9 = h1_s.lo;
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t10 = t9.lo;
+    t10 = HERO_STR_LIT(hero_str_20);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t11 = HERO_STR_LIT(hero_str_20);
+    t11 = h1_s.hi;
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t12 = h1_s;
+    hero_print_int(t9);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t13 = t12.hi;
+    hero_print_str(t10);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_int(t10);
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_str(t11);
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_int(t13);
+    hero_print_int(t11);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     hero_print_end();
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
@@ -239,7 +235,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_e);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     return;
-#line 243 "ffilentonanoutparameter.c"
+#line 239 "ffilentonanoutparameter.c"
 }
 #undef h0_e
 #undef h1_s

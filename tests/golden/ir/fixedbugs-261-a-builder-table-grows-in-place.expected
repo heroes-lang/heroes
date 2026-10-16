@@ -127,62 +127,60 @@ function main()
         $t1: i64 = const 0
         $t2: i64 = const 0
         $t3: [i64] = construct array($t1, $t2)
-        $t28: [i64] = load $own4
+        $t26: [i64] = load $own4
         store $own4 <- $t3
-        decref $t28
+        decref $t26
         incref $t3
         $t4: Row = construct Row($t3)
-        $t29: Row = load $own5
+        $t27: Row = load $own5
         store $own5 <- $t4
-        decref $t29
+        decref $t27
         $t5: [Row] = construct array($t4)
-        $t30: [Row] = load $own6
+        $t28: [Row] = load $own6
         store $own6 <- $t5
-        decref $t30
+        decref $t28
         incref $t5
         $t6: Grid = construct Grid($t5)
-        $t31: Grid = load $own7
+        $t29: Grid = load $own7
         store $own7 <- $t6
-        decref $t31
-        $t32: Grid = load g
+        decref $t29
+        $t30: Grid = load g
         incref $t6
         store g <- $t6
-        decref $t32
+        decref $t30
         $t7: str = const str 0
-        $t33: str = load x
+        $t31: str = load x
         incref $t7
         store x <- $t7
-        decref $t33
+        decref $t31
         $t8: str = const str 1
-        $t34: str = load y
+        $t32: str = load y
         incref $t8
         store y <- $t8
-        decref $t34
+        decref $t32
         $t9: str = const str 2
-        $t35: str = load z
+        $t33: str = load z
         incref $t9
         store z <- $t9
-        decref $t35
+        decref $t33
         $t10: i64 = const 4
         call heroes fill(@g, @x, @y, @z, $t10)
         $t11: str = load x
         $t12: str = load y
         $t13: str = load z
-        $t14: Grid = load g
-        $t15: [Row] = field $t14.rows
-        $t16: i64 = const 0
-        $t17: Row = index! $t15, $t16
-        $t18: [i64] = field $t17.cells
-        $t19: i64 = const 0
-        $t20: i64 = index! $t18, $t19
-        $t21: Grid = load g
-        $t22: [Row] = field $t21.rows
-        $t23: i64 = const 0
-        $t24: Row = index! $t22, $t23
-        $t25: [i64] = field $t24.cells
-        $t26: i64 = const 1
-        $t27: i64 = index! $t25, $t26
-        call builtin print($t11, $t12, $t13, $t20, $t27) variadic
+        $t14: [Row] = load g.rows
+        $t15: i64 = const 0
+        $t16: Row = index! $t14, $t15
+        $t17: [i64] = field $t16.cells
+        $t18: i64 = const 0
+        $t19: i64 = index! $t17, $t18
+        $t20: [Row] = load g.rows
+        $t21: i64 = const 0
+        $t22: Row = index! $t20, $t21
+        $t23: [i64] = field $t22.cells
+        $t24: i64 = const 1
+        $t25: i64 = index! $t23, $t24
+        call builtin print($t11, $t12, $t13, $t19, $t25) variadic
         decref_slot g
         decref_slot x
         decref_slot y

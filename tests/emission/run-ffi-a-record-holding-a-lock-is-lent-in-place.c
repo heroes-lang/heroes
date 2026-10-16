@@ -227,7 +227,7 @@ void h_ffiarecordholdingalockislentinplace_main(void) {
 #line 28 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
 #define h2_m (*hero_lend_h2_m)
 #line 28 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    struct counter *const hero_lend_h0_c = (struct counter *)hero_lend_local(sizeof(struct counter), "ffiarecordholdingalockislentinplace.main", "c"); h_ffiarecordholdingalockislentinplace_Holder h1_h; struct counter *const hero_lend_h2_m = (struct counter *)hero_lend_local(sizeof(struct counter), "ffiarecordholdingalockislentinplace.main", "m"); HERO_NODEBUG int64_t t1, t4, t6, t11, t12, t13, t18, t22, t25, t28; HERO_NODEBUG struct counter t2, t5, t10, t14, t17, t21, t27; HERO_NODEBUG h_ffiarecordholdingalockislentinplace_Holder t7, t9, t20, t24; HERO_NODEBUG HeroStr t19, t23, t26; HERO_ENTRY_STOP; goto bb0;
+    struct counter *const hero_lend_h0_c = (struct counter *)hero_lend_local(sizeof(struct counter), "ffiarecordholdingalockislentinplace.main", "c"); h_ffiarecordholdingalockislentinplace_Holder h1_h; struct counter *const hero_lend_h2_m = (struct counter *)hero_lend_local(sizeof(struct counter), "ffiarecordholdingalockislentinplace.main", "m"); HERO_NODEBUG int64_t t1, t4, t6, t9, t10, t11, t15, t17, t19, t21; HERO_NODEBUG struct counter t2, t5, t12; HERO_NODEBUG h_ffiarecordholdingalockislentinplace_Holder t7; HERO_NODEBUG HeroStr t16, t18, t20; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
 bb0:
     t1 = INT64_C(0);
@@ -262,20 +262,16 @@ bb0:
 #line 33 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     (void)counter_init(&h1_h.f_c);
     h_ffiarecordholdingalockislentinplace_twice(&h1_h.f_c);
-    t9 = h1_h;
+    t9 = h1_h.f_c.n;
 #line 35 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t10 = t9.f_c;
+    t10 = INT64_C(1);
 #line 35 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t11 = t10.n;
+    if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow();
 #line 35 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t12 = INT64_C(1);
-#line 35 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 35 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    h1_h.f_c.n = t13;
-    t14 = counter_made();
+    h1_h.f_c.n = t11;
+    t12 = counter_made();
 #line 36 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    h2_m = t14;
+    h2_m = t12;
     hero_lend_local_name(hero_lend_h2_m, "counter_lock", "c");
 #line 37 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     hero_pad_fill(&h2_m, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0);
@@ -286,43 +282,33 @@ bb0:
     hero_pad_fill(&h2_m, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0);
 #line 38 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     (void)counter_unlock(&h2_m);
-    t17 = h0_c;
+    t15 = h0_c.n;
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t18 = t17.n;
+    t16 = HERO_STR_LIT(hero_str_20);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t19 = HERO_STR_LIT(hero_str_20);
+    t17 = h1_h.f_c.n;
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t20 = h1_h;
+    t18 = HERO_STR_LIT(hero_str_20);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t21 = t20.f_c;
+    t19 = h1_h.f_k;
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t22 = t21.n;
+    t20 = HERO_STR_LIT(hero_str_20);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t23 = HERO_STR_LIT(hero_str_20);
+    t21 = h2_m.n;
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t24 = h1_h;
+    hero_print_int(t15);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t25 = t24.f_k;
+    hero_print_str(t16);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t26 = HERO_STR_LIT(hero_str_20);
+    hero_print_int(t17);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t27 = h2_m;
+    hero_print_str(t18);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    t28 = t27.n;
+    hero_print_int(t19);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    hero_print_int(t18);
+    hero_print_str(t20);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    hero_print_str(t19);
-#line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    hero_print_int(t22);
-#line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    hero_print_str(t23);
-#line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    hero_print_int(t25);
-#line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    hero_print_str(t26);
-#line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
-    hero_print_int(t28);
+    hero_print_int(t21);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     hero_print_end();
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
@@ -331,7 +317,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_c);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     return;
-#line 335 "ffiarecordholdingalockislentinplace.c"
+#line 321 "ffiarecordholdingalockislentinplace.c"
 }
 #undef h0_c
 #undef h2_m

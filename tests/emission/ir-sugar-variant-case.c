@@ -118,7 +118,7 @@ h_sugarvariantcase_Token h_sugarvariantcase_one(void);
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
 int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t) {
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
-    HERO_NODEBUG h_sugarvariantcase_Token h1_s0, t1, t2, t4; HERO_NODEBUG int64_t h2_r0, t3, t7, t8, t9; h_sugarvariantcase_Token_c_num h3_n; HERO_NODEBUG h_sugarvariantcase_Token_c_num t5, t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_sugarvariantcase_Token h1_s0, t1, t2, t4; HERO_NODEBUG int64_t h2_r0, t3, t6, t7, t8; h_sugarvariantcase_Token_c_num h3_n; HERO_NODEBUG h_sugarvariantcase_Token_c_num t5; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
 bb0:
     t1 = h0_t;
@@ -141,9 +141,9 @@ bb0:
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
 bb1:
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
-    t9 = h2_r0;
+    t8 = h2_r0;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
-    return t9;
+    return t8;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
 bb2:
     t4 = h1_s0;
@@ -152,22 +152,20 @@ bb2:
 #line 11 "tests/golden/ir/sugar-variant-case.hero"
     h3_n = t5;
 #line 11 "tests/golden/ir/sugar-variant-case.hero"
-    t6 = h3_n;
-#line 11 "tests/golden/ir/sugar-variant-case.hero"
-    t7 = t6.f_v;
+    t6 = h3_n.f_v;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
-    h2_r0 = t7;
+    h2_r0 = t6;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
     goto bb1;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
 bb3:
 #line 12 "tests/golden/ir/sugar-variant-case.hero"
-    t8 = INT64_C(0);
+    t7 = INT64_C(0);
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
-    h2_r0 = t8;
+    h2_r0 = t7;
 #line 10 "tests/golden/ir/sugar-variant-case.hero"
     goto bb1;
-#line 171 "sugarvariantcase.c"
+#line 169 "sugarvariantcase.c"
 }
 
 #line 14 "tests/golden/ir/sugar-variant-case.hero"
@@ -181,7 +179,7 @@ bb0:
     t2 = (h_sugarvariantcase_Token){.tag = h_sugarvariantcase_Token_tag_num, .as.c_num = {.f_v = t1}};
 #line 15 "tests/golden/ir/sugar-variant-case.hero"
     return t2;
-#line 185 "sugarvariantcase.c"
+#line 183 "sugarvariantcase.c"
 }
 HERO_TU_LOCAL bool h_sugarvariantcase_Token_c_num_eq(const h_sugarvariantcase_Token_c_num *a, const h_sugarvariantcase_Token_c_num *b) {
     if (!(a->f_v == b->f_v)) return false;

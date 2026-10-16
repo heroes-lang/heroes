@@ -207,21 +207,19 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(struct cell *ph0_c) {
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    HERO_NODEBUG struct cell t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 bb0:
-    t1 = (*ph0_c);
+    t1 = (*ph0_c).w;
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t2 = t1.w;
+    t2 = INT64_C(10);
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t3 = INT64_C(10);
+    if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow();
-#line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    (*ph0_c).w = t4;
+    (*ph0_c).w = t3;
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 225 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 223 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
@@ -348,7 +346,7 @@ bb0:
     hero_print_end();
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 352 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 350 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->v == b->v)) return false;

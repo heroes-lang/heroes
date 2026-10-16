@@ -53,6 +53,7 @@ use ir/questions
 use ir/emissions
 use ir/owned_release
 use ir/interp
+use ir/in_place
 use inventory
 
 ## Statements
@@ -209,13 +210,10 @@ function walk_place(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
         # pass that aborts on a shape it did not expect is a pass that
         # cannot be trusted with the next one.
 
-        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return emissions.orphan(
-            @b,
-            c,
-            id
-        )
-        .hole | .unary | .binary | .call | .method | .variant_case  => return emissions.orphan(@b, c, id)
-        .array | .map | .try_expr | .if_expr | .match_expr | .error => return emissions.orphan(@b, c, id)
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit         => return emissions.orphan(@b, c, id)
+        .bool_lit | .null_ptr | .hole | .unary | .binary | .call       => return emissions.orphan(@b, c, id)
+        .method | .variant_case | .array | .map | .try_expr | .if_expr => return emissions.orphan(@b, c, id)
+        .match_expr | .error                                           => return emissions.orphan(@b, c, id)
 
     return emissions.orphan(@b, c, id)
 
@@ -1230,6 +1228,10 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
 
             if qualified
                 return emissions.name_expr(@b, r, decls, id: id, ty: ty, span: span)
+
+            # A field of a place is read in place, never from a copy (panel 215's R3, `ir/in_place.hero`).
+            if in_place.read(a, r, c, s, decls, id: id)
+                return build.emit(@b, op: .load(place: place(@b, a, r, c, s, decls, id: id)), ty: ty, span: span)
             owner = c.expr_types[f.base]
             base = expr(@b, a, r, c, s, decls, id: f.base)
             found = layout.field_index(decls, c, s, owner: owner, name: f.name)

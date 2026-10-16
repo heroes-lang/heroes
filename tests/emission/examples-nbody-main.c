@@ -499,7 +499,7 @@ bb0:
 #line 158 "examples/nbody/main.hero"
 HeroArrayHeader * h_main_offset_momentum(HeroArrayHeader * h0_bodies) {
 #line 158 "examples/nbody/main.hero"
-    double h1_px; double h2_py; double h3_pz; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h10_own10 = {0}, *t4, *t7, *t10, *t37, *t61, *t64, *t68, *t75, *t76, *t77, *t78; HERO_NODEBUG int64_t h5_i0, t5, t6, t8, t11, t34, t35, t36, t38, t62, t63, t65, t69, t72, t73, t74; h_main_Body h6_b; h_main_Body h7_first; HeroArrayHeader * h8_out = {0}; int64_t h9_at; HERO_NODEBUG double t1, t2, t3, t13, t15, t17, t18, t19, t20, t22, t24, t25, t26, t27, t29, t31, t32, t33, t41, t43, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t59; HERO_NODEBUG bool t9, t66; HERO_NODEBUG h_main_Body t12, t14, t16, t21, t23, t28, t30, t39, t40, t42, t44, t58, t60, t70; HERO_ENTRY_STOP; goto bb0;
+    double h1_px; double h2_py; double h3_pz; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h10_own10 = {0}, *t4, *t7, *t10, *t31, *t51, *t54, *t58, *t65, *t66, *t67, *t68; HERO_NODEBUG int64_t h5_i0, t5, t6, t8, t11, t28, t29, t30, t32, t52, t53, t55, t59, t62, t63, t64; h_main_Body h6_b; h_main_Body h7_first; HeroArrayHeader * h8_out = {0}; int64_t h9_at; HERO_NODEBUG double t1, t2, t3, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49; HERO_NODEBUG bool t9, t56; HERO_NODEBUG h_main_Body t12, t33, t50, t60; HERO_ENTRY_STOP; goto bb0;
 #line 158 "examples/nbody/main.hero"
 bb0:
     t1 = 0x0p+0;
@@ -514,13 +514,13 @@ bb0:
 #line 163 "examples/nbody/main.hero"
     t4 = h0_bodies;
 #line 163 "examples/nbody/main.hero"
-    t76 = h4_xs0;
+    t66 = h4_xs0;
 #line 163 "examples/nbody/main.hero"
     hero_array_incref(t4);
 #line 163 "examples/nbody/main.hero"
     h4_xs0 = t4;
 #line 163 "examples/nbody/main.hero"
-    hero_array_decref(t76);
+    hero_array_decref(t66);
 #line 163 "examples/nbody/main.hero"
     t5 = INT64_C(0);
 #line 163 "examples/nbody/main.hero"
@@ -551,196 +551,176 @@ bb2:
     h6_b = t12;
     t13 = h1_px;
 #line 164 "examples/nbody/main.hero"
-    t14 = h6_b;
+    t14 = h6_b.f_vx;
 #line 164 "examples/nbody/main.hero"
-    t15 = t14.f_vx;
+    t15 = h6_b.f_mass;
 #line 164 "examples/nbody/main.hero"
-    t16 = h6_b;
+    t16 = t14 * t15;
 #line 164 "examples/nbody/main.hero"
-    t17 = t16.f_mass;
+    t17 = t13 + t16;
 #line 164 "examples/nbody/main.hero"
-    t18 = t15 * t17;
-#line 164 "examples/nbody/main.hero"
-    t19 = t13 + t18;
-#line 164 "examples/nbody/main.hero"
-    h1_px = t19;
-    t20 = h2_py;
+    h1_px = t17;
+    t18 = h2_py;
 #line 165 "examples/nbody/main.hero"
-    t21 = h6_b;
+    t19 = h6_b.f_vy;
 #line 165 "examples/nbody/main.hero"
-    t22 = t21.f_vy;
+    t20 = h6_b.f_mass;
 #line 165 "examples/nbody/main.hero"
-    t23 = h6_b;
+    t21 = t19 * t20;
 #line 165 "examples/nbody/main.hero"
-    t24 = t23.f_mass;
+    t22 = t18 + t21;
 #line 165 "examples/nbody/main.hero"
-    t25 = t22 * t24;
-#line 165 "examples/nbody/main.hero"
-    t26 = t20 + t25;
-#line 165 "examples/nbody/main.hero"
-    h2_py = t26;
-    t27 = h3_pz;
+    h2_py = t22;
+    t23 = h3_pz;
 #line 166 "examples/nbody/main.hero"
-    t28 = h6_b;
+    t24 = h6_b.f_vz;
 #line 166 "examples/nbody/main.hero"
-    t29 = t28.f_vz;
+    t25 = h6_b.f_mass;
 #line 166 "examples/nbody/main.hero"
-    t30 = h6_b;
+    t26 = t24 * t25;
 #line 166 "examples/nbody/main.hero"
-    t31 = t30.f_mass;
+    t27 = t23 + t26;
 #line 166 "examples/nbody/main.hero"
-    t32 = t29 * t31;
-#line 166 "examples/nbody/main.hero"
-    t33 = t27 + t32;
-#line 166 "examples/nbody/main.hero"
-    h3_pz = t33;
+    h3_pz = t27;
 #line 166 "examples/nbody/main.hero"
     goto bb3;
 #line 166 "examples/nbody/main.hero"
 bb3:
 #line 163 "examples/nbody/main.hero"
-    t34 = h5_i0;
+    t28 = h5_i0;
 #line 163 "examples/nbody/main.hero"
-    t35 = INT64_C(1);
+    t29 = INT64_C(1);
 #line 163 "examples/nbody/main.hero"
-    if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow();
+    if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow();
 #line 163 "examples/nbody/main.hero"
-    h5_i0 = t36;
+    h5_i0 = t30;
 #line 163 "examples/nbody/main.hero"
     goto bb1;
 #line 163 "examples/nbody/main.hero"
 bb4:
 #line 168 "examples/nbody/main.hero"
-    t37 = h0_bodies;
+    t31 = h0_bodies;
 #line 168 "examples/nbody/main.hero"
-    t38 = INT64_C(0);
+    t32 = INT64_C(0);
 #line 168 "examples/nbody/main.hero"
-    t39 = ((void)((t37 == NULL || t38 < 0 || t38 >= t37->len) ? ((void)hero_array_at(t37, t38), hero_unreachable()) : (void)0), (void)(t37->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t37 + 1))[t38]);
+    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t31 + 1))[t32]);
 #line 168 "examples/nbody/main.hero"
-    h7_first = t39;
+    h7_first = t33;
 #line 170 "examples/nbody/main.hero"
-    t40 = h7_first;
+    t34 = h7_first.f_x;
 #line 170 "examples/nbody/main.hero"
-    t41 = t40.f_x;
+    t35 = h7_first.f_y;
 #line 170 "examples/nbody/main.hero"
-    t42 = h7_first;
+    t36 = h7_first.f_z;
 #line 170 "examples/nbody/main.hero"
-    t43 = t42.f_y;
+    t37 = h1_px;
 #line 170 "examples/nbody/main.hero"
-    t44 = h7_first;
+    t38 = -t37;
 #line 170 "examples/nbody/main.hero"
-    t45 = t44.f_z;
+    t39 = h_main_solar_mass();
 #line 170 "examples/nbody/main.hero"
-    t46 = h1_px;
+    t40 = t38 / t39;
 #line 170 "examples/nbody/main.hero"
-    t47 = -t46;
+    t41 = h2_py;
 #line 170 "examples/nbody/main.hero"
-    t48 = h_main_solar_mass();
+    t42 = -t41;
 #line 170 "examples/nbody/main.hero"
-    t49 = t47 / t48;
+    t43 = h_main_solar_mass();
 #line 170 "examples/nbody/main.hero"
-    t50 = h2_py;
+    t44 = t42 / t43;
 #line 170 "examples/nbody/main.hero"
-    t51 = -t50;
+    t45 = h3_pz;
 #line 170 "examples/nbody/main.hero"
-    t52 = h_main_solar_mass();
+    t46 = -t45;
 #line 170 "examples/nbody/main.hero"
-    t53 = t51 / t52;
+    t47 = h_main_solar_mass();
 #line 170 "examples/nbody/main.hero"
-    t54 = h3_pz;
+    t48 = t46 / t47;
 #line 170 "examples/nbody/main.hero"
-    t55 = -t54;
+    t49 = h7_first.f_mass;
 #line 170 "examples/nbody/main.hero"
-    t56 = h_main_solar_mass();
-#line 170 "examples/nbody/main.hero"
-    t57 = t55 / t56;
-#line 170 "examples/nbody/main.hero"
-    t58 = h7_first;
-#line 170 "examples/nbody/main.hero"
-    t59 = t58.f_mass;
-#line 170 "examples/nbody/main.hero"
-    t60 = (h_main_Body){.f_x = t41, .f_y = t43, .f_z = t45, .f_vx = t49, .f_vy = t53, .f_vz = t57, .f_mass = t59};
+    t50 = (h_main_Body){.f_x = t34, .f_y = t35, .f_z = t36, .f_vx = t40, .f_vy = t44, .f_vz = t48, .f_mass = t49};
 #line 169 "examples/nbody/main.hero"
-    t61 = hero_array_new(&h_main_Body_desc, 1);
+    t51 = hero_array_new(&h_main_Body_desc, 1);
 #line 169 "examples/nbody/main.hero"
-    hero_array_push_owned(&t61, &t60);
+    hero_array_push_owned(&t51, &t50);
 #line 169 "examples/nbody/main.hero"
-    t77 = h10_own10;
+    t67 = h10_own10;
 #line 169 "examples/nbody/main.hero"
-    h10_own10 = t61;
+    h10_own10 = t51;
 #line 169 "examples/nbody/main.hero"
-    hero_array_decref(t77);
+    hero_array_decref(t67);
 #line 169 "examples/nbody/main.hero"
-    t78 = h8_out;
+    t68 = h8_out;
 #line 169 "examples/nbody/main.hero"
-    hero_array_incref(t61);
+    hero_array_incref(t51);
 #line 169 "examples/nbody/main.hero"
-    h8_out = t61;
+    h8_out = t51;
 #line 169 "examples/nbody/main.hero"
-    hero_array_decref(t78);
+    hero_array_decref(t68);
 #line 172 "examples/nbody/main.hero"
-    t62 = INT64_C(1);
+    t52 = INT64_C(1);
 #line 172 "examples/nbody/main.hero"
-    h9_at = t62;
+    h9_at = t52;
 #line 172 "examples/nbody/main.hero"
     goto bb5;
 #line 172 "examples/nbody/main.hero"
 bb5:
 #line 174 "examples/nbody/main.hero"
-    t63 = h9_at;
+    t53 = h9_at;
 #line 174 "examples/nbody/main.hero"
-    t64 = h0_bodies;
+    t54 = h0_bodies;
 #line 174 "examples/nbody/main.hero"
-    t65 = ((void)(t64 == NULL ? ((void)hero_array_len(t64), hero_unreachable()) : (void)0), t64->len);
+    t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len);
 #line 174 "examples/nbody/main.hero"
-    t66 = t63 < t65;
+    t56 = t53 < t55;
 #line 174 "examples/nbody/main.hero"
-    if (t66) goto bb6; else goto bb7;
+    if (t56) goto bb6; else goto bb7;
 #line 174 "examples/nbody/main.hero"
 bb6:
-    t68 = h0_bodies;
+    t58 = h0_bodies;
 #line 175 "examples/nbody/main.hero"
-    t69 = h9_at;
+    t59 = h9_at;
 #line 175 "examples/nbody/main.hero"
-    t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? ((void)hero_array_at(t68, t69), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t68 + 1))[t69]);
+    t60 = ((void)((t58 == NULL || t59 < 0 || t59 >= t58->len) ? ((void)hero_array_at(t58, t59), hero_unreachable()) : (void)0), (void)(t58->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t58 + 1))[t59]);
 #line 175 "examples/nbody/main.hero"
-    hero_array_push_owned(&h8_out, &t70);
-    t72 = h9_at;
+    hero_array_push_owned(&h8_out, &t60);
+    t62 = h9_at;
 #line 176 "examples/nbody/main.hero"
-    t73 = INT64_C(1);
+    t63 = INT64_C(1);
 #line 176 "examples/nbody/main.hero"
-    if (__builtin_add_overflow(t72, t73, &t74)) hero_panic_overflow();
+    if (__builtin_add_overflow(t62, t63, &t64)) hero_panic_overflow();
 #line 176 "examples/nbody/main.hero"
-    h9_at = t74;
+    h9_at = t64;
 #line 176 "examples/nbody/main.hero"
     goto bb5;
 #line 176 "examples/nbody/main.hero"
 bb7:
 #line 178 "examples/nbody/main.hero"
-    t75 = h8_out;
-#line 722 "main.c"
-    hero_array_incref(t75);
+    t65 = h8_out;
+#line 702 "main.c"
+    hero_array_incref(t65);
     hero_array_release_at(&h4_xs0);
     hero_array_release_at(&h8_out);
     hero_array_release_at(&h10_own10);
-    return t75;
+    return t65;
 }
 
 #line 184 "examples/nbody/main.hero"
 HeroArrayHeader * h_main_advanced(HeroArrayHeader * h0_bodies, double h1_dt) {
 #line 184 "examples/nbody/main.hero"
-    HeroArrayHeader * h2_moved = {0}; int64_t h3_i; int64_t h4_j; h_main_Body h5_b; h_main_Body h6_other; double h7_dx; double h8_dy; double h9_dz; double h10_distance; double h11_mag; int64_t h12_at; h_main_Body h13_b; HERO_NODEBUG HeroArrayHeader *t1, *t4, *t11, *t14, *t17, *t81, *t84, *t121, *t122; HERO_NODEBUG int64_t t2, t3, t5, t7, t8, t9, t10, t12, t15, t18, t54, t64, t73, t74, t75, t76, t77, t78, t79, t80, t82, t85, t87, t118, t119, t120; HERO_NODEBUG bool t6, t13, t83; HERO_NODEBUG h_main_Body t16, t19, t20, t22, t25, t27, t30, t32, t55, t59, t63, t65, t69, t72, t86, t88, t91, t95, t98, t102, t105, t109, t111, t113, t115, t117; HERO_NODEBUG double t21, t23, t24, t26, t28, t29, t31, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t56, t57, t58, t60, t61, t62, t66, t67, t68, t70, t71, t89, t90, t92, t93, t94, t96, t97, t99, t100, t101, t103, t104, t106, t107, t108, t110, t112, t114, t116; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_moved = {0}; int64_t h3_i; int64_t h4_j; h_main_Body h5_b; h_main_Body h6_other; double h7_dx; double h8_dy; double h9_dz; double h10_distance; double h11_mag; int64_t h12_at; h_main_Body h13_b; HERO_NODEBUG HeroArrayHeader *t1, *t4, *t11, *t14, *t17, *t73, *t76, *t103, *t104; HERO_NODEBUG int64_t t2, t3, t5, t7, t8, t9, t10, t12, t15, t18, t48, t57, t65, t66, t67, t68, t69, t70, t71, t72, t74, t77, t79, t100, t101, t102; HERO_NODEBUG bool t6, t13, t75; HERO_NODEBUG h_main_Body t16, t19, t49, t56, t58, t64, t78, t99; HERO_NODEBUG double t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t50, t51, t52, t53, t54, t55, t59, t60, t61, t62, t63, t80, t81, t82, t83, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98; HERO_ENTRY_STOP; goto bb0;
 #line 184 "examples/nbody/main.hero"
 bb0:
     t1 = h0_bodies;
 #line 185 "examples/nbody/main.hero"
-    t122 = h2_moved;
+    t104 = h2_moved;
 #line 185 "examples/nbody/main.hero"
     hero_array_incref(t1);
 #line 185 "examples/nbody/main.hero"
     h2_moved = t1;
 #line 185 "examples/nbody/main.hero"
-    hero_array_decref(t122);
+    hero_array_decref(t104);
     t2 = INT64_C(0);
 #line 186 "examples/nbody/main.hero"
     h3_i = t2;
@@ -772,9 +752,9 @@ bb2:
 #line 189 "examples/nbody/main.hero"
 bb3:
 #line 205 "examples/nbody/main.hero"
-    t79 = INT64_C(0);
+    t71 = INT64_C(0);
 #line 205 "examples/nbody/main.hero"
-    h12_at = t79;
+    h12_at = t71;
 #line 205 "examples/nbody/main.hero"
     goto bb7;
 #line 205 "examples/nbody/main.hero"
@@ -805,312 +785,262 @@ bb5:
     t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t17 + 1))[t18]);
 #line 193 "examples/nbody/main.hero"
     h6_other = t19;
-    t20 = h5_b;
+    t20 = h5_b.f_x;
 #line 194 "examples/nbody/main.hero"
-    t21 = t20.f_x;
+    t21 = h6_other.f_x;
 #line 194 "examples/nbody/main.hero"
-    t22 = h6_other;
+    t22 = t20 - t21;
 #line 194 "examples/nbody/main.hero"
-    t23 = t22.f_x;
-#line 194 "examples/nbody/main.hero"
-    t24 = t21 - t23;
-#line 194 "examples/nbody/main.hero"
-    h7_dx = t24;
-    t25 = h5_b;
+    h7_dx = t22;
+    t23 = h5_b.f_y;
 #line 195 "examples/nbody/main.hero"
-    t26 = t25.f_y;
+    t24 = h6_other.f_y;
 #line 195 "examples/nbody/main.hero"
-    t27 = h6_other;
+    t25 = t23 - t24;
 #line 195 "examples/nbody/main.hero"
-    t28 = t27.f_y;
-#line 195 "examples/nbody/main.hero"
-    t29 = t26 - t28;
-#line 195 "examples/nbody/main.hero"
-    h8_dy = t29;
-    t30 = h5_b;
+    h8_dy = t25;
+    t26 = h5_b.f_z;
 #line 196 "examples/nbody/main.hero"
-    t31 = t30.f_z;
+    t27 = h6_other.f_z;
 #line 196 "examples/nbody/main.hero"
-    t32 = h6_other;
+    t28 = t26 - t27;
 #line 196 "examples/nbody/main.hero"
-    t33 = t32.f_z;
-#line 196 "examples/nbody/main.hero"
-    t34 = t31 - t33;
-#line 196 "examples/nbody/main.hero"
-    h9_dz = t34;
-    t35 = h7_dx;
+    h9_dz = t28;
+    t29 = h7_dx;
 #line 197 "examples/nbody/main.hero"
-    t36 = h7_dx;
+    t30 = h7_dx;
 #line 197 "examples/nbody/main.hero"
-    t37 = t35 * t36;
+    t31 = t29 * t30;
 #line 197 "examples/nbody/main.hero"
-    t38 = h8_dy;
+    t32 = h8_dy;
 #line 197 "examples/nbody/main.hero"
-    t39 = h8_dy;
+    t33 = h8_dy;
 #line 197 "examples/nbody/main.hero"
-    t40 = t38 * t39;
+    t34 = t32 * t33;
 #line 197 "examples/nbody/main.hero"
-    t41 = t37 + t40;
+    t35 = t31 + t34;
 #line 197 "examples/nbody/main.hero"
-    t42 = h9_dz;
+    t36 = h9_dz;
 #line 197 "examples/nbody/main.hero"
-    t43 = h9_dz;
+    t37 = h9_dz;
 #line 197 "examples/nbody/main.hero"
+    t38 = t36 * t37;
+#line 197 "examples/nbody/main.hero"
+    t39 = t35 + t38;
+#line 197 "examples/nbody/main.hero"
+    t40 = sqrt(t39);
+#line 197 "examples/nbody/main.hero"
+    h10_distance = t40;
+    t41 = h1_dt;
+#line 198 "examples/nbody/main.hero"
+    t42 = h10_distance;
+#line 198 "examples/nbody/main.hero"
+    t43 = h10_distance;
+#line 198 "examples/nbody/main.hero"
     t44 = t42 * t43;
-#line 197 "examples/nbody/main.hero"
-    t45 = t41 + t44;
-#line 197 "examples/nbody/main.hero"
-    t46 = sqrt(t45);
-#line 197 "examples/nbody/main.hero"
-    h10_distance = t46;
-    t47 = h1_dt;
 #line 198 "examples/nbody/main.hero"
-    t48 = h10_distance;
+    t45 = h10_distance;
 #line 198 "examples/nbody/main.hero"
-    t49 = h10_distance;
+    t46 = t44 * t45;
 #line 198 "examples/nbody/main.hero"
-    t50 = t48 * t49;
+    t47 = t41 / t46;
 #line 198 "examples/nbody/main.hero"
-    t51 = h10_distance;
-#line 198 "examples/nbody/main.hero"
-    t52 = t50 * t51;
-#line 198 "examples/nbody/main.hero"
-    t53 = t47 / t52;
-#line 198 "examples/nbody/main.hero"
-    h11_mag = t53;
-    t54 = h3_i;
+    h11_mag = t47;
+    t48 = h3_i;
 #line 199 "examples/nbody/main.hero"
-    t55 = h5_b;
+    t49 = h5_b;
 #line 199 "examples/nbody/main.hero"
-    t56 = h7_dx;
+    t50 = h7_dx;
 #line 199 "examples/nbody/main.hero"
-    t57 = h8_dy;
+    t51 = h8_dy;
 #line 199 "examples/nbody/main.hero"
-    t58 = h9_dz;
+    t52 = h9_dz;
 #line 199 "examples/nbody/main.hero"
-    t59 = h6_other;
+    t53 = h6_other.f_mass;
 #line 199 "examples/nbody/main.hero"
-    t60 = t59.f_mass;
+    t54 = h11_mag;
 #line 199 "examples/nbody/main.hero"
-    t61 = h11_mag;
+    t55 = -t54;
 #line 199 "examples/nbody/main.hero"
-    t62 = -t61;
+    t56 = h_main_pulled(t49, t50, t51, t52, t53, t55);
 #line 199 "examples/nbody/main.hero"
-    t63 = h_main_pulled(t55, t56, t57, t58, t60, t62);
-#line 199 "examples/nbody/main.hero"
-    hero_array_set(&(h2_moved), t54, &t63);
-    t64 = h4_j;
+    hero_array_set(&(h2_moved), t48, &t56);
+    t57 = h4_j;
 #line 200 "examples/nbody/main.hero"
-    t65 = h6_other;
+    t58 = h6_other;
 #line 200 "examples/nbody/main.hero"
-    t66 = h7_dx;
+    t59 = h7_dx;
 #line 200 "examples/nbody/main.hero"
-    t67 = h8_dy;
+    t60 = h8_dy;
 #line 200 "examples/nbody/main.hero"
-    t68 = h9_dz;
+    t61 = h9_dz;
 #line 200 "examples/nbody/main.hero"
-    t69 = h5_b;
+    t62 = h5_b.f_mass;
 #line 200 "examples/nbody/main.hero"
-    t70 = t69.f_mass;
+    t63 = h11_mag;
 #line 200 "examples/nbody/main.hero"
-    t71 = h11_mag;
+    t64 = h_main_pulled(t58, t59, t60, t61, t62, t63);
 #line 200 "examples/nbody/main.hero"
-    t72 = h_main_pulled(t65, t66, t67, t68, t70, t71);
-#line 200 "examples/nbody/main.hero"
-    hero_array_set(&(h2_moved), t64, &t72);
-    t73 = h4_j;
+    hero_array_set(&(h2_moved), t57, &t64);
+    t65 = h4_j;
 #line 201 "examples/nbody/main.hero"
-    t74 = INT64_C(1);
+    t66 = INT64_C(1);
 #line 201 "examples/nbody/main.hero"
-    if (__builtin_add_overflow(t73, t74, &t75)) hero_panic_overflow();
+    if (__builtin_add_overflow(t65, t66, &t67)) hero_panic_overflow();
 #line 201 "examples/nbody/main.hero"
-    h4_j = t75;
+    h4_j = t67;
 #line 201 "examples/nbody/main.hero"
     goto bb4;
 #line 201 "examples/nbody/main.hero"
 bb6:
 #line 203 "examples/nbody/main.hero"
-    t76 = h3_i;
+    t68 = h3_i;
 #line 203 "examples/nbody/main.hero"
-    t77 = INT64_C(1);
+    t69 = INT64_C(1);
 #line 203 "examples/nbody/main.hero"
-    if (__builtin_add_overflow(t76, t77, &t78)) hero_panic_overflow();
+    if (__builtin_add_overflow(t68, t69, &t70)) hero_panic_overflow();
 #line 203 "examples/nbody/main.hero"
-    h3_i = t78;
+    h3_i = t70;
 #line 203 "examples/nbody/main.hero"
     goto bb1;
 #line 203 "examples/nbody/main.hero"
 bb7:
 #line 207 "examples/nbody/main.hero"
-    t80 = h12_at;
+    t72 = h12_at;
 #line 207 "examples/nbody/main.hero"
-    t81 = h2_moved;
+    t73 = h2_moved;
 #line 207 "examples/nbody/main.hero"
-    t82 = ((void)(t81 == NULL ? ((void)hero_array_len(t81), hero_unreachable()) : (void)0), t81->len);
+    t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);
 #line 207 "examples/nbody/main.hero"
-    t83 = t80 < t82;
+    t75 = t72 < t74;
 #line 207 "examples/nbody/main.hero"
-    if (t83) goto bb8; else goto bb9;
+    if (t75) goto bb8; else goto bb9;
 #line 207 "examples/nbody/main.hero"
 bb8:
-    t84 = h2_moved;
+    t76 = h2_moved;
 #line 208 "examples/nbody/main.hero"
-    t85 = h12_at;
+    t77 = h12_at;
 #line 208 "examples/nbody/main.hero"
-    t86 = ((void)((t84 == NULL || t85 < 0 || t85 >= t84->len) ? ((void)hero_array_at(t84, t85), hero_unreachable()) : (void)0), (void)(t84->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t84 + 1))[t85]);
+    t78 = ((void)((t76 == NULL || t77 < 0 || t77 >= t76->len) ? ((void)hero_array_at(t76, t77), hero_unreachable()) : (void)0), (void)(t76->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t76 + 1))[t77]);
 #line 208 "examples/nbody/main.hero"
-    h13_b = t86;
-    t87 = h12_at;
-    t88 = h13_b;
+    h13_b = t78;
+    t79 = h12_at;
+    t80 = h13_b.f_x;
 #line 210 "examples/nbody/main.hero"
-    t89 = t88.f_x;
+    t81 = h1_dt;
 #line 210 "examples/nbody/main.hero"
-    t90 = h1_dt;
+    t82 = h13_b.f_vx;
 #line 210 "examples/nbody/main.hero"
-    t91 = h13_b;
+    t83 = t81 * t82;
 #line 210 "examples/nbody/main.hero"
-    t92 = t91.f_vx;
-#line 210 "examples/nbody/main.hero"
-    t93 = t90 * t92;
-#line 210 "examples/nbody/main.hero"
-    t94 = t89 + t93;
-    t95 = h13_b;
+    t84 = t80 + t83;
+    t85 = h13_b.f_y;
 #line 211 "examples/nbody/main.hero"
-    t96 = t95.f_y;
+    t86 = h1_dt;
 #line 211 "examples/nbody/main.hero"
-    t97 = h1_dt;
+    t87 = h13_b.f_vy;
 #line 211 "examples/nbody/main.hero"
-    t98 = h13_b;
+    t88 = t86 * t87;
 #line 211 "examples/nbody/main.hero"
-    t99 = t98.f_vy;
-#line 211 "examples/nbody/main.hero"
-    t100 = t97 * t99;
-#line 211 "examples/nbody/main.hero"
-    t101 = t96 + t100;
-    t102 = h13_b;
+    t89 = t85 + t88;
+    t90 = h13_b.f_z;
 #line 212 "examples/nbody/main.hero"
-    t103 = t102.f_z;
+    t91 = h1_dt;
 #line 212 "examples/nbody/main.hero"
-    t104 = h1_dt;
+    t92 = h13_b.f_vz;
 #line 212 "examples/nbody/main.hero"
-    t105 = h13_b;
+    t93 = t91 * t92;
 #line 212 "examples/nbody/main.hero"
-    t106 = t105.f_vz;
-#line 212 "examples/nbody/main.hero"
-    t107 = t104 * t106;
-#line 212 "examples/nbody/main.hero"
-    t108 = t103 + t107;
-    t109 = h13_b;
-#line 213 "examples/nbody/main.hero"
-    t110 = t109.f_vx;
-    t111 = h13_b;
-#line 214 "examples/nbody/main.hero"
-    t112 = t111.f_vy;
-    t113 = h13_b;
-#line 215 "examples/nbody/main.hero"
-    t114 = t113.f_vz;
-    t115 = h13_b;
-#line 216 "examples/nbody/main.hero"
-    t116 = t115.f_mass;
+    t94 = t90 + t93;
+    t95 = h13_b.f_vx;
+    t96 = h13_b.f_vy;
+    t97 = h13_b.f_vz;
+    t98 = h13_b.f_mass;
 #line 209 "examples/nbody/main.hero"
-    t117 = (h_main_Body){.f_x = t94, .f_y = t101, .f_z = t108, .f_vx = t110, .f_vy = t112, .f_vz = t114, .f_mass = t116};
+    t99 = (h_main_Body){.f_x = t84, .f_y = t89, .f_z = t94, .f_vx = t95, .f_vy = t96, .f_vz = t97, .f_mass = t98};
 #line 209 "examples/nbody/main.hero"
-    hero_array_set(&(h2_moved), t87, &t117);
+    hero_array_set(&(h2_moved), t79, &t99);
 #line 218 "examples/nbody/main.hero"
-    t118 = h12_at;
+    t100 = h12_at;
 #line 218 "examples/nbody/main.hero"
-    t119 = INT64_C(1);
+    t101 = INT64_C(1);
 #line 218 "examples/nbody/main.hero"
-    if (__builtin_add_overflow(t118, t119, &t120)) hero_panic_overflow();
+    if (__builtin_add_overflow(t100, t101, &t102)) hero_panic_overflow();
 #line 218 "examples/nbody/main.hero"
-    h12_at = t120;
+    h12_at = t102;
 #line 218 "examples/nbody/main.hero"
     goto bb7;
 #line 218 "examples/nbody/main.hero"
 bb9:
 #line 220 "examples/nbody/main.hero"
-    t121 = h2_moved;
-#line 1034 "main.c"
-    hero_array_incref(t121);
+    t103 = h2_moved;
+#line 978 "main.c"
+    hero_array_incref(t103);
     hero_array_release_at(&h2_moved);
-    return t121;
+    return t103;
 }
 
 #line 225 "examples/nbody/main.hero"
 h_main_Body h_main_pulled(h_main_Body h0_b, double h1_dx, double h2_dy, double h3_dz, double h4_mass, double h5_mag) {
 #line 225 "examples/nbody/main.hero"
-    HERO_NODEBUG h_main_Body t1, t3, t5, t7, t15, t23, t31, t33; HERO_NODEBUG double t2, t4, t6, t8, t9, t10, t11, t12, t13, t14, t16, t17, t18, t19, t20, t21, t22, t24, t25, t26, t27, t28, t29, t30, t32; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25; HERO_NODEBUG h_main_Body t26; HERO_ENTRY_STOP; goto bb0;
 #line 225 "examples/nbody/main.hero"
 bb0:
 #line 227 "examples/nbody/main.hero"
-    t1 = h0_b;
-#line 227 "examples/nbody/main.hero"
-    t2 = t1.f_x;
-    t3 = h0_b;
-#line 228 "examples/nbody/main.hero"
-    t4 = t3.f_y;
-    t5 = h0_b;
-#line 229 "examples/nbody/main.hero"
-    t6 = t5.f_z;
-    t7 = h0_b;
+    t1 = h0_b.f_x;
+    t2 = h0_b.f_y;
+    t3 = h0_b.f_z;
+    t4 = h0_b.f_vx;
 #line 230 "examples/nbody/main.hero"
-    t8 = t7.f_vx;
+    t5 = h1_dx;
 #line 230 "examples/nbody/main.hero"
-    t9 = h1_dx;
+    t6 = h4_mass;
 #line 230 "examples/nbody/main.hero"
-    t10 = h4_mass;
+    t7 = t5 * t6;
 #line 230 "examples/nbody/main.hero"
-    t11 = t9 * t10;
+    t8 = h5_mag;
 #line 230 "examples/nbody/main.hero"
-    t12 = h5_mag;
+    t9 = t7 * t8;
 #line 230 "examples/nbody/main.hero"
-    t13 = t11 * t12;
-#line 230 "examples/nbody/main.hero"
-    t14 = t8 + t13;
-    t15 = h0_b;
+    t10 = t4 + t9;
+    t11 = h0_b.f_vy;
 #line 231 "examples/nbody/main.hero"
-    t16 = t15.f_vy;
+    t12 = h2_dy;
 #line 231 "examples/nbody/main.hero"
-    t17 = h2_dy;
+    t13 = h4_mass;
 #line 231 "examples/nbody/main.hero"
-    t18 = h4_mass;
+    t14 = t12 * t13;
 #line 231 "examples/nbody/main.hero"
-    t19 = t17 * t18;
+    t15 = h5_mag;
 #line 231 "examples/nbody/main.hero"
-    t20 = h5_mag;
+    t16 = t14 * t15;
 #line 231 "examples/nbody/main.hero"
+    t17 = t11 + t16;
+    t18 = h0_b.f_vz;
+#line 232 "examples/nbody/main.hero"
+    t19 = h3_dz;
+#line 232 "examples/nbody/main.hero"
+    t20 = h4_mass;
+#line 232 "examples/nbody/main.hero"
     t21 = t19 * t20;
-#line 231 "examples/nbody/main.hero"
-    t22 = t16 + t21;
-    t23 = h0_b;
 #line 232 "examples/nbody/main.hero"
-    t24 = t23.f_vz;
+    t22 = h5_mag;
 #line 232 "examples/nbody/main.hero"
-    t25 = h3_dz;
+    t23 = t21 * t22;
 #line 232 "examples/nbody/main.hero"
-    t26 = h4_mass;
-#line 232 "examples/nbody/main.hero"
-    t27 = t25 * t26;
-#line 232 "examples/nbody/main.hero"
-    t28 = h5_mag;
-#line 232 "examples/nbody/main.hero"
-    t29 = t27 * t28;
-#line 232 "examples/nbody/main.hero"
-    t30 = t24 + t29;
-    t31 = h0_b;
-#line 233 "examples/nbody/main.hero"
-    t32 = t31.f_mass;
+    t24 = t18 + t23;
+    t25 = h0_b.f_mass;
 #line 226 "examples/nbody/main.hero"
-    t33 = (h_main_Body){.f_x = t2, .f_y = t4, .f_z = t6, .f_vx = t14, .f_vy = t22, .f_vz = t30, .f_mass = t32};
+    t26 = (h_main_Body){.f_x = t1, .f_y = t2, .f_z = t3, .f_vx = t10, .f_vy = t17, .f_vz = t24, .f_mass = t25};
 #line 226 "examples/nbody/main.hero"
-    return t33;
-#line 1108 "main.c"
+    return t26;
+#line 1038 "main.c"
 }
 
 #line 239 "examples/nbody/main.hero"
 double h_main_energy(HeroArrayHeader * h0_bodies) {
 #line 239 "examples/nbody/main.hero"
-    double h1_e; int64_t h2_i; h_main_Body h3_b; int64_t h4_j; h_main_Body h5_other; double h6_dx; double h7_dy; double h8_dz; HERO_NODEBUG double t1, t10, t11, t13, t14, t16, t18, t19, t21, t23, t24, t25, t27, t29, t30, t31, t32, t33, t45, t47, t48, t50, t52, t53, t55, t57, t58, t59, t61, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t85; HERO_NODEBUG int64_t t2, t3, t5, t8, t34, t35, t36, t37, t39, t42, t79, t80, t81, t82, t83, t84; HERO_NODEBUG HeroArrayHeader *t4, *t7, *t38, *t41; HERO_NODEBUG bool t6, t40; HERO_NODEBUG h_main_Body t9, t12, t15, t17, t20, t22, t26, t28, t43, t44, t46, t49, t51, t54, t56, t60, t62; HERO_ENTRY_STOP; goto bb0;
+    double h1_e; int64_t h2_i; h_main_Body h3_b; int64_t h4_j; h_main_Body h5_other; double h6_dx; double h7_dy; double h8_dz; HERO_NODEBUG double t1, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t70; HERO_NODEBUG int64_t t2, t3, t5, t8, t27, t28, t29, t30, t32, t35, t64, t65, t66, t67, t68, t69; HERO_NODEBUG HeroArrayHeader *t4, *t7, *t31, *t34; HERO_NODEBUG bool t6, t33; HERO_NODEBUG h_main_Body t9, t36; HERO_ENTRY_STOP; goto bb0;
 #line 239 "examples/nbody/main.hero"
 bb0:
     t1 = 0x0p+0;
@@ -1146,183 +1076,153 @@ bb2:
 #line 245 "examples/nbody/main.hero"
     t11 = 0x1p-1;
 #line 245 "examples/nbody/main.hero"
-    t12 = h3_b;
+    t12 = h3_b.f_mass;
 #line 245 "examples/nbody/main.hero"
-    t13 = t12.f_mass;
+    t13 = t11 * t12;
 #line 245 "examples/nbody/main.hero"
-    t14 = t11 * t13;
+    t14 = h3_b.f_vx;
 #line 245 "examples/nbody/main.hero"
-    t15 = h3_b;
+    t15 = h3_b.f_vx;
 #line 245 "examples/nbody/main.hero"
-    t16 = t15.f_vx;
+    t16 = t14 * t15;
 #line 245 "examples/nbody/main.hero"
-    t17 = h3_b;
+    t17 = h3_b.f_vy;
 #line 245 "examples/nbody/main.hero"
-    t18 = t17.f_vx;
+    t18 = h3_b.f_vy;
 #line 245 "examples/nbody/main.hero"
-    t19 = t16 * t18;
+    t19 = t17 * t18;
 #line 245 "examples/nbody/main.hero"
-    t20 = h3_b;
+    t20 = t16 + t19;
 #line 245 "examples/nbody/main.hero"
-    t21 = t20.f_vy;
+    t21 = h3_b.f_vz;
 #line 245 "examples/nbody/main.hero"
-    t22 = h3_b;
+    t22 = h3_b.f_vz;
 #line 245 "examples/nbody/main.hero"
-    t23 = t22.f_vy;
+    t23 = t21 * t22;
 #line 245 "examples/nbody/main.hero"
-    t24 = t21 * t23;
+    t24 = t20 + t23;
 #line 245 "examples/nbody/main.hero"
-    t25 = t19 + t24;
+    t25 = t13 * t24;
 #line 245 "examples/nbody/main.hero"
-    t26 = h3_b;
+    t26 = t10 + t25;
 #line 245 "examples/nbody/main.hero"
-    t27 = t26.f_vz;
-#line 245 "examples/nbody/main.hero"
-    t28 = h3_b;
-#line 245 "examples/nbody/main.hero"
-    t29 = t28.f_vz;
-#line 245 "examples/nbody/main.hero"
-    t30 = t27 * t29;
-#line 245 "examples/nbody/main.hero"
-    t31 = t25 + t30;
-#line 245 "examples/nbody/main.hero"
-    t32 = t14 * t31;
-#line 245 "examples/nbody/main.hero"
-    t33 = t10 + t32;
-#line 245 "examples/nbody/main.hero"
-    h1_e = t33;
-    t34 = h2_i;
+    h1_e = t26;
+    t27 = h2_i;
 #line 246 "examples/nbody/main.hero"
-    t35 = INT64_C(1);
+    t28 = INT64_C(1);
 #line 246 "examples/nbody/main.hero"
-    if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow();
+    if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
 #line 246 "examples/nbody/main.hero"
-    h4_j = t36;
+    h4_j = t29;
 #line 246 "examples/nbody/main.hero"
     goto bb4;
 #line 246 "examples/nbody/main.hero"
 bb3:
 #line 258 "examples/nbody/main.hero"
-    t85 = h1_e;
+    t70 = h1_e;
 #line 258 "examples/nbody/main.hero"
-    return t85;
+    return t70;
 #line 258 "examples/nbody/main.hero"
 bb4:
 #line 248 "examples/nbody/main.hero"
-    t37 = h4_j;
+    t30 = h4_j;
 #line 248 "examples/nbody/main.hero"
-    t38 = h0_bodies;
+    t31 = h0_bodies;
 #line 248 "examples/nbody/main.hero"
-    t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len);
+    t32 = ((void)(t31 == NULL ? ((void)hero_array_len(t31), hero_unreachable()) : (void)0), t31->len);
 #line 248 "examples/nbody/main.hero"
-    t40 = t37 < t39;
+    t33 = t30 < t32;
 #line 248 "examples/nbody/main.hero"
-    if (t40) goto bb5; else goto bb6;
+    if (t33) goto bb5; else goto bb6;
 #line 248 "examples/nbody/main.hero"
 bb5:
-    t41 = h0_bodies;
+    t34 = h0_bodies;
 #line 249 "examples/nbody/main.hero"
-    t42 = h4_j;
+    t35 = h4_j;
 #line 249 "examples/nbody/main.hero"
-    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t41 + 1))[t42]);
+    t36 = ((void)((t34 == NULL || t35 < 0 || t35 >= t34->len) ? ((void)hero_array_at(t34, t35), hero_unreachable()) : (void)0), (void)(t34->elem->size != sizeof(h_main_Body) ? hero_unreachable() : (void)0), ((h_main_Body const *)(const void *)(t34 + 1))[t35]);
 #line 249 "examples/nbody/main.hero"
-    h5_other = t43;
-    t44 = h3_b;
+    h5_other = t36;
+    t37 = h3_b.f_x;
 #line 250 "examples/nbody/main.hero"
-    t45 = t44.f_x;
+    t38 = h5_other.f_x;
 #line 250 "examples/nbody/main.hero"
-    t46 = h5_other;
+    t39 = t37 - t38;
 #line 250 "examples/nbody/main.hero"
-    t47 = t46.f_x;
-#line 250 "examples/nbody/main.hero"
-    t48 = t45 - t47;
-#line 250 "examples/nbody/main.hero"
-    h6_dx = t48;
-    t49 = h3_b;
+    h6_dx = t39;
+    t40 = h3_b.f_y;
 #line 251 "examples/nbody/main.hero"
-    t50 = t49.f_y;
+    t41 = h5_other.f_y;
 #line 251 "examples/nbody/main.hero"
-    t51 = h5_other;
+    t42 = t40 - t41;
 #line 251 "examples/nbody/main.hero"
-    t52 = t51.f_y;
-#line 251 "examples/nbody/main.hero"
-    t53 = t50 - t52;
-#line 251 "examples/nbody/main.hero"
-    h7_dy = t53;
-    t54 = h3_b;
+    h7_dy = t42;
+    t43 = h3_b.f_z;
 #line 252 "examples/nbody/main.hero"
-    t55 = t54.f_z;
+    t44 = h5_other.f_z;
 #line 252 "examples/nbody/main.hero"
-    t56 = h5_other;
+    t45 = t43 - t44;
 #line 252 "examples/nbody/main.hero"
-    t57 = t56.f_z;
-#line 252 "examples/nbody/main.hero"
-    t58 = t55 - t57;
-#line 252 "examples/nbody/main.hero"
-    h8_dz = t58;
-    t59 = h1_e;
+    h8_dz = t45;
+    t46 = h1_e;
 #line 253 "examples/nbody/main.hero"
-    t60 = h3_b;
+    t47 = h3_b.f_mass;
 #line 253 "examples/nbody/main.hero"
-    t61 = t60.f_mass;
+    t48 = h5_other.f_mass;
 #line 253 "examples/nbody/main.hero"
-    t62 = h5_other;
+    t49 = t47 * t48;
 #line 253 "examples/nbody/main.hero"
-    t63 = t62.f_mass;
+    t50 = h6_dx;
 #line 253 "examples/nbody/main.hero"
-    t64 = t61 * t63;
+    t51 = h6_dx;
 #line 253 "examples/nbody/main.hero"
-    t65 = h6_dx;
+    t52 = t50 * t51;
 #line 253 "examples/nbody/main.hero"
-    t66 = h6_dx;
+    t53 = h7_dy;
 #line 253 "examples/nbody/main.hero"
-    t67 = t65 * t66;
+    t54 = h7_dy;
 #line 253 "examples/nbody/main.hero"
-    t68 = h7_dy;
+    t55 = t53 * t54;
 #line 253 "examples/nbody/main.hero"
-    t69 = h7_dy;
+    t56 = t52 + t55;
 #line 253 "examples/nbody/main.hero"
-    t70 = t68 * t69;
+    t57 = h8_dz;
 #line 253 "examples/nbody/main.hero"
-    t71 = t67 + t70;
+    t58 = h8_dz;
 #line 253 "examples/nbody/main.hero"
-    t72 = h8_dz;
+    t59 = t57 * t58;
 #line 253 "examples/nbody/main.hero"
-    t73 = h8_dz;
+    t60 = t56 + t59;
 #line 253 "examples/nbody/main.hero"
-    t74 = t72 * t73;
+    t61 = sqrt(t60);
 #line 253 "examples/nbody/main.hero"
-    t75 = t71 + t74;
+    t62 = t49 / t61;
 #line 253 "examples/nbody/main.hero"
-    t76 = sqrt(t75);
+    t63 = t46 - t62;
 #line 253 "examples/nbody/main.hero"
-    t77 = t64 / t76;
-#line 253 "examples/nbody/main.hero"
-    t78 = t59 - t77;
-#line 253 "examples/nbody/main.hero"
-    h1_e = t78;
-    t79 = h4_j;
+    h1_e = t63;
+    t64 = h4_j;
 #line 254 "examples/nbody/main.hero"
-    t80 = INT64_C(1);
+    t65 = INT64_C(1);
 #line 254 "examples/nbody/main.hero"
-    if (__builtin_add_overflow(t79, t80, &t81)) hero_panic_overflow();
+    if (__builtin_add_overflow(t64, t65, &t66)) hero_panic_overflow();
 #line 254 "examples/nbody/main.hero"
-    h4_j = t81;
+    h4_j = t66;
 #line 254 "examples/nbody/main.hero"
     goto bb4;
 #line 254 "examples/nbody/main.hero"
 bb6:
 #line 256 "examples/nbody/main.hero"
-    t82 = h2_i;
+    t67 = h2_i;
 #line 256 "examples/nbody/main.hero"
-    t83 = INT64_C(1);
+    t68 = INT64_C(1);
 #line 256 "examples/nbody/main.hero"
-    if (__builtin_add_overflow(t82, t83, &t84)) hero_panic_overflow();
+    if (__builtin_add_overflow(t67, t68, &t69)) hero_panic_overflow();
 #line 256 "examples/nbody/main.hero"
-    h2_i = t84;
+    h2_i = t69;
 #line 256 "examples/nbody/main.hero"
     goto bb1;
-#line 1326 "main.c"
+#line 1226 "main.c"
 }
 
 #line 261 "examples/nbody/main.hero"
@@ -1334,7 +1234,7 @@ bb0:
     t1 = INT64_C(1000);
 #line 262 "examples/nbody/main.hero"
     return t1;
-#line 1338 "main.c"
+#line 1238 "main.c"
 }
 
 #line 264 "examples/nbody/main.hero"
@@ -1346,7 +1246,7 @@ bb0:
     t1 = 0x1.47ae147ae147bp-7;
 #line 265 "examples/nbody/main.hero"
     return t1;
-#line 1350 "main.c"
+#line 1250 "main.c"
 }
 
 #line 267 "examples/nbody/main.hero"
@@ -1465,7 +1365,7 @@ bb3:
     hero_print_str(t19);
 #line 277 "examples/nbody/main.hero"
     hero_print_end();
-#line 1469 "main.c"
+#line 1369 "main.c"
     hero_array_release_at(&h0_start);
     hero_array_release_at(&h1_moved);
     hero_array_release_at(&h3_own3);
@@ -1485,7 +1385,7 @@ bb0:
     t1 = 0x1.dcd65p+29;
 #line 290 "examples/nbody/main.hero"
     return t1;
-#line 1489 "main.c"
+#line 1389 "main.c"
 }
 
 #line 292 "examples/nbody/main.hero"
@@ -1654,7 +1554,7 @@ bb5:
     t18 = h3_f0;
 #line 298 "examples/nbody/main.hero"
     t19 = t18.as.err;
-#line 1658 "main.c"
+#line 1558 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -1688,7 +1588,7 @@ bb8:
     goto bb6;
 #line 304 "examples/nbody/main.hero"
 bb9:
-#line 1692 "main.c"
+#line 1592 "main.c"
     t40 = h8_ret0;
     hero_str_incref(t40);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -1766,7 +1666,7 @@ bb2:
 bb3:
 #line 315 "examples/nbody/main.hero"
     t10 = h1_digits;
-#line 1770 "main.c"
+#line 1670 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_digits);
     hero_str_release_at(&h2_own2);
@@ -1833,7 +1733,7 @@ bb3:
     goto bb1;
 #line 404 "examples/nbody/main.hero"
 bb4:
-#line 1837 "main.c"
+#line 1737 "main.c"
     t14 = h3_ret0;
     return t14;
 }

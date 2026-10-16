@@ -134,25 +134,23 @@ bb0:
 #line 15 "tests/golden/ir/place-paths.hero"
 int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c) {
 #line 15 "tests/golden/ir/place-paths.hero"
-    HERO_NODEBUG h_placepaths_Grid t1; HERO_NODEBUG HeroArrayHeader *t2, *t5; HERO_NODEBUG int64_t t3, t6, t7; HERO_NODEBUG h_placepaths_Row t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1, *t4; HERO_NODEBUG int64_t t2, t5, t6; HERO_NODEBUG h_placepaths_Row t3; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/ir/place-paths.hero"
 bb0:
-    t1 = h0_g;
+    t1 = h0_g.f_rows;
 #line 16 "tests/golden/ir/place-paths.hero"
-    t2 = t1.f_rows;
+    t2 = h1_r;
 #line 16 "tests/golden/ir/place-paths.hero"
-    t3 = h1_r;
+    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), ((h_placepaths_Row const *)(const void *)(t1 + 1))[t2]);
 #line 16 "tests/golden/ir/place-paths.hero"
-    t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), ((h_placepaths_Row const *)(const void *)(t2 + 1))[t3]);
+    t4 = t3.f_cells;
 #line 16 "tests/golden/ir/place-paths.hero"
-    t5 = t4.f_cells;
+    t5 = h2_c;
 #line 16 "tests/golden/ir/place-paths.hero"
-    t6 = h2_c;
+    t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
 #line 16 "tests/golden/ir/place-paths.hero"
-    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
-#line 16 "tests/golden/ir/place-paths.hero"
-    return t7;
-#line 156 "placepaths.c"
+    return t6;
+#line 154 "placepaths.c"
 }
 HERO_TU_LOCAL void h_placepaths_Row_retain(const h_placepaths_Row *v) {
     hero_array_incref(v->f_cells);

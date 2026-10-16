@@ -160,18 +160,18 @@ void h_adversarialrecursivetree_main(void);
 #line 35 "tests/golden/run/adversarial-recursive-tree.hero"
 int64_t h_adversarialrecursivetree_value_of(h_adversarialrecursivetree_Expr h0_e) {
 #line 35 "tests/golden/run/adversarial-recursive-tree.hero"
-    HERO_NODEBUG h_adversarialrecursivetree_Expr h1_s0 = {0}, t1, t2, t4, t8, t13, t21; HERO_NODEBUG int64_t h2_r0, t3, t7, t12, t15, t18, t19, t20; h_adversarialrecursivetree_Expr_c_number h3_n; h_adversarialrecursivetree_Expr_c_add h4_a = {0}; h_adversarialrecursivetree_Expr_c_negate h5_g = {0}; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_number t5, t6; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_add t9, t10, t22; HERO_NODEBUG HeroArrayHeader *t11, *t17; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_negate t14, t16, t23; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_adversarialrecursivetree_Expr h1_s0 = {0}, t1, t2, t4, t7, t11, t18; HERO_NODEBUG int64_t h2_r0, t3, t6, t10, t13, t15, t16, t17; h_adversarialrecursivetree_Expr_c_number h3_n; h_adversarialrecursivetree_Expr_c_add h4_a = {0}; h_adversarialrecursivetree_Expr_c_negate h5_g = {0}; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_number t5; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_add t8, t19; HERO_NODEBUG HeroArrayHeader *t9, *t14; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_negate t12, t20; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/adversarial-recursive-tree.hero"
 bb0:
     t1 = h0_e;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
-    t21 = h1_s0;
+    t18 = h1_s0;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
     h_adversarialrecursivetree_Expr_retain(&t1);
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
     h1_s0 = t1;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
-    h_adversarialrecursivetree_Expr_release(&t21);
+    h_adversarialrecursivetree_Expr_release(&t18);
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
     t2 = h1_s0;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
@@ -191,12 +191,12 @@ bb0:
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
 bb1:
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
-    t20 = h2_r0;
+    t17 = h2_r0;
 #line 196 "adversarialrecursivetree.c"
     h_adversarialrecursivetree_Expr_release(hero_slot_escape(&h1_s0));
     h_adversarialrecursivetree_Expr_c_add_release(hero_slot_escape(&h4_a));
     h_adversarialrecursivetree_Expr_c_negate_release(hero_slot_escape(&h5_g));
-    return t20;
+    return t17;
 bb2:
 #line 37 "tests/golden/run/adversarial-recursive-tree.hero"
     t4 = h1_s0;
@@ -205,66 +205,60 @@ bb2:
 #line 37 "tests/golden/run/adversarial-recursive-tree.hero"
     h3_n = t5;
 #line 37 "tests/golden/run/adversarial-recursive-tree.hero"
-    t6 = h3_n;
-#line 37 "tests/golden/run/adversarial-recursive-tree.hero"
-    t7 = t6.f_v;
+    t6 = h3_n.f_v;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
-    h2_r0 = t7;
+    h2_r0 = t6;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
     goto bb1;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
 bb3:
 #line 38 "tests/golden/run/adversarial-recursive-tree.hero"
-    t8 = h1_s0;
+    t7 = h1_s0;
 #line 38 "tests/golden/run/adversarial-recursive-tree.hero"
-    t9 = t8.as.c_add;
+    t8 = t7.as.c_add;
 #line 38 "tests/golden/run/adversarial-recursive-tree.hero"
-    t22 = h4_a;
+    t19 = h4_a;
 #line 38 "tests/golden/run/adversarial-recursive-tree.hero"
-    h_adversarialrecursivetree_Expr_c_add_retain(&t9);
+    h_adversarialrecursivetree_Expr_c_add_retain(&t8);
 #line 38 "tests/golden/run/adversarial-recursive-tree.hero"
-    h4_a = t9;
+    h4_a = t8;
 #line 38 "tests/golden/run/adversarial-recursive-tree.hero"
-    h_adversarialrecursivetree_Expr_c_add_release(&t22);
+    h_adversarialrecursivetree_Expr_c_add_release(&t19);
 #line 38 "tests/golden/run/adversarial-recursive-tree.hero"
-    t10 = h4_a;
+    t9 = h4_a.f_parts;
 #line 38 "tests/golden/run/adversarial-recursive-tree.hero"
-    t11 = t10.f_parts;
-#line 38 "tests/golden/run/adversarial-recursive-tree.hero"
-    t12 = h_adversarialrecursivetree_sum_of(t11);
+    t10 = h_adversarialrecursivetree_sum_of(t9);
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
-    h2_r0 = t12;
+    h2_r0 = t10;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
     goto bb1;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
 bb4:
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    t13 = h1_s0;
+    t11 = h1_s0;
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    t14 = t13.as.c_negate;
+    t12 = t11.as.c_negate;
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    t23 = h5_g;
+    t20 = h5_g;
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    h_adversarialrecursivetree_Expr_c_negate_retain(&t14);
+    h_adversarialrecursivetree_Expr_c_negate_retain(&t12);
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    h5_g = t14;
+    h5_g = t12;
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    h_adversarialrecursivetree_Expr_c_negate_release(&t23);
+    h_adversarialrecursivetree_Expr_c_negate_release(&t20);
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    t15 = INT64_C(0);
+    t13 = INT64_C(0);
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    t16 = h5_g;
+    t14 = h5_g.f_inner;
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    t17 = t16.f_inner;
+    t15 = h_adversarialrecursivetree_sum_of(t14);
 #line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    t18 = h_adversarialrecursivetree_sum_of(t17);
-#line 39 "tests/golden/run/adversarial-recursive-tree.hero"
-    if (__builtin_sub_overflow(t15, t18, &t19)) hero_panic_overflow();
+    if (__builtin_sub_overflow(t13, t15, &t16)) hero_panic_overflow();
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
-    h2_r0 = t19;
+    h2_r0 = t16;
 #line 36 "tests/golden/run/adversarial-recursive-tree.hero"
     goto bb1;
-#line 268 "adversarialrecursivetree.c"
+#line 262 "adversarialrecursivetree.c"
 }
 
 #line 41 "tests/golden/run/adversarial-recursive-tree.hero"
@@ -347,7 +341,7 @@ bb3:
 bb4:
 #line 47 "tests/golden/run/adversarial-recursive-tree.hero"
     t18 = h1_total;
-#line 351 "adversarialrecursivetree.c"
+#line 345 "adversarialrecursivetree.c"
     hero_array_release_at(&h2_xs0);
     h_adversarialrecursivetree_Expr_release(hero_slot_escape(&h4_part));
     return t18;
@@ -356,18 +350,18 @@ bb4:
 #line 49 "tests/golden/run/adversarial-recursive-tree.hero"
 int64_t h_adversarialrecursivetree_depth_of(h_adversarialrecursivetree_Expr h0_e) {
 #line 49 "tests/golden/run/adversarial-recursive-tree.hero"
-    HERO_NODEBUG h_adversarialrecursivetree_Expr h1_s0 = {0}, t1, t2, t5, t12, t20; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t10, t11, t14, t17, t18, t19; h_adversarialrecursivetree_Expr_c_add h3_a = {0}; h_adversarialrecursivetree_Expr_c_negate h4_g = {0}; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_add t6, t8, t21; HERO_NODEBUG HeroArrayHeader *t9, *t16; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_negate t13, t15, t22; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_adversarialrecursivetree_Expr h1_s0 = {0}, t1, t2, t5, t11, t18; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t9, t10, t13, t15, t16, t17; h_adversarialrecursivetree_Expr_c_add h3_a = {0}; h_adversarialrecursivetree_Expr_c_negate h4_g = {0}; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_add t6, t19; HERO_NODEBUG HeroArrayHeader *t8, *t14; HERO_NODEBUG h_adversarialrecursivetree_Expr_c_negate t12, t20; HERO_ENTRY_STOP; goto bb0;
 #line 49 "tests/golden/run/adversarial-recursive-tree.hero"
 bb0:
     t1 = h0_e;
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
-    t20 = h1_s0;
+    t18 = h1_s0;
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
     h_adversarialrecursivetree_Expr_retain(&t1);
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
     h1_s0 = t1;
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
-    h_adversarialrecursivetree_Expr_release(&t20);
+    h_adversarialrecursivetree_Expr_release(&t18);
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
     t2 = h1_s0;
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
@@ -387,12 +381,12 @@ bb0:
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
 bb1:
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
-    t19 = h2_r0;
-#line 392 "adversarialrecursivetree.c"
+    t17 = h2_r0;
+#line 386 "adversarialrecursivetree.c"
     h_adversarialrecursivetree_Expr_release(hero_slot_escape(&h1_s0));
     h_adversarialrecursivetree_Expr_c_add_release(hero_slot_escape(&h3_a));
     h_adversarialrecursivetree_Expr_c_negate_release(hero_slot_escape(&h4_g));
-    return t19;
+    return t17;
 bb2:
 #line 51 "tests/golden/run/adversarial-recursive-tree.hero"
     t4 = INT64_C(1);
@@ -407,56 +401,52 @@ bb3:
 #line 52 "tests/golden/run/adversarial-recursive-tree.hero"
     t6 = t5.as.c_add;
 #line 52 "tests/golden/run/adversarial-recursive-tree.hero"
-    t21 = h3_a;
+    t19 = h3_a;
 #line 52 "tests/golden/run/adversarial-recursive-tree.hero"
     h_adversarialrecursivetree_Expr_c_add_retain(&t6);
 #line 52 "tests/golden/run/adversarial-recursive-tree.hero"
     h3_a = t6;
 #line 52 "tests/golden/run/adversarial-recursive-tree.hero"
-    h_adversarialrecursivetree_Expr_c_add_release(&t21);
+    h_adversarialrecursivetree_Expr_c_add_release(&t19);
 #line 52 "tests/golden/run/adversarial-recursive-tree.hero"
     t7 = INT64_C(1);
 #line 52 "tests/golden/run/adversarial-recursive-tree.hero"
-    t8 = h3_a;
+    t8 = h3_a.f_parts;
 #line 52 "tests/golden/run/adversarial-recursive-tree.hero"
-    t9 = t8.f_parts;
+    t9 = h_adversarialrecursivetree_deepest(t8);
 #line 52 "tests/golden/run/adversarial-recursive-tree.hero"
-    t10 = h_adversarialrecursivetree_deepest(t9);
-#line 52 "tests/golden/run/adversarial-recursive-tree.hero"
-    if (__builtin_add_overflow(t7, t10, &t11)) hero_panic_overflow();
+    if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow();
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
-    h2_r0 = t11;
+    h2_r0 = t10;
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
     goto bb1;
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
 bb4:
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    t12 = h1_s0;
+    t11 = h1_s0;
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    t13 = t12.as.c_negate;
+    t12 = t11.as.c_negate;
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    t22 = h4_g;
+    t20 = h4_g;
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    h_adversarialrecursivetree_Expr_c_negate_retain(&t13);
+    h_adversarialrecursivetree_Expr_c_negate_retain(&t12);
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    h4_g = t13;
+    h4_g = t12;
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    h_adversarialrecursivetree_Expr_c_negate_release(&t22);
+    h_adversarialrecursivetree_Expr_c_negate_release(&t20);
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    t14 = INT64_C(1);
+    t13 = INT64_C(1);
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    t15 = h4_g;
+    t14 = h4_g.f_inner;
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    t16 = t15.f_inner;
+    t15 = h_adversarialrecursivetree_deepest(t14);
 #line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    t17 = h_adversarialrecursivetree_deepest(t16);
-#line 53 "tests/golden/run/adversarial-recursive-tree.hero"
-    if (__builtin_add_overflow(t14, t17, &t18)) hero_panic_overflow();
+    if (__builtin_add_overflow(t13, t15, &t16)) hero_panic_overflow();
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
-    h2_r0 = t18;
+    h2_r0 = t16;
 #line 50 "tests/golden/run/adversarial-recursive-tree.hero"
     goto bb1;
-#line 460 "adversarialrecursivetree.c"
+#line 450 "adversarialrecursivetree.c"
 }
 
 #line 55 "tests/golden/run/adversarial-recursive-tree.hero"
@@ -541,7 +531,7 @@ bb3:
 bb4:
 #line 64 "tests/golden/run/adversarial-recursive-tree.hero"
     t20 = h1_best;
-#line 545 "adversarialrecursivetree.c"
+#line 535 "adversarialrecursivetree.c"
     hero_array_release_at(&h2_xs0);
     h_adversarialrecursivetree_Expr_release(hero_slot_escape(&h4_part));
     return t20;
@@ -558,7 +548,7 @@ bb6:
 bb7:
 #line 62 "tests/golden/run/adversarial-recursive-tree.hero"
     goto bb5;
-#line 562 "adversarialrecursivetree.c"
+#line 552 "adversarialrecursivetree.c"
 }
 
 #line 66 "tests/golden/run/adversarial-recursive-tree.hero"
@@ -904,7 +894,7 @@ bb0:
     hero_print_int(t53);
 #line 96 "tests/golden/run/adversarial-recursive-tree.hero"
     hero_print_end();
-#line 908 "adversarialrecursivetree.c"
+#line 898 "adversarialrecursivetree.c"
     h_adversarialrecursivetree_Expr_release(hero_slot_escape(&h0_leaf));
     h_adversarialrecursivetree_Expr_release(hero_slot_escape(&h1_inner));
     h_adversarialrecursivetree_Expr_release(hero_slot_escape(&h2_tree));

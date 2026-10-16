@@ -180,112 +180,98 @@ void h_ffiaconstructionnamesonearmofeachunion_main(void);
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 void h_ffiaconstructionnamesonearmofeachunion_main(void) {
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    SA h0_s; SA h1_t; SA h2_a; SA h3_b; HERO_NODEBUG bool h4_b0, h5_b1, t18, t23, t24, t29, t30; HERO_NODEBUG SA t1, t2, t7, t8, t10, t12, t13, t14, t16, t19, t21, t25, t27; HERO_NODEBUG int32_t t3, t4, t6, t11, t15, t17, t20, t22, t26, t28; HERO_NODEBUG float t5, t9; HERO_ENTRY_STOP; goto bb0;
+    SA h0_s; SA h1_t; SA h2_a; SA h3_b; HERO_NODEBUG bool h4_b0, h5_b1, t15, t18, t19, t22, t23; HERO_NODEBUG SA t1, t6, t7, t9, t11, t12; HERO_NODEBUG int32_t t2, t3, t5, t10, t13, t14, t16, t17, t20, t21; HERO_NODEBUG float t4, t8; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 bb0:
     t1 = make_sa();
 #line 23 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     h0_s = t1;
-    t2 = h0_s;
+    t2 = h0_s.i;
 #line 24 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t3 = t2.i;
-#line 24 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_int(t3);
+    hero_print_int(t2);
 #line 24 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     hero_print_end();
-    t4 = INT64_C(2);
+    t3 = INT64_C(2);
 #line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t5 = 0x1.8p+0;
+    t4 = 0x1.8p+0;
 #line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t6 = INT64_C(4);
+    t5 = INT64_C(4);
 #line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t7 = (SA){.kind = t4, .f = t5, .x = t6};
+    t6 = (SA){.kind = t3, .f = t4, .x = t5};
 #line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h1_t = t7;
-    t8 = h1_t;
+    h1_t = t6;
+    t7 = h1_t;
 #line 26 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t9 = sa_f(t8);
+    t8 = sa_f(t7);
 #line 26 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_f32(t9);
+    hero_print_f32(t8);
 #line 26 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     hero_print_end();
-    t10 = h1_t;
+    t9 = h1_t;
 #line 27 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t11 = sa_x(t10);
+    t10 = sa_x(t9);
 #line 27 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_int(t11);
+    hero_print_int(t10);
 #line 27 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     hero_print_end();
-    t12 = make_sa();
+    t11 = make_sa();
 #line 28 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h2_a = t12;
-    t13 = make_sa();
+    h2_a = t11;
+    t12 = make_sa();
 #line 29 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h3_b = t13;
-    t14 = h2_a;
+    h3_b = t12;
+    t13 = h2_a.kind;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t15 = t14.kind;
+    t14 = h3_b.kind;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t16 = h3_b;
+    t15 = t13 == t14;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t17 = t16.kind;
+    h5_b1 = t15;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t18 = t15 == t17;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h5_b1 = t18;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    if (t18) goto bb1; else goto bb2;
+    if (t15) goto bb1; else goto bb2;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 bb1:
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t19 = h2_a;
+    t16 = h2_a.i;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t20 = t19.i;
+    t17 = h3_b.i;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t21 = h3_b;
+    t18 = t16 == t17;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t22 = t21.i;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t23 = t20 == t22;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h5_b1 = t23;
+    h5_b1 = t18;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     goto bb2;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 bb2:
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t24 = h5_b1;
+    t19 = h5_b1;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h4_b0 = t24;
+    h4_b0 = t19;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    if (t24) goto bb3; else goto bb4;
+    if (t19) goto bb3; else goto bb4;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 bb3:
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t25 = h2_a;
+    t20 = h2_a.x;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t26 = t25.x;
+    t21 = h3_b.x;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t27 = h3_b;
+    t22 = t20 == t21;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t28 = t27.x;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t29 = t26 == t28;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h4_b0 = t29;
+    h4_b0 = t22;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     goto bb4;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 bb4:
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t30 = h4_b0;
+    t23 = h4_b0;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_bool(t30);
+    hero_print_bool(t23);
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     hero_print_end();
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     return;
-#line 289 "ffiaconstructionnamesonearmofeachunion.c"
+#line 275 "ffiaconstructionnamesonearmofeachunion.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonearmofeachunion_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

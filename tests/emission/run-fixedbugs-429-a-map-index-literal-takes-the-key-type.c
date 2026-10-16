@@ -142,7 +142,7 @@ void h_fixedbugs429amapindexliteraltakesthekeytype_main(void);
 #line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
 void h_fixedbugs429amapindexliteraltakesthekeytype_main(void) {
 #line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    HeroMapHeader * h0_names = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h2_f1 = {0}, h3_f2 = {0}, h6_f3 = {0}, h8_f4 = {0}, h10_f5 = {0}, h11_f6 = {0}, h13_f7 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h24_own24 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, t6, t7, t11, t13, t19, t20, t24, t26, t30, t31, t35, t44, t45, t49, t51, t60, t61, t65, t67, t74, t75, t79, t81, t85, t86, t95, t96, t100, t102, t117, t118, t119, t120, t121, t122, t127, t128, t132, t133, t136, t137, t138, t139, t142, t143; HERO_NODEBUG HeroStr h4_r0 = {0}, t2, t14, t16, t27, t36, t37, t38, t40, t52, t54, t68, t70, t82, t91, t103, t111, t112, t123, t124, t146; HeroMapHeader * h5_low = {0}; h_fixedbugs429amapindexliteraltakesthekeytype_Holder h7_h = {0}; HeroMapHeader * h9_ops = {0}; HeroMapHeader * h12_wide = {0}; HeroArrayHeader * h14_xs = {0}; HeroStr h15_s = {0}; HERO_NODEBUG HeroMapHeader *h16_own16 = {0}, *h20_own20 = {0}, *h22_own22 = {0}, *h25_own25 = {0}, *h28_own28 = {0}, *t3, *t4, *t17, *t28, *t41, *t42, *t55, *t58, *t71, *t72, *t83, *t92, *t93, *t115, *t116, *t125, *t126, *t129, *t134, *t135, *t140, *t141; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder h23_own23 = {0}, t56, t57, t130, t131; HERO_NODEBUG HeroArrayHeader *h30_own30 = {0}, *t107, *t108, *t144, *t145; HERO_NODEBUG uint8_t t1, t5, t15, t18, t29, t104, t105, t106, t110, t114; HERO_NODEBUG int64_t t8, t9, t21, t22, t32, t33, t46, t47, t62, t63, t76, t77, t87, t88, t90, t94, t97, t98, t109, t113; HERO_NODEBUG bool t10, t23, t34, t48, t64, t78, t89, t99; HERO_NODEBUG HeroFailure t12, t25, t50, t66, t80, t101; HERO_NODEBUG int8_t t39, t43; HERO_NODEBUG uint16_t t53, t59; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t69, t73, t84; HERO_ENTRY_STOP; goto bb0;
+    HeroMapHeader * h0_names = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h2_f1 = {0}, h3_f2 = {0}, h6_f3 = {0}, h8_f4 = {0}, h10_f5 = {0}, h11_f6 = {0}, h13_f7 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h24_own24 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, t6, t7, t11, t13, t19, t20, t24, t26, t30, t31, t35, t44, t45, t49, t51, t59, t60, t64, t66, t73, t74, t78, t80, t84, t85, t94, t95, t99, t101, t116, t117, t118, t119, t120, t121, t126, t127, t131, t132, t135, t136, t137, t138, t141, t142; HERO_NODEBUG HeroStr h4_r0 = {0}, t2, t14, t16, t27, t36, t37, t38, t40, t52, t54, t67, t69, t81, t90, t102, t110, t111, t122, t123, t145; HeroMapHeader * h5_low = {0}; h_fixedbugs429amapindexliteraltakesthekeytype_Holder h7_h = {0}; HeroMapHeader * h9_ops = {0}; HeroMapHeader * h12_wide = {0}; HeroArrayHeader * h14_xs = {0}; HeroStr h15_s = {0}; HERO_NODEBUG HeroMapHeader *h16_own16 = {0}, *h20_own20 = {0}, *h22_own22 = {0}, *h25_own25 = {0}, *h28_own28 = {0}, *t3, *t4, *t17, *t28, *t41, *t42, *t55, *t57, *t70, *t71, *t82, *t91, *t92, *t114, *t115, *t124, *t125, *t128, *t133, *t134, *t139, *t140; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder h23_own23 = {0}, t56, t129, t130; HERO_NODEBUG HeroArrayHeader *h30_own30 = {0}, *t106, *t107, *t143, *t144; HERO_NODEBUG uint8_t t1, t5, t15, t18, t29, t103, t104, t105, t109, t113; HERO_NODEBUG int64_t t8, t9, t21, t22, t32, t33, t46, t47, t61, t62, t75, t76, t86, t87, t89, t93, t96, t97, t108, t112; HERO_NODEBUG bool t10, t23, t34, t48, t63, t77, t88, t98; HERO_NODEBUG HeroFailure t12, t25, t50, t65, t79, t100; HERO_NODEBUG int8_t t39, t43; HERO_NODEBUG uint16_t t53, t58; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t68, t72, t83; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
 bb0:
     t1 = UINT64_C(11);
@@ -153,19 +153,19 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_map_put(t3, &t1, &t2);
 #line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t115 = h16_own16;
+    t114 = h16_own16;
 #line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h16_own16 = t3;
 #line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_decref(t115);
+    hero_map_decref(t114);
 #line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t116 = h0_names;
+    t115 = h0_names;
 #line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_map_incref(t3);
 #line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h0_names = t3;
 #line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_decref(t116);
+    hero_map_decref(t115);
     t4 = h0_names;
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t5 = UINT64_C(11);
@@ -188,19 +188,19 @@ bb0:
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     }
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t117 = h17_own17;
+    t116 = h17_own17;
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h17_own17 = t6;
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t117);
+    h_0opt_f87774a_release(&t116);
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t118 = h1_f0;
+    t117 = h1_f0;
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h_0opt_f87774a_retain(&t6);
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h1_f0 = t6;
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t118);
+    h_0opt_f87774a_release(&t117);
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t7 = h1_f0;
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -250,19 +250,19 @@ bb1:
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     }
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t119 = h18_own18;
+    t118 = h18_own18;
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h18_own18 = t19;
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t119);
+    h_0opt_f87774a_release(&t118);
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t120 = h2_f1;
+    t119 = h2_f1;
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h_0opt_f87774a_retain(&t19);
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h2_f1 = t19;
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t120);
+    h_0opt_f87774a_release(&t119);
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t20 = h2_f1;
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -313,19 +313,19 @@ bb3:
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     }
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t121 = h19_own19;
+    t120 = h19_own19;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h19_own19 = t30;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t121);
+    h_0opt_f87774a_release(&t120);
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t122 = h3_f2;
+    t121 = h3_f2;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h_0opt_f87774a_retain(&t30);
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h3_f2 = t30;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t122);
+    h_0opt_f87774a_release(&t121);
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t31 = h3_f2;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -351,13 +351,13 @@ bb5:
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t36 = t35.as.ok;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t123 = h4_r0;
+    t122 = h4_r0;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_str_incref(t36);
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h4_r0 = t36;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_str_decref(t123);
+    hero_str_decref(t122);
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     goto bb7;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -365,13 +365,13 @@ bb6:
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t37 = HERO_STR_LIT(hero_str_edaa230);
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t124 = h4_r0;
+    t123 = h4_r0;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_str_incref(t37);
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h4_r0 = t37;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_str_decref(t124);
+    hero_str_decref(t123);
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     goto bb7;
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -390,19 +390,19 @@ bb7:
 #line 27 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_map_put(t41, &t39, &t40);
 #line 27 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t125 = h20_own20;
+    t124 = h20_own20;
 #line 27 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h20_own20 = t41;
 #line 27 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_decref(t125);
+    hero_map_decref(t124);
 #line 27 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t126 = h5_low;
+    t125 = h5_low;
 #line 27 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_map_incref(t41);
 #line 27 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h5_low = t41;
 #line 27 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_decref(t126);
+    hero_map_decref(t125);
     t42 = h5_low;
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t43 = INT64_C(-128);
@@ -425,19 +425,19 @@ bb7:
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     }
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t127 = h21_own21;
+    t126 = h21_own21;
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h21_own21 = t44;
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t127);
+    h_0opt_f87774a_release(&t126);
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t128 = h6_f3;
+    t127 = h6_f3;
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h_0opt_f87774a_retain(&t44);
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h6_f3 = t44;
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t128);
+    h_0opt_f87774a_release(&t127);
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t45 = h6_f3;
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -466,364 +466,362 @@ bb8:
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_map_put(t55, &t53, &t54);
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t129 = h22_own22;
+    t128 = h22_own22;
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h22_own22 = t55;
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_decref(t129);
+    hero_map_decref(t128);
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_map_incref(t55);
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t56 = (h_fixedbugs429amapindexliteraltakesthekeytype_Holder){.f_m = t55};
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t130 = h23_own23;
+    t129 = h23_own23;
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h23_own23 = t56;
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder_release(&t130);
+    h_fixedbugs429amapindexliteraltakesthekeytype_Holder_release(&t129);
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t131 = h7_h;
+    t130 = h7_h;
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h_fixedbugs429amapindexliteraltakesthekeytype_Holder_retain(&t56);
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h7_h = t56;
 #line 29 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder_release(&t131);
-    t57 = h7_h;
+    h_fixedbugs429amapindexliteraltakesthekeytype_Holder_release(&t130);
+    t57 = h7_h.f_m;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t58 = t57.f_m;
-#line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t59 = UINT64_C(7);
+    t58 = UINT64_C(7);
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t58, &t59);
+      HERO_NODEBUG const void *found = hero_map_find(t57, &t58);
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        t60 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t59 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       } else {
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        t60 = (h_0opt_f87774a){.tag = INT64_C(0)};
+        t59 = (h_0opt_f87774a){.tag = INT64_C(0)};
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        (&hero_desc_str)->copy(&t60.as.ok, found);
+        (&hero_desc_str)->copy(&t59.as.ok, found);
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       }
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     }
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t132 = h24_own24;
+    t131 = h24_own24;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h24_own24 = t60;
+    h24_own24 = t59;
+#line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h_0opt_f87774a_release(&t131);
+#line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    t132 = h8_f4;
+#line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h_0opt_f87774a_retain(&t59);
+#line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h8_f4 = t59;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h_0opt_f87774a_release(&t132);
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t133 = h8_f4;
+    t60 = h8_f4;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_retain(&t60);
+    t61 = t60.tag;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h8_f4 = t60;
+    t62 = INT64_C(0);
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t133);
+    t63 = t61 == t62;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t61 = h8_f4;
-#line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t62 = t61.tag;
-#line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t63 = INT64_C(0);
-#line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t64 = t62 == t63;
-#line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    if (t64) goto bb10; else goto bb11;
+    if (t63) goto bb10; else goto bb11;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
 bb9:
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t49 = h6_f3;
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t50 = t49.as.err;
-#line 546 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 544 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t50);
     hero_unreachable();
 bb10:
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t67 = h8_f4;
+    t66 = h8_f4;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t68 = t67.as.ok;
+    t67 = t66.as.ok;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_print_str(t68);
+    hero_print_str(t67);
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_end();
-    t69 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_Op_tag_plus};
+    t68 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_Op_tag_plus};
 #line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t70 = HERO_STR_LIT(hero_str_f1e77ee);
+    t69 = HERO_STR_LIT(hero_str_f1e77ee);
 #line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t71 = hero_map_new(&h_fixedbugs429amapindexliteraltakesthekeytype_Op_desc, &hero_desc_str, 1);
+    t70 = hero_map_new(&h_fixedbugs429amapindexliteraltakesthekeytype_Op_desc, &hero_desc_str, 1);
 #line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_put(t71, &t69, &t70);
+    hero_map_put(t70, &t68, &t69);
 #line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t134 = h25_own25;
+    t133 = h25_own25;
 #line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h25_own25 = t71;
+    h25_own25 = t70;
+#line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    hero_map_decref(t133);
+#line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    t134 = h9_ops;
+#line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    hero_map_incref(t70);
+#line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h9_ops = t70;
 #line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_map_decref(t134);
-#line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t135 = h9_ops;
-#line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_incref(t71);
-#line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h9_ops = t71;
-#line 31 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_decref(t135);
-    t72 = h9_ops;
+    t71 = h9_ops;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t73 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_Op_tag_plus};
+    t72 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_Op_tag_plus};
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t72, &t73);
+      HERO_NODEBUG const void *found = hero_map_find(t71, &t72);
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        t74 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t73 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       } else {
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        t74 = (h_0opt_f87774a){.tag = INT64_C(0)};
+        t73 = (h_0opt_f87774a){.tag = INT64_C(0)};
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        (&hero_desc_str)->copy(&t74.as.ok, found);
+        (&hero_desc_str)->copy(&t73.as.ok, found);
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       }
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     }
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t136 = h26_own26;
+    t135 = h26_own26;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h26_own26 = t74;
+    h26_own26 = t73;
+#line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h_0opt_f87774a_release(&t135);
+#line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    t136 = h10_f5;
+#line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h_0opt_f87774a_retain(&t73);
+#line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h10_f5 = t73;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h_0opt_f87774a_release(&t136);
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t137 = h10_f5;
+    t74 = h10_f5;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_retain(&t74);
+    t75 = t74.tag;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h10_f5 = t74;
+    t76 = INT64_C(0);
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t137);
+    t77 = t75 == t76;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t75 = h10_f5;
-#line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t76 = t75.tag;
-#line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t77 = INT64_C(0);
-#line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t78 = t76 == t77;
-#line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    if (t78) goto bb12; else goto bb13;
+    if (t77) goto bb12; else goto bb13;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
 bb11:
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t65 = h8_f4;
+    t64 = h8_f4;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t66 = t65.as.err;
-#line 630 "fixedbugs429amapindexliteraltakesthekeytype.c"
-    hero_panic_must(t66);
+    t65 = t64.as.err;
+#line 628 "fixedbugs429amapindexliteraltakesthekeytype.c"
+    hero_panic_must(t65);
     hero_unreachable();
 bb12:
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t81 = h10_f5;
+    t80 = h10_f5;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t82 = t81.as.ok;
+    t81 = t80.as.ok;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_print_str(t82);
+    hero_print_str(t81);
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_end();
-    t83 = h9_ops;
+    t82 = h9_ops;
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t84 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_Op_tag_minus};
+    t83 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_Op_tag_minus};
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t83, &t84);
+      HERO_NODEBUG const void *found = hero_map_find(t82, &t83);
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        t85 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t84 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       } else {
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        t85 = (h_0opt_f87774a){.tag = INT64_C(0)};
+        t84 = (h_0opt_f87774a){.tag = INT64_C(0)};
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        (&hero_desc_str)->copy(&t85.as.ok, found);
+        (&hero_desc_str)->copy(&t84.as.ok, found);
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       }
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     }
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t138 = h27_own27;
+    t137 = h27_own27;
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h27_own27 = t85;
+    h27_own27 = t84;
+#line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h_0opt_f87774a_release(&t137);
+#line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    t138 = h11_f6;
+#line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h_0opt_f87774a_retain(&t84);
+#line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h11_f6 = t84;
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h_0opt_f87774a_release(&t138);
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t139 = h11_f6;
+    t85 = h11_f6;
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_retain(&t85);
+    t86 = t85.tag;
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h11_f6 = t85;
+    t87 = INT64_C(1);
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t139);
+    t88 = t86 == t87;
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t86 = h11_f6;
-#line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t87 = t86.tag;
-#line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t88 = INT64_C(1);
-#line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t89 = t87 == t88;
-#line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_print_bool(t89);
+    hero_print_bool(t88);
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_end();
-    t90 = INT64_C(5);
+    t89 = INT64_C(5);
 #line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t91 = HERO_STR_LIT(hero_str_dc6a73a);
+    t90 = HERO_STR_LIT(hero_str_dc6a73a);
 #line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t92 = hero_map_new(&hero_desc_int, &hero_desc_str, 1);
+    t91 = hero_map_new(&hero_desc_int, &hero_desc_str, 1);
 #line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_put(t92, &t90, &t91);
+    hero_map_put(t91, &t89, &t90);
 #line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t140 = h28_own28;
+    t139 = h28_own28;
 #line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h28_own28 = t92;
+    h28_own28 = t91;
+#line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    hero_map_decref(t139);
+#line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    t140 = h12_wide;
+#line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    hero_map_incref(t91);
+#line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h12_wide = t91;
 #line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_map_decref(t140);
-#line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t141 = h12_wide;
-#line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_incref(t92);
-#line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h12_wide = t92;
-#line 34 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_map_decref(t141);
-    t93 = h12_wide;
+    t92 = h12_wide;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t94 = INT64_C(5);
+    t93 = INT64_C(5);
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t93, &t94);
+      HERO_NODEBUG const void *found = hero_map_find(t92, &t93);
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        t95 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+        t94 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       } else {
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        t95 = (h_0opt_f87774a){.tag = INT64_C(0)};
+        t94 = (h_0opt_f87774a){.tag = INT64_C(0)};
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-        (&hero_desc_str)->copy(&t95.as.ok, found);
+        (&hero_desc_str)->copy(&t94.as.ok, found);
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       }
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     }
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t142 = h29_own29;
+    t141 = h29_own29;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h29_own29 = t95;
+    h29_own29 = t94;
+#line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h_0opt_f87774a_release(&t141);
+#line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    t142 = h13_f7;
+#line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h_0opt_f87774a_retain(&t94);
+#line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h13_f7 = t94;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     h_0opt_f87774a_release(&t142);
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t143 = h13_f7;
+    t95 = h13_f7;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_retain(&t95);
+    t96 = t95.tag;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h13_f7 = t95;
+    t97 = INT64_C(0);
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h_0opt_f87774a_release(&t143);
+    t98 = t96 == t97;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t96 = h13_f7;
-#line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t97 = t96.tag;
-#line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t98 = INT64_C(0);
-#line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t99 = t97 == t98;
-#line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    if (t99) goto bb14; else goto bb15;
+    if (t98) goto bb14; else goto bb15;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
 bb13:
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t79 = h10_f5;
+    t78 = h10_f5;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t80 = t79.as.err;
-#line 761 "fixedbugs429amapindexliteraltakesthekeytype.c"
-    hero_panic_must(t80);
+    t79 = t78.as.err;
+#line 759 "fixedbugs429amapindexliteraltakesthekeytype.c"
+    hero_panic_must(t79);
     hero_unreachable();
 bb14:
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t102 = h13_f7;
+    t101 = h13_f7;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t103 = t102.as.ok;
+    t102 = t101.as.ok;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_print_str(t103);
+    hero_print_str(t102);
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_end();
-    t104 = UINT64_C(1);
+    t103 = UINT64_C(1);
 #line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t105 = UINT64_C(2);
+    t104 = UINT64_C(2);
 #line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t106 = UINT64_C(3);
+    t105 = UINT64_C(3);
 #line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t107 = hero_array_new(&hero_desc_u8, 3);
+    t106 = hero_array_new(&hero_desc_u8, 3);
 #line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_array_push_owned(&t107, &t104);
+    hero_array_push_owned(&t106, &t103);
 #line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_array_push_owned(&t107, &t105);
+    hero_array_push_owned(&t106, &t104);
 #line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_array_push_owned(&t107, &t106);
+    hero_array_push_owned(&t106, &t105);
 #line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t144 = h30_own30;
+    t143 = h30_own30;
 #line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h30_own30 = t107;
+    h30_own30 = t106;
+#line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    hero_array_decref(t143);
+#line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    t144 = h14_xs;
+#line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    hero_array_incref(t106);
+#line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    h14_xs = t106;
 #line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_array_decref(t144);
-#line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t145 = h14_xs;
-#line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_array_incref(t107);
-#line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h14_xs = t107;
-#line 36 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_array_decref(t145);
-    t108 = h14_xs;
+    t107 = h14_xs;
 #line 37 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t109 = INT64_C(1);
+    t108 = INT64_C(1);
 #line 37 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t110 = ((void)((t108 == NULL || t109 < 0 || t109 >= t108->len) ? ((void)hero_array_at(t108, t109), hero_unreachable()) : (void)0), (void)(t108->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t108 + 1))[t109]);
+    t109 = ((void)((t107 == NULL || t108 < 0 || t108 >= t107->len) ? ((void)hero_array_at(t107, t108), hero_unreachable()) : (void)0), (void)(t107->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t107 + 1))[t108]);
 #line 37 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_print_int(t110);
+    hero_print_int(t109);
 #line 37 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_end();
-    t111 = HERO_STR_LIT(hero_str_1998f2);
+    t110 = HERO_STR_LIT(hero_str_1998f2);
 #line 38 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t146 = h15_s;
+    t145 = h15_s;
 #line 38 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_str_incref(t111);
+    hero_str_incref(t110);
 #line 38 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    h15_s = t111;
+    h15_s = t110;
 #line 38 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_str_decref(t146);
-    t112 = h15_s;
+    hero_str_decref(t145);
+    t111 = h15_s;
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t113 = INT64_C(2);
+    t112 = INT64_C(2);
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t114 = ((void)((t112.ptr == NULL || t113 < 0 || t113 >= t112.len) ? ((void)hero_str_byte(t112, t113), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t112.ptr[t113]);
+    t113 = ((void)((t111.ptr == NULL || t112 < 0 || t112 >= t111.len) ? ((void)hero_str_byte(t111, t112), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t111.ptr[t112]);
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    hero_print_int(t114);
+    hero_print_int(t113);
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_end();
-#line 827 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 825 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_map_release_at(&h0_names);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
@@ -858,11 +856,11 @@ bb14:
     return;
 bb15:
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t100 = h13_f7;
+    t99 = h13_f7;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t101 = t100.as.err;
-#line 865 "fixedbugs429amapindexliteraltakesthekeytype.c"
-    hero_panic_must(t101);
+    t100 = t99.as.err;
+#line 863 "fixedbugs429amapindexliteraltakesthekeytype.c"
+    hero_panic_must(t100);
     hero_unreachable();
 }
 HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_Op_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Op *a, const h_fixedbugs429amapindexliteraltakesthekeytype_Op *b) {

@@ -138,7 +138,7 @@ HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingage
 #line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 void h_fixedbugsagenericcallingageneric_main(void) {
 #line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    h_fixedbugsagenericcallingageneric_P h0_p; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t3, *t7, *t13, *t20, *t24, *t26, *t27, *t29, *t30, *t31; HERO_NODEBUG HeroStr h3_own3 = {0}, t5, t6, t8, t22, t23, t28; HERO_NODEBUG int64_t t1, t2, t4, t9, t11, t16, t17, t18, t19, t21, t25; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t10, t12, t14, t15; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugsagenericcallingageneric_P h0_p; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t3, *t7, *t13, *t19, *t23, *t25, *t26, *t28, *t29, *t30; HERO_NODEBUG HeroStr h3_own3 = {0}, t5, t6, t8, t21, t22, t27; HERO_NODEBUG int64_t t1, t2, t4, t9, t11, t15, t16, t17, t18, t20, t24; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t10, t12, t14; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -152,11 +152,11 @@ bb0:
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_array_push_owned(&t3, &t2);
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t26 = h1_own1;
+    t25 = h1_own1;
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h1_own1 = t3;
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_array_decref(t26);
+    hero_array_decref(t25);
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t4 = h_fixedbugsagenericcallingageneric_outer_1b9a87(t3);
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -173,19 +173,19 @@ bb0:
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_array_push_owned(&t7, &t6);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t27 = h2_own2;
+    t26 = h2_own2;
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h2_own2 = t7;
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_array_decref(t27);
+    hero_array_decref(t26);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t8 = h_fixedbugsagenericcallingageneric_outer_1e58d9(t7);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t28 = h3_own3;
+    t27 = h3_own3;
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h3_own3 = t8;
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_str_decref(t28);
+    hero_str_decref(t27);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_print_str(t8);
 #line 51 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -204,69 +204,67 @@ bb0:
 #line 52 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_array_push_owned(&t13, &t12);
 #line 52 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t29 = h4_own4;
+    t28 = h4_own4;
 #line 52 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h4_own4 = t13;
 #line 52 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_array_decref(t29);
+    hero_array_decref(t28);
 #line 52 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t14 = h_fixedbugsagenericcallingageneric_outer_36312915(t13);
 #line 52 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     h0_p = t14;
-    t15 = h0_p;
+    t15 = h0_p.f_x;
 #line 53 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t16 = t15.f_x;
-#line 53 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_print_int(t16);
+    hero_print_int(t15);
 #line 53 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_print_end();
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t17 = INT64_C(1);
+    t16 = INT64_C(1);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t18 = INT64_C(2);
+    t17 = INT64_C(2);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t19 = INT64_C(3);
+    t18 = INT64_C(3);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t20 = hero_array_new(&hero_desc_int, 3);
+    t19 = hero_array_new(&hero_desc_int, 3);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_array_push_owned(&t20, &t17);
+    hero_array_push_owned(&t19, &t16);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_array_push_owned(&t20, &t18);
+    hero_array_push_owned(&t19, &t17);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_array_push_owned(&t20, &t19);
+    hero_array_push_owned(&t19, &t18);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t30 = h5_own5;
+    t29 = h5_own5;
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    h5_own5 = t20;
+    h5_own5 = t19;
+#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    hero_array_decref(t29);
+#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    t20 = h_fixedbugsagenericcallingageneric_both_1b9a87(t19);
+#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    t21 = HERO_STR_LIT(hero_str_20);
+#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    t22 = HERO_STR_LIT(hero_str_efcabd0);
+#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    t23 = hero_array_new(&hero_desc_str, 1);
+#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    hero_array_push_owned(&t23, &t22);
+#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    t30 = h6_own6;
+#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    h6_own6 = t23;
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_array_decref(t30);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t21 = h_fixedbugsagenericcallingageneric_both_1b9a87(t20);
+    t24 = h_fixedbugsagenericcallingageneric_both_1e58d9(t23);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t22 = HERO_STR_LIT(hero_str_20);
+    hero_print_int(t20);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t23 = HERO_STR_LIT(hero_str_efcabd0);
+    hero_print_str(t21);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t24 = hero_array_new(&hero_desc_str, 1);
-#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_array_push_owned(&t24, &t23);
-#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t31 = h6_own6;
-#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    h6_own6 = t24;
-#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_array_decref(t31);
-#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    t25 = h_fixedbugsagenericcallingageneric_both_1e58d9(t24);
-#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_print_int(t21);
-#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_print_str(t22);
-#line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    hero_print_int(t25);
+    hero_print_int(t24);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_print_end();
-#line 270 "fixedbugsagenericcallingageneric.c"
+#line 268 "fixedbugsagenericcallingageneric.c"
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -289,7 +287,7 @@ bb0:
     t2 = h_fixedbugsagenericcallingageneric_middle_1b9a87(t1);
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 293 "fixedbugsagenericcallingageneric.c"
+#line 291 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -309,7 +307,7 @@ bb0:
     h1_own1 = t2;
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_str_decref(t3);
-#line 313 "fixedbugsagenericcallingageneric.c"
+#line 311 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -328,7 +326,7 @@ bb0:
     t2 = h_fixedbugsagenericcallingageneric_middle_36312915(t1);
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 332 "fixedbugsagenericcallingageneric.c"
+#line 330 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -360,7 +358,7 @@ bb0:
     t6 = h_fixedbugsagenericcallingageneric_tally_1b9a87(t5);
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     if (__builtin_add_overflow(t2, t6, &t7)) hero_panic_overflow();
-#line 364 "fixedbugsagenericcallingageneric.c"
+#line 362 "fixedbugsagenericcallingageneric.c"
     hero_array_release_at(&h1_own1);
     return t7;
 }
@@ -400,7 +398,7 @@ bb0:
     t6 = h_fixedbugsagenericcallingageneric_tally_1e58d9(t5);
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     if (__builtin_add_overflow(t2, t6, &t7)) hero_panic_overflow();
-#line 404 "fixedbugsagenericcallingageneric.c"
+#line 402 "fixedbugsagenericcallingageneric.c"
     hero_str_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
     return t7;
@@ -419,7 +417,7 @@ bb0:
     t2 = h_fixedbugsagenericcallingageneric_innermost_1b9a87(t1);
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 423 "fixedbugsagenericcallingageneric.c"
+#line 421 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -439,7 +437,7 @@ bb0:
     h1_own1 = t2;
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_str_decref(t3);
-#line 443 "fixedbugsagenericcallingageneric.c"
+#line 441 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -458,7 +456,7 @@ bb0:
     t2 = h_fixedbugsagenericcallingageneric_innermost_36312915(t1);
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 462 "fixedbugsagenericcallingageneric.c"
+#line 460 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -474,7 +472,7 @@ bb0:
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 478 "fixedbugsagenericcallingageneric.c"
+#line 476 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -490,7 +488,7 @@ bb0:
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 494 "fixedbugsagenericcallingageneric.c"
+#line 492 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -508,7 +506,7 @@ bb0:
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t3;
-#line 512 "fixedbugsagenericcallingageneric.c"
+#line 510 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -524,7 +522,7 @@ bb0:
     t2 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t2]);
-#line 528 "fixedbugsagenericcallingageneric.c"
+#line 526 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t3);
     return t3;
 }
@@ -544,7 +542,7 @@ bb0:
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_fixedbugsagenericcallingageneric_P) ? hero_unreachable() : (void)0), ((h_fixedbugsagenericcallingageneric_P const *)(const void *)(t1 + 1))[t2]);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t3;
-#line 548 "fixedbugsagenericcallingageneric.c"
+#line 546 "fixedbugsagenericcallingageneric.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsagenericcallingageneric_P_eq(const h_fixedbugsagenericcallingageneric_P *a, const h_fixedbugsagenericcallingageneric_P *b) {
     if (!(a->f_x == b->f_x)) return false;

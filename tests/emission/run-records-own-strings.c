@@ -121,32 +121,30 @@ void h_recordsownstrings_main(void);
 #line 24 "tests/golden/run/records-own-strings.hero"
 HeroStr h_recordsownstrings_greet(h_recordsownstrings_Person h0_p) {
 #line 24 "tests/golden/run/records-own-strings.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t3, t4, t5; HERO_NODEBUG h_recordsownstrings_Person t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/records-own-strings.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1a23a6da);
 #line 25 "tests/golden/run/records-own-strings.hero"
-    t2 = h0_p;
+    t2 = h0_p.f_name;
 #line 25 "tests/golden/run/records-own-strings.hero"
-    t3 = t2.f_name;
+    t3 = hero_str_concat(t1, t2);
 #line 25 "tests/golden/run/records-own-strings.hero"
-    t4 = hero_str_concat(t1, t3);
+    t4 = h1_own1;
 #line 25 "tests/golden/run/records-own-strings.hero"
-    t5 = h1_own1;
+    h1_own1 = t3;
 #line 25 "tests/golden/run/records-own-strings.hero"
-    h1_own1 = t4;
-#line 25 "tests/golden/run/records-own-strings.hero"
-    hero_str_decref(t5);
-#line 141 "recordsownstrings.c"
-    hero_str_incref(t4);
+    hero_str_decref(t4);
+#line 139 "recordsownstrings.c"
+    hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
-    return t4;
+    return t3;
 }
 
 #line 27 "tests/golden/run/records-own-strings.hero"
 void h_recordsownstrings_main(void) {
 #line 27 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person h0_p = {0}; h_recordsownstrings_Person h1_q = {0}; h_recordsownstrings_Pair h2_both = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, h5_own5 = {0}, t1, t2, t3, t7, t10, t11, t15, t17, t23, t26, t39, t40, t43; HERO_NODEBUG h_recordsownstrings_Person h4_own4 = {0}, h6_own6 = {0}, t5, t6, t8, t9, t13, t14, t16, t18, t19, t22, t25, t28, t29, t33, t35, t37, t38, t41, t42, t44, t45, t46, t50; HERO_NODEBUG h_recordsownstrings_Pair h7_own7 = {0}, h8_own8 = {0}, t20, t21, t24, t27, t30, t32, t34, t47, t48, t49; HERO_NODEBUG int64_t t4, t12; HERO_NODEBUG bool t31, t36; HERO_ENTRY_STOP; goto bb0;
+    h_recordsownstrings_Person h0_p = {0}; h_recordsownstrings_Person h1_q = {0}; h_recordsownstrings_Pair h2_both = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, h5_own5 = {0}, t1, t2, t3, t7, t9, t10, t13, t14, t18, t19, t29, t30, t33; HERO_NODEBUG h_recordsownstrings_Person h4_own4 = {0}, h6_own6 = {0}, t5, t6, t8, t12, t15, t16, t21, t22, t25, t26, t28, t31, t32, t34, t35, t36, t40; HERO_NODEBUG h_recordsownstrings_Pair h7_own7 = {0}, h8_own8 = {0}, t17, t20, t23, t37, t38, t39; HERO_NODEBUG int64_t t4, t11; HERO_NODEBUG bool t24, t27; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/records-own-strings.hero"
 bb0:
 #line 30 "tests/golden/run/records-own-strings.hero"
@@ -156,11 +154,11 @@ bb0:
 #line 30 "tests/golden/run/records-own-strings.hero"
     t3 = hero_str_concat(t1, t2);
 #line 30 "tests/golden/run/records-own-strings.hero"
-    t40 = h3_own3;
+    t30 = h3_own3;
 #line 30 "tests/golden/run/records-own-strings.hero"
     h3_own3 = t3;
 #line 30 "tests/golden/run/records-own-strings.hero"
-    hero_str_decref(t40);
+    hero_str_decref(t30);
 #line 30 "tests/golden/run/records-own-strings.hero"
     t4 = INT64_C(36);
 #line 30 "tests/golden/run/records-own-strings.hero"
@@ -168,176 +166,156 @@ bb0:
 #line 30 "tests/golden/run/records-own-strings.hero"
     t5 = (h_recordsownstrings_Person){.f_name = t3, .f_age = t4};
 #line 30 "tests/golden/run/records-own-strings.hero"
-    t41 = h4_own4;
+    t31 = h4_own4;
 #line 30 "tests/golden/run/records-own-strings.hero"
     h4_own4 = t5;
 #line 30 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_release(&t41);
+    h_recordsownstrings_Person_release(&t31);
 #line 30 "tests/golden/run/records-own-strings.hero"
-    t42 = h0_p;
+    t32 = h0_p;
 #line 30 "tests/golden/run/records-own-strings.hero"
     h_recordsownstrings_Person_retain(&t5);
 #line 30 "tests/golden/run/records-own-strings.hero"
     h0_p = t5;
 #line 30 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_release(&t42);
+    h_recordsownstrings_Person_release(&t32);
     t6 = h0_p;
 #line 31 "tests/golden/run/records-own-strings.hero"
     t7 = h_recordsownstrings_greet(t6);
 #line 31 "tests/golden/run/records-own-strings.hero"
-    t43 = h5_own5;
+    t33 = h5_own5;
 #line 31 "tests/golden/run/records-own-strings.hero"
     h5_own5 = t7;
 #line 31 "tests/golden/run/records-own-strings.hero"
-    hero_str_decref(t43);
+    hero_str_decref(t33);
 #line 31 "tests/golden/run/records-own-strings.hero"
     hero_print_str(t7);
 #line 31 "tests/golden/run/records-own-strings.hero"
     hero_print_end();
     t8 = h0_p;
 #line 32 "tests/golden/run/records-own-strings.hero"
-    t44 = h1_q;
+    t34 = h1_q;
 #line 32 "tests/golden/run/records-own-strings.hero"
     h_recordsownstrings_Person_retain(&t8);
 #line 32 "tests/golden/run/records-own-strings.hero"
     h1_q = t8;
 #line 32 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_release(&t44);
-    t9 = h1_q;
+    h_recordsownstrings_Person_release(&t34);
+    t9 = h1_q.f_name;
 #line 33 "tests/golden/run/records-own-strings.hero"
-    t10 = t9.f_name;
-#line 33 "tests/golden/run/records-own-strings.hero"
-    hero_print_str(t10);
+    hero_print_str(t9);
 #line 33 "tests/golden/run/records-own-strings.hero"
     hero_print_end();
-    t11 = HERO_STR_LIT(hero_str_1f648322);
+    t10 = HERO_STR_LIT(hero_str_1f648322);
 #line 34 "tests/golden/run/records-own-strings.hero"
-    t12 = INT64_C(45);
+    t11 = INT64_C(45);
 #line 34 "tests/golden/run/records-own-strings.hero"
-    hero_str_incref(t11);
+    hero_str_incref(t10);
 #line 34 "tests/golden/run/records-own-strings.hero"
-    t13 = (h_recordsownstrings_Person){.f_name = t11, .f_age = t12};
+    t12 = (h_recordsownstrings_Person){.f_name = t10, .f_age = t11};
 #line 34 "tests/golden/run/records-own-strings.hero"
-    t45 = h6_own6;
+    t35 = h6_own6;
 #line 34 "tests/golden/run/records-own-strings.hero"
-    h6_own6 = t13;
+    h6_own6 = t12;
 #line 34 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_release(&t45);
+    h_recordsownstrings_Person_release(&t35);
 #line 34 "tests/golden/run/records-own-strings.hero"
-    t46 = h1_q;
+    t36 = h1_q;
 #line 34 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_retain(&t13);
+    h_recordsownstrings_Person_retain(&t12);
 #line 34 "tests/golden/run/records-own-strings.hero"
-    h1_q = t13;
+    h1_q = t12;
 #line 34 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_release(&t46);
-    t14 = h1_q;
+    h_recordsownstrings_Person_release(&t36);
+    t13 = h1_q.f_name;
 #line 35 "tests/golden/run/records-own-strings.hero"
-    t15 = t14.f_name;
+    t14 = h0_p.f_name;
 #line 35 "tests/golden/run/records-own-strings.hero"
-    t16 = h0_p;
+    hero_print_str(t13);
 #line 35 "tests/golden/run/records-own-strings.hero"
-    t17 = t16.f_name;
-#line 35 "tests/golden/run/records-own-strings.hero"
-    hero_print_str(t15);
-#line 35 "tests/golden/run/records-own-strings.hero"
-    hero_print_str(t17);
+    hero_print_str(t14);
 #line 35 "tests/golden/run/records-own-strings.hero"
     hero_print_end();
-    t18 = h0_p;
+    t15 = h0_p;
 #line 36 "tests/golden/run/records-own-strings.hero"
-    t19 = h1_q;
+    t16 = h1_q;
 #line 36 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_retain(&t18);
+    h_recordsownstrings_Person_retain(&t15);
 #line 36 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_retain(&t19);
+    h_recordsownstrings_Person_retain(&t16);
 #line 36 "tests/golden/run/records-own-strings.hero"
-    t20 = (h_recordsownstrings_Pair){.f_one = t18, .f_two = t19};
+    t17 = (h_recordsownstrings_Pair){.f_one = t15, .f_two = t16};
 #line 36 "tests/golden/run/records-own-strings.hero"
-    t47 = h7_own7;
+    t37 = h7_own7;
 #line 36 "tests/golden/run/records-own-strings.hero"
-    h7_own7 = t20;
+    h7_own7 = t17;
 #line 36 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Pair_release(&t47);
+    h_recordsownstrings_Pair_release(&t37);
 #line 36 "tests/golden/run/records-own-strings.hero"
-    t48 = h2_both;
+    t38 = h2_both;
 #line 36 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Pair_retain(&t20);
+    h_recordsownstrings_Pair_retain(&t17);
 #line 36 "tests/golden/run/records-own-strings.hero"
-    h2_both = t20;
+    h2_both = t17;
 #line 36 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Pair_release(&t48);
-    t21 = h2_both;
+    h_recordsownstrings_Pair_release(&t38);
+    t18 = h2_both.f_one.f_name;
 #line 37 "tests/golden/run/records-own-strings.hero"
-    t22 = t21.f_one;
+    t19 = h2_both.f_two.f_name;
 #line 37 "tests/golden/run/records-own-strings.hero"
-    t23 = t22.f_name;
+    hero_print_str(t18);
 #line 37 "tests/golden/run/records-own-strings.hero"
-    t24 = h2_both;
-#line 37 "tests/golden/run/records-own-strings.hero"
-    t25 = t24.f_two;
-#line 37 "tests/golden/run/records-own-strings.hero"
-    t26 = t25.f_name;
-#line 37 "tests/golden/run/records-own-strings.hero"
-    hero_print_str(t23);
-#line 37 "tests/golden/run/records-own-strings.hero"
-    hero_print_str(t26);
+    hero_print_str(t19);
 #line 37 "tests/golden/run/records-own-strings.hero"
     hero_print_end();
-    t27 = h2_both;
+    t20 = h2_both;
 #line 38 "tests/golden/run/records-own-strings.hero"
-    t28 = h0_p;
+    t21 = h0_p;
 #line 38 "tests/golden/run/records-own-strings.hero"
-    t29 = h1_q;
+    t22 = h1_q;
 #line 38 "tests/golden/run/records-own-strings.hero"
+    h_recordsownstrings_Person_retain(&t21);
+#line 38 "tests/golden/run/records-own-strings.hero"
+    h_recordsownstrings_Person_retain(&t22);
+#line 38 "tests/golden/run/records-own-strings.hero"
+    t23 = (h_recordsownstrings_Pair){.f_one = t21, .f_two = t22};
+#line 38 "tests/golden/run/records-own-strings.hero"
+    t39 = h8_own8;
+#line 38 "tests/golden/run/records-own-strings.hero"
+    h8_own8 = t23;
+#line 38 "tests/golden/run/records-own-strings.hero"
+    h_recordsownstrings_Pair_release(&t39);
+#line 38 "tests/golden/run/records-own-strings.hero"
+    t24 = h_recordsownstrings_Pair_eq(&t20, &t23);
+#line 38 "tests/golden/run/records-own-strings.hero"
+    hero_print_bool(t24);
+#line 38 "tests/golden/run/records-own-strings.hero"
+    hero_print_end();
+    t25 = h2_both.f_one;
+#line 39 "tests/golden/run/records-own-strings.hero"
+    t26 = h2_both.f_two;
+#line 39 "tests/golden/run/records-own-strings.hero"
+    t27 = h_recordsownstrings_Person_eq(&t25, &t26);
+#line 39 "tests/golden/run/records-own-strings.hero"
+    hero_print_bool(t27);
+#line 39 "tests/golden/run/records-own-strings.hero"
+    hero_print_end();
+#line 43 "tests/golden/run/records-own-strings.hero"
+    t28 = h1_q;
+#line 43 "tests/golden/run/records-own-strings.hero"
+    t40 = h1_q;
+#line 43 "tests/golden/run/records-own-strings.hero"
     h_recordsownstrings_Person_retain(&t28);
-#line 38 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_retain(&t29);
-#line 38 "tests/golden/run/records-own-strings.hero"
-    t30 = (h_recordsownstrings_Pair){.f_one = t28, .f_two = t29};
-#line 38 "tests/golden/run/records-own-strings.hero"
-    t49 = h8_own8;
-#line 38 "tests/golden/run/records-own-strings.hero"
-    h8_own8 = t30;
-#line 38 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Pair_release(&t49);
-#line 38 "tests/golden/run/records-own-strings.hero"
-    t31 = h_recordsownstrings_Pair_eq(&t27, &t30);
-#line 38 "tests/golden/run/records-own-strings.hero"
-    hero_print_bool(t31);
-#line 38 "tests/golden/run/records-own-strings.hero"
-    hero_print_end();
-    t32 = h2_both;
-#line 39 "tests/golden/run/records-own-strings.hero"
-    t33 = t32.f_one;
-#line 39 "tests/golden/run/records-own-strings.hero"
-    t34 = h2_both;
-#line 39 "tests/golden/run/records-own-strings.hero"
-    t35 = t34.f_two;
-#line 39 "tests/golden/run/records-own-strings.hero"
-    t36 = h_recordsownstrings_Person_eq(&t33, &t35);
-#line 39 "tests/golden/run/records-own-strings.hero"
-    hero_print_bool(t36);
-#line 39 "tests/golden/run/records-own-strings.hero"
-    hero_print_end();
 #line 43 "tests/golden/run/records-own-strings.hero"
-    t37 = h1_q;
+    h1_q = t28;
 #line 43 "tests/golden/run/records-own-strings.hero"
-    t50 = h1_q;
-#line 43 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_retain(&t37);
-#line 43 "tests/golden/run/records-own-strings.hero"
-    h1_q = t37;
-#line 43 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person_release(&t50);
-    t38 = h1_q;
+    h_recordsownstrings_Person_release(&t40);
+    t29 = h1_q.f_name;
 #line 44 "tests/golden/run/records-own-strings.hero"
-    t39 = t38.f_name;
-#line 44 "tests/golden/run/records-own-strings.hero"
-    hero_print_str(t39);
+    hero_print_str(t29);
 #line 44 "tests/golden/run/records-own-strings.hero"
     hero_print_end();
-#line 341 "recordsownstrings.c"
+#line 319 "recordsownstrings.c"
     h_recordsownstrings_Person_release(hero_slot_escape(&h0_p));
     h_recordsownstrings_Person_release(hero_slot_escape(&h1_q));
     h_recordsownstrings_Pair_release(hero_slot_escape(&h2_both));

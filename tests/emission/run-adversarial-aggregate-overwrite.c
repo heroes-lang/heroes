@@ -136,7 +136,7 @@ void h_adversarialaggregateoverwrite_main(void);
 #line 29 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 void h_adversarialaggregateoverwrite_main(void) {
 #line 29 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Cell h0_c = {0}; int64_t h1_i; h_adversarialaggregateoverwrite_Slot h2_s = {0}; int64_t h3_j; HERO_NODEBUG h_adversarialaggregateoverwrite_Slot h4_s0 = {0}, h8_s1 = {0}, h12_s2 = {0}, h20_own20 = {0}, h24_own24 = {0}, h25_own25 = {0}, h29_own29 = {0}, t19, t30, t31, t38, t42, t43, t46, t53, t54, t55, t58, t65, t66, t69, t82, t83, t87, t88, t89, t90, t94, t95, t96, t98, t99, t104; HERO_NODEBUG HeroStr h5_r0 = {0}, h9_r1 = {0}, h17_own17 = {0}, h18_own18 = {0}, h21_own21 = {0}, h22_own22 = {0}, h26_own26 = {0}, h27_own27 = {0}, t1, t8, t10, t11, t18, t24, t26, t27, t32, t34, t35, t45, t50, t51, t52, t57, t62, t63, t64, t78, t79, t84, t85, t91, t92, t97, t100, t102, t103, t105, t107; h_adversarialaggregateoverwrite_Slot_c_full h6_f = {0}; HeroStr h7_tag1 = {0}; h_adversarialaggregateoverwrite_Slot_c_full h10_f = {0}; HeroStr h11_tag2 = {0}; HERO_NODEBUG int64_t h13_r2, t2, t4, t5, t6, t9, t12, t14, t15, t16, t20, t21, t22, t25, t28, t33, t36, t39, t40, t41, t44, t56, t67, t68, t73, t74, t75; h_adversarialaggregateoverwrite_Slot_c_full h14_f = {0}; int64_t h15_n; HERO_NODEBUG h_adversarialaggregateoverwrite_Cell h16_own16 = {0}, h19_own19 = {0}, h23_own23 = {0}, h28_own28 = {0}, t3, t13, t17, t29, t37, t49, t61, t72, t76, t77, t80, t81, t86, t93; HERO_NODEBUG bool t7, t23; HERO_NODEBUG h_adversarialaggregateoverwrite_Slot_c_full t47, t48, t59, t60, t70, t71, t101, t106, t108; HERO_ENTRY_STOP; goto bb0;
+    h_adversarialaggregateoverwrite_Cell h0_c = {0}; int64_t h1_i; h_adversarialaggregateoverwrite_Slot h2_s = {0}; int64_t h3_j; HERO_NODEBUG h_adversarialaggregateoverwrite_Slot h4_s0 = {0}, h8_s1 = {0}, h12_s2 = {0}, h20_own20 = {0}, h24_own24 = {0}, h25_own25 = {0}, h29_own29 = {0}, t18, t29, t30, t37, t41, t42, t45, t50, t51, t52, t55, t60, t61, t64, t75, t76, t80, t81, t82, t83, t87, t88, t89, t91, t92, t97; HERO_NODEBUG HeroStr h5_r0 = {0}, h9_r1 = {0}, h17_own17 = {0}, h18_own18 = {0}, h21_own21 = {0}, h22_own22 = {0}, h26_own26 = {0}, h27_own27 = {0}, t1, t8, t10, t11, t17, t23, t25, t26, t31, t33, t34, t44, t47, t48, t49, t54, t57, t58, t59, t71, t72, t77, t78, t84, t85, t90, t93, t95, t96, t98, t100; h_adversarialaggregateoverwrite_Slot_c_full h6_f = {0}; HeroStr h7_tag1 = {0}; h_adversarialaggregateoverwrite_Slot_c_full h10_f = {0}; HeroStr h11_tag2 = {0}; HERO_NODEBUG int64_t h13_r2, t2, t4, t5, t6, t9, t12, t14, t15, t16, t19, t20, t21, t24, t27, t32, t35, t38, t39, t40, t43, t53, t62, t63, t66, t67, t68; h_adversarialaggregateoverwrite_Slot_c_full h14_f = {0}; int64_t h15_n; HERO_NODEBUG h_adversarialaggregateoverwrite_Cell h16_own16 = {0}, h19_own19 = {0}, h23_own23 = {0}, h28_own28 = {0}, t3, t13, t28, t36, t69, t70, t73, t74, t79, t86; HERO_NODEBUG bool t7, t22; HERO_NODEBUG h_adversarialaggregateoverwrite_Slot_c_full t46, t56, t65, t94, t99, t101; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb0:
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
@@ -148,19 +148,19 @@ bb0:
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t3 = (h_adversarialaggregateoverwrite_Cell){.f_tag = t1, .f_n = t2};
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t76 = h16_own16;
+    t69 = h16_own16;
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h16_own16 = t3;
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Cell_release(&t76);
+    h_adversarialaggregateoverwrite_Cell_release(&t69);
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t77 = h0_c;
+    t70 = h0_c;
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h_adversarialaggregateoverwrite_Cell_retain(&t3);
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h0_c = t3;
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Cell_release(&t77);
+    h_adversarialaggregateoverwrite_Cell_release(&t70);
     t4 = INT64_C(0);
 #line 33 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h1_i = t4;
@@ -184,19 +184,19 @@ bb2:
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t10 = hero_int_to_str(t9);
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t78 = h17_own17;
+    t71 = h17_own17;
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h17_own17 = t10;
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t78);
+    hero_str_decref(t71);
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t11 = hero_str_concat(t8, t10);
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t79 = h18_own18;
+    t72 = h18_own18;
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h18_own18 = t11;
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t79);
+    hero_str_decref(t72);
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t12 = h1_i;
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
@@ -204,19 +204,19 @@ bb2:
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t13 = (h_adversarialaggregateoverwrite_Cell){.f_tag = t11, .f_n = t12};
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t80 = h19_own19;
+    t73 = h19_own19;
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h19_own19 = t13;
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Cell_release(&t80);
+    h_adversarialaggregateoverwrite_Cell_release(&t73);
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t81 = h0_c;
+    t74 = h0_c;
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h_adversarialaggregateoverwrite_Cell_retain(&t13);
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h0_c = t13;
 #line 36 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Cell_release(&t81);
+    h_adversarialaggregateoverwrite_Cell_release(&t74);
     t14 = h1_i;
 #line 37 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t15 = INT64_C(1);
@@ -229,186 +229,184 @@ bb2:
 #line 37 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb3:
 #line 39 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t17 = h0_c;
+    t17 = h0_c.f_tag;
 #line 39 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t18 = t17.f_tag;
-#line 39 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_print_str(t18);
+    hero_print_str(t17);
 #line 39 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     hero_print_end();
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t19 = (h_adversarialaggregateoverwrite_Slot){.tag = h_adversarialaggregateoverwrite_Slot_tag_empty};
+    t18 = (h_adversarialaggregateoverwrite_Slot){.tag = h_adversarialaggregateoverwrite_Slot_tag_empty};
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t82 = h20_own20;
+    t75 = h20_own20;
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h20_own20 = t19;
+    h20_own20 = t18;
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t82);
+    h_adversarialaggregateoverwrite_Slot_release(&t75);
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t83 = h2_s;
+    t76 = h2_s;
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_retain(&t19);
+    h_adversarialaggregateoverwrite_Slot_retain(&t18);
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h2_s = t19;
+    h2_s = t18;
 #line 42 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t83);
-    t20 = INT64_C(0);
+    h_adversarialaggregateoverwrite_Slot_release(&t76);
+    t19 = INT64_C(0);
 #line 43 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h3_j = t20;
+    h3_j = t19;
 #line 43 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     goto bb4;
 #line 43 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb4:
 #line 45 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t21 = h3_j;
+    t20 = h3_j;
 #line 45 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t22 = INT64_C(3);
+    t21 = INT64_C(3);
 #line 45 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t23 = t21 < t22;
+    t22 = t20 < t21;
 #line 45 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    if (t23) goto bb5; else goto bb6;
+    if (t22) goto bb5; else goto bb6;
 #line 45 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb5:
-    t24 = HERO_STR_LIT(hero_str_78);
+    t23 = HERO_STR_LIT(hero_str_78);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t25 = h3_j;
+    t24 = h3_j;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t26 = hero_int_to_str(t25);
+    t25 = hero_int_to_str(t24);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t84 = h21_own21;
+    t77 = h21_own21;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h21_own21 = t26;
+    h21_own21 = t25;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t84);
+    hero_str_decref(t77);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t27 = hero_str_concat(t24, t26);
+    t26 = hero_str_concat(t23, t25);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t85 = h22_own22;
+    t78 = h22_own22;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h22_own22 = t27;
+    h22_own22 = t26;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t85);
+    hero_str_decref(t78);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t28 = h3_j;
+    t27 = h3_j;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_incref(t27);
+    hero_str_incref(t26);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t29 = (h_adversarialaggregateoverwrite_Cell){.f_tag = t27, .f_n = t28};
+    t28 = (h_adversarialaggregateoverwrite_Cell){.f_tag = t26, .f_n = t27};
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t86 = h23_own23;
+    t79 = h23_own23;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h23_own23 = t29;
+    h23_own23 = t28;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Cell_release(&t86);
+    h_adversarialaggregateoverwrite_Cell_release(&t79);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Cell_retain(&t29);
+    h_adversarialaggregateoverwrite_Cell_retain(&t28);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t30 = (h_adversarialaggregateoverwrite_Slot){.tag = h_adversarialaggregateoverwrite_Slot_tag_full, .as.c_full = {.f_item = t29}};
+    t29 = (h_adversarialaggregateoverwrite_Slot){.tag = h_adversarialaggregateoverwrite_Slot_tag_full, .as.c_full = {.f_item = t28}};
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t87 = h24_own24;
+    t80 = h24_own24;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h24_own24 = t30;
+    h24_own24 = t29;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t87);
+    h_adversarialaggregateoverwrite_Slot_release(&t80);
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t88 = h2_s;
+    t81 = h2_s;
 #line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h_adversarialaggregateoverwrite_Slot_retain(&t29);
+#line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h2_s = t29;
+#line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h_adversarialaggregateoverwrite_Slot_release(&t81);
+    t30 = (h_adversarialaggregateoverwrite_Slot){.tag = h_adversarialaggregateoverwrite_Slot_tag_empty};
+#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t82 = h25_own25;
+#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h25_own25 = t30;
+#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h_adversarialaggregateoverwrite_Slot_release(&t82);
+#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t83 = h2_s;
+#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h_adversarialaggregateoverwrite_Slot_retain(&t30);
-#line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h2_s = t30;
-#line 46 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h_adversarialaggregateoverwrite_Slot_release(&t83);
+    t31 = HERO_STR_LIT(hero_str_79);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t32 = h3_j;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t33 = hero_int_to_str(t32);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t84 = h26_own26;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h26_own26 = t33;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    hero_str_decref(t84);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t34 = hero_str_concat(t31, t33);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t85 = h27_own27;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h27_own27 = t34;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    hero_str_decref(t85);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t35 = h3_j;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    hero_str_incref(t34);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t36 = (h_adversarialaggregateoverwrite_Cell){.f_tag = t34, .f_n = t35};
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t86 = h28_own28;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h28_own28 = t36;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h_adversarialaggregateoverwrite_Cell_release(&t86);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h_adversarialaggregateoverwrite_Cell_retain(&t36);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t37 = (h_adversarialaggregateoverwrite_Slot){.tag = h_adversarialaggregateoverwrite_Slot_tag_full, .as.c_full = {.f_item = t36}};
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t87 = h29_own29;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h29_own29 = t37;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h_adversarialaggregateoverwrite_Slot_release(&t87);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    t88 = h2_s;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h_adversarialaggregateoverwrite_Slot_retain(&t37);
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h2_s = t37;
+#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     h_adversarialaggregateoverwrite_Slot_release(&t88);
-    t31 = (h_adversarialaggregateoverwrite_Slot){.tag = h_adversarialaggregateoverwrite_Slot_tag_empty};
-#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t89 = h25_own25;
-#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h25_own25 = t31;
-#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t89);
-#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t90 = h2_s;
-#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_retain(&t31);
-#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h2_s = t31;
-#line 47 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t90);
-    t32 = HERO_STR_LIT(hero_str_79);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t33 = h3_j;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t34 = hero_int_to_str(t33);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t91 = h26_own26;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h26_own26 = t34;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t91);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t35 = hero_str_concat(t32, t34);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t92 = h27_own27;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h27_own27 = t35;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t92);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t36 = h3_j;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_incref(t35);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t37 = (h_adversarialaggregateoverwrite_Cell){.f_tag = t35, .f_n = t36};
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t93 = h28_own28;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h28_own28 = t37;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Cell_release(&t93);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Cell_retain(&t37);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t38 = (h_adversarialaggregateoverwrite_Slot){.tag = h_adversarialaggregateoverwrite_Slot_tag_full, .as.c_full = {.f_item = t37}};
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t94 = h29_own29;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h29_own29 = t38;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t94);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t95 = h2_s;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_retain(&t38);
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h2_s = t38;
-#line 48 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t95);
-    t39 = h3_j;
+    t38 = h3_j;
 #line 49 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t40 = INT64_C(1);
+    t39 = INT64_C(1);
 #line 49 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    if (__builtin_add_overflow(t39, t40, &t41)) hero_panic_overflow();
+    if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow();
 #line 49 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h3_j = t41;
+    h3_j = t40;
 #line 49 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     goto bb4;
 #line 49 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb6:
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t42 = h2_s;
+    t41 = h2_s;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t96 = h4_s0;
+    t89 = h4_s0;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_retain(&t42);
+    h_adversarialaggregateoverwrite_Slot_retain(&t41);
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h4_s0 = t42;
+    h4_s0 = t41;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t96);
+    h_adversarialaggregateoverwrite_Slot_release(&t89);
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t43 = h4_s0;
+    t42 = h4_s0;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t44 = t43.tag;
+    t43 = t42.tag;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    switch (t44) {
+    switch (t43) {
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
         case 0: goto bb8;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
@@ -420,47 +418,47 @@ bb6:
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb7:
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t51 = h5_r0;
+    t48 = h5_r0;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t97 = h7_tag1;
+    t90 = h7_tag1;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_incref(t51);
+    hero_str_incref(t48);
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h7_tag1 = t51;
+    h7_tag1 = t48;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t97);
+    hero_str_decref(t90);
 #line 55 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t52 = h7_tag1;
+    t49 = h7_tag1;
 #line 55 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_print_str(t52);
+    hero_print_str(t49);
 #line 55 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     hero_print_end();
 #line 58 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t53 = h2_s;
+    t50 = h2_s;
 #line 58 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t98 = h2_s;
+    t91 = h2_s;
 #line 58 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_retain(&t53);
+    h_adversarialaggregateoverwrite_Slot_retain(&t50);
 #line 58 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h2_s = t53;
+    h2_s = t50;
 #line 58 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t98);
+    h_adversarialaggregateoverwrite_Slot_release(&t91);
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t54 = h2_s;
+    t51 = h2_s;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t99 = h8_s1;
+    t92 = h8_s1;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_retain(&t54);
+    h_adversarialaggregateoverwrite_Slot_retain(&t51);
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h8_s1 = t54;
+    h8_s1 = t51;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t99);
+    h_adversarialaggregateoverwrite_Slot_release(&t92);
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t55 = h8_s1;
+    t52 = h8_s1;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t56 = t55.tag;
+    t53 = t52.tag;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    switch (t56) {
+    switch (t53) {
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
         case 0: goto bb11;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
@@ -472,81 +470,77 @@ bb7:
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb8:
 #line 52 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t45 = HERO_STR_LIT(hero_str_7ba188c6);
+    t44 = HERO_STR_LIT(hero_str_7ba188c6);
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t100 = h5_r0;
+    t93 = h5_r0;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_incref(t45);
+    hero_str_incref(t44);
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h5_r0 = t45;
+    h5_r0 = t44;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t100);
+    hero_str_decref(t93);
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     goto bb7;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb9:
 #line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t46 = h4_s0;
+    t45 = h4_s0;
 #line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t47 = t46.as.c_full;
+    t46 = t45.as.c_full;
 #line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t101 = h6_f;
+    t94 = h6_f;
 #line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_c_full_retain(&t47);
+    h_adversarialaggregateoverwrite_Slot_c_full_retain(&t46);
 #line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h6_f = t47;
+    h6_f = t46;
 #line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_c_full_release(&t101);
+    h_adversarialaggregateoverwrite_Slot_c_full_release(&t94);
 #line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t48 = h6_f;
-#line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t49 = t48.f_item;
-#line 53 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t50 = t49.f_tag;
+    t47 = h6_f.f_item.f_tag;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t102 = h5_r0;
+    t95 = h5_r0;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_incref(t50);
+    hero_str_incref(t47);
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h5_r0 = t50;
+    h5_r0 = t47;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t102);
+    hero_str_decref(t95);
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     goto bb7;
 #line 51 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb10:
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t63 = h9_r1;
+    t58 = h9_r1;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t103 = h11_tag2;
+    t96 = h11_tag2;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_incref(t63);
+    hero_str_incref(t58);
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h11_tag2 = t63;
+    h11_tag2 = t58;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t103);
+    hero_str_decref(t96);
 #line 64 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t64 = h11_tag2;
+    t59 = h11_tag2;
 #line 64 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_print_str(t64);
+    hero_print_str(t59);
 #line 64 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     hero_print_end();
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t65 = h2_s;
+    t60 = h2_s;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t104 = h12_s2;
+    t97 = h12_s2;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_retain(&t65);
+    h_adversarialaggregateoverwrite_Slot_retain(&t60);
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h12_s2 = t65;
+    h12_s2 = t60;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_release(&t104);
+    h_adversarialaggregateoverwrite_Slot_release(&t97);
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t66 = h12_s2;
+    t61 = h12_s2;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t67 = t66.tag;
+    t62 = t61.tag;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    switch (t67) {
+    switch (t62) {
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
         case 0: goto bb14;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
@@ -558,60 +552,56 @@ bb10:
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb11:
 #line 61 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t57 = HERO_STR_LIT(hero_str_7ba188c6);
+    t54 = HERO_STR_LIT(hero_str_7ba188c6);
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t105 = h9_r1;
+    t98 = h9_r1;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_incref(t57);
+    hero_str_incref(t54);
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h9_r1 = t57;
+    h9_r1 = t54;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t105);
+    hero_str_decref(t98);
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     goto bb10;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb12:
 #line 62 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t58 = h8_s1;
+    t55 = h8_s1;
 #line 62 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t59 = t58.as.c_full;
+    t56 = t55.as.c_full;
 #line 62 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t106 = h10_f;
+    t99 = h10_f;
 #line 62 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_c_full_retain(&t59);
+    h_adversarialaggregateoverwrite_Slot_c_full_retain(&t56);
 #line 62 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h10_f = t59;
+    h10_f = t56;
 #line 62 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_c_full_release(&t106);
+    h_adversarialaggregateoverwrite_Slot_c_full_release(&t99);
 #line 62 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t60 = h10_f;
-#line 62 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t61 = t60.f_item;
-#line 62 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t62 = t61.f_tag;
+    t57 = h10_f.f_item.f_tag;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t107 = h9_r1;
+    t100 = h9_r1;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_incref(t62);
+    hero_str_incref(t57);
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h9_r1 = t62;
+    h9_r1 = t57;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_str_decref(t107);
+    hero_str_decref(t100);
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     goto bb10;
 #line 60 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb13:
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t74 = h13_r2;
+    t67 = h13_r2;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h15_n = t74;
+    h15_n = t67;
 #line 71 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t75 = h15_n;
+    t68 = h15_n;
 #line 71 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    hero_print_int(t75);
+    hero_print_int(t68);
 #line 71 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     hero_print_end();
-#line 615 "adversarialaggregateoverwrite.c"
+#line 605 "adversarialaggregateoverwrite.c"
     h_adversarialaggregateoverwrite_Cell_release(hero_slot_escape(&h0_c));
     h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h2_s));
     h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h4_s0));
@@ -641,36 +631,32 @@ bb13:
     return;
 bb14:
 #line 68 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t68 = INT64_C(0);
+    t63 = INT64_C(0);
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h13_r2 = t68;
+    h13_r2 = t63;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     goto bb13;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb15:
 #line 69 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t69 = h12_s2;
+    t64 = h12_s2;
 #line 69 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t70 = t69.as.c_full;
+    t65 = t64.as.c_full;
 #line 69 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t108 = h14_f;
+    t101 = h14_f;
 #line 69 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_c_full_retain(&t70);
+    h_adversarialaggregateoverwrite_Slot_c_full_retain(&t65);
 #line 69 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h14_f = t70;
+    h14_f = t65;
 #line 69 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h_adversarialaggregateoverwrite_Slot_c_full_release(&t108);
+    h_adversarialaggregateoverwrite_Slot_c_full_release(&t101);
 #line 69 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t71 = h14_f;
-#line 69 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t72 = t71.f_item;
-#line 69 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    t73 = t72.f_n;
+    t66 = h14_f.f_item.f_n;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
-    h13_r2 = t73;
+    h13_r2 = t66;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     goto bb13;
-#line 674 "adversarialaggregateoverwrite.c"
+#line 660 "adversarialaggregateoverwrite.c"
 }
 HERO_TU_LOCAL void h_adversarialaggregateoverwrite_Cell_retain(const h_adversarialaggregateoverwrite_Cell *v) {
     hero_str_incref(v->f_tag);

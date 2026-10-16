@@ -432,7 +432,7 @@ void h_fixedbugs2058restzeropastthedepthiswritteninc11_main(void) {
 #line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
 #define h0_w (*hero_lend_h0_w)
 #line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    W *const hero_lend_h0_w = (W *)hero_lend_local(sizeof(W), "fixedbugs2058restzeropastthedepthiswritteninc11.main", "w"); D33 h1_d; HERO_NODEBUG int32_t t1, t4, t6, t9; HERO_NODEBUG W t2, t3; HERO_NODEBUG int64_t t5; HERO_NODEBUG D33 t7, t8; HERO_ENTRY_STOP; goto bb0;
+    W *const hero_lend_h0_w = (W *)hero_lend_local(sizeof(W), "fixedbugs2058restzeropastthedepthiswritteninc11.main", "w"); D33 h1_d; HERO_NODEBUG int32_t t1, t3, t5, t7; HERO_NODEBUG W t2; HERO_NODEBUG int64_t t4; HERO_NODEBUG D33 t6; HERO_ENTRY_STOP; goto bb0;
 #line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
 bb0:
     t1 = INT64_C(7);
@@ -444,11 +444,9 @@ bb0:
     t2.tag = t1;
 #line 144 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
     h0_w = t2;
-    t3 = h0_w;
+    t3 = h0_w.tag;
 #line 145 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t4 = t3.tag;
-#line 145 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_print_int(t4);
+    hero_print_int(t3);
 #line 145 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
     hero_print_end();
     hero_lend_local_name(hero_lend_h0_w, "w_deepest", "w");
@@ -461,32 +459,30 @@ bb0:
 #line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
     }
 #line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t5 = w_deepest(&h0_w);
+    t4 = w_deepest(&h0_w);
 #line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_print_int(t5);
+    hero_print_int(t4);
 #line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
     hero_print_end();
-    t6 = INT64_C(3);
+    t5 = INT64_C(3);
 #line 147 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t7 = *(D33 *)__builtin_memset(&t7, 0, sizeof t7);
+    t6 = *(D33 *)__builtin_memset(&t6, 0, sizeof t6);
 #line 147 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    __builtin_memset(&t7, 0, sizeof t7);
+    __builtin_memset(&t6, 0, sizeof t6);
 #line 147 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t7.n = t6;
+    t6.n = t5;
 #line 147 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    h1_d = t7;
-    t8 = h1_d;
+    h1_d = t6;
+    t7 = h1_d.n;
 #line 148 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t9 = t8.n;
-#line 148 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_print_int(t9);
+    hero_print_int(t7);
 #line 148 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
     hero_print_end();
 #line 148 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
     hero_lend_local_give(hero_lend_h0_w);
 #line 148 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
     return;
-#line 490 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
+#line 486 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
 }
 #undef h0_w
 HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_eq(const D0 *a, const D0 *b) {

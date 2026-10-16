@@ -104,7 +104,7 @@ void h_neverreboundelementandfieldwrites_main(void);
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
 void h_neverreboundelementandfieldwrites_main(void) {
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    HeroArrayHeader * h0_xs = {0}; h_neverreboundelementandfieldwrites_Pair h1_p; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t10, *t16, *t17; HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t9, t11, t12, t14, t15; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t8, t13; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; h_neverreboundelementandfieldwrites_Pair h1_p; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t10, *t15, *t16; HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t9, t11, t12, t13, t14; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t8; HERO_ENTRY_STOP; goto bb0;
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
 bb0:
     t1 = INT64_C(1);
@@ -117,19 +117,19 @@ bb0:
 #line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
     hero_array_push_owned(&t3, &t2);
 #line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t16 = h2_own2;
+    t15 = h2_own2;
 #line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
     h2_own2 = t3;
 #line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_array_decref(t16);
+    hero_array_decref(t15);
 #line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t17 = h0_xs;
+    t16 = h0_xs;
 #line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
     hero_array_incref(t3);
 #line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
     h0_xs = t3;
 #line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_array_decref(t17);
+    hero_array_decref(t16);
     t4 = INT64_C(0);
 #line 10 "tests/golden/run/never-rebound-element-and-field-writes.hero"
     t5 = INT64_C(7);
@@ -151,16 +151,14 @@ bb0:
 #line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
 #line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t13 = h1_p;
+    t13 = h1_p.f_b;
 #line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t14 = t13.f_b;
+    if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
 #line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    if (__builtin_add_overflow(t12, t14, &t15)) hero_panic_overflow();
-#line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_print_int(t15);
+    hero_print_int(t14);
 #line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
     hero_print_end();
-#line 164 "neverreboundelementandfieldwrites.c"
+#line 162 "neverreboundelementandfieldwrites.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;

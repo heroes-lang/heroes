@@ -275,17 +275,15 @@ bb0:
 #line 23 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
 int64_t h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_weigh(h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held h0_h) {
 #line 23 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
-    HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
 bb0:
-    t1 = h0_h;
+    t1 = h0_h.f_b;
 #line 24 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
-    t2 = t1.f_b;
+    t2 = hero_str_len(t1);
 #line 24 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
-    t3 = hero_str_len(t2);
-#line 24 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
-    return t3;
-#line 289 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+    return t2;
+#line 287 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
@@ -587,7 +585,7 @@ bb0:
     hero_print_int(t57);
 #line 39 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
     hero_print_end();
-#line 591 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 589 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
     h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held_release(hero_slot_escape(&h0_mine_held));
     hero_map_release_at(&h2_m1);
     hero_map_release_at(&h3_m2);
@@ -629,7 +627,7 @@ bb0:
     h0_own0 = t3;
 #line 25 "tests/golden/run/fixedbugs2030/one.hero"
     h_0opt_7090cf3b_release(&t4);
-#line 633 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 631 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
     h_0opt_7090cf3b_retain(&t3);
     h_0opt_7090cf3b_release(hero_slot_escape(&h0_own0));
     return t3;
@@ -638,15 +636,13 @@ bb0:
 #line 27 "tests/golden/run/fixedbugs2030/one.hero"
 int64_t h_fixedbugs2030one_weigh(h_fixedbugs2030one_Held h0_h) {
 #line 27 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG h_fixedbugs2030one_Held t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
-    t1 = h0_h;
+    t1 = h0_h.f_a;
 #line 28 "tests/golden/run/fixedbugs2030/one.hero"
-    t2 = t1.f_a;
-#line 28 "tests/golden/run/fixedbugs2030/one.hero"
-    return t2;
-#line 650 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+    return t1;
+#line 646 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs2030/a/held.hero"
@@ -660,7 +656,7 @@ bb0:
     t2 = (h_fixedbugs2030aheld_Held){.f_a = t1};
 #line 8 "tests/golden/run/fixedbugs2030/a/held.hero"
     return t2;
-#line 664 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 660 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 6 "tests/golden/run/fixedbugs2030/b/held.hero"
@@ -680,7 +676,7 @@ bb0:
     h0_own0 = t2;
 #line 7 "tests/golden/run/fixedbugs2030/b/held.hero"
     h_fixedbugs2030bheld_Held_release(&t3);
-#line 684 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 680 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
     h_fixedbugs2030bheld_Held_retain(&t2);
     h_fixedbugs2030bheld_Held_release(hero_slot_escape(&h0_own0));
     return t2;
@@ -691,18 +687,18 @@ bb0:
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs2030one_failure_21bceee4(h_0opt_7090cf3b h0_result) {
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG h_0opt_7090cf3b h1_s0 = {0}, t1, t2, t5, t10; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t8, t9, t11, t13; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t7, t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_7090cf3b h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_result;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    t10 = h1_s0;
+    t9 = h1_s0;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     h_0opt_7090cf3b_retain(&t1);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     h1_s0 = t1;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    h_0opt_7090cf3b_release(&t10);
+    h_0opt_7090cf3b_release(&t9);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     t2 = h1_s0;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
@@ -720,24 +716,24 @@ bb0:
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
 bb1:
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    t9 = h2_r0;
-#line 725 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
-    hero_str_incref(t9);
+    t8 = h2_r0;
+#line 721 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+    hero_str_incref(t8);
     h_0opt_7090cf3b_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
-    return t9;
+    return t8;
 bb2:
 #line 9 "tests/golden/run/fixedbugs2030/one.hero"
     t4 = HERO_STR_LIT(hero_str_0);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    t11 = h2_r0;
+    t10 = h2_r0;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     hero_str_incref(t4);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     h2_r0 = t4;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    hero_str_decref(t11);
+    hero_str_decref(t10);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     goto bb1;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
@@ -747,28 +743,26 @@ bb3:
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
     t6 = t5.as.err;
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
-    t12 = h3_e;
+    t11 = h3_e;
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
     hero_failure_retain(&t6);
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
     h3_e = t6;
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
-    hero_failure_release(&t12);
+    hero_failure_release(&t11);
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
-    t7 = h3_e;
-#line 10 "tests/golden/run/fixedbugs2030/one.hero"
-    t8 = t7.msg;
+    t7 = h3_e.msg;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    t13 = h2_r0;
+    t12 = h2_r0;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    hero_str_incref(t8);
+    hero_str_incref(t7);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    h2_r0 = t8;
+    h2_r0 = t7;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    hero_str_decref(t13);
+    hero_str_decref(t12);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     goto bb1;
-#line 772 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 766 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
@@ -776,18 +770,18 @@ bb3:
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs2030one_failure_19775961(h_0opt_2b8e1d5b h0_result) {
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG h_0opt_2b8e1d5b h1_s0 = {0}, t1, t2, t5, t10; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t8, t9, t11, t13; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t7, t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_2b8e1d5b h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_result;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    t10 = h1_s0;
+    t9 = h1_s0;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     h_0opt_2b8e1d5b_retain(&t1);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     h1_s0 = t1;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    h_0opt_2b8e1d5b_release(&t10);
+    h_0opt_2b8e1d5b_release(&t9);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     t2 = h1_s0;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
@@ -805,24 +799,24 @@ bb0:
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
 bb1:
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    t9 = h2_r0;
-#line 810 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
-    hero_str_incref(t9);
+    t8 = h2_r0;
+#line 804 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+    hero_str_incref(t8);
     h_0opt_2b8e1d5b_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
-    return t9;
+    return t8;
 bb2:
 #line 9 "tests/golden/run/fixedbugs2030/one.hero"
     t4 = HERO_STR_LIT(hero_str_0);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    t11 = h2_r0;
+    t10 = h2_r0;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     hero_str_incref(t4);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     h2_r0 = t4;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    hero_str_decref(t11);
+    hero_str_decref(t10);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     goto bb1;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
@@ -832,28 +826,26 @@ bb3:
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
     t6 = t5.as.err;
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
-    t12 = h3_e;
+    t11 = h3_e;
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
     hero_failure_retain(&t6);
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
     h3_e = t6;
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
-    hero_failure_release(&t12);
+    hero_failure_release(&t11);
 #line 10 "tests/golden/run/fixedbugs2030/one.hero"
-    t7 = h3_e;
-#line 10 "tests/golden/run/fixedbugs2030/one.hero"
-    t8 = t7.msg;
+    t7 = h3_e.msg;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    t13 = h2_r0;
+    t12 = h2_r0;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    hero_str_incref(t8);
+    hero_str_incref(t7);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    h2_r0 = t8;
+    h2_r0 = t7;
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
-    hero_str_decref(t13);
+    hero_str_decref(t12);
 #line 8 "tests/golden/run/fixedbugs2030/one.hero"
     goto bb1;
-#line 857 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 849 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
@@ -869,7 +861,7 @@ bb0:
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 13 "tests/golden/run/fixedbugs2030/one.hero"
     return t2;
-#line 873 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 865 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
@@ -885,7 +877,7 @@ bb0:
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 13 "tests/golden/run/fixedbugs2030/one.hero"
     return t2;
-#line 889 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 881 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 15 "tests/golden/run/fixedbugs2030/one.hero"
@@ -901,7 +893,7 @@ bb0:
     t2 = hero_map_len(t1);
 #line 16 "tests/golden/run/fixedbugs2030/one.hero"
     return t2;
-#line 905 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 897 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 15 "tests/golden/run/fixedbugs2030/one.hero"
@@ -917,7 +909,7 @@ bb0:
     t2 = hero_map_len(t1);
 #line 16 "tests/golden/run/fixedbugs2030/one.hero"
     return t2;
-#line 921 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 913 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs2030/one.hero"
@@ -939,7 +931,7 @@ bb0:
     if (__builtin_add_overflow(t2, t4, &t5)) hero_panic_overflow();
 #line 19 "tests/golden/run/fixedbugs2030/one.hero"
     return t5;
-#line 943 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 935 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs2030/one.hero"
@@ -961,7 +953,7 @@ bb0:
     if (__builtin_add_overflow(t2, t4, &t5)) hero_panic_overflow();
 #line 19 "tests/golden/run/fixedbugs2030/one.hero"
     return t5;
-#line 965 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 957 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 21 "tests/golden/run/fixedbugs2030/one.hero"
@@ -979,7 +971,7 @@ bb0:
     t3 = t1(t2);
 #line 22 "tests/golden/run/fixedbugs2030/one.hero"
     return t3;
-#line 983 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 975 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 21 "tests/golden/run/fixedbugs2030/one.hero"
@@ -997,7 +989,7 @@ bb0:
     t3 = t1(t2);
 #line 22 "tests/golden/run/fixedbugs2030/one.hero"
     return t3;
-#line 1001 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 993 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
@@ -1013,7 +1005,7 @@ bb0:
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 13 "tests/golden/run/fixedbugs2030/one.hero"
     return t2;
-#line 1017 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 1009 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
@@ -1029,7 +1021,7 @@ bb0:
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 13 "tests/golden/run/fixedbugs2030/one.hero"
     return t2;
-#line 1033 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
+#line 1025 "fixedbugs2030agenericattwomodulestypesofonenameistwoinstances.c"
 }
 HERO_TU_LOCAL void h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held_retain(const h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held *v) {
     hero_str_incref(v->f_b);

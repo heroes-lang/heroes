@@ -229,7 +229,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO(void) {
 #line 12 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 void h_fixedbugs094anemptybracelistandazerobuildazerorecord_main(void) {
 #line 12 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    struct pt h0_e; struct pt h1_z; HERO_NODEBUG struct pt t1, t2, t3, t5, t8, t10, t13, t14; HERO_NODEBUG int32_t t4, t6, t7, t9, t11, t12; HERO_NODEBUG bool t15; HERO_ENTRY_STOP; goto bb0;
+    struct pt h0_e; struct pt h1_z; HERO_NODEBUG struct pt t1, t2, t9, t10; HERO_NODEBUG int32_t t3, t4, t5, t6, t7, t8; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 bb0:
     t1 = h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY();
@@ -238,44 +238,36 @@ bb0:
     t2 = h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO();
 #line 14 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     h1_z = t2;
-    t3 = h0_e;
+    t3 = h0_e.x;
 #line 15 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    t4 = t3.x;
+    t4 = h0_e.y;
 #line 15 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    t5 = h0_e;
+    if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 15 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    t6 = t5.y;
-#line 15 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    if (__builtin_add_overflow(t4, t6, &t7)) hero_panic_overflow();
-#line 15 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    hero_print_int(t7);
+    hero_print_int(t5);
 #line 15 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     hero_print_end();
-    t8 = h1_z;
+    t6 = h1_z.x;
 #line 16 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    t9 = t8.x;
+    t7 = h1_z.y;
 #line 16 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
+    if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow();
+#line 16 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
+    hero_print_int(t8);
+#line 16 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
+    hero_print_end();
+    t9 = h0_e;
+#line 17 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     t10 = h1_z;
-#line 16 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    t11 = t10.y;
-#line 16 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    if (__builtin_add_overflow(t9, t11, &t12)) hero_panic_overflow();
-#line 16 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    hero_print_int(t12);
-#line 16 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    hero_print_end();
-    t13 = h0_e;
 #line 17 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    t14 = h1_z;
+    t11 = h_fixedbugs094anemptybracelistandazerobuildazerorecord_Pt_eq(&t9, &t10);
 #line 17 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    t15 = h_fixedbugs094anemptybracelistandazerobuildazerorecord_Pt_eq(&t13, &t14);
-#line 17 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    hero_print_bool(t15);
+    hero_print_bool(t11);
 #line 17 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     return;
-#line 279 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 271 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anemptybracelistandazerobuildazerorecord_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

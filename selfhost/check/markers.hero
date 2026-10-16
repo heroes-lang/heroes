@@ -1,7 +1,8 @@
 # What the `@` a marked parameter asks of a call site can stand before
-# (design.md §4.8; spec § 9: copy in, copy out).
+# (design.md §4.8; spec § 9: the callee works on the caller's place
+# itself).
 #
-# A marked argument is a place the call writes back into, so the `@` it owes
+# A marked argument is a place the call writes into, so the `@` it owes
 # stands only before a place whose root the program may write: a cell, or an
 # `@` parameter. Asked of the argument in hand, its root's binding as the
 # resolver recorded it (defect 135, the certain-fix audit's C8): `bump(k)`

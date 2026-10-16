@@ -113,77 +113,65 @@ void h_records_main(void);
 #line 18 "tests/golden/run/records.hero"
 int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b) {
 #line 18 "tests/golden/run/records.hero"
-    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG h_records_Point t1, t3, t6, t8; HERO_NODEBUG int64_t t2, t4, t5, t7, t9, t10, t11, t12, t13, t14, t15, t16, t17; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/records.hero"
 bb0:
-    t1 = h0_a;
+    t1 = h0_a.f_x;
 #line 19 "tests/golden/run/records.hero"
-    t2 = t1.f_x;
+    t2 = h1_b.f_x;
 #line 19 "tests/golden/run/records.hero"
-    t3 = h1_b;
+    if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 19 "tests/golden/run/records.hero"
-    t4 = t3.f_x;
-#line 19 "tests/golden/run/records.hero"
-    if (__builtin_sub_overflow(t2, t4, &t5)) hero_panic_overflow();
-#line 19 "tests/golden/run/records.hero"
-    h2_dx = t5;
-    t6 = h0_a;
+    h2_dx = t3;
+    t4 = h0_a.f_y;
 #line 20 "tests/golden/run/records.hero"
-    t7 = t6.f_y;
+    t5 = h1_b.f_y;
 #line 20 "tests/golden/run/records.hero"
-    t8 = h1_b;
+    if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow();
 #line 20 "tests/golden/run/records.hero"
-    t9 = t8.f_y;
-#line 20 "tests/golden/run/records.hero"
-    if (__builtin_sub_overflow(t7, t9, &t10)) hero_panic_overflow();
-#line 20 "tests/golden/run/records.hero"
-    h3_dy = t10;
-    t11 = h2_dx;
+    h3_dy = t6;
+    t7 = h2_dx;
 #line 21 "tests/golden/run/records.hero"
-    t12 = h2_dx;
+    t8 = h2_dx;
 #line 21 "tests/golden/run/records.hero"
-    if (__builtin_mul_overflow(t11, t12, &t13)) hero_panic_overflow();
+    if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow();
 #line 21 "tests/golden/run/records.hero"
-    t14 = h3_dy;
+    t10 = h3_dy;
 #line 21 "tests/golden/run/records.hero"
-    t15 = h3_dy;
+    t11 = h3_dy;
 #line 21 "tests/golden/run/records.hero"
-    if (__builtin_mul_overflow(t14, t15, &t16)) hero_panic_overflow();
+    if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow();
 #line 21 "tests/golden/run/records.hero"
-    if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
+    if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow();
 #line 21 "tests/golden/run/records.hero"
-    return t17;
-#line 157 "records.c"
+    return t13;
+#line 149 "records.c"
 }
 
 #line 23 "tests/golden/run/records.hero"
 h_records_Point h_records_moved(h_records_Point h0_p) {
 #line 23 "tests/golden/run/records.hero"
-    HERO_NODEBUG h_records_Point t1, t5, t7; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG h_records_Point t5; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/records.hero"
 bb0:
-    t1 = h0_p;
+    t1 = h0_p.f_x;
 #line 24 "tests/golden/run/records.hero"
-    t2 = t1.f_x;
+    t2 = INT64_C(10);
 #line 24 "tests/golden/run/records.hero"
-    t3 = INT64_C(10);
+    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 24 "tests/golden/run/records.hero"
-    if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow();
+    t4 = h0_p.f_y;
 #line 24 "tests/golden/run/records.hero"
-    t5 = h0_p;
+    t5 = (h_records_Point){.f_x = t3, .f_y = t4};
 #line 24 "tests/golden/run/records.hero"
-    t6 = t5.f_y;
-#line 24 "tests/golden/run/records.hero"
-    t7 = (h_records_Point){.f_x = t4, .f_y = t6};
-#line 24 "tests/golden/run/records.hero"
-    return t7;
-#line 181 "records.c"
+    return t5;
+#line 169 "records.c"
 }
 
 #line 26 "tests/golden/run/records.hero"
 void h_records_main(void) {
 #line 26 "tests/golden/run/records.hero"
-    h_records_Point h0_p; h_records_Point h1_q; h_records_Pair h2_both; h_records_Point h3_r; HERO_NODEBUG int64_t t1, t2, t4, t5, t9, t14, t15, t23, t33, t35; HERO_NODEBUG h_records_Point t3, t6, t7, t8, t10, t11, t13, t16, t18, t19, t22, t25, t26, t29, t30, t31, t32, t34, t36, t37, t39, t40; HERO_NODEBUG bool t12, t17, t28, t42; HERO_NODEBUG h_records_Pair t20, t21, t24, t27, t38, t41; HERO_ENTRY_STOP; goto bb0;
+    h_records_Point h0_p; h_records_Point h1_q; h_records_Pair h2_both; h_records_Point h3_r; HERO_NODEBUG int64_t t1, t2, t4, t5, t9, t14, t15, t21, t30, t31; HERO_NODEBUG h_records_Point t3, t6, t7, t8, t10, t11, t13, t16, t18, t19, t23, t24, t27, t28, t29, t32, t33, t35, t36; HERO_NODEBUG bool t12, t17, t26, t38; HERO_NODEBUG h_records_Pair t20, t22, t25, t34, t37; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/records.hero"
 bb0:
     t1 = INT64_C(0);
@@ -237,73 +225,65 @@ bb0:
     t20 = (h_records_Pair){.f_one = t18, .f_two = t19};
 #line 31 "tests/golden/run/records.hero"
     h2_both = t20;
-    t21 = h2_both;
+    t21 = h2_both.f_two.f_y;
 #line 32 "tests/golden/run/records.hero"
-    t22 = t21.f_two;
-#line 32 "tests/golden/run/records.hero"
-    t23 = t22.f_y;
-#line 32 "tests/golden/run/records.hero"
-    hero_print_int(t23);
+    hero_print_int(t21);
 #line 32 "tests/golden/run/records.hero"
     hero_print_end();
-    t24 = h2_both;
+    t22 = h2_both;
 #line 33 "tests/golden/run/records.hero"
-    t25 = h0_p;
+    t23 = h0_p;
 #line 33 "tests/golden/run/records.hero"
-    t26 = h1_q;
+    t24 = h1_q;
 #line 33 "tests/golden/run/records.hero"
-    t27 = (h_records_Pair){.f_one = t25, .f_two = t26};
+    t25 = (h_records_Pair){.f_one = t23, .f_two = t24};
 #line 33 "tests/golden/run/records.hero"
-    t28 = h_records_Pair_eq(&t24, &t27);
+    t26 = h_records_Pair_eq(&t22, &t25);
 #line 33 "tests/golden/run/records.hero"
-    hero_print_bool(t28);
+    hero_print_bool(t26);
 #line 33 "tests/golden/run/records.hero"
     hero_print_end();
 #line 36 "tests/golden/run/records.hero"
-    t29 = h0_p;
+    t27 = h0_p;
 #line 36 "tests/golden/run/records.hero"
+    h3_r = t27;
+    t28 = h3_r;
+#line 37 "tests/golden/run/records.hero"
+    t29 = h_records_moved(t28);
+#line 37 "tests/golden/run/records.hero"
     h3_r = t29;
-    t30 = h3_r;
-#line 37 "tests/golden/run/records.hero"
-    t31 = h_records_moved(t30);
-#line 37 "tests/golden/run/records.hero"
-    h3_r = t31;
 #line 42 "tests/golden/run/records.hero"
-    t32 = h3_r;
+    t30 = h3_r.f_x;
 #line 42 "tests/golden/run/records.hero"
-    t33 = t32.f_x;
-#line 42 "tests/golden/run/records.hero"
-    hero_print_int(t33);
+    hero_print_int(t30);
 #line 42 "tests/golden/run/records.hero"
     hero_print_end();
-    t34 = h0_p;
+    t31 = h0_p.f_x;
 #line 43 "tests/golden/run/records.hero"
-    t35 = t34.f_x;
-#line 43 "tests/golden/run/records.hero"
-    hero_print_int(t35);
+    hero_print_int(t31);
 #line 43 "tests/golden/run/records.hero"
     hero_print_end();
 #line 47 "tests/golden/run/records.hero"
-    t36 = h0_p;
+    t32 = h0_p;
 #line 47 "tests/golden/run/records.hero"
-    t37 = h0_p;
+    t33 = h0_p;
 #line 47 "tests/golden/run/records.hero"
-    t38 = (h_records_Pair){.f_one = t36, .f_two = t37};
+    t34 = (h_records_Pair){.f_one = t32, .f_two = t33};
 #line 47 "tests/golden/run/records.hero"
-    t39 = h0_p;
+    t35 = h0_p;
 #line 47 "tests/golden/run/records.hero"
-    t40 = h1_q;
+    t36 = h1_q;
 #line 47 "tests/golden/run/records.hero"
-    t41 = (h_records_Pair){.f_one = t39, .f_two = t40};
+    t37 = (h_records_Pair){.f_one = t35, .f_two = t36};
 #line 47 "tests/golden/run/records.hero"
-    t42 = h_records_Pair_eq(&t38, &t41);
+    t38 = h_records_Pair_eq(&t34, &t37);
 #line 47 "tests/golden/run/records.hero"
-    hero_print_bool(t42);
+    hero_print_bool(t38);
 #line 47 "tests/golden/run/records.hero"
     hero_print_end();
 #line 47 "tests/golden/run/records.hero"
     return;
-#line 307 "records.c"
+#line 287 "records.c"
 }
 HERO_TU_LOCAL bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

@@ -141,18 +141,18 @@ void h_variants_main(void);
 #line 19 "tests/golden/run/variants.hero"
 int64_t h_variants_size(h_variants_Token h0_t) {
 #line 19 "tests/golden/run/variants.hero"
-    HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t4, t8, t15; HERO_NODEBUG int64_t h2_r0, t3, t7, t12, t13, t14; h_variants_Token_c_num h3_n; h_variants_Token_c_word h4_w = {0}; HERO_NODEBUG h_variants_Token_c_num t5, t6; HERO_NODEBUG h_variants_Token_c_word t9, t10, t16; HERO_NODEBUG HeroStr t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t4, t7, t13; HERO_NODEBUG int64_t h2_r0, t3, t6, t10, t11, t12; h_variants_Token_c_num h3_n; h_variants_Token_c_word h4_w = {0}; HERO_NODEBUG h_variants_Token_c_num t5; HERO_NODEBUG h_variants_Token_c_word t8, t14; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/variants.hero"
 bb0:
     t1 = h0_t;
 #line 20 "tests/golden/run/variants.hero"
-    t15 = h1_s0;
+    t13 = h1_s0;
 #line 20 "tests/golden/run/variants.hero"
     h_variants_Token_retain(&t1);
 #line 20 "tests/golden/run/variants.hero"
     h1_s0 = t1;
 #line 20 "tests/golden/run/variants.hero"
-    h_variants_Token_release(&t15);
+    h_variants_Token_release(&t13);
 #line 20 "tests/golden/run/variants.hero"
     t2 = h1_s0;
 #line 20 "tests/golden/run/variants.hero"
@@ -172,11 +172,11 @@ bb0:
 #line 20 "tests/golden/run/variants.hero"
 bb1:
 #line 20 "tests/golden/run/variants.hero"
-    t14 = h2_r0;
+    t12 = h2_r0;
 #line 177 "variants.c"
     h_variants_Token_release(hero_slot_escape(&h1_s0));
     h_variants_Token_c_word_release(hero_slot_escape(&h4_w));
-    return t14;
+    return t12;
 bb2:
 #line 21 "tests/golden/run/variants.hero"
     t4 = h1_s0;
@@ -185,63 +185,59 @@ bb2:
 #line 21 "tests/golden/run/variants.hero"
     h3_n = t5;
 #line 21 "tests/golden/run/variants.hero"
-    t6 = h3_n;
-#line 21 "tests/golden/run/variants.hero"
-    t7 = t6.f_v;
+    t6 = h3_n.f_v;
 #line 20 "tests/golden/run/variants.hero"
-    h2_r0 = t7;
+    h2_r0 = t6;
 #line 20 "tests/golden/run/variants.hero"
     goto bb1;
 #line 20 "tests/golden/run/variants.hero"
 bb3:
 #line 22 "tests/golden/run/variants.hero"
-    t8 = h1_s0;
+    t7 = h1_s0;
 #line 22 "tests/golden/run/variants.hero"
-    t9 = t8.as.c_word;
+    t8 = t7.as.c_word;
 #line 22 "tests/golden/run/variants.hero"
-    t16 = h4_w;
+    t14 = h4_w;
 #line 22 "tests/golden/run/variants.hero"
-    h_variants_Token_c_word_retain(&t9);
+    h_variants_Token_c_word_retain(&t8);
 #line 22 "tests/golden/run/variants.hero"
-    h4_w = t9;
+    h4_w = t8;
 #line 22 "tests/golden/run/variants.hero"
-    h_variants_Token_c_word_release(&t16);
+    h_variants_Token_c_word_release(&t14);
 #line 22 "tests/golden/run/variants.hero"
-    t10 = h4_w;
+    t9 = h4_w.f_text;
 #line 22 "tests/golden/run/variants.hero"
-    t11 = t10.f_text;
-#line 22 "tests/golden/run/variants.hero"
-    t12 = hero_str_len(t11);
+    t10 = hero_str_len(t9);
 #line 20 "tests/golden/run/variants.hero"
-    h2_r0 = t12;
+    h2_r0 = t10;
 #line 20 "tests/golden/run/variants.hero"
     goto bb1;
 #line 20 "tests/golden/run/variants.hero"
 bb4:
 #line 23 "tests/golden/run/variants.hero"
-    t13 = INT64_C(0);
+    t11 = INT64_C(0);
 #line 20 "tests/golden/run/variants.hero"
-    h2_r0 = t13;
+    h2_r0 = t11;
 #line 20 "tests/golden/run/variants.hero"
     goto bb1;
-#line 228 "variants.c"
+#line 224 "variants.c"
 }
 
 #line 25 "tests/golden/run/variants.hero"
 HeroStr h_variants_label(h_variants_Token h0_t) {
 #line 25 "tests/golden/run/variants.hero"
-    HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t5, t13; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t4, t7, t9, t10, t11, t12, t14, t16, t17, t18; h_variants_Token_c_word h3_w = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_variants_Token_c_word t6, t8, t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t5, t12; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t4, t7, t8, t9, t10, t11, t13, t15, t16, t17; h_variants_Token_c_word h3_w = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_variants_Token_c_word t6, t14; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/variants.hero"
 bb0:
     t1 = h0_t;
 #line 26 "tests/golden/run/variants.hero"
-    t13 = h1_s0;
+    t12 = h1_s0;
 #line 26 "tests/golden/run/variants.hero"
     h_variants_Token_retain(&t1);
 #line 26 "tests/golden/run/variants.hero"
     h1_s0 = t1;
 #line 26 "tests/golden/run/variants.hero"
-    h_variants_Token_release(&t13);
+    h_variants_Token_release(&t12);
 #line 26 "tests/golden/run/variants.hero"
     t2 = h1_s0;
 #line 26 "tests/golden/run/variants.hero"
@@ -261,25 +257,25 @@ bb0:
 #line 26 "tests/golden/run/variants.hero"
 bb1:
 #line 26 "tests/golden/run/variants.hero"
-    t12 = h2_r0;
-#line 266 "variants.c"
-    hero_str_incref(t12);
+    t11 = h2_r0;
+#line 262 "variants.c"
+    hero_str_incref(t11);
     h_variants_Token_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
     h_variants_Token_c_word_release(hero_slot_escape(&h3_w));
     hero_str_release_at(&h4_own4);
-    return t12;
+    return t11;
 bb2:
 #line 27 "tests/golden/run/variants.hero"
     t4 = HERO_STR_LIT(hero_str_1d0a2a);
 #line 26 "tests/golden/run/variants.hero"
-    t14 = h2_r0;
+    t13 = h2_r0;
 #line 26 "tests/golden/run/variants.hero"
     hero_str_incref(t4);
 #line 26 "tests/golden/run/variants.hero"
     h2_r0 = t4;
 #line 26 "tests/golden/run/variants.hero"
-    hero_str_decref(t14);
+    hero_str_decref(t13);
 #line 26 "tests/golden/run/variants.hero"
     goto bb1;
 #line 26 "tests/golden/run/variants.hero"
@@ -289,27 +285,39 @@ bb3:
 #line 28 "tests/golden/run/variants.hero"
     t6 = t5.as.c_word;
 #line 28 "tests/golden/run/variants.hero"
-    t15 = h3_w;
+    t14 = h3_w;
 #line 28 "tests/golden/run/variants.hero"
     h_variants_Token_c_word_retain(&t6);
 #line 28 "tests/golden/run/variants.hero"
     h3_w = t6;
 #line 28 "tests/golden/run/variants.hero"
-    h_variants_Token_c_word_release(&t15);
+    h_variants_Token_c_word_release(&t14);
 #line 28 "tests/golden/run/variants.hero"
     t7 = HERO_STR_LIT(hero_str_37dd7354);
 #line 28 "tests/golden/run/variants.hero"
-    t8 = h3_w;
+    t8 = h3_w.f_text;
 #line 28 "tests/golden/run/variants.hero"
-    t9 = t8.f_text;
+    t9 = hero_str_concat(t7, t8);
 #line 28 "tests/golden/run/variants.hero"
-    t10 = hero_str_concat(t7, t9);
+    t15 = h4_own4;
 #line 28 "tests/golden/run/variants.hero"
-    t16 = h4_own4;
+    h4_own4 = t9;
 #line 28 "tests/golden/run/variants.hero"
-    h4_own4 = t10;
-#line 28 "tests/golden/run/variants.hero"
+    hero_str_decref(t15);
+#line 26 "tests/golden/run/variants.hero"
+    t16 = h2_r0;
+#line 26 "tests/golden/run/variants.hero"
+    hero_str_incref(t9);
+#line 26 "tests/golden/run/variants.hero"
+    h2_r0 = t9;
+#line 26 "tests/golden/run/variants.hero"
     hero_str_decref(t16);
+#line 26 "tests/golden/run/variants.hero"
+    goto bb1;
+#line 26 "tests/golden/run/variants.hero"
+bb4:
+#line 29 "tests/golden/run/variants.hero"
+    t10 = HERO_STR_LIT(hero_str_1aab3b);
 #line 26 "tests/golden/run/variants.hero"
     t17 = h2_r0;
 #line 26 "tests/golden/run/variants.hero"
@@ -320,21 +328,7 @@ bb3:
     hero_str_decref(t17);
 #line 26 "tests/golden/run/variants.hero"
     goto bb1;
-#line 26 "tests/golden/run/variants.hero"
-bb4:
-#line 29 "tests/golden/run/variants.hero"
-    t11 = HERO_STR_LIT(hero_str_1aab3b);
-#line 26 "tests/golden/run/variants.hero"
-    t18 = h2_r0;
-#line 26 "tests/golden/run/variants.hero"
-    hero_str_incref(t11);
-#line 26 "tests/golden/run/variants.hero"
-    h2_r0 = t11;
-#line 26 "tests/golden/run/variants.hero"
-    hero_str_decref(t18);
-#line 26 "tests/golden/run/variants.hero"
-    goto bb1;
-#line 338 "variants.c"
+#line 332 "variants.c"
 }
 
 #line 31 "tests/golden/run/variants.hero"
@@ -601,7 +595,7 @@ bb0:
     hero_print_bool(t43);
 #line 52 "tests/golden/run/variants.hero"
     hero_print_end();
-#line 605 "variants.c"
+#line 599 "variants.c"
     h_variants_Token_release(hero_slot_escape(&h0_a));
     h_variants_Token_release(hero_slot_escape(&h1_b));
     h_variants_Token_release(hero_slot_escape(&h2_c));

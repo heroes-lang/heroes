@@ -148,7 +148,7 @@ void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void);
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
 void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void) {
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    struct old_pair h0_p; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct old_pair t2, t3; HERO_ENTRY_STOP; goto bb0;
+    struct old_pair h0_p; HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct old_pair t2; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
 bb0:
     t1 = INT64_C(5);
@@ -156,16 +156,14 @@ bb0:
     t2 = (struct old_pair){.a = t1};
 #line 17 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
     h0_p = t2;
-    t3 = h0_p;
+    t3 = h0_p.a;
 #line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    t4 = t3.a;
-#line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    hero_print_int(t4);
+    hero_print_int(t3);
 #line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
     return;
-#line 169 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
+#line 167 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs584adeprecatedrecordasalocalbuildssilent_OldPair_eq(const struct old_pair *a, const struct old_pair *b) {
     if (!(a->a == b->a)) return false;

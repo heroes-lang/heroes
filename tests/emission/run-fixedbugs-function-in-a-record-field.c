@@ -161,7 +161,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 void h_fixedbugsfunctioninarecordfield_main(void) {
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h_fixedbugsfunctioninarecordfield_Holder h0_h = {0}; h_fixedbugsfunctioninarecordfield_Holder h1_k = {0}; h_fixedbugsfunctioninarecordfield_Step h2_s; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step h3_s0, t21, t22, t23, t25; h_fixedbugsfunctioninarecordfield_Step_c_apply h4_a; h_0fn_48ac9712 h5_call; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder h6_own6 = {0}, t3, t4, t8, t10, t12, t16, t33, t34, t35; HERO_NODEBUG h_0fn_48ac9712 t1, t5, t11, t13, t17, t20, t28, t29; HERO_NODEBUG HeroStr t2, t9; HERO_NODEBUG int64_t t6, t7, t14, t15, t18, t19, t24, t30, t31, t32; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step_c_apply t26, t27; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugsfunctioninarecordfield_Holder h0_h = {0}; h_fixedbugsfunctioninarecordfield_Holder h1_k = {0}; h_fixedbugsfunctioninarecordfield_Step h2_s; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step h3_s0, t20, t21, t22, t24; h_fixedbugsfunctioninarecordfield_Step_c_apply h4_a; h_0fn_48ac9712 h5_call; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder h6_own6 = {0}, t3, t4, t9, t11, t15, t31, t32, t33; HERO_NODEBUG h_0fn_48ac9712 t1, t5, t10, t12, t16, t19, t26, t27; HERO_NODEBUG HeroStr t2, t8; HERO_NODEBUG int64_t t6, t7, t13, t14, t17, t18, t23, t28, t29, t30; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step_c_apply t25; HERO_ENTRY_STOP; goto bb0;
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 bb0:
     t1 = h_fixedbugsfunctioninarecordfield_double;
@@ -172,19 +172,19 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t3 = (h_fixedbugsfunctioninarecordfield_Holder){.f_f = t1, .f_label = t2};
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t33 = h6_own6;
+    t31 = h6_own6;
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     h6_own6 = t3;
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h_fixedbugsfunctioninarecordfield_Holder_release(&t33);
+    h_fixedbugsfunctioninarecordfield_Holder_release(&t31);
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t34 = h0_h;
+    t32 = h0_h;
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     h_fixedbugsfunctioninarecordfield_Holder_retain(&t3);
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     h0_h = t3;
 #line 47 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h_fixedbugsfunctioninarecordfield_Holder_release(&t34);
+    h_fixedbugsfunctioninarecordfield_Holder_release(&t32);
     t4 = h0_h;
 #line 48 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     t5 = t4.f_f;
@@ -196,64 +196,62 @@ bb0:
     hero_print_int(t7);
 #line 48 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     hero_print_end();
-    t8 = h0_h;
+    t8 = h0_h.f_label;
 #line 49 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t9 = t8.f_label;
-#line 49 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    hero_print_str(t9);
+    hero_print_str(t8);
 #line 49 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     hero_print_end();
 #line 52 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t10 = h0_h;
+    t9 = h0_h;
 #line 52 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t35 = h1_k;
+    t33 = h1_k;
 #line 52 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h_fixedbugsfunctioninarecordfield_Holder_retain(&t10);
+    h_fixedbugsfunctioninarecordfield_Holder_retain(&t9);
 #line 52 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h1_k = t10;
+    h1_k = t9;
 #line 52 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h_fixedbugsfunctioninarecordfield_Holder_release(&t35);
-    t11 = h_fixedbugsfunctioninarecordfield_negate;
+    h_fixedbugsfunctioninarecordfield_Holder_release(&t33);
+    t10 = h_fixedbugsfunctioninarecordfield_negate;
 #line 53 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h1_k.f_f = t11;
-    t12 = h1_k;
+    h1_k.f_f = t10;
+    t11 = h1_k;
 #line 54 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t13 = t12.f_f;
+    t12 = t11.f_f;
 #line 54 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t14 = INT64_C(21);
+    t13 = INT64_C(21);
 #line 54 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t15 = t13(t14);
+    t14 = t12(t13);
 #line 54 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    hero_print_int(t15);
+    hero_print_int(t14);
 #line 54 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     hero_print_end();
 #line 57 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t16 = h0_h;
+    t15 = h0_h;
 #line 57 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t17 = t16.f_f;
+    t16 = t15.f_f;
 #line 57 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t18 = INT64_C(21);
+    t17 = INT64_C(21);
 #line 57 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t19 = t17(t18);
+    t18 = t16(t17);
 #line 57 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    hero_print_int(t19);
+    hero_print_int(t18);
 #line 57 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     hero_print_end();
-    t20 = h_fixedbugsfunctioninarecordfield_double;
+    t19 = h_fixedbugsfunctioninarecordfield_double;
 #line 58 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t21 = (h_fixedbugsfunctioninarecordfield_Step){.tag = h_fixedbugsfunctioninarecordfield_Step_tag_apply, .as.c_apply = {.f_g = t20}};
+    t20 = (h_fixedbugsfunctioninarecordfield_Step){.tag = h_fixedbugsfunctioninarecordfield_Step_tag_apply, .as.c_apply = {.f_g = t19}};
 #line 58 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h2_s = t21;
+    h2_s = t20;
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t22 = h2_s;
+    t21 = h2_s;
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h3_s0 = t22;
+    h3_s0 = t21;
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t23 = h3_s0;
+    t22 = h3_s0;
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t24 = t23.tag;
+    t23 = t22.tag;
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    switch (t24) {
+    switch (t23) {
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
         case 0: goto bb3;
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
@@ -264,44 +262,42 @@ bb0:
     }
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 bb1:
-#line 268 "fixedbugsfunctioninarecordfield.c"
+#line 266 "fixedbugsfunctioninarecordfield.c"
     h_fixedbugsfunctioninarecordfield_Holder_release(hero_slot_escape(&h0_h));
     h_fixedbugsfunctioninarecordfield_Holder_release(hero_slot_escape(&h1_k));
     h_fixedbugsfunctioninarecordfield_Holder_release(hero_slot_escape(&h6_own6));
     return;
 bb2:
 #line 61 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t25 = h3_s0;
+    t24 = h3_s0;
 #line 61 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t26 = t25.as.c_apply;
+    t25 = t24.as.c_apply;
 #line 61 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h4_a = t26;
-    t27 = h4_a;
+    h4_a = t25;
+    t26 = h4_a.f_g;
 #line 62 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t28 = t27.f_g;
-#line 62 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h5_call = t28;
-    t29 = h5_call;
+    h5_call = t26;
+    t27 = h5_call;
 #line 63 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t30 = INT64_C(50);
+    t28 = INT64_C(50);
 #line 63 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    t31 = t29(t30);
+    t29 = t27(t28);
 #line 63 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    hero_print_int(t31);
+    hero_print_int(t29);
 #line 63 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     hero_print_end();
 #line 63 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     goto bb1;
 #line 63 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 bb3:
-    t32 = INT64_C(0);
+    t30 = INT64_C(0);
 #line 64 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    hero_print_int(t32);
+    hero_print_int(t30);
 #line 64 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     hero_print_end();
 #line 64 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
     goto bb1;
-#line 305 "fixedbugsfunctioninarecordfield.c"
+#line 301 "fixedbugsfunctioninarecordfield.c"
 }
 HERO_TU_LOCAL void h_fixedbugsfunctioninarecordfield_Holder_retain(const h_fixedbugsfunctioninarecordfield_Holder *v) {
     hero_str_incref(v->f_label);

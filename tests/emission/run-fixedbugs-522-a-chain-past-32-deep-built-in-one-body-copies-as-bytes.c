@@ -2106,18 +2106,18 @@ void h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_main(void);
 #line 213 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 int64_t h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_down(h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39 h0_r39) {
 #line 213 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39 h1_s0, t1, t2, t4, t521; __builtin_memset(&h1_s0, 0, sizeof h1_s0); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38 h2_r0, h5_r1, h7_s1, h200_own200, h201_own201, t13, t14, t15, t16, t17, t18, t19, t21, t522, t523, t526, t527, t528, t529, t530, t531; __builtin_memset(&h2_r0, 0, sizeof h2_r0); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_c_a h3_x; __builtin_memset(&h3_x, 0, sizeof h3_x); HERO_NODEBUG h_0opt_723982c3 h4_f0, t7, t8, t12, t525; __builtin_memset(&h4_f0, 0, sizeof h4_f0); __builtin_memset(&h5_r1, 0, sizeof h5_r1); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38 h6_r38; __builtin_memset(&h6_r38, 0, sizeof h6_r38); __builtin_memset(&h7_s1, 0, sizeof h7_s1); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37 h8_r2, h11_s2, h202_own202, t24, t25, t26, t27, t28, t30, t532, t533, t535, t536, t537; __builtin_memset(&h8_r2, 0, sizeof h8_r2); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_c_a h9_x; __builtin_memset(&h9_x, 0, sizeof h9_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37 h10_r37; __builtin_memset(&h10_r37, 0, sizeof h10_r37); __builtin_memset(&h11_s2, 0, sizeof h11_s2); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36 h12_r3, h15_r4, h17_s3, h203_own203, h204_own204, t39, t40, t41, t42, t43, t44, t45, t47, t538, t539, t542, t543, t544, t545, t546, t547; __builtin_memset(&h12_r3, 0, sizeof h12_r3); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_c_a h13_x; __builtin_memset(&h13_x, 0, sizeof h13_x); HERO_NODEBUG h_0opt_46e36f2 h14_f1, t33, t34, t38, t541; __builtin_memset(&h14_f1, 0, sizeof h14_f1); __builtin_memset(&h15_r4, 0, sizeof h15_r4); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36 h16_r36; __builtin_memset(&h16_r36, 0, sizeof h16_r36); __builtin_memset(&h17_s3, 0, sizeof h17_s3); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35 h18_r5, h21_s4, h205_own205, t50, t51, t52, t53, t54, t56, t548, t549, t551, t552, t553; __builtin_memset(&h18_r5, 0, sizeof h18_r5); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_c_a h19_x; __builtin_memset(&h19_x, 0, sizeof h19_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35 h20_r35; __builtin_memset(&h20_r35, 0, sizeof h20_r35); __builtin_memset(&h21_s4, 0, sizeof h21_s4); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34 h22_r6, h25_r7, h27_s5, h206_own206, h207_own207, t65, t66, t67, t68, t69, t70, t71, t73, t554, t555, t558, t559, t560, t561, t562, t563; __builtin_memset(&h22_r6, 0, sizeof h22_r6); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_c_a h23_x; __builtin_memset(&h23_x, 0, sizeof h23_x); HERO_NODEBUG h_0opt_16a2eb20 h24_f2, t59, t60, t64, t557; __builtin_memset(&h24_f2, 0, sizeof h24_f2); __builtin_memset(&h25_r7, 0, sizeof h25_r7); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34 h26_r34; __builtin_memset(&h26_r34, 0, sizeof h26_r34); __builtin_memset(&h27_s5, 0, sizeof h27_s5); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33 h28_r8, h31_s6, h208_own208, t76, t77, t78, t79, t80, t82, t564, t565, t567, t568, t569; __builtin_memset(&h28_r8, 0, sizeof h28_r8); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_c_a h29_x; __builtin_memset(&h29_x, 0, sizeof h29_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33 h30_r33; __builtin_memset(&h30_r33, 0, sizeof h30_r33); __builtin_memset(&h31_s6, 0, sizeof h31_s6); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32 h32_r9, h35_r10, h37_s7, h209_own209, h210_own210, t91, t92, t93, t94, t95, t96, t97, t99, t570, t571, t574, t575, t576, t577, t578, t579; __builtin_memset(&h32_r9, 0, sizeof h32_r9); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_c_a h33_x; __builtin_memset(&h33_x, 0, sizeof h33_x); HERO_NODEBUG h_0opt_28d79f4e h34_f3, t85, t86, t90, t573; __builtin_memset(&h34_f3, 0, sizeof h34_f3); __builtin_memset(&h35_r10, 0, sizeof h35_r10); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32 h36_r32; __builtin_memset(&h36_r32, 0, sizeof h36_r32); __builtin_memset(&h37_s7, 0, sizeof h37_s7); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31 h38_r11, h41_s8, h211_own211, t102, t103, t104, t105, t106, t108, t580, t581, t583, t584, t585; __builtin_memset(&h38_r11, 0, sizeof h38_r11); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_c_a h39_x; __builtin_memset(&h39_x, 0, sizeof h39_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31 h40_r31; __builtin_memset(&h40_r31, 0, sizeof h40_r31); __builtin_memset(&h41_s8, 0, sizeof h41_s8); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30 h42_r12, h45_r13, h47_s9, h212_own212, h213_own213, t117, t118, t119, t120, t121, t122, t123, t125, t586, t587, t590, t591, t592, t593, t594, t595; __builtin_memset(&h42_r12, 0, sizeof h42_r12); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_c_a h43_x; __builtin_memset(&h43_x, 0, sizeof h43_x); HERO_NODEBUG h_0opt_3b0c537c h44_f4, t111, t112, t116, t589; __builtin_memset(&h44_f4, 0, sizeof h44_f4); __builtin_memset(&h45_r13, 0, sizeof h45_r13); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30 h46_r30; __builtin_memset(&h46_r30, 0, sizeof h46_r30); __builtin_memset(&h47_s9, 0, sizeof h47_s9); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29 h48_r14, h51_s10, h214_own214, t128, t129, t130, t131, t132, t134, t596, t597, t599, t600, t601; __builtin_memset(&h48_r14, 0, sizeof h48_r14); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_c_a h49_x; __builtin_memset(&h49_x, 0, sizeof h49_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29 h50_r29; __builtin_memset(&h50_r29, 0, sizeof h50_r29); __builtin_memset(&h51_s10, 0, sizeof h51_s10); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28 h52_r15, h55_r16, h57_s11, h215_own215, h216_own216, t143, t144, t145, t146, t147, t148, t149, t151, t602, t603, t606, t607, t608, t609, t610, t611; __builtin_memset(&h52_r15, 0, sizeof h52_r15); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_c_a h53_x; __builtin_memset(&h53_x, 0, sizeof h53_x); HERO_NODEBUG h_0opt_1ab59c92 h54_f5, t137, t138, t142, t605; __builtin_memset(&h54_f5, 0, sizeof h54_f5); __builtin_memset(&h55_r16, 0, sizeof h55_r16); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28 h56_r28; __builtin_memset(&h56_r28, 0, sizeof h56_r28); __builtin_memset(&h57_s11, 0, sizeof h57_s11); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27 h58_r17, h61_s12, h217_own217, t154, t155, t156, t157, t158, t160, t612, t613, t615, t616, t617; __builtin_memset(&h58_r17, 0, sizeof h58_r17); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_c_a h59_x; __builtin_memset(&h59_x, 0, sizeof h59_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27 h60_r27; __builtin_memset(&h60_r27, 0, sizeof h60_r27); __builtin_memset(&h61_s12, 0, sizeof h61_s12); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26 h62_r18, h65_r19, h67_s13, h218_own218, h219_own219, t169, t170, t171, t172, t173, t174, t175, t177, t618, t619, t622, t623, t624, t625, t626, t627; __builtin_memset(&h62_r18, 0, sizeof h62_r18); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_c_a h63_x; __builtin_memset(&h63_x, 0, sizeof h63_x); HERO_NODEBUG h_0opt_2cea50c0 h64_f6, t163, t164, t168, t621; __builtin_memset(&h64_f6, 0, sizeof h64_f6); __builtin_memset(&h65_r19, 0, sizeof h65_r19); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26 h66_r26; __builtin_memset(&h66_r26, 0, sizeof h66_r26); __builtin_memset(&h67_s13, 0, sizeof h67_s13); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25 h68_r20, h71_s14, h220_own220, t180, t181, t182, t183, t184, t186, t628, t629, t631, t632, t633; __builtin_memset(&h68_r20, 0, sizeof h68_r20); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_c_a h69_x; __builtin_memset(&h69_x, 0, sizeof h69_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25 h70_r25; __builtin_memset(&h70_r25, 0, sizeof h70_r25); __builtin_memset(&h71_s14, 0, sizeof h71_s14); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24 h72_r21, h75_r22, h77_s15, h221_own221, h222_own222, t195, t196, t197, t198, t199, t200, t201, t203, t634, t635, t638, t639, t640, t641, t642, t643; __builtin_memset(&h72_r21, 0, sizeof h72_r21); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_c_a h73_x; __builtin_memset(&h73_x, 0, sizeof h73_x); HERO_NODEBUG h_0opt_3f1f04ee h74_f7, t189, t190, t194, t637; __builtin_memset(&h74_f7, 0, sizeof h74_f7); __builtin_memset(&h75_r22, 0, sizeof h75_r22); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24 h76_r24; __builtin_memset(&h76_r24, 0, sizeof h76_r24); __builtin_memset(&h77_s15, 0, sizeof h77_s15); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23 h78_r23, h81_s16, h223_own223, t206, t207, t208, t209, t210, t212, t644, t645, t647, t648, t649; __builtin_memset(&h78_r23, 0, sizeof h78_r23); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_c_a h79_x; __builtin_memset(&h79_x, 0, sizeof h79_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23 h80_r23; __builtin_memset(&h80_r23, 0, sizeof h80_r23); __builtin_memset(&h81_s16, 0, sizeof h81_s16); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22 h82_r24, h85_r25, h87_s17, h224_own224, h225_own225, t221, t222, t223, t224, t225, t226, t227, t229, t650, t651, t654, t655, t656, t657, t658, t659; __builtin_memset(&h82_r24, 0, sizeof h82_r24); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_c_a h83_x; __builtin_memset(&h83_x, 0, sizeof h83_x); HERO_NODEBUG h_0opt_5153b91c h84_f8, t215, t216, t220, t653; __builtin_memset(&h84_f8, 0, sizeof h84_f8); __builtin_memset(&h85_r25, 0, sizeof h85_r25); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22 h86_r22; __builtin_memset(&h86_r22, 0, sizeof h86_r22); __builtin_memset(&h87_s17, 0, sizeof h87_s17); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21 h88_r26, h91_s18, h226_own226, t232, t233, t234, t235, t236, t238, t660, t661, t663, t664, t665; __builtin_memset(&h88_r26, 0, sizeof h88_r26); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_c_a h89_x; __builtin_memset(&h89_x, 0, sizeof h89_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21 h90_r21; __builtin_memset(&h90_r21, 0, sizeof h90_r21); __builtin_memset(&h91_s18, 0, sizeof h91_s18); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20 h92_r27, h95_r28, h97_s19, h227_own227, h228_own228, t247, t248, t249, t250, t251, t252, t253, t255, t666, t667, t670, t671, t672, t673, t674, t675; __builtin_memset(&h92_r27, 0, sizeof h92_r27); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_c_a h93_x; __builtin_memset(&h93_x, 0, sizeof h93_x); HERO_NODEBUG h_0opt_63886d4a h94_f9, t241, t242, t246, t669; __builtin_memset(&h94_f9, 0, sizeof h94_f9); __builtin_memset(&h95_r28, 0, sizeof h95_r28); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20 h96_r20; __builtin_memset(&h96_r20, 0, sizeof h96_r20); __builtin_memset(&h97_s19, 0, sizeof h97_s19); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19 h98_r29, h101_s20, h229_own229, t258, t259, t260, t261, t262, t264, t676, t677, t679, t680, t681; __builtin_memset(&h98_r29, 0, sizeof h98_r29); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_c_a h99_x; __builtin_memset(&h99_x, 0, sizeof h99_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19 h100_r19; __builtin_memset(&h100_r19, 0, sizeof h100_r19); __builtin_memset(&h101_s20, 0, sizeof h101_s20); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18 h102_r30, h105_r31, h107_s21, h230_own230, h231_own231, t273, t274, t275, t276, t277, t278, t279, t281, t682, t683, t686, t687, t688, t689, t690, t691; __builtin_memset(&h102_r30, 0, sizeof h102_r30); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_c_a h103_x; __builtin_memset(&h103_x, 0, sizeof h103_x); HERO_NODEBUG h_0opt_4331b660 h104_f10, t267, t268, t272, t685; __builtin_memset(&h104_f10, 0, sizeof h104_f10); __builtin_memset(&h105_r31, 0, sizeof h105_r31); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18 h106_r18; __builtin_memset(&h106_r18, 0, sizeof h106_r18); __builtin_memset(&h107_s21, 0, sizeof h107_s21); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17 h108_r32, h111_s22, h232_own232, t284, t285, t286, t287, t288, t290, t692, t693, t695, t696, t697; __builtin_memset(&h108_r32, 0, sizeof h108_r32); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_c_a h109_x; __builtin_memset(&h109_x, 0, sizeof h109_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17 h110_r17; __builtin_memset(&h110_r17, 0, sizeof h110_r17); __builtin_memset(&h111_s22, 0, sizeof h111_s22); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16 h112_r33, h115_r34, h117_s23, h233_own233, h234_own234, t299, t300, t301, t302, t303, t304, t305, t307, t698, t699, t702, t703, t704, t705, t706, t707; __builtin_memset(&h112_r33, 0, sizeof h112_r33); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_c_a h113_x; __builtin_memset(&h113_x, 0, sizeof h113_x); HERO_NODEBUG h_0opt_55666a8e h114_f11, t293, t294, t298, t701; __builtin_memset(&h114_f11, 0, sizeof h114_f11); __builtin_memset(&h115_r34, 0, sizeof h115_r34); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16 h116_r16; __builtin_memset(&h116_r16, 0, sizeof h116_r16); __builtin_memset(&h117_s23, 0, sizeof h117_s23); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15 h118_r35, h121_s24, h235_own235, t310, t311, t312, t313, t314, t316, t708, t709, t711, t712, t713; __builtin_memset(&h118_r35, 0, sizeof h118_r35); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_c_a h119_x; __builtin_memset(&h119_x, 0, sizeof h119_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15 h120_r15; __builtin_memset(&h120_r15, 0, sizeof h120_r15); __builtin_memset(&h121_s24, 0, sizeof h121_s24); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14 h122_r36, h125_r37, h127_s25, h236_own236, h237_own237, t325, t326, t327, t328, t329, t330, t331, t333, t714, t715, t718, t719, t720, t721, t722, t723; __builtin_memset(&h122_r36, 0, sizeof h122_r36); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_c_a h123_x; __builtin_memset(&h123_x, 0, sizeof h123_x); HERO_NODEBUG h_0opt_679b1ebc h124_f12, t319, t320, t324, t717; __builtin_memset(&h124_f12, 0, sizeof h124_f12); __builtin_memset(&h125_r37, 0, sizeof h125_r37); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14 h126_r14; __builtin_memset(&h126_r14, 0, sizeof h126_r14); __builtin_memset(&h127_s25, 0, sizeof h127_s25); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13 h128_r38, h131_s26, h238_own238, t336, t337, t338, t339, t340, t342, t724, t725, t727, t728, t729; __builtin_memset(&h128_r38, 0, sizeof h128_r38); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_c_a h129_x; __builtin_memset(&h129_x, 0, sizeof h129_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13 h130_r13; __builtin_memset(&h130_r13, 0, sizeof h130_r13); __builtin_memset(&h131_s26, 0, sizeof h131_s26); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12 h132_r39, h135_r40, h137_s27, h239_own239, h240_own240, t351, t352, t353, t354, t355, t356, t357, t359, t730, t731, t734, t735, t736, t737, t738, t739; __builtin_memset(&h132_r39, 0, sizeof h132_r39); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_c_a h133_x; __builtin_memset(&h133_x, 0, sizeof h133_x); HERO_NODEBUG h_0opt_79cfd2ea h134_f13, t345, t346, t350, t733; __builtin_memset(&h134_f13, 0, sizeof h134_f13); __builtin_memset(&h135_r40, 0, sizeof h135_r40); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12 h136_r12; __builtin_memset(&h136_r12, 0, sizeof h136_r12); __builtin_memset(&h137_s27, 0, sizeof h137_s27); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11 h138_r41, h141_s28, h241_own241, t362, t363, t364, t365, t366, t368, t740, t741, t743, t744, t745; __builtin_memset(&h138_r41, 0, sizeof h138_r41); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_c_a h139_x; __builtin_memset(&h139_x, 0, sizeof h139_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11 h140_r11; __builtin_memset(&h140_r11, 0, sizeof h140_r11); __builtin_memset(&h141_s28, 0, sizeof h141_s28); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10 h142_r42, h145_r43, h147_s29, h242_own242, h243_own243, t377, t378, t379, t380, t381, t382, t383, t385, t746, t747, t750, t751, t752, t753, t754, t755; __builtin_memset(&h142_r42, 0, sizeof h142_r42); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_c_a h143_x; __builtin_memset(&h143_x, 0, sizeof h143_x); HERO_NODEBUG h_0opt_c048719 h144_f14, t371, t372, t376, t749; __builtin_memset(&h144_f14, 0, sizeof h144_f14); __builtin_memset(&h145_r43, 0, sizeof h145_r43); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10 h146_r10; __builtin_memset(&h146_r10, 0, sizeof h146_r10); __builtin_memset(&h147_s29, 0, sizeof h147_s29); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9 h148_r44, h151_s30, h244_own244, t388, t389, t390, t391, t392, t394, t756, t757, t759, t760, t761; __builtin_memset(&h148_r44, 0, sizeof h148_r44); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_c_a h149_x; __builtin_memset(&h149_x, 0, sizeof h149_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9 h150_r9; __builtin_memset(&h150_r9, 0, sizeof h150_r9); __builtin_memset(&h151_s30, 0, sizeof h151_s30); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8 h152_r45, h155_r46, h157_s31, h245_own245, h246_own246, t403, t404, t405, t406, t407, t408, t409, t411, t762, t763, t766, t767, t768, t769, t770, t771; __builtin_memset(&h152_r45, 0, sizeof h152_r45); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_c_a h153_x; __builtin_memset(&h153_x, 0, sizeof h153_x); HERO_NODEBUG h_0opt_3b41ca8b h154_f15, t397, t398, t402, t765; __builtin_memset(&h154_f15, 0, sizeof h154_f15); __builtin_memset(&h155_r46, 0, sizeof h155_r46); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8 h156_r8; __builtin_memset(&h156_r8, 0, sizeof h156_r8); __builtin_memset(&h157_s31, 0, sizeof h157_s31); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7 h158_r47, h161_s32, h247_own247, t414, t415, t416, t417, t418, t420, t772, t773, t775, t776, t777; __builtin_memset(&h158_r47, 0, sizeof h158_r47); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_c_a h159_x; __builtin_memset(&h159_x, 0, sizeof h159_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7 h160_r7; __builtin_memset(&h160_r7, 0, sizeof h160_r7); __builtin_memset(&h161_s32, 0, sizeof h161_s32); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6 h162_r48, h165_r49, h167_s33, h248_own248, h249_own249, t429, t430, t431, t432, t433, t434, t435, t437, t778, t779, t782, t783, t784, t785, t786, t787; __builtin_memset(&h162_r48, 0, sizeof h162_r48); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_c_a h163_x; __builtin_memset(&h163_x, 0, sizeof h163_x); HERO_NODEBUG h_0opt_471f0495 h164_f16, t423, t424, t428, t781; __builtin_memset(&h164_f16, 0, sizeof h164_f16); __builtin_memset(&h165_r49, 0, sizeof h165_r49); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6 h166_r6; __builtin_memset(&h166_r6, 0, sizeof h166_r6); __builtin_memset(&h167_s33, 0, sizeof h167_s33); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5 h168_r50, h171_s34, h250_own250, t440, t441, t442, t443, t444, t446, t788, t789, t791, t792, t793; __builtin_memset(&h168_r50, 0, sizeof h168_r50); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_c_a h169_x; __builtin_memset(&h169_x, 0, sizeof h169_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5 h170_r5; __builtin_memset(&h170_r5, 0, sizeof h170_r5); __builtin_memset(&h171_s34, 0, sizeof h171_s34); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4 h172_r51, h175_r52, h177_s35, h251_own251, h252_own252, t455, t456, t457, t458, t459, t460, t461, t463, t794, t795, t798, t799, t800, t801, t802, t803; __builtin_memset(&h172_r51, 0, sizeof h172_r51); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_c_a h173_x; __builtin_memset(&h173_x, 0, sizeof h173_x); HERO_NODEBUG h_0opt_52fc3e9f h174_f17, t449, t450, t454, t797; __builtin_memset(&h174_f17, 0, sizeof h174_f17); __builtin_memset(&h175_r52, 0, sizeof h175_r52); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4 h176_r4; __builtin_memset(&h176_r4, 0, sizeof h176_r4); __builtin_memset(&h177_s35, 0, sizeof h177_s35); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3 h178_r53, h181_s36, h253_own253, t466, t467, t468, t469, t470, t472, t804, t805, t807, t808, t809; __builtin_memset(&h178_r53, 0, sizeof h178_r53); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_c_a h179_x; __builtin_memset(&h179_x, 0, sizeof h179_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3 h180_r3; __builtin_memset(&h180_r3, 0, sizeof h180_r3); __builtin_memset(&h181_s36, 0, sizeof h181_s36); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2 h182_r54, h185_r55, h187_s37, h254_own254, h255_own255, t481, t482, t483, t484, t485, t486, t487, t489, t810, t811, t814, t815, t816, t817, t818, t819; __builtin_memset(&h182_r54, 0, sizeof h182_r54); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_c_a h183_x; __builtin_memset(&h183_x, 0, sizeof h183_x); HERO_NODEBUG h_0opt_5ed978a9 h184_f18, t475, t476, t480, t813; __builtin_memset(&h184_f18, 0, sizeof h184_f18); __builtin_memset(&h185_r55, 0, sizeof h185_r55); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2 h186_r2; __builtin_memset(&h186_r2, 0, sizeof h186_r2); __builtin_memset(&h187_s37, 0, sizeof h187_s37); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1 h188_r56, h191_s38, h256_own256, t492, t493, t494, t495, t496, t498, t820, t821, t823, t824, t825; __builtin_memset(&h188_r56, 0, sizeof h188_r56); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_c_a h189_x; __builtin_memset(&h189_x, 0, sizeof h189_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1 h190_r1; __builtin_memset(&h190_r1, 0, sizeof h190_r1); __builtin_memset(&h191_s38, 0, sizeof h191_s38); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0 h192_r57, h195_r58, h197_s39, t507, t508, t509, t510, t511, t512, t513, t515; h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_c_a h193_x; __builtin_memset(&h193_x, 0, sizeof h193_x); HERO_NODEBUG h_0opt_6ab6b2b3 h194_f19, t501, t502, t506, t827; __builtin_memset(&h194_f19, 0, sizeof h194_f19); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0 h196_r0; HERO_NODEBUG int64_t h198_r59, t3, t9, t10, t20, t29, t35, t36, t46, t55, t61, t62, t72, t81, t87, t88, t98, t107, t113, t114, t124, t133, t139, t140, t150, t159, t165, t166, t176, t185, t191, t192, t202, t211, t217, t218, t228, t237, t243, t244, t254, t263, t269, t270, t280, t289, t295, t296, t306, t315, t321, t322, t332, t341, t347, t348, t358, t367, t373, t374, t384, t393, t399, t400, t410, t419, t425, t426, t436, t445, t451, t452, t462, t471, t477, t478, t488, t497, t503, t504, t514, t518, t519, t520; h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_c_a h199_x; __builtin_memset(&h200_own200, 0, sizeof h200_own200); __builtin_memset(&h201_own201, 0, sizeof h201_own201); __builtin_memset(&h202_own202, 0, sizeof h202_own202); __builtin_memset(&h203_own203, 0, sizeof h203_own203); __builtin_memset(&h204_own204, 0, sizeof h204_own204); __builtin_memset(&h205_own205, 0, sizeof h205_own205); __builtin_memset(&h206_own206, 0, sizeof h206_own206); __builtin_memset(&h207_own207, 0, sizeof h207_own207); __builtin_memset(&h208_own208, 0, sizeof h208_own208); __builtin_memset(&h209_own209, 0, sizeof h209_own209); __builtin_memset(&h210_own210, 0, sizeof h210_own210); __builtin_memset(&h211_own211, 0, sizeof h211_own211); __builtin_memset(&h212_own212, 0, sizeof h212_own212); __builtin_memset(&h213_own213, 0, sizeof h213_own213); __builtin_memset(&h214_own214, 0, sizeof h214_own214); __builtin_memset(&h215_own215, 0, sizeof h215_own215); __builtin_memset(&h216_own216, 0, sizeof h216_own216); __builtin_memset(&h217_own217, 0, sizeof h217_own217); __builtin_memset(&h218_own218, 0, sizeof h218_own218); __builtin_memset(&h219_own219, 0, sizeof h219_own219); __builtin_memset(&h220_own220, 0, sizeof h220_own220); __builtin_memset(&h221_own221, 0, sizeof h221_own221); __builtin_memset(&h222_own222, 0, sizeof h222_own222); __builtin_memset(&h223_own223, 0, sizeof h223_own223); __builtin_memset(&h224_own224, 0, sizeof h224_own224); __builtin_memset(&h225_own225, 0, sizeof h225_own225); __builtin_memset(&h226_own226, 0, sizeof h226_own226); __builtin_memset(&h227_own227, 0, sizeof h227_own227); __builtin_memset(&h228_own228, 0, sizeof h228_own228); __builtin_memset(&h229_own229, 0, sizeof h229_own229); __builtin_memset(&h230_own230, 0, sizeof h230_own230); __builtin_memset(&h231_own231, 0, sizeof h231_own231); __builtin_memset(&h232_own232, 0, sizeof h232_own232); __builtin_memset(&h233_own233, 0, sizeof h233_own233); __builtin_memset(&h234_own234, 0, sizeof h234_own234); __builtin_memset(&h235_own235, 0, sizeof h235_own235); __builtin_memset(&h236_own236, 0, sizeof h236_own236); __builtin_memset(&h237_own237, 0, sizeof h237_own237); __builtin_memset(&h238_own238, 0, sizeof h238_own238); __builtin_memset(&h239_own239, 0, sizeof h239_own239); __builtin_memset(&h240_own240, 0, sizeof h240_own240); __builtin_memset(&h241_own241, 0, sizeof h241_own241); __builtin_memset(&h242_own242, 0, sizeof h242_own242); __builtin_memset(&h243_own243, 0, sizeof h243_own243); __builtin_memset(&h244_own244, 0, sizeof h244_own244); __builtin_memset(&h245_own245, 0, sizeof h245_own245); __builtin_memset(&h246_own246, 0, sizeof h246_own246); __builtin_memset(&h247_own247, 0, sizeof h247_own247); __builtin_memset(&h248_own248, 0, sizeof h248_own248); __builtin_memset(&h249_own249, 0, sizeof h249_own249); __builtin_memset(&h250_own250, 0, sizeof h250_own250); __builtin_memset(&h251_own251, 0, sizeof h251_own251); __builtin_memset(&h252_own252, 0, sizeof h252_own252); __builtin_memset(&h253_own253, 0, sizeof h253_own253); __builtin_memset(&h254_own254, 0, sizeof h254_own254); __builtin_memset(&h255_own255, 0, sizeof h255_own255); __builtin_memset(&h256_own256, 0, sizeof h256_own256); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_c_a t5, t6, t524; HERO_NODEBUG bool t11, t37, t63, t89, t115, t141, t167, t193, t219, t245, t271, t297, t323, t349, t375, t401, t427, t453, t479, t505; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_c_a t22, t23, t534; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_c_a t31, t32, t540; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_c_a t48, t49, t550; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_c_a t57, t58, t556; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_c_a t74, t75, t566; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_c_a t83, t84, t572; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_c_a t100, t101, t582; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_c_a t109, t110, t588; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_c_a t126, t127, t598; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_c_a t135, t136, t604; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_c_a t152, t153, t614; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_c_a t161, t162, t620; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_c_a t178, t179, t630; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_c_a t187, t188, t636; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_c_a t204, t205, t646; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_c_a t213, t214, t652; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_c_a t230, t231, t662; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_c_a t239, t240, t668; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_c_a t256, t257, t678; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_c_a t265, t266, t684; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_c_a t282, t283, t694; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_c_a t291, t292, t700; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_c_a t308, t309, t710; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_c_a t317, t318, t716; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_c_a t334, t335, t726; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_c_a t343, t344, t732; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_c_a t360, t361, t742; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_c_a t369, t370, t748; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_c_a t386, t387, t758; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_c_a t395, t396, t764; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_c_a t412, t413, t774; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_c_a t421, t422, t780; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_c_a t438, t439, t790; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_c_a t447, t448, t796; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_c_a t464, t465, t806; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_c_a t473, t474, t812; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_c_a t490, t491, t822; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_c_a t499, t500, t826; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_c_a t516, t517; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39 h1_s0, t1, t2, t4, t481; __builtin_memset(&h1_s0, 0, sizeof h1_s0); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38 h2_r0, h5_r1, h7_s1, h200_own200, h201_own201, t12, t13, t14, t15, t16, t17, t18, t20, t482, t483, t486, t487, t488, t489, t490, t491; __builtin_memset(&h2_r0, 0, sizeof h2_r0); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_c_a h3_x; __builtin_memset(&h3_x, 0, sizeof h3_x); HERO_NODEBUG h_0opt_723982c3 h4_f0, t6, t7, t11, t485; __builtin_memset(&h4_f0, 0, sizeof h4_f0); __builtin_memset(&h5_r1, 0, sizeof h5_r1); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38 h6_r38; __builtin_memset(&h6_r38, 0, sizeof h6_r38); __builtin_memset(&h7_s1, 0, sizeof h7_s1); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37 h8_r2, h11_s2, h202_own202, t22, t23, t24, t25, t26, t28, t492, t493, t495, t496, t497; __builtin_memset(&h8_r2, 0, sizeof h8_r2); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_c_a h9_x; __builtin_memset(&h9_x, 0, sizeof h9_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37 h10_r37; __builtin_memset(&h10_r37, 0, sizeof h10_r37); __builtin_memset(&h11_s2, 0, sizeof h11_s2); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36 h12_r3, h15_r4, h17_s3, h203_own203, h204_own204, t36, t37, t38, t39, t40, t41, t42, t44, t498, t499, t502, t503, t504, t505, t506, t507; __builtin_memset(&h12_r3, 0, sizeof h12_r3); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_c_a h13_x; __builtin_memset(&h13_x, 0, sizeof h13_x); HERO_NODEBUG h_0opt_46e36f2 h14_f1, t30, t31, t35, t501; __builtin_memset(&h14_f1, 0, sizeof h14_f1); __builtin_memset(&h15_r4, 0, sizeof h15_r4); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36 h16_r36; __builtin_memset(&h16_r36, 0, sizeof h16_r36); __builtin_memset(&h17_s3, 0, sizeof h17_s3); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35 h18_r5, h21_s4, h205_own205, t46, t47, t48, t49, t50, t52, t508, t509, t511, t512, t513; __builtin_memset(&h18_r5, 0, sizeof h18_r5); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_c_a h19_x; __builtin_memset(&h19_x, 0, sizeof h19_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35 h20_r35; __builtin_memset(&h20_r35, 0, sizeof h20_r35); __builtin_memset(&h21_s4, 0, sizeof h21_s4); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34 h22_r6, h25_r7, h27_s5, h206_own206, h207_own207, t60, t61, t62, t63, t64, t65, t66, t68, t514, t515, t518, t519, t520, t521, t522, t523; __builtin_memset(&h22_r6, 0, sizeof h22_r6); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_c_a h23_x; __builtin_memset(&h23_x, 0, sizeof h23_x); HERO_NODEBUG h_0opt_16a2eb20 h24_f2, t54, t55, t59, t517; __builtin_memset(&h24_f2, 0, sizeof h24_f2); __builtin_memset(&h25_r7, 0, sizeof h25_r7); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34 h26_r34; __builtin_memset(&h26_r34, 0, sizeof h26_r34); __builtin_memset(&h27_s5, 0, sizeof h27_s5); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33 h28_r8, h31_s6, h208_own208, t70, t71, t72, t73, t74, t76, t524, t525, t527, t528, t529; __builtin_memset(&h28_r8, 0, sizeof h28_r8); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_c_a h29_x; __builtin_memset(&h29_x, 0, sizeof h29_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33 h30_r33; __builtin_memset(&h30_r33, 0, sizeof h30_r33); __builtin_memset(&h31_s6, 0, sizeof h31_s6); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32 h32_r9, h35_r10, h37_s7, h209_own209, h210_own210, t84, t85, t86, t87, t88, t89, t90, t92, t530, t531, t534, t535, t536, t537, t538, t539; __builtin_memset(&h32_r9, 0, sizeof h32_r9); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_c_a h33_x; __builtin_memset(&h33_x, 0, sizeof h33_x); HERO_NODEBUG h_0opt_28d79f4e h34_f3, t78, t79, t83, t533; __builtin_memset(&h34_f3, 0, sizeof h34_f3); __builtin_memset(&h35_r10, 0, sizeof h35_r10); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32 h36_r32; __builtin_memset(&h36_r32, 0, sizeof h36_r32); __builtin_memset(&h37_s7, 0, sizeof h37_s7); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31 h38_r11, h41_s8, h211_own211, t94, t95, t96, t97, t98, t100, t540, t541, t543, t544, t545; __builtin_memset(&h38_r11, 0, sizeof h38_r11); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_c_a h39_x; __builtin_memset(&h39_x, 0, sizeof h39_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31 h40_r31; __builtin_memset(&h40_r31, 0, sizeof h40_r31); __builtin_memset(&h41_s8, 0, sizeof h41_s8); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30 h42_r12, h45_r13, h47_s9, h212_own212, h213_own213, t108, t109, t110, t111, t112, t113, t114, t116, t546, t547, t550, t551, t552, t553, t554, t555; __builtin_memset(&h42_r12, 0, sizeof h42_r12); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_c_a h43_x; __builtin_memset(&h43_x, 0, sizeof h43_x); HERO_NODEBUG h_0opt_3b0c537c h44_f4, t102, t103, t107, t549; __builtin_memset(&h44_f4, 0, sizeof h44_f4); __builtin_memset(&h45_r13, 0, sizeof h45_r13); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30 h46_r30; __builtin_memset(&h46_r30, 0, sizeof h46_r30); __builtin_memset(&h47_s9, 0, sizeof h47_s9); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29 h48_r14, h51_s10, h214_own214, t118, t119, t120, t121, t122, t124, t556, t557, t559, t560, t561; __builtin_memset(&h48_r14, 0, sizeof h48_r14); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_c_a h49_x; __builtin_memset(&h49_x, 0, sizeof h49_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29 h50_r29; __builtin_memset(&h50_r29, 0, sizeof h50_r29); __builtin_memset(&h51_s10, 0, sizeof h51_s10); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28 h52_r15, h55_r16, h57_s11, h215_own215, h216_own216, t132, t133, t134, t135, t136, t137, t138, t140, t562, t563, t566, t567, t568, t569, t570, t571; __builtin_memset(&h52_r15, 0, sizeof h52_r15); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_c_a h53_x; __builtin_memset(&h53_x, 0, sizeof h53_x); HERO_NODEBUG h_0opt_1ab59c92 h54_f5, t126, t127, t131, t565; __builtin_memset(&h54_f5, 0, sizeof h54_f5); __builtin_memset(&h55_r16, 0, sizeof h55_r16); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28 h56_r28; __builtin_memset(&h56_r28, 0, sizeof h56_r28); __builtin_memset(&h57_s11, 0, sizeof h57_s11); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27 h58_r17, h61_s12, h217_own217, t142, t143, t144, t145, t146, t148, t572, t573, t575, t576, t577; __builtin_memset(&h58_r17, 0, sizeof h58_r17); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_c_a h59_x; __builtin_memset(&h59_x, 0, sizeof h59_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27 h60_r27; __builtin_memset(&h60_r27, 0, sizeof h60_r27); __builtin_memset(&h61_s12, 0, sizeof h61_s12); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26 h62_r18, h65_r19, h67_s13, h218_own218, h219_own219, t156, t157, t158, t159, t160, t161, t162, t164, t578, t579, t582, t583, t584, t585, t586, t587; __builtin_memset(&h62_r18, 0, sizeof h62_r18); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_c_a h63_x; __builtin_memset(&h63_x, 0, sizeof h63_x); HERO_NODEBUG h_0opt_2cea50c0 h64_f6, t150, t151, t155, t581; __builtin_memset(&h64_f6, 0, sizeof h64_f6); __builtin_memset(&h65_r19, 0, sizeof h65_r19); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26 h66_r26; __builtin_memset(&h66_r26, 0, sizeof h66_r26); __builtin_memset(&h67_s13, 0, sizeof h67_s13); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25 h68_r20, h71_s14, h220_own220, t166, t167, t168, t169, t170, t172, t588, t589, t591, t592, t593; __builtin_memset(&h68_r20, 0, sizeof h68_r20); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_c_a h69_x; __builtin_memset(&h69_x, 0, sizeof h69_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25 h70_r25; __builtin_memset(&h70_r25, 0, sizeof h70_r25); __builtin_memset(&h71_s14, 0, sizeof h71_s14); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24 h72_r21, h75_r22, h77_s15, h221_own221, h222_own222, t180, t181, t182, t183, t184, t185, t186, t188, t594, t595, t598, t599, t600, t601, t602, t603; __builtin_memset(&h72_r21, 0, sizeof h72_r21); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_c_a h73_x; __builtin_memset(&h73_x, 0, sizeof h73_x); HERO_NODEBUG h_0opt_3f1f04ee h74_f7, t174, t175, t179, t597; __builtin_memset(&h74_f7, 0, sizeof h74_f7); __builtin_memset(&h75_r22, 0, sizeof h75_r22); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24 h76_r24; __builtin_memset(&h76_r24, 0, sizeof h76_r24); __builtin_memset(&h77_s15, 0, sizeof h77_s15); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23 h78_r23, h81_s16, h223_own223, t190, t191, t192, t193, t194, t196, t604, t605, t607, t608, t609; __builtin_memset(&h78_r23, 0, sizeof h78_r23); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_c_a h79_x; __builtin_memset(&h79_x, 0, sizeof h79_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23 h80_r23; __builtin_memset(&h80_r23, 0, sizeof h80_r23); __builtin_memset(&h81_s16, 0, sizeof h81_s16); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22 h82_r24, h85_r25, h87_s17, h224_own224, h225_own225, t204, t205, t206, t207, t208, t209, t210, t212, t610, t611, t614, t615, t616, t617, t618, t619; __builtin_memset(&h82_r24, 0, sizeof h82_r24); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_c_a h83_x; __builtin_memset(&h83_x, 0, sizeof h83_x); HERO_NODEBUG h_0opt_5153b91c h84_f8, t198, t199, t203, t613; __builtin_memset(&h84_f8, 0, sizeof h84_f8); __builtin_memset(&h85_r25, 0, sizeof h85_r25); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22 h86_r22; __builtin_memset(&h86_r22, 0, sizeof h86_r22); __builtin_memset(&h87_s17, 0, sizeof h87_s17); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21 h88_r26, h91_s18, h226_own226, t214, t215, t216, t217, t218, t220, t620, t621, t623, t624, t625; __builtin_memset(&h88_r26, 0, sizeof h88_r26); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_c_a h89_x; __builtin_memset(&h89_x, 0, sizeof h89_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21 h90_r21; __builtin_memset(&h90_r21, 0, sizeof h90_r21); __builtin_memset(&h91_s18, 0, sizeof h91_s18); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20 h92_r27, h95_r28, h97_s19, h227_own227, h228_own228, t228, t229, t230, t231, t232, t233, t234, t236, t626, t627, t630, t631, t632, t633, t634, t635; __builtin_memset(&h92_r27, 0, sizeof h92_r27); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_c_a h93_x; __builtin_memset(&h93_x, 0, sizeof h93_x); HERO_NODEBUG h_0opt_63886d4a h94_f9, t222, t223, t227, t629; __builtin_memset(&h94_f9, 0, sizeof h94_f9); __builtin_memset(&h95_r28, 0, sizeof h95_r28); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20 h96_r20; __builtin_memset(&h96_r20, 0, sizeof h96_r20); __builtin_memset(&h97_s19, 0, sizeof h97_s19); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19 h98_r29, h101_s20, h229_own229, t238, t239, t240, t241, t242, t244, t636, t637, t639, t640, t641; __builtin_memset(&h98_r29, 0, sizeof h98_r29); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_c_a h99_x; __builtin_memset(&h99_x, 0, sizeof h99_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19 h100_r19; __builtin_memset(&h100_r19, 0, sizeof h100_r19); __builtin_memset(&h101_s20, 0, sizeof h101_s20); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18 h102_r30, h105_r31, h107_s21, h230_own230, h231_own231, t252, t253, t254, t255, t256, t257, t258, t260, t642, t643, t646, t647, t648, t649, t650, t651; __builtin_memset(&h102_r30, 0, sizeof h102_r30); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_c_a h103_x; __builtin_memset(&h103_x, 0, sizeof h103_x); HERO_NODEBUG h_0opt_4331b660 h104_f10, t246, t247, t251, t645; __builtin_memset(&h104_f10, 0, sizeof h104_f10); __builtin_memset(&h105_r31, 0, sizeof h105_r31); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18 h106_r18; __builtin_memset(&h106_r18, 0, sizeof h106_r18); __builtin_memset(&h107_s21, 0, sizeof h107_s21); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17 h108_r32, h111_s22, h232_own232, t262, t263, t264, t265, t266, t268, t652, t653, t655, t656, t657; __builtin_memset(&h108_r32, 0, sizeof h108_r32); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_c_a h109_x; __builtin_memset(&h109_x, 0, sizeof h109_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17 h110_r17; __builtin_memset(&h110_r17, 0, sizeof h110_r17); __builtin_memset(&h111_s22, 0, sizeof h111_s22); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16 h112_r33, h115_r34, h117_s23, h233_own233, h234_own234, t276, t277, t278, t279, t280, t281, t282, t284, t658, t659, t662, t663, t664, t665, t666, t667; __builtin_memset(&h112_r33, 0, sizeof h112_r33); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_c_a h113_x; __builtin_memset(&h113_x, 0, sizeof h113_x); HERO_NODEBUG h_0opt_55666a8e h114_f11, t270, t271, t275, t661; __builtin_memset(&h114_f11, 0, sizeof h114_f11); __builtin_memset(&h115_r34, 0, sizeof h115_r34); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16 h116_r16; __builtin_memset(&h116_r16, 0, sizeof h116_r16); __builtin_memset(&h117_s23, 0, sizeof h117_s23); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15 h118_r35, h121_s24, h235_own235, t286, t287, t288, t289, t290, t292, t668, t669, t671, t672, t673; __builtin_memset(&h118_r35, 0, sizeof h118_r35); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_c_a h119_x; __builtin_memset(&h119_x, 0, sizeof h119_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15 h120_r15; __builtin_memset(&h120_r15, 0, sizeof h120_r15); __builtin_memset(&h121_s24, 0, sizeof h121_s24); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14 h122_r36, h125_r37, h127_s25, h236_own236, h237_own237, t300, t301, t302, t303, t304, t305, t306, t308, t674, t675, t678, t679, t680, t681, t682, t683; __builtin_memset(&h122_r36, 0, sizeof h122_r36); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_c_a h123_x; __builtin_memset(&h123_x, 0, sizeof h123_x); HERO_NODEBUG h_0opt_679b1ebc h124_f12, t294, t295, t299, t677; __builtin_memset(&h124_f12, 0, sizeof h124_f12); __builtin_memset(&h125_r37, 0, sizeof h125_r37); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14 h126_r14; __builtin_memset(&h126_r14, 0, sizeof h126_r14); __builtin_memset(&h127_s25, 0, sizeof h127_s25); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13 h128_r38, h131_s26, h238_own238, t310, t311, t312, t313, t314, t316, t684, t685, t687, t688, t689; __builtin_memset(&h128_r38, 0, sizeof h128_r38); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_c_a h129_x; __builtin_memset(&h129_x, 0, sizeof h129_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13 h130_r13; __builtin_memset(&h130_r13, 0, sizeof h130_r13); __builtin_memset(&h131_s26, 0, sizeof h131_s26); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12 h132_r39, h135_r40, h137_s27, h239_own239, h240_own240, t324, t325, t326, t327, t328, t329, t330, t332, t690, t691, t694, t695, t696, t697, t698, t699; __builtin_memset(&h132_r39, 0, sizeof h132_r39); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_c_a h133_x; __builtin_memset(&h133_x, 0, sizeof h133_x); HERO_NODEBUG h_0opt_79cfd2ea h134_f13, t318, t319, t323, t693; __builtin_memset(&h134_f13, 0, sizeof h134_f13); __builtin_memset(&h135_r40, 0, sizeof h135_r40); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12 h136_r12; __builtin_memset(&h136_r12, 0, sizeof h136_r12); __builtin_memset(&h137_s27, 0, sizeof h137_s27); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11 h138_r41, h141_s28, h241_own241, t334, t335, t336, t337, t338, t340, t700, t701, t703, t704, t705; __builtin_memset(&h138_r41, 0, sizeof h138_r41); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_c_a h139_x; __builtin_memset(&h139_x, 0, sizeof h139_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11 h140_r11; __builtin_memset(&h140_r11, 0, sizeof h140_r11); __builtin_memset(&h141_s28, 0, sizeof h141_s28); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10 h142_r42, h145_r43, h147_s29, h242_own242, h243_own243, t348, t349, t350, t351, t352, t353, t354, t356, t706, t707, t710, t711, t712, t713, t714, t715; __builtin_memset(&h142_r42, 0, sizeof h142_r42); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_c_a h143_x; __builtin_memset(&h143_x, 0, sizeof h143_x); HERO_NODEBUG h_0opt_c048719 h144_f14, t342, t343, t347, t709; __builtin_memset(&h144_f14, 0, sizeof h144_f14); __builtin_memset(&h145_r43, 0, sizeof h145_r43); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10 h146_r10; __builtin_memset(&h146_r10, 0, sizeof h146_r10); __builtin_memset(&h147_s29, 0, sizeof h147_s29); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9 h148_r44, h151_s30, h244_own244, t358, t359, t360, t361, t362, t364, t716, t717, t719, t720, t721; __builtin_memset(&h148_r44, 0, sizeof h148_r44); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_c_a h149_x; __builtin_memset(&h149_x, 0, sizeof h149_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9 h150_r9; __builtin_memset(&h150_r9, 0, sizeof h150_r9); __builtin_memset(&h151_s30, 0, sizeof h151_s30); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8 h152_r45, h155_r46, h157_s31, h245_own245, h246_own246, t372, t373, t374, t375, t376, t377, t378, t380, t722, t723, t726, t727, t728, t729, t730, t731; __builtin_memset(&h152_r45, 0, sizeof h152_r45); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_c_a h153_x; __builtin_memset(&h153_x, 0, sizeof h153_x); HERO_NODEBUG h_0opt_3b41ca8b h154_f15, t366, t367, t371, t725; __builtin_memset(&h154_f15, 0, sizeof h154_f15); __builtin_memset(&h155_r46, 0, sizeof h155_r46); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8 h156_r8; __builtin_memset(&h156_r8, 0, sizeof h156_r8); __builtin_memset(&h157_s31, 0, sizeof h157_s31); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7 h158_r47, h161_s32, h247_own247, t382, t383, t384, t385, t386, t388, t732, t733, t735, t736, t737; __builtin_memset(&h158_r47, 0, sizeof h158_r47); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_c_a h159_x; __builtin_memset(&h159_x, 0, sizeof h159_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7 h160_r7; __builtin_memset(&h160_r7, 0, sizeof h160_r7); __builtin_memset(&h161_s32, 0, sizeof h161_s32); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6 h162_r48, h165_r49, h167_s33, h248_own248, h249_own249, t396, t397, t398, t399, t400, t401, t402, t404, t738, t739, t742, t743, t744, t745, t746, t747; __builtin_memset(&h162_r48, 0, sizeof h162_r48); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_c_a h163_x; __builtin_memset(&h163_x, 0, sizeof h163_x); HERO_NODEBUG h_0opt_471f0495 h164_f16, t390, t391, t395, t741; __builtin_memset(&h164_f16, 0, sizeof h164_f16); __builtin_memset(&h165_r49, 0, sizeof h165_r49); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6 h166_r6; __builtin_memset(&h166_r6, 0, sizeof h166_r6); __builtin_memset(&h167_s33, 0, sizeof h167_s33); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5 h168_r50, h171_s34, h250_own250, t406, t407, t408, t409, t410, t412, t748, t749, t751, t752, t753; __builtin_memset(&h168_r50, 0, sizeof h168_r50); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_c_a h169_x; __builtin_memset(&h169_x, 0, sizeof h169_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5 h170_r5; __builtin_memset(&h170_r5, 0, sizeof h170_r5); __builtin_memset(&h171_s34, 0, sizeof h171_s34); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4 h172_r51, h175_r52, h177_s35, h251_own251, h252_own252, t420, t421, t422, t423, t424, t425, t426, t428, t754, t755, t758, t759, t760, t761, t762, t763; __builtin_memset(&h172_r51, 0, sizeof h172_r51); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_c_a h173_x; __builtin_memset(&h173_x, 0, sizeof h173_x); HERO_NODEBUG h_0opt_52fc3e9f h174_f17, t414, t415, t419, t757; __builtin_memset(&h174_f17, 0, sizeof h174_f17); __builtin_memset(&h175_r52, 0, sizeof h175_r52); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4 h176_r4; __builtin_memset(&h176_r4, 0, sizeof h176_r4); __builtin_memset(&h177_s35, 0, sizeof h177_s35); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3 h178_r53, h181_s36, h253_own253, t430, t431, t432, t433, t434, t436, t764, t765, t767, t768, t769; __builtin_memset(&h178_r53, 0, sizeof h178_r53); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_c_a h179_x; __builtin_memset(&h179_x, 0, sizeof h179_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3 h180_r3; __builtin_memset(&h180_r3, 0, sizeof h180_r3); __builtin_memset(&h181_s36, 0, sizeof h181_s36); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2 h182_r54, h185_r55, h187_s37, h254_own254, h255_own255, t444, t445, t446, t447, t448, t449, t450, t452, t770, t771, t774, t775, t776, t777, t778, t779; __builtin_memset(&h182_r54, 0, sizeof h182_r54); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_c_a h183_x; __builtin_memset(&h183_x, 0, sizeof h183_x); HERO_NODEBUG h_0opt_5ed978a9 h184_f18, t438, t439, t443, t773; __builtin_memset(&h184_f18, 0, sizeof h184_f18); __builtin_memset(&h185_r55, 0, sizeof h185_r55); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2 h186_r2; __builtin_memset(&h186_r2, 0, sizeof h186_r2); __builtin_memset(&h187_s37, 0, sizeof h187_s37); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1 h188_r56, h191_s38, h256_own256, t454, t455, t456, t457, t458, t460, t780, t781, t783, t784, t785; __builtin_memset(&h188_r56, 0, sizeof h188_r56); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_c_a h189_x; __builtin_memset(&h189_x, 0, sizeof h189_x); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1 h190_r1; __builtin_memset(&h190_r1, 0, sizeof h190_r1); __builtin_memset(&h191_s38, 0, sizeof h191_s38); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0 h192_r57, h195_r58, h197_s39, t468, t469, t470, t471, t472, t473, t474, t476; h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_c_a h193_x; __builtin_memset(&h193_x, 0, sizeof h193_x); HERO_NODEBUG h_0opt_6ab6b2b3 h194_f19, t462, t463, t467, t787; __builtin_memset(&h194_f19, 0, sizeof h194_f19); h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0 h196_r0; HERO_NODEBUG int64_t h198_r59, t3, t8, t9, t19, t27, t32, t33, t43, t51, t56, t57, t67, t75, t80, t81, t91, t99, t104, t105, t115, t123, t128, t129, t139, t147, t152, t153, t163, t171, t176, t177, t187, t195, t200, t201, t211, t219, t224, t225, t235, t243, t248, t249, t259, t267, t272, t273, t283, t291, t296, t297, t307, t315, t320, t321, t331, t339, t344, t345, t355, t363, t368, t369, t379, t387, t392, t393, t403, t411, t416, t417, t427, t435, t440, t441, t451, t459, t464, t465, t475, t478, t479, t480; h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_c_a h199_x; __builtin_memset(&h200_own200, 0, sizeof h200_own200); __builtin_memset(&h201_own201, 0, sizeof h201_own201); __builtin_memset(&h202_own202, 0, sizeof h202_own202); __builtin_memset(&h203_own203, 0, sizeof h203_own203); __builtin_memset(&h204_own204, 0, sizeof h204_own204); __builtin_memset(&h205_own205, 0, sizeof h205_own205); __builtin_memset(&h206_own206, 0, sizeof h206_own206); __builtin_memset(&h207_own207, 0, sizeof h207_own207); __builtin_memset(&h208_own208, 0, sizeof h208_own208); __builtin_memset(&h209_own209, 0, sizeof h209_own209); __builtin_memset(&h210_own210, 0, sizeof h210_own210); __builtin_memset(&h211_own211, 0, sizeof h211_own211); __builtin_memset(&h212_own212, 0, sizeof h212_own212); __builtin_memset(&h213_own213, 0, sizeof h213_own213); __builtin_memset(&h214_own214, 0, sizeof h214_own214); __builtin_memset(&h215_own215, 0, sizeof h215_own215); __builtin_memset(&h216_own216, 0, sizeof h216_own216); __builtin_memset(&h217_own217, 0, sizeof h217_own217); __builtin_memset(&h218_own218, 0, sizeof h218_own218); __builtin_memset(&h219_own219, 0, sizeof h219_own219); __builtin_memset(&h220_own220, 0, sizeof h220_own220); __builtin_memset(&h221_own221, 0, sizeof h221_own221); __builtin_memset(&h222_own222, 0, sizeof h222_own222); __builtin_memset(&h223_own223, 0, sizeof h223_own223); __builtin_memset(&h224_own224, 0, sizeof h224_own224); __builtin_memset(&h225_own225, 0, sizeof h225_own225); __builtin_memset(&h226_own226, 0, sizeof h226_own226); __builtin_memset(&h227_own227, 0, sizeof h227_own227); __builtin_memset(&h228_own228, 0, sizeof h228_own228); __builtin_memset(&h229_own229, 0, sizeof h229_own229); __builtin_memset(&h230_own230, 0, sizeof h230_own230); __builtin_memset(&h231_own231, 0, sizeof h231_own231); __builtin_memset(&h232_own232, 0, sizeof h232_own232); __builtin_memset(&h233_own233, 0, sizeof h233_own233); __builtin_memset(&h234_own234, 0, sizeof h234_own234); __builtin_memset(&h235_own235, 0, sizeof h235_own235); __builtin_memset(&h236_own236, 0, sizeof h236_own236); __builtin_memset(&h237_own237, 0, sizeof h237_own237); __builtin_memset(&h238_own238, 0, sizeof h238_own238); __builtin_memset(&h239_own239, 0, sizeof h239_own239); __builtin_memset(&h240_own240, 0, sizeof h240_own240); __builtin_memset(&h241_own241, 0, sizeof h241_own241); __builtin_memset(&h242_own242, 0, sizeof h242_own242); __builtin_memset(&h243_own243, 0, sizeof h243_own243); __builtin_memset(&h244_own244, 0, sizeof h244_own244); __builtin_memset(&h245_own245, 0, sizeof h245_own245); __builtin_memset(&h246_own246, 0, sizeof h246_own246); __builtin_memset(&h247_own247, 0, sizeof h247_own247); __builtin_memset(&h248_own248, 0, sizeof h248_own248); __builtin_memset(&h249_own249, 0, sizeof h249_own249); __builtin_memset(&h250_own250, 0, sizeof h250_own250); __builtin_memset(&h251_own251, 0, sizeof h251_own251); __builtin_memset(&h252_own252, 0, sizeof h252_own252); __builtin_memset(&h253_own253, 0, sizeof h253_own253); __builtin_memset(&h254_own254, 0, sizeof h254_own254); __builtin_memset(&h255_own255, 0, sizeof h255_own255); __builtin_memset(&h256_own256, 0, sizeof h256_own256); HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_c_a t5, t484; HERO_NODEBUG bool t10, t34, t58, t82, t106, t130, t154, t178, t202, t226, t250, t274, t298, t322, t346, t370, t394, t418, t442, t466; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_c_a t21, t494; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_c_a t29, t500; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_c_a t45, t510; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_c_a t53, t516; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_c_a t69, t526; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_c_a t77, t532; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_c_a t93, t542; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_c_a t101, t548; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_c_a t117, t558; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_c_a t125, t564; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_c_a t141, t574; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_c_a t149, t580; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_c_a t165, t590; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_c_a t173, t596; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_c_a t189, t606; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_c_a t197, t612; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_c_a t213, t622; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_c_a t221, t628; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_c_a t237, t638; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_c_a t245, t644; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_c_a t261, t654; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_c_a t269, t660; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_c_a t285, t670; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_c_a t293, t676; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_c_a t309, t686; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_c_a t317, t692; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_c_a t333, t702; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_c_a t341, t708; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_c_a t357, t718; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_c_a t365, t724; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_c_a t381, t734; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_c_a t389, t740; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_c_a t405, t750; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_c_a t413, t756; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_c_a t429, t766; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_c_a t437, t772; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_c_a t453, t782; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_c_a t461, t786; HERO_NODEBUG h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_c_a t477; HERO_ENTRY_STOP; goto bb0;
 #line 213 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb0:
     HERO_COPY_HELD(t1, (h0_r39));
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t521, (h1_s0));
+    HERO_COPY_HELD(t481, (h1_s0));
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_retain(&t1);
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     HERO_COPY_HELD(h1_s0, (t1));
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_release(&t521);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_release(&t481);
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     HERO_COPY_HELD(t2, (h1_s0));
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2135,31 +2135,31 @@ bb0:
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb1:
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t17, (h2_r0));
+    HERO_COPY_HELD(t16, (h2_r0));
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t522, (h6_r38));
+    HERO_COPY_HELD(t482, (h6_r38));
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t16);
+#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(h6_r38, (t16));
+#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t482);
+#line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(t17, (h6_r38));
+#line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(t483, (h7_s1));
+#line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t17);
-#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h6_r38, (t17));
-#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t522);
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t18, (h6_r38));
+    HERO_COPY_HELD(h7_s1, (t17));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t523, (h7_s1));
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t483);
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t18);
+    HERO_COPY_HELD(t18, (h7_s1));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h7_s1, (t18));
+    t19 = t18.tag;
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t523);
-#line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t19, (h7_s1));
-#line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t20 = t19.tag;
-#line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t20) {
+    switch (t19) {
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb8;
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2175,131 +2175,129 @@ bb2:
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     HERO_COPY_HELD(t5, (t4.as.c_a));
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t524, (h3_x));
+    HERO_COPY_HELD(t484, (h3_x));
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_c_a_retain(&t5);
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     HERO_COPY_HELD(h3_x, (t5));
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_c_a_release(&t524);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_c_a_release(&t484);
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t6, (h3_x));
+    HERO_COPY_HELD(t6, (h3_x.f_inner));
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t7, (t6.f_inner));
+    HERO_COPY_HELD(t485, (h4_f0));
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t525, (h4_f0));
+    h_0opt_723982c3_retain(&t6);
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_723982c3_retain(&t7);
+    HERO_COPY_HELD(h4_f0, (t6));
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h4_f0, (t7));
+    h_0opt_723982c3_release(&t485);
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_723982c3_release(&t525);
+    HERO_COPY_HELD(t7, (h4_f0));
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t8, (h4_f0));
+    t8 = t7.tag;
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t9 = t8.tag;
+    t9 = INT64_C(0);
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t10 = INT64_C(0);
+    t10 = t8 == t9;
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t11 = t9 == t10;
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t11) goto bb4; else goto bb5;
+    if (t10) goto bb4; else goto bb5;
 #line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb3:
-    HERO_COPY_HELD(t16, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_tag_b}));
+    HERO_COPY_HELD(t15, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_tag_b}));
 #line 216 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t526, (h200_own200));
+    HERO_COPY_HELD(t486, (h200_own200));
 #line 216 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h200_own200, (t16));
+    HERO_COPY_HELD(h200_own200, (t15));
 #line 216 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t526);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t486);
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t527, (h2_r0));
-#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t16);
-#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h2_r0, (t16));
-#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t527);
-#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    goto bb1;
-#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-bb4:
-    HERO_COPY_HELD(t12, (h4_f0));
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t13, (t12.as.ok));
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t528, (h5_r1));
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t13);
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h5_r1, (t13));
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t528);
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    goto bb6;
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-bb5:
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t14, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_tag_b}));
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t529, (h201_own201));
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h201_own201, (t14));
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t529);
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t530, (h5_r1));
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t14);
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h5_r1, (t14));
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t530);
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    goto bb6;
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-bb6:
-#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t15, (h5_r1));
-#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t531, (h2_r0));
+    HERO_COPY_HELD(t487, (h2_r0));
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t15);
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     HERO_COPY_HELD(h2_r0, (t15));
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t531);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t487);
+#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    goto bb1;
+#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+bb4:
+    HERO_COPY_HELD(t11, (h4_f0));
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(t12, (t11.as.ok));
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(t488, (h5_r1));
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t12);
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(h5_r1, (t12));
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t488);
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    goto bb6;
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+bb5:
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(t13, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_tag_b}));
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(t489, (h201_own201));
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(h201_own201, (t13));
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t489);
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(t490, (h5_r1));
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t13);
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(h5_r1, (t13));
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t490);
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    goto bb6;
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+bb6:
+#line 215 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(t14, (h5_r1));
+#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(t491, (h2_r0));
+#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_retain(&t14);
+#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    HERO_COPY_HELD(h2_r0, (t14));
+#line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(&t491);
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb1;
 #line 214 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb7:
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t26, (h8_r2));
+    HERO_COPY_HELD(t24, (h8_r2));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t532, (h10_r37));
+    HERO_COPY_HELD(t492, (h10_r37));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_retain(&t26);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_retain(&t24);
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h10_r37, (t26));
+    HERO_COPY_HELD(h10_r37, (t24));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t532);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t492);
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t27, (h10_r37));
+    HERO_COPY_HELD(t25, (h10_r37));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t533, (h11_s2));
+    HERO_COPY_HELD(t493, (h11_s2));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_retain(&t27);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_retain(&t25);
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h11_s2, (t27));
+    HERO_COPY_HELD(h11_s2, (t25));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t533);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t493);
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t28, (h11_s2));
+    HERO_COPY_HELD(t26, (h11_s2));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t29 = t28.tag;
+    t27 = t26.tag;
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t29) {
+    switch (t27) {
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb11;
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2311,79 +2309,77 @@ bb7:
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb8:
 #line 219 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t21, (h7_s1));
+    HERO_COPY_HELD(t20, (h7_s1));
 #line 219 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t22, (t21.as.c_a));
+    HERO_COPY_HELD(t21, (t20.as.c_a));
 #line 219 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t534, (h9_x));
+    HERO_COPY_HELD(t494, (h9_x));
 #line 219 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_c_a_retain(&t22);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_c_a_retain(&t21);
 #line 219 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h9_x, (t22));
+    HERO_COPY_HELD(h9_x, (t21));
 #line 219 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_c_a_release(&t534);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_c_a_release(&t494);
 #line 219 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t23, (h9_x));
-#line 219 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t24, (t23.f_inner));
+    HERO_COPY_HELD(t22, (h9_x.f_inner));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t535, (h8_r2));
+    HERO_COPY_HELD(t495, (h8_r2));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_retain(&t24);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_retain(&t22);
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h8_r2, (t24));
+    HERO_COPY_HELD(h8_r2, (t22));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t535);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t495);
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb7;
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb9:
 #line 220 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t25, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_tag_b}));
+    HERO_COPY_HELD(t23, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_tag_b}));
 #line 220 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t536, (h202_own202));
+    HERO_COPY_HELD(t496, (h202_own202));
 #line 220 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h202_own202, (t25));
+    HERO_COPY_HELD(h202_own202, (t23));
 #line 220 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t536);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t496);
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t537, (h8_r2));
+    HERO_COPY_HELD(t497, (h8_r2));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_retain(&t25);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_retain(&t23);
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h8_r2, (t25));
+    HERO_COPY_HELD(h8_r2, (t23));
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t537);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_release(&t497);
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb7;
 #line 218 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb10:
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t43, (h12_r3));
+    HERO_COPY_HELD(t40, (h12_r3));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t538, (h16_r36));
+    HERO_COPY_HELD(t498, (h16_r36));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t43);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t40);
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h16_r36, (t43));
+    HERO_COPY_HELD(h16_r36, (t40));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t538);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t498);
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t44, (h16_r36));
+    HERO_COPY_HELD(t41, (h16_r36));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t539, (h17_s3));
+    HERO_COPY_HELD(t499, (h17_s3));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t44);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t41);
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h17_s3, (t44));
+    HERO_COPY_HELD(h17_s3, (t41));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t539);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t499);
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t45, (h17_s3));
+    HERO_COPY_HELD(t42, (h17_s3));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t46 = t45.tag;
+    t43 = t42.tag;
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t46) {
+    switch (t43) {
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb17;
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2395,135 +2391,133 @@ bb10:
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb11:
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t30, (h11_s2));
+    HERO_COPY_HELD(t28, (h11_s2));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t31, (t30.as.c_a));
+    HERO_COPY_HELD(t29, (t28.as.c_a));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t540, (h13_x));
+    HERO_COPY_HELD(t500, (h13_x));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_c_a_retain(&t31);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_c_a_retain(&t29);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h13_x, (t31));
+    HERO_COPY_HELD(h13_x, (t29));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_c_a_release(&t540);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R37_c_a_release(&t500);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t32, (h13_x));
+    HERO_COPY_HELD(t30, (h13_x.f_inner));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t33, (t32.f_inner));
+    HERO_COPY_HELD(t501, (h14_f1));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t541, (h14_f1));
+    h_0opt_46e36f2_retain(&t30);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_46e36f2_retain(&t33);
+    HERO_COPY_HELD(h14_f1, (t30));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h14_f1, (t33));
+    h_0opt_46e36f2_release(&t501);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_46e36f2_release(&t541);
+    HERO_COPY_HELD(t31, (h14_f1));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t34, (h14_f1));
+    t32 = t31.tag;
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t35 = t34.tag;
+    t33 = INT64_C(0);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t36 = INT64_C(0);
+    t34 = t32 == t33;
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t37 = t35 == t36;
-#line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t37) goto bb13; else goto bb14;
+    if (t34) goto bb13; else goto bb14;
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb12:
-    HERO_COPY_HELD(t42, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_tag_b}));
+    HERO_COPY_HELD(t39, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_tag_b}));
 #line 224 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t542, (h203_own203));
+    HERO_COPY_HELD(t502, (h203_own203));
 #line 224 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h203_own203, (t42));
+    HERO_COPY_HELD(h203_own203, (t39));
 #line 224 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t542);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t502);
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t543, (h12_r3));
+    HERO_COPY_HELD(t503, (h12_r3));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t42);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t39);
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h12_r3, (t42));
+    HERO_COPY_HELD(h12_r3, (t39));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t543);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t503);
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb10;
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb13:
-    HERO_COPY_HELD(t38, (h14_f1));
+    HERO_COPY_HELD(t35, (h14_f1));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t39, (t38.as.ok));
+    HERO_COPY_HELD(t36, (t35.as.ok));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t544, (h15_r4));
+    HERO_COPY_HELD(t504, (h15_r4));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t39);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t36);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h15_r4, (t39));
+    HERO_COPY_HELD(h15_r4, (t36));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t544);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t504);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb15;
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb14:
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t40, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_tag_b}));
+    HERO_COPY_HELD(t37, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_tag_b}));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t545, (h204_own204));
+    HERO_COPY_HELD(t505, (h204_own204));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h204_own204, (t40));
+    HERO_COPY_HELD(h204_own204, (t37));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t545);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t505);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t546, (h15_r4));
+    HERO_COPY_HELD(t506, (h15_r4));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t40);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t37);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h15_r4, (t40));
+    HERO_COPY_HELD(h15_r4, (t37));
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t546);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t506);
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb15;
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb15:
 #line 223 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t41, (h15_r4));
+    HERO_COPY_HELD(t38, (h15_r4));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t547, (h12_r3));
+    HERO_COPY_HELD(t507, (h12_r3));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t41);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_retain(&t38);
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h12_r3, (t41));
+    HERO_COPY_HELD(h12_r3, (t38));
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t547);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_release(&t507);
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb10;
 #line 222 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb16:
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t52, (h18_r5));
+    HERO_COPY_HELD(t48, (h18_r5));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t548, (h20_r35));
+    HERO_COPY_HELD(t508, (h20_r35));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_retain(&t52);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_retain(&t48);
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h20_r35, (t52));
+    HERO_COPY_HELD(h20_r35, (t48));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t548);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t508);
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t53, (h20_r35));
+    HERO_COPY_HELD(t49, (h20_r35));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t549, (h21_s4));
+    HERO_COPY_HELD(t509, (h21_s4));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_retain(&t53);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_retain(&t49);
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h21_s4, (t53));
+    HERO_COPY_HELD(h21_s4, (t49));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t549);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t509);
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t54, (h21_s4));
+    HERO_COPY_HELD(t50, (h21_s4));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t55 = t54.tag;
+    t51 = t50.tag;
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t55) {
+    switch (t51) {
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb20;
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2535,79 +2529,77 @@ bb16:
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb17:
 #line 227 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t47, (h17_s3));
+    HERO_COPY_HELD(t44, (h17_s3));
 #line 227 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t48, (t47.as.c_a));
+    HERO_COPY_HELD(t45, (t44.as.c_a));
 #line 227 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t550, (h19_x));
+    HERO_COPY_HELD(t510, (h19_x));
 #line 227 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_c_a_retain(&t48);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_c_a_retain(&t45);
 #line 227 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h19_x, (t48));
+    HERO_COPY_HELD(h19_x, (t45));
 #line 227 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_c_a_release(&t550);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R36_c_a_release(&t510);
 #line 227 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t49, (h19_x));
-#line 227 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t50, (t49.f_inner));
+    HERO_COPY_HELD(t46, (h19_x.f_inner));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t551, (h18_r5));
+    HERO_COPY_HELD(t511, (h18_r5));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_retain(&t50);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_retain(&t46);
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h18_r5, (t50));
+    HERO_COPY_HELD(h18_r5, (t46));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t551);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t511);
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb16;
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb18:
 #line 228 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t51, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_tag_b}));
+    HERO_COPY_HELD(t47, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_tag_b}));
 #line 228 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t552, (h205_own205));
+    HERO_COPY_HELD(t512, (h205_own205));
 #line 228 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h205_own205, (t51));
+    HERO_COPY_HELD(h205_own205, (t47));
 #line 228 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t552);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t512);
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t553, (h18_r5));
+    HERO_COPY_HELD(t513, (h18_r5));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_retain(&t51);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_retain(&t47);
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h18_r5, (t51));
+    HERO_COPY_HELD(h18_r5, (t47));
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t553);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_release(&t513);
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb16;
 #line 226 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb19:
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t69, (h22_r6));
+    HERO_COPY_HELD(t64, (h22_r6));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t554, (h26_r34));
+    HERO_COPY_HELD(t514, (h26_r34));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t69);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t64);
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h26_r34, (t69));
+    HERO_COPY_HELD(h26_r34, (t64));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t554);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t514);
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t70, (h26_r34));
+    HERO_COPY_HELD(t65, (h26_r34));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t555, (h27_s5));
+    HERO_COPY_HELD(t515, (h27_s5));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t70);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t65);
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h27_s5, (t70));
+    HERO_COPY_HELD(h27_s5, (t65));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t555);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t515);
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t71, (h27_s5));
+    HERO_COPY_HELD(t66, (h27_s5));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t72 = t71.tag;
+    t67 = t66.tag;
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t72) {
+    switch (t67) {
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb26;
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2619,135 +2611,133 @@ bb19:
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb20:
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t56, (h21_s4));
+    HERO_COPY_HELD(t52, (h21_s4));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t57, (t56.as.c_a));
+    HERO_COPY_HELD(t53, (t52.as.c_a));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t556, (h23_x));
+    HERO_COPY_HELD(t516, (h23_x));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_c_a_retain(&t57);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_c_a_retain(&t53);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h23_x, (t57));
+    HERO_COPY_HELD(h23_x, (t53));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_c_a_release(&t556);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R35_c_a_release(&t516);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t58, (h23_x));
+    HERO_COPY_HELD(t54, (h23_x.f_inner));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t59, (t58.f_inner));
+    HERO_COPY_HELD(t517, (h24_f2));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t557, (h24_f2));
+    h_0opt_16a2eb20_retain(&t54);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_16a2eb20_retain(&t59);
+    HERO_COPY_HELD(h24_f2, (t54));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h24_f2, (t59));
+    h_0opt_16a2eb20_release(&t517);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_16a2eb20_release(&t557);
+    HERO_COPY_HELD(t55, (h24_f2));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t60, (h24_f2));
+    t56 = t55.tag;
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t61 = t60.tag;
+    t57 = INT64_C(0);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t62 = INT64_C(0);
+    t58 = t56 == t57;
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t63 = t61 == t62;
-#line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t63) goto bb22; else goto bb23;
+    if (t58) goto bb22; else goto bb23;
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb21:
-    HERO_COPY_HELD(t68, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_tag_b}));
+    HERO_COPY_HELD(t63, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_tag_b}));
 #line 232 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t558, (h206_own206));
+    HERO_COPY_HELD(t518, (h206_own206));
 #line 232 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h206_own206, (t68));
+    HERO_COPY_HELD(h206_own206, (t63));
 #line 232 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t558);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t518);
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t559, (h22_r6));
+    HERO_COPY_HELD(t519, (h22_r6));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t68);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t63);
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h22_r6, (t68));
+    HERO_COPY_HELD(h22_r6, (t63));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t559);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t519);
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb19;
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb22:
-    HERO_COPY_HELD(t64, (h24_f2));
+    HERO_COPY_HELD(t59, (h24_f2));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t65, (t64.as.ok));
+    HERO_COPY_HELD(t60, (t59.as.ok));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t560, (h25_r7));
+    HERO_COPY_HELD(t520, (h25_r7));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t65);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t60);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h25_r7, (t65));
+    HERO_COPY_HELD(h25_r7, (t60));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t560);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t520);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb24;
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb23:
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t66, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_tag_b}));
+    HERO_COPY_HELD(t61, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_tag_b}));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t561, (h207_own207));
+    HERO_COPY_HELD(t521, (h207_own207));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h207_own207, (t66));
+    HERO_COPY_HELD(h207_own207, (t61));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t561);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t521);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t562, (h25_r7));
+    HERO_COPY_HELD(t522, (h25_r7));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t66);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t61);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h25_r7, (t66));
+    HERO_COPY_HELD(h25_r7, (t61));
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t562);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t522);
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb24;
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb24:
 #line 231 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t67, (h25_r7));
+    HERO_COPY_HELD(t62, (h25_r7));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t563, (h22_r6));
+    HERO_COPY_HELD(t523, (h22_r6));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t67);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_retain(&t62);
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h22_r6, (t67));
+    HERO_COPY_HELD(h22_r6, (t62));
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t563);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_release(&t523);
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb19;
 #line 230 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb25:
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t78, (h28_r8));
+    HERO_COPY_HELD(t72, (h28_r8));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t564, (h30_r33));
+    HERO_COPY_HELD(t524, (h30_r33));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_retain(&t78);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_retain(&t72);
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h30_r33, (t78));
+    HERO_COPY_HELD(h30_r33, (t72));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t564);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t524);
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t79, (h30_r33));
+    HERO_COPY_HELD(t73, (h30_r33));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t565, (h31_s6));
+    HERO_COPY_HELD(t525, (h31_s6));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_retain(&t79);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_retain(&t73);
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h31_s6, (t79));
+    HERO_COPY_HELD(h31_s6, (t73));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t565);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t525);
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t80, (h31_s6));
+    HERO_COPY_HELD(t74, (h31_s6));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t81 = t80.tag;
+    t75 = t74.tag;
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t81) {
+    switch (t75) {
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb29;
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2759,79 +2749,77 @@ bb25:
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb26:
 #line 235 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t73, (h27_s5));
+    HERO_COPY_HELD(t68, (h27_s5));
 #line 235 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t74, (t73.as.c_a));
+    HERO_COPY_HELD(t69, (t68.as.c_a));
 #line 235 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t566, (h29_x));
+    HERO_COPY_HELD(t526, (h29_x));
 #line 235 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_c_a_retain(&t74);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_c_a_retain(&t69);
 #line 235 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h29_x, (t74));
+    HERO_COPY_HELD(h29_x, (t69));
 #line 235 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_c_a_release(&t566);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R34_c_a_release(&t526);
 #line 235 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t75, (h29_x));
-#line 235 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t76, (t75.f_inner));
+    HERO_COPY_HELD(t70, (h29_x.f_inner));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t567, (h28_r8));
+    HERO_COPY_HELD(t527, (h28_r8));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_retain(&t76);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_retain(&t70);
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h28_r8, (t76));
+    HERO_COPY_HELD(h28_r8, (t70));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t567);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t527);
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb25;
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb27:
 #line 236 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t77, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_tag_b}));
+    HERO_COPY_HELD(t71, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_tag_b}));
 #line 236 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t568, (h208_own208));
+    HERO_COPY_HELD(t528, (h208_own208));
 #line 236 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h208_own208, (t77));
+    HERO_COPY_HELD(h208_own208, (t71));
 #line 236 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t568);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t528);
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t569, (h28_r8));
+    HERO_COPY_HELD(t529, (h28_r8));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_retain(&t77);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_retain(&t71);
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h28_r8, (t77));
+    HERO_COPY_HELD(h28_r8, (t71));
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t569);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_release(&t529);
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb25;
 #line 234 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb28:
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t95, (h32_r9));
+    HERO_COPY_HELD(t88, (h32_r9));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t570, (h36_r32));
+    HERO_COPY_HELD(t530, (h36_r32));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t95);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t88);
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h36_r32, (t95));
+    HERO_COPY_HELD(h36_r32, (t88));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t570);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t530);
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t96, (h36_r32));
+    HERO_COPY_HELD(t89, (h36_r32));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t571, (h37_s7));
+    HERO_COPY_HELD(t531, (h37_s7));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t96);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t89);
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h37_s7, (t96));
+    HERO_COPY_HELD(h37_s7, (t89));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t571);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t531);
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t97, (h37_s7));
+    HERO_COPY_HELD(t90, (h37_s7));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t98 = t97.tag;
+    t91 = t90.tag;
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t98) {
+    switch (t91) {
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb35;
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2843,135 +2831,133 @@ bb28:
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb29:
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t82, (h31_s6));
+    HERO_COPY_HELD(t76, (h31_s6));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t83, (t82.as.c_a));
+    HERO_COPY_HELD(t77, (t76.as.c_a));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t572, (h33_x));
+    HERO_COPY_HELD(t532, (h33_x));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_c_a_retain(&t83);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_c_a_retain(&t77);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h33_x, (t83));
+    HERO_COPY_HELD(h33_x, (t77));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_c_a_release(&t572);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R33_c_a_release(&t532);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t84, (h33_x));
+    HERO_COPY_HELD(t78, (h33_x.f_inner));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t85, (t84.f_inner));
+    HERO_COPY_HELD(t533, (h34_f3));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t573, (h34_f3));
+    h_0opt_28d79f4e_retain(&t78);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_28d79f4e_retain(&t85);
+    HERO_COPY_HELD(h34_f3, (t78));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h34_f3, (t85));
+    h_0opt_28d79f4e_release(&t533);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_28d79f4e_release(&t573);
+    HERO_COPY_HELD(t79, (h34_f3));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t86, (h34_f3));
+    t80 = t79.tag;
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t87 = t86.tag;
+    t81 = INT64_C(0);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t88 = INT64_C(0);
+    t82 = t80 == t81;
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t89 = t87 == t88;
-#line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t89) goto bb31; else goto bb32;
+    if (t82) goto bb31; else goto bb32;
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb30:
-    HERO_COPY_HELD(t94, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_tag_b}));
+    HERO_COPY_HELD(t87, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_tag_b}));
 #line 240 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t574, (h209_own209));
+    HERO_COPY_HELD(t534, (h209_own209));
 #line 240 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h209_own209, (t94));
+    HERO_COPY_HELD(h209_own209, (t87));
 #line 240 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t574);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t534);
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t575, (h32_r9));
+    HERO_COPY_HELD(t535, (h32_r9));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t94);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t87);
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h32_r9, (t94));
+    HERO_COPY_HELD(h32_r9, (t87));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t575);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t535);
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb28;
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb31:
-    HERO_COPY_HELD(t90, (h34_f3));
+    HERO_COPY_HELD(t83, (h34_f3));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t91, (t90.as.ok));
+    HERO_COPY_HELD(t84, (t83.as.ok));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t576, (h35_r10));
+    HERO_COPY_HELD(t536, (h35_r10));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t91);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t84);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h35_r10, (t91));
+    HERO_COPY_HELD(h35_r10, (t84));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t576);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t536);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb33;
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb32:
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t92, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_tag_b}));
+    HERO_COPY_HELD(t85, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_tag_b}));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t577, (h210_own210));
+    HERO_COPY_HELD(t537, (h210_own210));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h210_own210, (t92));
+    HERO_COPY_HELD(h210_own210, (t85));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t577);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t537);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t578, (h35_r10));
+    HERO_COPY_HELD(t538, (h35_r10));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t92);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t85);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h35_r10, (t92));
+    HERO_COPY_HELD(h35_r10, (t85));
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t578);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t538);
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb33;
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb33:
 #line 239 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t93, (h35_r10));
+    HERO_COPY_HELD(t86, (h35_r10));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t579, (h32_r9));
+    HERO_COPY_HELD(t539, (h32_r9));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t93);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_retain(&t86);
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h32_r9, (t93));
+    HERO_COPY_HELD(h32_r9, (t86));
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t579);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_release(&t539);
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb28;
 #line 238 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb34:
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t104, (h38_r11));
+    HERO_COPY_HELD(t96, (h38_r11));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t580, (h40_r31));
+    HERO_COPY_HELD(t540, (h40_r31));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_retain(&t104);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_retain(&t96);
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h40_r31, (t104));
+    HERO_COPY_HELD(h40_r31, (t96));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t580);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t540);
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t105, (h40_r31));
+    HERO_COPY_HELD(t97, (h40_r31));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t581, (h41_s8));
+    HERO_COPY_HELD(t541, (h41_s8));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_retain(&t105);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_retain(&t97);
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h41_s8, (t105));
+    HERO_COPY_HELD(h41_s8, (t97));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t581);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t541);
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t106, (h41_s8));
+    HERO_COPY_HELD(t98, (h41_s8));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t107 = t106.tag;
+    t99 = t98.tag;
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t107) {
+    switch (t99) {
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb38;
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -2983,79 +2969,77 @@ bb34:
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb35:
 #line 243 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t99, (h37_s7));
+    HERO_COPY_HELD(t92, (h37_s7));
 #line 243 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t100, (t99.as.c_a));
+    HERO_COPY_HELD(t93, (t92.as.c_a));
 #line 243 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t582, (h39_x));
+    HERO_COPY_HELD(t542, (h39_x));
 #line 243 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_c_a_retain(&t100);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_c_a_retain(&t93);
 #line 243 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h39_x, (t100));
+    HERO_COPY_HELD(h39_x, (t93));
 #line 243 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_c_a_release(&t582);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R32_c_a_release(&t542);
 #line 243 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t101, (h39_x));
-#line 243 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t102, (t101.f_inner));
+    HERO_COPY_HELD(t94, (h39_x.f_inner));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t583, (h38_r11));
+    HERO_COPY_HELD(t543, (h38_r11));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_retain(&t102);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_retain(&t94);
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h38_r11, (t102));
+    HERO_COPY_HELD(h38_r11, (t94));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t583);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t543);
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb34;
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb36:
 #line 244 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t103, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_tag_b}));
+    HERO_COPY_HELD(t95, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_tag_b}));
 #line 244 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t584, (h211_own211));
+    HERO_COPY_HELD(t544, (h211_own211));
 #line 244 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h211_own211, (t103));
+    HERO_COPY_HELD(h211_own211, (t95));
 #line 244 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t584);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t544);
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t585, (h38_r11));
+    HERO_COPY_HELD(t545, (h38_r11));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_retain(&t103);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_retain(&t95);
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h38_r11, (t103));
+    HERO_COPY_HELD(h38_r11, (t95));
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t585);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_release(&t545);
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb34;
 #line 242 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb37:
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t121, (h42_r12));
+    HERO_COPY_HELD(t112, (h42_r12));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t586, (h46_r30));
+    HERO_COPY_HELD(t546, (h46_r30));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t121);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t112);
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h46_r30, (t121));
+    HERO_COPY_HELD(h46_r30, (t112));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t586);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t546);
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t122, (h46_r30));
+    HERO_COPY_HELD(t113, (h46_r30));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t587, (h47_s9));
+    HERO_COPY_HELD(t547, (h47_s9));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t122);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t113);
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h47_s9, (t122));
+    HERO_COPY_HELD(h47_s9, (t113));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t587);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t547);
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t123, (h47_s9));
+    HERO_COPY_HELD(t114, (h47_s9));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t124 = t123.tag;
+    t115 = t114.tag;
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t124) {
+    switch (t115) {
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb44;
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -3067,135 +3051,133 @@ bb37:
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb38:
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t108, (h41_s8));
+    HERO_COPY_HELD(t100, (h41_s8));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t109, (t108.as.c_a));
+    HERO_COPY_HELD(t101, (t100.as.c_a));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t588, (h43_x));
+    HERO_COPY_HELD(t548, (h43_x));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_c_a_retain(&t109);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_c_a_retain(&t101);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h43_x, (t109));
+    HERO_COPY_HELD(h43_x, (t101));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_c_a_release(&t588);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R31_c_a_release(&t548);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t110, (h43_x));
+    HERO_COPY_HELD(t102, (h43_x.f_inner));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t111, (t110.f_inner));
+    HERO_COPY_HELD(t549, (h44_f4));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t589, (h44_f4));
+    h_0opt_3b0c537c_retain(&t102);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_3b0c537c_retain(&t111);
+    HERO_COPY_HELD(h44_f4, (t102));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h44_f4, (t111));
+    h_0opt_3b0c537c_release(&t549);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_3b0c537c_release(&t589);
+    HERO_COPY_HELD(t103, (h44_f4));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t112, (h44_f4));
+    t104 = t103.tag;
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t113 = t112.tag;
+    t105 = INT64_C(0);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t114 = INT64_C(0);
+    t106 = t104 == t105;
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t115 = t113 == t114;
-#line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t115) goto bb40; else goto bb41;
+    if (t106) goto bb40; else goto bb41;
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb39:
-    HERO_COPY_HELD(t120, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_tag_b}));
+    HERO_COPY_HELD(t111, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_tag_b}));
 #line 248 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t590, (h212_own212));
+    HERO_COPY_HELD(t550, (h212_own212));
 #line 248 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h212_own212, (t120));
+    HERO_COPY_HELD(h212_own212, (t111));
 #line 248 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t590);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t550);
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t591, (h42_r12));
+    HERO_COPY_HELD(t551, (h42_r12));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t120);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t111);
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h42_r12, (t120));
+    HERO_COPY_HELD(h42_r12, (t111));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t591);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t551);
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb37;
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb40:
-    HERO_COPY_HELD(t116, (h44_f4));
+    HERO_COPY_HELD(t107, (h44_f4));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t117, (t116.as.ok));
+    HERO_COPY_HELD(t108, (t107.as.ok));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t592, (h45_r13));
+    HERO_COPY_HELD(t552, (h45_r13));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t117);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t108);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h45_r13, (t117));
+    HERO_COPY_HELD(h45_r13, (t108));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t592);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t552);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb42;
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb41:
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t118, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_tag_b}));
+    HERO_COPY_HELD(t109, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_tag_b}));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t593, (h213_own213));
+    HERO_COPY_HELD(t553, (h213_own213));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h213_own213, (t118));
+    HERO_COPY_HELD(h213_own213, (t109));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t593);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t553);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t594, (h45_r13));
+    HERO_COPY_HELD(t554, (h45_r13));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t118);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t109);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h45_r13, (t118));
+    HERO_COPY_HELD(h45_r13, (t109));
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t594);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t554);
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb42;
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb42:
 #line 247 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t119, (h45_r13));
+    HERO_COPY_HELD(t110, (h45_r13));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t595, (h42_r12));
+    HERO_COPY_HELD(t555, (h42_r12));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t119);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_retain(&t110);
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h42_r12, (t119));
+    HERO_COPY_HELD(h42_r12, (t110));
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t595);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_release(&t555);
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb37;
 #line 246 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb43:
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t130, (h48_r14));
+    HERO_COPY_HELD(t120, (h48_r14));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t596, (h50_r29));
+    HERO_COPY_HELD(t556, (h50_r29));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_retain(&t130);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_retain(&t120);
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h50_r29, (t130));
+    HERO_COPY_HELD(h50_r29, (t120));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t596);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t556);
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t131, (h50_r29));
+    HERO_COPY_HELD(t121, (h50_r29));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t597, (h51_s10));
+    HERO_COPY_HELD(t557, (h51_s10));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_retain(&t131);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_retain(&t121);
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h51_s10, (t131));
+    HERO_COPY_HELD(h51_s10, (t121));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t597);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t557);
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t132, (h51_s10));
+    HERO_COPY_HELD(t122, (h51_s10));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t133 = t132.tag;
+    t123 = t122.tag;
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t133) {
+    switch (t123) {
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb47;
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -3207,79 +3189,77 @@ bb43:
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb44:
 #line 251 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t125, (h47_s9));
+    HERO_COPY_HELD(t116, (h47_s9));
 #line 251 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t126, (t125.as.c_a));
+    HERO_COPY_HELD(t117, (t116.as.c_a));
 #line 251 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t598, (h49_x));
+    HERO_COPY_HELD(t558, (h49_x));
 #line 251 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_c_a_retain(&t126);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_c_a_retain(&t117);
 #line 251 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h49_x, (t126));
+    HERO_COPY_HELD(h49_x, (t117));
 #line 251 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_c_a_release(&t598);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R30_c_a_release(&t558);
 #line 251 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t127, (h49_x));
-#line 251 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t128, (t127.f_inner));
+    HERO_COPY_HELD(t118, (h49_x.f_inner));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t599, (h48_r14));
+    HERO_COPY_HELD(t559, (h48_r14));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_retain(&t128);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_retain(&t118);
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h48_r14, (t128));
+    HERO_COPY_HELD(h48_r14, (t118));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t599);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t559);
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb43;
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb45:
 #line 252 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t129, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_tag_b}));
+    HERO_COPY_HELD(t119, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_tag_b}));
 #line 252 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t600, (h214_own214));
+    HERO_COPY_HELD(t560, (h214_own214));
 #line 252 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h214_own214, (t129));
+    HERO_COPY_HELD(h214_own214, (t119));
 #line 252 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t600);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t560);
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t601, (h48_r14));
+    HERO_COPY_HELD(t561, (h48_r14));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_retain(&t129);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_retain(&t119);
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h48_r14, (t129));
+    HERO_COPY_HELD(h48_r14, (t119));
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t601);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_release(&t561);
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb43;
 #line 250 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb46:
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t147, (h52_r15));
+    HERO_COPY_HELD(t136, (h52_r15));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t602, (h56_r28));
+    HERO_COPY_HELD(t562, (h56_r28));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t147);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t136);
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h56_r28, (t147));
+    HERO_COPY_HELD(h56_r28, (t136));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t602);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t562);
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t148, (h56_r28));
+    HERO_COPY_HELD(t137, (h56_r28));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t603, (h57_s11));
+    HERO_COPY_HELD(t563, (h57_s11));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t148);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t137);
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h57_s11, (t148));
+    HERO_COPY_HELD(h57_s11, (t137));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t603);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t563);
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t149, (h57_s11));
+    HERO_COPY_HELD(t138, (h57_s11));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t150 = t149.tag;
+    t139 = t138.tag;
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t150) {
+    switch (t139) {
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb53;
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -3291,135 +3271,133 @@ bb46:
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb47:
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t134, (h51_s10));
+    HERO_COPY_HELD(t124, (h51_s10));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t135, (t134.as.c_a));
+    HERO_COPY_HELD(t125, (t124.as.c_a));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t604, (h53_x));
+    HERO_COPY_HELD(t564, (h53_x));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_c_a_retain(&t135);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_c_a_retain(&t125);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h53_x, (t135));
+    HERO_COPY_HELD(h53_x, (t125));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_c_a_release(&t604);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R29_c_a_release(&t564);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t136, (h53_x));
+    HERO_COPY_HELD(t126, (h53_x.f_inner));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t137, (t136.f_inner));
+    HERO_COPY_HELD(t565, (h54_f5));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t605, (h54_f5));
+    h_0opt_1ab59c92_retain(&t126);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_1ab59c92_retain(&t137);
+    HERO_COPY_HELD(h54_f5, (t126));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h54_f5, (t137));
+    h_0opt_1ab59c92_release(&t565);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_1ab59c92_release(&t605);
+    HERO_COPY_HELD(t127, (h54_f5));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t138, (h54_f5));
+    t128 = t127.tag;
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t139 = t138.tag;
+    t129 = INT64_C(0);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t140 = INT64_C(0);
+    t130 = t128 == t129;
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t141 = t139 == t140;
-#line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t141) goto bb49; else goto bb50;
+    if (t130) goto bb49; else goto bb50;
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb48:
-    HERO_COPY_HELD(t146, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_tag_b}));
+    HERO_COPY_HELD(t135, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_tag_b}));
 #line 256 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t606, (h215_own215));
+    HERO_COPY_HELD(t566, (h215_own215));
 #line 256 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h215_own215, (t146));
+    HERO_COPY_HELD(h215_own215, (t135));
 #line 256 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t606);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t566);
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t607, (h52_r15));
+    HERO_COPY_HELD(t567, (h52_r15));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t146);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t135);
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h52_r15, (t146));
+    HERO_COPY_HELD(h52_r15, (t135));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t607);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t567);
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb46;
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb49:
-    HERO_COPY_HELD(t142, (h54_f5));
+    HERO_COPY_HELD(t131, (h54_f5));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t143, (t142.as.ok));
+    HERO_COPY_HELD(t132, (t131.as.ok));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t608, (h55_r16));
+    HERO_COPY_HELD(t568, (h55_r16));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t143);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t132);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h55_r16, (t143));
+    HERO_COPY_HELD(h55_r16, (t132));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t608);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t568);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb51;
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb50:
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t144, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_tag_b}));
+    HERO_COPY_HELD(t133, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_tag_b}));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t609, (h216_own216));
+    HERO_COPY_HELD(t569, (h216_own216));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h216_own216, (t144));
+    HERO_COPY_HELD(h216_own216, (t133));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t609);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t569);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t610, (h55_r16));
+    HERO_COPY_HELD(t570, (h55_r16));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t144);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t133);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h55_r16, (t144));
+    HERO_COPY_HELD(h55_r16, (t133));
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t610);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t570);
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb51;
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb51:
 #line 255 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t145, (h55_r16));
+    HERO_COPY_HELD(t134, (h55_r16));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t611, (h52_r15));
+    HERO_COPY_HELD(t571, (h52_r15));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t145);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_retain(&t134);
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h52_r15, (t145));
+    HERO_COPY_HELD(h52_r15, (t134));
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t611);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_release(&t571);
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb46;
 #line 254 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb52:
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t156, (h58_r17));
+    HERO_COPY_HELD(t144, (h58_r17));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t612, (h60_r27));
+    HERO_COPY_HELD(t572, (h60_r27));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_retain(&t156);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_retain(&t144);
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h60_r27, (t156));
+    HERO_COPY_HELD(h60_r27, (t144));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t612);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t572);
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t157, (h60_r27));
+    HERO_COPY_HELD(t145, (h60_r27));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t613, (h61_s12));
+    HERO_COPY_HELD(t573, (h61_s12));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_retain(&t157);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_retain(&t145);
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h61_s12, (t157));
+    HERO_COPY_HELD(h61_s12, (t145));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t613);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t573);
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t158, (h61_s12));
+    HERO_COPY_HELD(t146, (h61_s12));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t159 = t158.tag;
+    t147 = t146.tag;
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t159) {
+    switch (t147) {
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb56;
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -3431,79 +3409,77 @@ bb52:
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb53:
 #line 259 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t151, (h57_s11));
+    HERO_COPY_HELD(t140, (h57_s11));
 #line 259 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t152, (t151.as.c_a));
+    HERO_COPY_HELD(t141, (t140.as.c_a));
 #line 259 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t614, (h59_x));
+    HERO_COPY_HELD(t574, (h59_x));
 #line 259 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_c_a_retain(&t152);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_c_a_retain(&t141);
 #line 259 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h59_x, (t152));
+    HERO_COPY_HELD(h59_x, (t141));
 #line 259 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_c_a_release(&t614);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R28_c_a_release(&t574);
 #line 259 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t153, (h59_x));
-#line 259 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t154, (t153.f_inner));
+    HERO_COPY_HELD(t142, (h59_x.f_inner));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t615, (h58_r17));
+    HERO_COPY_HELD(t575, (h58_r17));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_retain(&t154);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_retain(&t142);
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h58_r17, (t154));
+    HERO_COPY_HELD(h58_r17, (t142));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t615);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t575);
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb52;
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb54:
 #line 260 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t155, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_tag_b}));
+    HERO_COPY_HELD(t143, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_tag_b}));
 #line 260 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t616, (h217_own217));
+    HERO_COPY_HELD(t576, (h217_own217));
 #line 260 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h217_own217, (t155));
+    HERO_COPY_HELD(h217_own217, (t143));
 #line 260 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t616);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t576);
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t617, (h58_r17));
+    HERO_COPY_HELD(t577, (h58_r17));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_retain(&t155);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_retain(&t143);
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h58_r17, (t155));
+    HERO_COPY_HELD(h58_r17, (t143));
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t617);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_release(&t577);
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb52;
 #line 258 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb55:
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t173, (h62_r18));
+    HERO_COPY_HELD(t160, (h62_r18));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t618, (h66_r26));
+    HERO_COPY_HELD(t578, (h66_r26));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t173);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t160);
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h66_r26, (t173));
+    HERO_COPY_HELD(h66_r26, (t160));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t618);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t578);
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t174, (h66_r26));
+    HERO_COPY_HELD(t161, (h66_r26));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t619, (h67_s13));
+    HERO_COPY_HELD(t579, (h67_s13));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t174);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t161);
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h67_s13, (t174));
+    HERO_COPY_HELD(h67_s13, (t161));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t619);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t579);
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t175, (h67_s13));
+    HERO_COPY_HELD(t162, (h67_s13));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t176 = t175.tag;
+    t163 = t162.tag;
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t176) {
+    switch (t163) {
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb62;
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -3515,135 +3491,133 @@ bb55:
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb56:
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t160, (h61_s12));
+    HERO_COPY_HELD(t148, (h61_s12));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t161, (t160.as.c_a));
+    HERO_COPY_HELD(t149, (t148.as.c_a));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t620, (h63_x));
+    HERO_COPY_HELD(t580, (h63_x));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_c_a_retain(&t161);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_c_a_retain(&t149);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h63_x, (t161));
+    HERO_COPY_HELD(h63_x, (t149));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_c_a_release(&t620);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R27_c_a_release(&t580);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t162, (h63_x));
+    HERO_COPY_HELD(t150, (h63_x.f_inner));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t163, (t162.f_inner));
+    HERO_COPY_HELD(t581, (h64_f6));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t621, (h64_f6));
+    h_0opt_2cea50c0_retain(&t150);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_2cea50c0_retain(&t163);
+    HERO_COPY_HELD(h64_f6, (t150));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h64_f6, (t163));
+    h_0opt_2cea50c0_release(&t581);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_2cea50c0_release(&t621);
+    HERO_COPY_HELD(t151, (h64_f6));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t164, (h64_f6));
+    t152 = t151.tag;
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t165 = t164.tag;
+    t153 = INT64_C(0);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t166 = INT64_C(0);
+    t154 = t152 == t153;
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t167 = t165 == t166;
-#line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t167) goto bb58; else goto bb59;
+    if (t154) goto bb58; else goto bb59;
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb57:
-    HERO_COPY_HELD(t172, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_tag_b}));
+    HERO_COPY_HELD(t159, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_tag_b}));
 #line 264 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t622, (h218_own218));
+    HERO_COPY_HELD(t582, (h218_own218));
 #line 264 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h218_own218, (t172));
+    HERO_COPY_HELD(h218_own218, (t159));
 #line 264 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t622);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t582);
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t623, (h62_r18));
+    HERO_COPY_HELD(t583, (h62_r18));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t172);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t159);
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h62_r18, (t172));
+    HERO_COPY_HELD(h62_r18, (t159));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t623);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t583);
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb55;
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb58:
-    HERO_COPY_HELD(t168, (h64_f6));
+    HERO_COPY_HELD(t155, (h64_f6));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t169, (t168.as.ok));
+    HERO_COPY_HELD(t156, (t155.as.ok));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t624, (h65_r19));
+    HERO_COPY_HELD(t584, (h65_r19));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t169);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t156);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h65_r19, (t169));
+    HERO_COPY_HELD(h65_r19, (t156));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t624);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t584);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb60;
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb59:
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t170, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_tag_b}));
+    HERO_COPY_HELD(t157, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_tag_b}));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t625, (h219_own219));
+    HERO_COPY_HELD(t585, (h219_own219));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h219_own219, (t170));
+    HERO_COPY_HELD(h219_own219, (t157));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t625);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t585);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t626, (h65_r19));
+    HERO_COPY_HELD(t586, (h65_r19));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t170);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t157);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h65_r19, (t170));
+    HERO_COPY_HELD(h65_r19, (t157));
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t626);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t586);
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb60;
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb60:
 #line 263 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t171, (h65_r19));
+    HERO_COPY_HELD(t158, (h65_r19));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t627, (h62_r18));
+    HERO_COPY_HELD(t587, (h62_r18));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t171);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_retain(&t158);
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h62_r18, (t171));
+    HERO_COPY_HELD(h62_r18, (t158));
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t627);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_release(&t587);
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb55;
 #line 262 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb61:
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t182, (h68_r20));
+    HERO_COPY_HELD(t168, (h68_r20));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t628, (h70_r25));
+    HERO_COPY_HELD(t588, (h70_r25));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_retain(&t182);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_retain(&t168);
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h70_r25, (t182));
+    HERO_COPY_HELD(h70_r25, (t168));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t628);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t588);
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t183, (h70_r25));
+    HERO_COPY_HELD(t169, (h70_r25));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t629, (h71_s14));
+    HERO_COPY_HELD(t589, (h71_s14));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_retain(&t183);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_retain(&t169);
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h71_s14, (t183));
+    HERO_COPY_HELD(h71_s14, (t169));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t629);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t589);
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t184, (h71_s14));
+    HERO_COPY_HELD(t170, (h71_s14));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t185 = t184.tag;
+    t171 = t170.tag;
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t185) {
+    switch (t171) {
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb65;
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -3655,79 +3629,77 @@ bb61:
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb62:
 #line 267 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t177, (h67_s13));
+    HERO_COPY_HELD(t164, (h67_s13));
 #line 267 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t178, (t177.as.c_a));
+    HERO_COPY_HELD(t165, (t164.as.c_a));
 #line 267 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t630, (h69_x));
+    HERO_COPY_HELD(t590, (h69_x));
 #line 267 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_c_a_retain(&t178);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_c_a_retain(&t165);
 #line 267 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h69_x, (t178));
+    HERO_COPY_HELD(h69_x, (t165));
 #line 267 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_c_a_release(&t630);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R26_c_a_release(&t590);
 #line 267 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t179, (h69_x));
-#line 267 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t180, (t179.f_inner));
+    HERO_COPY_HELD(t166, (h69_x.f_inner));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t631, (h68_r20));
+    HERO_COPY_HELD(t591, (h68_r20));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_retain(&t180);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_retain(&t166);
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h68_r20, (t180));
+    HERO_COPY_HELD(h68_r20, (t166));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t631);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t591);
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb61;
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb63:
 #line 268 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t181, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_tag_b}));
+    HERO_COPY_HELD(t167, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_tag_b}));
 #line 268 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t632, (h220_own220));
+    HERO_COPY_HELD(t592, (h220_own220));
 #line 268 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h220_own220, (t181));
+    HERO_COPY_HELD(h220_own220, (t167));
 #line 268 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t632);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t592);
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t633, (h68_r20));
+    HERO_COPY_HELD(t593, (h68_r20));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_retain(&t181);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_retain(&t167);
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h68_r20, (t181));
+    HERO_COPY_HELD(h68_r20, (t167));
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t633);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_release(&t593);
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb61;
 #line 266 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb64:
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t199, (h72_r21));
+    HERO_COPY_HELD(t184, (h72_r21));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t634, (h76_r24));
+    HERO_COPY_HELD(t594, (h76_r24));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t199);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t184);
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h76_r24, (t199));
+    HERO_COPY_HELD(h76_r24, (t184));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t634);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t594);
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t200, (h76_r24));
+    HERO_COPY_HELD(t185, (h76_r24));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t635, (h77_s15));
+    HERO_COPY_HELD(t595, (h77_s15));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t200);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t185);
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h77_s15, (t200));
+    HERO_COPY_HELD(h77_s15, (t185));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t635);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t595);
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t201, (h77_s15));
+    HERO_COPY_HELD(t186, (h77_s15));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t202 = t201.tag;
+    t187 = t186.tag;
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t202) {
+    switch (t187) {
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb71;
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -3739,135 +3711,133 @@ bb64:
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb65:
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t186, (h71_s14));
+    HERO_COPY_HELD(t172, (h71_s14));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t187, (t186.as.c_a));
+    HERO_COPY_HELD(t173, (t172.as.c_a));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t636, (h73_x));
+    HERO_COPY_HELD(t596, (h73_x));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_c_a_retain(&t187);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_c_a_retain(&t173);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h73_x, (t187));
+    HERO_COPY_HELD(h73_x, (t173));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_c_a_release(&t636);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R25_c_a_release(&t596);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t188, (h73_x));
+    HERO_COPY_HELD(t174, (h73_x.f_inner));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t189, (t188.f_inner));
+    HERO_COPY_HELD(t597, (h74_f7));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t637, (h74_f7));
+    h_0opt_3f1f04ee_retain(&t174);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_3f1f04ee_retain(&t189);
+    HERO_COPY_HELD(h74_f7, (t174));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h74_f7, (t189));
+    h_0opt_3f1f04ee_release(&t597);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_3f1f04ee_release(&t637);
+    HERO_COPY_HELD(t175, (h74_f7));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t190, (h74_f7));
+    t176 = t175.tag;
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t191 = t190.tag;
+    t177 = INT64_C(0);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t192 = INT64_C(0);
+    t178 = t176 == t177;
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t193 = t191 == t192;
-#line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t193) goto bb67; else goto bb68;
+    if (t178) goto bb67; else goto bb68;
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb66:
-    HERO_COPY_HELD(t198, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_tag_b}));
+    HERO_COPY_HELD(t183, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_tag_b}));
 #line 272 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t638, (h221_own221));
+    HERO_COPY_HELD(t598, (h221_own221));
 #line 272 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h221_own221, (t198));
+    HERO_COPY_HELD(h221_own221, (t183));
 #line 272 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t638);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t598);
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t639, (h72_r21));
+    HERO_COPY_HELD(t599, (h72_r21));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t198);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t183);
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h72_r21, (t198));
+    HERO_COPY_HELD(h72_r21, (t183));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t639);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t599);
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb64;
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb67:
-    HERO_COPY_HELD(t194, (h74_f7));
+    HERO_COPY_HELD(t179, (h74_f7));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t195, (t194.as.ok));
+    HERO_COPY_HELD(t180, (t179.as.ok));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t640, (h75_r22));
+    HERO_COPY_HELD(t600, (h75_r22));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t195);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t180);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h75_r22, (t195));
+    HERO_COPY_HELD(h75_r22, (t180));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t640);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t600);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb69;
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb68:
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t196, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_tag_b}));
+    HERO_COPY_HELD(t181, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_tag_b}));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t641, (h222_own222));
+    HERO_COPY_HELD(t601, (h222_own222));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h222_own222, (t196));
+    HERO_COPY_HELD(h222_own222, (t181));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t641);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t601);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t642, (h75_r22));
+    HERO_COPY_HELD(t602, (h75_r22));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t196);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t181);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h75_r22, (t196));
+    HERO_COPY_HELD(h75_r22, (t181));
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t642);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t602);
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb69;
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb69:
 #line 271 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t197, (h75_r22));
+    HERO_COPY_HELD(t182, (h75_r22));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t643, (h72_r21));
+    HERO_COPY_HELD(t603, (h72_r21));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t197);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_retain(&t182);
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h72_r21, (t197));
+    HERO_COPY_HELD(h72_r21, (t182));
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t643);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_release(&t603);
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb64;
 #line 270 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb70:
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t208, (h78_r23));
+    HERO_COPY_HELD(t192, (h78_r23));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t644, (h80_r23));
+    HERO_COPY_HELD(t604, (h80_r23));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_retain(&t208);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_retain(&t192);
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h80_r23, (t208));
+    HERO_COPY_HELD(h80_r23, (t192));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t644);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t604);
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t209, (h80_r23));
+    HERO_COPY_HELD(t193, (h80_r23));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t645, (h81_s16));
+    HERO_COPY_HELD(t605, (h81_s16));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_retain(&t209);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_retain(&t193);
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h81_s16, (t209));
+    HERO_COPY_HELD(h81_s16, (t193));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t645);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t605);
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t210, (h81_s16));
+    HERO_COPY_HELD(t194, (h81_s16));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t211 = t210.tag;
+    t195 = t194.tag;
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t211) {
+    switch (t195) {
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb74;
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -3879,79 +3849,77 @@ bb70:
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb71:
 #line 275 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t203, (h77_s15));
+    HERO_COPY_HELD(t188, (h77_s15));
 #line 275 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t204, (t203.as.c_a));
+    HERO_COPY_HELD(t189, (t188.as.c_a));
 #line 275 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t646, (h79_x));
+    HERO_COPY_HELD(t606, (h79_x));
 #line 275 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_c_a_retain(&t204);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_c_a_retain(&t189);
 #line 275 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h79_x, (t204));
+    HERO_COPY_HELD(h79_x, (t189));
 #line 275 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_c_a_release(&t646);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R24_c_a_release(&t606);
 #line 275 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t205, (h79_x));
-#line 275 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t206, (t205.f_inner));
+    HERO_COPY_HELD(t190, (h79_x.f_inner));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t647, (h78_r23));
+    HERO_COPY_HELD(t607, (h78_r23));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_retain(&t206);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_retain(&t190);
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h78_r23, (t206));
+    HERO_COPY_HELD(h78_r23, (t190));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t647);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t607);
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb70;
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb72:
 #line 276 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t207, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_tag_b}));
+    HERO_COPY_HELD(t191, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_tag_b}));
 #line 276 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t648, (h223_own223));
+    HERO_COPY_HELD(t608, (h223_own223));
 #line 276 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h223_own223, (t207));
+    HERO_COPY_HELD(h223_own223, (t191));
 #line 276 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t648);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t608);
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t649, (h78_r23));
+    HERO_COPY_HELD(t609, (h78_r23));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_retain(&t207);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_retain(&t191);
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h78_r23, (t207));
+    HERO_COPY_HELD(h78_r23, (t191));
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t649);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_release(&t609);
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb70;
 #line 274 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb73:
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t225, (h82_r24));
+    HERO_COPY_HELD(t208, (h82_r24));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t650, (h86_r22));
+    HERO_COPY_HELD(t610, (h86_r22));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t225);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t208);
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h86_r22, (t225));
+    HERO_COPY_HELD(h86_r22, (t208));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t650);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t610);
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t226, (h86_r22));
+    HERO_COPY_HELD(t209, (h86_r22));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t651, (h87_s17));
+    HERO_COPY_HELD(t611, (h87_s17));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t226);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t209);
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h87_s17, (t226));
+    HERO_COPY_HELD(h87_s17, (t209));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t651);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t611);
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t227, (h87_s17));
+    HERO_COPY_HELD(t210, (h87_s17));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t228 = t227.tag;
+    t211 = t210.tag;
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t228) {
+    switch (t211) {
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb80;
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -3963,135 +3931,133 @@ bb73:
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb74:
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t212, (h81_s16));
+    HERO_COPY_HELD(t196, (h81_s16));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t213, (t212.as.c_a));
+    HERO_COPY_HELD(t197, (t196.as.c_a));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t652, (h83_x));
+    HERO_COPY_HELD(t612, (h83_x));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_c_a_retain(&t213);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_c_a_retain(&t197);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h83_x, (t213));
+    HERO_COPY_HELD(h83_x, (t197));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_c_a_release(&t652);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R23_c_a_release(&t612);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t214, (h83_x));
+    HERO_COPY_HELD(t198, (h83_x.f_inner));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t215, (t214.f_inner));
+    HERO_COPY_HELD(t613, (h84_f8));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t653, (h84_f8));
+    h_0opt_5153b91c_retain(&t198);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_5153b91c_retain(&t215);
+    HERO_COPY_HELD(h84_f8, (t198));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h84_f8, (t215));
+    h_0opt_5153b91c_release(&t613);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_5153b91c_release(&t653);
+    HERO_COPY_HELD(t199, (h84_f8));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t216, (h84_f8));
+    t200 = t199.tag;
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t217 = t216.tag;
+    t201 = INT64_C(0);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t218 = INT64_C(0);
+    t202 = t200 == t201;
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t219 = t217 == t218;
-#line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t219) goto bb76; else goto bb77;
+    if (t202) goto bb76; else goto bb77;
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb75:
-    HERO_COPY_HELD(t224, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_tag_b}));
+    HERO_COPY_HELD(t207, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_tag_b}));
 #line 280 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t654, (h224_own224));
+    HERO_COPY_HELD(t614, (h224_own224));
 #line 280 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h224_own224, (t224));
+    HERO_COPY_HELD(h224_own224, (t207));
 #line 280 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t654);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t614);
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t655, (h82_r24));
+    HERO_COPY_HELD(t615, (h82_r24));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t224);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t207);
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h82_r24, (t224));
+    HERO_COPY_HELD(h82_r24, (t207));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t655);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t615);
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb73;
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb76:
-    HERO_COPY_HELD(t220, (h84_f8));
+    HERO_COPY_HELD(t203, (h84_f8));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t221, (t220.as.ok));
+    HERO_COPY_HELD(t204, (t203.as.ok));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t656, (h85_r25));
+    HERO_COPY_HELD(t616, (h85_r25));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t221);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t204);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h85_r25, (t221));
+    HERO_COPY_HELD(h85_r25, (t204));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t656);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t616);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb78;
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb77:
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t222, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_tag_b}));
+    HERO_COPY_HELD(t205, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_tag_b}));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t657, (h225_own225));
+    HERO_COPY_HELD(t617, (h225_own225));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h225_own225, (t222));
+    HERO_COPY_HELD(h225_own225, (t205));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t657);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t617);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t658, (h85_r25));
+    HERO_COPY_HELD(t618, (h85_r25));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t222);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t205);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h85_r25, (t222));
+    HERO_COPY_HELD(h85_r25, (t205));
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t658);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t618);
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb78;
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb78:
 #line 279 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t223, (h85_r25));
+    HERO_COPY_HELD(t206, (h85_r25));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t659, (h82_r24));
+    HERO_COPY_HELD(t619, (h82_r24));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t223);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_retain(&t206);
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h82_r24, (t223));
+    HERO_COPY_HELD(h82_r24, (t206));
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t659);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_release(&t619);
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb73;
 #line 278 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb79:
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t234, (h88_r26));
+    HERO_COPY_HELD(t216, (h88_r26));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t660, (h90_r21));
+    HERO_COPY_HELD(t620, (h90_r21));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_retain(&t234);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_retain(&t216);
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h90_r21, (t234));
+    HERO_COPY_HELD(h90_r21, (t216));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t660);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t620);
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t235, (h90_r21));
+    HERO_COPY_HELD(t217, (h90_r21));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t661, (h91_s18));
+    HERO_COPY_HELD(t621, (h91_s18));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_retain(&t235);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_retain(&t217);
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h91_s18, (t235));
+    HERO_COPY_HELD(h91_s18, (t217));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t661);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t621);
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t236, (h91_s18));
+    HERO_COPY_HELD(t218, (h91_s18));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t237 = t236.tag;
+    t219 = t218.tag;
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t237) {
+    switch (t219) {
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb83;
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -4103,79 +4069,77 @@ bb79:
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb80:
 #line 283 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t229, (h87_s17));
+    HERO_COPY_HELD(t212, (h87_s17));
 #line 283 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t230, (t229.as.c_a));
+    HERO_COPY_HELD(t213, (t212.as.c_a));
 #line 283 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t662, (h89_x));
+    HERO_COPY_HELD(t622, (h89_x));
 #line 283 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_c_a_retain(&t230);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_c_a_retain(&t213);
 #line 283 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h89_x, (t230));
+    HERO_COPY_HELD(h89_x, (t213));
 #line 283 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_c_a_release(&t662);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R22_c_a_release(&t622);
 #line 283 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t231, (h89_x));
-#line 283 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t232, (t231.f_inner));
+    HERO_COPY_HELD(t214, (h89_x.f_inner));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t663, (h88_r26));
+    HERO_COPY_HELD(t623, (h88_r26));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_retain(&t232);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_retain(&t214);
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h88_r26, (t232));
+    HERO_COPY_HELD(h88_r26, (t214));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t663);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t623);
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb79;
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb81:
 #line 284 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t233, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_tag_b}));
+    HERO_COPY_HELD(t215, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_tag_b}));
 #line 284 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t664, (h226_own226));
+    HERO_COPY_HELD(t624, (h226_own226));
 #line 284 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h226_own226, (t233));
+    HERO_COPY_HELD(h226_own226, (t215));
 #line 284 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t664);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t624);
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t665, (h88_r26));
+    HERO_COPY_HELD(t625, (h88_r26));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_retain(&t233);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_retain(&t215);
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h88_r26, (t233));
+    HERO_COPY_HELD(h88_r26, (t215));
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t665);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_release(&t625);
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb79;
 #line 282 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb82:
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t251, (h92_r27));
+    HERO_COPY_HELD(t232, (h92_r27));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t666, (h96_r20));
+    HERO_COPY_HELD(t626, (h96_r20));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t251);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t232);
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h96_r20, (t251));
+    HERO_COPY_HELD(h96_r20, (t232));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t666);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t626);
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t252, (h96_r20));
+    HERO_COPY_HELD(t233, (h96_r20));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t667, (h97_s19));
+    HERO_COPY_HELD(t627, (h97_s19));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t252);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t233);
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h97_s19, (t252));
+    HERO_COPY_HELD(h97_s19, (t233));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t667);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t627);
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t253, (h97_s19));
+    HERO_COPY_HELD(t234, (h97_s19));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t254 = t253.tag;
+    t235 = t234.tag;
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t254) {
+    switch (t235) {
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb89;
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -4187,135 +4151,133 @@ bb82:
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb83:
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t238, (h91_s18));
+    HERO_COPY_HELD(t220, (h91_s18));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t239, (t238.as.c_a));
+    HERO_COPY_HELD(t221, (t220.as.c_a));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t668, (h93_x));
+    HERO_COPY_HELD(t628, (h93_x));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_c_a_retain(&t239);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_c_a_retain(&t221);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h93_x, (t239));
+    HERO_COPY_HELD(h93_x, (t221));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_c_a_release(&t668);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R21_c_a_release(&t628);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t240, (h93_x));
+    HERO_COPY_HELD(t222, (h93_x.f_inner));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t241, (t240.f_inner));
+    HERO_COPY_HELD(t629, (h94_f9));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t669, (h94_f9));
+    h_0opt_63886d4a_retain(&t222);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_63886d4a_retain(&t241);
+    HERO_COPY_HELD(h94_f9, (t222));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h94_f9, (t241));
+    h_0opt_63886d4a_release(&t629);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_63886d4a_release(&t669);
+    HERO_COPY_HELD(t223, (h94_f9));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t242, (h94_f9));
+    t224 = t223.tag;
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t243 = t242.tag;
+    t225 = INT64_C(0);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t244 = INT64_C(0);
+    t226 = t224 == t225;
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t245 = t243 == t244;
-#line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t245) goto bb85; else goto bb86;
+    if (t226) goto bb85; else goto bb86;
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb84:
-    HERO_COPY_HELD(t250, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_tag_b}));
+    HERO_COPY_HELD(t231, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_tag_b}));
 #line 288 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t670, (h227_own227));
+    HERO_COPY_HELD(t630, (h227_own227));
 #line 288 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h227_own227, (t250));
+    HERO_COPY_HELD(h227_own227, (t231));
 #line 288 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t670);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t630);
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t671, (h92_r27));
+    HERO_COPY_HELD(t631, (h92_r27));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t250);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t231);
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h92_r27, (t250));
+    HERO_COPY_HELD(h92_r27, (t231));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t671);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t631);
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb82;
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb85:
-    HERO_COPY_HELD(t246, (h94_f9));
+    HERO_COPY_HELD(t227, (h94_f9));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t247, (t246.as.ok));
+    HERO_COPY_HELD(t228, (t227.as.ok));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t672, (h95_r28));
+    HERO_COPY_HELD(t632, (h95_r28));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t247);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t228);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h95_r28, (t247));
+    HERO_COPY_HELD(h95_r28, (t228));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t672);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t632);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb87;
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb86:
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t248, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_tag_b}));
+    HERO_COPY_HELD(t229, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_tag_b}));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t673, (h228_own228));
+    HERO_COPY_HELD(t633, (h228_own228));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h228_own228, (t248));
+    HERO_COPY_HELD(h228_own228, (t229));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t673);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t633);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t674, (h95_r28));
+    HERO_COPY_HELD(t634, (h95_r28));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t248);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t229);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h95_r28, (t248));
+    HERO_COPY_HELD(h95_r28, (t229));
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t674);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t634);
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb87;
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb87:
 #line 287 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t249, (h95_r28));
+    HERO_COPY_HELD(t230, (h95_r28));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t675, (h92_r27));
+    HERO_COPY_HELD(t635, (h92_r27));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t249);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_retain(&t230);
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h92_r27, (t249));
+    HERO_COPY_HELD(h92_r27, (t230));
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t675);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_release(&t635);
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb82;
 #line 286 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb88:
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t260, (h98_r29));
+    HERO_COPY_HELD(t240, (h98_r29));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t676, (h100_r19));
+    HERO_COPY_HELD(t636, (h100_r19));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_retain(&t260);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_retain(&t240);
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h100_r19, (t260));
+    HERO_COPY_HELD(h100_r19, (t240));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t676);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t636);
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t261, (h100_r19));
+    HERO_COPY_HELD(t241, (h100_r19));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t677, (h101_s20));
+    HERO_COPY_HELD(t637, (h101_s20));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_retain(&t261);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_retain(&t241);
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h101_s20, (t261));
+    HERO_COPY_HELD(h101_s20, (t241));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t677);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t637);
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t262, (h101_s20));
+    HERO_COPY_HELD(t242, (h101_s20));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t263 = t262.tag;
+    t243 = t242.tag;
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t263) {
+    switch (t243) {
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb92;
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -4327,79 +4289,77 @@ bb88:
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb89:
 #line 291 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t255, (h97_s19));
+    HERO_COPY_HELD(t236, (h97_s19));
 #line 291 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t256, (t255.as.c_a));
+    HERO_COPY_HELD(t237, (t236.as.c_a));
 #line 291 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t678, (h99_x));
+    HERO_COPY_HELD(t638, (h99_x));
 #line 291 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_c_a_retain(&t256);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_c_a_retain(&t237);
 #line 291 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h99_x, (t256));
+    HERO_COPY_HELD(h99_x, (t237));
 #line 291 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_c_a_release(&t678);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R20_c_a_release(&t638);
 #line 291 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t257, (h99_x));
-#line 291 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t258, (t257.f_inner));
+    HERO_COPY_HELD(t238, (h99_x.f_inner));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t679, (h98_r29));
+    HERO_COPY_HELD(t639, (h98_r29));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_retain(&t258);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_retain(&t238);
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h98_r29, (t258));
+    HERO_COPY_HELD(h98_r29, (t238));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t679);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t639);
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb88;
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb90:
 #line 292 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t259, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_tag_b}));
+    HERO_COPY_HELD(t239, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_tag_b}));
 #line 292 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t680, (h229_own229));
+    HERO_COPY_HELD(t640, (h229_own229));
 #line 292 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h229_own229, (t259));
+    HERO_COPY_HELD(h229_own229, (t239));
 #line 292 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t680);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t640);
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t681, (h98_r29));
+    HERO_COPY_HELD(t641, (h98_r29));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_retain(&t259);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_retain(&t239);
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h98_r29, (t259));
+    HERO_COPY_HELD(h98_r29, (t239));
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t681);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_release(&t641);
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb88;
 #line 290 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb91:
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t277, (h102_r30));
+    HERO_COPY_HELD(t256, (h102_r30));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t682, (h106_r18));
+    HERO_COPY_HELD(t642, (h106_r18));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t277);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t256);
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h106_r18, (t277));
+    HERO_COPY_HELD(h106_r18, (t256));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t682);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t642);
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t278, (h106_r18));
+    HERO_COPY_HELD(t257, (h106_r18));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t683, (h107_s21));
+    HERO_COPY_HELD(t643, (h107_s21));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t278);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t257);
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h107_s21, (t278));
+    HERO_COPY_HELD(h107_s21, (t257));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t683);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t643);
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t279, (h107_s21));
+    HERO_COPY_HELD(t258, (h107_s21));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t280 = t279.tag;
+    t259 = t258.tag;
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t280) {
+    switch (t259) {
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb98;
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -4411,135 +4371,133 @@ bb91:
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb92:
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t264, (h101_s20));
+    HERO_COPY_HELD(t244, (h101_s20));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t265, (t264.as.c_a));
+    HERO_COPY_HELD(t245, (t244.as.c_a));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t684, (h103_x));
+    HERO_COPY_HELD(t644, (h103_x));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_c_a_retain(&t265);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_c_a_retain(&t245);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h103_x, (t265));
+    HERO_COPY_HELD(h103_x, (t245));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_c_a_release(&t684);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R19_c_a_release(&t644);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t266, (h103_x));
+    HERO_COPY_HELD(t246, (h103_x.f_inner));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t267, (t266.f_inner));
+    HERO_COPY_HELD(t645, (h104_f10));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t685, (h104_f10));
+    h_0opt_4331b660_retain(&t246);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_4331b660_retain(&t267);
+    HERO_COPY_HELD(h104_f10, (t246));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h104_f10, (t267));
+    h_0opt_4331b660_release(&t645);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_4331b660_release(&t685);
+    HERO_COPY_HELD(t247, (h104_f10));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t268, (h104_f10));
+    t248 = t247.tag;
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t269 = t268.tag;
+    t249 = INT64_C(0);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t270 = INT64_C(0);
+    t250 = t248 == t249;
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t271 = t269 == t270;
-#line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t271) goto bb94; else goto bb95;
+    if (t250) goto bb94; else goto bb95;
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb93:
-    HERO_COPY_HELD(t276, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_tag_b}));
+    HERO_COPY_HELD(t255, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_tag_b}));
 #line 296 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t686, (h230_own230));
+    HERO_COPY_HELD(t646, (h230_own230));
 #line 296 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h230_own230, (t276));
+    HERO_COPY_HELD(h230_own230, (t255));
 #line 296 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t686);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t646);
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t687, (h102_r30));
+    HERO_COPY_HELD(t647, (h102_r30));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t276);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t255);
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h102_r30, (t276));
+    HERO_COPY_HELD(h102_r30, (t255));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t687);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t647);
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb91;
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb94:
-    HERO_COPY_HELD(t272, (h104_f10));
+    HERO_COPY_HELD(t251, (h104_f10));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t273, (t272.as.ok));
+    HERO_COPY_HELD(t252, (t251.as.ok));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t688, (h105_r31));
+    HERO_COPY_HELD(t648, (h105_r31));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t273);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t252);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h105_r31, (t273));
+    HERO_COPY_HELD(h105_r31, (t252));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t688);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t648);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb96;
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb95:
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t274, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_tag_b}));
+    HERO_COPY_HELD(t253, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_tag_b}));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t689, (h231_own231));
+    HERO_COPY_HELD(t649, (h231_own231));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h231_own231, (t274));
+    HERO_COPY_HELD(h231_own231, (t253));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t689);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t649);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t690, (h105_r31));
+    HERO_COPY_HELD(t650, (h105_r31));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t274);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t253);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h105_r31, (t274));
+    HERO_COPY_HELD(h105_r31, (t253));
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t690);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t650);
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb96;
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb96:
 #line 295 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t275, (h105_r31));
+    HERO_COPY_HELD(t254, (h105_r31));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t691, (h102_r30));
+    HERO_COPY_HELD(t651, (h102_r30));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t275);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_retain(&t254);
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h102_r30, (t275));
+    HERO_COPY_HELD(h102_r30, (t254));
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t691);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_release(&t651);
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb91;
 #line 294 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb97:
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t286, (h108_r32));
+    HERO_COPY_HELD(t264, (h108_r32));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t692, (h110_r17));
+    HERO_COPY_HELD(t652, (h110_r17));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_retain(&t286);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_retain(&t264);
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h110_r17, (t286));
+    HERO_COPY_HELD(h110_r17, (t264));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t692);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t652);
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t287, (h110_r17));
+    HERO_COPY_HELD(t265, (h110_r17));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t693, (h111_s22));
+    HERO_COPY_HELD(t653, (h111_s22));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_retain(&t287);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_retain(&t265);
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h111_s22, (t287));
+    HERO_COPY_HELD(h111_s22, (t265));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t693);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t653);
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t288, (h111_s22));
+    HERO_COPY_HELD(t266, (h111_s22));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t289 = t288.tag;
+    t267 = t266.tag;
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t289) {
+    switch (t267) {
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb101;
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -4551,79 +4509,77 @@ bb97:
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb98:
 #line 299 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t281, (h107_s21));
+    HERO_COPY_HELD(t260, (h107_s21));
 #line 299 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t282, (t281.as.c_a));
+    HERO_COPY_HELD(t261, (t260.as.c_a));
 #line 299 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t694, (h109_x));
+    HERO_COPY_HELD(t654, (h109_x));
 #line 299 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_c_a_retain(&t282);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_c_a_retain(&t261);
 #line 299 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h109_x, (t282));
+    HERO_COPY_HELD(h109_x, (t261));
 #line 299 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_c_a_release(&t694);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R18_c_a_release(&t654);
 #line 299 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t283, (h109_x));
-#line 299 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t284, (t283.f_inner));
+    HERO_COPY_HELD(t262, (h109_x.f_inner));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t695, (h108_r32));
+    HERO_COPY_HELD(t655, (h108_r32));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_retain(&t284);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_retain(&t262);
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h108_r32, (t284));
+    HERO_COPY_HELD(h108_r32, (t262));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t695);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t655);
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb97;
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb99:
 #line 300 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t285, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_tag_b}));
+    HERO_COPY_HELD(t263, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_tag_b}));
 #line 300 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t696, (h232_own232));
+    HERO_COPY_HELD(t656, (h232_own232));
 #line 300 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h232_own232, (t285));
+    HERO_COPY_HELD(h232_own232, (t263));
 #line 300 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t696);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t656);
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t697, (h108_r32));
+    HERO_COPY_HELD(t657, (h108_r32));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_retain(&t285);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_retain(&t263);
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h108_r32, (t285));
+    HERO_COPY_HELD(h108_r32, (t263));
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t697);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_release(&t657);
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb97;
 #line 298 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb100:
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t303, (h112_r33));
+    HERO_COPY_HELD(t280, (h112_r33));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t698, (h116_r16));
+    HERO_COPY_HELD(t658, (h116_r16));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t303);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t280);
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h116_r16, (t303));
+    HERO_COPY_HELD(h116_r16, (t280));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t698);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t658);
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t304, (h116_r16));
+    HERO_COPY_HELD(t281, (h116_r16));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t699, (h117_s23));
+    HERO_COPY_HELD(t659, (h117_s23));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t304);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t281);
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h117_s23, (t304));
+    HERO_COPY_HELD(h117_s23, (t281));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t699);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t659);
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t305, (h117_s23));
+    HERO_COPY_HELD(t282, (h117_s23));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t306 = t305.tag;
+    t283 = t282.tag;
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t306) {
+    switch (t283) {
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb107;
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -4635,135 +4591,133 @@ bb100:
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb101:
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t290, (h111_s22));
+    HERO_COPY_HELD(t268, (h111_s22));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t291, (t290.as.c_a));
+    HERO_COPY_HELD(t269, (t268.as.c_a));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t700, (h113_x));
+    HERO_COPY_HELD(t660, (h113_x));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_c_a_retain(&t291);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_c_a_retain(&t269);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h113_x, (t291));
+    HERO_COPY_HELD(h113_x, (t269));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_c_a_release(&t700);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R17_c_a_release(&t660);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t292, (h113_x));
+    HERO_COPY_HELD(t270, (h113_x.f_inner));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t293, (t292.f_inner));
+    HERO_COPY_HELD(t661, (h114_f11));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t701, (h114_f11));
+    h_0opt_55666a8e_retain(&t270);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_55666a8e_retain(&t293);
+    HERO_COPY_HELD(h114_f11, (t270));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h114_f11, (t293));
+    h_0opt_55666a8e_release(&t661);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_55666a8e_release(&t701);
+    HERO_COPY_HELD(t271, (h114_f11));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t294, (h114_f11));
+    t272 = t271.tag;
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t295 = t294.tag;
+    t273 = INT64_C(0);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t296 = INT64_C(0);
+    t274 = t272 == t273;
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t297 = t295 == t296;
-#line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t297) goto bb103; else goto bb104;
+    if (t274) goto bb103; else goto bb104;
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb102:
-    HERO_COPY_HELD(t302, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_tag_b}));
+    HERO_COPY_HELD(t279, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_tag_b}));
 #line 304 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t702, (h233_own233));
+    HERO_COPY_HELD(t662, (h233_own233));
 #line 304 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h233_own233, (t302));
+    HERO_COPY_HELD(h233_own233, (t279));
 #line 304 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t702);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t662);
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t703, (h112_r33));
+    HERO_COPY_HELD(t663, (h112_r33));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t302);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t279);
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h112_r33, (t302));
+    HERO_COPY_HELD(h112_r33, (t279));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t703);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t663);
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb100;
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb103:
-    HERO_COPY_HELD(t298, (h114_f11));
+    HERO_COPY_HELD(t275, (h114_f11));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t299, (t298.as.ok));
+    HERO_COPY_HELD(t276, (t275.as.ok));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t704, (h115_r34));
+    HERO_COPY_HELD(t664, (h115_r34));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t299);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t276);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h115_r34, (t299));
+    HERO_COPY_HELD(h115_r34, (t276));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t704);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t664);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb105;
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb104:
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t300, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_tag_b}));
+    HERO_COPY_HELD(t277, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_tag_b}));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t705, (h234_own234));
+    HERO_COPY_HELD(t665, (h234_own234));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h234_own234, (t300));
+    HERO_COPY_HELD(h234_own234, (t277));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t705);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t665);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t706, (h115_r34));
+    HERO_COPY_HELD(t666, (h115_r34));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t300);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t277);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h115_r34, (t300));
+    HERO_COPY_HELD(h115_r34, (t277));
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t706);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t666);
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb105;
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb105:
 #line 303 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t301, (h115_r34));
+    HERO_COPY_HELD(t278, (h115_r34));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t707, (h112_r33));
+    HERO_COPY_HELD(t667, (h112_r33));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t301);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_retain(&t278);
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h112_r33, (t301));
+    HERO_COPY_HELD(h112_r33, (t278));
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t707);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_release(&t667);
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb100;
 #line 302 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb106:
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t312, (h118_r35));
+    HERO_COPY_HELD(t288, (h118_r35));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t708, (h120_r15));
+    HERO_COPY_HELD(t668, (h120_r15));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_retain(&t312);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_retain(&t288);
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h120_r15, (t312));
+    HERO_COPY_HELD(h120_r15, (t288));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t708);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t668);
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t313, (h120_r15));
+    HERO_COPY_HELD(t289, (h120_r15));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t709, (h121_s24));
+    HERO_COPY_HELD(t669, (h121_s24));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_retain(&t313);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_retain(&t289);
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h121_s24, (t313));
+    HERO_COPY_HELD(h121_s24, (t289));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t709);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t669);
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t314, (h121_s24));
+    HERO_COPY_HELD(t290, (h121_s24));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t315 = t314.tag;
+    t291 = t290.tag;
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t315) {
+    switch (t291) {
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb110;
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -4775,79 +4729,77 @@ bb106:
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb107:
 #line 307 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t307, (h117_s23));
+    HERO_COPY_HELD(t284, (h117_s23));
 #line 307 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t308, (t307.as.c_a));
+    HERO_COPY_HELD(t285, (t284.as.c_a));
 #line 307 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t710, (h119_x));
+    HERO_COPY_HELD(t670, (h119_x));
 #line 307 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_c_a_retain(&t308);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_c_a_retain(&t285);
 #line 307 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h119_x, (t308));
+    HERO_COPY_HELD(h119_x, (t285));
 #line 307 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_c_a_release(&t710);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R16_c_a_release(&t670);
 #line 307 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t309, (h119_x));
-#line 307 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t310, (t309.f_inner));
+    HERO_COPY_HELD(t286, (h119_x.f_inner));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t711, (h118_r35));
+    HERO_COPY_HELD(t671, (h118_r35));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_retain(&t310);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_retain(&t286);
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h118_r35, (t310));
+    HERO_COPY_HELD(h118_r35, (t286));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t711);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t671);
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb106;
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb108:
 #line 308 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t311, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_tag_b}));
+    HERO_COPY_HELD(t287, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_tag_b}));
 #line 308 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t712, (h235_own235));
+    HERO_COPY_HELD(t672, (h235_own235));
 #line 308 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h235_own235, (t311));
+    HERO_COPY_HELD(h235_own235, (t287));
 #line 308 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t712);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t672);
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t713, (h118_r35));
+    HERO_COPY_HELD(t673, (h118_r35));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_retain(&t311);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_retain(&t287);
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h118_r35, (t311));
+    HERO_COPY_HELD(h118_r35, (t287));
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t713);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_release(&t673);
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb106;
 #line 306 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb109:
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t329, (h122_r36));
+    HERO_COPY_HELD(t304, (h122_r36));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t714, (h126_r14));
+    HERO_COPY_HELD(t674, (h126_r14));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t329);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t304);
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h126_r14, (t329));
+    HERO_COPY_HELD(h126_r14, (t304));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t714);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t674);
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t330, (h126_r14));
+    HERO_COPY_HELD(t305, (h126_r14));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t715, (h127_s25));
+    HERO_COPY_HELD(t675, (h127_s25));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t330);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t305);
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h127_s25, (t330));
+    HERO_COPY_HELD(h127_s25, (t305));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t715);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t675);
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t331, (h127_s25));
+    HERO_COPY_HELD(t306, (h127_s25));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t332 = t331.tag;
+    t307 = t306.tag;
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t332) {
+    switch (t307) {
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb116;
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -4859,135 +4811,133 @@ bb109:
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb110:
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t316, (h121_s24));
+    HERO_COPY_HELD(t292, (h121_s24));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t317, (t316.as.c_a));
+    HERO_COPY_HELD(t293, (t292.as.c_a));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t716, (h123_x));
+    HERO_COPY_HELD(t676, (h123_x));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_c_a_retain(&t317);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_c_a_retain(&t293);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h123_x, (t317));
+    HERO_COPY_HELD(h123_x, (t293));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_c_a_release(&t716);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R15_c_a_release(&t676);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t318, (h123_x));
+    HERO_COPY_HELD(t294, (h123_x.f_inner));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t319, (t318.f_inner));
+    HERO_COPY_HELD(t677, (h124_f12));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t717, (h124_f12));
+    h_0opt_679b1ebc_retain(&t294);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_679b1ebc_retain(&t319);
+    HERO_COPY_HELD(h124_f12, (t294));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h124_f12, (t319));
+    h_0opt_679b1ebc_release(&t677);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_679b1ebc_release(&t717);
+    HERO_COPY_HELD(t295, (h124_f12));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t320, (h124_f12));
+    t296 = t295.tag;
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t321 = t320.tag;
+    t297 = INT64_C(0);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t322 = INT64_C(0);
+    t298 = t296 == t297;
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t323 = t321 == t322;
-#line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t323) goto bb112; else goto bb113;
+    if (t298) goto bb112; else goto bb113;
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb111:
-    HERO_COPY_HELD(t328, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_tag_b}));
+    HERO_COPY_HELD(t303, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_tag_b}));
 #line 312 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t718, (h236_own236));
+    HERO_COPY_HELD(t678, (h236_own236));
 #line 312 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h236_own236, (t328));
+    HERO_COPY_HELD(h236_own236, (t303));
 #line 312 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t718);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t678);
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t719, (h122_r36));
+    HERO_COPY_HELD(t679, (h122_r36));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t328);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t303);
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h122_r36, (t328));
+    HERO_COPY_HELD(h122_r36, (t303));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t719);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t679);
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb109;
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb112:
-    HERO_COPY_HELD(t324, (h124_f12));
+    HERO_COPY_HELD(t299, (h124_f12));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t325, (t324.as.ok));
+    HERO_COPY_HELD(t300, (t299.as.ok));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t720, (h125_r37));
+    HERO_COPY_HELD(t680, (h125_r37));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t325);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t300);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h125_r37, (t325));
+    HERO_COPY_HELD(h125_r37, (t300));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t720);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t680);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb114;
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb113:
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t326, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_tag_b}));
+    HERO_COPY_HELD(t301, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_tag_b}));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t721, (h237_own237));
+    HERO_COPY_HELD(t681, (h237_own237));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h237_own237, (t326));
+    HERO_COPY_HELD(h237_own237, (t301));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t721);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t681);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t722, (h125_r37));
+    HERO_COPY_HELD(t682, (h125_r37));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t326);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t301);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h125_r37, (t326));
+    HERO_COPY_HELD(h125_r37, (t301));
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t722);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t682);
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb114;
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb114:
 #line 311 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t327, (h125_r37));
+    HERO_COPY_HELD(t302, (h125_r37));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t723, (h122_r36));
+    HERO_COPY_HELD(t683, (h122_r36));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t327);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_retain(&t302);
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h122_r36, (t327));
+    HERO_COPY_HELD(h122_r36, (t302));
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t723);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_release(&t683);
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb109;
 #line 310 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb115:
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t338, (h128_r38));
+    HERO_COPY_HELD(t312, (h128_r38));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t724, (h130_r13));
+    HERO_COPY_HELD(t684, (h130_r13));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_retain(&t338);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_retain(&t312);
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h130_r13, (t338));
+    HERO_COPY_HELD(h130_r13, (t312));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t724);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t684);
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t339, (h130_r13));
+    HERO_COPY_HELD(t313, (h130_r13));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t725, (h131_s26));
+    HERO_COPY_HELD(t685, (h131_s26));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_retain(&t339);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_retain(&t313);
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h131_s26, (t339));
+    HERO_COPY_HELD(h131_s26, (t313));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t725);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t685);
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t340, (h131_s26));
+    HERO_COPY_HELD(t314, (h131_s26));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t341 = t340.tag;
+    t315 = t314.tag;
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t341) {
+    switch (t315) {
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb119;
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -4999,79 +4949,77 @@ bb115:
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb116:
 #line 315 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t333, (h127_s25));
+    HERO_COPY_HELD(t308, (h127_s25));
 #line 315 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t334, (t333.as.c_a));
+    HERO_COPY_HELD(t309, (t308.as.c_a));
 #line 315 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t726, (h129_x));
+    HERO_COPY_HELD(t686, (h129_x));
 #line 315 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_c_a_retain(&t334);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_c_a_retain(&t309);
 #line 315 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h129_x, (t334));
+    HERO_COPY_HELD(h129_x, (t309));
 #line 315 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_c_a_release(&t726);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R14_c_a_release(&t686);
 #line 315 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t335, (h129_x));
-#line 315 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t336, (t335.f_inner));
+    HERO_COPY_HELD(t310, (h129_x.f_inner));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t727, (h128_r38));
+    HERO_COPY_HELD(t687, (h128_r38));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_retain(&t336);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_retain(&t310);
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h128_r38, (t336));
+    HERO_COPY_HELD(h128_r38, (t310));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t727);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t687);
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb115;
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb117:
 #line 316 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t337, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_tag_b}));
+    HERO_COPY_HELD(t311, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_tag_b}));
 #line 316 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t728, (h238_own238));
+    HERO_COPY_HELD(t688, (h238_own238));
 #line 316 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h238_own238, (t337));
+    HERO_COPY_HELD(h238_own238, (t311));
 #line 316 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t728);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t688);
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t729, (h128_r38));
+    HERO_COPY_HELD(t689, (h128_r38));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_retain(&t337);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_retain(&t311);
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h128_r38, (t337));
+    HERO_COPY_HELD(h128_r38, (t311));
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t729);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_release(&t689);
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb115;
 #line 314 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb118:
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t355, (h132_r39));
+    HERO_COPY_HELD(t328, (h132_r39));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t730, (h136_r12));
+    HERO_COPY_HELD(t690, (h136_r12));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t355);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t328);
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h136_r12, (t355));
+    HERO_COPY_HELD(h136_r12, (t328));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t730);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t690);
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t356, (h136_r12));
+    HERO_COPY_HELD(t329, (h136_r12));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t731, (h137_s27));
+    HERO_COPY_HELD(t691, (h137_s27));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t356);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t329);
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h137_s27, (t356));
+    HERO_COPY_HELD(h137_s27, (t329));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t731);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t691);
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t357, (h137_s27));
+    HERO_COPY_HELD(t330, (h137_s27));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t358 = t357.tag;
+    t331 = t330.tag;
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t358) {
+    switch (t331) {
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb125;
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -5083,135 +5031,133 @@ bb118:
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb119:
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t342, (h131_s26));
+    HERO_COPY_HELD(t316, (h131_s26));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t343, (t342.as.c_a));
+    HERO_COPY_HELD(t317, (t316.as.c_a));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t732, (h133_x));
+    HERO_COPY_HELD(t692, (h133_x));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_c_a_retain(&t343);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_c_a_retain(&t317);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h133_x, (t343));
+    HERO_COPY_HELD(h133_x, (t317));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_c_a_release(&t732);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R13_c_a_release(&t692);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t344, (h133_x));
+    HERO_COPY_HELD(t318, (h133_x.f_inner));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t345, (t344.f_inner));
+    HERO_COPY_HELD(t693, (h134_f13));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t733, (h134_f13));
+    h_0opt_79cfd2ea_retain(&t318);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_79cfd2ea_retain(&t345);
+    HERO_COPY_HELD(h134_f13, (t318));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h134_f13, (t345));
+    h_0opt_79cfd2ea_release(&t693);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_79cfd2ea_release(&t733);
+    HERO_COPY_HELD(t319, (h134_f13));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t346, (h134_f13));
+    t320 = t319.tag;
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t347 = t346.tag;
+    t321 = INT64_C(0);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t348 = INT64_C(0);
+    t322 = t320 == t321;
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t349 = t347 == t348;
-#line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t349) goto bb121; else goto bb122;
+    if (t322) goto bb121; else goto bb122;
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb120:
-    HERO_COPY_HELD(t354, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_tag_b}));
+    HERO_COPY_HELD(t327, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_tag_b}));
 #line 320 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t734, (h239_own239));
+    HERO_COPY_HELD(t694, (h239_own239));
 #line 320 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h239_own239, (t354));
+    HERO_COPY_HELD(h239_own239, (t327));
 #line 320 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t734);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t694);
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t735, (h132_r39));
+    HERO_COPY_HELD(t695, (h132_r39));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t354);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t327);
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h132_r39, (t354));
+    HERO_COPY_HELD(h132_r39, (t327));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t735);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t695);
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb118;
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb121:
-    HERO_COPY_HELD(t350, (h134_f13));
+    HERO_COPY_HELD(t323, (h134_f13));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t351, (t350.as.ok));
+    HERO_COPY_HELD(t324, (t323.as.ok));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t736, (h135_r40));
+    HERO_COPY_HELD(t696, (h135_r40));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t351);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t324);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h135_r40, (t351));
+    HERO_COPY_HELD(h135_r40, (t324));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t736);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t696);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb123;
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb122:
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t352, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_tag_b}));
+    HERO_COPY_HELD(t325, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_tag_b}));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t737, (h240_own240));
+    HERO_COPY_HELD(t697, (h240_own240));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h240_own240, (t352));
+    HERO_COPY_HELD(h240_own240, (t325));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t737);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t697);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t738, (h135_r40));
+    HERO_COPY_HELD(t698, (h135_r40));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t352);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t325);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h135_r40, (t352));
+    HERO_COPY_HELD(h135_r40, (t325));
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t738);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t698);
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb123;
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb123:
 #line 319 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t353, (h135_r40));
+    HERO_COPY_HELD(t326, (h135_r40));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t739, (h132_r39));
+    HERO_COPY_HELD(t699, (h132_r39));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t353);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_retain(&t326);
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h132_r39, (t353));
+    HERO_COPY_HELD(h132_r39, (t326));
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t739);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_release(&t699);
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb118;
 #line 318 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb124:
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t364, (h138_r41));
+    HERO_COPY_HELD(t336, (h138_r41));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t740, (h140_r11));
+    HERO_COPY_HELD(t700, (h140_r11));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_retain(&t364);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_retain(&t336);
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h140_r11, (t364));
+    HERO_COPY_HELD(h140_r11, (t336));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t740);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t700);
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t365, (h140_r11));
+    HERO_COPY_HELD(t337, (h140_r11));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t741, (h141_s28));
+    HERO_COPY_HELD(t701, (h141_s28));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_retain(&t365);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_retain(&t337);
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h141_s28, (t365));
+    HERO_COPY_HELD(h141_s28, (t337));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t741);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t701);
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t366, (h141_s28));
+    HERO_COPY_HELD(t338, (h141_s28));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t367 = t366.tag;
+    t339 = t338.tag;
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t367) {
+    switch (t339) {
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb128;
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -5223,79 +5169,77 @@ bb124:
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb125:
 #line 323 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t359, (h137_s27));
+    HERO_COPY_HELD(t332, (h137_s27));
 #line 323 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t360, (t359.as.c_a));
+    HERO_COPY_HELD(t333, (t332.as.c_a));
 #line 323 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t742, (h139_x));
+    HERO_COPY_HELD(t702, (h139_x));
 #line 323 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_c_a_retain(&t360);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_c_a_retain(&t333);
 #line 323 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h139_x, (t360));
+    HERO_COPY_HELD(h139_x, (t333));
 #line 323 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_c_a_release(&t742);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R12_c_a_release(&t702);
 #line 323 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t361, (h139_x));
-#line 323 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t362, (t361.f_inner));
+    HERO_COPY_HELD(t334, (h139_x.f_inner));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t743, (h138_r41));
+    HERO_COPY_HELD(t703, (h138_r41));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_retain(&t362);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_retain(&t334);
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h138_r41, (t362));
+    HERO_COPY_HELD(h138_r41, (t334));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t743);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t703);
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb124;
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb126:
 #line 324 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t363, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_tag_b}));
+    HERO_COPY_HELD(t335, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_tag_b}));
 #line 324 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t744, (h241_own241));
+    HERO_COPY_HELD(t704, (h241_own241));
 #line 324 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h241_own241, (t363));
+    HERO_COPY_HELD(h241_own241, (t335));
 #line 324 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t744);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t704);
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t745, (h138_r41));
+    HERO_COPY_HELD(t705, (h138_r41));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_retain(&t363);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_retain(&t335);
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h138_r41, (t363));
+    HERO_COPY_HELD(h138_r41, (t335));
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t745);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_release(&t705);
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb124;
 #line 322 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb127:
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t381, (h142_r42));
+    HERO_COPY_HELD(t352, (h142_r42));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t746, (h146_r10));
+    HERO_COPY_HELD(t706, (h146_r10));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t381);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t352);
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h146_r10, (t381));
+    HERO_COPY_HELD(h146_r10, (t352));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t746);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t706);
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t382, (h146_r10));
+    HERO_COPY_HELD(t353, (h146_r10));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t747, (h147_s29));
+    HERO_COPY_HELD(t707, (h147_s29));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t382);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t353);
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h147_s29, (t382));
+    HERO_COPY_HELD(h147_s29, (t353));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t747);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t707);
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t383, (h147_s29));
+    HERO_COPY_HELD(t354, (h147_s29));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t384 = t383.tag;
+    t355 = t354.tag;
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t384) {
+    switch (t355) {
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb134;
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -5307,135 +5251,133 @@ bb127:
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb128:
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t368, (h141_s28));
+    HERO_COPY_HELD(t340, (h141_s28));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t369, (t368.as.c_a));
+    HERO_COPY_HELD(t341, (t340.as.c_a));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t748, (h143_x));
+    HERO_COPY_HELD(t708, (h143_x));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_c_a_retain(&t369);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_c_a_retain(&t341);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h143_x, (t369));
+    HERO_COPY_HELD(h143_x, (t341));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_c_a_release(&t748);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R11_c_a_release(&t708);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t370, (h143_x));
+    HERO_COPY_HELD(t342, (h143_x.f_inner));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t371, (t370.f_inner));
+    HERO_COPY_HELD(t709, (h144_f14));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t749, (h144_f14));
+    h_0opt_c048719_retain(&t342);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_c048719_retain(&t371);
+    HERO_COPY_HELD(h144_f14, (t342));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h144_f14, (t371));
+    h_0opt_c048719_release(&t709);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_c048719_release(&t749);
+    HERO_COPY_HELD(t343, (h144_f14));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t372, (h144_f14));
+    t344 = t343.tag;
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t373 = t372.tag;
+    t345 = INT64_C(0);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t374 = INT64_C(0);
+    t346 = t344 == t345;
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t375 = t373 == t374;
-#line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t375) goto bb130; else goto bb131;
+    if (t346) goto bb130; else goto bb131;
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb129:
-    HERO_COPY_HELD(t380, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_tag_b}));
+    HERO_COPY_HELD(t351, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_tag_b}));
 #line 328 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t750, (h242_own242));
+    HERO_COPY_HELD(t710, (h242_own242));
 #line 328 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h242_own242, (t380));
+    HERO_COPY_HELD(h242_own242, (t351));
 #line 328 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t750);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t710);
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t751, (h142_r42));
+    HERO_COPY_HELD(t711, (h142_r42));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t380);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t351);
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h142_r42, (t380));
+    HERO_COPY_HELD(h142_r42, (t351));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t751);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t711);
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb127;
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb130:
-    HERO_COPY_HELD(t376, (h144_f14));
+    HERO_COPY_HELD(t347, (h144_f14));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t377, (t376.as.ok));
+    HERO_COPY_HELD(t348, (t347.as.ok));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t752, (h145_r43));
+    HERO_COPY_HELD(t712, (h145_r43));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t377);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t348);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h145_r43, (t377));
+    HERO_COPY_HELD(h145_r43, (t348));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t752);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t712);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb132;
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb131:
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t378, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_tag_b}));
+    HERO_COPY_HELD(t349, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_tag_b}));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t753, (h243_own243));
+    HERO_COPY_HELD(t713, (h243_own243));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h243_own243, (t378));
+    HERO_COPY_HELD(h243_own243, (t349));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t753);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t713);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t754, (h145_r43));
+    HERO_COPY_HELD(t714, (h145_r43));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t378);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t349);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h145_r43, (t378));
+    HERO_COPY_HELD(h145_r43, (t349));
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t754);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t714);
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb132;
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb132:
 #line 327 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t379, (h145_r43));
+    HERO_COPY_HELD(t350, (h145_r43));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t755, (h142_r42));
+    HERO_COPY_HELD(t715, (h142_r42));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t379);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_retain(&t350);
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h142_r42, (t379));
+    HERO_COPY_HELD(h142_r42, (t350));
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t755);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_release(&t715);
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb127;
 #line 326 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb133:
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t390, (h148_r44));
+    HERO_COPY_HELD(t360, (h148_r44));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t756, (h150_r9));
+    HERO_COPY_HELD(t716, (h150_r9));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_retain(&t390);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_retain(&t360);
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h150_r9, (t390));
+    HERO_COPY_HELD(h150_r9, (t360));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t756);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t716);
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t391, (h150_r9));
+    HERO_COPY_HELD(t361, (h150_r9));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t757, (h151_s30));
+    HERO_COPY_HELD(t717, (h151_s30));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_retain(&t391);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_retain(&t361);
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h151_s30, (t391));
+    HERO_COPY_HELD(h151_s30, (t361));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t757);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t717);
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t392, (h151_s30));
+    HERO_COPY_HELD(t362, (h151_s30));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t393 = t392.tag;
+    t363 = t362.tag;
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t393) {
+    switch (t363) {
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb137;
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -5447,79 +5389,77 @@ bb133:
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb134:
 #line 331 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t385, (h147_s29));
+    HERO_COPY_HELD(t356, (h147_s29));
 #line 331 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t386, (t385.as.c_a));
+    HERO_COPY_HELD(t357, (t356.as.c_a));
 #line 331 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t758, (h149_x));
+    HERO_COPY_HELD(t718, (h149_x));
 #line 331 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_c_a_retain(&t386);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_c_a_retain(&t357);
 #line 331 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h149_x, (t386));
+    HERO_COPY_HELD(h149_x, (t357));
 #line 331 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_c_a_release(&t758);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R10_c_a_release(&t718);
 #line 331 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t387, (h149_x));
-#line 331 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t388, (t387.f_inner));
+    HERO_COPY_HELD(t358, (h149_x.f_inner));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t759, (h148_r44));
+    HERO_COPY_HELD(t719, (h148_r44));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_retain(&t388);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_retain(&t358);
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h148_r44, (t388));
+    HERO_COPY_HELD(h148_r44, (t358));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t759);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t719);
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb133;
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb135:
 #line 332 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t389, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_tag_b}));
+    HERO_COPY_HELD(t359, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_tag_b}));
 #line 332 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t760, (h244_own244));
+    HERO_COPY_HELD(t720, (h244_own244));
 #line 332 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h244_own244, (t389));
+    HERO_COPY_HELD(h244_own244, (t359));
 #line 332 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t760);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t720);
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t761, (h148_r44));
+    HERO_COPY_HELD(t721, (h148_r44));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_retain(&t389);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_retain(&t359);
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h148_r44, (t389));
+    HERO_COPY_HELD(h148_r44, (t359));
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t761);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_release(&t721);
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb133;
 #line 330 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb136:
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t407, (h152_r45));
+    HERO_COPY_HELD(t376, (h152_r45));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t762, (h156_r8));
+    HERO_COPY_HELD(t722, (h156_r8));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t407);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t376);
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h156_r8, (t407));
+    HERO_COPY_HELD(h156_r8, (t376));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t762);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t722);
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t408, (h156_r8));
+    HERO_COPY_HELD(t377, (h156_r8));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t763, (h157_s31));
+    HERO_COPY_HELD(t723, (h157_s31));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t408);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t377);
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h157_s31, (t408));
+    HERO_COPY_HELD(h157_s31, (t377));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t763);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t723);
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t409, (h157_s31));
+    HERO_COPY_HELD(t378, (h157_s31));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t410 = t409.tag;
+    t379 = t378.tag;
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t410) {
+    switch (t379) {
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb143;
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -5531,135 +5471,133 @@ bb136:
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb137:
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t394, (h151_s30));
+    HERO_COPY_HELD(t364, (h151_s30));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t395, (t394.as.c_a));
+    HERO_COPY_HELD(t365, (t364.as.c_a));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t764, (h153_x));
+    HERO_COPY_HELD(t724, (h153_x));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_c_a_retain(&t395);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_c_a_retain(&t365);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h153_x, (t395));
+    HERO_COPY_HELD(h153_x, (t365));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_c_a_release(&t764);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R9_c_a_release(&t724);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t396, (h153_x));
+    HERO_COPY_HELD(t366, (h153_x.f_inner));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t397, (t396.f_inner));
+    HERO_COPY_HELD(t725, (h154_f15));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t765, (h154_f15));
+    h_0opt_3b41ca8b_retain(&t366);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_3b41ca8b_retain(&t397);
+    HERO_COPY_HELD(h154_f15, (t366));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h154_f15, (t397));
+    h_0opt_3b41ca8b_release(&t725);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_3b41ca8b_release(&t765);
+    HERO_COPY_HELD(t367, (h154_f15));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t398, (h154_f15));
+    t368 = t367.tag;
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t399 = t398.tag;
+    t369 = INT64_C(0);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t400 = INT64_C(0);
+    t370 = t368 == t369;
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t401 = t399 == t400;
-#line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t401) goto bb139; else goto bb140;
+    if (t370) goto bb139; else goto bb140;
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb138:
-    HERO_COPY_HELD(t406, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_tag_b}));
+    HERO_COPY_HELD(t375, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_tag_b}));
 #line 336 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t766, (h245_own245));
+    HERO_COPY_HELD(t726, (h245_own245));
 #line 336 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h245_own245, (t406));
+    HERO_COPY_HELD(h245_own245, (t375));
 #line 336 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t766);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t726);
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t767, (h152_r45));
+    HERO_COPY_HELD(t727, (h152_r45));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t406);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t375);
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h152_r45, (t406));
+    HERO_COPY_HELD(h152_r45, (t375));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t767);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t727);
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb136;
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb139:
-    HERO_COPY_HELD(t402, (h154_f15));
+    HERO_COPY_HELD(t371, (h154_f15));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t403, (t402.as.ok));
+    HERO_COPY_HELD(t372, (t371.as.ok));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t768, (h155_r46));
+    HERO_COPY_HELD(t728, (h155_r46));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t403);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t372);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h155_r46, (t403));
+    HERO_COPY_HELD(h155_r46, (t372));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t768);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t728);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb141;
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb140:
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t404, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_tag_b}));
+    HERO_COPY_HELD(t373, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_tag_b}));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t769, (h246_own246));
+    HERO_COPY_HELD(t729, (h246_own246));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h246_own246, (t404));
+    HERO_COPY_HELD(h246_own246, (t373));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t769);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t729);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t770, (h155_r46));
+    HERO_COPY_HELD(t730, (h155_r46));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t404);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t373);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h155_r46, (t404));
+    HERO_COPY_HELD(h155_r46, (t373));
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t770);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t730);
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb141;
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb141:
 #line 335 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t405, (h155_r46));
+    HERO_COPY_HELD(t374, (h155_r46));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t771, (h152_r45));
+    HERO_COPY_HELD(t731, (h152_r45));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t405);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_retain(&t374);
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h152_r45, (t405));
+    HERO_COPY_HELD(h152_r45, (t374));
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t771);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_release(&t731);
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb136;
 #line 334 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb142:
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t416, (h158_r47));
+    HERO_COPY_HELD(t384, (h158_r47));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t772, (h160_r7));
+    HERO_COPY_HELD(t732, (h160_r7));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_retain(&t416);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_retain(&t384);
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h160_r7, (t416));
+    HERO_COPY_HELD(h160_r7, (t384));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t772);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t732);
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t417, (h160_r7));
+    HERO_COPY_HELD(t385, (h160_r7));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t773, (h161_s32));
+    HERO_COPY_HELD(t733, (h161_s32));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_retain(&t417);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_retain(&t385);
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h161_s32, (t417));
+    HERO_COPY_HELD(h161_s32, (t385));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t773);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t733);
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t418, (h161_s32));
+    HERO_COPY_HELD(t386, (h161_s32));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t419 = t418.tag;
+    t387 = t386.tag;
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t419) {
+    switch (t387) {
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb146;
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -5671,79 +5609,77 @@ bb142:
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb143:
 #line 339 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t411, (h157_s31));
+    HERO_COPY_HELD(t380, (h157_s31));
 #line 339 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t412, (t411.as.c_a));
+    HERO_COPY_HELD(t381, (t380.as.c_a));
 #line 339 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t774, (h159_x));
+    HERO_COPY_HELD(t734, (h159_x));
 #line 339 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_c_a_retain(&t412);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_c_a_retain(&t381);
 #line 339 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h159_x, (t412));
+    HERO_COPY_HELD(h159_x, (t381));
 #line 339 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_c_a_release(&t774);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R8_c_a_release(&t734);
 #line 339 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t413, (h159_x));
-#line 339 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t414, (t413.f_inner));
+    HERO_COPY_HELD(t382, (h159_x.f_inner));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t775, (h158_r47));
+    HERO_COPY_HELD(t735, (h158_r47));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_retain(&t414);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_retain(&t382);
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h158_r47, (t414));
+    HERO_COPY_HELD(h158_r47, (t382));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t775);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t735);
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb142;
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb144:
 #line 340 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t415, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_tag_b}));
+    HERO_COPY_HELD(t383, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_tag_b}));
 #line 340 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t776, (h247_own247));
+    HERO_COPY_HELD(t736, (h247_own247));
 #line 340 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h247_own247, (t415));
+    HERO_COPY_HELD(h247_own247, (t383));
 #line 340 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t776);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t736);
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t777, (h158_r47));
+    HERO_COPY_HELD(t737, (h158_r47));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_retain(&t415);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_retain(&t383);
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h158_r47, (t415));
+    HERO_COPY_HELD(h158_r47, (t383));
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t777);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_release(&t737);
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb142;
 #line 338 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb145:
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t433, (h162_r48));
+    HERO_COPY_HELD(t400, (h162_r48));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t778, (h166_r6));
+    HERO_COPY_HELD(t738, (h166_r6));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t433);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t400);
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h166_r6, (t433));
+    HERO_COPY_HELD(h166_r6, (t400));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t778);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t738);
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t434, (h166_r6));
+    HERO_COPY_HELD(t401, (h166_r6));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t779, (h167_s33));
+    HERO_COPY_HELD(t739, (h167_s33));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t434);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t401);
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h167_s33, (t434));
+    HERO_COPY_HELD(h167_s33, (t401));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t779);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t739);
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t435, (h167_s33));
+    HERO_COPY_HELD(t402, (h167_s33));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t436 = t435.tag;
+    t403 = t402.tag;
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t436) {
+    switch (t403) {
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb152;
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -5755,135 +5691,133 @@ bb145:
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb146:
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t420, (h161_s32));
+    HERO_COPY_HELD(t388, (h161_s32));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t421, (t420.as.c_a));
+    HERO_COPY_HELD(t389, (t388.as.c_a));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t780, (h163_x));
+    HERO_COPY_HELD(t740, (h163_x));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_c_a_retain(&t421);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_c_a_retain(&t389);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h163_x, (t421));
+    HERO_COPY_HELD(h163_x, (t389));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_c_a_release(&t780);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R7_c_a_release(&t740);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t422, (h163_x));
+    HERO_COPY_HELD(t390, (h163_x.f_inner));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t423, (t422.f_inner));
+    HERO_COPY_HELD(t741, (h164_f16));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t781, (h164_f16));
+    h_0opt_471f0495_retain(&t390);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_471f0495_retain(&t423);
+    HERO_COPY_HELD(h164_f16, (t390));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h164_f16, (t423));
+    h_0opt_471f0495_release(&t741);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_471f0495_release(&t781);
+    HERO_COPY_HELD(t391, (h164_f16));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t424, (h164_f16));
+    t392 = t391.tag;
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t425 = t424.tag;
+    t393 = INT64_C(0);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t426 = INT64_C(0);
+    t394 = t392 == t393;
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t427 = t425 == t426;
-#line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t427) goto bb148; else goto bb149;
+    if (t394) goto bb148; else goto bb149;
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb147:
-    HERO_COPY_HELD(t432, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_tag_b}));
+    HERO_COPY_HELD(t399, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_tag_b}));
 #line 344 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t782, (h248_own248));
+    HERO_COPY_HELD(t742, (h248_own248));
 #line 344 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h248_own248, (t432));
+    HERO_COPY_HELD(h248_own248, (t399));
 #line 344 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t782);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t742);
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t783, (h162_r48));
+    HERO_COPY_HELD(t743, (h162_r48));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t432);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t399);
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h162_r48, (t432));
+    HERO_COPY_HELD(h162_r48, (t399));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t783);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t743);
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb145;
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb148:
-    HERO_COPY_HELD(t428, (h164_f16));
+    HERO_COPY_HELD(t395, (h164_f16));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t429, (t428.as.ok));
+    HERO_COPY_HELD(t396, (t395.as.ok));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t784, (h165_r49));
+    HERO_COPY_HELD(t744, (h165_r49));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t429);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t396);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h165_r49, (t429));
+    HERO_COPY_HELD(h165_r49, (t396));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t784);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t744);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb150;
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb149:
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t430, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_tag_b}));
+    HERO_COPY_HELD(t397, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_tag_b}));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t785, (h249_own249));
+    HERO_COPY_HELD(t745, (h249_own249));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h249_own249, (t430));
+    HERO_COPY_HELD(h249_own249, (t397));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t785);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t745);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t786, (h165_r49));
+    HERO_COPY_HELD(t746, (h165_r49));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t430);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t397);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h165_r49, (t430));
+    HERO_COPY_HELD(h165_r49, (t397));
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t786);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t746);
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb150;
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb150:
 #line 343 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t431, (h165_r49));
+    HERO_COPY_HELD(t398, (h165_r49));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t787, (h162_r48));
+    HERO_COPY_HELD(t747, (h162_r48));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t431);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_retain(&t398);
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h162_r48, (t431));
+    HERO_COPY_HELD(h162_r48, (t398));
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t787);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_release(&t747);
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb145;
 #line 342 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb151:
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t442, (h168_r50));
+    HERO_COPY_HELD(t408, (h168_r50));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t788, (h170_r5));
+    HERO_COPY_HELD(t748, (h170_r5));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_retain(&t442);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_retain(&t408);
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h170_r5, (t442));
+    HERO_COPY_HELD(h170_r5, (t408));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t788);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t748);
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t443, (h170_r5));
+    HERO_COPY_HELD(t409, (h170_r5));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t789, (h171_s34));
+    HERO_COPY_HELD(t749, (h171_s34));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_retain(&t443);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_retain(&t409);
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h171_s34, (t443));
+    HERO_COPY_HELD(h171_s34, (t409));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t789);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t749);
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t444, (h171_s34));
+    HERO_COPY_HELD(t410, (h171_s34));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t445 = t444.tag;
+    t411 = t410.tag;
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t445) {
+    switch (t411) {
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb155;
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -5895,79 +5829,77 @@ bb151:
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb152:
 #line 347 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t437, (h167_s33));
+    HERO_COPY_HELD(t404, (h167_s33));
 #line 347 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t438, (t437.as.c_a));
+    HERO_COPY_HELD(t405, (t404.as.c_a));
 #line 347 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t790, (h169_x));
+    HERO_COPY_HELD(t750, (h169_x));
 #line 347 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_c_a_retain(&t438);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_c_a_retain(&t405);
 #line 347 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h169_x, (t438));
+    HERO_COPY_HELD(h169_x, (t405));
 #line 347 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_c_a_release(&t790);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R6_c_a_release(&t750);
 #line 347 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t439, (h169_x));
-#line 347 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t440, (t439.f_inner));
+    HERO_COPY_HELD(t406, (h169_x.f_inner));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t791, (h168_r50));
+    HERO_COPY_HELD(t751, (h168_r50));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_retain(&t440);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_retain(&t406);
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h168_r50, (t440));
+    HERO_COPY_HELD(h168_r50, (t406));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t791);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t751);
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb151;
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb153:
 #line 348 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t441, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_tag_b}));
+    HERO_COPY_HELD(t407, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_tag_b}));
 #line 348 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t792, (h250_own250));
+    HERO_COPY_HELD(t752, (h250_own250));
 #line 348 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h250_own250, (t441));
+    HERO_COPY_HELD(h250_own250, (t407));
 #line 348 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t792);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t752);
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t793, (h168_r50));
+    HERO_COPY_HELD(t753, (h168_r50));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_retain(&t441);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_retain(&t407);
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h168_r50, (t441));
+    HERO_COPY_HELD(h168_r50, (t407));
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t793);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_release(&t753);
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb151;
 #line 346 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb154:
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t459, (h172_r51));
+    HERO_COPY_HELD(t424, (h172_r51));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t794, (h176_r4));
+    HERO_COPY_HELD(t754, (h176_r4));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t459);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t424);
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h176_r4, (t459));
+    HERO_COPY_HELD(h176_r4, (t424));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t794);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t754);
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t460, (h176_r4));
+    HERO_COPY_HELD(t425, (h176_r4));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t795, (h177_s35));
+    HERO_COPY_HELD(t755, (h177_s35));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t460);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t425);
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h177_s35, (t460));
+    HERO_COPY_HELD(h177_s35, (t425));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t795);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t755);
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t461, (h177_s35));
+    HERO_COPY_HELD(t426, (h177_s35));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t462 = t461.tag;
+    t427 = t426.tag;
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t462) {
+    switch (t427) {
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb161;
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -5979,135 +5911,133 @@ bb154:
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb155:
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t446, (h171_s34));
+    HERO_COPY_HELD(t412, (h171_s34));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t447, (t446.as.c_a));
+    HERO_COPY_HELD(t413, (t412.as.c_a));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t796, (h173_x));
+    HERO_COPY_HELD(t756, (h173_x));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_c_a_retain(&t447);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_c_a_retain(&t413);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h173_x, (t447));
+    HERO_COPY_HELD(h173_x, (t413));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_c_a_release(&t796);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R5_c_a_release(&t756);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t448, (h173_x));
+    HERO_COPY_HELD(t414, (h173_x.f_inner));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t449, (t448.f_inner));
+    HERO_COPY_HELD(t757, (h174_f17));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t797, (h174_f17));
+    h_0opt_52fc3e9f_retain(&t414);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_52fc3e9f_retain(&t449);
+    HERO_COPY_HELD(h174_f17, (t414));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h174_f17, (t449));
+    h_0opt_52fc3e9f_release(&t757);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_52fc3e9f_release(&t797);
+    HERO_COPY_HELD(t415, (h174_f17));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t450, (h174_f17));
+    t416 = t415.tag;
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t451 = t450.tag;
+    t417 = INT64_C(0);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t452 = INT64_C(0);
+    t418 = t416 == t417;
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t453 = t451 == t452;
-#line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t453) goto bb157; else goto bb158;
+    if (t418) goto bb157; else goto bb158;
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb156:
-    HERO_COPY_HELD(t458, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_tag_b}));
+    HERO_COPY_HELD(t423, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_tag_b}));
 #line 352 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t798, (h251_own251));
+    HERO_COPY_HELD(t758, (h251_own251));
 #line 352 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h251_own251, (t458));
+    HERO_COPY_HELD(h251_own251, (t423));
 #line 352 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t798);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t758);
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t799, (h172_r51));
+    HERO_COPY_HELD(t759, (h172_r51));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t458);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t423);
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h172_r51, (t458));
+    HERO_COPY_HELD(h172_r51, (t423));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t799);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t759);
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb154;
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb157:
-    HERO_COPY_HELD(t454, (h174_f17));
+    HERO_COPY_HELD(t419, (h174_f17));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t455, (t454.as.ok));
+    HERO_COPY_HELD(t420, (t419.as.ok));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t800, (h175_r52));
+    HERO_COPY_HELD(t760, (h175_r52));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t455);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t420);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h175_r52, (t455));
+    HERO_COPY_HELD(h175_r52, (t420));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t800);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t760);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb159;
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb158:
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t456, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_tag_b}));
+    HERO_COPY_HELD(t421, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_tag_b}));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t801, (h252_own252));
+    HERO_COPY_HELD(t761, (h252_own252));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h252_own252, (t456));
+    HERO_COPY_HELD(h252_own252, (t421));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t801);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t761);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t802, (h175_r52));
+    HERO_COPY_HELD(t762, (h175_r52));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t456);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t421);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h175_r52, (t456));
+    HERO_COPY_HELD(h175_r52, (t421));
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t802);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t762);
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb159;
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb159:
 #line 351 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t457, (h175_r52));
+    HERO_COPY_HELD(t422, (h175_r52));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t803, (h172_r51));
+    HERO_COPY_HELD(t763, (h172_r51));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t457);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_retain(&t422);
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h172_r51, (t457));
+    HERO_COPY_HELD(h172_r51, (t422));
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t803);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_release(&t763);
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb154;
 #line 350 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb160:
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t468, (h178_r53));
+    HERO_COPY_HELD(t432, (h178_r53));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t804, (h180_r3));
+    HERO_COPY_HELD(t764, (h180_r3));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_retain(&t468);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_retain(&t432);
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h180_r3, (t468));
+    HERO_COPY_HELD(h180_r3, (t432));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t804);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t764);
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t469, (h180_r3));
+    HERO_COPY_HELD(t433, (h180_r3));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t805, (h181_s36));
+    HERO_COPY_HELD(t765, (h181_s36));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_retain(&t469);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_retain(&t433);
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h181_s36, (t469));
+    HERO_COPY_HELD(h181_s36, (t433));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t805);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t765);
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t470, (h181_s36));
+    HERO_COPY_HELD(t434, (h181_s36));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t471 = t470.tag;
+    t435 = t434.tag;
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t471) {
+    switch (t435) {
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb164;
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -6119,79 +6049,77 @@ bb160:
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb161:
 #line 355 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t463, (h177_s35));
+    HERO_COPY_HELD(t428, (h177_s35));
 #line 355 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t464, (t463.as.c_a));
+    HERO_COPY_HELD(t429, (t428.as.c_a));
 #line 355 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t806, (h179_x));
+    HERO_COPY_HELD(t766, (h179_x));
 #line 355 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_c_a_retain(&t464);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_c_a_retain(&t429);
 #line 355 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h179_x, (t464));
+    HERO_COPY_HELD(h179_x, (t429));
 #line 355 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_c_a_release(&t806);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R4_c_a_release(&t766);
 #line 355 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t465, (h179_x));
-#line 355 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t466, (t465.f_inner));
+    HERO_COPY_HELD(t430, (h179_x.f_inner));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t807, (h178_r53));
+    HERO_COPY_HELD(t767, (h178_r53));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_retain(&t466);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_retain(&t430);
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h178_r53, (t466));
+    HERO_COPY_HELD(h178_r53, (t430));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t807);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t767);
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb160;
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb162:
 #line 356 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t467, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_tag_b}));
+    HERO_COPY_HELD(t431, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_tag_b}));
 #line 356 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t808, (h253_own253));
+    HERO_COPY_HELD(t768, (h253_own253));
 #line 356 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h253_own253, (t467));
+    HERO_COPY_HELD(h253_own253, (t431));
 #line 356 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t808);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t768);
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t809, (h178_r53));
+    HERO_COPY_HELD(t769, (h178_r53));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_retain(&t467);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_retain(&t431);
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h178_r53, (t467));
+    HERO_COPY_HELD(h178_r53, (t431));
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t809);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(&t769);
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb160;
 #line 354 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb163:
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t485, (h182_r54));
+    HERO_COPY_HELD(t448, (h182_r54));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t810, (h186_r2));
+    HERO_COPY_HELD(t770, (h186_r2));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t485);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t448);
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h186_r2, (t485));
+    HERO_COPY_HELD(h186_r2, (t448));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t810);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t770);
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t486, (h186_r2));
+    HERO_COPY_HELD(t449, (h186_r2));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t811, (h187_s37));
+    HERO_COPY_HELD(t771, (h187_s37));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t486);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t449);
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h187_s37, (t486));
+    HERO_COPY_HELD(h187_s37, (t449));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t811);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t771);
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t487, (h187_s37));
+    HERO_COPY_HELD(t450, (h187_s37));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t488 = t487.tag;
+    t451 = t450.tag;
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t488) {
+    switch (t451) {
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb170;
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -6203,135 +6131,133 @@ bb163:
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb164:
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t472, (h181_s36));
+    HERO_COPY_HELD(t436, (h181_s36));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t473, (t472.as.c_a));
+    HERO_COPY_HELD(t437, (t436.as.c_a));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t812, (h183_x));
+    HERO_COPY_HELD(t772, (h183_x));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_c_a_retain(&t473);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_c_a_retain(&t437);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h183_x, (t473));
+    HERO_COPY_HELD(h183_x, (t437));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_c_a_release(&t812);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_c_a_release(&t772);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t474, (h183_x));
+    HERO_COPY_HELD(t438, (h183_x.f_inner));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t475, (t474.f_inner));
+    HERO_COPY_HELD(t773, (h184_f18));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t813, (h184_f18));
+    h_0opt_5ed978a9_retain(&t438);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_5ed978a9_retain(&t475);
+    HERO_COPY_HELD(h184_f18, (t438));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h184_f18, (t475));
+    h_0opt_5ed978a9_release(&t773);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_5ed978a9_release(&t813);
+    HERO_COPY_HELD(t439, (h184_f18));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t476, (h184_f18));
+    t440 = t439.tag;
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t477 = t476.tag;
+    t441 = INT64_C(0);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t478 = INT64_C(0);
+    t442 = t440 == t441;
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t479 = t477 == t478;
-#line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t479) goto bb166; else goto bb167;
+    if (t442) goto bb166; else goto bb167;
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb165:
-    HERO_COPY_HELD(t484, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_tag_b}));
+    HERO_COPY_HELD(t447, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_tag_b}));
 #line 360 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t814, (h254_own254));
+    HERO_COPY_HELD(t774, (h254_own254));
 #line 360 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h254_own254, (t484));
+    HERO_COPY_HELD(h254_own254, (t447));
 #line 360 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t814);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t774);
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t815, (h182_r54));
+    HERO_COPY_HELD(t775, (h182_r54));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t484);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t447);
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h182_r54, (t484));
+    HERO_COPY_HELD(h182_r54, (t447));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t815);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t775);
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb163;
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb166:
-    HERO_COPY_HELD(t480, (h184_f18));
+    HERO_COPY_HELD(t443, (h184_f18));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t481, (t480.as.ok));
+    HERO_COPY_HELD(t444, (t443.as.ok));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t816, (h185_r55));
+    HERO_COPY_HELD(t776, (h185_r55));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t481);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t444);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h185_r55, (t481));
+    HERO_COPY_HELD(h185_r55, (t444));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t816);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t776);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb168;
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb167:
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t482, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_tag_b}));
+    HERO_COPY_HELD(t445, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_tag_b}));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t817, (h255_own255));
+    HERO_COPY_HELD(t777, (h255_own255));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h255_own255, (t482));
+    HERO_COPY_HELD(h255_own255, (t445));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t817);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t777);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t818, (h185_r55));
+    HERO_COPY_HELD(t778, (h185_r55));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t482);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t445);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h185_r55, (t482));
+    HERO_COPY_HELD(h185_r55, (t445));
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t818);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t778);
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb168;
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb168:
 #line 359 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t483, (h185_r55));
+    HERO_COPY_HELD(t446, (h185_r55));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t819, (h182_r54));
+    HERO_COPY_HELD(t779, (h182_r54));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t483);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_retain(&t446);
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h182_r54, (t483));
+    HERO_COPY_HELD(h182_r54, (t446));
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t819);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(&t779);
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb163;
 #line 358 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb169:
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t494, (h188_r56));
+    HERO_COPY_HELD(t456, (h188_r56));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t820, (h190_r1));
+    HERO_COPY_HELD(t780, (h190_r1));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_retain(&t494);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_retain(&t456);
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h190_r1, (t494));
+    HERO_COPY_HELD(h190_r1, (t456));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t820);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t780);
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t495, (h190_r1));
+    HERO_COPY_HELD(t457, (h190_r1));
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t821, (h191_s38));
+    HERO_COPY_HELD(t781, (h191_s38));
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_retain(&t495);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_retain(&t457);
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h191_s38, (t495));
+    HERO_COPY_HELD(h191_s38, (t457));
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t821);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t781);
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t496, (h191_s38));
+    HERO_COPY_HELD(t458, (h191_s38));
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t497 = t496.tag;
+    t459 = t458.tag;
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t497) {
+    switch (t459) {
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb173;
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -6343,67 +6269,65 @@ bb169:
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb170:
 #line 363 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t489, (h187_s37));
+    HERO_COPY_HELD(t452, (h187_s37));
 #line 363 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t490, (t489.as.c_a));
+    HERO_COPY_HELD(t453, (t452.as.c_a));
 #line 363 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t822, (h189_x));
+    HERO_COPY_HELD(t782, (h189_x));
 #line 363 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_c_a_retain(&t490);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_c_a_retain(&t453);
 #line 363 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h189_x, (t490));
+    HERO_COPY_HELD(h189_x, (t453));
 #line 363 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_c_a_release(&t822);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_c_a_release(&t782);
 #line 363 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t491, (h189_x));
-#line 363 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t492, (t491.f_inner));
+    HERO_COPY_HELD(t454, (h189_x.f_inner));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t823, (h188_r56));
+    HERO_COPY_HELD(t783, (h188_r56));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_retain(&t492);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_retain(&t454);
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h188_r56, (t492));
+    HERO_COPY_HELD(h188_r56, (t454));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t823);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t783);
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb169;
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb171:
 #line 364 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t493, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_tag_b}));
+    HERO_COPY_HELD(t455, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_tag_b}));
 #line 364 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t824, (h256_own256));
+    HERO_COPY_HELD(t784, (h256_own256));
 #line 364 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h256_own256, (t493));
+    HERO_COPY_HELD(h256_own256, (t455));
 #line 364 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t824);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t784);
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t825, (h188_r56));
+    HERO_COPY_HELD(t785, (h188_r56));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_retain(&t493);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_retain(&t455);
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h188_r56, (t493));
+    HERO_COPY_HELD(h188_r56, (t455));
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t825);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(&t785);
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb169;
 #line 362 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb172:
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(t511, (h192_r57));
+    HERO_COPY(t472, (h192_r57));
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(h196_r0, (t511));
+    HERO_COPY(h196_r0, (t472));
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(t512, (h196_r0));
+    HERO_COPY(t473, (h196_r0));
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(h197_s39, (t512));
+    HERO_COPY(h197_s39, (t473));
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(t513, (h197_s39));
+    HERO_COPY(t474, (h197_s39));
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t514 = t513.tag;
+    t475 = t474.tag;
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    switch (t514) {
+    switch (t475) {
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
         case 0: goto bb179;
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -6415,76 +6339,74 @@ bb172:
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb173:
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t498, (h191_s38));
+    HERO_COPY_HELD(t460, (h191_s38));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t499, (t498.as.c_a));
+    HERO_COPY_HELD(t461, (t460.as.c_a));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t826, (h193_x));
+    HERO_COPY_HELD(t786, (h193_x));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_c_a_retain(&t499);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_c_a_retain(&t461);
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h193_x, (t499));
+    HERO_COPY_HELD(h193_x, (t461));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_c_a_release(&t826);
+    h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_c_a_release(&t786);
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t500, (h193_x));
+    HERO_COPY_HELD(t462, (h193_x.f_inner));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t501, (t500.f_inner));
+    HERO_COPY_HELD(t787, (h194_f19));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t827, (h194_f19));
+    h_0opt_6ab6b2b3_retain(&t462);
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_6ab6b2b3_retain(&t501);
+    HERO_COPY_HELD(h194_f19, (t462));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(h194_f19, (t501));
+    h_0opt_6ab6b2b3_release(&t787);
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h_0opt_6ab6b2b3_release(&t827);
+    HERO_COPY_HELD(t463, (h194_f19));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY_HELD(t502, (h194_f19));
+    t464 = t463.tag;
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t503 = t502.tag;
+    t465 = INT64_C(0);
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t504 = INT64_C(0);
+    t466 = t464 == t465;
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t505 = t503 == t504;
-#line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    if (t505) goto bb175; else goto bb176;
+    if (t466) goto bb175; else goto bb176;
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb174:
-    HERO_COPY(t510, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_tag_b}));
+    HERO_COPY(t471, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_tag_b}));
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(h192_r57, (t510));
+    HERO_COPY(h192_r57, (t471));
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb172;
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb175:
-    HERO_COPY_HELD(t506, (h194_f19));
+    HERO_COPY_HELD(t467, (h194_f19));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(t507, (t506.as.ok));
+    HERO_COPY(t468, (t467.as.ok));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(h195_r58, (t507));
+    HERO_COPY(h195_r58, (t468));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb177;
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb176:
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(t508, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_tag_b}));
+    HERO_COPY(t469, ((h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0){.tag = h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_tag_b}));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(h195_r58, (t508));
+    HERO_COPY(h195_r58, (t469));
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb177;
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb177:
 #line 367 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(t509, (h195_r58));
+    HERO_COPY(t470, (h195_r58));
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(h192_r57, (t509));
+    HERO_COPY(h192_r57, (t470));
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb172;
 #line 366 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb178:
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t520 = h198_r59;
-#line 6488 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+    t480 = h198_r59;
+#line 6410 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_release(hero_slot_escape(&h1_s0));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(hero_slot_escape(&h2_r0));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_c_a_release(hero_slot_escape(&h3_x));
@@ -6735,31 +6657,29 @@ bb178:
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(hero_slot_escape(&h254_own254));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(hero_slot_escape(&h255_own255));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(hero_slot_escape(&h256_own256));
-    return t520;
+    return t480;
 bb179:
 #line 371 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(t515, (h197_s39));
+    HERO_COPY(t476, (h197_s39));
 #line 371 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(t516, (t515.as.c_a));
+    HERO_COPY(t477, (t476.as.c_a));
 #line 371 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(h199_x, (t516));
+    HERO_COPY(h199_x, (t477));
 #line 371 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    HERO_COPY(t517, (h199_x));
-#line 371 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t518 = t517.f_v;
+    t478 = h199_x.f_v;
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h198_r59 = t518;
+    h198_r59 = t478;
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb178;
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
 bb180:
 #line 372 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    t519 = INT64_C(-1);
+    t479 = INT64_C(-1);
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
-    h198_r59 = t519;
+    h198_r59 = t479;
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb178;
-#line 6763 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 6683 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
 }
 
 #line 374 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -7785,7 +7705,7 @@ bb0:
     hero_print_int(t119);
 #line 419 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     hero_print_end();
-#line 7789 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 7709 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(hero_slot_escape(&h1_r1));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(hero_slot_escape(&h2_r2));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(hero_slot_escape(&h3_r3));

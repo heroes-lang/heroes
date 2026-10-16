@@ -202,37 +202,35 @@ void h_ffirestzeroapartialrecord_main(void) {
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 #define h0_s (*hero_lend_h0_s)
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s"); HERO_NODEBUG SP t1, t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s"); HERO_NODEBUG SP t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 bb0:
     (void)dirty();
     t1 = h_ffirestzeroapartialrecord_built();
 #line 17 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     h0_s = t1;
-    t2 = h0_s;
+    t2 = h0_s.kind;
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    t3 = t2.kind;
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    t4 = HERO_STR_LIT(hero_str_20);
+    t3 = HERO_STR_LIT(hero_str_20);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     hero_lend_local_name(hero_lend_h0_s, "sp_union", "s");
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    t5 = sp_union(&h0_s);
+    t4 = sp_union(&h0_s);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_print_int(t3);
+    hero_print_int(t2);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_print_str(t4);
+    hero_print_str(t3);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_print_int(t5);
+    hero_print_int(t4);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     hero_print_end();
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     hero_lend_local_give(hero_lend_h0_s);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return;
-#line 236 "ffirestzeroapartialrecord.c"
+#line 234 "ffirestzeroapartialrecord.c"
 }
 #undef h0_s
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b) {

@@ -190,26 +190,26 @@ bb4:
 #line 12 "tests/golden/ir/sugar-try.hero"
 h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs) {
 #line 12 "tests/golden/ir/sugar-try.hero"
-    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t10, t17, t18, t19, t20, t21, t22; int64_t h3_v; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t4, t5, t11, t13, t14, t15, t16; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_sugartry_Reader t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t10, t16, t17, t18, t19, t20, t21; int64_t h3_v; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t4, t5, t11, t12, t13, t14, t15; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/ir/sugar-try.hero"
 bb0:
     t1 = h1_xs;
 #line 13 "tests/golden/ir/sugar-try.hero"
     t2 = h_sugartry_first_of(t1);
 #line 13 "tests/golden/ir/sugar-try.hero"
-    t19 = h5_own5;
+    t18 = h5_own5;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h5_own5 = t2;
 #line 13 "tests/golden/ir/sugar-try.hero"
-    h_0opt_e201354_release(&t19);
+    h_0opt_e201354_release(&t18);
 #line 13 "tests/golden/ir/sugar-try.hero"
-    t20 = h2_f0;
+    t19 = h2_f0;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h_0opt_e201354_retain(&t2);
 #line 13 "tests/golden/ir/sugar-try.hero"
     h2_f0 = t2;
 #line 13 "tests/golden/ir/sugar-try.hero"
-    h_0opt_e201354_release(&t20);
+    h_0opt_e201354_release(&t19);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t3 = h2_f0;
 #line 13 "tests/golden/ir/sugar-try.hero"
@@ -228,26 +228,24 @@ bb1:
     t11 = t10.as.ok;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h3_v = t11;
-    t12 = (*ph0_r);
+    t12 = (*ph0_r).f_pos;
 #line 14 "tests/golden/ir/sugar-try.hero"
-    t13 = t12.f_pos;
+    t13 = INT64_C(1);
 #line 14 "tests/golden/ir/sugar-try.hero"
-    t14 = INT64_C(1);
+    if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
 #line 14 "tests/golden/ir/sugar-try.hero"
-    if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 14 "tests/golden/ir/sugar-try.hero"
-    (*ph0_r).f_pos = t15;
-    t16 = h3_v;
+    (*ph0_r).f_pos = t14;
+    t15 = h3_v;
 #line 15 "tests/golden/ir/sugar-try.hero"
-    t17 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t16};
+    t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t15};
 #line 15 "tests/golden/ir/sugar-try.hero"
-    t21 = h6_own6;
+    t20 = h6_own6;
 #line 15 "tests/golden/ir/sugar-try.hero"
-    h6_own6 = t17;
+    h6_own6 = t16;
 #line 15 "tests/golden/ir/sugar-try.hero"
-    h_0opt_e201354_release(&t21);
+    h_0opt_e201354_release(&t20);
 #line 15 "tests/golden/ir/sugar-try.hero"
-    h4_ret0 = t17;
+    h4_ret0 = t16;
 #line 15 "tests/golden/ir/sugar-try.hero"
     goto bb3;
 #line 15 "tests/golden/ir/sugar-try.hero"
@@ -261,25 +259,25 @@ bb2:
 #line 13 "tests/golden/ir/sugar-try.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
 #line 13 "tests/golden/ir/sugar-try.hero"
-    t22 = h7_own7;
+    t21 = h7_own7;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h7_own7 = t9;
 #line 13 "tests/golden/ir/sugar-try.hero"
-    h_0opt_e201354_release(&t22);
+    h_0opt_e201354_release(&t21);
 #line 13 "tests/golden/ir/sugar-try.hero"
     h4_ret0 = t9;
 #line 13 "tests/golden/ir/sugar-try.hero"
     goto bb3;
 #line 13 "tests/golden/ir/sugar-try.hero"
 bb3:
-#line 276 "sugartry.c"
-    t18 = h4_ret0;
-    h_0opt_e201354_retain(&t18);
+#line 274 "sugartry.c"
+    t17 = h4_ret0;
+    h_0opt_e201354_retain(&t17);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h5_own5));
     h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     h_0opt_e201354_release(hero_slot_escape(&h7_own7));
-    return t18;
+    return t17;
 }
 HERO_TU_LOCAL bool h_sugartry_Reader_eq(const h_sugartry_Reader *a, const h_sugartry_Reader *b) {
     if (!(a->f_pos == b->f_pos)) return false;

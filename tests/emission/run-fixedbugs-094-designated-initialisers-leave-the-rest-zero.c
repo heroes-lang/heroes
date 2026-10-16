@@ -221,46 +221,38 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 void h_fixedbugs094designatedinitialisersleavetherestzero_main(void) {
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    struct pt h0_p; struct pt h1_t; HERO_NODEBUG struct pt t1, t2, t4, t6, t7, t9; HERO_NODEBUG int32_t t3, t5, t8, t10; HERO_ENTRY_STOP; goto bb0;
+    struct pt h0_p; struct pt h1_t; HERO_NODEBUG struct pt t1, t4; HERO_NODEBUG int32_t t2, t3, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 bb0:
     t1 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y();
 #line 16 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     h0_p = t1;
-    t2 = h0_p;
+    t2 = h0_p.x;
 #line 17 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    t3 = t2.x;
+    hero_print_int(t2);
 #line 17 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
+    hero_print_end();
+    t3 = h0_p.y;
+#line 18 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     hero_print_int(t3);
-#line 17 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_end();
-    t4 = h0_p;
-#line 18 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    t5 = t4.y;
-#line 18 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_int(t5);
 #line 18 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     hero_print_end();
-    t6 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE();
+    t4 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE();
 #line 19 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    h1_t = t6;
-    t7 = h1_t;
+    h1_t = t4;
+    t5 = h1_t.x;
 #line 20 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    t8 = t7.x;
-#line 20 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_int(t8);
+    hero_print_int(t5);
 #line 20 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     hero_print_end();
-    t9 = h1_t;
+    t6 = h1_t.y;
 #line 21 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    t10 = t9.y;
-#line 21 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_int(t10);
+    hero_print_int(t6);
 #line 21 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     return;
-#line 264 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 256 "fixedbugs094designatedinitialisersleavetherestzero.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094designatedinitialisersleavetherestzero_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;
