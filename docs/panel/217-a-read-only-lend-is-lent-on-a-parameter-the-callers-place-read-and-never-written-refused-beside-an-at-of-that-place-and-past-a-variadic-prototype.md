@@ -79,6 +79,17 @@ outputs under `llm-ergonomist-work/`).
   string buildable through a lease (three lines a call), breaks no buildable binding of the corpus,
   and applies to records; the copy keeps the shorter spelling but stops no write past the end and
   cannot apply to a record holding a lock. **(c).**
+
+  **Corrected 2026-10-17**, at R3(c)'s landing as defects 2102 and 2103's repair: *breaks no
+  buildable binding of the corpus* is false. The critic's pass wrote it as a reading of the
+  ffi-pragmatist's census, which it did not re-run, and that census held the corpus's programs:
+  `tests/golden/surface-fixtures/twoarity/as_text.hero` bound `printf(format: cstr lent, value:
+  cstr lent)`, built and printed `s = forty-two`, and `suite_surface` went red on it under the
+  repair. One fixture, moved to a lease (`value: cstr`, three lines in its wrapper), the program as
+  it stood kept refused as `twoarity-lent/`. The coordinator's census of the tracked bindings of
+  twenty common variadic C functions that night found no other `cstr lent` past a `...`, and, past
+  the read-only lend this sitting ruled, one `@` lend, `run/fixedbugs-437`'s `prctl`, which defect
+  2106's decision refuses (issue 2107).
 - **One word or two.** F1 gives `lent` a second meaning beside *C does not keep it*. Arm F1 saw three
   readers drop `lent` from the writing C functions (21 of 30 declarations), arm C none (30 of 30): a
   reading of one arm, not a measured shift. The spec-warden objects to a new word on its price, the
