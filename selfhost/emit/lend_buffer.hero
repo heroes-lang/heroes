@@ -36,6 +36,7 @@ use emit/lend_count
 use emit/lend_extent
 use emit/probe_params
 use emit/nodebug
+use emit/padding
 use widths
 
 # The contract between this writer and `emit/ffi_extent.hero`'s reader.
@@ -54,6 +55,9 @@ record Buffer
     callee: str
     param: str
     check: str
+    # The lines zeroing each element's padding in the buffer, where the
+    # elements are a group's records (panel 215's R1).
+    pad: [str]
 
 # Every buffer one extern call lends, in argument order.
 function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64) -> [Buffer]
@@ -70,8 +74,17 @@ function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
             match arg
                 .inout_arg io =>
                     tag = run.start.to_str() + "_" + index.to_str()
+                    pad = padding.buffer_lines(
+                        c,
+                        names,
+                        s,
+                        decls,
+                        element: element.must(),
+                        buffer: "hero_lend_b" + tag,
+                        extent: "hero_lend_e" + tag
+                    )
                     out @ out.push(
-                        Buffer(index: index, name: "hero_lend_b" + tag, extent_name: "hero_lend_e" + tag, extent: extent_text(c, s, decls, f, given: given, decl: decl, index: index), place: aggregate.place(c, s, decls, f, at: io.place), callee: callee, param: params[index], check: pointee_check(c, names, s, decls, decl: decl, index: index, element: element.must()))
+                        Buffer(index: index, name: "hero_lend_b" + tag, extent_name: "hero_lend_e" + tag, extent: extent_text(c, s, decls, f, given: given, decl: decl, index: index), place: aggregate.place(c, s, decls, f, at: io.place), callee: callee, param: params[index], check: pointee_check(c, names, s, decls, decl: decl, index: index, element: element.must()), pad: pad)
                     )
                 .value_arg => index @ index
         index @ index + 1
@@ -206,6 +219,9 @@ function before(@w: writer.Writer, held: [Buffer], arguments: [str]) -> [str]
             @w,
             text: "    " + nodebug.MARK + "void *" + b.name + " = hero_lend_take(" + b.place + ", " + b.extent_name + ", " + lend_count.quoted(b.callee) + ", " + lend_count.quoted(b.param) + ");"
         )
+
+        for line in b.pad
+            writer.line(@w, text: "    " + line)
 
         if b.index < out.len()
             out[b.index] @ b.name

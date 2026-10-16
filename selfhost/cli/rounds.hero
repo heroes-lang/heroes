@@ -24,7 +24,6 @@ use cli/compiling
 use cli/assemble
 use cli/probing
 use cli/pointee_ask
-use cli/header_types
 use cli/tag_spelling
 use cli/whose
 use cli/two_ways
@@ -35,6 +34,7 @@ use diag
 use emit/lock_screen
 use check/lock_copies
 use cli/locks
+use emit/lend_type
 
 # What the rounds came back with: the verdict, the failure already told where
 # it is the author's (`whose.of_refusal`); where the binary landed; the tags
@@ -193,7 +193,7 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     # The unit each counted parameter's count is compared in, read from the
     # header by the check above (panel 194's R7): every unit is emitted with
     # it, so the comparison is in what C counts and never in bytes alone.
-    counted = header_types.lend_units(answered)
+    counted = lend_type.lend_units(answered)
     lent = assemble.Lent(
         units: counted,
         digests: probing.digests_of(planned.probings),

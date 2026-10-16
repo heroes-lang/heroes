@@ -317,6 +317,8 @@
 #pragma pop_macro("hero_map_release_at")
 #pragma pop_macro("hero_map_set")
 #pragma pop_macro("hero_os_pid")
+#pragma pop_macro("hero_pad_fill")
+#pragma pop_macro("hero_pad_gaps")
 #pragma pop_macro("hero_panic")
 #pragma pop_macro("hero_panic_assert")
 #pragma pop_macro("hero_panic_assert_sides")

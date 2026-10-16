@@ -41,6 +41,7 @@ use cli/pointee_wants
 use cli/layout
 use cli/strings
 use cli/libraries
+use emit/membership
 
 # The modules whose units read one header list: the list, the modules, the
 # program cut to their members (the externs the pointee check asks about),
@@ -201,7 +202,16 @@ function check_all(t: toolchain.Toolchain, p: containers.Program, c: state.Check
 
     for one in probings
         if !one.probe.is_err() && laid_out(decls, records: one.records)
-            laid = layout.check_records(t, p, c, s, decls, probe: one.probe.must(), records: ok(one.records))
+            held: {i64: str} @= {}
+            laid = layout.check_records(t, p, c, s, decls, probe: one.probe.must(), records: ok(one.records), @held)
+
+            # Each record's membership rides the pointee answers to the
+            # emitter (panel 215's R1, `lend_type.lend_units`), an answer of
+            # its own kind, `pointee_ask.PAD`, that asks clang nothing.
+            for decl in sort(keys(held))
+                answered @ answered.push(
+                    pointee_ask.Answered(asked: pointee_ask.Pointee(name: membership.KEY, param: "", index: decl, declared: pointee_ask.PAD, file: "", line: 0, depth: false), header_type: held[decl].must(), pointee: "")
+                )
 
             if laid.is_err()
                 return Checked(verdict: laid, modules: one.modules, unread: unread, unread_modules: unread_modules)

@@ -1,0 +1,100 @@
+# What the layout round says a group record's members are, as one line of
+# text (panel 215's R1): written by `cli/layout.hero` from the screen's
+# answer or the layout dump, carried to the emitter in
+# `ctype.Names.lend_units` under `KEY`, and read by `emit/padding.hero`.
+# Split out of `emit/padding.hero` on 2026-10-16, at panel 215's landing:
+# the zeroing stayed there, the text both ends agree on came here.
+#
+# `DECLARED` for a record the screen vouches for, whose declared fields are
+# exactly the struct's members; for any other record the leaves of the
+# header's layout dump, one entry each, joined by `;`: `p <path>` a member,
+# `n <byte> <bytes>` the bytes a named bit-field's bits reach (the one span C
+# cannot be asked for, read from the dump's offset column), `f <path>` a
+# flexible array member, holding every byte from its offset to the end.
+
+use emit/layout_text
+
+# The key a record's membership rides under in `ctype.Names.lend_units`,
+# which no C name a counted parameter is keyed by can begin with.
+constant KEY: str
+    "%pad "
+
+# A record whose declared fields are the struct's members.
+constant DECLARED: str
+    "="
+
+# The membership of a record from the leaves of its layout dump, or absent
+# where a bit-field's bytes could not be read: then nothing is written for it.
+# A record or union member gives its leaves, an unnamed bit-field nothing,
+# being padding (C11 6.7.2.1p12), and an empty anonymous member nothing.
+function encoded(tree: [layout_text.Member]) -> str?
+    out: [str] @= []
+
+    for m in tree
+        if m.nested
+            continue
+
+        if m.bitfield
+            if m.name.len() == 0
+                continue
+
+            if m.byte < 0 || m.last < m.byte
+                return fail(code: "none", msg: "a bit-field whose bytes the dump does not give")
+            out @ out.push("n " + m.byte.to_str() + " " + (m.last - m.byte + 1).to_str())
+        else if m.flexible
+            out @ out.push("f " + m.path)
+        else if m.path.len() > 0
+            out @ out.push("p " + m.path)
+
+    return ok(out.join(";"))
+
+# The entries of a membership, split at each `;`.
+function entries(text: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= text.len()
+        if at == text.len() || text[at] == ';'
+            if at > start + 1
+                out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# The two numbers of a bit-field's span, split at their one space.
+function space_in(text: str) -> i64
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == ' '
+            return at
+        at @ at + 1
+
+    return 0 - 1
+
+# The names a dump's path spells, one per level: `via.fd` gives `via` and
+# `fd`.
+function names_in(path: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= path.len()
+        if at == path.len() || path[at] == '.'
+            if at > start
+                out @ out.push(path.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+## Tests
+
+test "a membership is read entry by entry, and a dump's leaves are its entries"
+    assert entries("p a;p inner.d;n 1 2") == ["p a", "p inner.d", "n 1 2"]
+    assert entries("") == []
+    assert space_in("1 2") == 1
+    assert names_in("via.fd") == ["via", "fd"]
+    assert names_in("kind") == ["kind"]

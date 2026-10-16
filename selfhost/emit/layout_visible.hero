@@ -1,0 +1,67 @@
+# The members a program can name on a group record's C type, read from the
+# header's layout dump (design.md §4.19; panel 186, defect 151): its own,
+# and those an anonymous member promotes (C11 6.7.2.1p13), never the members
+# of a NAMED record member, which are that member's own. The dump is read in
+# `emit/layout_text.hero`; this is what the layout check
+# (`emit/layout_check.hero`) and the member question (`cli/member_ask.hero`)
+# ask of it. Split out of `emit/layout_text.hero` on 2026-10-16, when panel
+# 215's R1 took that file past CLAUDE.md §11's ceiling: reading the dump
+# stayed there, what a program can name came here.
+
+use emit/layout_text
+use emit/layout_rows
+
+# A member a program can name on T: its own, or one an anonymous member
+# promotes (C11 6.7.2.1p13). `group` is the index of the anonymous member it
+# sits in at depth 1, or -1 for a member of T itself.
+record Visible
+    at: i64
+    group: i64
+
+# The members a program can name on T, in the dump's order: below a NAMED
+# record member the fields are that member's own, and are skipped.
+function visible(read: [layout_text.Member]) -> [Visible]
+    out: [Visible] @= []
+    hidden: i64 @= 0
+    group: i64 @= -1
+    k: i64 @= 0
+
+    while k < read.len()
+        m = read[k]
+
+        if hidden > 0 && m.depth > hidden
+            k @ k + 1
+            continue
+        hidden @ 0
+
+        if m.depth == 1
+            group @ -1
+
+            if m.name.len() == 0 && m.nested
+                group @ k
+
+        if m.name.len() > 0
+            out @ out.push(Visible(at: k, group: group))
+
+            if m.nested
+                hidden @ m.depth
+        k @ k + 1
+
+    return out
+
+## Tests
+
+test "an anonymous member's members are named on T, each in its group"
+    dump = "\n*** Dumping AST Record Layout\n         0 | struct hero_ly_4\n         0 |   DEEP v\n         0 |     int32_t kind\n         4 |     struct DEEP::(anonymous at ./bf.h:4:32) \n         4 |       union DEEP::(anonymous at ./bf.h:4:41) \n         4 |         int32_t i\n         4 |         float f\n         8 |       int32_t y\n    12:0-0 |     uint32_t flag\r\n        16 |     int32_t[] tail\n           | [sizeof=16, align=4]\n"
+    rows = layout_rows.rows_of(dump)
+    got = layout_text.members(rows: rows, from: layout_text.heads(rows)[4].must()).must()
+    seen = visible(got)
+    assert seen.len() == 6
+    assert seen[1].group == 1 && seen[3].group == 1 && seen[0].group == -1
+
+test "a named record member's own fields are not T's"
+    dump = "         0 | struct hero_ly_0\n         0 |   SN v\n         0 |     int32_t kind\n         4 |     W2 u\n         4 |       int32_t i\n         4 |       uint32_t n\n           | [sizeof=8, align=4]\n"
+    rows = layout_rows.rows_of(dump)
+    seen = visible(layout_text.members(rows: rows, from: layout_text.heads(rows)[0].must()).must())
+    assert seen.len() == 2
+    assert seen[1].at == 1

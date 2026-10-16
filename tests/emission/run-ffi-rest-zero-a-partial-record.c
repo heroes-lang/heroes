@@ -159,6 +159,25 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 SP h_ffirestzeroapartialrecord_built(void);
 void h_ffirestzeroapartialrecord_main(void);
+#pragma push_macro("c")
+#undef c
+#pragma push_macro("d")
+#undef d
+#pragma push_macro("kind")
+#undef kind
+#pragma push_macro("u")
+#undef u
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(SP, kind), sizeof(((SP *)0)->kind), __builtin_offsetof(SP, u.c), sizeof(((SP *)0)->u.c), __builtin_offsetof(SP, u.d), sizeof(((SP *)0)->u.d)};
+#pragma pop_macro("c")
+#pragma pop_macro("d")
+#pragma pop_macro("kind")
+#pragma pop_macro("u")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(SP), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 SP h_ffirestzeroapartialrecord_built(void) {
@@ -175,7 +194,7 @@ bb0:
     t2.kind = t1;
 #line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return t2;
-#line 179 "ffirestzeroapartialrecord.c"
+#line 198 "ffirestzeroapartialrecord.c"
 }
 
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
@@ -198,6 +217,8 @@ bb0:
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     hero_lend_local_name(hero_lend_h0_s, "sp_union", "s");
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+    hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0);
+#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     t5 = sp_union(&h0_s);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     hero_print_int(t3);
@@ -211,7 +232,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_s);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return;
-#line 215 "ffirestzeroapartialrecord.c"
+#line 236 "ffirestzeroapartialrecord.c"
 }
 #undef h0_s
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b) {

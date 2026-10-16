@@ -190,6 +190,70 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
+#pragma push_macro("close_cb")
+#undef close_cb
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("fd")
+#undef fd
+#pragma push_macro("flags")
+#undef flags
+#pragma push_macro("handle_queue")
+#undef handle_queue
+#pragma push_macro("heap")
+#undef heap
+#pragma push_macro("loop")
+#undef loop
+#pragma push_macro("next")
+#undef next
+#pragma push_macro("next_closing")
+#undef next_closing
+#pragma push_macro("node")
+#undef node
+#pragma push_macro("prev")
+#undef prev
+#pragma push_macro("queue")
+#undef queue
+#pragma push_macro("repeat")
+#undef repeat
+#pragma push_macro("reserved")
+#undef reserved
+#pragma push_macro("start_id")
+#undef start_id
+#pragma push_macro("timeout")
+#undef timeout
+#pragma push_macro("timer_cb")
+#undef timer_cb
+#pragma push_macro("type")
+#undef type
+#pragma push_macro("u")
+#undef u
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct uv_timer_s, data), sizeof(((struct uv_timer_s *)0)->data), __builtin_offsetof(struct uv_timer_s, loop), sizeof(((struct uv_timer_s *)0)->loop), __builtin_offsetof(struct uv_timer_s, type), sizeof(((struct uv_timer_s *)0)->type), __builtin_offsetof(struct uv_timer_s, close_cb), sizeof(((struct uv_timer_s *)0)->close_cb), __builtin_offsetof(struct uv_timer_s, handle_queue.next), sizeof(((struct uv_timer_s *)0)->handle_queue.next), __builtin_offsetof(struct uv_timer_s, handle_queue.prev), sizeof(((struct uv_timer_s *)0)->handle_queue.prev), __builtin_offsetof(struct uv_timer_s, u.fd), sizeof(((struct uv_timer_s *)0)->u.fd), __builtin_offsetof(struct uv_timer_s, u.reserved), sizeof(((struct uv_timer_s *)0)->u.reserved), __builtin_offsetof(struct uv_timer_s, next_closing), sizeof(((struct uv_timer_s *)0)->next_closing), __builtin_offsetof(struct uv_timer_s, flags), sizeof(((struct uv_timer_s *)0)->flags), __builtin_offsetof(struct uv_timer_s, timer_cb), sizeof(((struct uv_timer_s *)0)->timer_cb), __builtin_offsetof(struct uv_timer_s, node.heap), sizeof(((struct uv_timer_s *)0)->node.heap), __builtin_offsetof(struct uv_timer_s, node.queue.next), sizeof(((struct uv_timer_s *)0)->node.queue.next), __builtin_offsetof(struct uv_timer_s, node.queue.prev), sizeof(((struct uv_timer_s *)0)->node.queue.prev), __builtin_offsetof(struct uv_timer_s, timeout), sizeof(((struct uv_timer_s *)0)->timeout), __builtin_offsetof(struct uv_timer_s, repeat), sizeof(((struct uv_timer_s *)0)->repeat), __builtin_offsetof(struct uv_timer_s, start_id), sizeof(((struct uv_timer_s *)0)->start_id)};
+#pragma pop_macro("close_cb")
+#pragma pop_macro("data")
+#pragma pop_macro("fd")
+#pragma pop_macro("flags")
+#pragma pop_macro("handle_queue")
+#pragma pop_macro("heap")
+#pragma pop_macro("loop")
+#pragma pop_macro("next")
+#pragma pop_macro("next_closing")
+#pragma pop_macro("node")
+#pragma pop_macro("prev")
+#pragma pop_macro("queue")
+#pragma pop_macro("repeat")
+#pragma pop_macro("reserved")
+#pragma pop_macro("start_id")
+#pragma pop_macro("timeout")
+#pragma pop_macro("timer_cb")
+#pragma pop_macro("type")
+#pragma pop_macro("u")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct uv_timer_s), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 28 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 void h_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
@@ -212,7 +276,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     return;
-#line 216 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 280 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
@@ -230,10 +294,12 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     hero_lend_local_name(ph1_t, "uv_timer_init", "h");
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
+    hero_pad_fill(&(*ph1_t), sizeof(struct uv_timer_s), 1, hero_pad_g_0, hero_pad_n_0);
+#line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t2 = uv_timer_init(t1, &(*ph1_t));
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     return t2;
-#line 237 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 303 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
@@ -295,6 +361,8 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     hero_array_unshare(&(h2_ts));
 #line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
+    hero_pad_fill(&(*((void)((h2_ts == NULL || t10 < 0 || t10 >= h2_ts->len) ? ((void)hero_array_at_mut(h2_ts, t10), hero_unreachable()) : (void)0), (void)(h2_ts->elem->size != sizeof(struct uv_timer_s) ? hero_unreachable() : (void)0), (struct uv_timer_s *)(void *)(h2_ts + 1) + t10)), sizeof(struct uv_timer_s), 1, hero_pad_g_0, hero_pad_n_0);
+#line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t11 = uv_timer_init(t9, &(*((void)((h2_ts == NULL || t10 < 0 || t10 >= h2_ts->len) ? ((void)hero_array_at_mut(h2_ts, t10), hero_unreachable()) : (void)0), (void)(h2_ts->elem->size != sizeof(struct uv_timer_s) ? hero_unreachable() : (void)0), (struct uv_timer_s *)(void *)(h2_ts + 1) + t10)));
 #line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     hero_print_int(t11);
@@ -332,7 +400,7 @@ bb0:
     t21 = h0_loop;
 #line 44 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     (void)uv_walk(t19, (h_0fn_7d30c22)hero_callback_of((void (*)(void))t20), t21);
-#line 336 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 404 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_release_at(&h2_ts);
     hero_array_release_at(&h3_own3);
     hero_lend_local_give(hero_lend_h1_a);

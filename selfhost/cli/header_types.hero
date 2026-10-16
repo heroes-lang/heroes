@@ -34,7 +34,6 @@ use emit/ffi_pointee
 use emit/width_line
 use emit/ffi_unit
 use emit/ffi_read_only
-use emit/lend_type
 use cli/pointee_ask
 use emit/c_text
 
@@ -190,18 +189,6 @@ function desugared_at(sugar: {str: [str]}, name: str, index: i64) -> str
     if found.is_err() || index >= found.must().len()
         return ""
     return found.must()[index]
-
-# The unit each counted parameter's count is compared in, as the header
-# spells the parameter, keyed `<C name> <position>`: what `emit/ctype.Names`
-# carries to `emit/lend_extent.hero` (panel 194's R7, defects 092 and 395).
-function lend_units(answers: [pointee_ask.Answered]) -> {str: str}
-    out: {str: str} @= {}
-
-    for one in answers
-        if one.asked.declared == pointee_ask.UNIT
-            out[one.asked.name + " " + one.asked.index.to_str()] @ one.header_type
-
-    return lend_type.with_read_casts(out, answers)
 
 # What a header's parameter type points at: the text before its last `*`,
 # with `restrict` and `__restrict` gone. Absent when the header takes the

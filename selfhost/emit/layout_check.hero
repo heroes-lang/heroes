@@ -23,6 +23,7 @@ use source
 use check/state
 use emit/extern_union
 use emit/layout_text
+use emit/layout_visible
 use emit/layout_rows
 use emit/layout_compare
 use emit/layout_sites
@@ -135,7 +136,7 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
                     wide[name] @ true
         .constant_decl | .function_decl | .variant_decl | .test_decl => partial @ true
 
-    seen = layout_text.visible(tree)
+    seen = layout_visible.visible(tree)
     t = one.c_type
     is_union = "__builtin_classify_type(*(" + t + " *)0) == 13"
     shown: {str: bool} @= {}

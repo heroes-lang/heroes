@@ -317,6 +317,8 @@
 #pragma push_macro("hero_map_release_at")
 #pragma push_macro("hero_map_set")
 #pragma push_macro("hero_os_pid")
+#pragma push_macro("hero_pad_fill")
+#pragma push_macro("hero_pad_gaps")
 #pragma push_macro("hero_panic")
 #pragma push_macro("hero_panic_assert")
 #pragma push_macro("hero_panic_assert_sides")

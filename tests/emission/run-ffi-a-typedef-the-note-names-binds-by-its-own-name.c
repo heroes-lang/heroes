@@ -167,6 +167,29 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiatypedefthenotenamesbindsbyitsownname_main(void);
+#pragma push_macro("__align")
+#undef __align
+#pragma push_macro("__size")
+#undef __size
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(lock_t, __size), sizeof(((lock_t *)0)->__size), __builtin_offsetof(lock_t, __align), sizeof(((lock_t *)0)->__align)};
+#pragma pop_macro("__align")
+#pragma pop_macro("__size")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+#pragma push_macro("__opaque")
+#undef __opaque
+#pragma push_macro("re_nsub")
+#undef re_nsub
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {__builtin_offsetof(pattern_t, re_nsub), sizeof(((pattern_t *)0)->re_nsub), __builtin_offsetof(pattern_t, __opaque), sizeof(((pattern_t *)0)->__opaque)};
+#pragma pop_macro("__opaque")
+#pragma pop_macro("re_nsub")
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(lock_t), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+    hero_pad_n_1 = hero_pad_gaps(sizeof(pattern_t), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+}
+
 
 #line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
 void h_ffiatypedefthenotenamesbindsbyitsownname_main(void) {
@@ -185,11 +208,15 @@ bb0:
     h0_m = t1;
     hero_lend_local_name(hero_lend_h0_m, "lock_init", "m");
 #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+    hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
+#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     t2 = lock_init(&h0_m);
 #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     t3 = HERO_STR_LIT(hero_str_20);
 #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     hero_lend_local_name(hero_lend_h0_m, "lock_marked", "m");
+#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+    hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
 #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     t4 = lock_marked(&h0_m);
 #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
@@ -207,11 +234,15 @@ bb0:
     h1_p = t5;
     hero_lend_local_name(hero_lend_h1_p, "pattern_init", "p");
 #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+    hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
+#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     t6 = pattern_init(&h1_p);
 #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     t7 = HERO_STR_LIT(hero_str_20);
 #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     hero_lend_local_name(hero_lend_h1_p, "pattern_marked", "p");
+#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+    hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
 #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     t8 = pattern_marked(&h1_p);
 #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
@@ -238,7 +269,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     return;
-#line 242 "ffiatypedefthenotenamesbindsbyitsownname.c"
+#line 273 "ffiatypedefthenotenamesbindsbyitsownname.c"
 }
 #undef h0_m
 #undef h1_p

@@ -168,6 +168,37 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsatagnamesahandleandarecord_main(void);
+#pragma push_macro("ai_addr")
+#undef ai_addr
+#pragma push_macro("ai_addrlen")
+#undef ai_addrlen
+#pragma push_macro("ai_canonname")
+#undef ai_canonname
+#pragma push_macro("ai_family")
+#undef ai_family
+#pragma push_macro("ai_flags")
+#undef ai_flags
+#pragma push_macro("ai_next")
+#undef ai_next
+#pragma push_macro("ai_protocol")
+#undef ai_protocol
+#pragma push_macro("ai_socktype")
+#undef ai_socktype
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {__builtin_offsetof(struct addrinfo, ai_flags), sizeof(((struct addrinfo *)0)->ai_flags), __builtin_offsetof(struct addrinfo, ai_family), sizeof(((struct addrinfo *)0)->ai_family), __builtin_offsetof(struct addrinfo, ai_socktype), sizeof(((struct addrinfo *)0)->ai_socktype), __builtin_offsetof(struct addrinfo, ai_protocol), sizeof(((struct addrinfo *)0)->ai_protocol), __builtin_offsetof(struct addrinfo, ai_addrlen), sizeof(((struct addrinfo *)0)->ai_addrlen), __builtin_offsetof(struct addrinfo, ai_canonname), sizeof(((struct addrinfo *)0)->ai_canonname), __builtin_offsetof(struct addrinfo, ai_addr), sizeof(((struct addrinfo *)0)->ai_addr), __builtin_offsetof(struct addrinfo, ai_next), sizeof(((struct addrinfo *)0)->ai_next)};
+#pragma pop_macro("ai_addr")
+#pragma pop_macro("ai_addrlen")
+#pragma pop_macro("ai_canonname")
+#pragma pop_macro("ai_family")
+#pragma pop_macro("ai_flags")
+#pragma pop_macro("ai_next")
+#pragma pop_macro("ai_protocol")
+#pragma pop_macro("ai_socktype")
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_1 = hero_pad_gaps(sizeof(struct addrinfo), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+}
+
 
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 void h_fixedbugsatagnamesahandleandarecord_main(void) {
@@ -199,6 +230,8 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     hero_lend_local_name(hero_lend_h1_r, "getaddrinfo", "res");
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1);
+#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t8 = getaddrinfo(hero_cstr_nonnull(t6), t7, &h0_h, &h1_r);
 #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     hero_handle_acquired(h1_r, "freeaddrinfo");
@@ -228,7 +261,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_h);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
-#line 232 "fixedbugsatagnamesahandleandarecord.c"
+#line 265 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r

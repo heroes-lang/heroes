@@ -54,7 +54,21 @@ zero-initialised so cleanup is unconditional, with `ptr == NULL` as the
 non-value every runtime entry point rejects (panel 021).
 
 A generated `eq` or `hash` walks **fields, never bytes**, because padding makes
-two equal records hash differently and silently. `hash` is never null. Copy on
+two equal records hash differently and silently.
+
+**And C never reads a group record's padding as it was left** (panel 215's
+R1, ratified 2026-10-16): before each `extern` call, the bytes no C member
+holds in every group record the call lends through `@`, a whole cell, a
+field, an element, an `@` parameter handed on and the elements of an array's
+buffer, are written zero in place, never a byte a member holds and never
+inside a union (`emit/padding.hero`). Every span is clang's `offsetof` and
+`sizeof` of a member, in a table each unit writes once, a member's own name
+guarded from the header's macros; the gaps are found once, before `main`, and a
+lend only writes them. Measured before it on Linux x86-64 at
+`-O0`: two records `==` called equal reached C with seven bytes of a dirtied
+stack each (`run/ffi-the-padding-c-reads-is-zero`). What it does not
+promise: the bits a bit-field's byte holds beside it (defect 2099), and five
+shapes read and not yet run (issue 2100). `hash` is never null. Copy on
 write is **one unshare per step** of a mutated place: one at the primitive lets
 a nested store alias, measured, with every instrument in this project reporting
 success (panel 022).

@@ -27,6 +27,7 @@ use emit/externs as emit_externs
 use emit/ffi_asked
 use emit/ffi_lookup
 use emit/layout_text
+use emit/layout_visible
 use emit/layout_rows
 use cli/toolchain
 use cli/probing
@@ -98,7 +99,7 @@ function inside(s: source.Source, decl: ast.Decl, read: [layout_text.Member]) ->
     out: [Found] @= []
     top: {str: bool} @= {}
 
-    for seen in layout_text.visible(read)
+    for seen in layout_visible.visible(read)
         top[read[seen.at].name] @ true
 
     match decl.kind
@@ -192,7 +193,7 @@ function others(read: [layout_text.Member], top: {str: bool}, holder: str) -> [s
         first @ holder.slice(from: 0, to: dot.must())
     out: [str] @= []
 
-    for seen in layout_text.visible(read)
+    for seen in layout_visible.visible(read)
         name = read[seen.at].name
 
         if name != first && !top[name].is_err()

@@ -178,6 +178,19 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 struct slot h_ffiafilledrecordisaskedfor_blank(void);
 void h_ffiafilledrecordisaskedfor_main(void);
+#pragma push_macro("id")
+#undef id
+#pragma push_macro("name")
+#undef name
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct slot, name), sizeof(((struct slot *)0)->name), __builtin_offsetof(struct slot, id), sizeof(((struct slot *)0)->id)};
+#pragma pop_macro("id")
+#pragma pop_macro("name")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct slot), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 struct slot h_ffiafilledrecordisaskedfor_blank(void) {
@@ -204,7 +217,7 @@ bb0:
     t10 = (struct slot){.name = {t1, t2, t3, t4, t5, t6, t7, t8}};
 #line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     return t10;
-#line 208 "ffiafilledrecordisaskedfor.c"
+#line 221 "ffiafilledrecordisaskedfor.c"
 }
 
 #line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
@@ -219,6 +232,8 @@ bb0:
 #line 46 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h0_s = t1;
     hero_lend_local_name(hero_lend_h0_s, "slot_fill", "s");
+#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
+    hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t2 = slot_fill(&h0_s);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
@@ -298,7 +313,7 @@ bb2:
     t8 = h1_f0;
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t9 = t8.as.err;
-#line 302 "ffiafilledrecordisaskedfor.c"
+#line 317 "ffiafilledrecordisaskedfor.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -310,7 +325,7 @@ bb3:
     hero_print_str(t22);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     hero_print_end();
-#line 314 "ffiafilledrecordisaskedfor.c"
+#line 329 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
@@ -322,7 +337,7 @@ bb4:
     t19 = h2_f1;
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t20 = t19.as.err;
-#line 326 "ffiafilledrecordisaskedfor.c"
+#line 341 "ffiafilledrecordisaskedfor.c"
     hero_panic_must(t20);
     hero_unreachable();
 }

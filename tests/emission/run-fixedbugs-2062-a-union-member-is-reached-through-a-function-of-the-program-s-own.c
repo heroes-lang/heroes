@@ -159,6 +159,25 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown_main(void);
+#pragma push_macro("fd")
+#undef fd
+#pragma push_macro("handle")
+#undef handle
+#pragma push_macro("kind")
+#undef kind
+#pragma push_macro("via")
+#undef via
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct tagged, kind), sizeof(((struct tagged *)0)->kind), __builtin_offsetof(struct tagged, via.fd), sizeof(((struct tagged *)0)->via.fd), __builtin_offsetof(struct tagged, via.handle), sizeof(((struct tagged *)0)->via.handle)};
+#pragma pop_macro("fd")
+#pragma pop_macro("handle")
+#pragma pop_macro("kind")
+#pragma pop_macro("via")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct tagged), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 14 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
 void h_fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown_main(void) {
@@ -181,8 +200,12 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
     hero_lend_local_name(hero_lend_h0_t, "tagged_set_fd", "t");
 #line 16 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
+    hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
+#line 16 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
     (void)tagged_set_fd(&h0_t, t3);
     hero_lend_local_name(hero_lend_h0_t, "tg_kind", "t");
+#line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
+    hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
 #line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
     t4 = tg_kind(&h0_t);
 #line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
@@ -190,6 +213,8 @@ bb0:
 #line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
     hero_print_end();
     hero_lend_local_name(hero_lend_h0_t, "tagged_fd", "t");
+#line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
+    hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
 #line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
     t5 = tagged_fd(&h0_t);
 #line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
@@ -200,7 +225,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_t);
 #line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
     return;
-#line 204 "fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown.c"
+#line 229 "fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown.c"
 }
 #undef h0_t
 HERO_TU_LOCAL bool h_fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown_Tagged_eq(const struct tagged *a, const struct tagged *b) {

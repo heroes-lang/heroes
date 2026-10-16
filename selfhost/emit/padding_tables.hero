@@ -1,0 +1,128 @@
+# The padding tables a unit writes once, at file scope before the bodies
+# that read them (panel 215's R1, issue 1334): one per group record the
+# unit's functions lend through `@`, whole, in a fixed array, or as the
+# elements of an array's buffer, and one per record an array among their
+# members holds. What a table holds and how a lend reads it is
+# `emit/padding.hero`; this walks the bodies for the records, reading each
+# call's arguments as the lend itself reads them. Split out of
+# `emit/padding.hero` on 2026-10-16, at panel 215's landing.
+
+use ast
+use source
+use check/state
+use ir
+use ir/containers
+use emit/writer
+use emit/ctype
+use emit/lend_count
+use emit/padding
+
+# The tables of every group record the functions `at` lend, written once at
+# file scope before their bodies (`table_of`): each record's spans, its own
+# member names guarded from the header's macros there and nowhere else, so a
+# lend is one call (`passes`). A record with no span gets no table and no
+# call: zero spans would make every byte padding, and the safe direction is
+# to write nothing.
+function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    lent: {i64: bool} @= {}
+
+    for one in at
+        f = p.functions[one]
+
+        for blk in f.blocks
+            for inst in blk.insts
+                match inst.op
+                    .call cl =>
+                        match cl.callee
+                            .extern_fn e =>
+                                for decl in lent_by(c, s, decls, f, run: cl.arguments, decl: e.decl)
+                                    reached(c, names, s, decls, decl: decl, @lent)
+                            .heroes_fn | .builtin_fn | .indirect => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .func_ref  => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
+                    .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+    if lent.len() == 0
+        return
+    writer.at_generated(@w)
+
+    found: [i64] @= []
+
+    # ORDER: by declaration, so the unit's text is a function of the program.
+    for decl in sort(keys(lent))
+        held = padding.members(c, names, s, decls, decl: decl, t: ctype.of(names, decl: decl), prefix: "", at: "0")
+
+        if !held.is_err()
+            spans_at = padding.table_of(decl)
+            line = "__attribute__((unused)) static const size_t " + spans_at + "[] = {" + held.must().spans.join(", ") + "};"
+
+            for text in padding.guarded(names: held.must().bare, line: line)
+                writer.line(@w, text: text)
+
+            # Room for one more gap than the table has spans, the most
+            # `hero_pad_gaps` can find (`runtime/parts/lend.c` says why).
+            writer.line(
+                @w,
+                text: "__attribute__((unused)) static size_t " + padding.gaps_of(decl) + "[sizeof " + spans_at + " / sizeof(size_t) + 2];"
+            )
+            writer.line(@w, text: "__attribute__((unused)) static size_t " + padding.count_of(decl) + ";")
+            found @ found.push(decl)
+
+    # A type's gaps never change, so they are found once, before `main` and
+    # before any thread, and a lend only writes.
+    if found.len() > 0
+        writer.line(@w, text: "__attribute__((constructor)) static void hero_pad_init(void) {")
+
+        for decl in found
+            spans_at = padding.table_of(decl)
+            writer.line(
+                @w,
+                text: "    " + padding.count_of(decl) + " = hero_pad_gaps(sizeof(" + ctype.of(names, decl: decl) + "), " + spans_at + ", sizeof " + spans_at + " / (2 * sizeof(size_t)), " + padding.gaps_of(decl) + ");"
+            )
+
+        writer.line(@w, text: "}")
+
+    writer.blank(@w)
+
+# The group records one extern call lends: the record, or fixed array of
+# records, each `@` argument is, and the element of each array whose buffer
+# the call fills (`lend_count.buffer_element`), as `zero` and `buffer_lines`
+# read them.
+function lent_by(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64) -> [i64]
+    out: [i64] @= []
+    index: i64 @= 0
+
+    for arg in containers.args_of(f, run)
+        match arg
+            .inout_arg io =>
+                whole = padding.record_of(
+                    c,
+                    decls,
+                    ty: padding.innermost(c, ty: lend_count.place_type(c, s, decls, f, at: io.place))
+                )
+
+                if whole >= 0
+                    out @ out.push(whole)
+                element = lend_count.buffer_element(c, decls, decl: decl, index: index)
+
+                if !element.is_err() && padding.record_of(c, decls, ty: element.must()) >= 0
+                    out @ out.push(padding.record_of(c, decls, ty: element.must()))
+            .value_arg => index @ index
+
+        index @ index + 1
+
+    return out
+
+# `decl` and every record an array among its members holds, each with a
+# span, into `lent`.
+function reached(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, @lent: {i64: bool})
+    if !lent[decl].is_err()
+        return
+    held = padding.members(c, names, s, decls, decl: decl, t: ctype.of(names, decl: decl), prefix: "", at: "0")
+
+    if held.is_err() || held.must().spans.len() == 0
+        return
+    lent[decl] @ true
+
+    for one in held.must().arrays
+        reached(c, names, s, decls, decl: one.element, @lent)

@@ -64,6 +64,11 @@ record Member
     # read from the text, and only where C cannot be asked (a bit-field has
     # no `__builtin_offsetof`).
     byte: i64
+    # The last byte a bit-field's bits reach, else `byte`; -1 where the
+    # offset column is not the shape `layout_rows.last_byte` knows. The bytes
+    # a bit-field holds are the one span C cannot be asked for (panel 215's
+    # R1, `emit/padding.hero`).
+    last: i64
     # An anonymous member whose type opens with `union `: the one word of a
     # type's text that is read, because an anonymous member has no name C
     # can classify (a NAMED member is classified by C through `path`).
@@ -81,13 +86,6 @@ record Member
     path: str
     # The type as the dump prints it, its name taken off (defect 2062).
     type_text: str
-
-# A member a program can name on T: its own, or one an anonymous member
-# promotes (C11 6.7.2.1p13). `group` is the index of the anonymous member it
-# sits in at depth 1, or -1 for a member of T itself.
-record Visible
-    at: i64
-    group: i64
 
 ## The dump unit
 
@@ -196,6 +194,7 @@ function members(rows: [str], from: i64) -> [Member]?
     named: [str] @= []
     bits: [bool] @= []
     starts_at: [i64] @= []
+    lasts: [i64] @= []
     flex: [bool] @= []
     typed: [str] @= []
     closed: bool @= false
@@ -225,6 +224,7 @@ function members(rows: [str], from: i64) -> [Member]?
         depths @ depths.push(spaces / 2 - 1)
         bits @ bits.push(layout_rows.byte_index(text: row.slice(from: 0, to: bar), needle: ":") >= 0)
         starts_at @ starts_at.push(layout_rows.leading_number(row.slice(from: 0, to: bar)))
+        lasts @ lasts.push(layout_rows.last_byte(row.slice(from: 0, to: bar)))
 
         if space < 0
             named @ named.push(text)
@@ -255,7 +255,7 @@ function members(rows: [str], from: i64) -> [Member]?
         if anonymous
             place @ place_of(typed[k])
         out @ out.push(
-            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], union_kw: anonymous && deeper && layout_rows.starts(text: typed[k], prefix: "union "), place: place, path: paths[k], type_text: typed[k])
+            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], last: lasts[k], union_kw: anonymous && deeper && layout_rows.starts(text: typed[k], prefix: "union "), place: place, path: paths[k], type_text: typed[k])
         )
         k @ k + 1
 
@@ -328,37 +328,6 @@ function place_of(type_text: str) -> str
         return ""
     return type_text.slice(from: at.must() + 4, to: type_text.len())
 
-# The members a program can name on T, in the dump's order: below a NAMED
-# record member the fields are that member's own, and are skipped.
-function visible(read: [Member]) -> [Visible]
-    out: [Visible] @= []
-    hidden: i64 @= 0
-    group: i64 @= -1
-    k: i64 @= 0
-
-    while k < read.len()
-        m = read[k]
-
-        if hidden > 0 && m.depth > hidden
-            k @ k + 1
-            continue
-        hidden @ 0
-
-        if m.depth == 1
-            group @ -1
-
-            if m.name.len() == 0 && m.nested
-                group @ k
-
-        if m.name.len() > 0
-            out @ out.push(Visible(at: k, group: group))
-
-            if m.nested
-                hidden @ m.depth
-        k @ k + 1
-
-    return out
-
 ## Tests
 
 test "a block is read by its shape: depth, the empty name of an anonymous member, a bit-field, a flexible tail"
@@ -371,6 +340,7 @@ test "a block is read by its shape: depth, the empty name of an anonymous member
     assert got[2].depth == 2 && got[2].name == "" && got[2].nested
     assert got[3].depth == 3 && got[3].name == "i"
     assert got[6].bitfield && got[6].name == "flag" && got[6].byte == 12
+    assert got[6].last == 12 && got[3].last == 4
     assert got[3].byte == 4
     assert got[7].flexible && !got[0].flexible
     assert got[2].union_kw && !got[1].union_kw && !got[3].union_kw
@@ -384,17 +354,11 @@ test "a block is read by its shape: depth, the empty name of an anonymous member
     )
     assert widths[got[2].place].must() == 4
     assert heads(rows)[40].is_err() && heads(rows).len() == 1
-    seen = visible(got)
-    assert seen.len() == 6
-    assert seen[1].group == 1 && seen[3].group == 1 && seen[0].group == -1
 
 test "a named record member's own fields are not T's"
     dump = "         0 | struct hero_ly_0\n         0 |   SN v\n         0 |     int32_t kind\n         4 |     W2 u\n         4 |       int32_t i\n         4 |       uint32_t n\n           | [sizeof=8, align=4]\n"
     rows = layout_rows.rows_of(dump)
     read = members(rows: rows, from: heads(rows)[0].must()).must()
-    seen = visible(read)
-    assert seen.len() == 2
-    assert seen[1].at == 1
 
     # C names the union's members through it, and does not take it for an
     # anonymous union: a named member is classified by C, never by its text.

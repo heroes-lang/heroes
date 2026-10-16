@@ -173,6 +173,35 @@ SA h_ffirestzeroaunionnoneofwhosemembersisnamed_in_a_struct(void);
 UD h_ffirestzeroaunionnoneofwhosemembersisnamed_a_union_type(void);
 SA h_ffirestzeroaunionnoneofwhosemembersisnamed_nothing_named(void);
 void h_ffirestzeroaunionnoneofwhosemembersisnamed_main(void);
+#pragma push_macro("c")
+#undef c
+#pragma push_macro("d")
+#undef d
+#pragma push_macro("kind")
+#undef kind
+#pragma push_macro("x")
+#undef x
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, c), sizeof(((SA *)0)->c), __builtin_offsetof(SA, d), sizeof(((SA *)0)->d), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)};
+#pragma pop_macro("c")
+#pragma pop_macro("d")
+#pragma pop_macro("kind")
+#pragma pop_macro("x")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+#pragma push_macro("c")
+#undef c
+#pragma push_macro("d")
+#undef d
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {__builtin_offsetof(UD, c), sizeof(((UD *)0)->c), __builtin_offsetof(UD, d), sizeof(((UD *)0)->d)};
+#pragma pop_macro("c")
+#pragma pop_macro("d")
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(SA), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+    hero_pad_n_1 = hero_pad_gaps(sizeof(UD), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+}
+
 
 #line 26 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
 SA h_ffirestzeroaunionnoneofwhosemembersisnamed_in_a_struct(void) {
@@ -189,7 +218,7 @@ bb0:
     t2.kind = t1;
 #line 27 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return t2;
-#line 193 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 222 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 29 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -203,7 +232,7 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 30 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return t1;
-#line 207 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 236 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 32 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -217,7 +246,7 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 33 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return t1;
-#line 221 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 250 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 35 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -244,11 +273,15 @@ bb0:
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     hero_lend_local_name(hero_lend_h0_s, "sa_union", "s");
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+    hero_pad_fill(&h0_s, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
+#line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     t5 = sa_union(&h0_s);
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     t6 = HERO_STR_LIT(hero_str_20);
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     hero_lend_local_name(hero_lend_h0_s, "sa_x", "s");
+#line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+    hero_pad_fill(&h0_s, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     t7 = sa_x(&h0_s);
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -268,6 +301,8 @@ bb0:
 #line 40 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     h1_u = t8;
     hero_lend_local_name(hero_lend_h1_u, "ud_all", "u");
+#line 41 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+    hero_pad_fill(&h1_u, sizeof(UD), 1, hero_pad_g_1, hero_pad_n_1);
 #line 41 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     t9 = ud_all(&h1_u);
 #line 41 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -296,11 +331,15 @@ bb0:
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     hero_lend_local_name(hero_lend_h2_n, "sa_union", "s");
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+    hero_pad_fill(&h2_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
+#line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     t17 = sa_union(&h2_n);
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     t18 = HERO_STR_LIT(hero_str_20);
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     hero_lend_local_name(hero_lend_h2_n, "sa_x", "s");
+#line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+    hero_pad_fill(&h2_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     t19 = sa_x(&h2_n);
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -323,7 +362,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_s);
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return;
-#line 327 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 366 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 #undef h0_s
 #undef h1_u

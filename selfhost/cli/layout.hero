@@ -55,6 +55,7 @@ use emit/layout_text
 use emit/layout_rows
 use emit/layout_screen
 use emit/layout_check
+use emit/membership
 use cli/toolchain
 use cli/process
 use cli/publish
@@ -74,14 +75,19 @@ use ir/lower
 
 function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe) -> ()?
     every: {i64: bool}? = fail(code: "every", msg: "every group record")
-    return check_records(t, p, c, s, decls, probe: probe, records: every)
+    laid: {i64: str} @= {}
+    return check_records(t, p, c, s, decls, probe: probe, records: every, @laid)
 
 # The same, of the group records `records` holds where it is given: those a
 # module's unit reads the headers of, asked of those headers alone, since a
 # record is laid out as the unit that spells it reads it (panel 202 R1,
 # `cli/probing.hero`). `p` is the whole program, whose every use of a record
 # is what the union questions ask about.
-function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}?) -> ()?
+#
+# `laid` takes what `emit/padding.hero` reads of each record (panel 215's
+# R1): `membership.DECLARED` where the screen vouched for it, else the leaves of
+# its layout dump.
+function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}?, @laid: {i64: str}) -> ()?
     wanted = wanted_of(s, decls, records: records)
 
     if wanted.len() == 0
@@ -104,7 +110,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
         screen = kept.read(dir + "/screen-" + known.must() + ".txt")
 
         if !screen.is_err()
-            return answered(a, wanted: wanted, sum: known.must(), said: screen.must())
+            return answered(a, wanted: wanted, sum: known.must(), said: screen.must(), @laid)
     process.mkdir_all(dir)?
     screen_c = pointee.unit_path(dir: dir, stem: "screen", text: screen_text)
     publish.write_whole(path: screen_c, text: screen_text, keyed: true)?
@@ -133,51 +139,85 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
     listing = deps.pointer_text(rows.must())
     sum = listing.slice(from: 0, to: 16)
     kept.write(path: dir + "/screen-" + sum + ".txt", text: said.must())?
-    verdict = answered(a, wanted: wanted, sum: sum, said: said.must())
+    verdict = answered(a, wanted: wanted, sum: sum, said: said.must(), @laid)
     publish.write_whole(path: listed, text: listing, keyed: true)?
     return verdict
 
 # From what the screen said: the records it could not vouch for, their
-# layout (kept under the digest of the unit that asked for it), and the
-# check unit that layout gives. A record named after a typedef whose type
-# has no layout is refused first, by the screen's own two answers, unless
-# clang erred outside the screen too: then the headers did not compile
-# alone, and the program's own compile says so on the author's line.
-function answered(a: layout_runs.Asking, wanted: [layout_text.Asked], sum: str, said: str) -> ()?
+# layout (`layout_runs.kept_dump`), and the check unit that layout gives. A
+# record named after a typedef whose type has no layout is refused first, by
+# the screen's own two answers, unless clang erred outside the screen too:
+# then the headers did not compile alone, and the program's own compile says
+# so on the author's line.
+function answered(a: layout_runs.Asking, wanted: [layout_text.Asked], sum: str, said: str, @laid: {i64: str}) -> ()?
     opaque = layout_screen.no_layout(said, wanted: wanted)
 
     if opaque.len() > 0 && !layout_screen.strays(said)
         return refused_opaque(a, opaque: opaque)
     flagged = layout_screen.flagged(said)
     dumped: [layout_text.Asked] @= []
+    laying: [layout_text.Asked] @= []
 
+    # A record the screen vouches for names exactly the struct's members, so
+    # its padding is C's arithmetic on the declared fields; a `partial` one
+    # proves nothing, and is laid out by the dump beside the flagged ones,
+    # which alone the check unit asks about (panel 215's R1).
     for one in wanted
         if !flagged[one.decl].is_err()
             dumped @ dumped.push(one)
+            laying @ laying.push(one)
+        else if partial_record(a.decls, decl: one.decl)
+            laying @ laying.push(one)
+        else
+            laid[one.decl] @ membership.DECLARED
+
+    if laying.len() == 0
+        return ok()
+    made = layout_runs.kept_dump(a, sum: sum, dump_text: layout_text.dump_unit(a.headers, wanted: laying))
+
+    # A dump that did not compile names a record the build's own compile
+    # refuses on the author's line (every group record's type is in its field
+    # assertions), so nothing is said here.
+    if made.is_err()
+        return ok()
+    rows = layout_rows.wrapper_rows(made.must()).join("\n") + "\n"
+    lay(rows, laying: laying, @laid)
 
     if dumped.len() == 0
         return ok()
-    dump_text = layout_text.dump_unit(a.headers, wanted: dumped)
-    kept_path = a.dir + "/clang-dump-" + sum + "-" + digest.digest(dump_text) + ".txt"
-    layouts = kept.read(kept_path)
-    rows: str @= ""
-
-    if !layouts.is_err()
-        rows @ layout_rows.wrapper_rows(layouts.must()).join("\n") + "\n"
-    else
-        made = layout_runs.dump(a, dump_text: dump_text)
-
-        # A dump that did not compile names a record the build's own
-        # compile refuses on the author's line (every group record's type is
-        # in its field assertions), so nothing is said or kept here.
-        if made.is_err()
-            return ok()
-        rows @ layout_rows.wrapper_rows(made.must()).join("\n") + "\n"
-
-        if made.must().len() <= layout_runs.KEPT_DUMP
-            kept.write(path: kept_path, text: made.must())?
     text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
     return layout_runs.judged(a, sum: sum, text: text)
+
+# What `emit/padding.hero` reads of each record laid out (panel 215's R1):
+# the leaves of its block, where the reader knows the dump's shape and the
+# block's. A record it cannot read is left out, and nothing is written for
+# it, which is the behaviour before R1 and is silent.
+function lay(rows: str, laying: [layout_text.Asked], @laid: {i64: str})
+    read = layout_rows.rows_of(rows)
+
+    if !layout_text.control_holds(read)
+        return
+    opened = layout_text.heads(read)
+
+    for one in laying
+        start = opened[one.decl]
+
+        if !start.is_err()
+            tree = layout_text.members(rows: read, from: start.must())
+
+            if !tree.is_err()
+                text = membership.encoded(tree.must())
+
+                if !text.is_err()
+                    laid[one.decl] @ text.must()
+
+# Whether `decl` is a `partial` record, which the screen proves nothing of.
+function partial_record(decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .record_decl rec                                             => return rec.partial
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+
+    return false
 
 # **A record named after a typedef whose type has no layout, refused here,
 # before any unit compiles** (defect 191, 2026-10-02): the screen's two

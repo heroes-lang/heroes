@@ -44,6 +44,7 @@ use ir/mono
 use ir/own
 use ir/place_store
 use emit/lend_local
+use emit/padding_tables
 
 # What came out. Exactly one of the two is interesting: with any
 # diagnostic the C is empty, because a translation unit missing the
@@ -241,6 +242,10 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
             signature.prototype(@w, p.functions[at], c, names, s, decls)
 
     callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: callbacks)
+
+    # The padding tables of the group records these bodies lend (panel 215's
+    # R1, `emit/padding_tables.hero`), before the first body that reads one.
+    padding_tables.tables(@w, p, at: shown, c: c, names: names, s: s, decls: decls)
 
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)

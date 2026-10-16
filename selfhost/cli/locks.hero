@@ -64,6 +64,8 @@ record Owner
 record Screened
     wanted: [layout_text.Asked]
     said: str
+    # The screen's sum, which names its kept dump (`layout_runs.kept_dump`).
+    sum: str
     asking: layout_runs.Asking
 
 # The first lock clang found in each group record of `records`, by
@@ -84,14 +86,18 @@ function found(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     for one in sc.wanted
         questions @ questions.push(lock_screen.Question(decl: one.decl, c_type: one.c_type, path: ""))
 
-        if is_partial(decls, decl: one.decl) || !flagged[one.decl].is_err()
+        if layout.partial_record(decls, decl: one.decl) || !flagged[one.decl].is_err()
             asking @ asking.push(one)
             owners[one.decl] @ Owner(decl: one.decl, c_type: one.c_type, prefix: "")
 
     next: i64 @= ELEMENTS
 
     while asking.len() > 0
-        made = dump_kept(sc.asking, text: layout_text.dump_unit(sc.asking.headers, wanted: asking))
+        made = layout_runs.kept_dump(
+            sc.asking,
+            sum: sc.sum,
+            dump_text: layout_text.dump_unit(sc.asking.headers, wanted: asking)
+        )
 
         if made.is_err()
             break
@@ -156,7 +162,7 @@ function screened(t: toolchain.Toolchain, p: containers.Program, c: state.Checke
     if said.is_err()
         return fail(code: "none", msg: "no screen kept")
     a = layout_runs.Asking(t: t, dir: dir, headers: probe.headers, s: s, decls: decls, c: c, u: u, words: probe.words)
-    return ok(Screened(wanted: wanted, said: said.must(), asking: a))
+    return ok(Screened(wanted: wanted, said: said.must(), sum: known.must(), asking: a))
 
 # How many array levels a C type's text ends with: `struct c[2]` 1,
 # `int[2][3]` 2, `int[]` 1, `int *` 0.
@@ -172,26 +178,6 @@ function rank_of(type_text: str) -> i64
         at @ at - 1
 
     return n
-
-function is_partial(decls: [ast.Decl], decl: i64) -> bool
-    match decls[decl].kind
-        .record_decl rec                                             => return rec.partial
-        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
-
-    return false
-
-# A dump, kept under the digest of the unit that asked for it.
-function dump_kept(a: layout_runs.Asking, text: str) -> str?
-    path = a.dir + "/locks-dump-" + digest.digest(text) + ".txt"
-    known = kept.read(path)
-
-    if !known.is_err()
-        return known
-    made = layout_runs.dump(a, dump_text: text)
-
-    if !made.is_err() && made.must().len() <= layout_runs.KEPT_DUMP
-        kept.write(path: path, text: made.must())?
-    return made
 
 # What clang said of the identity unit, kept under the unit's digest.
 function asked_kept(a: layout_runs.Asking, text: str) -> str?
@@ -267,7 +253,13 @@ test "the element rounds find a lock an array of records holds, and end at a str
         named[source.span_text(s, d.name)] @ at
         at @ at + 1
 
-    assert !layout.check_records(t, low.program, c, s, parsed.decls, probe: probe, records: ok(every)).is_err()
+    laid: {i64: str} @= {}
+    assert !layout.check_records(t, low.program, c, s, parsed.decls, probe: probe, records: ok(every), @laid).is_err()
+
+    # Both records are `partial`, so the dump the lock question reads first
+    # is the one the layout check kept for panel 215's R1, whose leaves name
+    # the array whole: its elements are this question's own round.
+    assert layout_rows.byte_index(text: laid[named["holder"].must()].must(), needle: "p many") >= 0
     held = found(t, low.program, c, s, parsed.decls, probe: probe, records: every)
     assert held[named["holder"].must()].must().path == "many[0].lock"
     assert held[named["light"].must()].is_err()

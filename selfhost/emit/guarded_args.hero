@@ -1,0 +1,81 @@
+# Every argument of an extern call as C must receive it (design.md §1.12,
+# §4.19; panels 053 and 103): a `cstr` behind the runtime's null check, an
+# opaque or numeric `@` cast to `(void *)` as the probe spells it, and a
+# marked `@cstr` handed over as `char **`. Split out of `emit/ops.hero` on
+# 2026-10-16, when panel 215's R1 took that file past CLAUDE.md §11's
+# ceiling: the call stayed there, its arguments came here.
+
+use ast
+use check/table
+use check/state
+use check/freer as freer
+use ir/instances
+use emit/extern_probe
+
+# Every cstr argument of an extern call, wrapped in the runtime's null
+# check (panel 053; §12's robustness rule) — and every opaque or numeric
+# `@` argument cast to `(void *)` (panel 103; the reason and the two
+# exclusions are `extern_probe.is_cast_out`'s, and the probe and the call
+# spell the argument the same way or one of them is the thing clang
+# refuses). Not a language change and
+# not a type rule: hero_cstr_nonnull is to a null cstr what
+# __builtin_mul_overflow is to signed overflow — one branch, a named
+# abort, C's UB never reached. The hole was measured: a null cstr
+# handed STRAIGHT to C (strstr on getenv(UNSET)) reached libsystem
+# unexamined — SEGV at 0x0. The narrowing is the callee's DECLARED
+# PARAMETER TYPE, a fact about this declaration; the cost is that a
+# cstr from s.cstr(), which cannot be null, is checked too — one
+# predictable branch, and safety outranks speed (§12). An @cstr is
+# excluded: §4.8 makes it a pointer parameter, so the argument is the
+# address of a local, never null — a guard that cannot fail is read as
+# protection that is there (author decision 2026-08-15).
+function guard_arguments(p: instances.Held, c: state.Checked, decls: [ast.Decl], decl: i64, arguments: [str]) -> [str]
+    declared = instances.last_of(p, decl: decl)
+
+    if declared.is_err()
+        return arguments
+    callee = p.program.functions[declared.must()]
+    out: [str] @= []
+    index: i64 @= 0
+
+    for argument in arguments
+        is_cstr: bool @= false
+        is_out: bool @= false
+        cast: bool @= false
+
+        if index < callee.params.len()
+            slot = callee.slots[callee.params[index]]
+            cast @ extern_probe.is_cast_out(c, slot)
+
+            match table.get(c.types, slot.ty)
+                .cstr                                                      => is_cstr @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
+                .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
+                .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+
+            match slot.kind
+                .param_slot ps =>
+                    if ps.mutable
+                        is_out @ true
+                .local_slot | .synthetic_slot | .return_slot => is_out @ is_out
+
+        if is_cstr && !is_out
+            out @ out.push("hero_cstr_nonnull(" + argument + ")")
+        else if cast
+            out @ out.push("(void *)" + argument)
+        else if is_cstr && is_out && freer.owned_parameter(decls, at: decl, index: index)
+            # **A marked `@cstr` is handed over as `char **`, and this is step 4b's
+            # mechanism one level up.** The hidden cell is a `cstr`, which spells
+            # `const char *`, so its address is `const char **` — and against
+            # `sqlite3.h`'s `char **errmsg` that is `discards qualifiers in nested
+            # pointer types` under this compiler's own `-Werror`, measured. The
+            # probe already spells the cell without the `const` (`extern_probe`),
+            # so the call has to spell it the same way or the two ask clang
+            # different questions. Stripping the `const` is exactly what the mark
+            # licenses: the bytes are the program's the moment C writes them.
+            out @ out.push("(char **)" + argument)
+        else
+            out @ out.push(argument)
+        index @ index + 1
+
+    return out

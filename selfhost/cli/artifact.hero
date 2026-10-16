@@ -65,8 +65,8 @@ use cli/probing
 use cli/compiling
 use cli/one_file
 use cli/pointee_ask
-use cli/header_types
 use cli/publish
+use emit/lend_type
 
 # The artifact, written or printed, AFTER the build's own rounds have passed. A
 # failure here is the pointee check's and carries its message up so the caller
@@ -119,7 +119,7 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     # (`-fsyntax-only`, a package's `pkg-config --cflags` added for the nine
     # that bind one), and said nothing of any of them.
     text: str @= art.c
-    units = header_types.lend_units(answered)
+    units = lend_type.lend_units(answered)
 
     if struct_tags.len() > 0 || units.len() > 0 || kept.len() > 0
         text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: struct_tags, lend_units: units, kept: kept).c

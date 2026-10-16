@@ -178,6 +178,28 @@ function leading_number(text: str) -> i64
         return -1
     return value
 
+# The last byte an offset column reaches: `byte + hi / 8` for a bit-field's
+# `<byte>:<lo>-<hi>`, its bits counted from that byte, the byte itself for
+# any other member, and -1 for a bit-field's column of another shape (panel
+# 215's R1: the bytes a bit-field holds are the one span C cannot be asked
+# for, so they are read here, and a column this cannot read leaves its
+# record unwritten).
+function last_byte(column: str) -> i64
+    byte = leading_number(column)
+    colon = byte_index(text: column, needle: ":")
+
+    if colon < 0
+        return byte
+    dash = byte_index(text: column, needle: "-")
+
+    if byte < 0 || dash < colon
+        return -1
+    hi = leading_number(column.slice(from: dash + 1, to: column.len()))
+
+    if hi < 0
+        return -1
+    return byte + hi / 8
+
 function last_space(text: str) -> i64
     at: i64 @= text.len() - 1
 
@@ -208,3 +230,10 @@ test "only the blocks this compiler asked for become rows"
     assert rows[4] == "         0 | struct hero_ly_control"
     assert wrapper_rows("").len() == 0
     assert rows_of("a\r\nb\n").len() == 2 && rows_of("a\r\nb\n")[0] == "a"
+
+test "a bit-field's column gives the last byte its bits reach, any other its own"
+    assert last_byte("     1:5-8 ") == 2
+    assert last_byte("     1:0-2 ") == 1
+    assert last_byte("    12:0-0 ") == 12
+    assert last_byte("    16 ") == 16
+    assert last_byte("     1:5 ") == -1

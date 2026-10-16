@@ -159,6 +159,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs092acountinacellpasttherecordaborts_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct one), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 void h_fixedbugs092acountinacellpasttherecordaborts_main(void) {
@@ -191,6 +198,8 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     hero_lend_local_name(hero_lend_h1_n, "fill_len", "n");
 #line 18 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
+    hero_pad_fill(&h0_o, sizeof(struct one), 1, hero_pad_g_0, hero_pad_n_0);
+#line 18 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t6 = fill_len(&h0_o, (void *)&h1_n);
 #line 18 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     hero_print_int(t6);
@@ -209,7 +218,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 19 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     return;
-#line 213 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 222 "fixedbugs092acountinacellpasttherecordaborts.c"
 }
 #undef h0_o
 #undef h1_n

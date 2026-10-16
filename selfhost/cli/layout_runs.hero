@@ -70,6 +70,24 @@ function dump(a: Asking, dump_text: str) -> str?
         return fail(code: "unread", msg: "the dump did not compile")
     return ok(dumped_text.must())
 
+# The dump of `dump_text`'s records: read from where it was kept, under the
+# screen's `sum` and the unit's digest, or asked of clang and kept there when
+# it is no larger than `KEPT_DUMP`; absent when it did not compile. The one
+# place a dump is kept: the layout check and the lock question
+# (`cli/locks.hero`) ask the same unit of the same records first, and the
+# second reads the first's answer rather than running clang again.
+function kept_dump(a: Asking, sum: str, dump_text: str) -> str?
+    kept_path = a.dir + "/clang-dump-" + sum + "-" + digest.digest(dump_text) + ".txt"
+    known = kept.read(kept_path)
+
+    if !known.is_err()
+        return known
+    made = dump(a, dump_text: dump_text)
+
+    if !made.is_err() && made.must().len() <= KEPT_DUMP
+        kept.write(path: kept_path, text: made.must())?
+    return made
+
 # The check unit's verdict, kept under the digest of its own text: a compiler
 # that writes the assertions differently never reads another's answer.
 function judged(a: Asking, sum: str, text: str) -> ()?

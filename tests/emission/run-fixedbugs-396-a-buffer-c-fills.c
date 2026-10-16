@@ -219,10 +219,17 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct pair *)0) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)};
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_1 = hero_pad_gaps(sizeof(struct pair), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+}
+
 
 #line 20 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 int64_t h_fixedbugs396abuffercfills_DIGEST_LEN(void) {
-#line 226 "fixedbugs396abuffercfills.c"
+#line 233 "fixedbugs396abuffercfills.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -232,7 +239,7 @@ int64_t h_fixedbugs396abuffercfills_DIGEST_LEN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 20 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     return DIGEST_LEN;
-#line 236 "fixedbugs396abuffercfills.c"
+#line 243 "fixedbugs396abuffercfills.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -305,7 +312,7 @@ bb0:
     hero_print_int(t9);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 309 "fixedbugs396abuffercfills.c"
+#line 316 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_other);
     hero_array_release_at(&h1_own1);
     return;
@@ -736,6 +743,8 @@ bb0:
     HERO_NODEBUG int64_t hero_lend_e77_0 = INT64_C(2);
 #line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     HERO_NODEBUG void *hero_lend_b77_0 = hero_lend_take(h5_pairs, hero_lend_e77_0, "fill_pairs2", "p");
+#line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
+    hero_pad_fill(hero_lend_b77_0, sizeof(struct pair), (size_t)hero_lend_e77_0, hero_pad_g_1, hero_pad_n_1);
 #line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     (void)fill_pairs2((void *)hero_lend_b77_0);
 #line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1186,7 +1195,7 @@ bb0:
     hero_print_int(t186);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 1190 "fixedbugs396abuffercfills.c"
+#line 1199 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_before);
     hero_array_release_at(&h2_named);

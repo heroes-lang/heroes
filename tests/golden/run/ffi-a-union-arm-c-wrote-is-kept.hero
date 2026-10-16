@@ -1,0 +1,28 @@
+# UNVERIFIED — pending debrief
+# Panel 215's R1, issue 1334, 2026-10-16, adversarial: a record bound to a
+# union by one arm passes the layout screen, a union's initialiser filling
+# one member, so its declared fields are not its members. The padding R1
+# writes is asked of C, `__builtin_classify_type`, and a union is covered
+# whole: the wide arm C wrote survives the next lend. The sitting's first
+# build zeroed it and printed `0.0 1432778632` at exit 0.
+
+extern "ffi-a-union-arm-c-wrote-is-kept.h"
+    record UN
+        c: i8
+    record V
+        fd: i32
+    record Nu tag nu
+        kind: i32
+        via: V
+    function un_set(@p: UN)
+    function un_get(@p: UN) -> f64
+    function nu_set(@p: Nu)
+    function nu_get(@p: Nu) -> i64
+
+function main()
+    u: UN @= UN(c: 0)
+    un_set(@u)
+    print(un_get(@u))
+    n: Nu @= Nu(kind: 1, via: V(fd: 0))
+    nu_set(@n)
+    print(nu_get(@n))

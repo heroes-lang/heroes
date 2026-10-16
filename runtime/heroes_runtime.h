@@ -729,6 +729,9 @@ int64_t hero_lend_count_u64(uint64_t, const char *, const char *);
 void *hero_lend_local(size_t, const char *, const char *);
 void hero_lend_local_name(void *, const char *, const char *);
 void hero_lend_local_give(void *);
+/* A padding table's gaps, found once, and written zero at each lend (panel 215's R1). */
+size_t hero_pad_gaps(size_t, const size_t *, size_t, size_t *);
+void hero_pad_fill(void *, size_t, size_t, const size_t *, size_t);
 
 /* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
  *

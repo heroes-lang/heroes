@@ -67,6 +67,7 @@ use emit/descriptors
 use emit/signature
 use emit/body
 use emit/callback_thunk
+use emit/padding_tables
 
 # One module's translation unit, written from its plan
 # (`emit/unit_plan.hero`, which decides what it holds and which headers it
@@ -162,6 +163,10 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
             signature.prototype(@w, f, c, names, s, decls)
 
     callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: whole.callbacks)
+
+    # The padding tables of the group records these bodies lend (panel 215's
+    # R1, `emit/padding_tables.hero`), before the first body that reads one.
+    padding_tables.tables(@w, p, at: keep, c: c, names: names, s: s, decls: decls)
 
     for at in keep
         f = p.functions[at]

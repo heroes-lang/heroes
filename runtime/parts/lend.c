@@ -487,6 +487,47 @@ void hero_lend_local_name(void *local, const char *callee, const char *param) {
     }
 }
 
+/* The gaps of one padding table (panel 215's R1, issue 1334;
+ * emit/padding_tables.hero): every run of the `size` bytes no span covers,
+ * written as offset and length pairs into `gaps`, and how many there are.
+ * `spans` holds `n` pairs, each a C member's offset and size in the header's
+ * own layout, written by the emitter as `__builtin_offsetof` and `sizeof` of a
+ * member the screen or the layout dump names, so clang computed every number;
+ * a union's arms each give a span, so a byte is a gap only where it is padding
+ * in every arm, and the spans need no order (an arm may start below the member
+ * before it in the table). A gap ends at the offset of a span past it or at
+ * `size`, a different one each time, so there are at most `n + 1` of them,
+ * the room the unit gives `gaps`. Called once per table, before `main`, by the
+ * unit's constructor: a type's gaps never change, so a lend only writes. */
+size_t hero_pad_gaps(size_t size, const size_t *spans, size_t n, size_t *gaps) {
+    size_t at = 0, count = 0;
+    while (at < size) {
+        size_t next = size;
+        int covered = 0;
+        for (size_t i = 0; i < n; i++) {
+            size_t off = spans[2 * i], len = spans[2 * i + 1];
+            if (off <= at && at < off + len) { covered = 1; at = off + len; break; }
+            if (off > at && off < next) next = off;
+        }
+        if (covered) continue;
+        if (count > n) hero_panic("a padding table gave more gaps than it has spans — this is a compiler bug, please report it");
+        gaps[2 * count] = at;
+        gaps[2 * count + 1] = next - at;
+        count++;
+        at = next;
+    }
+    return count;
+}
+
+/* The gaps of `count` group records laid end to end from `p`, written zero in
+ * place before C reads them; nothing a member holds is touched, so a mutex
+ * another thread is locking keeps its bytes. */
+void hero_pad_fill(void *p, size_t size, size_t count, const size_t *gaps, size_t ngaps) {
+    unsigned char *b = p;
+    for (size_t k = 0; k < count; k++)
+        for (size_t g = 0; g < ngaps; g++) memset(b + k * size + gaps[2 * g], 0, gaps[2 * g + 1]);
+}
+
 void hero_lend_local_give(void *local) {
     if (hero_lend_depth < 1) hero_panic("a local lent to C was given back twice — this is a compiler bug, please report it");
     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];

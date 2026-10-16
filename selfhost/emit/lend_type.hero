@@ -27,6 +27,7 @@
 use bytes
 use emit/ffi_lookup
 use cli/pointee_ask
+use emit/membership
 
 constant KEY: str
     "read "
@@ -51,6 +52,22 @@ function cast_lends(units: {str: str}, name: str, arguments: [str]) -> [str]
         index @ index + 1
 
     return out
+
+# The unit each counted parameter's count is compared in, as the header
+# spells the parameter, keyed `<C name> <position>`: what `emit/ctype.Names`
+# carries to `emit/lend_extent.hero` (panel 194's R7, defects 092 and 395);
+# and each group record's membership, keyed `membership.KEY <declaration>`,
+# which no C name begins with (panel 215's R1).
+function lend_units(answers: [pointee_ask.Answered]) -> {str: str}
+    out: {str: str} @= {}
+
+    for one in answers
+        if one.asked.declared == pointee_ask.UNIT
+            out[one.asked.name + " " + one.asked.index.to_str()] @ one.header_type
+        else if one.asked.declared == pointee_ask.PAD
+            out[membership.KEY + one.asked.index.to_str()] @ one.header_type
+
+    return with_read_casts(out, answers)
 
 # The table with every read-only answer whose pointer is spelled otherwise
 # than `const char *` or `const void *`, which a `const char *` reaches with no

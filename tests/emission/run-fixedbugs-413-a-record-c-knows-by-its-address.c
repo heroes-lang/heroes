@@ -217,6 +217,19 @@ int32_t h_fixedbugs413arecordcknowsbyitsaddress_deep(struct keeper *ph0_k, int64
 int64_t h_fixedbugs413arecordcknowsbyitsaddress_every_one(HeroArrayHeader * *ph0_ks);
 void h_fixedbugs413arecordcknowsbyitsaddress_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+#pragma push_macro("self")
+#undef self
+#pragma push_macro("uses")
+#undef uses
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)};
+#pragma pop_macro("self")
+#pragma pop_macro("uses")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct keeper), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 34 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_start(struct keeper *ph0_k) {
@@ -226,10 +239,12 @@ int32_t h_fixedbugs413arecordcknowsbyitsaddress_start(struct keeper *ph0_k) {
 bb0:
     hero_lend_local_name(ph0_k, "keep_init", "k");
 #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t1 = keep_init(&(*ph0_k));
 #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 233 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 248 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -241,7 +256,7 @@ bb0:
     t1 = h_fixedbugs413arecordcknowsbyitsaddress_start(&(*ph0_k));
 #line 38 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 245 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 260 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 40 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -276,6 +291,8 @@ bb2:
 #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_lend_local_name(ph0_k, "keep_init", "k");
 #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t4 = keep_init(&(*ph0_k));
 #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h2_ret0 = t4;
@@ -287,7 +304,7 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb4:
-#line 291 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 308 "fixedbugs413arecordcknowsbyitsaddress.c"
     t9 = h2_ret0;
     return t9;
 }
@@ -355,6 +372,8 @@ bb2:
 #line 49 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&((*ph0_ks)));
 #line 49 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*((void)(((*ph0_ks) == NULL || t14 < 0 || t14 >= (*ph0_ks)->len) ? ((void)hero_array_at_mut((*ph0_ks), t14), hero_unreachable()) : (void)0), (void)((*ph0_ks)->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)((*ph0_ks) + 1) + t14)), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 49 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t15 = keep_init(&(*((void)(((*ph0_ks) == NULL || t14 < 0 || t14 >= (*ph0_ks)->len) ? ((void)hero_array_at_mut((*ph0_ks), t14), hero_unreachable()) : (void)0), (void)((*ph0_ks)->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)((*ph0_ks) + 1) + t14)));
 #line 49 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t16 = INT64_C(0);
@@ -378,7 +397,7 @@ bb3:
 bb4:
 #line 52 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t24 = h1_refused;
-#line 382 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 401 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t24;
@@ -399,7 +418,7 @@ bb6:
 bb7:
 #line 50 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     goto bb5;
-#line 403 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 422 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -425,11 +444,15 @@ bb0:
     h0_k = t1;
     hero_lend_local_name(hero_lend_h0_k, "keep_init", "k");
 #line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h0_k, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t2 = keep_init(&h0_k);
 #line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t3 = HERO_STR_LIT(hero_str_20);
 #line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_lend_local_name(hero_lend_h0_k, "keep_use", "k");
+#line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h0_k, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t4 = keep_use(&h0_k);
 #line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -477,6 +500,8 @@ bb0:
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h1_ks));
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h1_ks == NULL || t9 < 0 || t9 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t9), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t9)), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t10 = keep_init(&(*((void)((h1_ks == NULL || t9 < 0 || t9 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t9), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t9)));
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t11 = HERO_STR_LIT(hero_str_20);
@@ -484,6 +509,8 @@ bb0:
     t12 = INT64_C(1);
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h1_ks));
+#line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h1_ks == NULL || t12 < 0 || t12 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t12), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t12)), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t13 = keep_use(&(*((void)((h1_ks == NULL || t12 < 0 || t12 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t12), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t12)));
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -533,6 +560,8 @@ bb0:
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h2_ws));
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h2_ws == NULL || t21 < 0 || t21 >= h2_ws->len) ? ((void)hero_array_at_mut(h2_ws, t21), hero_unreachable()) : (void)0), (void)(h2_ws->elem->size != sizeof(struct wrap) ? hero_unreachable() : (void)0), (struct wrap *)(void *)(h2_ws + 1) + t21)).k, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t22 = keep_init(&(*((void)((h2_ws == NULL || t21 < 0 || t21 >= h2_ws->len) ? ((void)hero_array_at_mut(h2_ws, t21), hero_unreachable()) : (void)0), (void)(h2_ws->elem->size != sizeof(struct wrap) ? hero_unreachable() : (void)0), (struct wrap *)(void *)(h2_ws + 1) + t21)).k);
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t23 = HERO_STR_LIT(hero_str_20);
@@ -540,6 +569,8 @@ bb0:
     t24 = INT64_C(1);
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h2_ws));
+#line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h2_ws == NULL || t24 < 0 || t24 >= h2_ws->len) ? ((void)hero_array_at_mut(h2_ws, t24), hero_unreachable()) : (void)0), (void)(h2_ws->elem->size != sizeof(struct wrap) ? hero_unreachable() : (void)0), (struct wrap *)(void *)(h2_ws + 1) + t24)).k, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t25 = keep_use(&(*((void)((h2_ws == NULL || t24 < 0 || t24 >= h2_ws->len) ? ((void)hero_array_at_mut(h2_ws, t24), hero_unreachable()) : (void)0), (void)(h2_ws->elem->size != sizeof(struct wrap) ? hero_unreachable() : (void)0), (struct wrap *)(void *)(h2_ws + 1) + t24)).k);
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -557,11 +588,15 @@ bb0:
     h3_p = t26;
     t27 = INT64_C(1);
 #line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h3_p.k[((uint64_t)(t27) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t27))], sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t28 = keep_init(&h3_p.k[((uint64_t)(t27) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t27))]);
 #line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t29 = HERO_STR_LIT(hero_str_20);
 #line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t30 = INT64_C(1);
+#line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h3_p.k[((uint64_t)(t30) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t30))], sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t31 = keep_use(&h3_p.k[((uint64_t)(t30) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t30))]);
 #line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -581,9 +616,13 @@ bb0:
     t34 = (struct wrap){.before = t32, .k = t33};
 #line 63 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h4_w = t34;
+    hero_pad_fill(&h4_w.k, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 64 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t35 = keep_init(&h4_w.k);
 #line 64 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t36 = HERO_STR_LIT(hero_str_20);
+#line 64 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h4_w.k, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 64 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t37 = keep_use(&h4_w.k);
 #line 64 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -604,6 +643,8 @@ bb0:
     t40 = HERO_STR_LIT(hero_str_20);
 #line 66 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_lend_local_name(hero_lend_h5_a, "keep_use", "k");
+#line 66 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h5_a, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 66 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t41 = keep_use(&h5_a);
 #line 66 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -626,6 +667,8 @@ bb0:
 #line 67 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h1_ks));
 #line 67 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h1_ks == NULL || t45 < 0 || t45 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t45), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t45)), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 67 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t46 = keep_use(&(*((void)((h1_ks == NULL || t45 < 0 || t45 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t45), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t45)));
 #line 67 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_int(t43);
@@ -645,6 +688,8 @@ bb0:
     t49 = HERO_STR_LIT(hero_str_20);
 #line 69 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_lend_local_name(hero_lend_h6_b, "keep_use", "k");
+#line 69 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h6_b, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 69 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t50 = keep_use(&h6_b);
 #line 69 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -668,6 +713,8 @@ bb0:
 #line 71 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_lend_local_name(hero_lend_h7_d, "keep_use", "k");
 #line 71 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h7_d, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 71 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t55 = keep_use(&h7_d);
 #line 71 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_int(t53);
@@ -685,6 +732,8 @@ bb0:
 #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h1_ks));
 #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h1_ks == NULL || t58 < 0 || t58 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t58), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t58)), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t59 = keep_use(&(*((void)((h1_ks == NULL || t58 < 0 || t58 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t58), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t58)));
 #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t60 = HERO_STR_LIT(hero_str_20);
@@ -693,6 +742,8 @@ bb0:
 #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h1_ks));
 #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h1_ks == NULL || t61 < 0 || t61 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t61), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t61)), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t62 = keep_use(&(*((void)((h1_ks == NULL || t61 < 0 || t61 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t61), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t61)));
 #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t63 = HERO_STR_LIT(hero_str_20);
@@ -700,6 +751,8 @@ bb0:
     t64 = INT64_C(2);
 #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h1_ks));
+#line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h1_ks == NULL || t64 < 0 || t64 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t64), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t64)), sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t65 = keep_use(&(*((void)((h1_ks == NULL || t64 < 0 || t64 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t64), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t64)));
 #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -774,11 +827,15 @@ bb0:
     h8_copy = t84;
     hero_lend_local_name(hero_lend_h8_copy, "keep_use", "k");
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h8_copy, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
+#line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t85 = keep_use(&h8_copy);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t86 = HERO_STR_LIT(hero_str_20);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_lend_local_name(hero_lend_h0_k, "keep_use", "k");
+#line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+    hero_pad_fill(&h0_k, sizeof(struct keeper), 1, hero_pad_g_0, hero_pad_n_0);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t87 = keep_use(&h0_k);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -789,7 +846,7 @@ bb0:
     hero_print_int(t87);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_end();
-#line 793 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 850 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h1_ks);
     hero_array_release_at(&h2_ws);
     hero_array_release_at(&h9_own9);
@@ -859,7 +916,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 863 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 920 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

@@ -183,10 +183,35 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void);
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void);
 void h_fixedbugs396sha256finalfillsitsdigest_main(void);
+#pragma push_macro("Nh")
+#undef Nh
+#pragma push_macro("Nl")
+#undef Nl
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("h")
+#undef h
+#pragma push_macro("md_len")
+#undef md_len
+#pragma push_macro("num")
+#undef num
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(struct SHA256state_st, h), sizeof(((struct SHA256state_st *)0)->h), __builtin_offsetof(struct SHA256state_st, Nl), sizeof(((struct SHA256state_st *)0)->Nl), __builtin_offsetof(struct SHA256state_st, Nh), sizeof(((struct SHA256state_st *)0)->Nh), __builtin_offsetof(struct SHA256state_st, data), sizeof(((struct SHA256state_st *)0)->data), __builtin_offsetof(struct SHA256state_st, num), sizeof(((struct SHA256state_st *)0)->num), __builtin_offsetof(struct SHA256state_st, md_len), sizeof(((struct SHA256state_st *)0)->md_len)};
+#pragma pop_macro("Nh")
+#pragma pop_macro("Nl")
+#pragma pop_macro("data")
+#pragma pop_macro("h")
+#pragma pop_macro("md_len")
+#pragma pop_macro("num")
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_2;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_2 = hero_pad_gaps(sizeof(struct SHA256state_st), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
+}
+
 
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
-#line 190 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 215 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -196,7 +221,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return SHA256_DIGEST_LENGTH;
-#line 200 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 225 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -214,7 +239,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
-#line 218 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 243 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -224,7 +249,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return EVP_MAX_MD_SIZE;
-#line 228 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 253 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -293,6 +318,8 @@ bb0:
     hero_array_decref(t64);
     hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c");
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+    hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2);
+#line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t8 = SHA256_Init(&h0_c);
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t9 = HERO_STR_LIT(hero_str_20);
@@ -305,11 +332,15 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_lend_local_name(hero_lend_h0_c, "SHA256_Update", "c");
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+    hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2);
+#line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t13 = SHA256_Update(&h0_c, hero_cstr_nonnull(t11), t12);
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t14 = HERO_STR_LIT(hero_str_20);
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_lend_local_name(hero_lend_h0_c, "SHA256_Final", "c");
+#line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+    hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2);
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     {
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
@@ -519,7 +550,7 @@ bb0:
     if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     }
-#line 523 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 554 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);

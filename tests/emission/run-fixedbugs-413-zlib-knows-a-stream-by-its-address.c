@@ -181,6 +181,55 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs413zlibknowsastreambyitsaddress_Z
 
 int32_t h_fixedbugs413zlibknowsastreambyitsaddress_init(struct z_stream_s *ph0_s);
 void h_fixedbugs413zlibknowsastreambyitsaddress_main(void);
+#pragma push_macro("adler")
+#undef adler
+#pragma push_macro("avail_in")
+#undef avail_in
+#pragma push_macro("avail_out")
+#undef avail_out
+#pragma push_macro("data_type")
+#undef data_type
+#pragma push_macro("msg")
+#undef msg
+#pragma push_macro("next_in")
+#undef next_in
+#pragma push_macro("next_out")
+#undef next_out
+#pragma push_macro("opaque")
+#undef opaque
+#pragma push_macro("reserved")
+#undef reserved
+#pragma push_macro("state")
+#undef state
+#pragma push_macro("total_in")
+#undef total_in
+#pragma push_macro("total_out")
+#undef total_out
+#pragma push_macro("zalloc")
+#undef zalloc
+#pragma push_macro("zfree")
+#undef zfree
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct z_stream_s, next_in), sizeof(((struct z_stream_s *)0)->next_in), __builtin_offsetof(struct z_stream_s, avail_in), sizeof(((struct z_stream_s *)0)->avail_in), __builtin_offsetof(struct z_stream_s, total_in), sizeof(((struct z_stream_s *)0)->total_in), __builtin_offsetof(struct z_stream_s, next_out), sizeof(((struct z_stream_s *)0)->next_out), __builtin_offsetof(struct z_stream_s, avail_out), sizeof(((struct z_stream_s *)0)->avail_out), __builtin_offsetof(struct z_stream_s, total_out), sizeof(((struct z_stream_s *)0)->total_out), __builtin_offsetof(struct z_stream_s, msg), sizeof(((struct z_stream_s *)0)->msg), __builtin_offsetof(struct z_stream_s, state), sizeof(((struct z_stream_s *)0)->state), __builtin_offsetof(struct z_stream_s, zalloc), sizeof(((struct z_stream_s *)0)->zalloc), __builtin_offsetof(struct z_stream_s, zfree), sizeof(((struct z_stream_s *)0)->zfree), __builtin_offsetof(struct z_stream_s, opaque), sizeof(((struct z_stream_s *)0)->opaque), __builtin_offsetof(struct z_stream_s, data_type), sizeof(((struct z_stream_s *)0)->data_type), __builtin_offsetof(struct z_stream_s, adler), sizeof(((struct z_stream_s *)0)->adler), __builtin_offsetof(struct z_stream_s, reserved), sizeof(((struct z_stream_s *)0)->reserved)};
+#pragma pop_macro("adler")
+#pragma pop_macro("avail_in")
+#pragma pop_macro("avail_out")
+#pragma pop_macro("data_type")
+#pragma pop_macro("msg")
+#pragma pop_macro("next_in")
+#pragma pop_macro("next_out")
+#pragma pop_macro("opaque")
+#pragma pop_macro("reserved")
+#pragma pop_macro("state")
+#pragma pop_macro("total_in")
+#pragma pop_macro("total_out")
+#pragma pop_macro("zalloc")
+#pragma pop_macro("zfree")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct z_stream_s), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 27 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 int32_t h_fixedbugs413zlibknowsastreambyitsaddress_init(struct z_stream_s *ph0_s) {
@@ -196,10 +245,12 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_lend_local_name(ph0_s, "deflateInit_", "s");
 #line 28 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&(*ph0_s), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
+#line 28 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t4 = deflateInit_(&(*ph0_s), t1, hero_cstr_nonnull(t2), t3);
 #line 28 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     return t4;
-#line 203 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 254 "fixedbugs413zlibknowsastreambyitsaddress.c"
 }
 
 #line 30 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
@@ -225,15 +276,21 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_lend_local_name(hero_lend_h0_s, "deflateInit_", "s");
 #line 32 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
+#line 32 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t5 = deflateInit_(&h0_s, t2, hero_cstr_nonnull(t3), t4);
 #line 32 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h1_a = t5;
     hero_lend_local_name(hero_lend_h0_s, "deflateReset", "s");
 #line 33 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
+#line 33 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t6 = deflateReset(&h0_s);
 #line 33 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h2_b = t6;
     hero_lend_local_name(hero_lend_h0_s, "deflateEnd", "s");
+#line 34 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
 #line 34 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t7 = deflateEnd(&h0_s);
 #line 34 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
@@ -296,6 +353,8 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_array_unshare(&(h4_zs));
 #line 37 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h4_zs == NULL || t16 < 0 || t16 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t16), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t16)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
+#line 37 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t20 = deflateInit_(&(*((void)((h4_zs == NULL || t16 < 0 || t16 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t16), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t16)), t17, hero_cstr_nonnull(t18), t19);
 #line 37 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h5_d = t20;
@@ -303,12 +362,16 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_array_unshare(&(h4_zs));
 #line 38 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h4_zs == NULL || t21 < 0 || t21 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t21), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t21)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
+#line 38 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t22 = deflateReset(&(*((void)((h4_zs == NULL || t21 < 0 || t21 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t21), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t21)));
 #line 38 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h6_e = t22;
     t23 = INT64_C(0);
 #line 39 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_array_unshare(&(h4_zs));
+#line 39 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h4_zs == NULL || t23 < 0 || t23 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t23), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t23)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
 #line 39 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t24 = deflateEnd(&(*((void)((h4_zs == NULL || t23 < 0 || t23 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t23), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t23)));
 #line 39 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
@@ -344,10 +407,14 @@ bb0:
     h9_g = t31;
     hero_lend_local_name(hero_lend_h8_t, "deflateReset", "s");
 #line 43 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&h8_t, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
+#line 43 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t32 = deflateReset(&h8_t);
 #line 43 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h10_h = t32;
     hero_lend_local_name(hero_lend_h8_t, "deflateEnd", "s");
+#line 44 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&h8_t, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
 #line 44 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t33 = deflateEnd(&h8_t);
 #line 44 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
@@ -384,12 +451,16 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_array_unshare(&(h4_zs));
 #line 47 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h4_zs == NULL || t41 < 0 || t41 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t41), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t41)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
+#line 47 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t42 = deflateReset(&(*((void)((h4_zs == NULL || t41 < 0 || t41 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t41), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t41)));
 #line 47 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h13_k = t42;
     t43 = INT64_C(1);
 #line 48 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_array_unshare(&(h4_zs));
+#line 48 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&(*((void)((h4_zs == NULL || t43 < 0 || t43 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t43), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t43)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
 #line 48 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t44 = deflateEnd(&(*((void)((h4_zs == NULL || t43 < 0 || t43 >= h4_zs->len) ? ((void)hero_array_at_mut(h4_zs, t43), hero_unreachable()) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t43)));
 #line 48 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
@@ -415,7 +486,7 @@ bb0:
     hero_print_int(t49);
 #line 49 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_print_end();
-#line 419 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 490 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_release_at(&h4_zs);
     hero_array_release_at(&h15_own15);
     hero_lend_local_give(hero_lend_h8_t);

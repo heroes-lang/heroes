@@ -1,0 +1,76 @@
+# Panel 215's R1, issue 1334, 2026-10-16: a group record's padding is
+# written zero in place before C reads it, from every place a lend starts:
+# a field of a record of the program's own after a by-value call, padding at
+# the tail, padding inside a member, an array of records lent with
+# `counted_by`, an `@` parameter handed on, and a record C built member by
+# member and returned by value, which no construction of the program's
+# touched. Each count is how many padding bytes C read that were not zero.
+# Measured 2026-10-16 on Linux x86-64 (`heroes-linux`, Debian clang 22.1.8)
+# at the `-O0` `heroes build` compiles at, three runs each: the compiler
+# before the repair printed `true 7 7 7 14 7 7`, `==` calling two records
+# equal while C read every padding byte of the dirtied stack, and the
+# repair prints the line below. On arm64 both print it, the bytes never
+# surviving there, so this case is judged by the CI's x86-64 leg.
+
+extern "ffi-padding-c-reads.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    record Tp tag tp
+        d: f64
+        c: i8
+    record Ocd tag ocd
+        inner: Cd
+    function dirty()
+    function cd_made() -> Cd
+    function cd_pad(@p: Cd) -> i32
+    function tp_pad(@p: Tp) -> i32
+    function ocd_pad(@p: Ocd) -> i32
+    function cds_pad(@p: [Cd] counted_by 2 lent) -> i32
+
+record Holder
+    h: Cd
+    t: Tp
+    o: Ocd
+
+function cd_through(x: Cd) -> Cd
+    return x
+
+function tp_through(x: Tp) -> Tp
+    return x
+
+function ocd_through(x: Ocd) -> Ocd
+    return x
+
+function handed_on(@p: Cd) -> i32
+    return cd_pad(@p)
+
+function work()
+    a = Cd(c: 1, d: 2.0, rest: zero)
+    held: Holder @= Holder(
+        h: cd_through(x: a),
+        t: tp_through(x: Tp(d: 2.0, c: 1, rest: zero)),
+        o: ocd_through(x: Ocd(inner: Cd(c: 1, d: 2.0, rest: zero)))
+    )
+    pairs: [Cd] @= [cd_through(x: a), cd_through(x: a)]
+    made: Cd @= cd_made()
+    handed: Cd @= cd_through(x: a)
+    print(
+        held.h == a,
+        " ",
+        cd_pad(@held.h),
+        " ",
+        tp_pad(@held.t),
+        " ",
+        ocd_pad(@held.o),
+        " ",
+        cds_pad(@pairs),
+        " ",
+        handed_on(@handed),
+        " ",
+        cd_pad(@made)
+    )
+
+function main()
+    dirty()
+    work()
