@@ -127,3 +127,18 @@ branch wrote it on 2026-09-25, when that branch was merged: the page keeps its
 reasoning, and on 2026-10-06 its six items became files of `issues/2026-09/25/`
 (`.claude/rules/records.md` § A live list), each as the page held it, and on
 2026-10-12 GitHub issues.
+
+**Panel 215 ratified 2026-10-16**, R1 to R5 as written, by the author's
+answer `1a 2a 3a` on the coordinator's `/decide` list (issue 2070 holds the
+verdict; the sitting's file carries it under its own heading). What the
+milestone owes from that day, each on GitHub: R1's landing is issue 1334 and
+R2's is 1335; R3's three sentences, their ledger row and the `spec` suite's
+pins; the four messages and one note that still explain `@` by its copy-out
+(`selfhost/resolve/errors.hero`, `resolve/writes.hero`,
+`resolve/written_nowhere.hero`), to be reworded with R3's sentence; the first
+`fix (guess)` of `aliased_mutable_arguments`, which proposes the copy R2
+refuses for a record holding a lock; and the sitting on a read-only lend,
+issue 2098, the re-run's task C its instrument. Issue 1333 closed the same
+day on measurement 044: route T's first return condition reads no string
+field the program writes, and A1 read 10 of 10 first try against its
+condition *fails at least half*.

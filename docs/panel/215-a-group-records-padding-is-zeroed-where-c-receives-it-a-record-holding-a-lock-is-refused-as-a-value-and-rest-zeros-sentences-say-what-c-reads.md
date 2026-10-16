@@ -236,3 +236,27 @@ sitting's decision issue carries the same lines.
 
 Pending: https://github.com/heroes-lang/heroes/issues/2070 asks for it, naming the sitting as `panel 215`. A yes settles R1 to R5 as
 written and the two questions above the way the author answers them.
+
+**RATIFIED, 2026-10-16**, R1 to R5 as written above, the author answering `1a 2a 3a` in
+conversation, between 17:31 (the compiler's build time, read before the question) and 19:46 (the
+clock read after the answer), on the coordinator's `/decide` list, which put each route with its
+measurement and a recommendation: *1a*, the five resolutions over the conservative resolution;
+*2a*, question 1's reading, robustness deciding THAT a measured class closes and Principle 0 HOW,
+so R2 lands as a refusal and the word B waits, written into CLAUDE.md § Precedence at `df89c0df2`;
+*3a*, question 2's recommendation, a sitting on a read-only lend, the re-run's task C its
+instrument, issue 2098 of M-buildable-structs, R2 landing with `@c` in its note until it sits.
+Recorded as a reading (CLAUDE.md § 4). The author may overturn it.
+
+**What the coordinator verified before asking**, on the tree at `3e389b024`: nothing of R1 to R3
+has landed (`ffi_lock_copied` is in no file under `selfhost/`, and § 9 still reads *copy in, copy
+out*); the specification has not moved since 2026-10-13 and differs from `m-g-at` in R3's three
+places alone (`diff`); `heroes measure` reads 10,048 real, so R3's 10,108 stands against the
+ceiling of 16,384 raised on 2026-10-14; and two `@` arguments reaching one place are refused
+already (`aliased_mutable_arguments`, run on `f(a: @x, b: @x)` and `g(@p, @p.x)`), so § 9's new
+sentence changes no program's meaning. **Two things the landing owes that the sitting did not
+list**: the four messages and one note that still explain `@` by its copy-out
+(`selfhost/resolve/errors.hero:202`, `resolve/writes.hero:307` and `:311`,
+`resolve/written_nowhere.hero:79` and `:96`), to be reworded with R3's sentence; and
+`aliased_mutable_arguments`'s first `fix (guess)`, which proposes the copy R2 refuses for a record
+holding a lock (the spec-warden's own finding, `215-reports/spec-warden-drafts.md` § Found while
+building the key). Both stand on the milestone's page.
