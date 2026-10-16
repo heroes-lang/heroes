@@ -1,0 +1,25 @@
+# fixedbugs, defect 2074, 2026-10-16.
+#
+# SYMPTOM, as filed on 2026-10-14 by batch 17's emit lane: `#define K (1, 2)`
+# bound as an `i64` constant built at exit 0 and printed 2, which is right,
+# with clang's *left operand of comma operator has no effect* reaching the
+# author as it stood, a warning on a correct program.
+#
+# MEASURED 2026-10-16 at the landing of panel 215: it does not reproduce. The
+# value builds silent and prints its right operand at `-O0`, `-O2` and under
+# `--sanitize`, on Apple clang 21 and on Linux arm64's clang 22.1.8, and so
+# does the emitted unit compiled by hand with the build's own flags. The
+# accessor it names, `selfhost/emit/constant_accessor.hero`, was last changed
+# by defects 2071 and 2072 the day it was filed, by the lane that filed it;
+# that this is what repaired it is an inference from the dates, unrun.
+#
+# So this case is its guard: the `warnings` suite builds every program under
+# `run/` and refuses any warning clang gives, on every leg of the CI.
+
+extern "fixedbugs-2074-comma.h"
+    constant K_COMMA: i64
+    constant K_COMMAS: i32
+
+function main()
+    print(K_COMMA)
+    print(K_COMMAS)
