@@ -76,8 +76,6 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_I32(SIGKILL), "heroes-ffi-return SIGKILL i32");
-_Static_assert(__builtin_constant_p(SIGKILL), "heroes-ffi-const SIGKILL");
 _Static_assert(HERO_RET_I32(kill((int32_t)0, (int32_t)0)), "heroes-ffi-return kill i32");
 _Static_assert(HERO_RET_I32(getppid()), "heroes-ffi-return getppid i32");
 _Static_assert(HERO_RET_INT(time((void *)0)), "heroes-ffi-return time i64");
@@ -91,8 +89,6 @@ _Static_assert(HERO_RET_INT(hero_fs_mkdir_all(0)), "heroes-ffi-return hero_fs_mk
 _Static_assert(HERO_RET_INT(hero_dir_scan(0, (int64_t)0, (int64_t)0)), "heroes-ffi-return hero_dir_scan i64");
 _Static_assert(HERO_RET_UNIT(hero_dir_release()), "heroes-ffi-return hero_dir_release ()");
 _Static_assert(HERO_RET_INT(hero_dir_remove_tree(0)), "heroes-ffi-return hero_dir_remove_tree i64");
-_Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
-_Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -127,7 +123,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 131 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 127 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
@@ -191,7 +187,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 195 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 191 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
@@ -225,7 +221,9 @@ HeroArrayHeader * h_library_args(void);
 
 #line 19 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 int32_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_SIGKILL(void) {
-#line 229 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 225 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+    _Static_assert(HERO_RET_I32(SIGKILL), "heroes-ffi-return SIGKILL i32");
+    _Static_assert(__builtin_constant_p(SIGKILL), "heroes-ffi-const SIGKILL");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -235,7 +233,7 @@ int32_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_SIGKILL(void
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 19 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     return SIGKILL;
-#line 239 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 237 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -253,7 +251,9 @@ int32_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_SIGKILL(void
 
 #line 39 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_HERO_DIR_FILES(void) {
-#line 257 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 255 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+    _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
+    _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

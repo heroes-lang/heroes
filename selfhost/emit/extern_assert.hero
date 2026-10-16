@@ -168,21 +168,14 @@ function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Ch
         # stdout and errno are objects, and a zero-argument accessor
         # over one would return two answers on two calls: §4.2's
         # mutable global through the back door.
+        # A constant whose accessor `return`s it is asserted there, inside a
+        # function, where C reads a statement expression too (defect 2101:
+        # `(__extension__ ({ 3; }))` stopped the build at exit 2 here, at file
+        # scope); a record's constant, built in an initialiser, here.
         if emit_externs.is_extern_constant(decls, f)
-            writer.line(
-                @w,
-                text: "_Static_assert(" + check_macro.must() + "(" + extern_name + type_argument + "), \"" + assert_spelling.ASSERTION + extern_name + " " + declared_type + "\");"
-            )
-
-            # A struct constant is not asked whether it is a value
-            # (panel 063): __builtin_constant_p answers 0 for every
-            # struct, and asking would newly refuse raylib's 26
-            # CLITERAL(Color) macros that bind and run today.
-            if assert_spelling.asks_for_a_value(c, ty: f.result)
-                writer.line(
-                    @w,
-                    text: "_Static_assert(__builtin_constant_p(" + extern_name + "), \"" + assert_spelling.CONSTANCY + extern_name + "\");"
-                )
+            if !in_accessor(c, s, decls, f)
+                for line in constant_assertions(f, c, names, s, decls)
+                    writer.line(@w, text: line)
             continue
 
         # The message is a CONTRACT with the error mapper, not prose:
@@ -194,6 +187,41 @@ function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Ch
         )
 
     writer.line(@w, text: "")
+
+# Whether a constant's assertions stand in its accessor: a constant of the
+# program's own headers that `return`s its value. A record's is built in an
+# initialiser; the library's, the runtime's own and spelt by it, stays at
+# file scope, so a unit that binds no constant of its own headers writes the
+# C it wrote (as `emit/value_check.asked` leaves the library's alone).
+function in_accessor(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function) -> bool
+    return !record_constant.is_record_value(c, decls, f) && !source.is_library(s, decls[f.decl].name.start)
+
+# A constant's assertions: its type, as a function's result is asked, and,
+# for a value C can be asked about, that the header gives it one at all.
+# stdout and errno are objects, and a zero-argument accessor over one would
+# return two answers on two calls: §4.2's mutable global through the back
+# door. A struct constant is not asked whether it is a value (panel 063):
+# __builtin_constant_p answers 0 for every struct, and asking would newly
+# refuse raylib's 26 CLITERAL(Color) macros that bind and run today.
+function constant_assertions(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> [str]
+    check_macro = assert_spelling.return_check(c, ty: f.result)
+    out: [str] @= []
+
+    if check_macro.is_err()
+        return out
+    extern_name = source.span_text(s, decls[f.decl].name)
+    none: [str] = []
+    declared_type = render.render_ty(c.types, s, decls, f.result, none)
+    type_argument = assert_spelling.return_argument(names, c, ty: f.result)
+    out @ out.push(
+        "_Static_assert(" + check_macro.must() + "(" + extern_name + type_argument + "), \"" + assert_spelling.ASSERTION + extern_name + " " + declared_type + "\");"
+    )
+
+    if assert_spelling.asks_for_a_value(c, ty: f.result)
+        out @ out.push(
+            "_Static_assert(__builtin_constant_p(" + extern_name + "), \"" + assert_spelling.CONSTANCY + extern_name + "\");"
+        )
+    return out
 
 # The call the return assertion makes of an extern function: its C name
 # over a zero of each parameter's declared type, never evaluated. A refused
@@ -266,9 +294,16 @@ test "an extern function gets its zero-cost call, a constant its token and value
     # The function: a call with a zero argument, never evaluated.
     assert has(text: got, needle: "_Static_assert(HERO_RET_F64(sqrt((double)0)), \"heroes-ffi-return sqrt f64\");")
 
-    # The constant: a token, and the constancy question after it.
-    assert has(text: got, needle: "_Static_assert(HERO_RET_F64(M_PI), \"heroes-ffi-return M_PI f64\");")
-    assert has(text: got, needle: "_Static_assert(__builtin_constant_p(M_PI), \"heroes-ffi-const M_PI\");")
+    # The constant: a token, and the constancy question after it, asked in
+    # its accessor (defect 2101) and no longer at file scope.
+    assert !has(text: got, needle: "heroes-ffi-const M_PI")
+    asked: [[str]] @= []
+
+    for f in low.program.functions
+        if emit_externs.is_extern_constant(parsed.decls, f) && in_accessor(c, s, parsed.decls, f)
+            asked @ asked.push(constant_assertions(f, c, names, s, parsed.decls))
+
+    assert asked == [["_Static_assert(HERO_RET_F64(M_PI), \"heroes-ffi-return M_PI f64\");", "_Static_assert(__builtin_constant_p(M_PI), \"heroes-ffi-const M_PI\");"]]
 
     # The conditional macros stay out when nothing needs them.
     assert !has(text: got, needle: "HERO_RET_RECORD")

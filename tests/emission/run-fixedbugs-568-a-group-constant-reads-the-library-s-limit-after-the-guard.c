@@ -74,12 +74,6 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_I32(CASE_LIMIT), "heroes-ffi-return CASE_LIMIT i32");
-_Static_assert(__builtin_constant_p(CASE_LIMIT), "heroes-ffi-const CASE_LIMIT");
-_Static_assert(HERO_RET_F64(CASE_HUGE), "heroes-ffi-return CASE_HUGE f64");
-_Static_assert(__builtin_constant_p(CASE_HUGE), "heroes-ffi-const CASE_HUGE");
-_Static_assert(HERO_RET_INT(CASE_LOW), "heroes-ffi-return CASE_LOW i64");
-_Static_assert(__builtin_constant_p(CASE_LOW), "heroes-ffi-const CASE_LOW");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -98,7 +92,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 102 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 96 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -140,7 +134,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 144 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 138 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -159,7 +153,9 @@ void h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMIT(void) {
-#line 163 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 157 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+    _Static_assert(HERO_RET_I32(CASE_LIMIT), "heroes-ffi-return CASE_LIMIT i32");
+    _Static_assert(__builtin_constant_p(CASE_LIMIT), "heroes-ffi-const CASE_LIMIT");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -169,7 +165,7 @@ int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMI
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_LIMIT;
-#line 173 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 169 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -187,9 +183,12 @@ int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMI
 
 #line 12 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 double h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(void) {
+#line 187 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+    _Static_assert(HERO_RET_F64(CASE_HUGE), "heroes-ffi-return CASE_HUGE f64");
+    _Static_assert(__builtin_constant_p(CASE_HUGE), "heroes-ffi-const CASE_HUGE");
 #line 12 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_HUGE;
-#line 193 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 192 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -206,7 +205,9 @@ double h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(
 
 #line 13 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 int64_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(void) {
-#line 210 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 209 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+    _Static_assert(HERO_RET_INT(CASE_LOW), "heroes-ffi-return CASE_LOW i64");
+    _Static_assert(__builtin_constant_p(CASE_LOW), "heroes-ffi-const CASE_LOW");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -216,7 +217,7 @@ int64_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_LOW;
-#line 220 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 221 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -265,7 +266,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return;
-#line 269 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 270 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

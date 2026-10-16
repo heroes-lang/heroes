@@ -79,10 +79,6 @@ _Static_assert(__builtin_classify_type(((struct SHA256state_st *)0)->num) == 1 &
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_INT(SHA256_DIGEST_LENGTH), "heroes-ffi-return SHA256_DIGEST_LENGTH i64");
-_Static_assert(__builtin_constant_p(SHA256_DIGEST_LENGTH), "heroes-ffi-const SHA256_DIGEST_LENGTH");
-_Static_assert(HERO_RET_INT(EVP_MAX_MD_SIZE), "heroes-ffi-return EVP_MAX_MD_SIZE i64");
-_Static_assert(__builtin_constant_p(EVP_MAX_MD_SIZE), "heroes-ffi-const EVP_MAX_MD_SIZE");
 _Static_assert(HERO_RET_I32(SHA256_Init((struct SHA256state_st *)0)), "heroes-ffi-return SHA256_Init i32");
 _Static_assert(HERO_RET_I32(SHA256_Update((struct SHA256state_st *)0, 0, (uint64_t)0)), "heroes-ffi-return SHA256_Update i32");
 _Static_assert(HERO_RET_I32(SHA256_Final((void *)0, (struct SHA256state_st *)0)), "heroes-ffi-return SHA256_Final i32");
@@ -164,7 +160,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 164 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b);
@@ -211,7 +207,9 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
-#line 215 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 211 "fixedbugs396sha256finalfillsitsdigest.c"
+    _Static_assert(HERO_RET_INT(SHA256_DIGEST_LENGTH), "heroes-ffi-return SHA256_DIGEST_LENGTH i64");
+    _Static_assert(__builtin_constant_p(SHA256_DIGEST_LENGTH), "heroes-ffi-const SHA256_DIGEST_LENGTH");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -221,7 +219,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return SHA256_DIGEST_LENGTH;
-#line 225 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 223 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -239,7 +237,9 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
-#line 243 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 241 "fixedbugs396sha256finalfillsitsdigest.c"
+    _Static_assert(HERO_RET_INT(EVP_MAX_MD_SIZE), "heroes-ffi-return EVP_MAX_MD_SIZE i64");
+    _Static_assert(__builtin_constant_p(EVP_MAX_MD_SIZE), "heroes-ffi-const EVP_MAX_MD_SIZE");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

@@ -79,8 +79,6 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(HERO_RET_UNIT(hero_errno_clear()), "heroes-ffi-return hero_errno_clear ()");
 _Static_assert(HERO_RET_I32(hero_errno()), "heroes-ffi-return hero_errno i32");
 _Static_assert(HERO_RET_INT(strtoll(0, (void *)0, (int32_t)0)), "heroes-ffi-return strtoll i64");
-_Static_assert(HERO_RET_I32(ERANGE), "heroes-ffi-return ERANGE i32");
-_Static_assert(__builtin_constant_p(ERANGE), "heroes-ffi-const ERANGE");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -101,7 +99,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_19d86d81, "99999999999999999999999");
 
-#line 105 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 103 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,7 +143,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 147 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -162,7 +160,9 @@ void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
-#line 166 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 164 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+    _Static_assert(HERO_RET_I32(ERANGE), "heroes-ffi-return ERANGE i32");
+    _Static_assert(__builtin_constant_p(ERANGE), "heroes-ffi-const ERANGE");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

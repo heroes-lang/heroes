@@ -92,10 +92,6 @@ _Static_assert(HERO_RET_INT(write((int32_t)0, 0, (uint64_t)0)), "heroes-ffi-retu
 _Static_assert(HERO_RET_INT(read((int32_t)0, (void *)0, (uint64_t)0)), "heroes-ffi-return read i64");
 _Static_assert(HERO_RET_I32(close((int32_t)0)), "heroes-ffi-return close i32");
 _Static_assert(HERO_RET_I32(gethostname((void *)0, (uint64_t)0)), "heroes-ffi-return gethostname i32");
-_Static_assert(HERO_RET_I32(POLLIN), "heroes-ffi-return POLLIN i32");
-_Static_assert(__builtin_constant_p(POLLIN), "heroes-ffi-const POLLIN");
-_Static_assert(HERO_RET_I32(POLLOUT), "heroes-ffi-return POLLOUT i32");
-_Static_assert(__builtin_constant_p(POLLOUT), "heroes-ffi-const POLLOUT");
 _Static_assert(HERO_RET_I32(poll((void *)0, (uint32_t)0, (int32_t)0)), "heroes-ffi-return poll i32");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
@@ -175,7 +171,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 179 "fixedbugs396posixfillsitsbuffers.c"
+#line 175 "fixedbugs396posixfillsitsbuffers.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396posixfillsitsbuffers_PollFd_eq(const struct pollfd *a, const struct pollfd *b);
@@ -223,7 +219,9 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 21 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
-#line 227 "fixedbugs396posixfillsitsbuffers.c"
+#line 223 "fixedbugs396posixfillsitsbuffers.c"
+    _Static_assert(HERO_RET_I32(POLLIN), "heroes-ffi-return POLLIN i32");
+    _Static_assert(__builtin_constant_p(POLLIN), "heroes-ffi-const POLLIN");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -233,7 +231,7 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     return POLLIN;
-#line 237 "fixedbugs396posixfillsitsbuffers.c"
+#line 235 "fixedbugs396posixfillsitsbuffers.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -251,7 +249,9 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
 
 #line 22 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
-#line 255 "fixedbugs396posixfillsitsbuffers.c"
+#line 253 "fixedbugs396posixfillsitsbuffers.c"
+    _Static_assert(HERO_RET_I32(POLLOUT), "heroes-ffi-return POLLOUT i32");
+    _Static_assert(__builtin_constant_p(POLLOUT), "heroes-ffi-const POLLOUT");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

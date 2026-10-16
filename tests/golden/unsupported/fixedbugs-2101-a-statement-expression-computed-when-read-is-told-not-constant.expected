@@ -1,0 +1,20 @@
+error[ffi_not_constant]: `fixedbugs-2101-statement.h` has `ST_SIDE`, but not as a constant — clang cannot read its value while compiling
+  at tests/golden/unsupported/fixedbugs-2101-a-statement-expression-computed-when-read-is-told-not-constant.hero:21:5
+     |
+  21 |     constant ST_SIDE: i32  #~ ffi_not_constant
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: a `constant` names one value forever (§4.4), and clang reads `ST_SIDE` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global §4.2 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_ST_SIDE(void) { return ST_SIDE; }`
+
+error[ffi_not_constant]: `fixedbugs-2101-statement.h` has `ST_DECL`, but not as a constant — clang cannot read its value while compiling
+  at tests/golden/unsupported/fixedbugs-2101-a-statement-expression-computed-when-read-is-told-not-constant.hero:22:5
+     |
+  22 |     constant ST_DECL: i32  #~ ffi_not_constant
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: a `constant` names one value forever (§4.4), and clang reads `ST_DECL` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global §4.2 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_ST_DECL(void) { return ST_DECL; }`
+
+error[ffi_not_constant]: `fixedbugs-2101-statement.h` has `ST_READ`, but not as a constant — clang cannot read its value while compiling
+  at tests/golden/unsupported/fixedbugs-2101-a-statement-expression-computed-when-read-is-told-not-constant.hero:23:5
+     |
+  23 |     constant ST_READ: i32  #~ ffi_not_constant
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: a `constant` names one value forever (§4.4), and clang reads `ST_READ` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global §4.2 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_ST_READ(void) { return ST_READ; }`

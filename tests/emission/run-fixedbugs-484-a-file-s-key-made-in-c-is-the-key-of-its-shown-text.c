@@ -79,12 +79,6 @@ _Static_assert(HERO_RET_PTR(fopen(0, 0)), "heroes-ffi-return fopen ptr");
 _Static_assert(HERO_RET_I32(fputc((int32_t)0, (void *)0)), "heroes-ffi-return fputc i32");
 _Static_assert(HERO_RET_I32(fclose((void *)0)), "heroes-ffi-return fclose i32");
 _Static_assert(HERO_RET_STR(hero_file_read_shown(0, 0, 0)), "heroes-ffi-return hero_file_read_shown str");
-_Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
-_Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
-_Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
-_Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
-_Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
-_Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 _Static_assert(HERO_RET_STR(hero_file_key(0, 0)), "heroes-ffi-return hero_file_key str");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
@@ -122,7 +116,7 @@ HERO_STR_STATIC(hero_str_182a0b44, "build/heroes-golden-key-484-not-there.bin");
 HERO_STR_STATIC(hero_str_180e659f, "missing [");
 HERO_STR_STATIC(hero_str_2fb7, "] ");
 
-#line 126 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 120 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -188,7 +182,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 192 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 186 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -222,7 +216,9 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 25 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_OK(void) {
-#line 226 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 220 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
+    _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -232,13 +228,15 @@ int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 25 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     return HERO_OS_OK;
-#line 236 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 232 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
 #pragma clang diagnostic pop
 }
 
 #line 26 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_NOT_FOUND(void) {
-#line 242 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 238 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
+    _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -248,13 +246,15 @@ int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_NOT_FOUND(v
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 26 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     return HERO_OS_NOT_FOUND;
-#line 252 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 250 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
 #pragma clang diagnostic pop
 }
 
 #line 27 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_NOT_TEXT(void) {
-#line 258 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 256 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    _Static_assert(HERO_RET_INT(HERO_OS_NOT_TEXT), "heroes-ffi-return HERO_OS_NOT_TEXT i64");
+    _Static_assert(__builtin_constant_p(HERO_OS_NOT_TEXT), "heroes-ffi-const HERO_OS_NOT_TEXT");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

@@ -79,13 +79,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_F64(M_PI), "heroes-ffi-return M_PI f64");
-_Static_assert(__builtin_constant_p(M_PI), "heroes-ffi-const M_PI");
 _Static_assert(HERO_RET_F64(sqrt((double)0)), "heroes-ffi-return sqrt f64");
-_Static_assert(HERO_RET_INT(SEEK_SET), "heroes-ffi-return SEEK_SET i64");
-_Static_assert(__builtin_constant_p(SEEK_SET), "heroes-ffi-const SEEK_SET");
-_Static_assert(HERO_RET_INT(SEEK_END), "heroes-ffi-return SEEK_END i64");
-_Static_assert(__builtin_constant_p(SEEK_END), "heroes-ffi-const SEEK_END");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -104,7 +98,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 108 "fficonstant.c"
+#line 102 "fficonstant.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -148,7 +142,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fficonstant.c"
+#line 146 "fficonstant.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -167,9 +161,12 @@ void h_fficonstant_main(void);
 
 #line 45 "tests/golden/run/ffi-constant.hero"
 double h_fficonstant_M_PI(void) {
+#line 165 "fficonstant.c"
+    _Static_assert(HERO_RET_F64(M_PI), "heroes-ffi-return M_PI f64");
+    _Static_assert(__builtin_constant_p(M_PI), "heroes-ffi-const M_PI");
 #line 45 "tests/golden/run/ffi-constant.hero"
     return M_PI;
-#line 173 "fficonstant.c"
+#line 170 "fficonstant.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -186,7 +183,9 @@ double h_fficonstant_M_PI(void) {
 
 #line 49 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_SET(void) {
-#line 190 "fficonstant.c"
+#line 187 "fficonstant.c"
+    _Static_assert(HERO_RET_INT(SEEK_SET), "heroes-ffi-return SEEK_SET i64");
+    _Static_assert(__builtin_constant_p(SEEK_SET), "heroes-ffi-const SEEK_SET");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -196,7 +195,7 @@ int64_t h_fficonstant_SEEK_SET(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 49 "tests/golden/run/ffi-constant.hero"
     return SEEK_SET;
-#line 200 "fficonstant.c"
+#line 199 "fficonstant.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -214,7 +213,9 @@ int64_t h_fficonstant_SEEK_SET(void) {
 
 #line 50 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_END(void) {
-#line 218 "fficonstant.c"
+#line 217 "fficonstant.c"
+    _Static_assert(HERO_RET_INT(SEEK_END), "heroes-ffi-return SEEK_END i64");
+    _Static_assert(__builtin_constant_p(SEEK_END), "heroes-ffi-const SEEK_END");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -224,7 +225,7 @@ int64_t h_fficonstant_SEEK_END(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 50 "tests/golden/run/ffi-constant.hero"
     return SEEK_END;
-#line 228 "fficonstant.c"
+#line 229 "fficonstant.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -280,7 +281,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/run/ffi-constant.hero"
     return;
-#line 284 "fficonstant.c"
+#line 285 "fficonstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

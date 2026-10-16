@@ -36,8 +36,6 @@ _Static_assert(HERO_RET_INT(hero_os_pid()), "heroes-ffi-return hero_os_pid i64")
 _Static_assert(HERO_RET_INT(hero_fs_mkdir_all(0)), "heroes-ffi-return hero_fs_mkdir_all i64");
 _Static_assert(HERO_RET_INT(hero_fs_remove(0)), "heroes-ffi-return hero_fs_remove i64");
 _Static_assert(HERO_RET_INT(hero_dir_scan(0, (int64_t)0, (int64_t)0)), "heroes-ffi-return hero_dir_scan i64");
-_Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
-_Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -64,7 +62,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 68 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 66 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
@@ -98,7 +96,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 100 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
@@ -118,7 +116,9 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 14 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
 int64_t h_fixedbugs573alistingleftstandingistoldastheprograms_HERO_DIR_FILES(void) {
-#line 122 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 120 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+    _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
+    _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

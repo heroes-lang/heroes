@@ -79,8 +79,6 @@ _Static_assert(__builtin_classify_type(((regex_t *)0)->re_nsub) == 1 && sizeof((
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_I32(REG_EXTENDED), "heroes-ffi-return REG_EXTENDED i32");
-_Static_assert(__builtin_constant_p(REG_EXTENDED), "heroes-ffi-const REG_EXTENDED");
 _Static_assert(HERO_RET_INT(regcomp((regex_t *)0, 0, (int32_t)0)), "heroes-ffi-return regcomp i64");
 _Static_assert(HERO_RET_INT(regexec((regex_t *)0, 0, (uint64_t)0, (void *)0, (int32_t)0)), "heroes-ffi-return regexec i64");
 _Static_assert(HERO_RET_UNIT(regfree((regex_t *)0)), "heroes-ffi-return regfree ()");
@@ -164,7 +162,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 166 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_eq(const regex_t *a, const regex_t *b);
@@ -204,7 +202,9 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 15 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 int32_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(void) {
-#line 208 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 206 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+    _Static_assert(HERO_RET_I32(REG_EXTENDED), "heroes-ffi-return REG_EXTENDED i32");
+    _Static_assert(__builtin_constant_p(REG_EXTENDED), "heroes-ffi-const REG_EXTENDED");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

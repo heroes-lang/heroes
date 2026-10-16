@@ -87,8 +87,6 @@ _Static_assert(__builtin_classify_type(((struct pair *)0)->b) == 1 && sizeof(((s
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_INT(DIGEST_LEN), "heroes-ffi-return DIGEST_LEN i64");
-_Static_assert(__builtin_constant_p(DIGEST_LEN), "heroes-ffi-const DIGEST_LEN");
 _Static_assert(HERO_RET_I32(digest32((void *)0)), "heroes-ffi-return digest32 i32");
 _Static_assert(HERO_RET_INT(fill_void((void *)0, (uint64_t)0)), "heroes-ffi-return fill_void i64");
 _Static_assert(HERO_RET_UNIT(fill_ints4((void *)0)), "heroes-ffi-return fill_ints4 ()");
@@ -174,7 +172,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 178 "fixedbugs396abuffercfills.c"
+#line 176 "fixedbugs396abuffercfills.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396abuffercfills_Pair_eq(const struct pair *a, const struct pair *b);
@@ -229,7 +227,9 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 20 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 int64_t h_fixedbugs396abuffercfills_DIGEST_LEN(void) {
-#line 233 "fixedbugs396abuffercfills.c"
+#line 231 "fixedbugs396abuffercfills.c"
+    _Static_assert(HERO_RET_INT(DIGEST_LEN), "heroes-ffi-return DIGEST_LEN i64");
+    _Static_assert(__builtin_constant_p(DIGEST_LEN), "heroes-ffi-const DIGEST_LEN");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

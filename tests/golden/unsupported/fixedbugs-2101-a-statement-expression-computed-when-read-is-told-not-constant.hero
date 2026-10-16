@@ -1,0 +1,28 @@
+# FIXED DEFECT 2101, 2026-10-17, lane land215 (panel 216's compiler-engineer
+# built the repair, alpha2 and the reader of a requirement over several lines).
+#
+# SYMPTOM: each of these constants stopped `heroes build` at exit 2, *internal
+# error*: first at file scope, where C has no statement expression, and once
+# asserted in its accessor, at the constancy assertion, whose requirement clang
+# prints over several lines, `({\n    st_counter++;\n})`, so the line that names
+# the failure did not hold the marker and no reader claimed it.
+#
+# CAUSE: the assertions stood at file scope, and clang's lines were read one by
+# one.
+#
+# FIX: the assertions stand in the accessor, and a requirement clang prints over
+# several lines is read as one (`emit/ffi_constant_value.hero`'s
+# `assertion_lines`): each constant is told `ffi_not_constant` at exit 1, its
+# note true of a statement expression too, which it was not (*an object or a
+# macro that expands to one*). The ones clang folds build:
+# `tests/golden/run/fixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds.hero`.
+
+extern "fixedbugs-2101-statement.h"
+    constant ST_SIDE: i32  #~ ffi_not_constant
+    constant ST_DECL: i32  #~ ffi_not_constant
+    constant ST_READ: i32  #~ ffi_not_constant
+
+function main()
+    print(ST_SIDE)
+    print(ST_DECL)
+    print(ST_READ)

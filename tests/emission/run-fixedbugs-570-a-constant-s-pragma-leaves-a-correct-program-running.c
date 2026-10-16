@@ -86,8 +86,6 @@ _Static_assert(HERO_RET_RECORD(slot_make(), Slot), "heroes-ffi-return slot_make 
 _Static_assert(HERO_RET_UNIT(slot_fill((void *)0, (int64_t)0)), "heroes-ffi-return slot_fill ()");
 _Static_assert(HERO_RET_INT(slot_sum((void *)0, (int64_t)0)), "heroes-ffi-return slot_sum i64");
 _Static_assert(HERO_RET_I32(abs((int32_t)0)), "heroes-ffi-return abs i32");
-_Static_assert(HERO_RET_I32(QUIET_FIVE), "heroes-ffi-return QUIET_FIVE i32");
-_Static_assert(__builtin_constant_p(QUIET_FIVE), "heroes-ffi-const QUIET_FIVE");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -151,7 +149,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 153 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_Slot_eq(const Slot *a, const Slot *b);
@@ -170,7 +168,9 @@ void h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
 int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(void) {
-#line 174 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 172 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+    _Static_assert(HERO_RET_I32(QUIET_FIVE), "heroes-ffi-return QUIET_FIVE i32");
+    _Static_assert(__builtin_constant_p(QUIET_FIVE), "heroes-ffi-const QUIET_FIVE");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

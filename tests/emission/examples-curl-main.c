@@ -75,12 +75,6 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_I32(CURLOPT_URL), "heroes-ffi-return CURLOPT_URL i32");
-_Static_assert(__builtin_constant_p(CURLOPT_URL), "heroes-ffi-const CURLOPT_URL");
-_Static_assert(HERO_RET_INT(CURLE_OK), "heroes-ffi-return CURLE_OK i64");
-_Static_assert(__builtin_constant_p(CURLE_OK), "heroes-ffi-const CURLE_OK");
-_Static_assert(HERO_RET_INT(CURLE_UNSUPPORTED_PROTOCOL), "heroes-ffi-return CURLE_UNSUPPORTED_PROTOCOL i64");
-_Static_assert(__builtin_constant_p(CURLE_UNSUPPORTED_PROTOCOL), "heroes-ffi-const CURLE_UNSUPPORTED_PROTOCOL");
 _Static_assert(HERO_RET_CSTR(curl_version()), "heroes-ffi-return curl_version cstr");
 _Static_assert(HERO_RET_RECORD(curl_easy_init(), CURL *), "heroes-ffi-return curl_easy_init Curl");
 _Static_assert(HERO_RET_INT(curl_easy_setopt((CURL *){0}, (uint32_t)0, 0)), "heroes-ffi-return curl_easy_setopt i64");
@@ -115,7 +109,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 119 "main.c"
+#line 113 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -169,7 +163,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 173 "main.c"
+#line 167 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Curl_eq(CURL * const *a, CURL * const *b);
@@ -196,7 +190,9 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 39 "examples/curl/main.hero"
 int32_t h_main_CURLOPT_URL(void) {
-#line 200 "main.c"
+#line 194 "main.c"
+    _Static_assert(HERO_RET_I32(CURLOPT_URL), "heroes-ffi-return CURLOPT_URL i32");
+    _Static_assert(__builtin_constant_p(CURLOPT_URL), "heroes-ffi-const CURLOPT_URL");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -206,7 +202,7 @@ int32_t h_main_CURLOPT_URL(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 39 "examples/curl/main.hero"
     return CURLOPT_URL;
-#line 210 "main.c"
+#line 206 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -224,7 +220,9 @@ int32_t h_main_CURLOPT_URL(void) {
 
 #line 40 "examples/curl/main.hero"
 int64_t h_main_CURLE_OK(void) {
-#line 228 "main.c"
+#line 224 "main.c"
+    _Static_assert(HERO_RET_INT(CURLE_OK), "heroes-ffi-return CURLE_OK i64");
+    _Static_assert(__builtin_constant_p(CURLE_OK), "heroes-ffi-const CURLE_OK");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -234,7 +232,7 @@ int64_t h_main_CURLE_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 40 "examples/curl/main.hero"
     return CURLE_OK;
-#line 238 "main.c"
+#line 236 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -252,7 +250,9 @@ int64_t h_main_CURLE_OK(void) {
 
 #line 41 "examples/curl/main.hero"
 int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
-#line 256 "main.c"
+#line 254 "main.c"
+    _Static_assert(HERO_RET_INT(CURLE_UNSUPPORTED_PROTOCOL), "heroes-ffi-return CURLE_UNSUPPORTED_PROTOCOL i64");
+    _Static_assert(__builtin_constant_p(CURLE_UNSUPPORTED_PROTOCOL), "heroes-ffi-const CURLE_UNSUPPORTED_PROTOCOL");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

@@ -74,14 +74,6 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_U64(WRAPPED), "heroes-ffi-return WRAPPED u64");
-_Static_assert(__builtin_constant_p(WRAPPED), "heroes-ffi-const WRAPPED");
-_Static_assert(HERO_RET_U32(HIGH_BIT), "heroes-ffi-return HIGH_BIT u32");
-_Static_assert(__builtin_constant_p(HIGH_BIT), "heroes-ffi-const HIGH_BIT");
-_Static_assert(HERO_RET_I32(FROM_A_FLOAT), "heroes-ffi-return FROM_A_FLOAT i32");
-_Static_assert(__builtin_constant_p(FROM_A_FLOAT), "heroes-ffi-const FROM_A_FLOAT");
-_Static_assert(HERO_RET_I16(NARROWED), "heroes-ffi-return NARROWED i16");
-_Static_assert(__builtin_constant_p(NARROWED), "heroes-ffi-const NARROWED");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -100,7 +92,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 104 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 96 "fixedbugs2072valuescdefinesstillbuild.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -142,7 +134,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 138 "fixedbugs2072valuescdefinesstillbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -162,7 +154,9 @@ void h_fixedbugs2072valuescdefinesstillbuild_main(void);
 
 #line 7 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
 uint64_t h_fixedbugs2072valuescdefinesstillbuild_WRAPPED(void) {
-#line 166 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 158 "fixedbugs2072valuescdefinesstillbuild.c"
+    _Static_assert(HERO_RET_U64(WRAPPED), "heroes-ffi-return WRAPPED u64");
+    _Static_assert(__builtin_constant_p(WRAPPED), "heroes-ffi-const WRAPPED");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -172,7 +166,7 @@ uint64_t h_fixedbugs2072valuescdefinesstillbuild_WRAPPED(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 7 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
     return WRAPPED;
-#line 176 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 170 "fixedbugs2072valuescdefinesstillbuild.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -190,7 +184,9 @@ uint64_t h_fixedbugs2072valuescdefinesstillbuild_WRAPPED(void) {
 
 #line 8 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
 uint32_t h_fixedbugs2072valuescdefinesstillbuild_HIGH_BIT(void) {
-#line 194 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 188 "fixedbugs2072valuescdefinesstillbuild.c"
+    _Static_assert(HERO_RET_U32(HIGH_BIT), "heroes-ffi-return HIGH_BIT u32");
+    _Static_assert(__builtin_constant_p(HIGH_BIT), "heroes-ffi-const HIGH_BIT");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -200,7 +196,7 @@ uint32_t h_fixedbugs2072valuescdefinesstillbuild_HIGH_BIT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 8 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
     return HIGH_BIT;
-#line 204 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 200 "fixedbugs2072valuescdefinesstillbuild.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -218,7 +214,9 @@ uint32_t h_fixedbugs2072valuescdefinesstillbuild_HIGH_BIT(void) {
 
 #line 9 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
 int32_t h_fixedbugs2072valuescdefinesstillbuild_FROM_A_FLOAT(void) {
-#line 222 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 218 "fixedbugs2072valuescdefinesstillbuild.c"
+    _Static_assert(HERO_RET_I32(FROM_A_FLOAT), "heroes-ffi-return FROM_A_FLOAT i32");
+    _Static_assert(__builtin_constant_p(FROM_A_FLOAT), "heroes-ffi-const FROM_A_FLOAT");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -228,7 +226,7 @@ int32_t h_fixedbugs2072valuescdefinesstillbuild_FROM_A_FLOAT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 9 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
     return FROM_A_FLOAT;
-#line 232 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 230 "fixedbugs2072valuescdefinesstillbuild.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -246,7 +244,9 @@ int32_t h_fixedbugs2072valuescdefinesstillbuild_FROM_A_FLOAT(void) {
 
 #line 10 "tests/golden/run/fixedbugs-2072-values-c-defines-still-build.hero"
 int16_t h_fixedbugs2072valuescdefinesstillbuild_NARROWED(void) {
-#line 250 "fixedbugs2072valuescdefinesstillbuild.c"
+#line 248 "fixedbugs2072valuescdefinesstillbuild.c"
+    _Static_assert(HERO_RET_I16(NARROWED), "heroes-ffi-return NARROWED i16");
+    _Static_assert(__builtin_constant_p(NARROWED), "heroes-ffi-const NARROWED");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

@@ -75,8 +75,6 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_I32(SIGSTOP), "heroes-ffi-return SIGSTOP i32");
-_Static_assert(__builtin_constant_p(SIGSTOP), "heroes-ffi-const SIGSTOP");
 _Static_assert(HERO_RET_I32(kill((int32_t)0, (int32_t)0)), "heroes-ffi-return kill i32");
 _Static_assert(HERO_RET_I32(getpid()), "heroes-ffi-return getpid i32");
 _Static_assert(HERO_RET_UNIT(hero_run_reset()), "heroes-ffi-return hero_run_reset ()");
@@ -107,7 +105,7 @@ HERO_STR_STATIC(hero_str_57d8beb1, "child");
 HERO_STR_STATIC(hero_str_0, "");
 HERO_STR_STATIC(hero_str_408405b7, "a child that stopped itself was waited on until its watchdog ended it: ");
 
-#line 111 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 109 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -156,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 158 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -175,7 +173,9 @@ HeroArrayHeader * h_library_args(void);
 
 #line 20 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 int32_t h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP(void) {
-#line 179 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 177 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+    _Static_assert(HERO_RET_I32(SIGSTOP), "heroes-ffi-return SIGSTOP i32");
+    _Static_assert(__builtin_constant_p(SIGSTOP), "heroes-ffi-const SIGSTOP");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

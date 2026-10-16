@@ -121,7 +121,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         if !undefined.is_err()
             found @ ffi_lookup.add_once(found, d: undefined.must())
 
-    for line in ffi_lookup.lines(text: text)
+    for line in ffi_constant_value.assertion_lines(text: text)
         wrong = ffi_declared.wrong_type(s, decls, tree, line: line, results: asked.results, word_bits: word_bits)
 
         if !wrong.is_err()

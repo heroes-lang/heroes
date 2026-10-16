@@ -94,8 +94,6 @@ _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, 
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_U64(HELD_INTS), "heroes-ffi-return HELD_INTS u64");
-_Static_assert(__builtin_constant_p(HELD_INTS), "heroes-ffi-const HELD_INTS");
 _Static_assert(HERO_RET_INT(fill_ints((void *)0, (uint64_t)0)), "heroes-ffi-return fill_ints i64");
 _Static_assert(HERO_RET_INT(read_ints((void *)0, (uint64_t)0)), "heroes-ffi-return read_ints i64");
 _Static_assert(HERO_RET_INT(fill_shorts((void *)0, (uint64_t)0)), "heroes-ffi-return fill_shorts i64");
@@ -178,7 +176,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 182 "fixedbugs395acountincsownunitruns.c"
+#line 180 "fixedbugs395acountincsownunitruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b);
@@ -200,7 +198,9 @@ void h_fixedbugs395acountincsownunitruns_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
-#line 204 "fixedbugs395acountincsownunitruns.c"
+#line 202 "fixedbugs395acountincsownunitruns.c"
+    _Static_assert(HERO_RET_U64(HELD_INTS), "heroes-ffi-return HELD_INTS u64");
+    _Static_assert(__builtin_constant_p(HELD_INTS), "heroes-ffi-const HELD_INTS");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

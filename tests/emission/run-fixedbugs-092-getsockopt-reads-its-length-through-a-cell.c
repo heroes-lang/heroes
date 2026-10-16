@@ -85,14 +85,6 @@ _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, 
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_INT(AF_UNIX), "heroes-ffi-return AF_UNIX i64");
-_Static_assert(__builtin_constant_p(AF_UNIX), "heroes-ffi-const AF_UNIX");
-_Static_assert(HERO_RET_INT(SOCK_STREAM), "heroes-ffi-return SOCK_STREAM i64");
-_Static_assert(__builtin_constant_p(SOCK_STREAM), "heroes-ffi-const SOCK_STREAM");
-_Static_assert(HERO_RET_INT(SOL_SOCKET), "heroes-ffi-return SOL_SOCKET i64");
-_Static_assert(__builtin_constant_p(SOL_SOCKET), "heroes-ffi-const SOL_SOCKET");
-_Static_assert(HERO_RET_INT(SO_LINGER), "heroes-ffi-return SO_LINGER i64");
-_Static_assert(__builtin_constant_p(SO_LINGER), "heroes-ffi-const SO_LINGER");
 _Static_assert(HERO_RET_I32(socket((int32_t)0, (int32_t)0, (int32_t)0)), "heroes-ffi-return socket i32");
 _Static_assert(HERO_RET_I32(getsockopt((int32_t)0, (int32_t)0, (int32_t)0, (struct linger *)0, 0)), "heroes-ffi-return getsockopt i32");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
@@ -165,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 161 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs092getsockoptreadsitslengththroughacell_Linger_eq(const struct linger *a, const struct linger *b);
@@ -198,7 +190,9 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 10 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
-#line 202 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 194 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+    _Static_assert(HERO_RET_INT(AF_UNIX), "heroes-ffi-return AF_UNIX i64");
+    _Static_assert(__builtin_constant_p(AF_UNIX), "heroes-ffi-const AF_UNIX");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -208,7 +202,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 10 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return AF_UNIX;
-#line 212 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 206 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -226,7 +220,9 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
 
 #line 11 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
-#line 230 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 224 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+    _Static_assert(HERO_RET_INT(SOCK_STREAM), "heroes-ffi-return SOCK_STREAM i64");
+    _Static_assert(__builtin_constant_p(SOCK_STREAM), "heroes-ffi-const SOCK_STREAM");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -236,7 +232,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return SOCK_STREAM;
-#line 240 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 236 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -254,7 +250,9 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
 
 #line 12 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
-#line 258 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 254 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+    _Static_assert(HERO_RET_INT(SOL_SOCKET), "heroes-ffi-return SOL_SOCKET i64");
+    _Static_assert(__builtin_constant_p(SOL_SOCKET), "heroes-ffi-const SOL_SOCKET");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -264,7 +262,7 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 12 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return SOL_SOCKET;
-#line 268 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 266 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -282,7 +280,9 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
 
 #line 13 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SO_LINGER(void) {
-#line 286 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 284 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+    _Static_assert(HERO_RET_INT(SO_LINGER), "heroes-ffi-return SO_LINGER i64");
+    _Static_assert(__builtin_constant_p(SO_LINGER), "heroes-ffi-const SO_LINGER");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

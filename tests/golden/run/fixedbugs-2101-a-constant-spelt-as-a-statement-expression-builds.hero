@@ -1,0 +1,24 @@
+# FIXED DEFECT 2101, 2026-10-17, lane land215 (panel 216's compiler-engineer
+# built the repair, alpha2 and the reader of a requirement over several lines).
+#
+# SYMPTOM: a constant the header spells `(__extension__ ({ 3; }))` stopped
+# `heroes build` at exit 2, *internal error: compiling the generated C failed*,
+# clang refusing a statement expression at file scope in the constant's own
+# return-type assertion.
+#
+# CAUSE: a constant's type and constancy were asserted at file scope, where C
+# has no statement expression; its accessor, a function, reads one.
+#
+# FIX: a constant of the program's own headers that its accessor returns is
+# asserted inside that accessor (`emit/extern_assert.hero`'s
+# `constant_assertions`, `emit/constant_accessor.hero`), so these build and
+# print their value. The ones clang cannot fold are told, never exit 2:
+# `tests/golden/unsupported/fixedbugs-2101-a-statement-expression-computed-when-read-is-told-not-constant.hero`.
+
+extern "fixedbugs-2101-statement.h"
+    constant ST_PURE: i32
+    constant ST_TWO: i32
+
+function main()
+    print(ST_PURE)
+    print(ST_TWO)

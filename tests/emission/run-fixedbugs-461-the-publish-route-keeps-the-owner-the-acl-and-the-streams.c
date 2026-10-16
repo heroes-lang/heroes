@@ -84,12 +84,6 @@ _Static_assert(HERO_RET_UNIT(hero_dir_release()), "heroes-ffi-return hero_dir_re
 _Static_assert(HERO_RET_INT(hero_dir_remove_tree(0)), "heroes-ffi-return hero_dir_remove_tree i64");
 _Static_assert(HERO_RET_INT(hero_file_stage(0, (HeroStr){0}, 0)), "heroes-ffi-return hero_file_stage i64");
 _Static_assert(HERO_RET_INT(hero_fs_replace(0, 0)), "heroes-ffi-return hero_fs_replace i64");
-_Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
-_Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
-_Static_assert(HERO_RET_INT(HERO_STAGE_DONE), "heroes-ffi-return HERO_STAGE_DONE i64");
-_Static_assert(__builtin_constant_p(HERO_STAGE_DONE), "heroes-ffi-const HERO_STAGE_DONE");
-_Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
-_Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -133,7 +127,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 137 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 131 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
@@ -186,7 +180,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 190 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 184 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
@@ -212,7 +206,9 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 34 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 int64_t h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_HERO_DIR_FILES(void) {
-#line 216 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 210 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+    _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
+    _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -222,13 +218,15 @@ int64_t h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_HERO_DIR_F
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 34 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     return HERO_DIR_FILES;
-#line 226 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 222 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
 #pragma clang diagnostic pop
 }
 
 #line 35 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 int64_t h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_HERO_STAGE_DONE(void) {
-#line 232 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 228 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+    _Static_assert(HERO_RET_INT(HERO_STAGE_DONE), "heroes-ffi-return HERO_STAGE_DONE i64");
+    _Static_assert(__builtin_constant_p(HERO_STAGE_DONE), "heroes-ffi-const HERO_STAGE_DONE");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -238,13 +236,15 @@ int64_t h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_HERO_STAGE
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 35 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     return HERO_STAGE_DONE;
-#line 242 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 240 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
 #pragma clang diagnostic pop
 }
 
 #line 36 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 int64_t h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_HERO_OS_OK(void) {
-#line 248 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 246 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+    _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
+    _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

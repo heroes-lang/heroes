@@ -107,7 +107,50 @@ function told(name: str, declared: str, known: ffi_lookup.Declared, words: str, 
         )
     return d
 
+# clang's lines, with a static assertion's failure read whole where clang
+# prints its requirement over several (defect 2101), here because the one shape
+# measured to print so is a constant's value, a statement expression: a statement expression
+# is printed as its block, `({\n    st_counter++;\n})`, so the line naming
+# the failure did not hold the marker after it and no reader found it, an
+# exit 2. Every other line is the line it was.
+function assertion_lines(text: str) -> [str]
+    out: [str] @= []
+    open: str @= ""
+
+    for line in ffi_lookup.lines(text: text)
+        if open.len() > 0
+            open @ open + " " + line
+
+            if ffi_lookup.has(text: line, needle: REQUIREMENT_END)
+                out @ out.push(open)
+                open @ ""
+        else if ffi_lookup.has(text: line, needle: REQUIREMENT) && !ffi_lookup.has(text: ffi_lookup.after(text: line, marker: REQUIREMENT).default(""), needle: REQUIREMENT_END)
+            open @ line
+        else
+            out @ out.push(line)
+
+    if open.len() > 0
+        out @ out.push(open)
+    return out
+
+# Where clang opens and closes an assertion's requirement.
+constant REQUIREMENT: str
+    "static assertion failed due to requirement '"
+
+constant REQUIREMENT_END: str
+    "': "
+
 ## Tests
+
+# clang 21's words for `(__extension__ ({ st_counter++; }))` at the constancy
+# assertion in its accessor, cut to what is read: three lines, read as one.
+test "a requirement clang prints over several lines is read as one line, and no other line moves (defect 2101)"
+    said = "t.c:97:20: error: static assertion failed due to requirement '__builtin_constant_p((__extension__ ({\n    st_counter++;\n})))': heroes-ffi-const ST_SIDE\n   97 |     _Static_assert(x);\n1 error generated.\n"
+    got = assertion_lines(text: said)
+    assert got.len() == 3
+    assert ffi_lookup.has(text: got[0], needle: "heroes-ffi-const ST_SIDE")
+    assert got[1] == "   97 |     _Static_assert(x);"
+    assert assertion_lines(text: "a\nb\n") == ["a", "b"]
 
 constant TEXT: str
     "extern \"m.h\"\n    constant K_SHIFT: i64\n    constant K_F: f64\n\nfunction main()\n    print(K_SHIFT, K_F)\n"

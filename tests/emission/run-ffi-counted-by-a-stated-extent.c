@@ -100,8 +100,6 @@ _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, 
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_INT(HELD_LEN), "heroes-ffi-return HELD_LEN i64");
-_Static_assert(__builtin_constant_p(HELD_LEN), "heroes-ffi-const HELD_LEN");
 _Static_assert(HERO_RET_UNIT(fill16((void *)0)), "heroes-ffi-return fill16 ()");
 _Static_assert(HERO_RET_UNIT(fill16_const((void *)0)), "heroes-ffi-return fill16_const ()");
 _Static_assert(HERO_RET_UNIT(fill16_under((void *)0)), "heroes-ffi-return fill16_under ()");
@@ -176,7 +174,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 180 "fficountedbyastatedextent.c"
+#line 178 "fficountedbyastatedextent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b);
@@ -205,7 +203,9 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
-#line 209 "fficountedbyastatedextent.c"
+#line 207 "fficountedbyastatedextent.c"
+    _Static_assert(HERO_RET_INT(HELD_LEN), "heroes-ffi-return HELD_LEN i64");
+    _Static_assert(__builtin_constant_p(HELD_LEN), "heroes-ffi-const HELD_LEN");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

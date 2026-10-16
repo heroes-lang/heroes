@@ -90,8 +90,6 @@ _Static_assert(_Generic(&((Both *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == size
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_INT(SL_NAME_LEN), "heroes-ffi-return SL_NAME_LEN i64");
-_Static_assert(__builtin_constant_p(SL_NAME_LEN), "heroes-ffi-const SL_NAME_LEN");
 _Static_assert(HERO_RET_RECORD(sl_make(), Sl), "heroes-ffi-return sl_make Sl");
 _Static_assert(HERO_RET_RECORD(both_make(), Both), "heroes-ffi-return both_make Both");
 _Static_assert(HERO_RET_INT(sum_n((void *)0, (int64_t)0)), "heroes-ffi-return sum_n i64");
@@ -158,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 162 "ffialentfieldcountedbyaconstant.c"
+#line 160 "ffialentfieldcountedbyaconstant.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_Sl_eq(const Sl *a, const Sl *b);
@@ -179,7 +177,9 @@ void h_ffialentfieldcountedbyaconstant_main(void);
 
 #line 19 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
-#line 183 "ffialentfieldcountedbyaconstant.c"
+#line 181 "ffialentfieldcountedbyaconstant.c"
+    _Static_assert(HERO_RET_INT(SL_NAME_LEN), "heroes-ffi-return SL_NAME_LEN i64");
+    _Static_assert(__builtin_constant_p(SL_NAME_LEN), "heroes-ffi-const SL_NAME_LEN");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"

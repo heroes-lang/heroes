@@ -85,8 +85,6 @@ _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, 
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_I32(RLIMIT_FSIZE), "heroes-ffi-return RLIMIT_FSIZE i32");
-_Static_assert(__builtin_constant_p(RLIMIT_FSIZE), "heroes-ffi-const RLIMIT_FSIZE");
 _Static_assert(HERO_RET_I32(getrlimit((int32_t)0, (struct rlimit *)0)), "heroes-ffi-return getrlimit i32");
 _Static_assert(HERO_RET_UNIT(hero_run_reset()), "heroes-ffi-return hero_run_reset ()");
 _Static_assert(HERO_RET_UNIT(hero_run_arg((HeroStr){0})), "heroes-ffi-return hero_run_arg ()");
@@ -100,8 +98,6 @@ _Static_assert(HERO_RET_INT(hero_fs_exists(0)), "heroes-ffi-return hero_fs_exist
 _Static_assert(HERO_RET_INT(hero_dir_scan(0, (int64_t)0, (int64_t)0)), "heroes-ffi-return hero_dir_scan i64");
 _Static_assert(HERO_RET_UNIT(hero_dir_release()), "heroes-ffi-return hero_dir_release ()");
 _Static_assert(HERO_RET_INT(hero_dir_remove_tree(0)), "heroes-ffi-return hero_dir_remove_tree i64");
-_Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
-_Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
 _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
@@ -209,7 +205,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 213 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 209 "fixedbugs438awritecutshortleavestheoldtext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs438awritecutshortleavestheoldtext_Ceiling_eq(const struct rlimit *a, const struct rlimit *b);
@@ -253,7 +249,9 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 21 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void) {
-#line 257 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 253 "fixedbugs438awritecutshortleavestheoldtext.c"
+    _Static_assert(HERO_RET_I32(RLIMIT_FSIZE), "heroes-ffi-return RLIMIT_FSIZE i32");
+    _Static_assert(__builtin_constant_p(RLIMIT_FSIZE), "heroes-ffi-const RLIMIT_FSIZE");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
@@ -263,7 +261,7 @@ int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     return RLIMIT_FSIZE;
-#line 267 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 265 "fixedbugs438awritecutshortleavestheoldtext.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -281,7 +279,9 @@ int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void) {
 
 #line 40 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 int64_t h_fixedbugs438awritecutshortleavestheoldtext_HERO_DIR_FILES(void) {
-#line 285 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 283 "fixedbugs438awritecutshortleavestheoldtext.c"
+    _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
+    _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
