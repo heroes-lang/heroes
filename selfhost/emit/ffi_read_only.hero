@@ -245,6 +245,13 @@ function no_prototype(s: source.Source, decls: [ast.Decl], p: containers.Program
 # *a, const char *b)` would be told that `a` may be written. The probe's call
 # tells the count (`ffi_call_shape`), and the question is asked once the
 # counts agree. The count is the declaration's own, an `ARITY` ask's index.
+# **A variadic header's count never agrees and its probe's call is legal C**,
+# so a `cstr` past its `...` is asked nothing here: one declared `lent` is
+# refused by `emit/ffi_past_prototype.hero` (defect 2102), and one without
+# `lent` takes only a lease, a copy C may write. Before the `...` the probe's
+# call holds the parameter to the header's own type, measured 2026-10-17:
+# `fmt: cstr lent` over `char *fmt, ...` is refused as
+# `ffi_writable_parameter`.
 function lend_answers(out: [pointee_ask.Answered], wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {str: [str]}) -> [pointee_ask.Answered]
     counts: {str: i64} @= {}
 

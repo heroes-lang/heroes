@@ -34,6 +34,7 @@ use emit/ffi_pointee
 use emit/width_line
 use emit/ffi_unit
 use emit/ffi_read_only
+use emit/ffi_past_prototype
 use cli/pointee_ask
 use emit/c_text
 
@@ -72,7 +73,7 @@ function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
 # the author's own line. `(T)-1 > 0` is the sign of an integer type in
 # C11 arithmetic; for a float pointee the two sides agree and only
 # `sizeof` decides, which is the right question for a float.
-function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {str: [str]}) -> str
+function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {str: [str]}, open: {str: i64}) -> str
     lines: [str] @= c_text.includes(headers)
 
     for one in answered(wanted, types: types, sugar: sugar)
@@ -138,6 +139,11 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
         )
         lines @ lines.push(width_line.width_assertions(asked, header_type: header_type))
 
+    # A lend past a variadic header's `...` has no type to be asked of, and
+    # is refused at its declaration (`emit/ffi_past_prototype.hero`).
+    for line in ffi_past_prototype.lines(wanted, open: open)
+        lines @ lines.push(line)
+
     return lines.join("\n") + "\n"
 
 # Every ask the dump could answer, with the header's own pointee text. Shared
@@ -152,7 +158,7 @@ function answered(wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {st
     for one in wanted
         params = types[one.name]
 
-        if params.is_err() || one.declared == pointee_ask.READ || one.declared == pointee_ask.ARITY
+        if params.is_err() || one.declared == pointee_ask.READ || one.declared == pointee_ask.ARITY || one.declared == pointee_ask.LENT
             continue
 
         if one.index >= params.must().len()
@@ -235,28 +241,28 @@ function strip_word(text: str, word: str) -> str
 # writes the question for, and the shape is the contract.
 function parameter_types(json: str, name: str) -> [str]
     out: [str] @= []
-    opened = locate_text(text: json, needle: "\"name\": \"" + PREFIX + name + "\"", from: 0)
+    opened = bytes.locate(text: json, needle: "\"name\": \"" + PREFIX + name + "\"", from: 0)
 
     if opened.is_err()
         return out
     at: i64 @= opened.must()
-    stop = locate_text(text: json, needle: "\"kind\": \"FunctionDecl\"", from: at)
+    stop = bytes.locate(text: json, needle: "\"kind\": \"FunctionDecl\"", from: at)
     limit: i64 @= json.len()
 
     if !stop.is_err()
         limit @ stop.must()
 
     while true
-        param = locate_text(text: json, needle: "\"kind\": \"ParmVarDecl\"", from: at)
+        param = bytes.locate(text: json, needle: "\"kind\": \"ParmVarDecl\"", from: at)
 
         if param.is_err() || param.must() >= limit
             break
-        typed = locate_text(text: json, needle: "\"qualType\": \"", from: param.must())
+        typed = bytes.locate(text: json, needle: "\"qualType\": \"", from: param.must())
 
         if typed.is_err() || typed.must() >= limit
             break
         start = typed.must() + 13
-        close = locate_text(text: json, needle: "\"", from: start)
+        close = bytes.locate(text: json, needle: "\"", from: start)
 
         if close.is_err()
             break
@@ -282,32 +288,32 @@ function types_of(json: str, wanted: [pointee_ask.Pointee]) -> {str: [str]}
 # and a function's own `typeof`; read for a lend's asks alone (panel 194's R7).
 function parameter_sugar(json: str, name: str) -> [str]
     out: [str] @= []
-    opened = locate_text(text: json, needle: "\"name\": \"" + PREFIX + name + "\"", from: 0)
+    opened = bytes.locate(text: json, needle: "\"name\": \"" + PREFIX + name + "\"", from: 0)
 
     if opened.is_err()
         return out
     at: i64 @= opened.must()
-    stop = locate_text(text: json, needle: "\"kind\": \"FunctionDecl\"", from: at)
+    stop = bytes.locate(text: json, needle: "\"kind\": \"FunctionDecl\"", from: at)
     limit: i64 @= json.len()
 
     if !stop.is_err()
         limit @ stop.must()
 
     while true
-        param = locate_text(text: json, needle: "\"kind\": \"ParmVarDecl\"", from: at)
+        param = bytes.locate(text: json, needle: "\"kind\": \"ParmVarDecl\"", from: at)
 
         if param.is_err() || param.must() >= limit
             break
-        typed = locate_text(text: json, needle: "\"qualType\": \"", from: param.must())
+        typed = bytes.locate(text: json, needle: "\"qualType\": \"", from: param.must())
 
         if typed.is_err() || typed.must() >= limit
             break
-        plain = locate_text(text: json, needle: "\"desugaredQualType\": \"", from: param.must())
+        plain = bytes.locate(text: json, needle: "\"desugaredQualType\": \"", from: param.must())
         found: str @= ""
 
         if !plain.is_err() && plain.must() < typed.must()
             start = plain.must() + 22
-            close = locate_text(text: json, needle: "\"", from: start)
+            close = bytes.locate(text: json, needle: "\"", from: start)
 
             if !close.is_err()
                 found @ json.slice(from: start, to: close.must())
@@ -324,24 +330,6 @@ function sugar_of(json: str, wanted: [pointee_ask.Pointee]) -> {str: [str]}
             out[one.name] @ parameter_sugar(json: json, name: one.name)
 
     return out
-
-# Byte offset of `needle` in `text` at or after `from`, over bytes. **The
-# dump is not ASCII where the author's header is not** (found beside defect
-# 110, 2026-09-27): this asked the first byte and then sliced, and a type
-# named above ASCII, `typedef int 漢;`, put the end of a candidate inside a
-# character, so `build` aborted on a binding `check` accepts. Every byte is
-# asked now, and nothing is cut until a match says where.
-function locate_text(text: str, needle: str, from: i64) -> i64?
-    if needle.len() == 0 || from < 0
-        return fail(code: "none", msg: "nothing to find")
-    index: i64 @= from
-
-    while index + needle.len() <= text.len()
-        if bytes.bytes_at(text: text, at: index, needle: needle)
-            return ok(index)
-        index @ index + 1
-
-    return fail(code: "none", msg: "not found")
 
 function trimmed(text: str) -> str
     start: i64 @= 0
@@ -383,9 +371,9 @@ test "the dump is searched by its bytes, and a type named above ASCII is read wh
     json = "{\"kind\": \"FunctionDecl\", \"name\": \"hero_ty_takes\", \"inner\": [{\"kind\": \"ParmVarDecl\", \"type\": {\"desugaredQualType\": \"int *\", \"qualType\": \"漢éé *\"}}]}\n{\"kind\": \"FunctionDecl\", \"name\": \"hero_ty_hero_file_read\", \"inner\": []}\n"
     assert parameter_types(json: json, name: "takes") == ["漢éé *"]
     assert parameter_types(json: json, name: "hero_file_read").len() == 0
-    assert locate_text(text: "é漢😀x", needle: "x", from: 0).must() == 9
-    assert locate_text(text: "é漢😀x", needle: "漢", from: 1).must() == 2
-    assert locate_text(text: "é漢😀x", needle: "\"", from: 0).is_err()
+    assert bytes.locate(text: "é漢😀x", needle: "x", from: 0).must() == 9
+    assert bytes.locate(text: "é漢😀x", needle: "漢", from: 1).must() == 2
+    assert bytes.locate(text: "é漢😀x", needle: "\"", from: 0).is_err()
 
 test "the check unit asserts width and sign at the author's line, with the marker"
     wanted: [pointee_ask.Pointee] = [
@@ -399,13 +387,13 @@ test "the check unit asserts width and sign at the author's line, with the marke
     types["eat"] @ ["void *"]
     headers: [str] = ["stdio.h", "math.h"]
     none: {str: [str]} = {}
-    unit = check_unit(headers, wanted, types: types, sugar: none)
+    unit = check_unit(headers, wanted, types: types, sugar: none, open: {})
     assert unit.slice(from: 0, to: 18) == "#include <stdio.h>"
-    assert locate_text(text: unit, needle: "#line 2 \"t.hero\"", from: 0).must() > 0
-    assert locate_text(text: unit, needle: "_Static_assert(!(!(sizeof(size_t) == sizeof(int32_t) && (((size_t)-1 > 0) == ((int32_t)-1 > 0))) && sizeof(size_t) * 8 == 64), \"heroes-ffi-pointee-bits getline n int32_t 64 size_t\");", from: 0).must() > 0
-    assert locate_text(text: unit, needle: "sizeof(size_t) * 8 == 128, \"heroes-ffi-pointee getline n int32_t size_t\");", from: 0).must() > 0
-    assert locate_text(text: unit, needle: "heroes-ffi-pointee frexp e int32_t int\"", from: 0).must() > 0
-    assert locate_text(text: unit, needle: "_Static_assert(!__builtin_types_compatible_p(void, void) && __builtin_classify_type(*(void *)0) == 5, \"heroes-ffi-pointee-depth eat p handle void\");", from: 0).must() > 0
-    assert locate_text(text: unit, needle: "sizeof(handle)", from: 0).is_err()
+    assert bytes.locate(text: unit, needle: "#line 2 \"t.hero\"", from: 0).must() > 0
+    assert bytes.locate(text: unit, needle: "_Static_assert(!(!(sizeof(size_t) == sizeof(int32_t) && (((size_t)-1 > 0) == ((int32_t)-1 > 0))) && sizeof(size_t) * 8 == 64), \"heroes-ffi-pointee-bits getline n int32_t 64 size_t\");", from: 0).must() > 0
+    assert bytes.locate(text: unit, needle: "sizeof(size_t) * 8 == 128, \"heroes-ffi-pointee getline n int32_t size_t\");", from: 0).must() > 0
+    assert bytes.locate(text: unit, needle: "heroes-ffi-pointee frexp e int32_t int\"", from: 0).must() > 0
+    assert bytes.locate(text: unit, needle: "_Static_assert(!__builtin_types_compatible_p(void, void) && __builtin_classify_type(*(void *)0) == 5, \"heroes-ffi-pointee-depth eat p handle void\");", from: 0).must() > 0
+    assert bytes.locate(text: unit, needle: "sizeof(handle)", from: 0).is_err()
     dumped = dump_unit(headers, wanted)
-    assert locate_text(text: dumped, needle: "extern __typeof__(*getline) hero_ty_getline;", from: 0).must() > 0
+    assert bytes.locate(text: dumped, needle: "extern __typeof__(*getline) hero_ty_getline;", from: 0).must() > 0

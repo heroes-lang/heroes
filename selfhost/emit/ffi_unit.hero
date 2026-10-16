@@ -28,6 +28,7 @@ use source
 use diag
 use emit/ffi_lookup
 use emit/ffi_pointee
+use emit/ffi_past_prototype
 use cli/pointee_ask
 use parse
 use resolve
@@ -52,6 +53,11 @@ function lend_refusals(s: source.Source, decls: [ast.Decl], tree: ast.Ast, answe
 
     for one in unit_unsized(s, decls, tree, answered, line: line)
         out @ out.push(one)
+
+    past = ffi_past_prototype.refused(s, decls, tree, line: line)
+
+    if !past.is_err()
+        out @ out.push(past.must())
 
     return out
 

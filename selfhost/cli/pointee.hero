@@ -78,6 +78,7 @@ use cli/read_back
 use cli/kept
 use emit/ffi_lookup
 use emit/ffi_read_only
+use emit/ffi_past_prototype
 use parse
 use resolve
 use checker
@@ -153,9 +154,15 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         if !kept_json.is_err()
             types = header_types.types_of(kept_json.must(), wanted)
             sugar = header_types.sugar_of(kept_json.must(), wanted)
+            open = ffi_past_prototype.variadic_of(
+                json: kept_json.must(),
+                wanted,
+                types: types,
+                prefix: header_types.PREFIX
+            )
             answered @ header_types.answered(wanted, types: types, sugar: sugar)
             verdict = kept.read(
-                verdict_path(dir: dir, sum: known.must(), check_text: header_types.check_unit(headers, wanted, types: types, sugar: sugar))
+                verdict_path(dir: dir, sum: known.must(), check_text: header_types.check_unit(headers, wanted, types: types, sugar: sugar, open: open))
             )
 
             if !verdict.is_err()
@@ -219,8 +226,9 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     sum = listing.slice(from: 0, to: 16)
     types = header_types.types_of(json.must(), wanted)
     sugar = header_types.sugar_of(json.must(), wanted)
+    open = ffi_past_prototype.variadic_of(json: json.must(), wanted, types: types, prefix: header_types.PREFIX)
     answered @ header_types.answered(wanted, types: types, sugar: sugar)
-    check_text = header_types.check_unit(headers, wanted, types: types, sugar: sugar)
+    check_text = header_types.check_unit(headers, wanted, types: types, sugar: sugar, open: open)
     check_c = unit_path(dir: dir, stem: "check", text: check_text)
     publish.write_whole(path: check_c, text: check_text, keyed: true)?
     check_err = publish.private_name(dir + "/check-stderr.txt")

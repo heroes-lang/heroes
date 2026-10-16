@@ -1,0 +1,24 @@
+# FIXED DEFECT 2102's legal shape beside it, 2026-10-17, lane land215 (panel
+# 217's R3(c)).
+#
+# A `cstr` without `lent` past a variadic header's `...` takes only a lease,
+# `x: cstr @= a.lease()`, which is a copy of the string's bytes: C may write
+# it, and the string it was copied from, with every value sharing that
+# string, stays as it was. A C function that only reads the copy reads what C
+# wrote there. The refused shape is
+# `tests/golden/unsupported/fixedbugs-2102-a-read-only-lend-past-a-variadic-prototype-is-refused.hero`.
+
+extern "fixedbugs-2102-lease.h"
+    function va_scribble(k: i32, s: cstr) -> i64
+    function va_length(k: i32, s: cstr) -> i64
+
+function main()
+    a = "hel" + "lo"
+    b = a
+    x: cstr @= a.lease()
+    print(va_scribble(k: 1, s: x))
+    print(va_length(k: 2, s: x))
+    print(x.validated().must())
+    end_lease(@x)
+    print(a)
+    print(b)

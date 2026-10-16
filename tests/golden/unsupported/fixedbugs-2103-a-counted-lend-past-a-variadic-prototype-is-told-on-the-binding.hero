@@ -1,0 +1,29 @@
+# FIXED DEFECT 2103, 2026-10-17, lane land215 (panel 217's R3(c)).
+#
+# SYMPTOM: `va_scrub(k: i32, p: ptr counted_by 4 lent)` over a header's
+# `int64_t va_scrub(int32_t k, ...)`, called with a binding's field lent by
+# `.ptr()`, exited 2, *internal error: compiling the generated C failed*, at
+# the emitter's own `heroes-ffi-extent-unasked` assertion; an array lent as
+# `@md: [u8] counted_by 4 lent` the same, measured the day it was repaired.
+#
+# CAUSE: a count is held to what is lent in the unit C counts in, what the
+# header's pointer points at, and past a variadic header's `...` the pointer
+# has no type: the pointee check had nothing to ask, so the emitter found no
+# unit and blamed itself for the author's binding.
+#
+# FIX: a counted parameter past the `...` is refused on its declaration as
+# `ffi_parameter_type`, at exit 1 (`emit/ffi_past_prototype.hero`).
+
+extern "fixedbugs-2103-variadic.h"
+    record Slot
+        nsap: u8[8]
+        id: i64
+    function va_scrub(k: i32, p: ptr counted_by 4 lent) -> i64  #~ ffi_parameter_type
+    function va_fill(k: i32, @md: [u8] counted_by 4 lent) -> i64  #~ ffi_parameter_type
+
+function main()
+    t = Slot(nsap: [1, 2, 3, 4, 5, 6, 7, 8], id: 1)
+    print(va_scrub(k: 1, p: t.nsap.ptr()))
+    md: [u8] @= [1, 2, 3, 4]
+    print(va_fill(k: 2, @md))
+    print(md.len())

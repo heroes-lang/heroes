@@ -1,0 +1,29 @@
+# FIXED DEFECT 2102, 2026-10-17, lane land215 (panel 217's R3(c)).
+#
+# SYMPTOM: `va_scribble(k: i32, s: cstr lent)` over a header's `int64_t
+# va_scribble(int32_t k, ...)`, whose body writes `s[0] = 'X'`, built at exit
+# 0: lent `"hel" + "lo"`, the string and its copy both printed `Xello`; lent
+# the literal `"hello"`, the program died of SIGBUS, exit 138 on this Mac and
+# 139 on Linux arm64.
+#
+# CAUSE: defect 411's question, whether the header's pointer points at `const`
+# bytes, is asked only where the declaration's count of parameters is the
+# header's, and a variadic header's never is; past its `...` C reads the
+# argument as whatever type it asks for, so the probe's call is legal C and
+# nothing refused the lend.
+#
+# FIX: the dump says which functions are variadic, and a `cstr lent` past the
+# `...` is refused on its parameter, the message naming the lease, a copy C may
+# write, which a `cstr` without `lent` takes there
+# (`emit/ffi_past_prototype.hero`). The legal shape beside it is
+# `tests/golden/run/fixedbugs-2102-a-lease-past-a-variadic-prototype-is-a-copy-c-may-write.hero`.
+
+extern "fixedbugs-2102-variadic.h"
+    function va_scribble(k: i32, s: cstr lent) -> i64  #~ ffi_writable_parameter
+
+function main()
+    a = "hel" + "lo"
+    b = a
+    print(va_scribble(k: 1, s: a.cstr()))
+    print(a)
+    print(b)

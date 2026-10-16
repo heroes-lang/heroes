@@ -1,0 +1,7 @@
+error[ffi_writable_parameter]: `s` of `va_scribble` is declared `cstr lent`, and `fixedbugs-2102-variadic.h` gives `va_scribble` 1 parameter and then `...`, where `s` stands — C reads what a call hands it there as whatever type it asks for, and does not promise to leave it alone
+  at tests/golden/unsupported/fixedbugs-2102-a-read-only-lend-past-a-variadic-prototype-is-refused.hero:22:34
+     |
+  22 |     function va_scribble(k: i32, s: cstr lent) -> i64  #~ ffi_writable_parameter
+     |                                  ^
+  note: §4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
+  note: hand C a copy it may write instead: declare `s: cstr` without `lent`, pass it a lease, `x: cstr @= text.lease()`, and end the lease with `end_lease(@x)` once the call returns

@@ -11,7 +11,7 @@
 # defects 092 and 395; defect 411): what unit C counts a `counted_by`
 # parameter in, whether a whole record lent with `@` and no count reaches a
 # `void *`, and whether a `cstr`'s pointer points at `const` bytes, with the
-# count of parameters it is asked under.
+# count of parameters it is asked under, and where a read-only lend stands.
 record Pointee
     name: str
     param: str
@@ -36,6 +36,15 @@ constant WHOLE: str
 # (defect 411, `emit/ffi_read_only.hero`).
 constant READ: str
     "read"
+
+# A `cstr lent` parameter that is not `@`, which a lend reaches: asked only
+# whether it stands past a header's `...`, where C reads it as any type it
+# asks for and a read-only lend is refused (panel 217's R3(c), defect 2102,
+# `emit/ffi_past_prototype.hero`). Apart from `READ`, which a `cstr` without
+# `lent` asks too: only a lease reaches that one, a copy C may write, and past
+# `...` it stays open.
+constant LENT: str
+    "lent"
 
 # How many parameters the declaration gives, in `index`, asked of every
 # function with one: its parameters stand for the header's only where the two

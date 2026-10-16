@@ -36,7 +36,10 @@
 # fault. The pointee check asks every counted parameter, so that line is
 # reached only where the check could not run, and there the build's own
 # compile has already told the author why (a header that does not
-# preprocess, a name the header spells as a macro).
+# preprocess, a name the header spells as a macro). **Past a variadic
+# header's `...` the check ran and had no type to ask**, and this line was
+# reached at exit 2 (defect 2103, 2026-10-16): the check now refuses such a
+# parameter on its declaration first (`emit/ffi_past_prototype.hero`).
 #
 # WHY IN THE BODY AND NOT AT FILE SCOPE. The object is named through the place
 # it is lent from — `h0_s.name`, `h0_o.inner` — which is a local, and `sizeof`

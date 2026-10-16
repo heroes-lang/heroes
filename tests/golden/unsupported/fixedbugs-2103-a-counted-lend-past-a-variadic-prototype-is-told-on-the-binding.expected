@@ -1,0 +1,13 @@
+error[ffi_parameter_type]: `p` of `va_scrub` is declared `counted_by`, and `fixedbugs-2103-variadic.h` gives `va_scrub` 1 parameter and then `...`, where `p` stands — C counts in what its pointer points at, and there the pointer has no type, so no count can be held to what is lent
+  at tests/golden/unsupported/fixedbugs-2103-a-counted-lend-past-a-variadic-prototype-is-told-on-the-binding.hero:21:31
+     |
+  21 |     function va_scrub(k: i32, p: ptr counted_by 4 lent) -> i64  #~ ffi_parameter_type
+     |                               ^
+  note: §4.19: a counted lend hands C the program's own bytes, a field, an array or a record, and C counts them in what its pointer points at; past a header's `...` none of them can be held to a count, so declare `p: ptr` and hand it memory C gave you
+
+error[ffi_parameter_type]: `md` of `va_fill` is declared `counted_by`, and `fixedbugs-2103-variadic.h` gives `va_fill` 1 parameter and then `...`, where `md` stands — C counts in what its pointer points at, and there the pointer has no type, so no count can be held to what is lent
+  at tests/golden/unsupported/fixedbugs-2103-a-counted-lend-past-a-variadic-prototype-is-told-on-the-binding.hero:22:31
+     |
+  22 |     function va_fill(k: i32, @md: [u8] counted_by 4 lent) -> i64  #~ ffi_parameter_type
+     |                               ^^
+  note: §4.19: a counted lend hands C the program's own bytes, a field, an array or a record, and C counts them in what its pointer points at; past a header's `...` none of them can be held to a count, so declare `md: ptr` and hand it memory C gave you

@@ -91,6 +91,26 @@ function rfind(text: str, needle: str) -> i64?
 
     return fail(code: "absent", msg: "the needle never occurs")
 
+# Byte offset of `needle` in `text` at or after `from`, over bytes. It was
+# `cli/header_types.hero`'s `locate_text` until 2026-10-17, when a second
+# reader of clang's dump needed it (`emit/ffi_past_prototype.hero`). **The
+# dump is not ASCII where the author's header is not** (found beside defect
+# 110, 2026-09-27): this asked the first byte and then sliced, and a type
+# named above ASCII, `typedef int 漢;`, put the end of a candidate inside a
+# character, so `build` aborted on a binding `check` accepts. Every byte is
+# asked now, and nothing is cut until a match says where.
+function locate(text: str, needle: str, from: i64) -> i64?
+    if needle.len() == 0 || from < 0
+        return fail(code: "none", msg: "nothing to find")
+    index: i64 @= from
+
+    while index + needle.len() <= text.len()
+        if bytes_at(text: text, at: index, needle: needle)
+            return ok(index)
+        index @ index + 1
+
+    return fail(code: "none", msg: "not found")
+
 ## Tests
 
 test "a character is read by the width its first byte gives, and no further"

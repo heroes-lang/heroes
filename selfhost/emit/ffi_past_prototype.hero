@@ -1,0 +1,324 @@
+# A lend past a header's `...` (design.md §4.19, §1.12; panel 217's R3(c),
+# provisional, author ratification pending; defects 2102 and 2103,
+# 2026-10-16).
+#
+# A C function the header declares variadic, `int64_t va_scribble(int32_t k,
+# ...)`, is bound at the fixed shape the program calls it with (§4.19), and a
+# parameter past the header's own takes what a call hands it with no type: C
+# reads it with `va_arg` as whatever type it asks for. Nothing the pointee
+# check asks of a parameter's pointer has an answer there, and every such ask
+# was dropped in silence (`cli/header_types.hero`'s `answered`,
+# `emit/ffi_read_only.hero`'s `lend_answers`). Two of those silences were
+# holes, and both are refused here, on the parameter:
+#
+# - a READ-ONLY lend, `s: cstr lent` handed `a.cstr()`: C wrote the string's
+#   shared bytes, `Xello Xello` at exit 0, and a literal's, SIGBUS (defect
+#   2102). Told as `ffi_writable_parameter`, naming the lease, a copy C may
+#   write: a `cstr` without `lent` takes only a lease, and past `...` it stays
+#   open;
+# - a COUNTED lend, `p: ptr counted_by 4 lent` or `@md: [u8] counted_by 4
+#   lent`: C counts in what its pointer points at, which there is nothing
+#   typed, so `emit/lend_extent.hero` found no unit and stopped the build at
+#   exit 2, blaming itself (defect 2103). Told as `ffi_parameter_type`.
+#
+# **Whether a function is variadic is clang's own answer, read from the
+# dump**: its `FunctionDecl` carries `"variadic": true` among its own keys,
+# before its parameters. Measured 2026-10-17 on Apple clang 21.0.0 and clang
+# 22.1.8 (Linux arm64 and x86-64) over eight shapes: present on a prototype
+# ending in `...`, through a macro's name and through a function type's
+# typedef, `printf` and `sscanf` among them; absent on `float f(float)`,
+# raylib's `ColorAlpha(Color, float)`, `int f(void)` and `int f()`, the last
+# defect 426's question. Clang 18 is unrun here. It is not the variadicity
+# `_Static_assert` panel 094's R6 refused and panel 096 built and withdrew:
+# that compared the header's type with one the declaration spells, which
+# promotion made false on `ColorAlpha`; this reads what clang computed, and
+# compares nothing.
+#
+# The refusal is asked in the check unit like every other question, at the
+# author's declaration, so the build stops at exit 1 before the main unit
+# compiles: one assertion that always fails, its marker carrying the
+# function, the parameter, the kind of lend and how many parameters the
+# header gives before its `...`. A record lent read-only, once that form
+# lands, is the same `LENT` ask (panel 217's R6).
+
+use token
+use ast
+use source
+use diag
+use bytes
+use emit/c_text
+use emit/ffi_lookup
+use emit/ffi_pointee
+use cli/pointee_ask
+use parse
+use resolve
+use checker
+
+# The contract between the line written below and its reader: one string,
+# one home (CLAUDE.md §11). No other `heroes-ffi-` marker is a prefix of it,
+# nor it of one.
+constant MARKER: str
+    "heroes-ffi-past-prototype "
+
+# The marker's word for each kind of lend it refuses.
+constant READ: str
+    "read"
+
+constant COUNTED: str
+    "counted"
+
+## The header's answer
+
+# For every function asked about that the header declares variadic, how many
+# parameters it gives before its `...`: `types` is the dump's parameter list
+# (`cli/header_types.hero`'s `types_of`) and `prefix` the name the dump unit
+# declares each function under, that file's `PREFIX`. A function that is not
+# variadic, or that the dump does not hold, is absent.
+function variadic_of(json: str, wanted: [pointee_ask.Pointee], types: {str: [str]}, prefix: str) -> {str: i64}
+    out: {str: i64} @= {}
+
+    for one in wanted
+        params = types[one.name]
+
+        if !out[one.name].is_err() || params.is_err()
+            continue
+
+        if variadic(json: json, name: prefix + one.name)
+            out[one.name] @ params.must().len()
+
+    return out
+
+# Whether the declaration named `name` holds `"variadic": true` among its own
+# keys: between its name and the next `"kind"`, which opens its first
+# parameter or the declaration after it, so neither's key is read as its own.
+function variadic(json: str, name: str) -> bool
+    opened = bytes.locate(text: json, needle: "\"name\": \"" + name + "\"", from: 0)
+
+    if opened.is_err()
+        return false
+    limit: i64 @= json.len()
+    next = bytes.locate(text: json, needle: "\"kind\": ", from: opened.must())
+
+    if !next.is_err()
+        limit @ next.must()
+    flag = bytes.locate(text: json, needle: "\"variadic\": true", from: opened.must())
+    return !flag.is_err() && flag.must() < limit
+
+# The check unit's lines: one assertion that fails, at the author's line, for
+# each lend that stands past its header's `...`. A `cstr` without `lent` asks
+# nothing here, since only a lease reaches it.
+function lines(wanted: [pointee_ask.Pointee], open: {str: i64}) -> [str]
+    out: [str] @= []
+
+    for one in wanted
+        fixed = open[one.name]
+
+        if fixed.is_err() || one.index < fixed.must()
+            continue
+        kind: str @= ""
+
+        if one.declared == pointee_ask.LENT
+            kind @ READ
+        else if one.declared == pointee_ask.UNIT
+            kind @ COUNTED
+
+        if kind.len() > 0
+            out @ out.push(c_text.line_directive(at: one.line, file: one.file))
+            out @ out.push(
+                "_Static_assert(0, \"" + MARKER + one.name + " " + one.param + " " + kind + " " + fixed.must().to_str() + "\");"
+            )
+
+    return out
+
+## The refusal
+
+# `heroes-ffi-past-prototype <name> <param> <kind> <count>` failed, at the
+# author's declaration: the parameter is told what C does with a lend there.
+function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
+        return fail(code: "none", msg: "not an assertion failure")
+    rest = ffi_lookup.after(text: line, marker: MARKER)
+
+    if rest.is_err()
+        return fail(code: "none", msg: "not a past-prototype assertion")
+    parts = ffi_lookup.words(text: rest.must())
+
+    if parts.len() < 4
+        return fail(code: "none", msg: "the marker's tail is not ours")
+    name = parts[0]
+    param = parts[1]
+    kind = parts[2]
+    declared = ffi_lookup.declaration(s, decls, name: name)
+    fixed = ffi_lookup.number(text: ffi_pointee.trim_quote(parts[3]))
+
+    if declared.is_err() || fixed.is_err() || kind != READ && kind != COUNTED
+        return fail(code: "none", msg: "no extern of that name, or not our marker")
+    span: token.Span @= declared.must().span
+    spans = ffi_pointee.parameter_spans(s, decls, tree, name: name, param: param)
+
+    if !spans.is_err()
+        span @ spans.must().name
+    stands = "`" + declared.must().header + "` gives `" + name + "` " + given(fixed.must()) + " and then `...`, where `" + param + "` stands"
+
+    if kind == READ
+        d: diag.Diagnostic @= diag.new_diagnostic(
+            code: "ffi_writable_parameter",
+            message: "`" + param + "` of `" + name + "` is declared `cstr lent`, and " + stands + " — C reads what a call hands it there as whatever type it asks for, and does not promise to leave it alone",
+            span: span
+        )
+        d.notes @ d.notes.push(
+            "§4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts"
+        )
+        d.notes @ d.notes.push(
+            "hand C a copy it may write instead: declare `" + param + ": cstr` without `lent`, pass it a lease, `x: cstr @= text.lease()`, and end the lease with `end_lease(@x)` once the call returns"
+        )
+        return ok(d)
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`" + param + "` of `" + name + "` is declared `counted_by`, and " + stands + " — C counts in what its pointer points at, and there the pointer has no type, so no count can be held to what is lent",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "§4.19: a counted lend hands C the program's own bytes, a field, an array or a record, and C counts them in what its pointer points at; past a header's `...` none of them can be held to a count, so declare `" + param + ": ptr` and hand it memory C gave you"
+    )
+    return ok(d)
+
+# How many parameters the header gives before its `...`, in words.
+function given(count: i64) -> str
+    if count == 0
+        return "no parameter"
+
+    if count == 1
+        return "1 parameter"
+    return count.to_str() + " parameters"
+
+## Tests
+
+# The flag is read among the declaration's own keys, never its parameters'
+# nor the next declaration's; the count is the dump's parameter list.
+test "a function the dump marks variadic is read with its fixed count, and only its own key counts"
+    json = "{\"kind\": \"FunctionDecl\", \"name\": \"hero_ty_va\", \"storageClass\": \"extern\", \"variadic\": true, \"inner\": [{\"kind\": \"ParmVarDecl\", \"type\": {\"qualType\": \"int32_t\"}}]}\n{\"kind\": \"FunctionDecl\", \"name\": \"hero_ty_fixed\", \"inner\": [{\"kind\": \"ParmVarDecl\", \"type\": {\"qualType\": \"int\"}}]}\n{\"kind\": \"FunctionDecl\", \"name\": \"hero_ty_after\", \"variadic\": true, \"inner\": []}\n"
+    assert variadic(json: json, name: "hero_ty_va")
+    assert !variadic(json: json, name: "hero_ty_fixed")
+    assert variadic(json: json, name: "hero_ty_after")
+    assert !variadic(json: json, name: "hero_ty_v")
+    asked = pointee_ask.Pointee(
+        name: "va",
+        param: "s",
+        index: 1,
+        declared: pointee_ask.LENT,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    other = pointee_ask.Pointee(
+        name: "fixed",
+        param: "s",
+        index: 0,
+        declared: pointee_ask.LENT,
+        file: "t.hero",
+        line: 3,
+        depth: false
+    )
+    types: {str: [str]} @= {}
+    types["va"] @ ["int32_t"]
+    types["fixed"] @ ["int"]
+    open = variadic_of(json: json, [asked, other], types: types, prefix: "hero_ty_")
+    assert open["va"].must() == 1
+    assert open["fixed"].is_err()
+
+# Past the fixed count a `lent` cstr and a counted parameter fail, each with
+# its kind; before it, a `cstr` without `lent` and a function that is not
+# variadic ask nothing.
+test "the check unit refuses a read-only and a counted lend past the prototype, and nothing else"
+    lent = pointee_ask.Pointee(
+        name: "va",
+        param: "s",
+        index: 1,
+        declared: pointee_ask.LENT,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    counted = pointee_ask.Pointee(
+        name: "va",
+        param: "p",
+        index: 2,
+        declared: pointee_ask.UNIT,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    leased = pointee_ask.Pointee(
+        name: "va",
+        param: "x",
+        index: 3,
+        declared: pointee_ask.READ,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    before = pointee_ask.Pointee(
+        name: "va",
+        param: "fmt",
+        index: 0,
+        declared: pointee_ask.LENT,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    open: {str: i64} @= {}
+    open["va"] @ 1
+    got = lines([lent, counted, leased, before], open: open)
+    assert got.len() == 4
+    assert got[0] == c_text.line_directive(at: 2, file: "t.hero")
+    assert got[1] == "_Static_assert(0, \"heroes-ffi-past-prototype va s read 1\");"
+    assert got[3] == "_Static_assert(0, \"heroes-ffi-past-prototype va p counted 1\");"
+    none: {str: i64} = {}
+    assert lines([lent, counted], open: none).len() == 0
+
+# Defects 2102 and 2103: the failed line is read onto the parameter, a string
+# told its lease and a counted lend its pointer, and an echo or another
+# marker is not this one.
+test "a lend past a variadic prototype is told on its parameter (defects 2102 and 2103)"
+    text = "extern \"va.h\"\n    function va_scribble(k: i32, s: cstr lent) -> i64\n    function va_scrub(k: i32, p: ptr counted_by 4 lent) -> i64\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    _ = checker.check(parsed.tree, out, s, parsed.decls)
+    read = refused(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:2:5: error: static assertion failed: heroes-ffi-past-prototype va_scribble s read 1"
+    ).must()
+    assert read.code == "ffi_writable_parameter"
+    assert source.span_text(s, read.span) == "s"
+    assert read.message == "`s` of `va_scribble` is declared `cstr lent`, and `va.h` gives `va_scribble` 1 parameter and then `...`, where `s` stands — C reads what a call hands it there as whatever type it asks for, and does not promise to leave it alone"
+    assert ffi_lookup.has(text: read.notes[1], needle: "`x: cstr @= text.lease()`")
+    assert read.fixes.len() == 0
+    counted = refused(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:3:5: error: static assertion failed: heroes-ffi-past-prototype va_scrub p counted 1"
+    ).must()
+    assert counted.code == "ffi_parameter_type"
+    assert source.span_text(s, counted.span) == "p"
+    assert ffi_lookup.has(text: counted.notes[0], needle: "declare `p: ptr`")
+    echo = "_Static_assert(0, \"heroes-ffi-past-prototype va_scribble s read 1\");"
+    assert refused(s, parsed.decls, parsed.tree, line: echo).is_err()
+    assert refused(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:2:5: error: static assertion failed: heroes-ffi-writable va_scribble s char *"
+    ).is_err()
+    assert refused(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:2:5: error: static assertion failed: heroes-ffi-past-prototype nowhere s read 1"
+    ).is_err()
+    assert given(0) == "no parameter"
+    assert given(2) == "2 parameters"
