@@ -1,0 +1,72 @@
+# The readers of a group record's FIELD in one line of clang's refusal, in the
+# order `emit/ffi.hero` asks them, each diagnostic once: a field the header has
+# inside another member, a field it lacks, a flexible array member, a `const`
+# member named or left out (defects 060 and 2131), an unnamed member's type,
+# and a field at another type. Split out of `emit/ffi.hero` along that seam
+# when defect 2131's reader took it past its ceiling (2026-10-17); the
+# readers are the same, and so is their order.
+
+use ast
+use source
+use diag
+use ir/containers
+use emit/ffi_lookup
+use emit/ffi_field
+use emit/ffi_const_built
+use emit/ffi_nested
+use emit/ffi_asked
+
+function told(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: containers.Program, line: str, asked: ffi_asked.Asked, word_bits: i64) -> [diag.Diagnostic]
+    found: [diag.Diagnostic] @= []
+
+    # A field the header has inside another member, and one whose type
+    # has no name (defect 2062), each read before the field's own reader.
+    inside = ffi_nested.unknown_inside(s, decls, line: line, nested: asked.nested)
+
+    if !inside.is_err()
+        found @ ffi_lookup.add_once(found, d: inside.must())
+    unknown_f = ffi_field.unknown_field(s, decls, line: line)
+
+    if !unknown_f.is_err()
+        found @ ffi_lookup.add_once(found, d: unknown_f.must())
+    flex = ffi_field.flexible_array_member(s, tree, decls, line: line)
+
+    if !flex.is_err()
+        found @ ffi_lookup.add_once(found, d: flex.must())
+
+    # Defect 060, 2026-09-18. It sits here rather than beside
+    # field_type because it is not a disagreement about a field's
+    # TYPE: the declaration is correct and C refuses the assignment
+    # the construction performs. Order against field_type does not
+    # matter — the two match disjoint clang wordings — but it goes
+    # after flex for the reason flex goes before field_type, that a
+    # reader meets the narrower message first.
+    const_f = ffi_field.const_member(s, decls, line: line)
+
+    if !const_f.is_err()
+        found @ ffi_lookup.add_once(found, d: const_f.must())
+    else
+        # The member a `partial` record leaves out (defect 2131), blamed on
+        # the record built or received at clang's line.
+        left = ffi_const_built.left_out(s, tree, decls, p, line: line)
+
+        if !left.is_err()
+            found @ ffi_lookup.add_once(found, d: left.must())
+    unnamed = ffi_nested.unnamed_member(s, tree, decls, line: line, fields: asked.fields)
+
+    if !unnamed.is_err()
+        found @ ffi_lookup.add_once(found, d: unnamed.must())
+    field = ffi_field.field_type(
+        s,
+        tree,
+        decls,
+        line: line,
+        fields: asked.fields,
+        widths: asked.widths,
+        word_bits: word_bits
+    )
+
+    if !field.is_err()
+        found @ ffi_lookup.add_once(found, d: field.must())
+
+    return found

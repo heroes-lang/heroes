@@ -30,8 +30,7 @@ use emit/ffi_call
 use emit/ffi_record
 use emit/ffi_layout
 use emit/ffi_built
-use emit/ffi_field
-use emit/ffi_nested
+use emit/ffi_fields_told
 use emit/ffi_cascade
 use emit/ffi_tag
 use emit/ffi_incomplete
@@ -192,48 +191,11 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         if !macro_f.is_err()
             found @ ffi_lookup.add_once(found, d: macro_f.must())
 
-        # A field the header has inside another member, and one whose type
-        # has no name (defect 2062), each read before the field's own reader.
-        inside = ffi_nested.unknown_inside(s, decls, line: line, nested: asked.nested)
+        # A group record's field, the readers of `emit/ffi_fields_told.hero`, in
+        # their order.
+        for one in ffi_fields_told.told(s, tree, decls, p, line: line, asked: asked, word_bits: word_bits)
+            found @ ffi_lookup.add_once(found, d: one)
 
-        if !inside.is_err()
-            found @ ffi_lookup.add_once(found, d: inside.must())
-        unknown_f = ffi_field.unknown_field(s, decls, line: line)
-
-        if !unknown_f.is_err()
-            found @ ffi_lookup.add_once(found, d: unknown_f.must())
-        flex = ffi_field.flexible_array_member(s, tree, decls, line: line)
-
-        if !flex.is_err()
-            found @ ffi_lookup.add_once(found, d: flex.must())
-
-        # Defect 060, 2026-09-18. It sits here rather than beside
-        # field_type because it is not a disagreement about a field's
-        # TYPE: the declaration is correct and C refuses the assignment
-        # the construction performs. Order against field_type does not
-        # matter — the two match disjoint clang wordings — but it goes
-        # after flex for the reason flex goes before field_type, that a
-        # reader meets the narrower message first.
-        const_f = ffi_field.const_member(s, decls, line: line)
-
-        if !const_f.is_err()
-            found @ ffi_lookup.add_once(found, d: const_f.must())
-        unnamed = ffi_nested.unnamed_member(s, tree, decls, line: line, fields: asked.fields)
-
-        if !unnamed.is_err()
-            found @ ffi_lookup.add_once(found, d: unnamed.must())
-        field = ffi_field.field_type(
-            s,
-            tree,
-            decls,
-            line: line,
-            fields: asked.fields,
-            widths: asked.widths,
-            word_bits: word_bits
-        )
-
-        if !field.is_err()
-            found @ ffi_lookup.add_once(found, d: field.must())
         union_r = ffi_record.union_record(s, tree, decls, line: line)
 
         if !union_r.is_err()

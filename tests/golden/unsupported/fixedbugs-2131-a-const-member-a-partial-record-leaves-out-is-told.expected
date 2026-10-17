@@ -1,0 +1,13 @@
+error[ffi_const_field]: `fixedbugs-2131-const-left-out.h` declares `Cm`'s member `a` as `const`, and `Cm` leaves it out, so C still refuses to assign any `Cm` — and this line is that assignment
+  at tests/golden/unsupported/fixedbugs-2131-a-const-member-a-partial-record-leaves-out-is-told.hero:21:17
+     |
+  21 |     built: Cm = Cm(b: 2, rest: zero)  #~ ffi_const_field
+     |                 ^^^^^^^^^^^^^^^^^^^^
+  note: a `partial` record is the header's whole struct, its size C's, so a member it leaves out is still in every `Cm` C assigns: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here
+
+error[ffi_const_field]: `fixedbugs-2131-const-left-out.h` declares `Cm`'s member `a` as `const`, and `Cm` leaves it out, so C still refuses to assign any `Cm` — and this line is that assignment
+  at tests/golden/unsupported/fixedbugs-2131-a-const-member-a-partial-record-leaves-out-is-told.hero:22:11
+     |
+  22 |     got = cm_make()  #~ ffi_const_field
+     |           ^^^^^^^^^
+  note: a `partial` record is the header's whole struct, its size C's, so a member it leaves out is still in every `Cm` C assigns: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here

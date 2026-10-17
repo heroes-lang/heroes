@@ -1,0 +1,125 @@
+# A `partial` group record whose header struct holds a `const` member the
+# record leaves out (defect 2131, 2026-10-17): C refuses to assign the struct,
+# and a construction of the record, or an extern's by-value result stored, is
+# that assignment. `ffi_field.const_member` blames the field a record NAMES;
+# a member the record leaves out is named by no field, and the program was
+# told *internal error: compiling the generated C failed* at exit 2, the
+# compiler blaming itself for the header's `const`.
+#
+# This reader recovers the RECORD instead, through the program's own IR at
+# the file and line clang's error names (`ffi_site.location`, as `ffi_lend`
+# reads a lend): a construction of a group record there, or a call of an
+# extern whose result is one. So §7's narrowing holds
+# (`.claude/rules/c-boundary.md`): the name recovered is a declaration of this
+# program's group, and a member no record of the program builds or receives at
+# that line stays the compiler's, exit 2. It reads clang's ERROR line alone,
+# as `const_member` does.
+
+use ast
+use token
+use source
+use diag
+use ir
+use ir/containers
+use emit/ffi_lookup
+use emit/ffi_site
+use emit/ffi_field
+use emit/externs as emit_externs
+
+function left_out(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: containers.Program, line: str) -> diag.Diagnostic?
+    tail = ffi_lookup.after(text: line, marker: ffi_field.CONST_MEMBER)
+
+    if tail.is_err()
+        return fail(code: "none", msg: "not a const-member line")
+    member = ffi_lookup.up_to_quote(tail.must())
+    at = ffi_site.location(s, line: line)
+
+    if at.is_err()
+        return fail(code: "none", msg: "no usable location")
+
+    for f in p.functions
+        for blk in f.blocks
+            for inst in blk.insts
+                if source.file_of(s, inst.span.start) != at.must().file || source.file_line_of(s, inst.span.start) != at.must().line
+                    continue
+                built = record_of(s, tree, decls, inst: inst)
+
+                if built.is_err()
+                    continue
+                told = told_left_out(s, decls, at: built.must(), member: member, span: inst.span)
+
+                if !told.is_err()
+                    return told
+
+    return fail(code: "none", msg: "no group record is built or received at that line")
+
+# The declaration index of the group record an instruction builds or
+# receives by value, or none.
+function record_of(s: source.Source, tree: ast.Ast, decls: [ast.Decl], inst: ir.Inst) -> i64?
+    match inst.op
+        .construct cn =>
+            match cn.shape
+                .record_shape r => return ok(r.decl)
+                .case_shape | .array_shape | .map_shape | .ok_shape | .fail_shape | .err_shape => return fail(
+                    code: "none",
+                    msg: "not a record"
+                )
+        .call cl =>
+            match cl.callee
+                .extern_fn e =>
+                    match decls[e.decl].kind
+                        .function_decl fd => return named_record(
+                            s,
+                            decls,
+                            name: source.span_text(s, tree.types[fd.value.result].span)
+                        )
+                        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(
+                            code: "none",
+                            msg: "not a function"
+                        )
+                .heroes_fn | .builtin_fn | .indirect => return fail(code: "none", msg: "not an extern")
+        .lit | .load | .field | .store | .push_owned | .unary | .binary | .cast => return fail(
+            code: "none",
+            msg: "not a build"
+        )
+        .index | .map_get | .len_of | .tag_of | .payload | .func_ref => return fail(code: "none", msg: "not a build")
+        .abort_op | .incref | .decref | .decref_slot | .hole | .missing | .copy_out => return fail(
+            code: "none",
+            msg: "not a build"
+        )
+
+# The group record of that name, by its index among the declarations.
+function named_record(s: source.Source, decls: [ast.Decl], name: str) -> i64?
+    for at in range(from: 0, to: decls.len())
+        match decls[at].kind
+            .record_decl rec =>
+                if !rec.header.is_err() && source.span_text(s, decls[at].name) == name
+                    return ok(at)
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no group record of that name")
+
+# The refusal, where the record at `at` is a group's, `partial`, and names no
+# field `member`; a member it names is `const_member`'s.
+function told_left_out(s: source.Source, decls: [ast.Decl], at: i64, member: str, span: token.Span) -> diag.Diagnostic?
+    match decls[at].kind
+        .record_decl rec =>
+            if rec.header.is_err() || !rec.partial
+                return fail(code: "none", msg: "not a partial group record")
+
+            for field in rec.fields
+                if source.span_text(s, field.name) == member
+                    return fail(code: "none", msg: "a field the record names")
+
+            header = emit_externs.unquoted(s, span: rec.header.must())
+            owner = source.span_text(s, decls[at].name)
+            d: diag.Diagnostic @= diag.new_diagnostic(
+                code: "ffi_const_field",
+                message: "`" + header + "` declares `" + owner + "`'s member `" + member + "` as `const`, and `" + owner + "` leaves it out, so C still refuses to assign any `" + owner + "` — and this line is that assignment",
+                span: span
+            )
+            d.notes @ d.notes.push(
+                "a `partial` record is the header's whole struct, its size C's, so a member it leaves out is still in every `" + owner + "` C assigns: take one FROM the library through a pointer a function the group declares returns, rather than build it or receive it by value here"
+            )
+            return ok(d)
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a record")
