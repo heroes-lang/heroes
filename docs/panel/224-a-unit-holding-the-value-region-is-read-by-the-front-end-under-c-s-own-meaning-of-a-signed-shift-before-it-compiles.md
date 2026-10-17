@@ -108,6 +108,28 @@ https://github.com/heroes-lang/heroes/issues/2128.
   and removed, both said in his report.
 - No historian sat; no prior art is claimed.
 
+## Amended at the landing, 2026-10-17 evening
+
+**R1 as built reads one word more than as written**, and the compiler-engineer measured why
+(`docs/panel/224-reports/compiler-engineer.md` § 10): besides the region's six, the pass reports on
+the 2072 unit the three `_Static_assert` errors the unit's own compile reports too, so a verdict
+counting only where *every* error is the region's never counts on that unit. So the pass runs
+**after** the unit's compile, and **its verdict counts only where every error it reports that the
+compile did not is a region error**, at the unit's C file or a file one of its own `#line`s names,
+naming one of `UNDEFINED`; any other new error and it gives no verdict, the compile deciding as
+before; an object the pass refuses after a compile that succeeded is thrown away, never cached. The
+pass can only add region errors. Measured on the final build (`sources 5fa340a90f75c5eb` on both
+machines): the 2072 case 1/0 on this Mac and on the box; the critic's `hdr.h` program refused on this
+Mac with the base's message and built on the box printing `7`, no false note; the compiler's own
+tests 1723 on both; `unsupported` 344/0 here and 328/0 on the box; `run` 534/0 here. R2's two tests
+landed, and two more: a header's own error alone and beside the region give no verdict.
+
+**Still open, said**: the header's own compile keeps each machine's meaning, so the critic's
+`fl.hero`, binding a float of a header whose own code holds a shift C leaves undefined, builds on the
+box and is refused on this Mac, as before this sitting; and the compiler-engineer **withdraws his
+objection to the `-###`-gated variant**, its reason falsified by the critic, which leaves R3's
+choice, the pass on every target, standing on the witness it gives every CI leg.
+
 ## Author's verdict
 
 Pending.

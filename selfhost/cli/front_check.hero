@@ -1,0 +1,236 @@
+# The region's verdict asked of clang's front end under C's own meaning of a
+# signed shift (panel 224's route E, defect 2120). A unit that holds the
+# region `emit/value_check.hero` opens around a header constant's `return`
+# is read once more before it compiles, `-fsyntax-only -fno-wrapv` after its
+# own words, which win where the driver said `-fwrapv`: clang 23 for
+# `x86_64-pc-windows-msvc` adds `-fwrapv` to every compile with
+# `-fms-compatibility`, and under it the region is silent on a shift of a
+# negative value and a shift into the sign bit (`-1 << 2`, `1 << 31`), so
+# the two were told only once the region's other refusals were corrected.
+# The object is still compiled under the target's own words, so a header's
+# inline code keeps the meaning its clang gives it (panel 218's R3: the word
+# is the probe's and never the program's).
+#
+# **The pass's verdict counts only where every error it reports is the
+# region's own** (panel 224's critic, second pass): an error at a line of the
+# unit's own C, its file or a file one of its `#line`s names, naming one of
+# `undefined_words.UNDEFINED`. A header that makes one of those warnings an
+# error itself, at its own line, was refused here on the box where its own
+# compile builds it, and told with a false note. Any other error, an error
+# with no place, or a mix, and the pass says nothing: the unit's own compile
+# decides, as it did before the pass.
+#
+# A unit with no region reads nothing here and its key does not move.
+
+use emit/undefined_words
+use emit/value_check
+use emit/clang_place
+use emit/ffi_lookup
+use emit/writer
+use cli/strings
+use cli/toolchain
+use cli/process
+use cli/publish
+
+# The words that ask the front end alone, C's meaning of a signed shift
+# first after the unit's own, so it wins.
+constant FRONT: [str]
+    ["-fno-wrapv", "-fsyntax-only", "-fno-crash-diagnostics"]
+
+# Whether the unit's text holds the region: its first error line, as
+# `emit/value_check.opened` spells it.
+function holds(tu_text: str) -> bool
+    return strings.holds(text: tu_text, needle: value_check.error_line(undefined_words.UNDEFINED[0]))
+
+# What a unit's key names of this check: the words it asks under, for a
+# unit that holds the region, so an object compiled before the check was
+# asked is never served to a build that asks it.
+function key_text(tu_text: str) -> str
+    if !holds(tu_text)
+        return ""
+    return "|front:" + FRONT.join(" ")
+
+# The front end's verdict on `c_file` under `line`, the unit's own words,
+# asked after the unit's compile, which refused with `compiled` (`""` where it
+# compiled): clang's refusal, carried as a compile's is, where every error it
+# reports that the compile did not is the region's; nothing otherwise, the
+# compile deciding. The compile's own errors stand in either verdict: under
+# the target's meaning they are what the base refused the unit by (the 2072
+# case's constancy and type assertions, measured on the box).
+function refused(line: [str], c_file: str, tu_text: str, err_path: str, compiled: str) -> ()?
+    asked = toolchain.asked_of_clang(
+        line: strings.with_all(list: line, more: FRONT).push(c_file),
+        what: "compiling the generated C",
+        err_path: err_path
+    )
+
+    match asked
+        .ok => return ok()
+        .err e =>
+            if region_only(said: e.msg, own: own_files(c_file: c_file, tu_text: tu_text), known: compiled)
+                return fail(code: e.code, msg: e.msg)
+            return ok()
+
+# Whether `said` reports at least one error `known` does not, and every
+# such error is the region's: placed at a file the unit owns and naming one
+# of the region's warnings. An error clang printed with no place (`clang:
+# error: ...`, `fatal error: too many errors emitted`) is never the region's.
+function region_only(said: str, own: [str], known: str) -> bool
+    errors: i64 @= 0
+    before = ffi_lookup.lines(text: known)
+
+    for one in ffi_lookup.lines(text: said)
+        kind = severity(one)
+
+        if listed(before, path: one)
+            continue
+
+        if kind == ": error: " || kind == ": fatal error: " || kind == "unplaced"
+            errors @ errors + 1
+
+            if kind != ": error: " || !undefined_words.undefined(one)
+                return false
+            at = clang_place.place(one)
+
+            if at.is_err() || !listed(own, path: at.must().path)
+                return false
+
+    return errors > 0
+
+# The severity a diagnostic line is told with, the first of clang's that
+# stands in it; `unplaced` for a line that opens with an error and no place,
+# "" for a line that is no diagnostic.
+function severity(line: str) -> str
+    if strings.starts_with(text: line, prefix: "error: ") || strings.starts_with(text: line, prefix: "fatal error: ")
+        return "unplaced"
+    found: str @= ""
+    first: i64 @= line.len()
+
+    for one in clang_place.SEVERITIES
+        at = clang_place.offset_of(text: line, needle: one)
+
+        if !at.is_err() && at.must() < first
+            first @ at.must()
+            found @ one
+
+    return found
+
+# The files the unit's own C stands in: the file itself and every file a
+# `#line` of its text names, as clang prints a name, its escapes read.
+function own_files(c_file: str, tu_text: str) -> [str]
+    out: [str] @= [c_file]
+
+    for row in ffi_lookup.lines(text: tu_text)
+        if !strings.starts_with(text: row, prefix: "#line ")
+            continue
+        open = clang_place.offset_of(text: row, needle: "\"")
+
+        if open.is_err() || !strings.ends_with(text: row, suffix: "\"")
+            continue
+        name = unescaped(row.slice(from: open.must() + 1, to: row.len() - 1))
+
+        if !listed(out, path: name)
+            out @ out.push(name)
+
+    return out
+
+# A C string's text with its escapes read: `\\` as one backslash, `\"` as a
+# quote, as clang prints a `#line` name it was given escaped.
+function unescaped(text: str) -> str
+    cs = text.chars()
+    kept: [str] @= []
+    index: i64 @= 0
+
+    while index < cs.len()
+        if cs[index] == "\\" && index + 1 < cs.len()
+            index @ index + 1
+        kept @ kept.push(cs[index])
+        index @ index + 1
+
+    return kept.join("")
+
+function listed(names: [str], path: str) -> bool
+    for one in names
+        if one == path
+            return true
+
+    return false
+
+## Tests
+
+# The region as `emit/value_check.opened` writes it, so no test reads a
+# spelling copied here.
+function region_text() -> str
+    w: writer.Writer @= writer.new_writer("w")
+    value_check.opened(@w)
+    return writer.finish(w)
+
+# A unit of two accessors in the region, `1 << 31` and `-1 << 2`, after
+# `head`, the region's lines at `w.hero`.
+function two_accessors(head: str) -> str
+    region = region_text()
+    sign = "long long k_sign(void) {\n" + region + "#line 1 \"w.hero\"\n    return (1 << 31);\n#pragma clang diagnostic pop\n}\n"
+    return head + sign + "long long k_neg(void) {\n" + region + "#line 2 \"w.hero\"\n    return (-1 << 2);\n#pragma clang diagnostic pop\n}\n"
+
+test "the region is found by the lines emit/value_check.opened writes, and only it is keyed"
+    region = region_text()
+    assert holds(region)
+    assert !holds("#pragma clang diagnostic error \"-Wreturn-type\"\n")
+    assert key_text("int x;\n") == ""
+    assert key_text(region) == "|front:-fno-wrapv -fsyntax-only -fno-crash-diagnostics"
+    assert FRONT[0] == "-fno-wrapv"
+
+test "under -fwrapv the pass refuses the region's two, and the unit's own front end does not (panel 224)"
+    dir = "build/selftest-front-check"
+    assert !process.mkdir_all(dir).is_err()
+    c_file = dir + "/w.c"
+    text = two_accessors("")
+    assert !publish.write_whole(path: c_file, text: text, keyed: false).is_err()
+    fronted = refused(
+        line: ["clang", "-std=gnu11", "-fwrapv"],
+        c_file: c_file,
+        tu_text: text,
+        err_path: dir + "/front.txt",
+        compiled: ""
+    )
+    assert fronted.is_err()
+    said = failure_of(fronted)
+    assert strings.holds(text: said, needle: "-Wshift-sign-overflow]")
+    assert strings.holds(text: said, needle: "-Wshift-negative-value]")
+    plain = toolchain.asked_of_clang(
+        line: ["clang", "-std=gnu11", "-fwrapv", "-fsyntax-only", c_file],
+        what: "compiling",
+        err_path: dir + "/plain.txt"
+    )
+    assert !plain.is_err()
+
+test "a header's own error, alone or beside the region's, leaves the verdict to the unit's compile"
+    dir = "build/selftest-front-check-header"
+    assert !process.mkdir_all(dir).is_err()
+    header = "#pragma clang diagnostic error \"-Wshift-negative-value\"\nstatic inline int hdr_twice(int x) { return x + (-1 << 2); }\n"
+    assert !publish.write_whole(path: dir + "/hdr.h", text: header, keyed: false).is_err()
+    alone = "#include \"hdr.h\"\nlong long k_ok(void) {\n" + region_text() + "#line 3 \"w.hero\"\n    return 7;\n#pragma clang diagnostic pop\n}\n"
+    assert !publish.write_whole(path: dir + "/alone.c", text: alone, keyed: false).is_err()
+    assert !refused(line: ["clang", "-std=gnu11", "-fwrapv"], c_file: dir + "/alone.c", tu_text: alone, err_path: dir + "/alone.txt", compiled: "").is_err()
+    mixed = two_accessors("#include \"hdr.h\"\n")
+    assert !publish.write_whole(path: dir + "/mixed.c", text: mixed, keyed: false).is_err()
+    assert !refused(line: ["clang", "-std=gnu11", "-fwrapv"], c_file: dir + "/mixed.c", tu_text: mixed, err_path: dir + "/mixed.txt", compiled: "").is_err()
+
+test "only errors at the unit's own lines naming the region's warnings are the region's"
+    own = own_files(c_file: "b/w.c", tu_text: "#line 4 \"C:\\\\w\\\\m.hero\"\nint x;\n#line 9 \"b/w.c\"\n")
+    assert own == ["b/w.c", "C:\\w\\m.hero"]
+    region = "C:\\w\\m.hero:4:5: error: shifting a negative signed value is undefined [-Werror,-Wshift-negative-value]"
+    assert region_only(said: "compiling failed:\n" + region + "\n1 error generated.\n", own: own, known: "")
+    assert !region_only(said: region + "\nhdr.h:2:40: error: shifting a negative signed value is undefined [-Werror,-Wshift-negative-value]\n", own: own, known: "")
+    other = "b/w.c:7:1: error: static assertion failed: heroes-ffi-const K"
+    assert !region_only(said: region + "\n" + other + "\n", own: own, known: "")
+    assert region_only(said: region + "\n" + other + "\n", own: own, known: "compiling failed:\n" + other + "\n")
+    assert !region_only(said: other + "\n", own: own, known: other + "\n")
+    assert !region_only(said: "clang: error: unknown argument: '-fx'\n", own: own, known: "")
+    assert !region_only(said: region + "\nfatal error: too many errors emitted, stopping now\n", own: own, known: "")
+    assert !region_only(said: "1 error generated.\n", own: own, known: "")
+
+function failure_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg

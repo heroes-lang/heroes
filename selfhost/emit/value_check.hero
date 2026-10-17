@@ -92,7 +92,12 @@ function opened(@w: writer.Writer)
     writer.line(@w, text: PUSH)
 
     for one in undefined_words.UNDEFINED
-        writer.line(@w, text: "#pragma clang diagnostic error \"" + one + "\"")
+        writer.line(@w, text: error_line(one))
+
+# The region's line making `flag` an error, the one spelling
+# `cli/front_check.hero` finds the region by.
+function error_line(flag: str) -> str
+    return "#pragma clang diagnostic error \"" + flag + "\""
 
 # Whether clang's message names one of the region's warnings as an error.
 function undefined(message: str) -> bool

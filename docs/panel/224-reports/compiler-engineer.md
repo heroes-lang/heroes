@@ -11,7 +11,8 @@ rename on the same volume, `/dev/disk3s5`, while two runs were still writing int
 and `/c/w/224-compiler-engineer` on the box (the same archive carried by `ssh` as a `.tar.gz`,
 `build/`, `archive/` and `site/` left out). No paid run, no credential printed. Nothing written in
 the lane but this file. **Status 18:56: complete; every row below was run, and what was not is said *unrun* where it
-stands.**
+stands. § 10, appended 19:05 to 19:42 at the coordinator's request, repairs the patch after the
+critic's second pass; its one open row is the box's `run` form, still running at 19:41.**
 
 ## The verdict
 
@@ -296,3 +297,97 @@ the first run whose log prints a clang of version 23 or later, where the base co
 the CI job's log (`clang version` line and `unsupported:` count), `wc -l`. Scored at the first
 milestone tag after `windows-latest` moves past clang 20; falsified by a red 2072 there under E,
 or by the patch growing past 80 lines.
+
+## 10. The repair asked by the coordinator (19:05 to 19:45), after the critic's second pass
+
+The coordinator adopted E provisionally and asked four things on reading `critic.md`: (1) the
+pass's verdict to count only where every error it reports is a region error, at the unit's own C
+and naming one of `undefined_words.UNDEFINED`, any other error or a mix leaving the verdict to the
+unit's own compile; (2) a compiler test witnessing E on every platform; (3) a test tying
+`front_check.holds` to `value_check.opened`'s own output; (4) the critic's `hdr.h` program to build
+and print 7 on the box, and the 2072 case to stay 1/0 in one build on the box and this Mac.
+
+**The patch**: `$C/out/route-e2.patch`, against `3c478500b`, `selfhost/` only (`diff -ruN`, `-p1`;
+`shasum -a 256` begins `e600280e6c2c81d4`); `git -C <lane> apply --check` passes, nothing written in
+the lane. Three files: `selfhost/cli/front_check.hero` (new, 236 lines by `wc -l`, 158 before its
+tests), `selfhost/cli/units.hero` (599 to 621), `selfhost/emit/value_check.hero` (123 to 128: the
+region's line is now `error_line(flag)`, which `opened` writes and `holds` finds, so the spelling
+exists once; the emitted C is the same text).
+
+### (1) as worded and (4) cannot both hold: measured, and how the patch keeps both intents
+
+A first build to the letter of (1) (`heroes-e2`, `sources 6f4bbee933c36e2b`) built the critic's
+`main.hero` on the box and printed `7`, and **read the 2072 case `0 passed, 1 failed` on the box**,
+the pair missing again (`out/box-e2-checks.txt`). The reason, read on the box from the 2072 unit
+the harness compiled (`build/tu-58cd5f2a33902cfc/...c`, `clang @<words> -I
+tests/golden/unsupported -fsyntax-only [-fno-wrapv]`): the pass reports the six region errors
+**and three more**, the constancy and type `_Static_assert`s for `DIVIDED_BY_ZERO` and
+`REMAINDER_BY_ZERO` at the unit's C lines 222, 251 and 252, and the unit's own compile reports
+**the same three** under the target's meaning. So under (1) as worded the pass can never give a
+verdict on that unit, and the case cannot be 1/0 on the box.
+
+**What the patch does instead** (`heroes-e3`, `sources 5fa340a90f75c5eb`): the pass runs **after**
+the unit's compile, and its verdict counts only where **every error it reports that the compile
+did not** is a region error: placed (`clang_place.place`, read from the right, so a Windows drive's
+colon stays in the path) at the unit's C file or a file one of the unit's own `#line`s names (the
+`.hero` the region's `return` stands at), naming one of `UNDEFINED` as an error. An error the
+compile did not report that is anything else (a header's own line, an unplaced `clang: error:`, a
+`fatal error: too many errors emitted`) means no verdict: the compile's own verdict stands, as in
+the base. The compile's own errors are what the base refuses the unit by, so the pass can add
+nothing to a refusal but region errors, which is what (1) guards. Where the pass refuses after a
+compile that succeeded, its staged object and dependency listing are discarded, never published.
+**This departs from (1)'s words**; the coordinator should read it as the seat's proposal, not as
+(1) done.
+
+### Results, `heroes-e3` (`$O` = `$C/out`)
+
+| what | where | command | result |
+|---|---|---|---|
+| built | Mac | `./heroes-base build selfhost/main.hero -o heroes-e3` | exit 0, `sources 5fa340a90f75c5eb` |
+| built by the seed's stage 1, fixpoint | Mac | `./heroes build selfhost/main.hero -o heroes-e3s1`; both `--emit-c`, `cmp` | exit 0, same key; **identical**, 26,274,251 bytes |
+| built | box | `./heroes-base.exe build selfhost/main.hero -o heroes-e3.exe` | exit 0, `sources 5fa340a90f75c5eb` |
+| own tests | Mac | `./heroes-e3 test selfhost/main.hero` | **1723 tests, all passed**, exit 0 (four new, below) |
+| `layout` | Mac | harness `layout` | **6 passed, 0 failed** |
+| **2072 case** | Mac | harness `unsupported fixedbugs-2072` | **1 passed, 0 failed** |
+| **2072 case** | box | the same with `heroes-e3.exe` | **1 passed, 0 failed** (`out/box-e3-checks.txt`) |
+| **the critic's `main.hero`** (`hdr.h`: its own `#pragma clang diagnostic error "-Wshift-negative-value"` and `-1 << 2`; binds `K_OK`) | box | `heroes-e3.exe build main.hero`, run | **exit 0, prints `7`**, as the base (the first E: exit 1, `ffi_header_refused` with the false `stdio.h` note) |
+| `fl.hero`, `control.hero` | box | the same | exit 0, `1.5`; exit 0, `7` |
+| the same three | Mac | `heroes-e3 build` | `main` and `fl` exit 1 `ffi_header_refused`, `control` 7: as the base and the first E; `main`'s message is the base's byte for byte (`cmp main-base.out main-e3.out`) |
+| `pair.hero` (`-1 << 2`, `1 << 31` alone) | box | `heroes-e3.exe build pair.hero` | exit 1, both in the region's words, `cmp` equal to the first E's |
+| `unsupported` whole | Mac | harness `unsupported` | **344 passed, 0 failed** |
+| `unsupported` whole | box | the same | **328 passed, 0 failed**, exit 0 (beside the box's `run`) |
+| `run` whole | Mac | harness `run` | **534 passed, 0 failed** (two cases skipped for `sys/prctl.h`, as the harness says) |
+| `run` whole | box | the same, started 19:17 | **not finished at 19:41, so its verdict is unread here**; it keeps running, writing `/c/w/224-compiler-engineer/run-e3.txt` on the box and `$C/out/box-run-e3.txt` here |
+| own tests | box | `heroes-e3.exe test selfhost/main.hero` (beside the box's `run`) | **1723 tests, all passed**, exit 0, the four new among them: the `-fwrapv` witness holds on clang 23 too |
+
+**The four tests** in `front_check.hero`, each run on this Mac in the 1723:
+- *the region is found by the lines `emit/value_check.opened` writes, and only it is keyed* (3):
+  `opened` writes into a `writer`, `holds` must find what it wrote;
+- *under -fwrapv the pass refuses the region's two, and the unit's own front end does not* (2): a
+  unit of two accessors in `opened`'s region, `1 << 31` and `-1 << 2`, written to
+  `build/selftest-front-check/w.c`; `refused` with `clang -std=gnu11 -fwrapv` is a refusal naming
+  `-Wshift-sign-overflow` and `-Wshift-negative-value`, and `clang -std=gnu11 -fwrapv
+  -fsyntax-only` of the same file is not. It asks the machine's clang with `-fwrapv` written in, so
+  it witnesses E on every platform, not only where the driver adds the word;
+- *a header's own error, alone or beside the region's, leaves the verdict to the unit's compile*:
+  the critic's `hdr.h` beside a region holding `return 7`, and beside the two, both no verdict;
+- *only errors at the unit's own lines naming the region's warnings are the region's*: the pure
+  reader, a Windows path with escaped backslashes in its `#line`, a header's line, an error the
+  compile also reported (skipped), the same error with nothing new (no verdict), an unplaced
+  `clang: error:`, a `fatal error:` line.
+
+### What this leaves (unrun, or not repaired here)
+
+- **The critic's `fl.hero` split stays**: the header's own compile and `header_order`'s trials
+  ask under the target's meaning, so on the box a header that makes one of the two warnings an
+  error itself is read under `-fwrapv` everywhere but the pass. With the repair, the pass no longer
+  refuses it either, so the box reads `hdr.h` the same with E as with the base; the box and this Mac
+  still differ on it, as they did before 224. Not repaired here; it is a question for the sitting.
+- **The cheaper variant** (the pass only where the build's `clang -###` answer holds `-fwrapv`): my
+  § 4 refused it on a premise the critic falsified (a package cannot carry `-fwrapv`,
+  `libraries.hero:162`). I withdraw that reason. The variant would change only whether a real build runs the pass;
+  the witness test calls the pass directly and holds under either. What running it everywhere
+  still buys is that every platform's real builds exercise the same path the box needs; what it
+  costs is the measured +0.03 s per cold unit holding the region on this Mac. Unbuilt; I no
+  longer object to it.
+- `corpus`, `warnings`, `emission` on the box under `heroes-e3`: unrun.

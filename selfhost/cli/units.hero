@@ -56,6 +56,7 @@ use cli/clang_told
 use cli/kept
 use cli/response_file
 use cli/served
+use cli/front_check
 
 # How a refused unit's message names the C clang refused, on its last line.
 constant GENERATED: str
@@ -140,7 +141,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         compiling.Compiling(level: level, sanitize: sanitize, search_include: search_include, package_flags: package_flags, runtime: t.runtime, source_dir: source_dir)
     )
     key = digest.digest(
-        t.fingerprint + "|tu|" + t.compiler_key + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|words:" + libraries.key_text(words)
+        t.fingerprint + "|tu|" + t.compiler_key + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|words:" + libraries.key_text(words) + front_check.key_text(tu_text)
     )
     dir = t.build + "/tu-" + key
     process.mkdir_all(dir)?
@@ -193,6 +194,8 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # them, and one file in `build/words/` serves every unit of the build.
     line: [str] @= response_file.carried(line: strings.with_all(list: ["clang"], more: words), dir: t.build + "/words")
 
+    unit_line = line
+
     # `-fno-crash-diagnostics` (defect 170): a clang that dies writes no copy of
     # the unit and no script into the system's temporary folder (8,270,409
     # bytes of preprocessed C for 3,000 nested variants, measured 2026-10-03),
@@ -208,6 +211,25 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # as nothing on every warm build after the first.
     compiled = toolchain.asked_of_clang(line: line, what: "compiling the generated C", err_path: err_path)
     publish.discard(err_path)
+
+    # A unit holding the value region is read once more by the front end under
+    # C's own meaning of a signed shift, its verdict counting only where every
+    # error it adds to the compile's is the region's (`cli/front_check.hero`,
+    # panel 224).
+    if front_check.holds(tu_text)
+        fronted = front_check.refused(
+            line: unit_line,
+            c_file: c_file,
+            tu_text: tu_text,
+            err_path: err_path,
+            compiled: failure_text(compiled)
+        )
+        publish.discard(err_path)
+
+        if fronted.is_err()
+            publish.discard(staged)
+            publish.discard(depfile)
+            return fail(code: failure_code(fronted), msg: failure_note(fronted) + "\n" + GENERATED + c_file)
 
     if compiled.is_err()
         publish.discard(staged)
