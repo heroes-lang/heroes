@@ -20,5 +20,8 @@ static const struct pair R_OBJ = { INT_MIN / -1, 3 };
 #define K_QCH ';' + EA
 struct holder { int a[2]; int b; };
 #define R_FILL { { 1 << 31 }, 2 }
-struct ae { enum { AE0, AE1 } k; int y; };
-#define R_AE { (unsigned)(INT_MIN / -1), 2 }
+struct ae { enum { AE_NEG = -1, AE0, AE1 } k; int y; };
+#define R_AE { INT_MIN / -1, 2 }
+/* AE_NEG makes the enumeration `int` on every platform: with no negative
+   enumerator clang gives it `unsigned int` on Darwin and Linux and `int`
+   for the MSVC target, and the case read two answers (defect 2125). */

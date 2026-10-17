@@ -83,5 +83,5 @@ error[ffi_constant_type]: `R_AE` in `fixedbugs-2109-folded.h` cannot be declared
      |
   42 |     constant R_AE: Ae  #~ ffi_constant_type
      |     ^^^^^^^^^^^^^^^^^
-  note: `fixedbugs-2109-folded.h` line 24 reads `#define R_AE { (unsigned)(INT_MIN / -1), 2 }`
+  note: `fixedbugs-2109-folded.h` line 24 reads `#define R_AE { INT_MIN / -1, 2 }`
   note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `R_AE` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines

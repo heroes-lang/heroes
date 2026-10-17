@@ -35,7 +35,7 @@ extern "fixedbugs-2109-folded.h"
         a: i32[2]
         b: i32
     record Ae tag ae
-        k: u32
+        k: i32
         y: i32
     constant K_QCH: i32  #~ ffi_constant_type
     constant R_FILL: Holder  #~ ffi_constant_type

@@ -98,6 +98,13 @@ Linux arm64 read `emission` 1277 and 0 and its bless moved no file. The Windows 
 before the merge of lane-s4, read `run` 511 and 0 and C2's diagnostics identical to this Mac's.
 Pushed at `f94a8cddb`; its CI's four legs were running at this close.
 
+**Corrected 2026-10-17, after the close**: the Windows box read C2's diagnostics and `run` 511
+at `e92f33a2f`, before panel 220's reshape (`ca26867d5`) added the value `R_AE` to defect 2109's
+case, so *on the lane before the merge of lane-s4* named a later tree than the one it ran. At
+`f94a8cddb` the box read `unsupported fixedbugs-21` 13 and 1 on that case: an enumeration with no
+negative enumerator is `unsigned int` on Darwin and Linux and `int` for the MSVC target, and the
+case pinned the first (defect 2125, repaired in the commit that adds this paragraph).
+
 **Status at the close**, for `docs/ROADMAP.md` § Where we are: the compiler 665 modules and
 173,240 lines of Heroes, the seed 263,233 lines of C, 26,229,018 bytes, 56,166 `#line`s; the spec
 7703 vendored and 10,108 real against 16384; the contract 8167 real, unchanged; sittings 220,
