@@ -19,6 +19,7 @@
 
 use shell
 use strings
+use freed_bytes
 
 # Why a case or a surface row named `name` is not judged on this machine, or
 # absent where it is: on Windows, a shape its C cannot hold; anywhere else, a
@@ -64,6 +65,41 @@ function elsewhere() -> [Skip]
         Skip(name: "fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows", why: STATIC_ELSEWHERE)
     ]
 
+# **And an emission that names the platform's own C is compared where it was
+# blessed** (defect 2111, 2026-10-17): since a group record's padding is zeroed
+# before C reads it (panel 215's R1), a padding table and its macro guards name
+# every member of the C struct as the machine's header declares it, private
+# ones included, which no table may leave out, and those members are the
+# platform's. The emission is right on each platform and one blessed file
+# stands for all, so it is compared on Darwin, where this Mac blessed it, and
+# skipped elsewhere by name; its program is built, run and emitted twice on
+# every platform all the same (`run`, `warnings`, `determinism`).
+constant MEMBERS_ARE_DARWINS: str
+    "its emission names every member of a C struct as the machine's header declares it, a padding table and its macro guards (panel 215's R1): Darwin's `pthread_mutex_t` holds `__sig` and `__opaque` where glibc's holds `__align` and `__count`, Darwin's `regex_t` `re_magic`, `re_g` and `re_endp` where glibc's holds `__allocated`, and `struct addrinfo` puts `ai_canonname` before `ai_addr` on Darwin and after it on glibc (Linux arm64, Debian clang 22.1.8, 2026-10-17); blessed on Darwin and compared there, its program built, run and emitted twice on every platform (defect 2111)"
+
+# The emissions compared on Darwin alone, by the label `suite_emission` gives
+# them.
+function darwin_emissions() -> [Skip]
+    return [
+        Skip(name: "run/ffi-a-record-holding-a-lock-is-lent-in-place", why: MEMBERS_ARE_DARWINS)
+        Skip(name: "run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record", why: MEMBERS_ARE_DARWINS)
+        Skip(name: "run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote", why: MEMBERS_ARE_DARWINS)
+        Skip(name: "run/fixedbugs-a-tag-names-a-handle-and-a-record", why: MEMBERS_ARE_DARWINS)
+    ]
+
+# Why the emission labelled `label` is not compared on this machine: one of
+# `darwin_emissions` anywhere but Darwin, which a file every Darwin has tells
+# (`freed_bytes.DARWIN`).
+function emission_reason(label: str) -> str?
+    if shell.exists(freed_bytes.DARWIN)
+        return fail(code: "judged", msg: "judged on this machine")
+
+    for one in darwin_emissions()
+        if one.name == label
+            return ok(one.why)
+
+    return fail(code: "judged", msg: "judged on this machine")
+
 # Whether the report a case's `!sanitizer:` line names is the runtime's to
 # tell on this machine: a stack overflow on Windows, where ASan wrote nothing
 # in 3 and 4 of 8 runs of one case and the runtime's handler keeps the fault
@@ -104,6 +140,21 @@ test "a name is judged where its platform's C holds its shape"
     assert reason("fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused").is_err() == !on_windows
     assert reason(elsewhere()[0].name).is_err() == on_windows
     assert reason("fixedbugs-562-another-case").is_err()
+
+# Each emission compared on Darwin alone is a blessed file and a `run` case that
+# exist, so a renamed one is compared rather than skipped in silence; on Darwin
+# every one is compared (defect 2111).
+test "every emission compared on Darwin alone names a blessed file and a case that exist"
+    for one in darwin_emissions()
+        stem = one.name.slice(from: 4, to: one.name.len())
+        assert strings.starts_with(text: one.name, prefix: "run/")
+        assert shell.exists("tests/emission/run-" + stem + ".c")
+        assert shell.exists("tests/golden/run/" + stem + ".hero")
+
+    assert darwin_emissions().len() == 4
+    on_darwin = shell.exists(freed_bytes.DARWIN)
+    assert emission_reason(darwin_emissions()[0].name).is_err() == on_darwin
+    assert emission_reason("run/another-case").is_err()
 
 # A stack overflow's report is the runtime's on Windows alone, and no other
 # report is (defect 641).

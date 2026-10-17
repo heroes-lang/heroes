@@ -58,6 +58,7 @@ use floors
 use shell
 use strings
 use suite_descriptors
+use platform_skips
 
 constant STORE: str
     "tests/emission"
@@ -283,6 +284,16 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
             )
             continue
         seen[one.stored] @ one.label
+
+        # An emission that names this platform's own C is compared where it
+        # was blessed and skipped here by name, its file seen, so no orphan
+        # (`platform_skips.emission_reason`, defect 2111).
+        elsewhere = platform_skips.emission_reason(one.label)
+
+        if !elsewhere.is_err()
+            skipped @ skipped + 1
+            report.keep_skip(@r, label: "emission/" + one.label, detail: "  " + elsewhere.must())
+            continue
         said = shell.run_guarded(
             scratch: scratch,
             words: [compiler, "build", one.source, "--emit-c"]
