@@ -49,12 +49,16 @@ constant STATIC_ON_WINDOWS: str
 constant STATIC_ELSEWHERE: str
     "its words are the Windows target's, Microsoft's extension refused in a header's region (clang 23.1.1 on the Windows box, 2026-10-13), where this Mac's clang and Linux's say `static declaration of 'hero_str_len' follows non-static declaration`, which defect 2045's case judges on them; its mark is judged on every platform (defect 2053)"
 
+constant LINKED_ON_WINDOWS: str
+    "the probe of a header constant's value links on Windows with `/FORCE:UNRESOLVED`, the platform's word for leaving the program's libraries out, since neither link.exe nor lld drops a reference dead-stripping drops elsewhere (measured on the box, 2026-10-17); so a header constructor calling a function no library of the probe holds links there and ends the probe when it calls it, told as a probe that did not finish, where Darwin's and Linux's links leave the symbol undefined and it is told by its name (panel 218's R2)"
+
 # The cases and rows Windows cannot hold, by the name the report gives them.
 function windows() -> [Skip]
     return [
         Skip(name: "fixedbugs-562-a-header-only-inline-is-told-what-c-wants", why: INLINE_ON_WINDOWS)
         Skip(name: "a header-only C99 inline is refused by run as by build, told what C wants (defect 562)", why: INLINE_ON_WINDOWS)
         Skip(name: "fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused", why: STATIC_ON_WINDOWS)
+        Skip(name: "fixedbugs-2075-a-probe-that-does-not-link-is-told-as-such", why: LINKED_ON_WINDOWS)
     ]
 
 # The cases whose words the Windows target's C alone says, by the name the
@@ -123,11 +127,11 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(text: surface.must(), needle: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 3
+    assert windows().len() == 4
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).
-    for one in [windows()[2], elsewhere()[0], elsewhere()[1]]
+    for one in [windows()[2], windows()[3], elsewhere()[0], elsewhere()[1]]
         assert shell.exists("tests/golden/unsupported/" + one.name + ".hero")
 
     assert elsewhere().len() == 2

@@ -71,12 +71,12 @@ function refused(s: source.Source, decls: [ast.Decl], p: containers.Program, c: 
     if !clang_place.offset_of(text: message, needle: EMPTY).is_err()
         words @ "it expands to nothing"
     return ok(
-        told(name: found.name, declared: declared, known: known, words: words, undefined: undefined, spelled: ffi_value.spelled_at(rows, line: line, name: found.name), program: s.files[at.file].name)
+        told(name: found.name, declared: declared, known: known, words: words, note: note_of(name: found.name, undefined: undefined), spelled: ffi_value.spelled_at(rows, line: line, name: found.name), program: s.files[at.file].name)
     )
 
 # The diagnostic: the header's value refused, the header's line that spells
-# it, and what a group's constant is.
-function told(name: str, declared: str, known: ffi_lookup.Declared, words: str, undefined: bool, spelled: ffi_value.Spelled?, program: str) -> diag.Diagnostic
+# it, and `note`, what a group's constant is and why this value is not one.
+function told(name: str, declared: str, known: ffi_lookup.Declared, words: str, note: str, spelled: ffi_value.Spelled?, program: str) -> diag.Diagnostic
     where: str @= ""
     file: str @= known.header
 
@@ -97,15 +97,15 @@ function told(name: str, declared: str, known: ffi_lookup.Declared, words: str, 
             "`" + file + "` line " + spelled.must().row.to_str() + " reads `" + spelled.must().quoted.must() + "`"
         )
 
-    if undefined
-        d.notes @ d.notes.push(
-            "C leaves this value undefined: a program reading `" + name + "` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines"
-        )
-    else
-        d.notes @ d.notes.push(
-            "C cannot read the header's value of `" + name + "` as an expression, so no program that reads it can be built. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant the header spells as one"
-        )
+    d.notes @ d.notes.push(note)
     return d
+
+# The region's two notes (defect 2072): a value clang warns C leaves
+# undefined, and one C cannot read as an expression.
+function note_of(name: str, undefined: bool) -> str
+    if undefined
+        return "C leaves this value undefined: a program reading `" + name + "` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines"
+    return "C cannot read the header's value of `" + name + "` as an expression, so no program that reads it can be built. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant the header spells as one"
 
 # clang's lines, with a static assertion's failure read whole where clang
 # prints its requirement over several (defect 2101), here because the one shape

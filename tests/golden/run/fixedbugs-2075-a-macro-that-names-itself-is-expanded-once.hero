@@ -1,0 +1,15 @@
+# Panel 218's R2, item 2, 2026-10-17, lane land215 (found by its completeness
+# critic: the probe compiled the unit preprocessed with its `#define`s kept,
+# which expanded them a second time, so `SELF_W` read `((SELF_W + 1) + 1)`
+# and was refused as undefined where C gives 2147483647).
+#
+# The probe compiles the plain `-E` text, so a macro naming itself expands
+# once, as the program's own compile expands it, and both values build.
+
+extern "fixedbugs-2075-self.h"
+    constant SELF_W: i32
+    constant SELF_V: i32
+
+function main()
+    print(SELF_W)
+    print(SELF_V)

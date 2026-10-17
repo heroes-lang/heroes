@@ -1,0 +1,14 @@
+# Panel 218's R2, item 1, 2026-10-17, lane land215 (found by its completeness
+# critic: a probe that did not link passed in silence, and a header whose
+# constructor called zlib built `INT_MIN / -1` at exit 0, a new value per run).
+#
+# A probe that does not link with the runtime alone is told with the linker's
+# words and the header's code named, never counted judged: this header's
+# constructor calls a function no library of the probe holds, so the link
+# leaves it undefined and the constant the probe asked is told so.
+
+extern "fixedbugs-2075-unlinked.h"
+    constant U_VALUE: i32  #~ ffi_constant_type
+
+function main()
+    print(U_VALUE)

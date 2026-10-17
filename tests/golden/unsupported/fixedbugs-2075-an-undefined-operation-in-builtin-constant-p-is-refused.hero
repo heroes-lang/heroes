@@ -1,0 +1,14 @@
+# Panel 218's R4, ruled provisionally 2026-10-17, lane land215: a KNOWN COST,
+# pinned. The value is 7 whichever way `__builtin_constant_p` answers, and C
+# never computes its argument; clang computes it under the probe's checks all
+# the same, at `-O0` too, and it overflows, so the probe traps. The sitting
+# rules it refused, none of panel 216's 41,114, 43,827 and 42,086 bound real
+# macros holding the shape, and the words told true of it: the expression
+# HOLDS an operation C leaves undefined for its operands, never that the value
+# is undefined.
+
+extern "fixedbugs-2075-unevaluated.h"
+    constant B_SEVEN: i32  #~ ffi_constant_type
+
+function main()
+    print(B_SEVEN)

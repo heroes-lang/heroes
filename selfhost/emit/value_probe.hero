@@ -16,18 +16,24 @@
 # trunk built told, and 96 of 96 cells alike on the Windows box's clang 23.
 #
 # THE ROUTE. The module's own unit, the text the build compiled, preprocessed
-# with `-E -dD` under the unit's own words, so a header that spells a value
-# under `__OPTIMIZE__` or a sanitizer's feature reads as the program does;
-# that text compiled at the program's level with every sanitizer off and four
-# checks on in trap mode, which needs no sanitizer runtime; `main` renamed and
-# `hero_extern_refs` no longer `used`, so dead-stripping drops every function
-# that reaches another module or a C library (variant S: no library linked or
-# loaded, the ffi-pragmatist's veto line); linked with the runtime alone and a
-# driver that calls each accessor by index, writing the index before the
-# call. A trap ends the run and the next starts after it. Two canaries ride
-# the unit's own compile: one undefined, which must trap, and one defined,
-# which must not. A probe that does not finish, or whose canaries say the
-# checks did not fire, is told as such, never as an undefined value.
+# with `-E` under the unit's own words, so a header that spells a value under
+# `__OPTIMIZE__` or a sanitizer's feature reads as the program does, and with
+# no `#define` kept, since the text is compiled again and a kept one would
+# expand a second time (`#define K (K + 1)` grew by one more `+ 1`, panel
+# 218's critic); that text compiled at the program's level with every
+# sanitizer off, four checks on in trap mode, which needs no sanitizer
+# runtime, and `-fno-wrapv`, so the C standard's meaning is asked on every
+# target (panel 218's R3: clang 23's MSVC target adds `-fwrapv`); `main`
+# renamed and `hero_extern_refs` no longer `used`, so dead-stripping drops
+# every function that reaches another module or a C library (variant S: no
+# library linked or loaded, the ffi-pragmatist's veto line). Appended to it,
+# where every type the header declares is in scope, two canaries and one
+# dispatcher calling each accessor by index, a record's as a scalar's; linked
+# with the runtime alone and a driver that writes each index before the call.
+# A trap ends the run and the next starts after it. The undefined canary must
+# trap and the defined one must not. A probe that does not finish, that does
+# not link, or whose canaries say the checks did not fire, is told as such,
+# never as an undefined value.
 
 use ast
 use source
@@ -35,7 +41,6 @@ use bytes
 use check/table
 use check/state
 use ir/containers
-use emit/ctype
 use emit/signature
 use emit/value_check
 use emit/extern_refs
@@ -79,25 +84,30 @@ constant TRAPS: [i64]
         3221225501
     ]
 
-# One accessor the probe calls: its C name, its prototype, its constant's
-# declaration and the type the program declares it.
+# One accessor the probe calls: its C name, its constant's declaration and
+# the type the program declares it.
 record Accessor
     name: str
-    prototype: str
     decl: i64
     result: i64
 
-# Whether `f`'s value is judged: the value check's integers and `bool`s, and
-# the floating constants it leaves out (panel 216's critic, condition 1).
+# Whether `f`'s value is judged: the value check's integers and `bool`s, the
+# floating constants it leaves out (panel 216's critic, condition 1), and the
+# records, whose accessor runs a leaf that is a call under the checks (panel
+# 218's R2: `{ g_divmin(), 2 }` built and moved by level while no record was
+# asked).
 function judged(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function) -> bool
     if value_check.asked(c, s, decls, f)
         return true
 
-    if !emit_externs.is_extern_constant(decls, f) || record_constant.is_record_value(c, decls, f)
+    if !emit_externs.is_extern_constant(decls, f)
         return false
 
     if source.is_library(s, decls[f.decl].name.start)
         return false
+
+    if record_constant.is_record_value(c, decls, f)
+        return true
 
     return match table.get(c.types, f.result)
         .float_ty                                              => true
@@ -106,16 +116,14 @@ function judged(c: state.Checked, s: source.Source, decls: [ast.Decl], f: contai
         .function_ty | .case_ty | .failure | .generic | .error => false
 
 # The accessors a unit defines that the probe calls, in the order of `defined`.
-function asked(p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], defined: [i64]) -> [Accessor]
+function asked(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], defined: [i64]) -> [Accessor]
     out: [Accessor] @= []
 
     for index in defined
         f = p.functions[index]
 
         if judged(c, s, decls, f)
-            out @ out.push(
-                Accessor(name: signature.instance_name(f, c, s, decls), prototype: signature.signature(f, c, names, s, decls) + ";", decl: f.decl, result: f.result)
-            )
+            out @ out.push(Accessor(name: signature.instance_name(f, c, s, decls), decl: f.decl, result: f.result))
 
     return out
 
@@ -131,54 +139,61 @@ function unit_text(tu_text: str) -> str
     rest = tu_text.slice(from: at.must() + head.len(), to: tu_text.len())
     return tu_text.slice(from: 0, to: at.must()) + extern_refs.UNUSED_HEAD + rest
 
-# The two canaries, appended to the unit's preprocessed text so they are
-# compiled by the very words its accessors are: one division C leaves
-# undefined, and one it defines. `volatile` keeps either from folding.
-function canaries() -> str
-    return "\nint " + CANARY_UNDEFINED + "(void) { volatile int hero_a = -2147483647 - 1; volatile int hero_b = -1; return hero_a / hero_b; }\nint " + CANARY_DEFINED + "(void) { volatile int hero_a = 1000; volatile int hero_b = 60; return hero_a / hero_b; }\n"
-
-# The driver: every accessor called by its index, the canaries first, each
-# index written and flushed before its call, from the index its one argument
-# names, and `FINISHED` once all have returned.
-function driver(accessors: [Accessor]) -> str
+# What the probe appends to the unit's preprocessed text, so it is compiled by
+# the very words the accessors are and sees every type the header declares:
+# the two canaries, one division C leaves undefined and one it defines
+# (`volatile` keeps either from folding), and the dispatcher, which calls the
+# canaries first and then every accessor by its index, its value kept in a
+# `volatile` of the accessor's own type, a record's as a scalar's.
+function appended(accessors: [Accessor]) -> str
     lines: [str] @= [
-        "#include <stdbool.h>"
-        "#include <stdint.h>"
-        "#include <stdio.h>"
-        "#include <stdlib.h>"
-        "int " + CANARY_UNDEFINED + "(void);"
-        "int " + CANARY_DEFINED + "(void);"
+        ""
+        "int " + CANARY_UNDEFINED + "(void) { volatile int hero_a = -2147483647 - 1; volatile int hero_b = -1; return hero_a / hero_b; }"
+        "int " + CANARY_DEFINED + "(void) { volatile int hero_a = 1000; volatile int hero_b = 60; return hero_a / hero_b; }"
+        "void " + DISPATCH + "(int hero_i) {"
+        "    switch (hero_i) {"
     ]
-
-    for one in accessors
-        lines @ lines.push(one.prototype)
-
-    lines @ lines.push("static void hero_probe_call(int i) {")
-    lines @ lines.push("    switch (i) {")
-    called: [str] @= [CANARY_UNDEFINED, CANARY_DEFINED]
-
-    for one in accessors
-        called @ called.push(one.name)
-
     index: i64 @= 0
 
-    for name in called
+    for name in called(accessors)
         lines @ lines.push(
-            "    case " + index.to_str() + ": { volatile long double hero_v = (long double)" + name + "(); (void)hero_v; break; }"
+            "    case " + index.to_str() + ": { volatile __typeof__(" + name + "()) hero_v = " + name + "(); (void)hero_v; break; }"
         )
         index @ index + 1
 
     lines @ lines.push("    }")
     lines @ lines.push("}")
-    lines @ lines.push("int main(int argc, char **argv) {")
-    lines @ lines.push("    int from = argc > 1 ? atoi(argv[1]) : 0;")
-    lines @ lines.push(
-        "    for (int i = from; i < " + called.len().to_str() + "; i++) { printf(\"%d\\n\", i); fflush(stdout); hero_probe_call(i); }"
-    )
-    lines @ lines.push("    printf(\"" + FINISHED + "\\n\");")
-    lines @ lines.push("    fflush(stdout);")
-    lines @ lines.push("    return 0;")
-    lines @ lines.push("}")
+    return lines.join("\n") + "\n"
+
+# What the dispatcher calls, by index: the canaries, then the accessors.
+function called(accessors: [Accessor]) -> [str]
+    out: [str] @= [CANARY_UNDEFINED, CANARY_DEFINED]
+
+    for one in accessors
+        out @ out.push(one.name)
+
+    return out
+
+# The dispatcher's name, a function of the unit the driver calls.
+constant DISPATCH: str
+    "hero_probe_call"
+
+# The driver: the dispatcher called with every index from the one its one
+# argument names, each written and flushed before its call, and `FINISHED`
+# once all have returned.
+function driver(count: i64) -> str
+    lines: [str] = [
+        "#include <stdio.h>"
+        "#include <stdlib.h>"
+        "void " + DISPATCH + "(int hero_i);"
+        "int main(int argc, char **argv) {"
+        "    int from = argc > 1 ? atoi(argv[1]) : 0;"
+        "    for (int i = from; i < " + count.to_str() + "; i++) { printf(\"%d\\n\", i); fflush(stdout); " + DISPATCH + "(i); }"
+        "    printf(\"" + FINISHED + "\\n\");"
+        "    fflush(stdout);"
+        "    return 0;"
+        "}"
+    ]
     return lines.join("\n") + "\n"
 
 ## Reading a run
@@ -213,14 +228,13 @@ function is_trap(signal: i64) -> bool
 
 ## Tests
 
-test "the probe judges a program's integer and float constants, and the library's and a record's are not asked"
-    text = "extern \"k.h\"\n    constant K_DIV: i32\n    constant K_F: f64\n    constant K_S: str\n\nfunction main()\n    print(K_DIV)\n"
+test "the probe judges a program's integer, float and record constants, and a string's is not asked"
+    text = "extern \"k.h\"\n    record Pt\n        x: i32\n        y: i32\n    constant K_DIV: i32\n    constant K_F: f64\n    constant K_S: str\n    constant K_R: Pt\n\nfunction main()\n    print(K_DIV)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    names = ctype.new_names(s, parsed.decls)
     every: [i64] @= []
     index: i64 @= 0
 
@@ -228,31 +242,33 @@ test "the probe judges a program's integer and float constants, and the library'
         every @ every.push(index)
         index @ index + 1
 
-    got = asked(low.program, c, names, s, parsed.decls, defined: every)
+    got = asked(low.program, c, s, parsed.decls, defined: every)
     found: [str] @= []
 
     for one in got
         found @ found.push(source.span_text(s, parsed.decls[one.decl].name))
 
-    assert found == ["K_DIV", "K_F"]
-    assert ffi_lookup.has(text: got[0].prototype, needle: "(void);")
+    assert found == ["K_DIV", "K_F", "K_R"]
 
 test "the unit loses its used reference table and nothing else"
     tu = "int x;\n" + extern_refs.HEAD + "\n    (void)0;\n}\nint y;\n"
     assert unit_text(tu) == "int x;\n" + extern_refs.UNUSED_HEAD + "\n    (void)0;\n}\nint y;\n"
     assert unit_text("int z;\n") == "int z;\n"
 
-test "the driver calls the canaries first and every accessor by index, and says when it finished"
-    one = Accessor(name: "h_m_K", prototype: "int32_t h_m_K(void);", decl: 0, result: 0)
-    text = driver([one])
+test "the dispatcher calls the canaries first and every accessor by index at its own type, and the driver says when it finished"
+    one = Accessor(name: "h_m_K", decl: 0, result: 0)
+    text = appended([one])
     assert ffi_lookup.has(
         text: text,
-        needle: "case 0: { volatile long double hero_v = (long double)hero_probe_canary_undefined();"
+        needle: "case 0: { volatile __typeof__(hero_probe_canary_undefined()) hero_v = hero_probe_canary_undefined();"
     )
-    assert ffi_lookup.has(text: text, needle: "case 2: { volatile long double hero_v = (long double)h_m_K();")
-    assert ffi_lookup.has(text: text, needle: "i < 3; i++")
-    assert ffi_lookup.has(text: text, needle: "int32_t h_m_K(void);")
-    assert ffi_lookup.has(text: canaries(), needle: "int hero_probe_canary_defined(void)")
+    assert ffi_lookup.has(text: text, needle: "case 2: { volatile __typeof__(h_m_K()) hero_v = h_m_K();")
+    assert ffi_lookup.has(text: text, needle: "int hero_probe_canary_defined(void)")
+    assert ffi_lookup.has(text: text, needle: "void hero_probe_call(int hero_i) {")
+    assert called([one]).len() == 3
+    shown = driver(3)
+    assert ffi_lookup.has(text: shown, needle: "i < 3; i++")
+    assert ffi_lookup.has(text: shown, needle: "void hero_probe_call(int hero_i);")
 
 test "a run is read by its last index, its last line and the signal that ended it"
     assert last_index("0\n1\n2\n").must() == 2

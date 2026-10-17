@@ -1,7 +1,7 @@
-error[ffi_constant_type]: `P_SHIFT` in `fixedbugs-2104-pragma.h` cannot be declared `i64`: clang refuses the header's value at line 3: C leaves it undefined, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+error[ffi_constant_type]: `P_SHIFT` in `fixedbugs-2104-pragma.h` cannot be declared `i64`: clang refuses the header's value at line 3: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
   at tests/golden/unsupported/fixedbugs-2104-a-pragma-in-a-constant-s-value-does-not-switch-off-the-check.hero:14:5
      |
   14 |     constant P_SHIFT: i64  #~ ffi_constant_type
      |     ^^^^^^^^^^^^^^^^^^^^^
   note: `fixedbugs-2104-pragma.h` line 3 reads `#define P_SHIFT (_Pragma("clang diagnostic ignored \"-Wshift-count-overflow\"") 1 << 40)`
-  note: C leaves this value undefined: a program reading `P_SHIFT` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `P_SHIFT` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines

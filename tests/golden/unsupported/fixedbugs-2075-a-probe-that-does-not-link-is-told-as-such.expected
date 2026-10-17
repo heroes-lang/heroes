@@ -1,0 +1,6 @@
+error[ffi_constant_type]: `U_VALUE` in `fixedbugs-2075-unlinked.h` cannot be read as C computes it: the program's own unit, run to read the header's values, did not link with the runtime alone: `unlinked_somewhere` is undefined there, which is the header's own code, a constructor, a function marked `used` or a value's own call, reaching a library
+  at tests/golden/unsupported/fixedbugs-2075-a-probe-that-does-not-link-is-told-as-such.hero:11:5
+     |
+  11 |     constant U_VALUE: i32  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: § 13: a group's constants are the values C computes, read by running the module's own unit with clang's checks before the program links, with no library linked or loaded; a header whose kept code reaches a library cannot be run so, and its constants cannot be judged

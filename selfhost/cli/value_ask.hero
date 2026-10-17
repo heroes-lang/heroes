@@ -27,7 +27,6 @@ use ast
 use source
 use diag
 use check/state
-use emit/ctype
 use emit/value_probe
 use emit/ffi_lookup
 use ir/containers
@@ -75,9 +74,12 @@ record Unit
     words: [str]
     defined: [i64]
 
-# What the probes said: a diagnostic per constant C leaves undefined, and the
-# compiler's own failure, present where a probe's canaries say its checks did
-# not fire, absent otherwise.
+# What the probes said: a diagnostic per constant a probe refuses, and the
+# compiler's own failure, present where a probe of the compiler's own making
+# did not preprocess, compile or link but for a symbol the header's code
+# reaches, or its canaries say its checks did not fire; absent otherwise. A
+# probe that tells nothing is never counted judged (panel 218's R2: one that
+# did not link passed in silence).
 record Told
     found: [diag.Diagnostic]
     broken: str?
@@ -85,21 +87,16 @@ record Told
 # Every unit's verdict, its refusals as diagnostics on each constant's line.
 function told(t: toolchain.Toolchain, units: [Unit], level: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Told
     out: [diag.Diagnostic] @= []
-    names = ctype.new_names(s, decls)
 
     for one in units
-        accessors = value_probe.asked(p, c, names, s, decls, defined: one.defined)
+        accessors = value_probe.asked(p, c, s, decls, defined: one.defined)
 
         if accessors.len() == 0
             continue
         verdict = asked(t, one: one, accessors: accessors, level: level)
 
         if verdict.is_err()
-            broken = broken_of(verdict)
-
-            if broken.len() > 0
-                return Told(found: out, broken: ok(broken))
-            continue
+            return Told(found: out, broken: ok(failure_of(verdict)))
 
         for line in ffi_lookup.lines(text: verdict.must().said)
             for d in value_told.refusals(line: line, accessors: accessors, preprocessed: verdict.must().preprocessed, c: c, s: s, decls: decls)
@@ -108,95 +105,117 @@ function told(t: toolchain.Toolchain, units: [Unit], level: str, p: containers.P
     none: str? = fail(code: "none", msg: "every probe's checks fired")
     return Told(found: out, broken: none)
 
-# A verdict's failure where it is the compiler's own, a canary that did not
-# answer as it must; empty for every other failure, which tells nothing.
-function broken_of(failed: Verdict?) -> str
+# A verdict's failure, always the compiler's own: every failure of the
+# author's header is a verdict that refuses.
+function failure_of(failed: Verdict?) -> str
     match failed
-        .ok => return ""
-        .err e =>
-            if e.code == "broken"
-                return e.msg
-            return ""
+        .ok    => return ""
+        .err e => return e.msg
 
-# What one unit's probe said, one line per finding, `trap <index>` or
-# `death <words>`, and the preprocessed text the header's lines are read from.
+# What one unit's probe said, one line per finding, `trap <index>`,
+# `death <words>` or `unlinked <the linker's words>`, and, where it refuses,
+# the unit preprocessed with its `#define`s kept, which the header's lines are
+# read from.
 record Verdict
     said: str
     preprocessed: str?
 
 # The verdict kept under its key, or asked: the unit preprocessed, compiled
-# in trap mode with its canaries, linked with the runtime alone and run.
+# in trap mode with what the probe appends, linked with the runtime alone and
+# run. The key names the unit's text and words and what the probe appends and
+# compiles it with, so a probe of another shape never reads this one's.
 function asked(t: toolchain.Toolchain, one: Unit, accessors: [value_probe.Accessor], level: str) -> Verdict?
     key = digest.digest(
-        t.fingerprint + "|value|" + t.compiler_key + "|" + one.module + "|" + one.text + "|words:" + libraries.key_text(one.words) + "|" + level + "|" + t.runtime_key + "|" + t.target
+        t.fingerprint + "|value|" + t.compiler_key + "|" + one.module + "|" + one.text + "|words:" + libraries.key_text(one.words) + "|" + level + "|" + t.runtime_key + "|" + t.target + "|probe:" + value_probe.appended(accessors) + "|" + checks().join(" ")
     )
     dir = t.build + "/value-" + key
     known = kept_answers.read(dir + "/verdict.txt")
 
-    # A kept verdict that refuses is preprocessed again for the header's
-    # lines: a refusal ends the build, so this never runs on one that builds.
     if !known.is_err()
-        refusing = ffi_lookup.has(text: known.must(), needle: "trap ") || ffi_lookup.has(text: known.must(), needle: "death ")
-        unread: str? = fail(code: "none", msg: "kept, and refusing nothing")
-
-        if refusing
-            return ok(Verdict(said: known.must(), preprocessed: preprocessed_unit(dir: dir, one: one)))
-        return ok(Verdict(said: known.must(), preprocessed: unread))
-    preprocessed = preprocessed_unit(dir: dir, one: one)
-
-    if preprocessed.is_err()
-        return fail(code: "unread", msg: "the unit did not preprocess, which its own compile tells")
+        return ok(Verdict(said: known.must(), preprocessed: defined_text(dir: dir, one: one, said: known.must())))
+    preprocessed = preprocessed_unit(dir: dir, one: one, defines: false)?
     probe_i = dir + "/probe.i"
-    publish.write_whole(path: probe_i, text: preprocessed.must() + value_probe.canaries(), keyed: false)?
+    publish.write_whole(path: probe_i, text: preprocessed + value_probe.appended(accessors), keyed: false)?
     object = publish.private_name(dir + "/probe.o")
     second = response_file.carried(
         line: strings.with_all(list: strings.with_all(list: ["clang", "-x", "cpp-output"], more: one.words), more: strings.with_all(list: checks(), more: ["-ffunction-sections", "-fdata-sections", "-w", "-c"])),
         dir: dir
     )
+    errors = publish.private_name(dir + "/compile-errors.txt")
     compiled = process.run(
         program: "clang",
         words: second.push(probe_i).push("-o").push(object),
         out: process.discard(),
-        err: process.discard()
+        err: errors
     )
+    said_by_clang = read_back.words(errors).default("")
+    publish.discard(errors)
 
     if !compiled.started || compiled.code != 0
         publish.discard(object)
-        return fail(code: "unread", msg: "the probe of the values did not compile")
+        return fail(
+            code: "broken",
+            msg: "internal error: the probe of the header constants' values in module `" + one.module + "` did not compile, where the module's own unit did: " + value_told.first_error(said_by_clang)
+        )
     said = linked_and_run(t, dir: dir, object: object, accessors: accessors, level: level)
     publish.discard(object)
     kept_answers.write(path: dir + "/verdict.txt", text: said?)?
-    return ok(Verdict(said: said.must(), preprocessed: ok(preprocessed.must())))
+    return ok(Verdict(said: said.must(), preprocessed: defined_text(dir: dir, one: one, said: said.must())))
 
-# The unit's text as the probe reads it, preprocessed with `-dD` under its
-# own words, `main` renamed: what the probe compiles and what the header's
-# lines are read from.
-function preprocessed_unit(dir: str, one: Unit) -> str?
+# The unit preprocessed with its `#define`s kept, where a verdict refuses:
+# what the header's lines are quoted from, read by a run of its own since the
+# probe compiles the text without them. A verdict that refuses nothing reads
+# nothing.
+function defined_text(dir: str, one: Unit, said: str) -> str?
+    if !value_told.refusing(said)
+        return fail(code: "none", msg: "refusing nothing")
+    return preprocessed_unit(dir: dir, one: one, defines: true)
+
+# The unit's text preprocessed under its own words, `main` renamed, its
+# `#define`s kept only where `defines` asks: the probe compiles it without
+# them, since a kept one expands a second time.
+function preprocessed_unit(dir: str, one: Unit, defines: bool) -> str?
     process.mkdir_all(dir)?
     unit = dir + "/" + one.module + ".c"
     publish.write_whole(path: unit, text: value_probe.unit_text(one.text), keyed: true)?
     i_path = publish.private_name(dir + "/unit.i")
+    head: [str] @= ["clang", "-E"]
+
+    if defines
+        head @ head.push("-dD")
     first = response_file.carried(
-        line: strings.with_all(list: ["clang", "-E", "-dD", "-D" + "main=" + value_probe.HIDDEN_MAIN], more: one.words),
+        line: strings.with_all(list: head.push("-D" + "main=" + value_probe.HIDDEN_MAIN), more: one.words),
         dir: dir
     )
+    errors = publish.private_name(dir + "/preprocess-errors.txt")
     ran = process.run(
         program: "clang",
         words: first.push(unit).push("-o").push(i_path),
         out: process.discard(),
-        err: process.discard()
+        err: errors
     )
+    said_by_clang = read_back.words(errors).default("")
+    publish.discard(errors)
     text = read_back.words(i_path)
     publish.discard(i_path)
 
-    if !ran.started || ran.code != 0
-        return fail(code: "unread", msg: "the unit did not preprocess")
+    if !ran.started || ran.code != 0 || text.is_err()
+        return fail(
+            code: "broken",
+            msg: "internal error: module `" + one.module + "`'s unit did not preprocess for the probe of its header constants' values, where it compiled: " + value_told.first_error(said_by_clang)
+        )
     return text
 
-# The words that compile and link the probe: every sanitizer of the build off
-# and the four checks on, each a trap.
+# The words that compile and link the probe: every sanitizer of the build off,
+# the four checks on, each a trap, and the C standard's meaning of a signed
+# overflow and a shift on every target (panel 218's R3), never the program's.
 function checks() -> [str]
-    return ["-fno-sanitize=all", "-fsanitize=" + value_probe.CHECKS, "-fsanitize-trap=" + value_probe.CHECKS]
+    return [
+        "-fno-sanitize=all"
+        "-fsanitize=" + value_probe.CHECKS
+        "-fsanitize-trap=" + value_probe.CHECKS
+        "-fno-wrapv"
+    ]
 
 # The platform's word for leaving the program's libraries out of the link.
 function leave_out(target: str) -> [str]
@@ -209,12 +228,15 @@ function leave_out(target: str) -> [str]
 
 # The driver linked with the unit's object and the runtime alone, then run
 # until it finishes, each run starting after the accessor the last trapped
-# at. A canary that does not answer as it must is the compiler's failure,
-# `broken`; a run that ends otherwise than by a trap or by finishing is the
-# probe's death, told as such.
+# at. A link that leaves a symbol undefined is the header's code reaching a
+# library, `unlinked` and told; any other link that fails, or a canary that
+# does not answer as it must, is the compiler's failure, `broken`; a run that
+# ends otherwise than by a trap or by finishing is the probe's death, told as
+# such.
 function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, accessors: [value_probe.Accessor], level: str) -> str?
     driver_c = dir + "/driver.c"
-    publish.write_whole(path: driver_c, text: value_probe.driver(accessors), keyed: false)?
+    total = value_probe.called(accessors).len()
+    publish.write_whole(path: driver_c, text: value_probe.driver(total), keyed: false)?
     runtime = toolchain.runtime_object(t, level: level, sanitize: false)?
     binary = publish.private_name(dir + "/probe") + process.exe_suffix()
     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false))
@@ -222,19 +244,23 @@ function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, accessors
     line @ strings.with_all(list: line, more: checks())
     line @ strings.with_all(list: line, more: [object, driver_c, runtime])
     line @ strings.with_all(list: line, more: leave_out(t.target))
-    linked = process.run(
-        program: "clang",
-        words: line.push("-o").push(binary),
-        out: process.discard(),
-        err: process.discard()
-    )
+    errors = publish.private_name(dir + "/link-errors.txt")
+    linked = process.run(program: "clang", words: line.push("-o").push(binary), out: process.discard(), err: errors)
+    said_by_linker = read_back.words(errors).default("")
+    publish.discard(errors)
 
     if !linked.started || linked.code != 0
         publish.discard(binary)
-        return fail(code: "unread", msg: "the probe of the values did not link")
+        undefined = value_told.undefined_symbol(said_by_linker, apple: link_flags.apple(t.target))
+
+        if undefined.is_err()
+            return fail(
+                code: "broken",
+                msg: "internal error: the probe of a header constant's value did not link: " + value_told.first_error(said_by_linker)
+            )
+        return ok("unlinked " + undefined.must() + "\n")
     findings: [str] @= []
     start: i64 @= 0
-    total = accessors.len() + 2
     runs: i64 @= 0
 
     while runs <= total

@@ -1,10 +1,12 @@
 # The diagnostics a probe of a header constant's value tells (panel 216's R1,
-# ratified 2026-10-17; defects 2075 and 2104): a trapped accessor's constant
-# told as a value C leaves undefined, `ffi_constant_type` on its declaration
-# with the header's line quoted, and a probe that did not finish told on every
-# constant it asked, never as an undefined value (the ffi-pragmatist's
-# condition (c)). Split out of `cli/value_ask.hero`, which runs the probe,
-# along the seam between running and telling.
+# ratified 2026-10-17; panel 218's R2 and R4; defects 2075 and 2104): a
+# trapped accessor's constant told as an expression holding an operation C
+# leaves undefined, `ffi_constant_type` on its declaration with the header's
+# line quoted; a probe that did not finish, or did not link because the
+# header's own code reaches a library, told once, on the first constant it
+# asked, never as an undefined value (the ffi-pragmatist's condition (c)).
+# Split out of `cli/value_ask.hero`, which runs the probe, along the seam
+# between running and telling.
 
 use ast
 use source
@@ -15,11 +17,13 @@ use emit/value_probe
 use emit/ffi_lookup
 use emit/ffi_value
 use emit/ffi_constant_value
+use bytes
 use cli/bound_said
+use cli/runtime_name
 use cli/strings
 
-# One finding's diagnostics: a trapped accessor's constant told as a value C
-# leaves undefined; a probe's death told on every constant it asked.
+# One finding's diagnostics: a trapped accessor's constant told on its own
+# line; a probe's death, or its link that left a symbol undefined, told once.
 function refusals(line: str, accessors: [value_probe.Accessor], preprocessed: str?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     trap = ffi_lookup.after(text: line, marker: "trap ")
@@ -28,10 +32,11 @@ function refusals(line: str, accessors: [value_probe.Accessor], preprocessed: st
         index = ffi_lookup.number(text: trap.must())
 
         if !index.is_err() && index.must() >= 2 && index.must() - 2 < accessors.len()
+            one = accessors[index.must() - 2]
             d = diagnostic(
-                one: accessors[index.must() - 2],
+                one: one,
                 words: UNDEFINED,
-                undefined: true,
+                note: trapped_note(source.span_text(s, decls[one.decl].name)),
                 preprocessed: preprocessed,
                 c: c,
                 s: s,
@@ -42,32 +47,51 @@ function refusals(line: str, accessors: [value_probe.Accessor], preprocessed: st
                 out @ out.push(d.must())
         return out
     death = ffi_lookup.after(text: line, marker: "death ")
+    unlinked = ffi_lookup.after(text: line, marker: "unlinked ")
 
-    if death.is_err() || accessors.len() == 0
+    if death.is_err() && unlinked.is_err() || accessors.len() == 0
         return out
     name = source.span_text(s, decls[accessors[0].decl].name)
     known = ffi_lookup.declaration(s, decls, name: name)
 
     if known.is_err()
         return out
+    why: str @= ""
+    note: str @= ""
+
+    if !death.is_err()
+        why @ "did not finish (" + death.must() + "), which is the header's own code ending or holding a process before `main`"
+        note @ "§ 13: a group's constants are the values C computes, read by running the module's own unit with clang's checks before the program links; a header whose code ends or holds a process before `main`, a constructor that exits or a read of stdin, ends or holds that run, and the program it would build the same way"
+    else
+        missing: str @= ""
+
+        if unlinked.must() != "?"
+            missing @ ": `" + unlinked.must() + "` is undefined there"
+        why @ "did not link with the runtime alone" + missing + ", which is the header's own code, a constructor, a function marked `used` or a value's own call, reaching a library"
+        note @ "§ 13: a group's constants are the values C computes, read by running the module's own unit with clang's checks before the program links, with no library linked or loaded; a header whose kept code reaches a library cannot be run so, and its constants cannot be judged"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_constant_type",
-        message: "`" + name + "` in `" + known.must().header + "` cannot be read as C computes it: the program's own unit, run to read the header's values, did not finish (" + death.must() + "), which is the header's own code ending or holding a process before `main`",
+        message: "`" + name + "` in `" + known.must().header + "` cannot be read as C computes it: the program's own unit, run to read the header's values, " + why,
         span: known.must().span
     )
-    d.notes @ d.notes.push(
-        "§ 13: a group's constants are the values C computes, read by running the module's own unit with clang's checks before the program links; a header whose code ends or holds a process before `main`, a constructor that exits or a read of stdin, ends or holds that run, and the program it would build the same way"
-    )
+    d.notes @ d.notes.push(note)
     out @ out.push(d)
     return out
 
-# The words a trapped value is told with.
+# The words a trapped value is told with: what a trap shows, an operation in
+# the expression C leaves undefined for the operands it is given, and never
+# that the value is (panel 218's R4: `__builtin_constant_p`'s argument, which
+# C never computes, traps under the checks all the same).
 constant UNDEFINED: str
-    "C leaves it undefined, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it"
+    "its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it"
+
+# The note under a trapped value.
+function trapped_note(name: str) -> str
+    return "an operation C leaves undefined gives no value: wherever C computes it, a program reading `" + name + "` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines"
 
 # The diagnostic on a constant, the header's line read from the preprocessed
 # unit where it holds the constant's last `#define`.
-function diagnostic(one: value_probe.Accessor, words: str, undefined: bool, preprocessed: str?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
+function diagnostic(one: value_probe.Accessor, words: str, note: str, preprocessed: str?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
     name = source.span_text(s, decls[one.decl].name)
     known = ffi_lookup.declaration(s, decls, name: name)?
     none: [str] = []
@@ -84,5 +108,101 @@ function diagnostic(one: value_probe.Accessor, words: str, undefined: bool, prep
                 ffi_value.Spelled(path: found.must().file, row: found.must().line, quoted: ok(found.must().text))
             )
     return ok(
-        ffi_constant_value.told(name: name, declared: declared, known: known, words: words, undefined: undefined, spelled: spelled, program: source.file_at(s, decls[one.decl].span.start).name)
+        ffi_constant_value.told(name: name, declared: declared, known: known, words: words, note: note, spelled: spelled, program: source.file_at(s, decls[one.decl].span.start).name)
     )
+
+## Reading what clang and the linker said
+
+# Whether a verdict refuses a constant.
+function refusing(said: str) -> bool
+    return ffi_lookup.has(text: said, needle: "trap ") || ffi_lookup.has(text: said, needle: "death ") || ffi_lookup.has(text: said, needle: "unlinked ")
+
+# The first line clang wrote that says `error`, else its first line, quoted
+# as it stands: what an internal error shows of a probe's own failure.
+function first_error(said: str) -> str
+    first: str @= ""
+
+    for line in ffi_lookup.lines(text: said)
+        if line.len() == 0
+            continue
+
+        if ffi_lookup.has(text: line, needle: "error")
+            return line
+
+        if first.len() == 0
+            first @ line
+
+    if first.len() == 0
+        return "clang said nothing"
+    return first
+
+# The name a failed link leaves undefined, read by its form: on the first line
+# that says `ndefined`, joined to the next where it ends in `:` (ld64 names the
+# symbol there), the first C name a quote, a backtick, an apostrophe or
+# `symbol: ` opens, its leading `_` taken off on Darwin, where the linker
+# writes every C name with one; `?` where the line names none; absent where no
+# line says `ndefined`, which is then no reference of the header's code.
+function undefined_symbol(said: str, apple: bool) -> str?
+    rows = ffi_lookup.lines(text: said)
+    index: i64 @= 0
+
+    while index < rows.len()
+        if ffi_lookup.has(text: rows[index], needle: "ndefined")
+            text: str @= rows[index]
+
+            if strings.ends_with(text: strings.trimmed(text), suffix: ":") && index + 1 < rows.len()
+                text @ text + " " + rows[index + 1]
+            name = quoted_name(text)
+
+            if name.is_err()
+                return ok("?")
+
+            if apple && strings.starts_with(text: name.must(), prefix: "_")
+                return ok(name.must().slice(from: 1, to: name.must().len()))
+            return name
+        index @ index + 1
+
+    return fail(code: "none", msg: "no undefined symbol named")
+
+# The first C name a linker's line opens with a quote, a backtick, an
+# apostrophe or `symbol: `, the forms ld64, GNU ld and lld write a symbol in.
+function quoted_name(text: str) -> str?
+    after = bytes.locate(text: text, needle: "symbol: ", from: 0)
+
+    if !after.is_err()
+        named = runtime_name.name_at(text: text, at: after.must() + 8)
+
+        if !named.is_err()
+            return named
+    index: i64 @= 0
+
+    while index + 1 < text.len()
+        if text[index] == '"' || text[index] == '`' || text[index] == '\''
+            named = runtime_name.name_at(text: text, at: index + 1)
+
+            if !named.is_err()
+                return named
+        index @ index + 1
+
+    return fail(code: "none", msg: "no name quoted")
+
+## Tests
+
+test "the symbol a link left undefined is read by its form, on ld64, GNU ld and lld"
+    ld64 = "Undefined symbols for architecture arm64:\n  \"_zlibVersion\", referenced from:\n      _hero_lib_init in p.o\nld: symbol(s) not found\n"
+    assert undefined_symbol(ld64, apple: true).must() == "zlibVersion"
+    assert undefined_symbol("/usr/bin/ld: p.o: in function `f':\np.c:(.text+0x5): undefined reference to `zlibVersion'\n", apple: false).must() == "zlibVersion"
+    assert undefined_symbol("ld.lld: error: undefined symbol: zlibVersion\n", apple: false).must() == "zlibVersion"
+    assert undefined_symbol("ld: undefined something\n", apple: false).must() == "?"
+    assert undefined_symbol("clang: error: unable to execute command\n", apple: false).is_err()
+
+test "a probe's own failure quotes clang's first error, else its first line"
+    assert first_error("In file included from x.c:1:\nx.c:3:1: error: expected ';'\n") == "x.c:3:1: error: expected ';'"
+    assert first_error("warning: something\n") == "warning: something"
+    assert first_error("") == "clang said nothing"
+
+test "a verdict refuses where it names a trap, a death or a link left undefined"
+    assert refusing("trap 2\n")
+    assert refusing("death it exited 3 before it finished\n")
+    assert refusing("unlinked ld.lld: error: undefined symbol: f\n")
+    assert !refusing("\n")

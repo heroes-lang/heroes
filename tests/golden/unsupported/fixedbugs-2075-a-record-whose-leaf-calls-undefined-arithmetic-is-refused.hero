@@ -1,0 +1,16 @@
+# Panel 218's R2, item 3, 2026-10-17, lane land215 (found by its completeness
+# critic: `R_CALL`, `{ g_divmin(), 2 }`, built and printed `-2147483648 2` at
+# `-O0` and `0 2` at `-O2`, since no record accessor was asked).
+#
+# A record constant's accessor is asked as a scalar's is: its leaf, a call
+# dividing `INT_MIN` by -1, runs under the checks and traps.
+
+extern "fixedbugs-2075-calls.h"
+    record Pair tag pair
+        x: i32
+        y: i32
+    constant C_PAIR: Pair  #~ ffi_constant_type
+
+function main()
+    v = C_PAIR
+    print(v.x)

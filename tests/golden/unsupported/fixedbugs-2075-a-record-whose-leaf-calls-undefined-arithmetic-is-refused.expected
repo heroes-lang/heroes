@@ -1,0 +1,7 @@
+error[ffi_constant_type]: `C_PAIR` in `fixedbugs-2075-calls.h` cannot be declared `Pair`: clang refuses the header's value at line 6: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2075-a-record-whose-leaf-calls-undefined-arithmetic-is-refused.hero:12:5
+     |
+  12 |     constant C_PAIR: Pair  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2075-calls.h` line 6 reads `#define C_PAIR { calls_divmin(), 2 }`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `C_PAIR` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
