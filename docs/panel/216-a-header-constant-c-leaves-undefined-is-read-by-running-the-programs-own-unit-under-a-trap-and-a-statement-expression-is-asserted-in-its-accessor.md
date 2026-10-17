@@ -237,3 +237,18 @@ started again after the one that trapped, read `K_DIV` and `K_FLT` trapped and t
 in 3 runs, at `-O0` and `-O2`. So both of R3's conditions stand met; R1 is built in its lane and
 judged by the CI's four legs after its push. The scripts are the coordinator's, `ux_trap.sh` and
 `resume.sh`, copied from the compiler-engineer's `ux2.sh` and the ffi-pragmatist's `resume.py`.
+
+**And a correction of the sentence above, measured the same hour on the box.** Its 48 shapes'
+units call no C library, so they did not ask what variant S does where a unit does: a unit
+defining `uses_the_library`, which calls `library_function_nobody_links`, beside two accessors,
+compiled with the checks in trap mode and `-ffunction-sections -fdata-sections`, and linked with a
+probe that calls only the accessors: with `-Wl,/OPT:REF` (link.exe) the link exits 1 on the
+unresolved symbol, and with `-fuse-ld=lld -Wl,/OPT:REF` it exits 1 too, *undefined symbol:
+library_function_nobody_links*, at `-O0` and `-O2`, so dead-stripping does not drop a reference
+there as ld64's `-dead_strip` and GNU ld's `--gc-sections` do on the corpus (the ffi-pragmatist's
+84 of 84 and 88 of 88). With `-Wl,/FORCE:UNRESOLVED` it links, exit 0, and the probe prints the
+defined accessor's `7` and traps on the undefined one, exit 132, at both levels. No library is
+linked or loaded either way, which is the ffi-pragmatist's veto line, and an accessor calls none,
+since `__builtin_constant_p` refuses a constant that is a call (`ffi_not_constant`). So R1's probe
+links with the platform's own word for leaving the program's libraries out: `-dead_strip` on
+Darwin, `--gc-sections` on Linux, `/FORCE:UNRESOLVED` on Windows.
