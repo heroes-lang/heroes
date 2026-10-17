@@ -207,3 +207,8 @@ there, which `-fwrapv` defines, so the split would be partial and its words owed
 ## Author's verdict
 
 Pending.
+
+Asked for by https://github.com/heroes-lang/heroes/issues/2115, naming the sitting as
+`panel 218`, with its one question and the recommendation. R4's record call leaf is defect 2116
+(https://github.com/heroes-lang/heroes/issues/2116, `blocking`), filed 2026-10-17 after the
+coordinator measured it: two reads of `{ g_next(), 2 }` printed `1` and `2`.
