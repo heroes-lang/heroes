@@ -77,7 +77,20 @@ lend only writes them. Measured before it on Linux x86-64 at
 `-O0`: two records `==` called equal reached C with seven bytes of a dirtied
 stack each (`run/ffi-the-padding-c-reads-is-zero`). What it does not
 promise: the bits a bit-field's byte holds beside it (defect 2099), and five
-shapes read and not yet run (issue 2100). `hash` is never null. Copy on
+shapes read and not yet run (issue 2100). `hash` is never null.
+
+**And the bits beside a named bit-field, since panel 223** (2026-10-17, provisional, defect 2099):
+at both of R1's sites, before each lend and after each store of a whole group record (defect
+2112), in each byte a named bit-field shares with bits no named bit-field holds, those bits are
+cleared by `__atomic_fetch_and` through `volatile unsigned char *` (`hero_pad_clear`), the masks
+found once before `main` by `m.F--` on a zeroed object for each named bit-field, its name guarded
+(`hero_pad_masks`), so no byte order is assumed; a byte a `const` bit-field holds is left as it
+was. What stays, said: an atomic `and` beside C's own plain write to the same byte is a data race
+by C11's letter, measured to lose nothing on three legs where a plain read-modify-write lost
+thousands; R1's zeroing write already lands inside a bit-field's access unit on the MSVC target
+and, for a byte only an unnamed bit-field holds, on all four legs, changing no member; and a
+library version that adds a bit-field where the binding's header had padding has those bits
+cleared. Copy on
 write is **one unshare per step** of a mutated place: one at the primitive lets
 a nested store alias, measured, with every instrument in this project reporting
 success (panel 022).

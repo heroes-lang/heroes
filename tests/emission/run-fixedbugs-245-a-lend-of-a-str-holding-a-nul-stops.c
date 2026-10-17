@@ -419,7 +419,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3df4f7024d9cb58a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("311bf0cc7e511e08", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs245alendofastrholdinganulstops_main();

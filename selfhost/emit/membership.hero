@@ -3,16 +3,21 @@
 # answer or the layout dump, carried to the emitter in
 # `ctype.Names.lend_units` under `KEY`, and read by `emit/padding.hero`.
 # Split out of `emit/padding.hero` on 2026-10-16, at panel 215's landing:
-# the zeroing stayed there, the text both ends agree on came here.
+# the zeroing stayed there, the text both ends agree on came here; and on
+# 2026-10-17, at panel 223, the guard that spells a dump's names (`guarded`).
 #
 # `DECLARED` for a record the screen vouches for, whose declared fields are
 # exactly the struct's members; for any other record the leaves of the
 # header's layout dump, one entry each, joined by `;`: `p <path>` a member,
-# `n <byte> <bytes>` the bytes a named bit-field's bits reach (the one span C
-# cannot be asked for, read from the dump's offset column), `f <path>` a
-# flexible array member, holding every byte from its offset to the end.
+# `n <byte> <bytes> <path>` a named bit-field, the bytes its bits reach (the
+# one span C cannot be asked for, read from the dump's offset column) and its
+# C name, through which its bits are found (panel 223); `c <byte> <bytes>` a
+# `const` one, whose bytes are held whole, since no line may write it; `f
+# <path>` a flexible array member, holding every byte from its offset to the
+# end.
 
 use emit/layout_text
+use emit/layout_rows
 
 # The key a record's membership rides under in `ctype.Names.lend_units`,
 # which no C name a counted parameter is keyed by can begin with.
@@ -40,7 +45,13 @@ function encoded(tree: [layout_text.Member]) -> str?
 
             if m.byte < 0 || m.last < m.byte
                 return fail(code: "none", msg: "a bit-field whose bytes the dump does not give")
-            out @ out.push("n " + m.byte.to_str() + " " + (m.last - m.byte + 1).to_str())
+            span = m.byte.to_str() + " " + (m.last - m.byte + 1).to_str()
+
+            # The dump prints a `const` bit-field's qualifier first.
+            if layout_rows.starts(text: m.type_text, prefix: "const ")
+                out @ out.push("c " + span)
+            else
+                out @ out.push("n " + span + " " + m.path)
         else if m.flexible
             out @ out.push("f " + m.path)
         else if m.path.len() > 0
@@ -74,6 +85,59 @@ function space_in(text: str) -> i64
 
     return 0 - 1
 
+# What a bit-field's entry gives, its record at `at` in the outer type (panel
+# 223, defect 2099): `span`, the bytes its bits reach, which no gap holds; and
+# `path`, its C name, empty for a `c` entry. `emit/padding_tables.hero` finds
+# its bits before `main` by `--` on a zeroed object, through that name, and
+# `hero_pad_clear` writes zero the bits beside them at each lend.
+record Bits
+    span: [str]
+    path: str
+
+# A bit-field's entry, `<byte> <bytes>` and for an `n` entry ` <path>`;
+# absent where it has no space.
+function bit_entry(rest: str, at: str) -> Bits?
+    first = space_in(rest)
+
+    if first < 0
+        return fail(code: "none", msg: "a bit-field's entry is not two numbers")
+    tail = rest.slice(from: first + 1, to: rest.len())
+    second = space_in(tail)
+    bytes: str @= tail
+    path: str @= ""
+
+    if second >= 0
+        bytes @ tail.slice(from: 0, to: second)
+        path @ tail.slice(from: second + 1, to: tail.len())
+    return ok(Bits(span: ["(" + at + ") + " + rest.slice(from: 0, to: first), bytes], path: path))
+
+# **A member's own name is spelled where no header macro reaches it.** The
+# dump names the members as C declares them, and a header may define a macro
+# of a member's name: `#define fd via.fd` makes `s.fd` read `s.via.fd`, which
+# a field the program declares relies on (defect 2062), and turns the dump's
+# `via.fd` into `via.via.fd`, which clang refused, exit 2 on a correct program
+# (`run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own`,
+# found at panel 215's landing). So each such name is saved, undefined for
+# the one line that spells it, and restored, whether or not it was a macro:
+# `push_macro` of a name with no definition restores it as none.
+#
+# ORDER: by the name's bytes — the `#pragma` lines of the emitted C, which a
+# second emission of the same input gives alike (the `determinism` suite).
+function guarded(names: {str: bool}, line: str) -> [str]
+    held = sort(keys(names))
+    out: [str] @= []
+
+    for name in held
+        out @ out.push("#pragma push_macro(\"" + name + "\")")
+        out @ out.push("#undef " + name)
+
+    out @ out.push(line)
+
+    for name in held
+        out @ out.push("#pragma pop_macro(\"" + name + "\")")
+
+    return out
+
 # The names a dump's path spells, one per level: `via.fd` gives `via` and
 # `fd`.
 function names_in(path: str) -> [str]
@@ -93,8 +157,77 @@ function names_in(path: str) -> [str]
 ## Tests
 
 test "a membership is read entry by entry, and a dump's leaves are its entries"
-    assert entries("p a;p inner.d;n 1 2") == ["p a", "p inner.d", "n 1 2"]
+    assert entries("p a;p inner.d;n 1 2 c") == ["p a", "p inner.d", "n 1 2 c"]
+    assert bit_entry(rest: "1 2 c", at: "0").must().span == ["(0) + 1", "2"]
+    assert bit_entry(rest: "1 2 o.c", at: "x").must().path == "o.c"
+    assert bit_entry(rest: "0 1", at: "0").must().path == "" && bit_entry(rest: "1", at: "0").is_err()
     assert entries("") == []
     assert space_in("1 2") == 1
     assert names_in("via.fd") == ["via", "fd"]
     assert names_in("kind") == ["kind"]
+
+test "a named bit-field gives its bytes and its C name, a const one its bytes alone"
+    b = layout_text.Member(
+        depth: 1,
+        name: "b",
+        nested: false,
+        bitfield: true,
+        flexible: false,
+        byte: 1,
+        last: 1,
+        union_kw: false,
+        place: "",
+        path: "b",
+        type_text: "unsigned int"
+    )
+    c = layout_text.Member(
+        depth: 1,
+        name: "c",
+        nested: false,
+        bitfield: true,
+        flexible: false,
+        byte: 1,
+        last: 2,
+        union_kw: false,
+        place: "",
+        path: "c",
+        type_text: "unsigned int"
+    )
+    k = layout_text.Member(
+        depth: 1,
+        name: "k",
+        nested: false,
+        bitfield: true,
+        flexible: false,
+        byte: 0,
+        last: 0,
+        union_kw: false,
+        place: "",
+        path: "k",
+        type_text: "const unsigned int"
+    )
+    pad = layout_text.Member(
+        depth: 1,
+        name: "",
+        nested: false,
+        bitfield: true,
+        flexible: false,
+        byte: 1,
+        last: 1,
+        union_kw: false,
+        place: "",
+        path: "",
+        type_text: "unsigned int"
+    )
+    assert encoded([k, b, pad, c]).must() == "c 0 1;n 1 1 b;n 1 2 c"
+
+test "a name the dump spelled is undefined for the one line that spells it, and restored"
+    named: {str: bool} @= {}
+    named["fd"] @ true
+    named["via"] @ true
+    got = guarded(names: named, line: "x;")
+    assert got[0] == "#pragma push_macro(\"fd\")" && got[1] == "#undef fd"
+    assert got[4] == "x;"
+    assert got[5] == "#pragma pop_macro(\"fd\")" && got[6] == "#pragma pop_macro(\"via\")"
+    none: {str: bool} = {}
+    assert guarded(names: none, line: "x;") == ["x;"]

@@ -339,3 +339,127 @@ at the landing, by the `layout` suite, with no `DECIDED` row added.
 - Linux x86-64 for the race and the value probe (the box is the x86-64 leg that ran them).
 - The suppression of the table and the call for a record whose bit-fields fill every byte they
   touch (`fixedbugs-156`'s `BF`): decided at run time as built, so a call of zero masks stands.
+
+## 7. The route as the coordinator adopted it, built and run (appended 2026-10-17, 19:15)
+
+The coordinator adopted route A with the atomic `and`, provisionally, with three changes from the
+critic's second pass (`docs/panel/223-reports/critic.md` § 3): (1) the masks come from C's own
+bits, `o.F--` on a zeroed object for each named bit-field, in the constructor before `main`, its
+names guarded as a member's are, the runtime reading the object's bytes; the dump's bit column and
+the little-endian `_Static_assert` go; (2) the clear goes through `volatile unsigned char *` with
+`__atomic_fetch_and`; (3) a byte a `const` bit-field holds is left alone. **§ 3's mechanism (masks
+from the dump's `byte:lo-hi`) and § 5's classes *bit tables* and *one `_Static_assert` per unit*
+are superseded by this section**; what they measured stands at its time. The dump route's files are
+kept at `<copy>/w/built-dump-route/`.
+
+### 7a. What was built
+
+- `selfhost/emit/membership.hero`: a named bit-field's entry is `n <byte> <bytes> <path>`, its C
+  name added; one whose dump type opens `const ` is `c <byte> <bytes>`, held whole (the dump prints
+  the qualifier first: `0:0-2 | const unsigned int k`, measured on this Mac); `bit_entry` reads
+  both. **The split's seam**: `guarded`, the guard that spells a dump's names, moved here from
+  `padding.hero` with its test, since this module already reads those names (`names_in`).
+- `selfhost/emit/padding.hero`: `Held.bits` holds each named bit-field's C name on the outer type;
+  a `c` entry's bytes join the whole spans, so no mask reaches them and R1's gaps are unchanged.
+- `selfhost/emit/padding_tables.hero`: per record with bits, at file scope a mask room
+  `hero_pad_m_<d>[2 * Σ bytes]` and a count; in `hero_pad_init`, a block `{ T hero_pad_o;
+  __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o); hero_pad_o.b--; hero_pad_o.c--;
+  hero_pad_mn_<d> = hero_pad_masks(<table>, <whole spans>, &hero_pad_o, sizeof hero_pad_o,
+  hero_pad_m_<d>, <room>); }`, the `--` line between `push_macro`/`#undef`/`pop_macro` of each name
+  its paths spell. No bit table, no `_Static_assert`.
+- `runtime/parts/lend.c`: `hero_pad_masks` reads the object's bytes, skipping a byte no named
+  bit-field touches, one all of whose bits are named, and one a whole span covers;
+  `hero_pad_clear` writes through `volatile unsigned char *` with `__atomic_fetch_and(...,
+  __ATOMIC_RELAXED)`. `runtime/heroes_runtime.h` declares both, the object as `const void *`;
+  `heroes_guard_open.h`, `heroes_guard_close.h` and `selfhost/emit/guarded_names.hero` list the two
+  names.
+- **Found by the compiler's own tests on the way**: declaring the object `const unsigned char *`
+  in `heroes_runtime.h` failed *the list holds every word the runtime's headers write*
+  (`missing: unsigned`), 1,719 of 1,720; declared `const void *`, 1,720 of 1,720.
+- `layout_rows.hero` and `layout_text.hero` are back to `3c478500b` (the dump column is not read).
+
+| file | `+` / `-` against `3c478500b` | code lines (ceiling), `layout`'s count by the hook's mirror |
+|---|---|---|
+| `selfhost/emit/padding.hero` | +38 -52 | 284 -> **283** (300) |
+| `selfhost/emit/padding_tables.hero` | +49 -2 | 116 -> 153 (300) |
+| `selfhost/emit/membership.hero` | +139 -6 (of which the guard and its test moved in, and a 52-line test `heroes fmt` broke per field) | 75 -> 129 (300) |
+| `selfhost/emit/guarded_names.hero` | +1 -1 | 193 (300) |
+| `runtime/parts/lend.c`, `heroes_runtime.h`, `heroes_guard_open.h`, `heroes_guard_close.h` | +41, +3, +2, +2 | |
+
+**+90 code lines net** over three `selfhost/emit/` modules (the guard's move is net zero) and
+**+48 runtime lines**; no module over its ceiling, no `DECIDED` row; `layout` 6 passed, 0 failed.
+
+### 7b. The `run/` case
+
+`tests/golden/run/ffi-the-bits-beside-a-bit-field-are-zero.{hero,h,expected}`: six records C
+returns with every bit set, held in a field of the program's own record and lent; C compares what
+it receives with the same record built from zero bytes and the same members, and prints 0 per
+record where every byte agrees, so the line is the same on every layout. Its header comment says
+what it measures and what the compiler before printed, as the run form's cases do (no `#~`: it
+provokes no diagnostic).
+
+| compiler | this Mac | the box (MSVC layout) |
+|---|---|---|
+| landed (`3c478500b`) | `2 0 1 3 10 2` | `5 0 1 6 13 5` |
+| the route | **`0 0 0 0 0 0`** | **`0 0 0 0 0 0`** |
+
+**The `const` shape could not go in, and why**: a record holding a `const` member, bit-field or
+not, is refused by the **landed** compiler before any route. `<copy>/w/p6/cq.hero` (`struct cq {
+const unsigned k : 3; unsigned j : 2; int64_t n; }`, a field of the program's record) and
+`cq2.hero` (a lent local built `rest: zero`) both stop at `internal error: compiling the generated
+C failed`, clang's *cannot assign to variable 't1' with const-qualified data member 'k'*, plus
+`-Wdefault-const-init-field-unsafe` warnings: exit 2 on a correct binding. **A defect found beside
+the work, not filed here**; until it is repaired no program reaches change (3), so (3) is held by
+the compiler's own test `a named bit-field gives its bytes and its C name, a const one its bytes
+alone` (`encoded` over a `const unsigned int` member gives `c 0 1`), not by a run.
+
+### 7c. Measured on the final sources
+
+The route's compiler `heroes-next`, `--version` `sources 661c18886e93f5b8`, built on this Mac by
+`./heroes build selfhost/main.hero -o heroes-next` (exit 0); the same key built in the container and
+on the box from the same files.
+
+| instrument (command) | result |
+|---|---|
+| the compiler's own tests, `./heroes-next test selfhost/main.hero` | **1,720 tests, all passed** |
+| `run`, filtered: `... -- ./heroes-next run ffi-the-bits-beside` and `... run fixedbugs-156` | **1 passed, 0 failed**; **1 passed, 0 failed** |
+| `layout` | **6 passed, 0 failed** |
+| `wholes`, `descriptors` (on `64610a1f57f15711`, the build before the `const void *` repair, which moved only the header's parameter type and one cast in the constructor; neither suite reads either) | **630 / 0**, **630 / 0** |
+| `determinism` | **575 passed, 0 failed** |
+| `emission` | 690 passed, 611 failed: 1 is the new case, *nothing blessed* (the patch carries no `tests/emission/`, as asked); the 610 re-emitted (`<copy>/w/scripts/reemit.sh`, `xargs -P 6`) are **609 identical but the key line** (the runtime moved, panel 222's R4) and **1 moved**, `run-fixedbugs-156-records-beside-bit-fields-build.c` |
+| that file's every changed line, `python3 -I <copy>/w/scripts/classify.py <blessed> <new>` (`difflib` over both sides without the key line, each line matched to one class) | **+16 -2, 0 other**: `+6` macro guard of a bit-field's name, `+2` block braces, `+1` scratch object, `+1` scratch zeroed, `+1` decrement line, `+1` masks found, `+2` mask room and count, `+1` the store with its `hero_pad_clear`, `-1` the store before it, `+1 -1` `#line` |
+| MemorySanitizer, `docker run ... heroes-linux-arm64:latest bash /src/w/scripts/msan2.sh w/p1` (two stages in the container, `sources 661c18886e93f5b8`) | `pn.hero` **0/0/0/0/0** with the runtime as built and **0/0/0/0/0** with the plain `&=` variant; landed 1/0/0/0/0 (§ 1). Output `<copy>/w/p1/msan-final-arm64.txt` |
+| the lost-update race through Heroes, `race.hero`, this Mac, two runs each | atomic through `volatile`: **0**, **0**; plain: **40,814**, **53,734** |
+| the same on the box, stage 2 built there (`sources 661c18886e93f5b8`) | atomic: **0**, **0**; plain: **1,304,216**, **1,562,472** |
+| the value probe `vp.hero`, Mac and box (on `64610a1f57f15711`) | bytes identical to the dump route's on both layouts (§ 3c), every checksum `9510 743981 104 5167680 30510 1032` |
+
+### 7d. The patch
+
+`.claude/worktrees/223-compiler-engineer/route.patch`: `diff -ruN` of `selfhost/`, `runtime/` and
+`tests/golden/` between a `git archive 3c478500b` and the copy, `-p1`; eleven files, +344 -55
+lines; no `tests/emission/`, no seed. `sha256 0dc4a371d79faffccc2c0763931c3073e0587966d813ce20e0a17eb4d60a7aea`.
+`git apply --check -p1` on a fresh `git archive 3c478500b`: applies cleanly. Applied there, stage 1
+from the seed and stage 2 (`./heroes build selfhost/main.hero -o heroes-next`, exit 0) report
+**`sources 661c18886e93f5b8`**, the key every measurement of 7c names: the patch is what was run.
+
+### 7e. What the verdict and the conditions become
+
+My verdict on the adopted route is **approve**, unchanged; the change to C's own bits removes the
+one premise my route carried (the dump's numbering) and the `_Static_assert` with it, which is
+better than what I built. Conditions 1 to 3 of § 4 are met in the patch (283 of 300; the case,
+layout-independent, so no second blessing; every moved line classified, 0 other). Condition 4's
+sentence reads, with the three changes: *... and in a byte a named bit-field shares, the bits no
+named bit-field holds are cleared by an atomic `and`, so no bit a named bit-field holds is ever
+written, even while a thread C runs writes it, and a byte a `const` bit-field holds is never
+written (`emit/padding.hero`). Every span is clang's `offsetof` and `sizeof` of a member, and every
+bit-field's bits C's own, `--` on each of a zeroed object, in a table each unit writes once, a
+member's own name guarded from the header's macros; the gaps and the masks are found once, before
+`main`, and a lend only writes them.* **§ 5's prediction, restated for this route**: at the landing
+commit, `emission` moves exactly 1 blessed emission beyond its key line (`fixedbugs-156`), and the
+classifying script reads 0 lines outside 7c's classes.
+
+**Unrun**: `emit`, `lldb`, `runtime` and the full net on the final sources (`emit` read 12 failed,
+all key-line only, on the dump route, § 3e); a seed regenerated and its fixpoint; Linux x86-64;
+the per-lend time of the final route (the clear's body moved to `volatile`; not re-taken, the
+Mac's load average reading 8.50 at 19:17, other sessions' work, which no clock may run beside);
+the `const` exception through a program (unreachable, 7b).

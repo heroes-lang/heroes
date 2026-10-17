@@ -259,7 +259,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4bfe6ab2656e14d3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f25647c16227d52", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_deadhandlereadbycthroughacellitshouldonlywrite_main();

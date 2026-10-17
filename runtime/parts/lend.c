@@ -528,6 +528,47 @@ void hero_pad_fill(void *p, size_t size, size_t count, const size_t *gaps, size_
         for (size_t g = 0; g < ngaps; g++) memset(b + k * size + gaps[2 * g], 0, gaps[2 * g + 1]);
 }
 
+/* The bytes named bit-fields share with bits no named bit-field holds (panel
+ * 223, defect 2099), as offset and bits-to-keep pairs into `masks`, and how
+ * many. `object` is the `size` bytes of a zeroed record on which the unit's
+ * constructor ran `--` on each named bit-field, so C itself set exactly their
+ * bits, on any ABI and either byte order. A byte one of the first `nfull`
+ * spans covers is a whole member's (another arm of a union, or a `const`
+ * bit-field's, which no write may reach) and is left out, as is a byte no
+ * named bit-field touches or every bit of which one holds. At most `room`
+ * bytes, the sum of each bit-field's own. Called once per table, before
+ * `main`, after `hero_pad_gaps`. */
+size_t hero_pad_masks(const size_t *spans, size_t nfull, const void *object, size_t size, size_t *masks, size_t room) {
+    const unsigned char *image = object;
+    size_t count = 0;
+    for (size_t at = 0; at < size; at++) {
+        if (image[at] == 0 || image[at] == 0xFF) continue;
+        int whole = 0;
+        for (size_t s = 0; s < nfull; s++)
+            if (spans[2 * s] <= at && at < spans[2 * s] + spans[2 * s + 1]) whole = 1;
+        if (whole) continue;
+        if (count == room) hero_panic("a bit-field table gave more bytes than it has room for — this is a compiler bug, please report it");
+        masks[2 * count] = at;
+        masks[2 * count + 1] = image[at];
+        count++;
+    }
+    return count;
+}
+
+/* The bits no named bit-field holds, in each byte one shares, written zero in
+ * `count` records laid end to end from `p` (panel 223). An atomic `and` per
+ * byte, through a `volatile` byte so it is neither merged nor dropped: a bit
+ * a named bit-field holds is never written, even while a thread C runs writes
+ * that bit-field under its own lock, where a plain read, `and` and write put
+ * back values C had replaced (measured on three legs,
+ * docs/panel/223-reports/compiler-engineer.md). */
+void hero_pad_clear(void *p, size_t size, size_t count, const size_t *masks, size_t n) {
+    volatile unsigned char *b = p;
+    for (size_t k = 0; k < count; k++)
+        for (size_t i = 0; i < n; i++)
+            (void)__atomic_fetch_and(b + k * size + masks[2 * i], (unsigned char)masks[2 * i + 1], __ATOMIC_RELAXED);
+}
+
 void hero_lend_local_give(void *local) {
     if (hero_lend_depth < 1) hero_panic("a local lent to C was given back twice — this is a compiler bug, please report it");
     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];

@@ -189,23 +189,37 @@ __attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof
 #pragma pop_macro("kind")
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((unused)) static size_t hero_pad_m_0[10];
+__attribute__((unused)) static size_t hero_pad_mn_0;
 __attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(UNNAMED *)hero_pad_nowhere()) == 13 ? sizeof(UNNAMED) : 0), __builtin_offsetof(UNNAMED, a), sizeof(((UNNAMED *)0)->a), __builtin_offsetof(UNNAMED, b), sizeof(((UNNAMED *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(BF), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     hero_pad_n_1 = hero_pad_gaps(sizeof(UNNAMED), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+    {
+        BF hero_pad_o;
+        __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o);
+    #pragma push_macro("flag")
+    #undef flag
+    #pragma push_macro("rest")
+    #undef rest
+        hero_pad_o.flag--; hero_pad_o.rest--;
+    #pragma pop_macro("flag")
+    #pragma pop_macro("rest")
+        hero_pad_mn_0 = hero_pad_masks(hero_pad_t_0, 1, &hero_pad_o, sizeof hero_pad_o, hero_pad_m_0, 5);
+    }
 }
 
 
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) { BF h0_built; UNNAMED h1_u; HERO_NODEBUG BF t1, t4; HERO_NODEBUG int32_t t2, t3, t5, t6, t7, t13, t15, t16; HERO_NODEBUG UNNAMED t8, t9, t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG ZEROW t14; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = make_bf(); t2 = t1.kind; hero_print_int(t2); hero_print_end();
-    t3 = INT64_C(9); t4 = (BF){.kind = t3}; h0_built = t4; hero_pad_fill(&h0_built, sizeof(BF), 1, hero_pad_g_0, hero_pad_n_0);
+    t3 = INT64_C(9); t4 = (BF){.kind = t3}; h0_built = t4; hero_pad_fill(&h0_built, sizeof(BF), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_built, sizeof(BF), 1, hero_pad_m_0, hero_pad_mn_0);
     t5 = h0_built.kind; hero_print_int(t5); hero_print_end();
     t6 = INT64_C(1); t7 = INT64_C(2); t8 = (UNNAMED){.a = t6, .b = t7}; h1_u = t8; hero_pad_fill(&h1_u, sizeof(UNNAMED), 1, hero_pad_g_1, hero_pad_n_1);
     t9 = h1_u; t10 = make_unnamed(); t11 = h_fixedbugs156recordsbesidebitfieldsbuild_UNNAMED_eq(&t9, &t10); t12 = HERO_STR_LIT(hero_str_20); t13 = h1_u.b; t14 = make_zerow(); t15 = t14.b; if (__builtin_add_overflow(t13, t15, &t16)) hero_panic_overflow(); hero_print_bool(t11); hero_print_str(t12); hero_print_int(t16); hero_print_end(); return;
-#line 209 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 223 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b) {
     hero_panic("h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq: a partial record has no structural equality");
@@ -308,7 +322,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("654c26852ee70c38", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5873204f5f9b74b6", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs156recordsbesidebitfieldsbuild_main();

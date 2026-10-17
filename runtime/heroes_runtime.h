@@ -742,6 +742,9 @@ void hero_lend_local_give(void *);
 /* A padding table's gaps, found once, and written zero at each lend (panel 215's R1). */
 size_t hero_pad_gaps(size_t, const size_t *, size_t, size_t *);
 void hero_pad_fill(void *, size_t, size_t, const size_t *, size_t);
+/* The bits beside a named bit-field: masks found once from C's own bits, cleared atomically at each lend (panel 223). */
+size_t hero_pad_masks(const size_t *, size_t, const void *, size_t, size_t *, size_t);
+void hero_pad_clear(void *, size_t, size_t, const size_t *, size_t);
 
 /* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
  *

@@ -249,7 +249,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("41a9fe547a5a2298", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("34d0f81e2b0e8b17", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent_main();

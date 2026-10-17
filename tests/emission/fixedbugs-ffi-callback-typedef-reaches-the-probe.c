@@ -244,7 +244,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ad5ac0466b6b39d", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5dfca5ce176b1c1c", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fficallbacktypedefreachestheprobe_main();

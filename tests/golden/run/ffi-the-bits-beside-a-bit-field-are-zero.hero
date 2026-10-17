@@ -1,0 +1,58 @@
+# Panel 223, defect 2099, 2026-10-17: in a byte a named bit-field shares,
+# the bits no named bit-field holds are written zero before C reads the
+# record, and no bit a named bit-field holds is written. Each record C
+# returns with every bit set is stored in a field of the program's own
+# record and lent; C compares what it receives with the same record built
+# from zero bytes, and prints 0 where every byte agrees. Measured on this
+# Mac before the repair: `2 0 1 3 10 2`, bytes 1, 0, 2, 9 and 1 kept as C
+# left them, the union's bytes kept; under it the line below, on the MSVC
+# layout too.
+
+extern "ffi-the-bits-beside-a-bit-field-are-zero.h"
+    record Bf tag bf partial
+        a: i8
+        d: f64
+    record Ux tag ux partial
+        k: i32
+    record Gp tag gp partial
+        z: i8
+    record Md tag md partial
+        lo: u8
+        n: i64
+    record Ob tag ob partial
+        k: i32
+        inr: Bf
+    record Ar tag ar partial
+        e: Bf[2]
+        n: i32
+    function mk_bf() -> Bf
+    function mk_ux() -> Ux
+    function mk_gp() -> Gp
+    function mk_md() -> Md
+    function mk_ob() -> Ob
+    function mk_ar() -> Ar
+    function check_bf(@p: Bf) -> i64
+    function check_ux(@p: Ux) -> i64
+    function check_gp(@p: Gp) -> i64
+    function check_md(@p: Md) -> i64
+    function check_ob(@p: Ob) -> i64
+    function check_ar(@p: Ar) -> i64
+
+record Held
+    bf: Bf
+    ux: Ux
+    gp: Gp
+    md: Md
+    ob: Ob
+    ar: Ar
+    k: i64
+
+function main()
+    h: Held @= Held(bf: mk_bf(), ux: mk_ux(), gp: mk_gp(), md: mk_md(), ob: mk_ob(), ar: mk_ar(), k: 1)
+    a = check_bf(@h.bf)
+    b = check_ux(@h.ux)
+    c = check_gp(@h.gp)
+    d = check_md(@h.md)
+    e = check_ob(@h.ob)
+    f = check_ar(@h.ar)
+    print(a, " ", b, " ", c, " ", d, " ", e, " ", f)

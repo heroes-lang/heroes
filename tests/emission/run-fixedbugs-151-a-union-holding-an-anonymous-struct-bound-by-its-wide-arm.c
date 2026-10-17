@@ -240,7 +240,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("08bdfa5160b05830", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7be4f41a1164c0af", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_main();

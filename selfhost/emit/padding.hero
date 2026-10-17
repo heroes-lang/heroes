@@ -25,9 +25,14 @@
 # elements (`a[k]`), as are the elements of an array lent through `@`, in the
 # region `hero_lend_take` fills (`emit/lend_buffer.hero`).
 #
-# **WHAT IT LEAVES, each filed as an issue at the landing**: the padding BITS
-# inside a byte a named bit-field holds (a whole byte is written or none); a
-# C array of structs the binding does not declare as a fixed array of a group
+# **AND THE BITS BESIDE A NAMED BIT-FIELD** (panel 223, defect 2099): in a
+# byte one shares, the bits no named bit-field holds are written zero by an
+# atomic `and`, each byte's mask found once before `main` by C itself, `--` on
+# each named bit-field of a zeroed object (`emit/padding_tables.hero`), so no
+# bit a named bit-field holds is written, even while C's own thread writes it;
+# a byte a `const` bit-field holds is held whole and never written.
+#
+# **WHAT IT LEAVES, each filed as an issue at the landing**: a C array of structs the binding does not declare as a fixed array of a group
 # record, covered whole (the dump prints it as one line); the bytes past a
 # union's widest arm where the union is taken by its declared arms; a record
 # handed to C BY VALUE, which is no lend; and a record whose dump this reader
@@ -58,6 +63,9 @@ use emit/membership
 # arrays of records among them, whose elements are zeroed one by one.
 record Held
     spans: [str]
+    # Each named bit-field's bytes, after `spans` in the table, and its C name.
+    bitspans: [str]
+    bits: [str]
     arrays: [Nested]
     # The C names a layout dump spelled in `spans`, each a member's own name,
     # which no header macro may rewrite (`guarded`).
@@ -118,6 +126,11 @@ function gaps_of(decl: i64) -> str
 function count_of(decl: i64) -> str
     return "hero_pad_n_" + decl.to_str()
 
+# The bit-fields' tables of record `decl`: `m` the masks found
+# from them, `mn` how many (panel 223).
+function bit_table(kind: str, decl: i64) -> str
+    return "hero_pad_" + kind + "_" + decl.to_str()
+
 # The lines that zero `count` records of `decl` laid end to end from `base`:
 # one call reading the record's table, then each array of records a member
 # holds, element by element. None where the record has no table.
@@ -125,11 +138,16 @@ function passes(c: state.Checked, names: ctype.Names, s: source.Source, decls: [
     t = ctype.of(names, decl: decl)
     held = members(c, names, s, decls, decl: decl, t: t, prefix: "", at: "0")
 
-    if held.is_err() || held.must().spans.len() == 0
+    if held.is_err() || held.must().spans.len() + held.must().bitspans.len() == 0
         return []
     out: [str] @= [
         "hero_pad_fill(" + base + ", sizeof(" + t + "), " + count + ", " + gaps_of(decl) + ", " + count_of(decl) + ");"
     ]
+
+    if held.must().bits.len() > 0
+        out @ out.push(
+            "hero_pad_clear(" + base + ", sizeof(" + t + "), " + count + ", " + bit_table("m", decl: decl) + ", " + bit_table("mn", decl: decl) + ");"
+        )
 
     for one in held.must().arrays
         k = "hero_pad_k" + depth.to_str()
@@ -152,6 +170,8 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
     if said.is_err()
         return fail(code: "none", msg: "the layout round said nothing of this record")
     spans: [str] @= []
+    bitspans: [str] @= []
+    bits: [str] @= []
     arrays: [Nested] @= []
     bare: {str: bool} @= {}
 
@@ -183,6 +203,8 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
 
             if !sub.is_err()
                 spans @ joined(list: spans, more: sub.must().spans)
+                bitspans @ joined(list: bitspans, more: sub.must().bitspans)
+                bits @ joined(list: bits, more: sub.must().bits)
 
                 # ORDER: none — each name is set in another map, whose one
                 # reader sorts it (`guarded`).
@@ -202,7 +224,7 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
             arrays @ arrays.push(Nested(path: path, element: inner))
 
     if said.must() == membership.DECLARED
-        return ok(Held(spans: spans, arrays: arrays, bare: bare))
+        return ok(Held(spans: spans, bitspans: bitspans, bits: bits, arrays: arrays, bare: bare))
     d = ctype.of(names, decl: decl)
 
     for entry in membership.entries(said.must())
@@ -219,46 +241,21 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
                 list: spans,
                 more: ["__builtin_offsetof(" + t + ", " + prefix + rest + ")", "sizeof(" + d + ") - __builtin_offsetof(" + d + ", " + rest + ")"]
             )
-        else if entry[0] == 'n'
-            gap = membership.space_in(rest)
+        else if entry[0] == 'n' || entry[0] == 'c'
+            found = membership.bit_entry(rest: rest, at: at)
 
-            if gap < 0
-                return fail(code: "none", msg: "a bit-field's entry is not two numbers")
-            spans @ joined(
-                list: spans,
-                more: ["(" + at + ") + " + rest.slice(from: 0, to: gap), rest.slice(from: gap + 1, to: rest.len())]
-            )
+            if found.is_err()
+                return fail(code: "none", msg: "a bit-field's entry this reader cannot read")
+
+            if entry[0] == 'c'
+                spans @ joined(list: spans, more: found.must().span)
+            else
+                bitspans @ joined(list: bitspans, more: found.must().span)
+                bits @ bits.push(prefix + found.must().path)
         else
             return fail(code: "none", msg: "an entry of a kind this reader does not know")
 
-    return ok(Held(spans: spans, arrays: arrays, bare: bare))
-
-# **A member's own name is spelled where no header macro reaches it.** The
-# dump names the members as C declares them, and a header may define a macro
-# of a member's name: `#define fd via.fd` makes `s.fd` read `s.via.fd`, which
-# a field the program declares relies on (defect 2062), and turns the dump's
-# `via.fd` into `via.via.fd`, which clang refused, exit 2 on a correct program
-# (`run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own`,
-# found at panel 215's landing). So each such name is saved, undefined for
-# the one line that spells it, and restored, whether or not it was a macro:
-# `push_macro` of a name with no definition restores it as none.
-#
-# ORDER: by the name's bytes — the `#pragma` lines of the emitted C, which a
-# second emission of the same input gives alike (the `determinism` suite).
-function guarded(names: {str: bool}, line: str) -> [str]
-    held = sort(keys(names))
-    out: [str] @= []
-
-    for name in held
-        out @ out.push("#pragma push_macro(\"" + name + "\")")
-        out @ out.push("#undef " + name)
-
-    out @ out.push(line)
-
-    for name in held
-        out @ out.push("#pragma pop_macro(\"" + name + "\")")
-
-    return out
+    return ok(Held(spans: spans, bitspans: bitspans, bits: bits, arrays: arrays, bare: bare))
 
 # **A union the screen vouches for is covered whole.** A record bound to a
 # union by one arm (`record UN` over `typedef union { char c; double d; } UN;`
@@ -338,14 +335,3 @@ function fields_of(decls: [ast.Decl], decl: i64) -> [ast.Field]
         .constant_decl | .function_decl | .variant_decl | .test_decl => return []
 
     return []
-
-test "a name the dump spelled is undefined for the one line that spells it, and restored"
-    named: {str: bool} @= {}
-    named["fd"] @ true
-    named["via"] @ true
-    got = guarded(names: named, line: "x;")
-    assert got[0] == "#pragma push_macro(\"fd\")" && got[1] == "#undef fd"
-    assert got[4] == "x;"
-    assert got[5] == "#pragma pop_macro(\"fd\")" && got[6] == "#pragma pop_macro(\"via\")"
-    none: {str: bool} = {}
-    assert guarded(names: none, line: "x;") == ["x;"]

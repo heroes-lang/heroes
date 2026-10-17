@@ -16,6 +16,8 @@ use emit/writer
 use emit/ctype
 use emit/lend_count
 use emit/padding
+use emit/membership
+use emit/layout_rows
 
 # The tables of every group record the functions `at` lend, written once at
 # file scope before their bodies (`table_of`): each record's spans, its own
@@ -60,6 +62,7 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
     writer.line(@w, text: "void *" + padding.NOWHERE + "(void);")
 
     found: [i64] @= []
+    masked: [str] @= []
 
     # ORDER: by declaration, so the unit's text is a function of the program.
     for decl in sort(keys(lent))
@@ -67,9 +70,9 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
 
         if !held.is_err()
             spans_at = padding.table_of(decl)
-            line = "__attribute__((unused)) static const size_t " + spans_at + "[] = {" + held.must().spans.join(", ") + "};"
+            line = "__attribute__((unused)) static const size_t " + spans_at + "[] = {" + padding.joined(list: held.must().spans, more: held.must().bitspans).join(", ") + "};"
 
-            for text in padding.guarded(names: held.must().bare, line: line)
+            for text in membership.guarded(names: held.must().bare, line: line)
                 writer.line(@w, text: text)
 
             # Room for one more gap than the table has spans, the most
@@ -80,6 +83,10 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
             )
             writer.line(@w, text: "__attribute__((unused)) static size_t " + padding.count_of(decl) + ";")
             found @ found.push(decl)
+
+            if held.must().bits.len() > 0
+                for step in bit_tables(@w, decl: decl, held: held.must(), t: ctype.of(names, decl: decl))
+                    masked @ masked.push(step)
 
     # A type's gaps never change, so they are found once, before `main` and
     # before any thread, and a lend only writes.
@@ -93,9 +100,49 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
                 text: "    " + padding.count_of(decl) + " = hero_pad_gaps(sizeof(" + ctype.of(names, decl: decl) + "), " + spans_at + ", sizeof " + spans_at + " / (2 * sizeof(size_t)), " + padding.gaps_of(decl) + ");"
             )
 
+        for line in masked
+            writer.line(@w, text: "    " + line)
+
         writer.line(@w, text: "}")
 
     writer.blank(@w)
+
+# A record's bit-field tables (panel 223, defect 2099): room for a mask per
+# byte its named bit-fields reach and how many masks there are, at file scope;
+# and the constructor's block that finds them, the answer. C finds the bits
+# itself, endianness and ABI alike: `--` on each named bit-field of a zeroed
+# object sets exactly its bits, all of them, whatever its type, and
+# `hero_pad_masks` reads the object's bytes. Each name the block spells is
+# guarded from the header's macros, as a member's is in the table.
+function bit_tables(@w: writer.Writer, decl: i64, held: padding.Held, t: str) -> [str]
+    room: i64 @= 0
+    k: i64 @= 1
+
+    while k < held.bitspans.len()
+        room @ room + layout_rows.leading_number(held.bitspans[k])
+        k @ k + 2
+
+    m = padding.bit_table("m", decl: decl)
+    writer.line(@w, text: "__attribute__((unused)) static size_t " + m + "[" + (2 * room).to_str() + "];")
+    writer.line(@w, text: "__attribute__((unused)) static size_t " + padding.bit_table("mn", decl: decl) + ";")
+    spelled: {str: bool} @= {}
+    steps: [str] @= []
+
+    for path in held.bits
+        steps @ steps.push("hero_pad_o." + path + "--;")
+
+        for name in membership.names_in(path)
+            spelled[name] @ true
+
+    out: [str] @= ["{", "    " + t + " hero_pad_o;", "    __builtin_memset(&hero_pad_o, 0, sizeof hero_pad_o);"]
+
+    for line in membership.guarded(names: spelled, line: "    " + steps.join(" "))
+        out @ out.push(line)
+
+    out @ out.push(
+        "    " + padding.bit_table("mn", decl: decl) + " = hero_pad_masks(" + padding.table_of(decl) + ", " + (held.spans.len() / 2).to_str() + ", &hero_pad_o, sizeof hero_pad_o, " + m + ", " + room.to_str() + ");"
+    )
+    return out.push("}")
 
 # The group records one extern call lends: the record, or fixed array of
 # records, each `@` argument is, and the element of each array whose buffer
