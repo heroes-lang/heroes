@@ -9,9 +9,11 @@
 # constant evaluator does, and at `-O2` it does not (the critic, on both seats'
 # prototypes: `S_BCPV` refused and `S_BCPM` kept at the program's `-O2`).
 #
-# **Cold only, and not for every unit**: an accessor whose value holds no name
-# and no brace list reaches nothing a dump would show, so a unit of literal
-# macros asks no dump (`value_text.reaches`); the verdict is kept under
+# **Cold only, one dump per asked unit, and no C text read**: which accessor
+# reaches an initialiser is clang's dump's answer, never a scan of the
+# preprocessed text (panel 220: a `;` inside a literal cut such a scan short,
+# `';' + HS_EA` built). A unit none of whose accessors reaches one runs no
+# probe, its canary read from the walk alone; the verdict is kept under
 # `build/init-<key>/`, so a warm build asks nothing.
 
 use emit/value_probe
@@ -60,31 +62,23 @@ function asked(t: toolchain.Toolchain, one: value_run.Unit, accessors: [value_pr
 
     if plain.is_err()
         plain @ ok(value_run.preprocessed(dir: dir, one: one, defines: false)?)
-    wanted: [i64] @= []
-    index: i64 @= 0
-
-    for accessor in accessors
-        if value_text.reaches(text: plain.must(), accessor: accessor.name)
-            wanted @ wanted.push(index)
-        index @ index + 1
-
-    said: str @= ""
-
-    if wanted.len() > 0
-        said @ questioned(t, dir: dir, one: one, accessors: accessors, wanted: wanted, base: plain.must() + CANARY)?
+    said = questioned(t, dir: dir, one: one, accessors: accessors, base: plain.must() + CANARY)?
     kept_answers.write(path: dir + "/verdict.txt", text: said)?
     return ok(said)
 
 # The dump of `base`, its questions, and their probe at `-O0`, read into the
-# verdict's lines.
-function questioned(t: toolchain.Toolchain, dir: str, one: value_run.Unit, accessors: [value_probe.Accessor], wanted: [i64], base: str) -> str?
+# verdict's lines; no probe where no asked accessor reaches a question.
+function questioned(t: toolchain.Toolchain, dir: str, one: value_run.Unit, accessors: [value_probe.Accessor], base: str) -> str?
     tree = dumped(dir: dir, one: one, base: base)?
     names: [str] @= ["hero_c2_canary_u", "hero_c2_canary_d"]
 
-    for index in wanted
-        names @ names.push(accessors[index].name)
+    for accessor in accessors
+        names @ names.push(accessor.name)
 
     qs = value_init.questions(tree, text: base, names: names)
+
+    if !reached(qs)
+        return canary_read(qs)
     functions: [str] @= []
     cases: [str] @= []
     index: i64 @= 0
@@ -98,7 +92,29 @@ function questioned(t: toolchain.Toolchain, dir: str, one: value_run.Unit, acces
     object = value_run.compiled(dir: dir, one: one, text: text, level: "-O0")?
     said = value_run.linked_and_run(t, dir: dir, object: object, total: 2 + qs.len(), level: "-O0")
     publish.discard(object)
-    return lines_of(findings: said?, qs: qs, wanted: wanted, base: base)
+    return lines_of(findings: said?, qs: qs, base: base)
+
+# Whether an asked accessor, the two canaries aside, reaches a question.
+function reached(qs: [value_init.Question]) -> bool
+    for q in qs
+        for reader in q.readers
+            if reader >= 2
+                return true
+
+    return false
+
+# Where no asked accessor reaches an initialiser, no probe runs: the canary is
+# read from the walk alone, its undefined enumerator's initialiser reached
+# through the second and sliced whole, or the dump was not read.
+function canary_read(qs: [value_init.Question]) -> str?
+    for q in qs
+        if q.member == "hero_c2_ua" && q.text == "1 << 31"
+            return ok("")
+
+    return fail(
+        code: "broken",
+        msg: "internal error: the walk of clang's dump did not reach the undefined canary of a header constant's initialiser, so the dump was not read"
+    )
 
 # clang's JSON dump of `base`, under the unit's words, read as a tree.
 function dumped(dir: str, one: value_run.Unit, base: str) -> clang_tree.Tree?
@@ -138,7 +154,7 @@ function dumped(dir: str, one: value_run.Unit, base: str) -> clang_tree.Tree?
 # A probe's findings as the verdict's lines, each refused accessor told once,
 # from the first finding that names it; the canaries' answers checked, the
 # undefined one's question trapped and no defined one's refused.
-function lines_of(findings: str, qs: [value_init.Question], wanted: [i64], base: str) -> str?
+function lines_of(findings: str, qs: [value_init.Question], base: str) -> str?
     out: [str] @= []
     seen: {i64: bool} @= {}
     canary: bool @= false
@@ -171,11 +187,11 @@ function lines_of(findings: str, qs: [value_init.Question], wanted: [i64], base:
 
             if reader == 0
                 canary @ canary || kind == "trap"
-            else if seen[wanted[reader - 2]].is_err()
-                seen[wanted[reader - 2]] @ true
+            else if seen[reader - 2].is_err()
+                seen[reader - 2] @ true
                 place = value_text.presumed(base, at: q.begin).default(value_text.Place(file: "", line: 0))
                 out @ out.push(
-                    "init " + kind + " " + wanted[reader - 2].to_str() + "\t" + place.line.to_str() + "\t" + place.file + "\t" + q.member
+                    "init " + kind + " " + (reader - 2).to_str() + "\t" + place.line.to_str() + "\t" + place.file + "\t" + q.member
                 )
 
     if !canary

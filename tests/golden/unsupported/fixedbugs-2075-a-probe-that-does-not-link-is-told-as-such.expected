@@ -1,4 +1,4 @@
-error[ffi_constant_type]: `U_VALUE` in `fixedbugs-2075-unlinked.h` cannot be read as C computes it: the program's own unit, run to read the header's values, did not link with the runtime alone: `unlinked_somewhere` is undefined there, which is the header's own code, a constructor, a function marked `used` or a value's own call, reaching a library
+error[ffi_constant_type]: `U_VALUE` in `fixedbugs-2075-unlinked.h` cannot be read as C computes it: the program's own unit, run to read the header's values, did not link with the runtime alone: `unlinked_somewhere` is undefined there, which is what the header names reaching what a library defines: a constructor, a function marked `used`, a value's own call, or an object the value reads
   at tests/golden/unsupported/fixedbugs-2075-a-probe-that-does-not-link-is-told-as-such.hero:11:5
      |
   11 |     constant U_VALUE: i32  #~ ffi_constant_type

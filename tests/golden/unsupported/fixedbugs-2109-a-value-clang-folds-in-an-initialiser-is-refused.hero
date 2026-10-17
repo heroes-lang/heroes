@@ -14,7 +14,10 @@
 # object, a brace list leaf by leaf, a chain through a second enumerator, an
 # enumerator whose type moves when its enum completes, one with no initialiser
 # (its predecessor asked), and a macro naming a const object, each told
-# naming the declaration whose initialiser traps and its line.
+# naming the declaration whose initialiser traps and its line; and the three
+# panel 220 and 221 found: a value with a `;` inside a literal (`K_QCH`), an
+# array filled in part (`R_FILL`, clang's `array_filler`), and a leaf
+# converted to an enumeration with no name (`R_AE`).
 
 extern "fixedbugs-2109-folded.h"
     record Pair tag pair
@@ -28,6 +31,15 @@ extern "fixedbugs-2109-folded.h"
     constant IC: i32  #~ ffi_constant_type
     constant M_OBJ: i32  #~ ffi_constant_type
     constant M_ROBJ: Pair  #~ ffi_constant_type
+    record Holder tag holder
+        a: i32[2]
+        b: i32
+    record Ae tag ae
+        k: u32
+        y: i32
+    constant K_QCH: i32  #~ ffi_constant_type
+    constant R_FILL: Holder  #~ ffi_constant_type
+    constant R_AE: Ae  #~ ffi_constant_type
 
 function main()
     print(E_SHIFT)

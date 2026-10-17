@@ -165,14 +165,23 @@ function leaves(@out: [Question], @seen: {str: i64}, @pending: [str], tree: clan
     if one.kind == "ImplicitValueInitExpr" || one.begin < 0 || one.end < 0
         return
     reached(@pending, tree: tree, at: at)
-    cast = arithmetic(one)
+    sliced = spliced(tree, text: text, at: at)
+    cast: str @= arithmetic(one)
+
+    # An enumeration clang names `(unnamed ...)`, `enum ae::(unnamed at f.h:3:13)`
+    # read through, has no spelling, so its
+    # leaf is asked at its own type and every operation in it is still checked
+    # (panel 220's hole 2: `{ (unsigned)(INT_MIN / -1), 2 }` into such a field
+    # was never asked and built).
+    if cast.len() == 0 && strings.starts_with(text: bare(one), prefix: "enum ") && strings.holds(text: bare(one), needle: "(")
+        cast @ "__typeof__((" + sliced + "))"
 
     if cast.len() > 0
         add(
             @out,
             @seen,
             key: "leaf " + at.to_str(),
-            q: Question(member: owner, leaf: true, text: spliced(tree, text: text, at: at), cast: cast, begin: one.begin, readers: []),
+            q: Question(member: owner, leaf: true, text: sliced, cast: cast, begin: one.begin, readers: []),
             reader: reader
         )
 
@@ -245,16 +254,7 @@ function constant_object(tree: clang_tree.Tree, at: i64) -> bool
 # read through, an `enum` counted, anything else (a pointer, an array, a
 # record, a type clang names `(unnamed ...)`) not.
 function arithmetic(one: clang_tree.Node) -> str
-    t: str @= one.qual
-
-    if one.desugared.len() > 0
-        t @ one.desugared
-
-    while strings.starts_with(text: t, prefix: "const ") || strings.starts_with(text: t, prefix: "volatile ")
-        if strings.starts_with(text: t, prefix: "const ")
-            t @ t.slice(from: 6, to: t.len())
-        else
-            t @ t.slice(from: 9, to: t.len())
+    t = bare(one)
 
     if strings.holds(text: t, needle: "(") || strings.holds(text: t, needle: "[") || strings.holds(text: t, needle: "*")
         return ""
@@ -267,6 +267,21 @@ function arithmetic(one: clang_tree.Node) -> str
             return t
 
     return ""
+
+# A node's type, its typedef read through and its qualifiers taken off.
+function bare(one: clang_tree.Node) -> str
+    t: str @= one.qual
+
+    if one.desugared.len() > 0
+        t @ one.desugared
+
+    while strings.starts_with(text: t, prefix: "const ") || strings.starts_with(text: t, prefix: "volatile ")
+        if strings.starts_with(text: t, prefix: "const ")
+            t @ t.slice(from: 6, to: t.len())
+        else
+            t @ t.slice(from: 9, to: t.len())
+
+    return t
 
 constant ARITHMETIC: [str]
     [

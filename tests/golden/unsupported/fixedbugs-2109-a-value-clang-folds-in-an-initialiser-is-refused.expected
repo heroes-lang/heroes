@@ -1,68 +1,87 @@
-In file included from build/tu-38b0a31177f9651b/fixedbugs2109avalueclangfoldsinaninitialiserisrefused.c:22:
-tests/golden/unsupported/fixedbugs-2109-folded.h:9:35: warning: overflow in expression; result is -2'147'483'648 with type 'int' [-Winteger-overflow]
-    9 | enum T { TA = 2147483647, TB = TA + 1, TBIG = 0x100000000LL };
-      |                                ~~~^~~
-1 warning generated.
 error[ffi_constant_type]: `E_SHIFT` in `fixedbugs-2109-folded.h` cannot be declared `i32`: clang refuses the header's value at line 4: its initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
-  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:23:5
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:26:5
      |
-  23 |     constant E_SHIFT: i32  #~ ffi_constant_type
+  26 |     constant E_SHIFT: i32  #~ ffi_constant_type
      |     ^^^^^^^^^^^^^^^^^^^^^
   note: `fixedbugs-2109-folded.h` line 4 reads `enum { E_SHIFT = 1 << 31 };`
   note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `E_SHIFT` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
 
 error[ffi_constant_type]: `S_DIV` in `fixedbugs-2109-folded.h` cannot be declared `i32`: clang refuses the header's value at line 5: its initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
-  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:24:5
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:27:5
      |
-  24 |     constant S_DIV: i32  #~ ffi_constant_type
+  27 |     constant S_DIV: i32  #~ ffi_constant_type
      |     ^^^^^^^^^^^^^^^^^^^
   note: `fixedbugs-2109-folded.h` line 5 reads `static const int S_DIV = INT_MIN / -1;`
   note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `S_DIV` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
 
 error[ffi_constant_type]: `R_BRACE` in `fixedbugs-2109-folded.h` cannot be declared `Pair`: clang refuses the header's value at line 7: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
-  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:25:5
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:28:5
      |
-  25 |     constant R_BRACE: Pair  #~ ffi_constant_type
+  28 |     constant R_BRACE: Pair  #~ ffi_constant_type
      |     ^^^^^^^^^^^^^^^^^^^^^^
   note: `fixedbugs-2109-folded.h` line 7 reads `#define R_BRACE { INT_MIN / -1, 2 }`
   note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `R_BRACE` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
 
 error[ffi_constant_type]: `EB` in `fixedbugs-2109-folded.h` cannot be declared `i32`: clang refuses the header's value at line 8: it reads `EA`, whose initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
-  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:26:5
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:29:5
      |
-  26 |     constant EB: i32  #~ ffi_constant_type
+  29 |     constant EB: i32  #~ ffi_constant_type
      |     ^^^^^^^^^^^^^^^^
   note: `fixedbugs-2109-folded.h` line 8 reads `enum { EA = 1 << 31, EB = EA + 1 };`
   note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `EB` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
 
-error[ffi_constant_type]: `TB` in `fixedbugs-2109-folded.h` cannot be declared `i64`: clang refuses the header's value at line 9: its initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
-  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:27:5
+error[ffi_constant_type]: `K_QCH` in `fixedbugs-2109-folded.h` cannot be declared `i32`: clang refuses the header's value at line 8: it reads `EA`, whose initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:40:5
      |
-  27 |     constant TB: i64  #~ ffi_constant_type
-     |     ^^^^^^^^^^^^^^^^
-  note: `fixedbugs-2109-folded.h` line 9 reads `enum T { TA = 2147483647, TB = TA + 1, TBIG = 0x100000000LL };`
-  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `TB` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
-
-error[ffi_constant_type]: `IC` in `fixedbugs-2109-folded.h` cannot be declared `i32`: clang refuses the header's value at line 10: it reads `IA`, whose initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
-  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:28:5
-     |
-  28 |     constant IC: i32  #~ ffi_constant_type
-     |     ^^^^^^^^^^^^^^^^
-  note: `fixedbugs-2109-folded.h` line 10 reads `enum { IA = 1 << 31, IB, IC };`
-  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `IC` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
-
-error[ffi_constant_type]: `M_OBJ` in `fixedbugs-2109-folded.h` cannot be declared `i32`: clang refuses the header's value at line 11: it reads `folded_k`, whose initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
-  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:29:5
-     |
-  29 |     constant M_OBJ: i32  #~ ffi_constant_type
+  40 |     constant K_QCH: i32  #~ ffi_constant_type
      |     ^^^^^^^^^^^^^^^^^^^
-  note: `fixedbugs-2109-folded.h` line 11 reads `static const int folded_k = INT_MIN / -1;`
-  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `M_OBJ` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+  note: `fixedbugs-2109-folded.h` line 8 reads `enum { EA = 1 << 31, EB = EA + 1 };`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `K_QCH` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
 
-error[ffi_constant_type]: `M_ROBJ` in `fixedbugs-2109-folded.h` cannot be declared `Pair`: clang refuses the header's value at line 13: it reads `R_OBJ`, whose initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
+error[ffi_constant_type]: `TB` in `fixedbugs-2109-folded.h` cannot be declared `i64`: clang refuses the header's value at line 13: its initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
   at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:30:5
      |
-  30 |     constant M_ROBJ: Pair  #~ ffi_constant_type
+  30 |     constant TB: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2109-folded.h` line 13 reads `enum T { TA = 2147483647, TB = TA + 1, TBIG = 0x100000000LL };`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `TB` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `IC` in `fixedbugs-2109-folded.h` cannot be declared `i32`: clang refuses the header's value at line 15: it reads `IA`, whose initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:31:5
+     |
+  31 |     constant IC: i32  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2109-folded.h` line 15 reads `enum { IA = 1 << 31, IB, IC };`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `IC` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `M_OBJ` in `fixedbugs-2109-folded.h` cannot be declared `i32`: clang refuses the header's value at line 16: it reads `folded_k`, whose initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:32:5
+     |
+  32 |     constant M_OBJ: i32  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2109-folded.h` line 16 reads `static const int folded_k = INT_MIN / -1;`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `M_OBJ` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `M_ROBJ` in `fixedbugs-2109-folded.h` cannot be declared `Pair`: clang refuses the header's value at line 18: it reads `R_OBJ`, whose initialiser holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:33:5
+     |
+  33 |     constant M_ROBJ: Pair  #~ ffi_constant_type
      |     ^^^^^^^^^^^^^^^^^^^^^
-  note: `fixedbugs-2109-folded.h` line 13 reads `static const struct pair R_OBJ = { INT_MIN / -1, 3 };`
+  note: `fixedbugs-2109-folded.h` line 18 reads `static const struct pair R_OBJ = { INT_MIN / -1, 3 };`
   note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `M_ROBJ` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `R_FILL` in `fixedbugs-2109-folded.h` cannot be declared `Holder`: clang refuses the header's value at line 22: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:41:5
+     |
+  41 |     constant R_FILL: Holder  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2109-folded.h` line 22 reads `#define R_FILL { { 1 << 31 }, 2 }`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `R_FILL` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `R_AE` in `fixedbugs-2109-folded.h` cannot be declared `Ae`: clang refuses the header's value at line 24: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2109-a-value-clang-folds-in-an-initialiser-is-refused.hero:42:5
+     |
+  42 |     constant R_AE: Ae  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2109-folded.h` line 24 reads `#define R_AE { (unsigned)(INT_MIN / -1), 2 }`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `R_AE` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines

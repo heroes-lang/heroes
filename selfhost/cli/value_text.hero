@@ -1,153 +1,17 @@
-# The probe's text read as text (panel 218's R1, provisional 2026-10-17;
-# defect 2109; design.md §4.19): before clang's dump, whether an accessor's
-# value as the program's preprocessor expanded it can reach anything a dump
-# would show; after it, where a byte of the preprocessed unit stands in the
-# file it came from, read from the line markers `clang -E` writes and never
-# from the dump, whose `line` and `presumedFile` are written only where they
-# change. Split out of `cli/value_init.hero`, which walks the dump, along the
-# seam between the tree and the text.
+# Where a byte of the probe's preprocessed text stands in the file it came
+# from (panel 218's R1, provisional 2026-10-17; defect 2109; design.md
+# §4.19): the last line marker `clang -E` wrote above it, read by
+# `cli/bound_said.hero`'s reader of them, never from clang's dump, whose
+# `line` and `presumedFile` are written only where they change.
 
-use bytes
-use cli/strings
+use cli/bound_said
 
-# Whether an accessor's value, as the program's preprocessor expanded it in
-# `text`, can reach an enumerator, an object or a brace list: it holds a `{`
-# or a name that is no keyword of C's and no builtin's. A value of literals
-# and operators alone reaches none and asks no dump (the compiler-engineer's
-# pre-filter: 96 of 120 corpus accessors, and the compiler's own 22). A value
-# this does not find is asked, the safe direction.
-function reaches(text: str, accessor: str) -> bool
-    value = value_text(text: text, accessor: accessor)
-
-    if value.is_err()
-        return true
-    v = value.must()
-    at: i64 @= 0
-
-    while at < v.len()
-        b = v[at]
-
-        if b == '{'
-            return true
-
-        if b == '"' || b == '\''
-            at @ quoted_end(text: v, from: at)
-            continue
-
-        if b >= '0' && b <= '9' || b == '.'
-            at @ at + 1
-
-            while at < v.len() && (name_byte(v[at]) || v[at] == '.' || (v[at] == '+' || v[at] == '-') && exponent(v[at - 1]))
-                at @ at + 1
-
-            continue
-
-        if name_byte(b)
-            stop: i64 @= at
-
-            while stop < v.len() && name_byte(v[stop])
-                stop @ stop + 1
-
-            word = v.slice(from: at, to: stop)
-
-            if !strings.starts_with(text: word, prefix: "__builtin_") && !keyword(word)
-                return true
-            at @ stop
-            continue
-        at @ at + 1
-
-    return false
-
-# The text of an accessor's value in the preprocessed unit: a record's
-# `hero_constant_value` initialiser, else what its body's last `return`
-# returns, read to the `;` that ends it outside every bracket.
-function value_text(text: str, accessor: str) -> str?
-    head = bytes.locate(text: text, needle: accessor + "(void) {", from: 0)?
-    end = bytes.locate(text: text, needle: "\n}", from: head).default(text.len())
-    kept = bytes.locate(text: text, needle: "hero_constant_value = ", from: head)
-    from: i64 @= -1
-
-    if !kept.is_err() && kept.must() < end
-        from @ kept.must() + 22
-    else
-        at: i64 @= head
-
-        while true
-            next = bytes.locate(text: text, needle: "return ", from: at)
-
-            if next.is_err() || next.must() >= end
-                break
-            from @ next.must() + 7
-            at @ next.must() + 1
-
-    if from < 0
-        return fail(code: "none", msg: "no value found")
-    depth: i64 @= 0
-    at: i64 @= from
-
-    while at < end
-        b = text[at]
-
-        if b == '(' || b == '{' || b == '['
-            depth @ depth + 1
-        else if b == ')' || b == '}' || b == ']'
-            depth @ depth - 1
-        else if b == ';' && depth == 0
-            return ok(text.slice(from: from, to: at))
-        at @ at + 1
-
-    return fail(code: "none", msg: "no end found")
-
-function keyword(word: str) -> bool
-    for one in KEYWORDS
-        if one == word
-            return true
-
-    return false
-
-constant KEYWORDS: [str]
-    [
-        "int"
-        "long"
-        "short"
-        "char"
-        "signed"
-        "unsigned"
-        "float"
-        "double"
-        "void"
-        "_Bool"
-        "const"
-        "volatile"
-        "sizeof"
-        "_Alignof"
-        "__extension__"
-    ]
-
-function name_byte(b: u8) -> bool
-    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
-
-function exponent(b: u8) -> bool
-    return b == 'e' || b == 'E' || b == 'p' || b == 'P'
-
-# Past the string or character literal opening at `from`.
-function quoted_end(text: str, from: i64) -> i64
-    quote = text[from]
-    at: i64 @= from + 1
-
-    while at < text.len() && text[at] != quote
-        if text[at] == '\\'
-            at @ at + 1
-        at @ at + 1
-
-    return at + 1
-
-# Where byte `at` of preprocessed text stands in the file it came from: the
-# last line marker before it, `# <line> "<file>"`, naming the line after it.
 record Place
     file: str
     line: i64
 
+# The last line marker before byte `at`, `# <line> "<file>"`, naming the line
+# after it, plus the lines between.
 function presumed(text: str, at: i64) -> Place?
     start: i64 @= at
     below: i64 @= 0
@@ -163,41 +27,21 @@ function presumed(text: str, at: i64) -> Place?
 
         line = text.slice(from: above, to: start - 1)
 
-        if strings.starts_with(text: line, prefix: "# ") && line.len() > 2 && line[2] >= '0' && line[2] <= '9'
-            return marker(line: line, below: below)
+        if bound_said.marker(line)
+            return ok(Place(file: bound_said.marker_file(line), line: bound_said.marker_row(line) + below))
         below @ below + 1
         start @ above
 
     return fail(code: "none", msg: "no line marker before it")
 
-# A line marker read: its line number, plus `below`, and its file.
-function marker(line: str, below: i64) -> Place?
-    at: i64 @= 2
-    number: i64 @= 0
-
-    while at < line.len() && line[at] >= '0' && line[at] <= '9'
-        number @ number * 10 + to_i64(line[at] - '0').must()
-        at @ at + 1
-
-    open = bytes.locate(text: line, needle: "\"", from: at)?
-    close = bytes.locate(text: line, needle: "\"", from: open + 1)?
-    return ok(Place(file: line.slice(from: open + 1, to: close), line: number + below))
-
 ## Tests
 
-test "a value of literals and operators reaches nothing, a name or a brace list does"
-    unit = "int32_t h_m_A(void) {\n    return (0x1Fu << 4) + 1e5 + 'x' + __builtin_huge_valf();\n}\nint32_t h_m_B(void) {\n    return (EA + 1);\n}\nstruct pt h_m_C(void) {\n    struct pt hero_constant_value = { 1, 2 };\n    return hero_constant_value;\n}\nint32_t h_m_D(void) {\n    return (int)(sizeof(long));\n}\n"
-    assert !reaches(text: unit, accessor: "h_m_A")
-    assert reaches(text: unit, accessor: "h_m_B")
-    assert reaches(text: unit, accessor: "h_m_C")
-    assert !reaches(text: unit, accessor: "h_m_D")
-    assert reaches(text: unit, accessor: "h_m_missing")
-    assert value_text(text: unit, accessor: "h_m_C").must() == "{ 1, 2 }"
-
-test "a byte's place is read from the line marker above it"
+test "a byte's place is read from the line marker above it, a Windows path's backslash read as one"
     text = "# 1 \"main.c\"\nint a;\n# 2 \"./f.h\" 1\nenum { EA = 1 << 31 };\n\nenum { EB = 2 };\n"
-    at = bytes.locate(text: text, needle: "EB", from: 0).must()
-    place = presumed(text, at: at).must()
+    place = presumed(text, at: 66).must()
     assert place.file == "./f.h"
     assert place.line == 4
     assert presumed("enum { X };\n", at: 3).is_err()
+    windows = presumed("# 7 \"C:\\\\h\\\\f.h\" 1\nenum { EB = 2 };\n", at: 26).must()
+    assert windows.file == "C:\\h\\f.h"
+    assert windows.line == 7

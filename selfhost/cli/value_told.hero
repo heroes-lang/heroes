@@ -77,7 +77,7 @@ function refusals(line: str, accessors: [value_probe.Accessor], preprocessed: st
 
         if unlinked.must() != "?"
             missing @ ": `" + unlinked.must() + "` is undefined there"
-        why @ "did not link with the runtime alone" + missing + ", which is the header's own code, a constructor, a function marked `used` or a value's own call, reaching a library"
+        why @ "did not link with the runtime alone" + missing + ", which is what the header names reaching what a library defines: a constructor, a function marked `used`, a value's own call, or an object the value reads"
         note @ "§ 13: a group's constants are the values C computes, read by running the module's own unit with clang's checks before the program links, with no library linked or loaded; a header whose kept code reaches a library cannot be run so, and its constants cannot be judged"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_constant_type",

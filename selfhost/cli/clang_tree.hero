@@ -1,6 +1,6 @@
 # clang's `-ast-dump=json` read as a tree of the nodes C2 walks (panel 218's
-# R1; defect 2109; design.md §4.19): every object of an `inner` array is a
-# node, the root too, and each keeps only what the walk asks of it: its `id`,
+# R1; defect 2109; design.md §4.19): every object of an array directly under a
+# node is a node, `inner`'s and `array_filler`'s, the root too, and each keeps only what the walk asks of it: its `id`,
 # `kind`, `name`, the `qualType` of its `type` and the type it names where
 # that is a typedef's, `desugaredQualType`, the byte offsets its `range`
 # begins and ends at in the text clang read, the token length at its end, and,
@@ -92,7 +92,7 @@ function read(text: str) -> Tree?
                 parent @ stack[depth - 1].owner
             one: Open @= Open(object: b == '{', owner: parent, path: "")
 
-            if b == '{' && (depth == 0 || !stack[depth - 1].object && stack[depth - 1].path == "inner")
+            if b == '{' && (depth == 0 || !stack[depth - 1].object && direct(stack[depth - 1].path))
                 nodes @ nodes.push(
                     Node(parent: parent, id: "", kind: "", name: "", qual: "", desugared: "", begin: -1, end: -1, end_length: 0, ref_id: "", ref_kind: "", ref_name: "")
                 )
@@ -151,8 +151,23 @@ function tree_of(nodes: [Node]) -> Tree
 
     return Tree(nodes: nodes, children: children, by_id: by_id)
 
-# A container's path from its node, the key it opens under appended; an
-# `inner` array's objects are nodes of their own.
+# Whether an array opens directly under its node, so its objects are nodes:
+# clang writes a node's children under `inner`, and the elements a partially
+# filled array spells under `array_filler`, its implicit filler first
+# (measured 2026-10-17 on `{ { 1 << 31 }, 2 }` for `struct { int a[2]; int b; }`:
+# `1 << 31` stood there and nowhere under `inner`, panel 221's ffi-pragmatist).
+function direct(path: str) -> bool
+    at: i64 @= 0
+
+    while at < path.len()
+        if path[at] == '/'
+            return false
+        at @ at + 1
+
+    return true
+
+# A container's path from its node, the key it opens under appended; the
+# objects of an array directly under a node are nodes of their own.
 function joined(path: str, key: str) -> str
     if path.len() == 0
         return key
@@ -290,3 +305,11 @@ test "nesting deeper than a recursive reader's guard reads, and a broken dump do
     assert tree.must().nodes.len() == 301
     assert read("{\"kind\": \"X\", \"inner\": [").is_err()
     assert read("]").is_err()
+
+test "the elements of an array filled in part are children, written under array_filler after its filler"
+    text = "{\"kind\": \"InitListExpr\", \"inner\": [{\"kind\": \"InitListExpr\", \"array_filler\": [{\"kind\": \"ImplicitValueInitExpr\"}, {\"kind\": \"BinaryOperator\", \"inner\": [{\"kind\": \"IntegerLiteral\"}]}]}, {\"kind\": \"IntegerLiteral\"}]}"
+    tree = read(text).must()
+    assert tree.nodes.len() == 6
+    assert tree.children[1] == [2, 3]
+    assert tree.nodes[3].kind == "BinaryOperator"
+    assert tree.children[0] == [1, 5]
