@@ -178,6 +178,8 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
             if !sub.is_err()
                 spans @ joined(list: spans, more: sub.must().spans)
 
+                # ORDER: none — each name is set in another map, whose one
+                # reader sorts it (`guarded`).
                 for name in keys(sub.must().bare)
                     bare[name] @ true
 
@@ -234,6 +236,9 @@ function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
 # found at panel 215's landing). So each such name is saved, undefined for
 # the one line that spells it, and restored, whether or not it was a macro:
 # `push_macro` of a name with no definition restores it as none.
+#
+# ORDER: by the name's bytes — the `#pragma` lines of the emitted C, which a
+# second emission of the same input gives alike (the `determinism` suite).
 function guarded(names: {str: bool}, line: str) -> [str]
     held = sort(keys(names))
     out: [str] @= []

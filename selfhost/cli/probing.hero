@@ -208,6 +208,8 @@ function check_all(t: toolchain.Toolchain, p: containers.Program, c: state.Check
             # Each record's membership rides the pointee answers to the
             # emitter (panel 215's R1, `lend_type.lend_units`), an answer of
             # its own kind, `pointee_ask.PAD`, that asks clang nothing.
+            # ORDER: by declaration index — the answers' list, which the emitter
+            # reads by each answer's key, so only the list itself sees it.
             for decl in sort(keys(held))
                 answered @ answered.push(
                     pointee_ask.Answered(asked: pointee_ask.Pointee(name: membership.KEY, param: "", index: decl, declared: pointee_ask.PAD, file: "", line: 0, depth: false), header_type: held[decl].must(), pointee: "")

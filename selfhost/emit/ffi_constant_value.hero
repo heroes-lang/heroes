@@ -115,22 +115,22 @@ function told(name: str, declared: str, known: ffi_lookup.Declared, words: str, 
 # exit 2. Every other line is the line it was.
 function assertion_lines(text: str) -> [str]
     out: [str] @= []
-    open: str @= ""
+    open: [str] @= []
 
     for line in ffi_lookup.lines(text: text)
         if open.len() > 0
-            open @ open + " " + line
+            open @ open.push(line)
 
             if ffi_lookup.has(text: line, needle: REQUIREMENT_END)
-                out @ out.push(open)
-                open @ ""
+                out @ out.push(open.join(" "))
+                open @ []
         else if ffi_lookup.has(text: line, needle: REQUIREMENT) && !ffi_lookup.has(text: ffi_lookup.after(text: line, marker: REQUIREMENT).default(""), needle: REQUIREMENT_END)
-            open @ line
+            open @ [line]
         else
             out @ out.push(line)
 
     if open.len() > 0
-        out @ out.push(open)
+        out @ out.push(open.join(" "))
     return out
 
 # Where clang opens and closes an assertion's requirement.

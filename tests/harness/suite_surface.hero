@@ -1236,7 +1236,10 @@ test "the tables are what this module is, so they are counted"
     # and the two `--in-place` rows over `apply141/holes.hero` moved into
     # `apply_tree.hero`, which runs them on a copy of their fixture, so no row
     # of this table writes the tree it reads.
-    assert verb_probes().len() == 199
+    # 199 -> 200 on 2026-10-17, defect 2102's reader (lane land215): printf's
+    # value lent read-only past its `...` in one module of `twoarity-lent/`, told
+    # on that module's line and never on its namesake's.
+    assert verb_probes().len() == 200
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
