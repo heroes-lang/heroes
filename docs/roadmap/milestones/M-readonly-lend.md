@@ -10,6 +10,35 @@ enter it that night or in the next session, the author chose the next session
 `docs/panel/217-a-read-only-lend-is-lent-on-a-parameter-the-callers-place-read-and-never-written-refused-beside-an-at-of-that-place-and-past-a-variadic-prototype.md`;
 its § Resolution, R1 to R7, is this page's reasoning and is not restated here.
 
+**Opened 2026-10-18**, by the author's `/step` naming no step, the next row of
+the chain, in one lane, `lane-readonly-lend`, the steps in this order: the form
+and its refusals (R1, R2), from the compiler-engineer's final prototype; the C
+half (R3); the read-only mode in the IR with a verifier rule, and the messages
+(R5, R4); the walk; the specification's text and design.md's §4.8 and §4.19;
+then defect 2128, which counts `blocking` at this milestone's tag, being
+`adjacent` and filed between the two tags of 2026-10-17. **What the seats'
+reports leave to the landing, read on 2026-10-18**, each beside the prototype
+`f1f` the compiler-engineer approved on:
+
+- **(a)**: `f1f`'s probe takes `struct counter *` and puts the `const` question
+  in an assertion of its own; the ffi-pragmatist's condition is a probe whose
+  parameter carries the `const` (`docs/panel/217-reports/critic-reports.md`
+  § 2, `ffi-pragmatist.md` § 7);
+- **(c) for a record**: `f1f` builds a record lent read-only past a writing
+  variadic header, `103` at exit 0, the critic's `va_record_lent`; the `cstr`
+  half is defects 2102 and 2103's repair;
+- **(d) at a C call**: the overlap of an `@` lend and a read-only one handed to
+  C, where `restrict` makes `-O0` and `-O2` print two answers (`ffi-pragmatist.md`
+  § 4); whether `f1f`'s sweep reaches an `extern` call is to be run;
+- **the words**: the draft's *no other `@` argument of the call* is narrower
+  than the refusal, which reaches an `@` nested inside another argument, and the
+  sentence on C writing through an address it was let keep is owed and
+  unpriced, so the landing's count may differ from the predicted 10,246, and is
+  scored as measured;
+- **a message**: an `@` argument rooted at a lent parameter and handed to an
+  `extern`, `counter_value(@c)`, is told the generic `not_mutable` and not the
+  route that works, a `lent` C declaration (`compiler-engineer.md`, r01).
+
 **The fact that schedules it.** A parameter is a value or an `@` place the
 function may change, and C's `const struct counter *` is neither: a function
 that only reads a record holding a lock can take it by copying it, which panel
