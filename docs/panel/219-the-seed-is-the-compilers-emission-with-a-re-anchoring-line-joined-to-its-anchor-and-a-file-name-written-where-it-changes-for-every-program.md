@@ -167,3 +167,15 @@ identifier text at 69.7% of s4).
 ## Author's verdict
 
 Pending.
+
+Asked for by https://github.com/heroes-lang/heroes/issues/2118, naming the sitting as
+`panel 219`, with its one question and the recommendation.
+
+**RATIFIED, 2026-10-17**, R1 to R4 as written above, the author answering in conversation that
+morning on the coordinator's summary, which put this sitting's question and panel 218's, each with
+its measurement and a recommendation: meant as *ok, I accept the recommendations*. So **the
+question to the author is answered: M-bounded-seed's target is amended** from a seed under 10 MB
+to what the sitting measured the profile to bound, the seed halved by s4 (about 25.6 MB, history
+60% of the seed as written's per regeneration), with part 2's rhythm bounding how often it is
+paid; the content changes 10 MB would need go to sittings of their own, outside this milestone.
+The other answer is not taken. Recorded as a reading (CLAUDE.md § 4). The author may overturn it.

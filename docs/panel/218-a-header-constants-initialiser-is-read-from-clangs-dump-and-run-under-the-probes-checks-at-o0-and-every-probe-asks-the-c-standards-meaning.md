@@ -212,3 +212,11 @@ Asked for by https://github.com/heroes-lang/heroes/issues/2115, naming the sitti
 `panel 218`, with its one question and the recommendation. R4's record call leaf is defect 2116
 (https://github.com/heroes-lang/heroes/issues/2116, `blocking`), filed 2026-10-17 after the
 coordinator measured it: two reads of `{ g_next(), 2 }` printed `1` and `2`.
+
+**RATIFIED, 2026-10-17**, R1 to R5 as written above, the author answering in conversation that
+morning on the coordinator's summary, which put this sitting's question and the next one's, each
+with its measurement and a recommendation: meant as *ok, I accept the recommendations*. So **the
+question to the author is answered: the probe asks the C standard's meaning on every platform**,
+`-fno-wrapv` in its words and never in the program's, and the four Windows SDK values named above
+are refused where they build today; the conservative resolution, the target's own `-fwrapv`, is
+not taken. Recorded as a reading (CLAUDE.md § 4). The author may overturn it.

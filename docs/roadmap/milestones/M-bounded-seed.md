@@ -126,3 +126,16 @@ have a copy of the old repository somewhere, keep it aside, to compare that
 GitHub, under `.claude/worktrees/backup-before-rewrite/`, made again just
 before the force-push; `main`'s files are compared with it after the rewrite
 and after the push, the remapped hashes being the one difference allowed.
+
+**Decided 2026-10-17, by the author: the target is amended** (panel 219, ratified that morning,
+https://github.com/heroes-lang/heroes/issues/2118, the coordinator's recommendation and its
+reason put beside the other answer). Part 1's *a seed under 10 MB* is reached by no emission
+profile: the sitting measured it as a floor, every copy, inline bounds check, `#line`,
+indentation and dead function removed leaving 18,831,319 bytes, identifier text being 69.7% of
+what remains. The shape this milestone delivers is panel 219's s4, the compiler's own emission
+with a re-anchoring `#line` joined to its anchor and a file name written where it changes, for
+every program: the seed about 25.6 MB, its line table unchanged at every address, and its
+history 60% of the seed as written's per regeneration; part 2's rhythm bounds how often that is
+paid. What a smaller seed would need changes every program's C (copy propagation in the
+lowering, bounds checks out of line, the identifiers' mass), each a sitting and an ABI question
+of its own, and is no part of this row.
