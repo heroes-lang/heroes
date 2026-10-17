@@ -76,8 +76,6 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_RET_UNIT(c) __builtin_types_compatible_p(__typeof__(c), void)
 #define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)
 #define HERO_RET_CSTR(c) _Generic((c), char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0)
-_Static_assert(HERO_RET_I32(PR_GET_PDEATHSIG), "heroes-ffi-return PR_GET_PDEATHSIG i32");
-_Static_assert(__builtin_constant_p(PR_GET_PDEATHSIG), "heroes-ffi-const PR_GET_PDEATHSIG");
 _Static_assert(HERO_RET_PTR(mktemp((void *)0)), "heroes-ffi-return mktemp ptr");
 _Static_assert(HERO_RET_PTR(malloc((uint64_t)0)), "heroes-ffi-return malloc ptr");
 _Static_assert(HERO_RET_UNIT(free((void *)0)), "heroes-ffi-return free ()");
@@ -103,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_52c92387, "heroes-589-XXXXXX");
 
-#line 107 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 105 "fixedbugs589acallofmktemplinkssilentonlinux.c"
 typedef struct h_0opt_fbbb698 {
     int64_t tag;
     union {
@@ -160,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 164 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 162 "fixedbugs589acallofmktemplinkssilentonlinux.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
@@ -181,7 +179,9 @@ void h_fixedbugs589acallofmktemplinkssilentonlinux_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
 int32_t h_fixedbugs589acallofmktemplinkssilentonlinux_PR_GET_PDEATHSIG(void) {
-#line 185 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 183 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+    _Static_assert(HERO_RET_I32(PR_GET_PDEATHSIG), "heroes-ffi-return PR_GET_PDEATHSIG i32");
+    _Static_assert(__builtin_constant_p(PR_GET_PDEATHSIG), "heroes-ffi-const PR_GET_PDEATHSIG");
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wshift-count-overflow"
 #pragma clang diagnostic error "-Wshift-count-negative"
