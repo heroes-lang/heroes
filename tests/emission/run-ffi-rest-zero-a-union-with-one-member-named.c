@@ -62,7 +62,7 @@ _Static_assert(__builtin_classify_type(((SA *)0)->kind) == 1 && sizeof(((SA *)0)
 _Static_assert(__builtin_classify_type(((SA *)0)->c) == 1 && sizeof(((SA *)0)->c) == sizeof(int8_t) && (_Generic(((SA *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA c");
 _Static_assert(_Generic(&((SA *)0)->d, double *: 1, default: 0) && sizeof(((SA *)0)->d) == sizeof(double), "heroes-ffi-field SA d");
 _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x) == sizeof(int32_t) && (_Generic(((SA *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA x");
-#line 17 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+#line 17
 _Static_assert(__builtin_classify_type(((UD *)0)->c) == 1 && sizeof(((UD *)0)->c) == sizeof(int8_t) && (_Generic(((UD *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UD c");
 _Static_assert(_Generic(&((UD *)0)->d, double *: 1, default: 0) && sizeof(((UD *)0)->d) == sizeof(double), "heroes-ffi-field UD d");
 #line 69 "ffirestzeroaunionwithonemembernamed.c"
@@ -149,11 +149,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffirestzeroaunionwithonemem
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 159 "ffirestzeroaunionwithonemembernamed.c"
 #pragma clang diagnostic pop
@@ -197,153 +197,39 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 22 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-SA h_ffirestzeroaunionwithonemembernamed_wide(void) {
-#line 22 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG double t2; HERO_NODEBUG SA t3; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-bb0:
-    t1 = INT64_C(2);
-#line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t2 = 0x1.4p+1;
-#line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t3 = (SA){0};
-#line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    __builtin_memset(&t3, 0, sizeof t3);
-#line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t3.kind = t1;
-#line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t3.d = t2;
-#line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    return t3;
-#line 219 "ffirestzeroaunionwithonemembernamed.c"
+SA h_ffirestzeroaunionwithonemembernamed_wide(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG double t2; HERO_NODEBUG SA t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(2); t2 = 0x1.4p+1; t3 = (SA){0}; __builtin_memset(&t3, 0, sizeof t3); t3.kind = t1; t3.d = t2; return t3;
+#line 203 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 25 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-SA h_ffirestzeroaunionwithonemembernamed_narrow(void) {
-#line 25 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG SA t3; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t2 = INT64_C(7);
-#line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t3 = (SA){0};
-#line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    __builtin_memset(&t3, 0, sizeof t3);
-#line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t3.kind = t1;
-#line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t3.c = t2;
-#line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    return t3;
-#line 241 "ffirestzeroaunionwithonemembernamed.c"
+SA h_ffirestzeroaunionwithonemembernamed_narrow(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG SA t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); t2 = INT64_C(7); t3 = (SA){0}; __builtin_memset(&t3, 0, sizeof t3); t3.kind = t1; t3.c = t2; return t3;
+#line 209 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 28 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-UD h_ffirestzeroaunionwithonemembernamed_a_union_type(void) {
-#line 28 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    HERO_NODEBUG double t1; HERO_NODEBUG UD t2; HERO_ENTRY_STOP; goto bb0;
-#line 28 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-bb0:
-    t1 = 0x1.8p+0;
-#line 29 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t2 = (UD){0};
-#line 29 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    __builtin_memset(&t2, 0, sizeof t2);
-#line 29 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t2.d = t1;
-#line 29 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    return t2;
-#line 259 "ffirestzeroaunionwithonemembernamed.c"
+UD h_ffirestzeroaunionwithonemembernamed_a_union_type(void) { HERO_NODEBUG double t1; HERO_NODEBUG UD t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1.8p+0; t2 = (UD){0}; __builtin_memset(&t2, 0, sizeof t2); t2.d = t1; return t2;
+#line 215 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 void h_ffirestzeroaunionwithonemembernamed_main(void) {
-#line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+#line 31
 #define h0_w (*hero_lend_h0_w)
-#line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+#line 31
 #define h1_n (*hero_lend_h1_n)
-#line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    SA *const hero_lend_h0_w = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "w"); SA *const hero_lend_h1_n = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "n"); HERO_NODEBUG SA t1, t7; HERO_NODEBUG int32_t t2, t8; HERO_NODEBUG HeroStr t3, t5, t9, t11; HERO_NODEBUG double t4, t14; HERO_NODEBUG int64_t t6, t12; HERO_NODEBUG int8_t t10; HERO_NODEBUG UD t13; HERO_ENTRY_STOP; goto bb0;
-#line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-bb0:
+#line 31
+    SA *const hero_lend_h0_w = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "w"); SA *const hero_lend_h1_n = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "n"); HERO_NODEBUG SA t1, t7; HERO_NODEBUG int32_t t2, t8; HERO_NODEBUG HeroStr t3, t5, t9, t11; HERO_NODEBUG double t4, t14; HERO_NODEBUG int64_t t6, t12; HERO_NODEBUG int8_t t10; HERO_NODEBUG UD t13; HERO_ENTRY_STOP; goto bb0; bb0:
     (void)dirty();
-    t1 = h_ffirestzeroaunionwithonemembernamed_wide();
-#line 33 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    h0_w = t1;
-#line 33 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_pad_fill(&h0_w, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_w.kind;
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t3 = HERO_STR_LIT(hero_str_20);
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t4 = h0_w.d;
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t5 = HERO_STR_LIT(hero_str_20);
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_lend_local_name(hero_lend_h0_w, "sa_x", "s");
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_pad_fill(&h0_w, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t6 = sa_x(&h0_w);
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_int(t2);
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_str(t3);
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_f64(t4);
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_str(t5);
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_int(t6);
-#line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_end();
+    t1 = h_ffirestzeroaunionwithonemembernamed_wide(); h0_w = t1; hero_pad_fill(&h0_w, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
+    t2 = h0_w.kind; t3 = HERO_STR_LIT(hero_str_20); t4 = h0_w.d; t5 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h0_w, "sa_x", "s"); hero_pad_fill(&h0_w, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0); t6 = sa_x(&h0_w); hero_print_int(t2); hero_print_str(t3); hero_print_f64(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end();
     (void)dirty();
-    t7 = h_ffirestzeroaunionwithonemembernamed_narrow();
-#line 36 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    h1_n = t7;
-#line 36 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_pad_fill(&h1_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-    t8 = h1_n.kind;
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t9 = HERO_STR_LIT(hero_str_20);
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t10 = h1_n.c;
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t11 = HERO_STR_LIT(hero_str_20);
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_lend_local_name(hero_lend_h1_n, "sa_x", "s");
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_pad_fill(&h1_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t12 = sa_x(&h1_n);
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_int(t8);
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_str(t9);
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_int(t10);
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_str(t11);
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_int(t12);
-#line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_end();
-    t13 = h_ffirestzeroaunionwithonemembernamed_a_union_type();
-#line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    t14 = t13.d;
-#line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_f64(t14);
-#line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_print_end();
-#line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_lend_local_give(hero_lend_h1_n);
-#line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    hero_lend_local_give(hero_lend_h0_w);
-#line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    return;
-#line 347 "ffirestzeroaunionwithonemembernamed.c"
+    t7 = h_ffirestzeroaunionwithonemembernamed_narrow(); h1_n = t7; hero_pad_fill(&h1_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
+    t8 = h1_n.kind; t9 = HERO_STR_LIT(hero_str_20); t10 = h1_n.c; t11 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h1_n, "sa_x", "s"); hero_pad_fill(&h1_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0); t12 = sa_x(&h1_n); hero_print_int(t8); hero_print_str(t9); hero_print_int(t10); hero_print_str(t11); hero_print_int(t12); hero_print_end();
+    t13 = h_ffirestzeroaunionwithonemembernamed_a_union_type(); t14 = t13.d; hero_print_f64(t14); hero_print_end(); hero_lend_local_give(hero_lend_h1_n); hero_lend_local_give(hero_lend_h0_w); return;
+#line 233 "ffirestzeroaunionwithonemembernamed.c"
 }
 #undef h0_w
 #undef h1_n

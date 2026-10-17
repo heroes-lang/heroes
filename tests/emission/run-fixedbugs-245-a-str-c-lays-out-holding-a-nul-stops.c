@@ -137,11 +137,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs245astrclaysouthol
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 147 "fixedbugs245astrclaysoutholdinganulstops.c"
 #pragma clang diagnostic pop
@@ -158,55 +158,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs245astrclaysoutholdinganulstops_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-void h_fixedbugs245astrclaysoutholdinganulstops_main(void) {
-#line 13 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    HeroStr h0_laid = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t5, t6, t7, t10, t11; HERO_NODEBUG int64_t t4; HERO_NODEBUG const char *t8; HERO_NODEBUG uint64_t t9; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-bb0:
-    t1 = laid_out_by_c();
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    t10 = h1_own1;
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    h1_own1 = t1;
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_str_decref(t10);
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    t11 = h0_laid;
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_str_incref(t1);
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    h0_laid = t1;
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_str_decref(t11);
-    t2 = HERO_STR_LIT(hero_str_10e4fea3);
-#line 15 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    t3 = h0_laid;
-#line 15 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    t4 = hero_str_len(t3);
-#line 15 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    t5 = HERO_STR_LIT(hero_str_391e7e27);
-#line 15 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_print_str(t2);
-#line 15 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_print_int(t4);
-#line 15 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_print_str(t5);
-#line 15 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_print_end();
-    t6 = HERO_STR_LIT(hero_str_521d74b5);
-#line 16 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    t7 = h0_laid;
-#line 16 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    t8 = hero_str_lend(t7);
-#line 16 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    t9 = strlen(hero_cstr_nonnull(t8));
-#line 16 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_print_str(t6);
-#line 16 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_print_uint(t9);
-#line 16 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    hero_print_end();
-#line 210 "fixedbugs245astrclaysoutholdinganulstops.c"
+void h_fixedbugs245astrclaysoutholdinganulstops_main(void) { HeroStr h0_laid = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t5, t6, t7, t10, t11; HERO_NODEBUG int64_t t4; HERO_NODEBUG const char *t8; HERO_NODEBUG uint64_t t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = laid_out_by_c(); t10 = h1_own1; h1_own1 = t1; hero_str_decref(t10); t11 = h0_laid; hero_str_incref(t1); h0_laid = t1; hero_str_decref(t11);
+    t2 = HERO_STR_LIT(hero_str_10e4fea3); t3 = h0_laid; t4 = hero_str_len(t3); t5 = HERO_STR_LIT(hero_str_391e7e27); hero_print_str(t2); hero_print_int(t4); hero_print_str(t5); hero_print_end();
+    t6 = HERO_STR_LIT(hero_str_521d74b5); t7 = h0_laid; t8 = hero_str_lend(t7); t9 = strlen(hero_cstr_nonnull(t8)); hero_print_str(t6); hero_print_uint(t9); hero_print_end();
+#line 166 "fixedbugs245astrclaysoutholdinganulstops.c"
     hero_str_release_at(&h0_laid);
     hero_str_release_at(&h1_own1);
     return;

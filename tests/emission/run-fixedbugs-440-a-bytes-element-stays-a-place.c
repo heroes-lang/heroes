@@ -140,11 +140,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs440abyteselementst
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 150 "fixedbugs440abyteselementstaysaplace.c"
 #pragma clang diagnostic pop
@@ -168,247 +168,41 @@ void h_fixedbugs440abyteselementstaysaplace_shout(HeroStr *ph0_s);
 void h_fixedbugs440abyteselementstaysaplace_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-void h_fixedbugs440abyteselementstaysaplace_f(uint8_t *ph0_n) {
-#line 15 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-bb0:
-    t1 = (*ph0_n);
-#line 16 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t2 = UINT64_C(1);
-#line 16 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 16 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    (*ph0_n) = t3;
-#line 16 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    return;
-#line 186 "fixedbugs440abyteselementstaysaplace.c"
+void h_fixedbugs440abyteselementstaysaplace_f(uint8_t *ph0_n) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_n); t2 = UINT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); (*ph0_n) = t3; return;
+#line 174 "fixedbugs440abyteselementstaysaplace.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-void h_fixedbugs440abyteselementstaysaplace_add(int64_t h0_k, uint8_t *ph1_n) {
-#line 18 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    HERO_NODEBUG uint8_t t1, t2, t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-bb0:
-    t1 = (*ph1_n);
-#line 19 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t2 = UINT64_C(1);
-#line 19 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 19 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    (*ph1_n) = t3;
-    t4 = h0_k;
-#line 20 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_int(t4);
-#line 20 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_end();
-#line 20 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    return;
-#line 209 "fixedbugs440abyteselementstaysaplace.c"
+void h_fixedbugs440abyteselementstaysaplace_add(int64_t h0_k, uint8_t *ph1_n) { HERO_NODEBUG uint8_t t1, t2, t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph1_n); t2 = UINT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); (*ph1_n) = t3;
+    t4 = h0_k; hero_print_int(t4); hero_print_end(); return;
+#line 181 "fixedbugs440abyteselementstaysaplace.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-void h_fixedbugs440abyteselementstaysaplace_shout(HeroStr *ph0_s) {
-#line 22 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-bb0:
-    t1 = (*ph0_s);
-#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t2 = HERO_STR_LIT(hero_str_21);
-#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t4 = h1_own1;
-#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h1_own1 = t3;
-#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_str_decref(t4);
-#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t5 = (*ph0_s);
-#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_str_incref(t3);
-#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    (*ph0_s) = t3;
-#line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_str_decref(t5);
-#line 237 "fixedbugs440abyteselementstaysaplace.c"
+void h_fixedbugs440abyteselementstaysaplace_shout(HeroStr *ph0_s) { HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_s); t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t4 = h1_own1; h1_own1 = t3; hero_str_decref(t4); t5 = (*ph0_s); hero_str_incref(t3); (*ph0_s) = t3; hero_str_decref(t5);
+#line 187 "fixedbugs440abyteselementstaysaplace.c"
     hero_str_release_at(&h1_own1);
     return;
 }
 
 #line 25 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-void h_fixedbugs440abyteselementstaysaplace_main(void) {
-#line 25 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    HeroArrayHeader * h0_bs = {0}; int64_t h1_k; h_fixedbugs440abyteselementstaysaplace_Packet h2_p = {0}; HeroStr h3_s = {0}; HeroArrayHeader * h4_xs = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *h8_own8 = {0}, *t3, *t10, *t15, *t17, *t21, *t25, *t31, *t34, *t35, *t36, *t40, *t41; HERO_NODEBUG h_fixedbugs440abyteselementstaysaplace_Packet h7_own7 = {0}, t11, t37, t38; HERO_NODEBUG uint8_t t1, t2, t9, t19, t23, t27; HERO_NODEBUG int64_t t4, t5, t6, t7, t8, t12, t16, t18, t22, t26, t32; HERO_NODEBUG HeroStr t13, t14, t20, t24, t28, t29, t30, t33, t39; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-bb0:
-    t1 = UINT64_C(97);
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t2 = UINT64_C(98);
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t3 = hero_array_new(&hero_desc_u8, 2);
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_push_owned(&t3, &t1);
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_push_owned(&t3, &t2);
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t34 = h5_own5;
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h5_own5 = t3;
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_decref(t34);
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t35 = h0_bs;
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_incref(t3);
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h0_bs = t3;
-#line 26 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_decref(t35);
-    t4 = INT64_C(0);
-#line 27 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_unshare(&(h0_bs));
-#line 27 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h_fixedbugs440abyteselementstaysaplace_f(&(*((void)((h0_bs == NULL || t4 < 0 || t4 >= h0_bs->len) ? ((void)hero_array_at_mut(h0_bs, t4), hero_unreachable()) : (void)0), (void)(h0_bs->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), (uint8_t *)(void *)(h0_bs + 1) + t4)));
-    t5 = INT64_C(1);
-#line 28 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_unshare(&(h0_bs));
-#line 28 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    (void)bump((void *)&(*((void)((h0_bs == NULL || t5 < 0 || t5 >= h0_bs->len) ? ((void)hero_array_at_mut(h0_bs, t5), hero_unreachable()) : (void)0), (void)(h0_bs->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), (uint8_t *)(void *)(h0_bs + 1) + t5)));
-    t6 = INT64_C(3);
-#line 29 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h1_k = t6;
-    t7 = h1_k;
-#line 30 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t8 = INT64_C(0);
-#line 30 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_unshare(&(h0_bs));
-#line 30 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h_fixedbugs440abyteselementstaysaplace_add(t7, &(*((void)((h0_bs == NULL || t8 < 0 || t8 >= h0_bs->len) ? ((void)hero_array_at_mut(h0_bs, t8), hero_unreachable()) : (void)0), (void)(h0_bs->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), (uint8_t *)(void *)(h0_bs + 1) + t8)));
-    t9 = UINT64_C(99);
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t10 = hero_array_new(&hero_desc_u8, 1);
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_push_owned(&t10, &t9);
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t36 = h6_own6;
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h6_own6 = t10;
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_decref(t36);
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_incref(t10);
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t11 = (h_fixedbugs440abyteselementstaysaplace_Packet){.f_bytes = t10};
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t37 = h7_own7;
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h7_own7 = t11;
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h_fixedbugs440abyteselementstaysaplace_Packet_release(&t37);
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t38 = h2_p;
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h_fixedbugs440abyteselementstaysaplace_Packet_retain(&t11);
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h2_p = t11;
-#line 31 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h_fixedbugs440abyteselementstaysaplace_Packet_release(&t38);
-    t12 = INT64_C(0);
-#line 32 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_unshare(&(h2_p.f_bytes));
-#line 32 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h_fixedbugs440abyteselementstaysaplace_f(&(*((void)((h2_p.f_bytes == NULL || t12 < 0 || t12 >= h2_p.f_bytes->len) ? ((void)hero_array_at_mut(h2_p.f_bytes, t12), hero_unreachable()) : (void)0), (void)(h2_p.f_bytes->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), (uint8_t *)(void *)(h2_p.f_bytes + 1) + t12)));
-    t13 = HERO_STR_LIT(hero_str_61);
-#line 33 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t39 = h3_s;
-#line 33 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_str_incref(t13);
-#line 33 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h3_s = t13;
-#line 33 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_str_decref(t39);
+void h_fixedbugs440abyteselementstaysaplace_main(void) { HeroArrayHeader * h0_bs = {0}; int64_t h1_k; h_fixedbugs440abyteselementstaysaplace_Packet h2_p = {0}; HeroStr h3_s = {0}; HeroArrayHeader * h4_xs = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *h8_own8 = {0}, *t3, *t10, *t15, *t17, *t21, *t25, *t31, *t34, *t35, *t36, *t40, *t41; HERO_NODEBUG h_fixedbugs440abyteselementstaysaplace_Packet h7_own7 = {0}, t11, t37, t38; HERO_NODEBUG uint8_t t1, t2, t9, t19, t23, t27; HERO_NODEBUG int64_t t4, t5, t6, t7, t8, t12, t16, t18, t22, t26, t32; HERO_NODEBUG HeroStr t13, t14, t20, t24, t28, t29, t30, t33, t39; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(97); t2 = UINT64_C(98); t3 = hero_array_new(&hero_desc_u8, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t34 = h5_own5; h5_own5 = t3; hero_array_decref(t34); t35 = h0_bs; hero_array_incref(t3); h0_bs = t3; hero_array_decref(t35);
+    t4 = INT64_C(0); hero_array_unshare(&(h0_bs)); h_fixedbugs440abyteselementstaysaplace_f(&(*((void)((h0_bs == NULL || t4 < 0 || t4 >= h0_bs->len) ? ((void)hero_array_at_mut(h0_bs, t4), hero_unreachable()) : (void)0), (void)(h0_bs->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), (uint8_t *)(void *)(h0_bs + 1) + t4)));
+    t5 = INT64_C(1); hero_array_unshare(&(h0_bs)); (void)bump((void *)&(*((void)((h0_bs == NULL || t5 < 0 || t5 >= h0_bs->len) ? ((void)hero_array_at_mut(h0_bs, t5), hero_unreachable()) : (void)0), (void)(h0_bs->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), (uint8_t *)(void *)(h0_bs + 1) + t5)));
+    t6 = INT64_C(3); h1_k = t6;
+    t7 = h1_k; t8 = INT64_C(0); hero_array_unshare(&(h0_bs)); h_fixedbugs440abyteselementstaysaplace_add(t7, &(*((void)((h0_bs == NULL || t8 < 0 || t8 >= h0_bs->len) ? ((void)hero_array_at_mut(h0_bs, t8), hero_unreachable()) : (void)0), (void)(h0_bs->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), (uint8_t *)(void *)(h0_bs + 1) + t8)));
+    t9 = UINT64_C(99); t10 = hero_array_new(&hero_desc_u8, 1); hero_array_push_owned(&t10, &t9); t36 = h6_own6; h6_own6 = t10; hero_array_decref(t36); hero_array_incref(t10); t11 = (h_fixedbugs440abyteselementstaysaplace_Packet){.f_bytes = t10}; t37 = h7_own7; h7_own7 = t11; h_fixedbugs440abyteselementstaysaplace_Packet_release(&t37); t38 = h2_p; h_fixedbugs440abyteselementstaysaplace_Packet_retain(&t11); h2_p = t11; h_fixedbugs440abyteselementstaysaplace_Packet_release(&t38);
+    t12 = INT64_C(0); hero_array_unshare(&(h2_p.f_bytes)); h_fixedbugs440abyteselementstaysaplace_f(&(*((void)((h2_p.f_bytes == NULL || t12 < 0 || t12 >= h2_p.f_bytes->len) ? ((void)hero_array_at_mut(h2_p.f_bytes, t12), hero_unreachable()) : (void)0), (void)(h2_p.f_bytes->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), (uint8_t *)(void *)(h2_p.f_bytes + 1) + t12)));
+    t13 = HERO_STR_LIT(hero_str_61); t39 = h3_s; hero_str_incref(t13); h3_s = t13; hero_str_decref(t39);
     h_fixedbugs440abyteselementstaysaplace_shout(&h3_s);
-    t14 = HERO_STR_LIT(hero_str_62);
-#line 35 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t15 = hero_array_new(&hero_desc_str, 1);
-#line 35 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_push_owned(&t15, &t14);
-#line 35 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t40 = h8_own8;
-#line 35 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h8_own8 = t15;
-#line 35 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_decref(t40);
-#line 35 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t41 = h4_xs;
-#line 35 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_incref(t15);
-#line 35 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h4_xs = t15;
-#line 35 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_decref(t41);
-    t16 = INT64_C(0);
-#line 36 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_array_unshare(&(h4_xs));
-#line 36 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    h_fixedbugs440abyteselementstaysaplace_shout(&(*((void)((h4_xs == NULL || t16 < 0 || t16 >= h4_xs->len) ? ((void)hero_array_at_mut(h4_xs, t16), hero_unreachable()) : (void)0), (void)(h4_xs->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), (HeroStr *)(void *)(h4_xs + 1) + t16)));
-    t17 = h0_bs;
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t18 = INT64_C(0);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t17 + 1))[t18]);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t20 = HERO_STR_LIT(hero_str_20);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t21 = h0_bs;
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t22 = INT64_C(1);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t21 + 1))[t22]);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t24 = HERO_STR_LIT(hero_str_20);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t25 = h2_p.f_bytes;
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t26 = INT64_C(0);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t25 + 1))[t26]);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t28 = HERO_STR_LIT(hero_str_20);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t29 = h3_s;
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t30 = HERO_STR_LIT(hero_str_20);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t31 = h4_xs;
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t32 = INT64_C(0);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t31 + 1))[t32]);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_int(t19);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_str(t20);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_int(t23);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_str(t24);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_int(t27);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_str(t28);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_str(t29);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_str(t30);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_str(t33);
-#line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    hero_print_end();
-#line 412 "fixedbugs440abyteselementstaysaplace.c"
+    t14 = HERO_STR_LIT(hero_str_62); t15 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t15, &t14); t40 = h8_own8; h8_own8 = t15; hero_array_decref(t40); t41 = h4_xs; hero_array_incref(t15); h4_xs = t15; hero_array_decref(t41);
+    t16 = INT64_C(0); hero_array_unshare(&(h4_xs)); h_fixedbugs440abyteselementstaysaplace_shout(&(*((void)((h4_xs == NULL || t16 < 0 || t16 >= h4_xs->len) ? ((void)hero_array_at_mut(h4_xs, t16), hero_unreachable()) : (void)0), (void)(h4_xs->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), (HeroStr *)(void *)(h4_xs + 1) + t16)));
+    t17 = h0_bs; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t17 + 1))[t18]); t20 = HERO_STR_LIT(hero_str_20); t21 = h0_bs; t22 = INT64_C(1); t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t21 + 1))[t22]); t24 = HERO_STR_LIT(hero_str_20); t25 = h2_p.f_bytes; t26 = INT64_C(0); t27 = ((void)((t25 == NULL || t26 < 0 || t26 >= t25->len) ? ((void)hero_array_at(t25, t26), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t25 + 1))[t26]); t28 = HERO_STR_LIT(hero_str_20); t29 = h3_s; t30 = HERO_STR_LIT(hero_str_20); t31 = h4_xs; t32 = INT64_C(0); t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t31 + 1))[t32]); hero_print_int(t19); hero_print_str(t20); hero_print_int(t23); hero_print_str(t24); hero_print_int(t27); hero_print_str(t28); hero_print_str(t29); hero_print_str(t30); hero_print_str(t33); hero_print_end();
+#line 206 "fixedbugs440abyteselementstaysaplace.c"
     hero_array_release_at(&h0_bs);
     h_fixedbugs440abyteselementstaysaplace_Packet_release(hero_slot_escape(&h2_p));
     hero_str_release_at(&h3_s);

@@ -143,11 +143,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsafreedobjectreadth
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 153 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 #pragma clang diagnostic pop
@@ -166,74 +166,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void);
 
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void) {
-#line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    outer * h0_a; outer * h1_kept; HERO_NODEBUG outer *t1, *t2, *t4, *t6, *t8, *t9, *t12; HERO_NODEBUG HeroStr t3, t7, t11; HERO_NODEBUG int64_t t5, t13; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
-#line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-bb0:
-    t1 = make();
-#line 38 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_handle_acquired(t1, "release");
-#line 38 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    h0_a = t1;
-    t2 = h0_a;
-#line 39 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    h1_kept = t2;
-    t3 = HERO_STR_LIT(hero_str_63c4e8c6);
-#line 40 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    t4 = h0_a;
-#line 40 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_handle_alive(t4, "the argument `o` of `value`");
-#line 40 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    t5 = value(t4);
-#line 40 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_print_str(t3);
-#line 40 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_print_int(t5);
-#line 40 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_print_end();
-    t6 = h0_a;
-#line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    {
-#line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_handle_alive(t6, "the argument `o` of `release`");
-#line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t6, "release", NULL);
-#line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    (void)release(t6);
-#line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
-#line 41 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    }
-    t7 = HERO_STR_LIT(hero_str_2731e935);
-#line 42 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    t8 = h1_kept;
-#line 42 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    t9 = ((void *)0);
-#line 42 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    t10 = h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(&t8, &t9);
-#line 42 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_print_str(t7);
-#line 42 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_print_bool(t10);
-#line 42 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_print_end();
-    t11 = HERO_STR_LIT(hero_str_3043d2a7);
-#line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    t12 = h1_kept;
-#line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_handle_alive(t12, "the argument `o` of `value`");
-#line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    t13 = value(t12);
-#line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_print_str(t11);
-#line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_print_int(t13);
-#line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    hero_print_end();
-#line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    return;
-#line 237 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void) { outer * h0_a; outer * h1_kept; HERO_NODEBUG outer *t1, *t2, *t4, *t6, *t8, *t9, *t12; HERO_NODEBUG HeroStr t3, t7, t11; HERO_NODEBUG int64_t t5, t13; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = make(); hero_handle_acquired(t1, "release"); h0_a = t1;
+    t2 = h0_a; h1_kept = t2;
+    t3 = HERO_STR_LIT(hero_str_63c4e8c6); t4 = h0_a; hero_handle_alive(t4, "the argument `o` of `value`"); t5 = value(t4); hero_print_str(t3); hero_print_int(t5); hero_print_end();
+    t6 = h0_a; { hero_handle_alive(t6, "the argument `o` of `release`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t6, "release", NULL); (void)release(t6); if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead(); }
+    t7 = HERO_STR_LIT(hero_str_2731e935); t8 = h1_kept; t9 = ((void *)0); t10 = h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(&t8, &t9); hero_print_str(t7); hero_print_bool(t10); hero_print_end();
+    t11 = HERO_STR_LIT(hero_str_3043d2a7); t12 = h1_kept; hero_handle_alive(t12, "the argument `o` of `value`"); t13 = value(t12); hero_print_str(t11); hero_print_int(t13); hero_print_end(); return;
+#line 177 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

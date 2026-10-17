@@ -79,11 +79,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 89 "neverreboundelementandfieldwrites.c"
 #pragma clang diagnostic pop
@@ -102,63 +102,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_neverreboundelementandfieldwrites_main(void);
 
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-void h_neverreboundelementandfieldwrites_main(void) {
-#line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    HeroArrayHeader * h0_xs = {0}; h_neverreboundelementandfieldwrites_Pair h1_p; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t10, *t15, *t16; HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t9, t11, t12, t13, t14; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t8; HERO_ENTRY_STOP; goto bb0;
-#line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t2 = INT64_C(2);
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t3 = hero_array_new(&hero_desc_int, 2);
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_array_push_owned(&t3, &t1);
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_array_push_owned(&t3, &t2);
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t15 = h2_own2;
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    h2_own2 = t3;
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_array_decref(t15);
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t16 = h0_xs;
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_array_incref(t3);
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    h0_xs = t3;
-#line 9 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_array_decref(t16);
-    t4 = INT64_C(0);
-#line 10 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t5 = INT64_C(7);
-#line 10 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_array_set(&(h0_xs), t4, &t5);
-    t6 = INT64_C(1);
-#line 11 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t7 = INT64_C(2);
-#line 11 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t8 = (h_neverreboundelementandfieldwrites_Pair){.f_a = t6, .f_b = t7};
-#line 11 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    h1_p = t8;
-    t9 = INT64_C(9);
-#line 12 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    h1_p.f_b = t9;
-    t10 = h0_xs;
-#line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t11 = INT64_C(0);
-#line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]);
-#line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    t13 = h1_p.f_b;
-#line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_print_int(t14);
-#line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    hero_print_end();
-#line 162 "neverreboundelementandfieldwrites.c"
+void h_neverreboundelementandfieldwrites_main(void) { HeroArrayHeader * h0_xs = {0}; h_neverreboundelementandfieldwrites_Pair h1_p; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t10, *t15, *t16; HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t9, t11, t12, t13, t14; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t15 = h2_own2; h2_own2 = t3; hero_array_decref(t15); t16 = h0_xs; hero_array_incref(t3); h0_xs = t3; hero_array_decref(t16);
+    t4 = INT64_C(0); t5 = INT64_C(7); hero_array_set(&(h0_xs), t4, &t5);
+    t6 = INT64_C(1); t7 = INT64_C(2); t8 = (h_neverreboundelementandfieldwrites_Pair){.f_a = t6, .f_b = t7}; h1_p = t8;
+    t9 = INT64_C(9); h1_p.f_b = t9;
+    t10 = h0_xs; t11 = INT64_C(0); t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); t13 = h1_p.f_b; if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow(); hero_print_int(t14); hero_print_end();
+#line 112 "neverreboundelementandfieldwrites.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;

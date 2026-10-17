@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
 #pragma clang diagnostic pop
@@ -98,91 +98,31 @@ void h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_main(void
 void h_library_exit(int64_t h0_code);
 
 #line 16 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-int64_t h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_helper(int64_t h0_n) {
-#line 16 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-bb0:
-    t1 = h0_n;
-#line 17 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    t2 = INT64_C(0);
-#line 17 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    t3 = t1 < t2;
-#line 17 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 17 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-bb1:
-#line 19 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    t5 = h0_n;
-#line 19 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    t6 = INT64_C(1);
-#line 19 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 19 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    return t7;
-#line 19 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-bb2:
-#line 18 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    t4 = INT64_C(1);
-#line 18 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    h_library_exit(t4);
-#line 18 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    hero_unreachable();
-#line 18 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    goto bb1;
-#line 18 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-bb3:
-#line 18 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    goto bb1;
-#line 138 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
+int64_t h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_helper(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(0); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 19
+    t5 = h0_n; t6 = INT64_C(1); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow(); return t7; bb2:
+#line 18
+    t4 = INT64_C(1); h_library_exit(t4); hero_unreachable(); goto bb1; bb3: goto bb1;
+#line 108 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
 }
 
 #line 21 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-int64_t h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(int64_t h0_n) {
-#line 21 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-bb0:
-    t1 = h0_n;
-#line 22 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    t2 = h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_helper(t1);
-#line 22 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    t3 = h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(t2);
-#line 22 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    return t3;
-#line 154 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
+int64_t h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_helper(t1); t3 = h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(t2); return t3;
+#line 114 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-void h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_main(void) {
-#line 24 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 24 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 25 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    t2 = h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(t1);
-#line 25 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    hero_print_int(t2);
-#line 25 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    hero_print_end();
-#line 25 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    return;
-#line 172 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
+void h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(t1); hero_print_int(t2); hero_print_end(); return;
+#line 120 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
 }
 
 #line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) {
-#line 227 "<heroes library>"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 227 "<heroes library>"
-bb0:
-    t1 = h0_code;
-#line 228 "<heroes library>"
-    (void)hero_exit(t1);
-#line 228 "<heroes library>"
-    return;
-#line 186 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
+void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; (void)hero_exit(t1); return;
+#line 126 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

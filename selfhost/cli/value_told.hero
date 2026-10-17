@@ -21,7 +21,7 @@ use emit/ffi_value
 use emit/ffi_constant_value
 use bytes
 use cli/bound_said
-use cli/runtime_name
+use cli/caret_bytes
 use cli/strings
 
 # One finding's diagnostics: a trapped accessor's constant told on its own
@@ -304,7 +304,7 @@ function quoted_name(text: str) -> str?
     after = bytes.locate(text: text, needle: "symbol: ", from: 0)
 
     if !after.is_err()
-        named = runtime_name.name_at(text: text, at: after.must() + 8)
+        named = caret_bytes.name_at(text: text, at: after.must() + 8)
 
         if !named.is_err()
             return named
@@ -312,7 +312,7 @@ function quoted_name(text: str) -> str?
 
     while index + 1 < text.len()
         if text[index] == '"' || text[index] == '`' || text[index] == '\''
-            named = runtime_name.name_at(text: text, at: index + 1)
+            named = caret_bytes.name_at(text: text, at: index + 1)
 
             if !named.is_err()
                 return named

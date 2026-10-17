@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "abortarrayslice.c"
 #pragma clang diagnostic pop
@@ -95,77 +95,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_abortarrayslice_main(void);
 
 #line 5 "tests/golden/run/abort-array-slice.hero"
-void h_abortarrayslice_main(void) {
-#line 5 "tests/golden/run/abort-array-slice.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *t4, *t5, *t8, *t10, *t13, *t15, *t16, *t17, *t18; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t9, t11, t12, t14; HERO_ENTRY_STOP; goto bb0;
-#line 5 "tests/golden/run/abort-array-slice.hero"
-bb0:
-    t1 = INT64_C(10);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    t2 = INT64_C(20);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    t3 = INT64_C(30);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    t4 = hero_array_new(&hero_desc_int, 3);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    hero_array_push_owned(&t4, &t1);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    hero_array_push_owned(&t4, &t2);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    hero_array_push_owned(&t4, &t3);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    t15 = h1_own1;
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    h1_own1 = t4;
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    hero_array_decref(t15);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    t16 = h0_xs;
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    hero_array_incref(t4);
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    h0_xs = t4;
-#line 6 "tests/golden/run/abort-array-slice.hero"
-    hero_array_decref(t16);
-    t5 = h0_xs;
-#line 7 "tests/golden/run/abort-array-slice.hero"
-    t6 = INT64_C(1);
-#line 7 "tests/golden/run/abort-array-slice.hero"
-    t7 = INT64_C(3);
-#line 7 "tests/golden/run/abort-array-slice.hero"
-    t8 = hero_array_slice(t5, t6, t7);
-#line 7 "tests/golden/run/abort-array-slice.hero"
-    t17 = h2_own2;
-#line 7 "tests/golden/run/abort-array-slice.hero"
-    h2_own2 = t8;
-#line 7 "tests/golden/run/abort-array-slice.hero"
-    hero_array_decref(t17);
-#line 7 "tests/golden/run/abort-array-slice.hero"
-    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
-#line 7 "tests/golden/run/abort-array-slice.hero"
-    hero_print_int(t9);
-#line 7 "tests/golden/run/abort-array-slice.hero"
-    hero_print_end();
-    t10 = h0_xs;
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    t11 = INT64_C(1);
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    t12 = INT64_C(9);
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    t13 = hero_array_slice(t10, t11, t12);
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    t18 = h3_own3;
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    h3_own3 = t13;
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    hero_array_decref(t18);
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    hero_print_int(t14);
-#line 8 "tests/golden/run/abort-array-slice.hero"
-    hero_print_end();
-#line 169 "abortarrayslice.c"
+void h_abortarrayslice_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *t4, *t5, *t8, *t10, *t13, *t15, *t16, *t17, *t18; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t9, t11, t12, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(10); t2 = INT64_C(20); t3 = INT64_C(30); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t15 = h1_own1; h1_own1 = t4; hero_array_decref(t15); t16 = h0_xs; hero_array_incref(t4); h0_xs = t4; hero_array_decref(t16);
+    t5 = h0_xs; t6 = INT64_C(1); t7 = INT64_C(3); t8 = hero_array_slice(t5, t6, t7); t17 = h2_own2; h2_own2 = t8; hero_array_decref(t17); t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); hero_print_int(t9); hero_print_end();
+    t10 = h0_xs; t11 = INT64_C(1); t12 = INT64_C(9); t13 = hero_array_slice(t10, t11, t12); t18 = h3_own3; h3_own3 = t13; hero_array_decref(t18); t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); hero_print_int(t14); hero_print_end();
+#line 103 "abortarrayslice.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);

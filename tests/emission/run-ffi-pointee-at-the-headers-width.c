@@ -134,16 +134,16 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 11 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffipointeeattheheaderswidth_frexp(double a0, int32_t * a1) { (void)(frexp)(a0, (void *)a1); }
-#line 14 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+#line 14
 __attribute__((unused)) static void hero_ffi_probe_h_ffipointeeattheheaderswidth_time(int64_t * a0) { (void)(time)((void *)a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 149 "ffipointeeattheheaderswidth.c"
 #pragma clang diagnostic pop
@@ -161,56 +161,20 @@ void h_ffipointeeattheheaderswidth_main(void);
 
 #line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 void h_ffipointeeattheheaderswidth_main(void) {
-#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+#line 16
 #define h0_e (*hero_lend_h0_e)
-#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+#line 16
 #define h2_t (*hero_lend_h2_t)
-#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e"); double h1_m; int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3, t4; HERO_NODEBUG int64_t t6, t8, t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 17 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    h0_e = t1;
-    t2 = 0x1p+3;
-#line 18 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    hero_lend_local_name(hero_lend_h0_e, "frexp", "e");
-#line 18 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    t3 = frexp(t2, (void *)&h0_e);
-#line 18 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    h1_m = t3;
-    t4 = h1_m;
-#line 19 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    hero_print_f64(t4);
-#line 19 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    hero_print_end();
-    t5 = h0_e;
-#line 20 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    hero_print_int(t5);
-#line 20 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    hero_print_end();
-    t6 = INT64_C(0);
-#line 21 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    h2_t = t6;
-    hero_lend_local_name(hero_lend_h2_t, "time", "t");
-#line 22 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    (void)time((void *)&h2_t);
-    t8 = h2_t;
-#line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    t9 = INT64_C(0);
-#line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    t10 = t8 > t9;
-#line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    hero_print_bool(t10);
-#line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    hero_print_end();
-#line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    hero_lend_local_give(hero_lend_h2_t);
-#line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    hero_lend_local_give(hero_lend_h0_e);
-#line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    return;
-#line 214 "ffipointeeattheheaderswidth.c"
+#line 16
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e"); double h1_m; int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3, t4; HERO_NODEBUG int64_t t6, t8, t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_e = t1;
+    t2 = 0x1p+3; hero_lend_local_name(hero_lend_h0_e, "frexp", "e"); t3 = frexp(t2, (void *)&h0_e); h1_m = t3;
+    t4 = h1_m; hero_print_f64(t4); hero_print_end();
+    t5 = h0_e; hero_print_int(t5); hero_print_end();
+    t6 = INT64_C(0); h2_t = t6;
+    hero_lend_local_name(hero_lend_h2_t, "time", "t"); (void)time((void *)&h2_t);
+    t8 = h2_t; t9 = INT64_C(0); t10 = t8 > t9; hero_print_bool(t10); hero_print_end(); hero_lend_local_give(hero_lend_h2_t); hero_lend_local_give(hero_lend_h0_e); return;
+#line 178 "ffipointeeattheheaderswidth.c"
 }
 #undef h0_e
 #undef h2_t

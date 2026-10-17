@@ -139,11 +139,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_deadhandlereadafterconsumet
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 149 "deadhandlereadafterconsumethroughonename.c"
 #pragma clang diagnostic pop
@@ -162,83 +162,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_deadhandlereadafterconsumethroughonename_main(void);
 
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-void h_deadhandlereadafterconsumethroughonename_main(void) {
-#line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    Obj * h0_b; Obj * h1_c; HERO_NODEBUG Obj *t1, *t5, *t6, *t7, *t10; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t8, t12; HERO_NODEBUG const char *t9; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-bb0:
-    t1 = obj_new();
-#line 22 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    hero_handle_acquired(t1, "obj_delete");
-#line 22 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    h0_b = t1;
-#line 24 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    t2 = one();
-#line 24 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    t3 = INT64_C(1);
-#line 24 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    t4 = t2 == t3;
-#line 24 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 24 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-bb1:
-#line 26 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    t6 = obj_new();
-#line 26 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    hero_handle_acquired(t6, "obj_delete");
-#line 26 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    h1_c = t6;
-    t7 = h0_b;
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    t8 = HERO_STR_LIT(hero_str_63);
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    t9 = hero_str_lend(t8);
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    t10 = h1_c;
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    {
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    hero_handle_alive(t7, "the argument `object` of `obj_add`");
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    hero_handle_alive(t10, "the argument `item` of `obj_add`");
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    HERO_NODEBUG uint64_t hero_life_2_0 = hero_handle_ending(t10, "obj_add", NULL);
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    (void)obj_add(t7, hero_cstr_nonnull(t9), t10);
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    if (hero_handle_ended(t10, hero_life_2_0) && h1_c == t10) h1_c = hero_handle_dead();
-#line 27 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    }
-    t12 = HERO_STR_LIT(hero_str_1ca80789);
-#line 28 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    hero_print_str(t12);
-#line 28 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    hero_print_end();
-#line 28 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    return;
-#line 28 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-bb2:
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    t5 = h0_b;
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    {
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    hero_handle_alive(t5, "the argument `item` of `obj_delete`");
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "obj_delete", NULL);
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    (void)obj_delete(t5);
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    if (hero_handle_ended(t5, hero_life_0_0) && h0_b == t5) h0_b = hero_handle_dead();
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    }
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    goto bb1;
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-bb3:
-#line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    goto bb1;
-#line 242 "deadhandlereadafterconsumethroughonename.c"
+void h_deadhandlereadafterconsumethroughonename_main(void) { Obj * h0_b; Obj * h1_c; HERO_NODEBUG Obj *t1, *t5, *t6, *t7, *t10; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t8, t12; HERO_NODEBUG const char *t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = obj_new(); hero_handle_acquired(t1, "obj_delete"); h0_b = t1;
+#line 24
+    t2 = one(); t3 = INT64_C(1); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 26
+    t6 = obj_new(); hero_handle_acquired(t6, "obj_delete"); h1_c = t6;
+    t7 = h0_b; t8 = HERO_STR_LIT(hero_str_63); t9 = hero_str_lend(t8); t10 = h1_c; { hero_handle_alive(t7, "the argument `object` of `obj_add`"); hero_handle_alive(t10, "the argument `item` of `obj_add`"); HERO_NODEBUG uint64_t hero_life_2_0 = hero_handle_ending(t10, "obj_add", NULL); (void)obj_add(t7, hero_cstr_nonnull(t9), t10); if (hero_handle_ended(t10, hero_life_2_0) && h1_c == t10) h1_c = hero_handle_dead(); }
+    t12 = HERO_STR_LIT(hero_str_1ca80789); hero_print_str(t12); hero_print_end(); return; bb2:
+#line 25
+    t5 = h0_b; { hero_handle_alive(t5, "the argument `item` of `obj_delete`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "obj_delete", NULL); (void)obj_delete(t5); if (hero_handle_ended(t5, hero_life_0_0) && h0_b == t5) h0_b = hero_handle_dead(); } goto bb1; bb3: goto bb1;
+#line 176 "deadhandlereadafterconsumethroughonename.c"
 }
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

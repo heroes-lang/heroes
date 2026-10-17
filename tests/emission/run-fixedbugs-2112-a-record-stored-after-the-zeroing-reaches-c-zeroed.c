@@ -146,11 +146,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2112arecordstoreda
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 156 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 #pragma clang diagnostic pop
@@ -178,67 +178,23 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 25 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-Kept h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_made(int64_t h0_n) {
-#line 25 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG Kept t3; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-bb0:
-    t1 = UINT64_C(1);
-#line 26 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    t2 = h0_n;
-#line 26 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    t3 = (Kept){.c = t1, .n = t2};
-#line 26 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    return t3;
-#line 194 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
+Kept h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_made(int64_t h0_n) { HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG Kept t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(1); t2 = h0_n; t3 = (Kept){.c = t1, .n = t2}; return t3;
+#line 184 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
 void h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_main(void) {
-#line 28 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
+#line 28
 #define h0_k (*hero_lend_h0_k)
-#line 28 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    Kept *const hero_lend_h0_k = (Kept *)hero_lend_local(sizeof(Kept), "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.main", "k"); HERO_NODEBUG int64_t t1, t3, t4, t6, t7; HERO_NODEBUG Kept t2, t5; HERO_ENTRY_STOP; goto bb0;
-#line 28 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-bb0:
-    t1 = INT64_C(2);
-#line 29 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    t2 = h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_made(t1);
-#line 29 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    h0_k = t2;
-#line 29 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_pad_fill(&h0_k, sizeof(Kept), 1, hero_pad_g_0, hero_pad_n_0);
-    hero_lend_local_name(hero_lend_h0_k, "keep_it", "k");
-#line 30 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_pad_fill(&h0_k, sizeof(Kept), 1, hero_pad_g_0, hero_pad_n_0);
-#line 30 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    t3 = keep_it(&h0_k);
-#line 30 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_print_int(t3);
-#line 30 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_print_end();
-    t4 = INT64_C(3);
-#line 31 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    t5 = h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_made(t4);
-#line 31 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    h0_k = t5;
-#line 31 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_pad_fill(&h0_k, sizeof(Kept), 1, hero_pad_g_0, hero_pad_n_0);
-    t6 = padding_set();
-#line 32 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_print_int(t6);
-#line 32 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_print_end();
-    t7 = h0_k.n;
-#line 33 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_print_int(t7);
-#line 33 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_print_end();
-#line 33 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    hero_lend_local_give(hero_lend_h0_k);
-#line 33 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
-    return;
-#line 242 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
+#line 28
+    Kept *const hero_lend_h0_k = (Kept *)hero_lend_local(sizeof(Kept), "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.main", "k"); HERO_NODEBUG int64_t t1, t3, t4, t6, t7; HERO_NODEBUG Kept t2, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(2); t2 = h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_made(t1); h0_k = t2; hero_pad_fill(&h0_k, sizeof(Kept), 1, hero_pad_g_0, hero_pad_n_0);
+    hero_lend_local_name(hero_lend_h0_k, "keep_it", "k"); hero_pad_fill(&h0_k, sizeof(Kept), 1, hero_pad_g_0, hero_pad_n_0); t3 = keep_it(&h0_k); hero_print_int(t3); hero_print_end();
+    t4 = INT64_C(3); t5 = h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_made(t4); h0_k = t5; hero_pad_fill(&h0_k, sizeof(Kept), 1, hero_pad_g_0, hero_pad_n_0);
+    t6 = padding_set(); hero_print_int(t6); hero_print_end();
+    t7 = h0_k.n; hero_print_int(t7); hero_print_end(); hero_lend_local_give(hero_lend_h0_k); return;
+#line 198 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 }
 #undef h0_k
 HERO_TU_LOCAL bool h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_Kept_eq(const Kept *a, const Kept *b) {

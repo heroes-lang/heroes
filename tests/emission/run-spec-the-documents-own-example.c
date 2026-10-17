@@ -79,11 +79,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 89 "specthedocumentsownexample.c"
 #pragma clang diagnostic pop
@@ -103,69 +103,17 @@ int64_t h_specthedocumentsownexample_dist2(h_specthedocumentsownexample_Point h0
 void h_specthedocumentsownexample_main(void);
 
 #line 29 "tests/golden/run/spec-the-documents-own-example.hero"
-int64_t h_specthedocumentsownexample_dist2(h_specthedocumentsownexample_Point h0_a, h_specthedocumentsownexample_Point h1_b) {
-#line 29 "tests/golden/run/spec-the-documents-own-example.hero"
-    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13; HERO_ENTRY_STOP; goto bb0;
-#line 29 "tests/golden/run/spec-the-documents-own-example.hero"
-bb0:
-    t1 = h1_b.f_x;
-#line 30 "tests/golden/run/spec-the-documents-own-example.hero"
-    t2 = h0_a.f_x;
-#line 30 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 30 "tests/golden/run/spec-the-documents-own-example.hero"
-    h2_dx = t3;
-    t4 = h1_b.f_y;
-#line 31 "tests/golden/run/spec-the-documents-own-example.hero"
-    t5 = h0_a.f_y;
-#line 31 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 31 "tests/golden/run/spec-the-documents-own-example.hero"
-    h3_dy = t6;
-    t7 = h2_dx;
-#line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    t8 = h2_dx;
-#line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    t10 = h3_dy;
-#line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    t11 = h3_dy;
-#line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow();
-#line 32 "tests/golden/run/spec-the-documents-own-example.hero"
-    return t13;
-#line 141 "specthedocumentsownexample.c"
+int64_t h_specthedocumentsownexample_dist2(h_specthedocumentsownexample_Point h0_a, h_specthedocumentsownexample_Point h1_b) { int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_b.f_x; t2 = h0_a.f_x; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow(); h2_dx = t3;
+    t4 = h1_b.f_y; t5 = h0_a.f_y; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow(); h3_dy = t6;
+    t7 = h2_dx; t8 = h2_dx; if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = h3_dy; t11 = h3_dy; if (__builtin_mul_overflow(t10, t11, &t12)) hero_panic_overflow(); if (__builtin_add_overflow(t9, t12, &t13)) hero_panic_overflow(); return t13;
+#line 111 "specthedocumentsownexample.c"
 }
 
 #line 40 "tests/golden/run/spec-the-documents-own-example.hero"
-void h_specthedocumentsownexample_main(void) {
-#line 40 "tests/golden/run/spec-the-documents-own-example.hero"
-    HERO_NODEBUG int64_t t1, t2, t4, t5, t7; HERO_NODEBUG h_specthedocumentsownexample_Point t3, t6; HERO_ENTRY_STOP; goto bb0;
-#line 40 "tests/golden/run/spec-the-documents-own-example.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 41 "tests/golden/run/spec-the-documents-own-example.hero"
-    t2 = INT64_C(0);
-#line 41 "tests/golden/run/spec-the-documents-own-example.hero"
-    t3 = (h_specthedocumentsownexample_Point){.f_x = t1, .f_y = t2};
-#line 41 "tests/golden/run/spec-the-documents-own-example.hero"
-    t4 = INT64_C(3);
-#line 41 "tests/golden/run/spec-the-documents-own-example.hero"
-    t5 = INT64_C(4);
-#line 41 "tests/golden/run/spec-the-documents-own-example.hero"
-    t6 = (h_specthedocumentsownexample_Point){.f_x = t4, .f_y = t5};
-#line 41 "tests/golden/run/spec-the-documents-own-example.hero"
-    t7 = h_specthedocumentsownexample_dist2(t3, t6);
-#line 41 "tests/golden/run/spec-the-documents-own-example.hero"
-    hero_print_int(t7);
-#line 41 "tests/golden/run/spec-the-documents-own-example.hero"
-    hero_print_end();
-#line 41 "tests/golden/run/spec-the-documents-own-example.hero"
-    return;
-#line 169 "specthedocumentsownexample.c"
+void h_specthedocumentsownexample_main(void) { HERO_NODEBUG int64_t t1, t2, t4, t5, t7; HERO_NODEBUG h_specthedocumentsownexample_Point t3, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = INT64_C(0); t3 = (h_specthedocumentsownexample_Point){.f_x = t1, .f_y = t2}; t4 = INT64_C(3); t5 = INT64_C(4); t6 = (h_specthedocumentsownexample_Point){.f_x = t4, .f_y = t5}; t7 = h_specthedocumentsownexample_dist2(t3, t6); hero_print_int(t7); hero_print_end(); return;
+#line 117 "specthedocumentsownexample.c"
 }
 HERO_TU_LOCAL bool h_specthedocumentsownexample_Point_eq(const h_specthedocumentsownexample_Point *a, const h_specthedocumentsownexample_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

@@ -147,11 +147,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_main_sqrt(double a0) { (voi
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 157 "main.c"
 #pragma clang diagnostic pop
@@ -183,334 +183,80 @@ HeroStr h_main_nine_places(double h0_v);
 HeroStr h_main_padded(int64_t h0_rest);
 
 #line 45 "examples/spectral/main.hero"
-int64_t h_main_N(void) {
-#line 45 "examples/spectral/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 45 "examples/spectral/main.hero"
-bb0:
-    t1 = INT64_C(100);
-#line 46 "examples/spectral/main.hero"
-    return t1;
+int64_t h_main_N(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(100); return t1;
+#line 189 "main.c"
+}
+
+#line 49 "examples/spectral/main.hero"
+int64_t h_main_ROUNDS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(10); return t1;
 #line 195 "main.c"
 }
 
-#line 49 "examples/spectral/main.hero"
-int64_t h_main_ROUNDS(void) {
-#line 49 "examples/spectral/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 49 "examples/spectral/main.hero"
-bb0:
-    t1 = INT64_C(10);
-#line 50 "examples/spectral/main.hero"
-    return t1;
-#line 207 "main.c"
-}
-
 #line 56 "examples/spectral/main.hero"
-double h_main_eval_a(int64_t h0_i, int64_t h1_j) {
-#line 56 "examples/spectral/main.hero"
-    int64_t h2_span; HERO_NODEBUG int64_t t1, t2, t3, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG double t4, t16, t17; HERO_ENTRY_STOP; goto bb0;
-#line 56 "examples/spectral/main.hero"
-bb0:
-    t1 = h0_i;
-#line 57 "examples/spectral/main.hero"
-    t2 = h1_j;
-#line 57 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 57 "examples/spectral/main.hero"
-    h2_span = t3;
-    t4 = 0x1p+0;
-#line 58 "examples/spectral/main.hero"
-    t5 = h2_span;
-#line 58 "examples/spectral/main.hero"
-    t6 = h2_span;
-#line 58 "examples/spectral/main.hero"
-    t7 = INT64_C(1);
-#line 58 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow();
-#line 58 "examples/spectral/main.hero"
-    if (__builtin_mul_overflow(t5, t8, &t9)) hero_panic_overflow();
-#line 58 "examples/spectral/main.hero"
-    t10 = INT64_C(2);
-#line 58 "examples/spectral/main.hero"
-    if (t10 == 0) hero_panic("division by zero");
-#line 58 "examples/spectral/main.hero"
-    if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow();
-#line 58 "examples/spectral/main.hero"
-    t11 = t9 / t10;
-#line 58 "examples/spectral/main.hero"
-    t12 = h0_i;
-#line 58 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 58 "examples/spectral/main.hero"
-    t14 = INT64_C(1);
-#line 58 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 58 "examples/spectral/main.hero"
-    t16 = hero_int_to_f64(t15);
-#line 58 "examples/spectral/main.hero"
-    t17 = t4 / t16;
-#line 58 "examples/spectral/main.hero"
-    return t17;
-#line 256 "main.c"
+double h_main_eval_a(int64_t h0_i, int64_t h1_j) { int64_t h2_span; HERO_NODEBUG int64_t t1, t2, t3, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG double t4, t16, t17; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_i; t2 = h1_j; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); h2_span = t3;
+    t4 = 0x1p+0; t5 = h2_span; t6 = h2_span; t7 = INT64_C(1); if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow(); if (__builtin_mul_overflow(t5, t8, &t9)) hero_panic_overflow(); t10 = INT64_C(2); if (t10 == 0) hero_panic("division by zero"); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow(); t11 = t9 / t10; t12 = h0_i; if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); t16 = hero_int_to_f64(t15); t17 = t4 / t16; return t17;
+#line 202 "main.c"
 }
 
 #line 61 "examples/spectral/main.hero"
-HeroArrayHeader * h_main_a_times(HeroArrayHeader * h0_u) {
-#line 61 "examples/spectral/main.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; double h3_total; int64_t h4_j; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t1, *t4, *t10, *t17, *t31, *t32, *t33; HERO_NODEBUG int64_t t2, t3, t5, t8, t9, t11, t14, t15, t18, t22, t23, t24, t28, t29, t30; HERO_NODEBUG bool t6, t12; HERO_NODEBUG double t7, t13, t16, t19, t20, t21, t26; HERO_ENTRY_STOP; goto bb0;
-#line 61 "examples/spectral/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_f64, 1);
-#line 62 "examples/spectral/main.hero"
-    t32 = h5_own5;
-#line 62 "examples/spectral/main.hero"
-    h5_own5 = t1;
-#line 62 "examples/spectral/main.hero"
-    hero_array_decref(t32);
-#line 62 "examples/spectral/main.hero"
-    t33 = h1_out;
-#line 62 "examples/spectral/main.hero"
-    hero_array_incref(t1);
-#line 62 "examples/spectral/main.hero"
-    h1_out = t1;
-#line 62 "examples/spectral/main.hero"
-    hero_array_decref(t33);
-    t2 = INT64_C(0);
-#line 63 "examples/spectral/main.hero"
-    h2_i = t2;
-#line 63 "examples/spectral/main.hero"
-    goto bb1;
-#line 63 "examples/spectral/main.hero"
-bb1:
-#line 65 "examples/spectral/main.hero"
-    t3 = h2_i;
-#line 65 "examples/spectral/main.hero"
-    t4 = h0_u;
-#line 65 "examples/spectral/main.hero"
-    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 65 "examples/spectral/main.hero"
-    t6 = t3 < t5;
-#line 65 "examples/spectral/main.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 65 "examples/spectral/main.hero"
-bb2:
-    t7 = 0x0p+0;
-#line 66 "examples/spectral/main.hero"
-    h3_total = t7;
-    t8 = INT64_C(0);
-#line 67 "examples/spectral/main.hero"
-    h4_j = t8;
-#line 67 "examples/spectral/main.hero"
-    goto bb4;
-#line 67 "examples/spectral/main.hero"
-bb3:
-#line 76 "examples/spectral/main.hero"
+HeroArrayHeader * h_main_a_times(HeroArrayHeader * h0_u) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; double h3_total; int64_t h4_j; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t1, *t4, *t10, *t17, *t31, *t32, *t33; HERO_NODEBUG int64_t t2, t3, t5, t8, t9, t11, t14, t15, t18, t22, t23, t24, t28, t29, t30; HERO_NODEBUG bool t6, t12; HERO_NODEBUG double t7, t13, t16, t19, t20, t21, t26; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_f64, 1); t32 = h5_own5; h5_own5 = t1; hero_array_decref(t32); t33 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t33);
+    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+#line 65
+    t3 = h2_i; t4 = h0_u; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb2:
+    t7 = 0x0p+0; h3_total = t7;
+    t8 = INT64_C(0); h4_j = t8; goto bb4; bb3:
+#line 76
     t31 = h1_out;
-#line 311 "main.c"
+#line 215 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h5_own5);
     return t31;
 bb4:
 #line 69 "examples/spectral/main.hero"
-    t9 = h4_j;
-#line 69 "examples/spectral/main.hero"
-    t10 = h0_u;
-#line 69 "examples/spectral/main.hero"
-    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
-#line 69 "examples/spectral/main.hero"
-    t12 = t9 < t11;
-#line 69 "examples/spectral/main.hero"
-    if (t12) goto bb5; else goto bb6;
-#line 69 "examples/spectral/main.hero"
-bb5:
-    t13 = h3_total;
-#line 70 "examples/spectral/main.hero"
-    t14 = h2_i;
-#line 70 "examples/spectral/main.hero"
-    t15 = h4_j;
-#line 70 "examples/spectral/main.hero"
-    t16 = h_main_eval_a(t14, t15);
-#line 70 "examples/spectral/main.hero"
-    t17 = h0_u;
-#line 70 "examples/spectral/main.hero"
-    t18 = h4_j;
-#line 70 "examples/spectral/main.hero"
-    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t17 + 1))[t18]);
-#line 70 "examples/spectral/main.hero"
-    t20 = t16 * t19;
-#line 70 "examples/spectral/main.hero"
-    t21 = t13 + t20;
-#line 70 "examples/spectral/main.hero"
-    h3_total = t21;
-    t22 = h4_j;
-#line 71 "examples/spectral/main.hero"
-    t23 = INT64_C(1);
-#line 71 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow();
-#line 71 "examples/spectral/main.hero"
-    h4_j = t24;
-#line 71 "examples/spectral/main.hero"
-    goto bb4;
-#line 71 "examples/spectral/main.hero"
-bb6:
-#line 73 "examples/spectral/main.hero"
-    t26 = h3_total;
-#line 73 "examples/spectral/main.hero"
-    hero_array_push_owned(&h1_out, &t26);
-    t28 = h2_i;
-#line 74 "examples/spectral/main.hero"
-    t29 = INT64_C(1);
-#line 74 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow();
-#line 74 "examples/spectral/main.hero"
-    h2_i = t30;
-#line 74 "examples/spectral/main.hero"
-    goto bb1;
-#line 372 "main.c"
+    t9 = h4_j; t10 = h0_u; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = t9 < t11; if (t12) goto bb5; else goto bb6; bb5:
+    t13 = h3_total; t14 = h2_i; t15 = h4_j; t16 = h_main_eval_a(t14, t15); t17 = h0_u; t18 = h4_j; t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t17 + 1))[t18]); t20 = t16 * t19; t21 = t13 + t20; h3_total = t21;
+    t22 = h4_j; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow(); h4_j = t24; goto bb4; bb6:
+#line 73
+    t26 = h3_total; hero_array_push_owned(&h1_out, &t26);
+    t28 = h2_i; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow(); h2_i = t30; goto bb1;
+#line 228 "main.c"
 }
 
 #line 80 "examples/spectral/main.hero"
-HeroArrayHeader * h_main_at_times(HeroArrayHeader * h0_u) {
-#line 80 "examples/spectral/main.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; double h3_total; int64_t h4_j; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t1, *t4, *t10, *t17, *t31, *t32, *t33; HERO_NODEBUG int64_t t2, t3, t5, t8, t9, t11, t14, t15, t18, t22, t23, t24, t28, t29, t30; HERO_NODEBUG bool t6, t12; HERO_NODEBUG double t7, t13, t16, t19, t20, t21, t26; HERO_ENTRY_STOP; goto bb0;
-#line 80 "examples/spectral/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_f64, 1);
-#line 81 "examples/spectral/main.hero"
-    t32 = h5_own5;
-#line 81 "examples/spectral/main.hero"
-    h5_own5 = t1;
-#line 81 "examples/spectral/main.hero"
-    hero_array_decref(t32);
-#line 81 "examples/spectral/main.hero"
-    t33 = h1_out;
-#line 81 "examples/spectral/main.hero"
-    hero_array_incref(t1);
-#line 81 "examples/spectral/main.hero"
-    h1_out = t1;
-#line 81 "examples/spectral/main.hero"
-    hero_array_decref(t33);
-    t2 = INT64_C(0);
-#line 82 "examples/spectral/main.hero"
-    h2_i = t2;
-#line 82 "examples/spectral/main.hero"
-    goto bb1;
-#line 82 "examples/spectral/main.hero"
-bb1:
-#line 84 "examples/spectral/main.hero"
-    t3 = h2_i;
-#line 84 "examples/spectral/main.hero"
-    t4 = h0_u;
-#line 84 "examples/spectral/main.hero"
-    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 84 "examples/spectral/main.hero"
-    t6 = t3 < t5;
-#line 84 "examples/spectral/main.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 84 "examples/spectral/main.hero"
-bb2:
-    t7 = 0x0p+0;
-#line 85 "examples/spectral/main.hero"
-    h3_total = t7;
-    t8 = INT64_C(0);
-#line 86 "examples/spectral/main.hero"
-    h4_j = t8;
-#line 86 "examples/spectral/main.hero"
-    goto bb4;
-#line 86 "examples/spectral/main.hero"
-bb3:
-#line 95 "examples/spectral/main.hero"
+HeroArrayHeader * h_main_at_times(HeroArrayHeader * h0_u) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; double h3_total; int64_t h4_j; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t1, *t4, *t10, *t17, *t31, *t32, *t33; HERO_NODEBUG int64_t t2, t3, t5, t8, t9, t11, t14, t15, t18, t22, t23, t24, t28, t29, t30; HERO_NODEBUG bool t6, t12; HERO_NODEBUG double t7, t13, t16, t19, t20, t21, t26; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_f64, 1); t32 = h5_own5; h5_own5 = t1; hero_array_decref(t32); t33 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t33);
+    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+#line 84
+    t3 = h2_i; t4 = h0_u; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb2:
+    t7 = 0x0p+0; h3_total = t7;
+    t8 = INT64_C(0); h4_j = t8; goto bb4; bb3:
+#line 95
     t31 = h1_out;
-#line 427 "main.c"
+#line 241 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h5_own5);
     return t31;
 bb4:
 #line 88 "examples/spectral/main.hero"
-    t9 = h4_j;
-#line 88 "examples/spectral/main.hero"
-    t10 = h0_u;
-#line 88 "examples/spectral/main.hero"
-    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
-#line 88 "examples/spectral/main.hero"
-    t12 = t9 < t11;
-#line 88 "examples/spectral/main.hero"
-    if (t12) goto bb5; else goto bb6;
-#line 88 "examples/spectral/main.hero"
-bb5:
-    t13 = h3_total;
-#line 89 "examples/spectral/main.hero"
-    t14 = h4_j;
-#line 89 "examples/spectral/main.hero"
-    t15 = h2_i;
-#line 89 "examples/spectral/main.hero"
-    t16 = h_main_eval_a(t14, t15);
-#line 89 "examples/spectral/main.hero"
-    t17 = h0_u;
-#line 89 "examples/spectral/main.hero"
-    t18 = h4_j;
-#line 89 "examples/spectral/main.hero"
-    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t17 + 1))[t18]);
-#line 89 "examples/spectral/main.hero"
-    t20 = t16 * t19;
-#line 89 "examples/spectral/main.hero"
-    t21 = t13 + t20;
-#line 89 "examples/spectral/main.hero"
-    h3_total = t21;
-    t22 = h4_j;
-#line 90 "examples/spectral/main.hero"
-    t23 = INT64_C(1);
-#line 90 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow();
-#line 90 "examples/spectral/main.hero"
-    h4_j = t24;
-#line 90 "examples/spectral/main.hero"
-    goto bb4;
-#line 90 "examples/spectral/main.hero"
-bb6:
-#line 92 "examples/spectral/main.hero"
-    t26 = h3_total;
-#line 92 "examples/spectral/main.hero"
-    hero_array_push_owned(&h1_out, &t26);
-    t28 = h2_i;
-#line 93 "examples/spectral/main.hero"
-    t29 = INT64_C(1);
-#line 93 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow();
-#line 93 "examples/spectral/main.hero"
-    h2_i = t30;
-#line 93 "examples/spectral/main.hero"
-    goto bb1;
-#line 488 "main.c"
+    t9 = h4_j; t10 = h0_u; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = t9 < t11; if (t12) goto bb5; else goto bb6; bb5:
+    t13 = h3_total; t14 = h4_j; t15 = h2_i; t16 = h_main_eval_a(t14, t15); t17 = h0_u; t18 = h4_j; t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t17 + 1))[t18]); t20 = t16 * t19; t21 = t13 + t20; h3_total = t21;
+    t22 = h4_j; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow(); h4_j = t24; goto bb4; bb6:
+#line 92
+    t26 = h3_total; hero_array_push_owned(&h1_out, &t26);
+    t28 = h2_i; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow(); h2_i = t30; goto bb1;
+#line 254 "main.c"
 }
 
 #line 98 "examples/spectral/main.hero"
-HeroArrayHeader * h_main_ata_times(HeroArrayHeader * h0_u) {
-#line 98 "examples/spectral/main.hero"
-    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t1, *t2, *t3, *t4, *t5; HERO_ENTRY_STOP; goto bb0;
-#line 98 "examples/spectral/main.hero"
-bb0:
-    t1 = h0_u;
-#line 99 "examples/spectral/main.hero"
-    t2 = h_main_a_times(t1);
-#line 99 "examples/spectral/main.hero"
-    t4 = h1_own1;
-#line 99 "examples/spectral/main.hero"
-    h1_own1 = t2;
-#line 99 "examples/spectral/main.hero"
-    hero_array_decref(t4);
-#line 99 "examples/spectral/main.hero"
-    t3 = h_main_at_times(t2);
-#line 99 "examples/spectral/main.hero"
-    t5 = h2_own2;
-#line 99 "examples/spectral/main.hero"
-    h2_own2 = t3;
-#line 99 "examples/spectral/main.hero"
-    hero_array_decref(t5);
-#line 514 "main.c"
+HeroArrayHeader * h_main_ata_times(HeroArrayHeader * h0_u) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t1, *t2, *t3, *t4, *t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_u; t2 = h_main_a_times(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = h_main_at_times(t2); t5 = h2_own2; h2_own2 = t3; hero_array_decref(t5);
+#line 260 "main.c"
     hero_array_incref(t3);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -518,60 +264,16 @@ bb0:
 }
 
 #line 102 "examples/spectral/main.hero"
-HeroArrayHeader * h_main_ones(int64_t h0_n) {
-#line 102 "examples/spectral/main.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_at; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_NODEBUG double t7; HERO_ENTRY_STOP; goto bb0;
-#line 102 "examples/spectral/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_f64, 1);
-#line 103 "examples/spectral/main.hero"
-    t13 = h3_own3;
-#line 103 "examples/spectral/main.hero"
-    h3_own3 = t1;
-#line 103 "examples/spectral/main.hero"
-    hero_array_decref(t13);
-#line 103 "examples/spectral/main.hero"
-    t14 = h1_out;
-#line 103 "examples/spectral/main.hero"
-    hero_array_incref(t1);
-#line 103 "examples/spectral/main.hero"
-    h1_out = t1;
-#line 103 "examples/spectral/main.hero"
-    hero_array_decref(t14);
-    t2 = INT64_C(0);
-#line 104 "examples/spectral/main.hero"
-    h2_at = t2;
-#line 104 "examples/spectral/main.hero"
-    goto bb1;
-#line 104 "examples/spectral/main.hero"
-bb1:
-#line 106 "examples/spectral/main.hero"
-    t3 = h2_at;
-#line 106 "examples/spectral/main.hero"
-    t4 = h0_n;
-#line 106 "examples/spectral/main.hero"
-    t5 = t3 < t4;
-#line 106 "examples/spectral/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 106 "examples/spectral/main.hero"
-bb2:
-    t7 = 0x1p+0;
-#line 107 "examples/spectral/main.hero"
-    hero_array_push_owned(&h1_out, &t7);
-    t9 = h2_at;
-#line 108 "examples/spectral/main.hero"
-    t10 = INT64_C(1);
-#line 108 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 108 "examples/spectral/main.hero"
-    h2_at = t11;
-#line 108 "examples/spectral/main.hero"
-    goto bb1;
-#line 108 "examples/spectral/main.hero"
-bb3:
-#line 110 "examples/spectral/main.hero"
+HeroArrayHeader * h_main_ones(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; int64_t h2_at; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_NODEBUG double t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_f64, 1); t13 = h3_own3; h3_own3 = t1; hero_array_decref(t13); t14 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t14);
+    t2 = INT64_C(0); h2_at = t2; goto bb1; bb1:
+#line 106
+    t3 = h2_at; t4 = h0_n; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = 0x1p+0; hero_array_push_owned(&h1_out, &t7);
+    t9 = h2_at; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h2_at = t11; goto bb1; bb3:
+#line 110
     t12 = h1_out;
-#line 575 "main.c"
+#line 277 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_own3);
@@ -579,189 +281,27 @@ bb3:
 }
 
 #line 116 "examples/spectral/main.hero"
-double h_main_spectral_norm(int64_t h0_n) {
-#line 116 "examples/spectral/main.hero"
-    HeroArrayHeader * h1_u = {0}; HeroArrayHeader * h2_v = {0}; int64_t h3_round; double h4_vbv; double h5_vv; int64_t h6_at; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *t2, *t4, *t9, *t10, *t11, *t12, *t23, *t26, *t32, *t35, *t47, *t48, *t49, *t50, *t51, *t52, *t53, *t54; HERO_NODEBUG int64_t t1, t3, t5, t6, t7, t13, t14, t15, t18, t19, t20, t24, t27, t33, t36, t40, t41, t42; HERO_NODEBUG bool t8, t21; HERO_NODEBUG double t16, t17, t22, t25, t28, t29, t30, t31, t34, t37, t38, t39, t43, t44, t45, t46; HERO_ENTRY_STOP; goto bb0;
-#line 116 "examples/spectral/main.hero"
-bb0:
-    t1 = h0_n;
-#line 117 "examples/spectral/main.hero"
-    t2 = h_main_ones(t1);
-#line 117 "examples/spectral/main.hero"
-    t47 = h7_own7;
-#line 117 "examples/spectral/main.hero"
-    h7_own7 = t2;
-#line 117 "examples/spectral/main.hero"
-    hero_array_decref(t47);
-#line 117 "examples/spectral/main.hero"
-    t48 = h1_u;
-#line 117 "examples/spectral/main.hero"
-    hero_array_incref(t2);
-#line 117 "examples/spectral/main.hero"
-    h1_u = t2;
-#line 117 "examples/spectral/main.hero"
-    hero_array_decref(t48);
-    t3 = h0_n;
-#line 118 "examples/spectral/main.hero"
-    t4 = h_main_ones(t3);
-#line 118 "examples/spectral/main.hero"
-    t49 = h8_own8;
-#line 118 "examples/spectral/main.hero"
-    h8_own8 = t4;
-#line 118 "examples/spectral/main.hero"
-    hero_array_decref(t49);
-#line 118 "examples/spectral/main.hero"
-    t50 = h2_v;
-#line 118 "examples/spectral/main.hero"
-    hero_array_incref(t4);
-#line 118 "examples/spectral/main.hero"
-    h2_v = t4;
-#line 118 "examples/spectral/main.hero"
-    hero_array_decref(t50);
-    t5 = INT64_C(0);
-#line 119 "examples/spectral/main.hero"
-    h3_round = t5;
-#line 119 "examples/spectral/main.hero"
-    goto bb1;
-#line 119 "examples/spectral/main.hero"
-bb1:
-#line 121 "examples/spectral/main.hero"
-    t6 = h3_round;
-#line 121 "examples/spectral/main.hero"
-    t7 = h_main_ROUNDS();
-#line 121 "examples/spectral/main.hero"
-    t8 = t6 < t7;
-#line 121 "examples/spectral/main.hero"
-    if (t8) goto bb2; else goto bb3;
-#line 121 "examples/spectral/main.hero"
-bb2:
-    t9 = h1_u;
-#line 122 "examples/spectral/main.hero"
-    t10 = h_main_ata_times(t9);
-#line 122 "examples/spectral/main.hero"
-    t51 = h9_own9;
-#line 122 "examples/spectral/main.hero"
-    h9_own9 = t10;
-#line 122 "examples/spectral/main.hero"
-    hero_array_decref(t51);
-#line 122 "examples/spectral/main.hero"
-    t52 = h2_v;
-#line 122 "examples/spectral/main.hero"
-    hero_array_incref(t10);
-#line 122 "examples/spectral/main.hero"
-    h2_v = t10;
-#line 122 "examples/spectral/main.hero"
-    hero_array_decref(t52);
-    t11 = h2_v;
-#line 123 "examples/spectral/main.hero"
-    t12 = h_main_ata_times(t11);
-#line 123 "examples/spectral/main.hero"
-    t53 = h10_own10;
-#line 123 "examples/spectral/main.hero"
-    h10_own10 = t12;
-#line 123 "examples/spectral/main.hero"
-    hero_array_decref(t53);
-#line 123 "examples/spectral/main.hero"
-    t54 = h1_u;
-#line 123 "examples/spectral/main.hero"
-    hero_array_incref(t12);
-#line 123 "examples/spectral/main.hero"
-    h1_u = t12;
-#line 123 "examples/spectral/main.hero"
-    hero_array_decref(t54);
-    t13 = h3_round;
-#line 124 "examples/spectral/main.hero"
-    t14 = INT64_C(1);
-#line 124 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 124 "examples/spectral/main.hero"
-    h3_round = t15;
-#line 124 "examples/spectral/main.hero"
-    goto bb1;
-#line 124 "examples/spectral/main.hero"
-bb3:
-#line 126 "examples/spectral/main.hero"
-    t16 = 0x0p+0;
-#line 126 "examples/spectral/main.hero"
-    h4_vbv = t16;
-    t17 = 0x0p+0;
-#line 127 "examples/spectral/main.hero"
-    h5_vv = t17;
-    t18 = INT64_C(0);
-#line 128 "examples/spectral/main.hero"
-    h6_at = t18;
-#line 128 "examples/spectral/main.hero"
-    goto bb4;
-#line 128 "examples/spectral/main.hero"
-bb4:
-#line 130 "examples/spectral/main.hero"
-    t19 = h6_at;
-#line 130 "examples/spectral/main.hero"
-    t20 = h0_n;
-#line 130 "examples/spectral/main.hero"
-    t21 = t19 < t20;
-#line 130 "examples/spectral/main.hero"
-    if (t21) goto bb5; else goto bb6;
-#line 130 "examples/spectral/main.hero"
-bb5:
-    t22 = h4_vbv;
-#line 131 "examples/spectral/main.hero"
-    t23 = h1_u;
-#line 131 "examples/spectral/main.hero"
-    t24 = h6_at;
-#line 131 "examples/spectral/main.hero"
-    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t23 + 1))[t24]);
-#line 131 "examples/spectral/main.hero"
-    t26 = h2_v;
-#line 131 "examples/spectral/main.hero"
-    t27 = h6_at;
-#line 131 "examples/spectral/main.hero"
-    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t26 + 1))[t27]);
-#line 131 "examples/spectral/main.hero"
-    t29 = t25 * t28;
-#line 131 "examples/spectral/main.hero"
-    t30 = t22 + t29;
-#line 131 "examples/spectral/main.hero"
-    h4_vbv = t30;
-    t31 = h5_vv;
-#line 132 "examples/spectral/main.hero"
-    t32 = h2_v;
-#line 132 "examples/spectral/main.hero"
-    t33 = h6_at;
-#line 132 "examples/spectral/main.hero"
-    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t32 + 1))[t33]);
-#line 132 "examples/spectral/main.hero"
-    t35 = h2_v;
-#line 132 "examples/spectral/main.hero"
-    t36 = h6_at;
-#line 132 "examples/spectral/main.hero"
-    t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t35 + 1))[t36]);
-#line 132 "examples/spectral/main.hero"
-    t38 = t34 * t37;
-#line 132 "examples/spectral/main.hero"
-    t39 = t31 + t38;
-#line 132 "examples/spectral/main.hero"
-    h5_vv = t39;
-    t40 = h6_at;
-#line 133 "examples/spectral/main.hero"
-    t41 = INT64_C(1);
-#line 133 "examples/spectral/main.hero"
-    if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow();
-#line 133 "examples/spectral/main.hero"
-    h6_at = t42;
-#line 133 "examples/spectral/main.hero"
-    goto bb4;
-#line 133 "examples/spectral/main.hero"
-bb6:
-#line 135 "examples/spectral/main.hero"
-    t43 = h4_vbv;
-#line 135 "examples/spectral/main.hero"
-    t44 = h5_vv;
-#line 135 "examples/spectral/main.hero"
-    t45 = t43 / t44;
-#line 135 "examples/spectral/main.hero"
-    t46 = sqrt(t45);
-#line 765 "main.c"
+double h_main_spectral_norm(int64_t h0_n) { HeroArrayHeader * h1_u = {0}; HeroArrayHeader * h2_v = {0}; int64_t h3_round; double h4_vbv; double h5_vv; int64_t h6_at; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *t2, *t4, *t9, *t10, *t11, *t12, *t23, *t26, *t32, *t35, *t47, *t48, *t49, *t50, *t51, *t52, *t53, *t54; HERO_NODEBUG int64_t t1, t3, t5, t6, t7, t13, t14, t15, t18, t19, t20, t24, t27, t33, t36, t40, t41, t42; HERO_NODEBUG bool t8, t21; HERO_NODEBUG double t16, t17, t22, t25, t28, t29, t30, t31, t34, t37, t38, t39, t43, t44, t45, t46; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = h_main_ones(t1); t47 = h7_own7; h7_own7 = t2; hero_array_decref(t47); t48 = h1_u; hero_array_incref(t2); h1_u = t2; hero_array_decref(t48);
+    t3 = h0_n; t4 = h_main_ones(t3); t49 = h8_own8; h8_own8 = t4; hero_array_decref(t49); t50 = h2_v; hero_array_incref(t4); h2_v = t4; hero_array_decref(t50);
+    t5 = INT64_C(0); h3_round = t5; goto bb1; bb1:
+#line 121
+    t6 = h3_round; t7 = h_main_ROUNDS(); t8 = t6 < t7; if (t8) goto bb2; else goto bb3; bb2:
+    t9 = h1_u; t10 = h_main_ata_times(t9); t51 = h9_own9; h9_own9 = t10; hero_array_decref(t51); t52 = h2_v; hero_array_incref(t10); h2_v = t10; hero_array_decref(t52);
+    t11 = h2_v; t12 = h_main_ata_times(t11); t53 = h10_own10; h10_own10 = t12; hero_array_decref(t53); t54 = h1_u; hero_array_incref(t12); h1_u = t12; hero_array_decref(t54);
+    t13 = h3_round; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); h3_round = t15; goto bb1; bb3:
+#line 126
+    t16 = 0x0p+0; h4_vbv = t16;
+    t17 = 0x0p+0; h5_vv = t17;
+    t18 = INT64_C(0); h6_at = t18; goto bb4; bb4:
+#line 130
+    t19 = h6_at; t20 = h0_n; t21 = t19 < t20; if (t21) goto bb5; else goto bb6; bb5:
+    t22 = h4_vbv; t23 = h1_u; t24 = h6_at; t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t23 + 1))[t24]); t26 = h2_v; t27 = h6_at; t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t26 + 1))[t27]); t29 = t25 * t28; t30 = t22 + t29; h4_vbv = t30;
+    t31 = h5_vv; t32 = h2_v; t33 = h6_at; t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t32 + 1))[t33]); t35 = h2_v; t36 = h6_at; t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t35 + 1))[t36]); t38 = t34 * t37; t39 = t31 + t38; h5_vv = t39;
+    t40 = h6_at; t41 = INT64_C(1); if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow(); h6_at = t42; goto bb4; bb6:
+#line 135
+    t43 = h4_vbv; t44 = h5_vv; t45 = t43 / t44; t46 = sqrt(t45);
+#line 305 "main.c"
     hero_array_release_at(&h1_u);
     hero_array_release_at(&h2_v);
     hero_array_release_at(&h7_own7);
@@ -772,244 +312,46 @@ bb6:
 }
 
 #line 137 "examples/spectral/main.hero"
-void h_main_main(void) {
-#line 137 "examples/spectral/main.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}, t3, t4; HERO_NODEBUG int64_t t1; HERO_NODEBUG double t2; HERO_ENTRY_STOP; goto bb0;
-#line 137 "examples/spectral/main.hero"
-bb0:
-    t1 = h_main_N();
-#line 138 "examples/spectral/main.hero"
-    t2 = h_main_spectral_norm(t1);
-#line 138 "examples/spectral/main.hero"
-    t3 = h_main_nine_places(t2);
-#line 138 "examples/spectral/main.hero"
-    t4 = h0_own0;
-#line 138 "examples/spectral/main.hero"
-    h0_own0 = t3;
-#line 138 "examples/spectral/main.hero"
-    hero_str_decref(t4);
-#line 138 "examples/spectral/main.hero"
-    hero_print_str(t3);
-#line 138 "examples/spectral/main.hero"
-    hero_print_end();
-#line 796 "main.c"
+void h_main_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t3, t4; HERO_NODEBUG int64_t t1; HERO_NODEBUG double t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_main_N(); t2 = h_main_spectral_norm(t1); t3 = h_main_nine_places(t2); t4 = h0_own0; h0_own0 = t3; hero_str_decref(t4); hero_print_str(t3); hero_print_end();
+#line 318 "main.c"
     hero_str_release_at(&h0_own0);
     return;
 }
 
 #line 144 "examples/spectral/main.hero"
-double h_main_BILLION(void) {
-#line 144 "examples/spectral/main.hero"
-    HERO_NODEBUG double t1; HERO_ENTRY_STOP; goto bb0;
-#line 144 "examples/spectral/main.hero"
-bb0:
-    t1 = 0x1.dcd65p+29;
-#line 145 "examples/spectral/main.hero"
-    return t1;
-#line 810 "main.c"
+double h_main_BILLION(void) { HERO_NODEBUG double t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1.dcd65p+29; return t1;
+#line 326 "main.c"
 }
 
 #line 147 "examples/spectral/main.hero"
-HeroStr h_main_nine_places(double h0_v) {
-#line 147 "examples/spectral/main.hero"
-    bool h1_negative; double h2_size; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h9_own9 = {0}, t13, t14, t18, t20, t41, t42; int64_t h4_scaled; int64_t h5_whole; int64_t h6_rest; HeroStr h7_text = {0}; HERO_NODEBUG HeroStr h8_ret0 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, t29, t30, t31, t33, t34, t36, t37, t38, t39, t40, t43, t44, t45, t46, t47, t48; HERO_NODEBUG double t1, t2, t4, t6, t7, t8, t9, t10, t11, t12; HERO_NODEBUG bool t3, t5, t17, t35; HERO_NODEBUG int64_t t15, t16, t21, t22, t23, t24, t25, t26, t27, t28, t32; HERO_NODEBUG HeroFailure t19; HERO_ENTRY_STOP; goto bb0;
-#line 147 "examples/spectral/main.hero"
-bb0:
-    t1 = h0_v;
-#line 148 "examples/spectral/main.hero"
-    t2 = 0x0p+0;
-#line 148 "examples/spectral/main.hero"
-    if (t1 != t1 || t2 != t2) hero_panic("a nan in `<`: it is neither less nor greater, so both arms would be false");
-#line 148 "examples/spectral/main.hero"
-    t3 = t1 < t2;
-#line 148 "examples/spectral/main.hero"
-    h1_negative = t3;
-    t4 = h0_v;
-#line 149 "examples/spectral/main.hero"
-    h2_size = t4;
-#line 151 "examples/spectral/main.hero"
-    t5 = h1_negative;
-#line 151 "examples/spectral/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 151 "examples/spectral/main.hero"
-bb1:
-#line 153 "examples/spectral/main.hero"
-    t8 = h2_size;
-#line 153 "examples/spectral/main.hero"
-    t9 = h_main_BILLION();
-#line 153 "examples/spectral/main.hero"
-    t10 = t8 * t9;
-#line 153 "examples/spectral/main.hero"
-    t11 = 0x1p-1;
-#line 153 "examples/spectral/main.hero"
-    t12 = t10 + t11;
-#line 153 "examples/spectral/main.hero"
-    if (hero_f64_fits_int(t12)) {
-#line 153 "examples/spectral/main.hero"
-        t13 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t12)};
-#line 153 "examples/spectral/main.hero"
-    } else {
-#line 153 "examples/spectral/main.hero"
-        t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 153 "examples/spectral/main.hero"
-    }
-#line 153 "examples/spectral/main.hero"
-    t41 = h9_own9;
-#line 153 "examples/spectral/main.hero"
-    h9_own9 = t13;
-#line 153 "examples/spectral/main.hero"
-    h_0opt_e201354_release(&t41);
-#line 153 "examples/spectral/main.hero"
-    t42 = h3_f0;
-#line 153 "examples/spectral/main.hero"
-    h_0opt_e201354_retain(&t13);
-#line 153 "examples/spectral/main.hero"
-    h3_f0 = t13;
-#line 153 "examples/spectral/main.hero"
-    h_0opt_e201354_release(&t42);
-#line 153 "examples/spectral/main.hero"
-    t14 = h3_f0;
-#line 153 "examples/spectral/main.hero"
-    t15 = t14.tag;
-#line 153 "examples/spectral/main.hero"
-    t16 = INT64_C(0);
-#line 153 "examples/spectral/main.hero"
-    t17 = t15 == t16;
-#line 153 "examples/spectral/main.hero"
-    if (t17) goto bb4; else goto bb5;
-#line 153 "examples/spectral/main.hero"
-bb2:
-#line 152 "examples/spectral/main.hero"
-    t6 = h0_v;
-#line 152 "examples/spectral/main.hero"
-    t7 = -t6;
-#line 152 "examples/spectral/main.hero"
-    h2_size = t7;
-#line 152 "examples/spectral/main.hero"
-    goto bb1;
-#line 152 "examples/spectral/main.hero"
-bb3:
-#line 152 "examples/spectral/main.hero"
-    goto bb1;
-#line 152 "examples/spectral/main.hero"
-bb4:
-    t20 = h3_f0;
-#line 153 "examples/spectral/main.hero"
-    t21 = t20.as.ok;
-#line 153 "examples/spectral/main.hero"
-    h4_scaled = t21;
-    t22 = h4_scaled;
-#line 154 "examples/spectral/main.hero"
-    t23 = INT64_C(1000000000);
-#line 154 "examples/spectral/main.hero"
-    if (t23 == 0) hero_panic("division by zero");
-#line 154 "examples/spectral/main.hero"
-    if (t22 == INT64_MIN && t23 == INT64_C(-1)) hero_panic_overflow();
-#line 154 "examples/spectral/main.hero"
-    t24 = t22 / t23;
-#line 154 "examples/spectral/main.hero"
-    h5_whole = t24;
-    t25 = h4_scaled;
-#line 155 "examples/spectral/main.hero"
-    t26 = INT64_C(1000000000);
-#line 155 "examples/spectral/main.hero"
-    if (t26 == 0) hero_panic("division by zero");
-#line 155 "examples/spectral/main.hero"
-    if (t25 == INT64_MIN && t26 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 155 "examples/spectral/main.hero"
-    t27 = t25 % t26;
-#line 155 "examples/spectral/main.hero"
-    h6_rest = t27;
-    t28 = h5_whole;
-#line 156 "examples/spectral/main.hero"
-    t29 = hero_int_to_str(t28);
-#line 156 "examples/spectral/main.hero"
-    t43 = h10_own10;
-#line 156 "examples/spectral/main.hero"
-    h10_own10 = t29;
-#line 156 "examples/spectral/main.hero"
-    hero_str_decref(t43);
-#line 156 "examples/spectral/main.hero"
-    t30 = HERO_STR_LIT(hero_str_2e);
-#line 156 "examples/spectral/main.hero"
-    t31 = hero_str_concat(t29, t30);
-#line 156 "examples/spectral/main.hero"
-    t44 = h11_own11;
-#line 156 "examples/spectral/main.hero"
-    h11_own11 = t31;
-#line 156 "examples/spectral/main.hero"
-    hero_str_decref(t44);
-#line 156 "examples/spectral/main.hero"
-    t32 = h6_rest;
-#line 156 "examples/spectral/main.hero"
-    t33 = h_main_padded(t32);
-#line 156 "examples/spectral/main.hero"
-    t45 = h12_own12;
-#line 156 "examples/spectral/main.hero"
-    h12_own12 = t33;
-#line 156 "examples/spectral/main.hero"
-    hero_str_decref(t45);
-#line 156 "examples/spectral/main.hero"
-    t34 = hero_str_concat(t31, t33);
-#line 156 "examples/spectral/main.hero"
-    t46 = h13_own13;
-#line 156 "examples/spectral/main.hero"
-    h13_own13 = t34;
-#line 156 "examples/spectral/main.hero"
-    hero_str_decref(t46);
-#line 156 "examples/spectral/main.hero"
-    t47 = h7_text;
-#line 156 "examples/spectral/main.hero"
-    hero_str_incref(t34);
-#line 156 "examples/spectral/main.hero"
-    h7_text = t34;
-#line 156 "examples/spectral/main.hero"
-    hero_str_decref(t47);
-#line 158 "examples/spectral/main.hero"
-    t35 = h1_negative;
-#line 158 "examples/spectral/main.hero"
-    if (t35) goto bb7; else goto bb8;
-#line 158 "examples/spectral/main.hero"
-bb5:
-#line 153 "examples/spectral/main.hero"
-    t18 = h3_f0;
-#line 153 "examples/spectral/main.hero"
-    t19 = t18.as.err;
-#line 979 "main.c"
+HeroStr h_main_nine_places(double h0_v) { bool h1_negative; double h2_size; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h9_own9 = {0}, t13, t14, t18, t20, t41, t42; int64_t h4_scaled; int64_t h5_whole; int64_t h6_rest; HeroStr h7_text = {0}; HERO_NODEBUG HeroStr h8_ret0 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, t29, t30, t31, t33, t34, t36, t37, t38, t39, t40, t43, t44, t45, t46, t47, t48; HERO_NODEBUG double t1, t2, t4, t6, t7, t8, t9, t10, t11, t12; HERO_NODEBUG bool t3, t5, t17, t35; HERO_NODEBUG int64_t t15, t16, t21, t22, t23, t24, t25, t26, t27, t28, t32; HERO_NODEBUG HeroFailure t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_v; t2 = 0x0p+0; if (t1 != t1 || t2 != t2) hero_panic("a nan in `<`: it is neither less nor greater, so both arms would be false"); t3 = t1 < t2; h1_negative = t3;
+    t4 = h0_v; h2_size = t4;
+#line 151
+    t5 = h1_negative; if (t5) goto bb2; else goto bb3; bb1:
+#line 153
+    t8 = h2_size; t9 = h_main_BILLION(); t10 = t8 * t9; t11 = 0x1p-1; t12 = t10 + t11; if (hero_f64_fits_int(t12)) { t13 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t12)}; } else { t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t41 = h9_own9; h9_own9 = t13; h_0opt_e201354_release(&t41); t42 = h3_f0; h_0opt_e201354_retain(&t13); h3_f0 = t13; h_0opt_e201354_release(&t42); t14 = h3_f0; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb4; else goto bb5; bb2:
+#line 152
+    t6 = h0_v; t7 = -t6; h2_size = t7; goto bb1; bb3: goto bb1; bb4:
+    t20 = h3_f0; t21 = t20.as.ok; h4_scaled = t21;
+    t22 = h4_scaled; t23 = INT64_C(1000000000); if (t23 == 0) hero_panic("division by zero"); if (t22 == INT64_MIN && t23 == INT64_C(-1)) hero_panic_overflow(); t24 = t22 / t23; h5_whole = t24;
+    t25 = h4_scaled; t26 = INT64_C(1000000000); if (t26 == 0) hero_panic("division by zero"); if (t25 == INT64_MIN && t26 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t27 = t25 % t26; h6_rest = t27;
+    t28 = h5_whole; t29 = hero_int_to_str(t28); t43 = h10_own10; h10_own10 = t29; hero_str_decref(t43); t30 = HERO_STR_LIT(hero_str_2e); t31 = hero_str_concat(t29, t30); t44 = h11_own11; h11_own11 = t31; hero_str_decref(t44); t32 = h6_rest; t33 = h_main_padded(t32); t45 = h12_own12; h12_own12 = t33; hero_str_decref(t45); t34 = hero_str_concat(t31, t33); t46 = h13_own13; h13_own13 = t34; hero_str_decref(t46); t47 = h7_text; hero_str_incref(t34); h7_text = t34; hero_str_decref(t47);
+#line 158
+    t35 = h1_negative; if (t35) goto bb7; else goto bb8; bb5:
+#line 153
+    t18 = h3_f0; t19 = t18.as.err;
+#line 347 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
 #line 160 "examples/spectral/main.hero"
-    t39 = h7_text;
-#line 160 "examples/spectral/main.hero"
-    h8_ret0 = t39;
-#line 160 "examples/spectral/main.hero"
-    goto bb9;
-#line 160 "examples/spectral/main.hero"
-bb7:
-#line 159 "examples/spectral/main.hero"
-    t36 = HERO_STR_LIT(hero_str_2d);
-#line 159 "examples/spectral/main.hero"
-    t37 = h7_text;
-#line 159 "examples/spectral/main.hero"
-    t38 = hero_str_concat(t36, t37);
-#line 159 "examples/spectral/main.hero"
-    t48 = h14_own14;
-#line 159 "examples/spectral/main.hero"
-    h14_own14 = t38;
-#line 159 "examples/spectral/main.hero"
-    hero_str_decref(t48);
-#line 159 "examples/spectral/main.hero"
-    h8_ret0 = t38;
-#line 159 "examples/spectral/main.hero"
-    goto bb9;
-#line 159 "examples/spectral/main.hero"
-bb8:
-#line 159 "examples/spectral/main.hero"
-    goto bb6;
-#line 159 "examples/spectral/main.hero"
-bb9:
-#line 1013 "main.c"
+    t39 = h7_text; h8_ret0 = t39; goto bb9; bb7:
+#line 159
+    t36 = HERO_STR_LIT(hero_str_2d); t37 = h7_text; t38 = hero_str_concat(t36, t37); t48 = h14_own14; h14_own14 = t38; hero_str_decref(t48); h8_ret0 = t38; goto bb9; bb8: goto bb6; bb9:
+#line 355 "main.c"
     t40 = h8_ret0;
     hero_str_incref(t40);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -1024,70 +366,14 @@ bb9:
 }
 
 #line 163 "examples/spectral/main.hero"
-HeroStr h_main_padded(int64_t h0_rest) {
-#line 163 "examples/spectral/main.hero"
-    HeroStr h1_digits = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t2, t3, t7, t8, t9, t10, t11, t12, t13, t14; HERO_NODEBUG int64_t t1, t4, t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
-#line 163 "examples/spectral/main.hero"
-bb0:
-    t1 = h0_rest;
-#line 164 "examples/spectral/main.hero"
-    t2 = hero_int_to_str(t1);
-#line 164 "examples/spectral/main.hero"
-    t11 = h2_own2;
-#line 164 "examples/spectral/main.hero"
-    h2_own2 = t2;
-#line 164 "examples/spectral/main.hero"
-    hero_str_decref(t11);
-#line 164 "examples/spectral/main.hero"
-    t12 = h1_digits;
-#line 164 "examples/spectral/main.hero"
-    hero_str_incref(t2);
-#line 164 "examples/spectral/main.hero"
-    h1_digits = t2;
-#line 164 "examples/spectral/main.hero"
-    hero_str_decref(t12);
-#line 164 "examples/spectral/main.hero"
-    goto bb1;
-#line 164 "examples/spectral/main.hero"
-bb1:
-#line 166 "examples/spectral/main.hero"
-    t3 = h1_digits;
-#line 166 "examples/spectral/main.hero"
-    t4 = hero_str_len(t3);
-#line 166 "examples/spectral/main.hero"
-    t5 = INT64_C(9);
-#line 166 "examples/spectral/main.hero"
-    t6 = t4 < t5;
-#line 166 "examples/spectral/main.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 166 "examples/spectral/main.hero"
-bb2:
-    t7 = HERO_STR_LIT(hero_str_30);
-#line 167 "examples/spectral/main.hero"
-    t8 = h1_digits;
-#line 167 "examples/spectral/main.hero"
-    t9 = hero_str_concat(t7, t8);
-#line 167 "examples/spectral/main.hero"
-    t13 = h3_own3;
-#line 167 "examples/spectral/main.hero"
-    h3_own3 = t9;
-#line 167 "examples/spectral/main.hero"
-    hero_str_decref(t13);
-#line 167 "examples/spectral/main.hero"
-    t14 = h1_digits;
-#line 167 "examples/spectral/main.hero"
-    hero_str_incref(t9);
-#line 167 "examples/spectral/main.hero"
-    h1_digits = t9;
-#line 167 "examples/spectral/main.hero"
-    hero_str_decref(t14);
-#line 167 "examples/spectral/main.hero"
-    goto bb1;
-#line 167 "examples/spectral/main.hero"
-bb3:
-#line 169 "examples/spectral/main.hero"
+HeroStr h_main_padded(int64_t h0_rest) { HeroStr h1_digits = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t2, t3, t7, t8, t9, t10, t11, t12, t13, t14; HERO_NODEBUG int64_t t1, t4, t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_rest; t2 = hero_int_to_str(t1); t11 = h2_own2; h2_own2 = t2; hero_str_decref(t11); t12 = h1_digits; hero_str_incref(t2); h1_digits = t2; hero_str_decref(t12); goto bb1; bb1:
+#line 166
+    t3 = h1_digits; t4 = hero_str_len(t3); t5 = INT64_C(9); t6 = t4 < t5; if (t6) goto bb2; else goto bb3; bb2:
+    t7 = HERO_STR_LIT(hero_str_30); t8 = h1_digits; t9 = hero_str_concat(t7, t8); t13 = h3_own3; h3_own3 = t9; hero_str_decref(t13); t14 = h1_digits; hero_str_incref(t9); h1_digits = t9; hero_str_decref(t14); goto bb1; bb3:
+#line 169
     t10 = h1_digits;
-#line 1091 "main.c"
+#line 377 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_digits);
     hero_str_release_at(&h2_own2);

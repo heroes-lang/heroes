@@ -149,11 +149,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionnamesananon
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 159 "ffiaconstructionnamesananonymousstructwhole.c"
 #pragma clang diagnostic pop
@@ -192,58 +192,14 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-void h_ffiaconstructionnamesananonymousstructwhole_main(void) {
-#line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    SB h0_b; SB h1_c; HERO_NODEBUG int32_t t1, t6, t8, t9, t10; HERO_NODEBUG int16_t t2, t3, t12, t13; HERO_NODEBUG SB t4, t5, t7, t11; HERO_ENTRY_STOP; goto bb0;
-#line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 21 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    t2 = INT64_C(2);
-#line 21 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    t3 = INT64_C(3);
-#line 21 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    t4 = (SB){.kind = t1, .lo = t2, .hi = t3};
-#line 21 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    h0_b = t4;
-#line 21 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_pad_fill(&h0_b, sizeof(SB), 1, hero_pad_g_0, hero_pad_n_0);
-    t5 = h0_b;
-#line 22 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    t6 = sb_i(t5);
-#line 22 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_int(t6);
-#line 22 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_end();
-    t7 = h0_b;
-#line 23 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    t8 = sb_kind(t7);
-#line 23 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_int(t8);
-#line 23 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_end();
-    t9 = INT64_C(1);
-#line 24 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    t10 = INT64_C(196610);
-#line 24 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    t11 = (SB){.kind = t9, .i = t10};
-#line 24 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    h1_c = t11;
-#line 24 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_pad_fill(&h1_c, sizeof(SB), 1, hero_pad_g_0, hero_pad_n_0);
-    t12 = h1_c.lo;
-#line 25 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_int(t12);
-#line 25 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_end();
-    t13 = h1_c.hi;
-#line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_int(t13);
-#line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    hero_print_end();
-#line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
-    return;
-#line 247 "ffiaconstructionnamesananonymousstructwhole.c"
+void h_ffiaconstructionnamesananonymousstructwhole_main(void) { SB h0_b; SB h1_c; HERO_NODEBUG int32_t t1, t6, t8, t9, t10; HERO_NODEBUG int16_t t2, t3, t12, t13; HERO_NODEBUG SB t4, t5, t7, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = (SB){.kind = t1, .lo = t2, .hi = t3}; h0_b = t4; hero_pad_fill(&h0_b, sizeof(SB), 1, hero_pad_g_0, hero_pad_n_0);
+    t5 = h0_b; t6 = sb_i(t5); hero_print_int(t6); hero_print_end();
+    t7 = h0_b; t8 = sb_kind(t7); hero_print_int(t8); hero_print_end();
+    t9 = INT64_C(1); t10 = INT64_C(196610); t11 = (SB){.kind = t9, .i = t10}; h1_c = t11; hero_pad_fill(&h1_c, sizeof(SB), 1, hero_pad_g_0, hero_pad_n_0);
+    t12 = h1_c.lo; hero_print_int(t12); hero_print_end();
+    t13 = h1_c.hi; hero_print_int(t13); hero_print_end(); return;
+#line 203 "ffiaconstructionnamesananonymousstructwhole.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesananonymousstructwhole_SB_eq(const SB *a, const SB *b) {
     if (!(a->kind == b->kind)) return false;

@@ -16074,11 +16074,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 16084 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
 #pragma clang diagnostic pop
@@ -24109,65 +24109,13 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs140variantsthrougharraysathousand
 void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void);
 
 #line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void) {
-#line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t2, *t4, *t5, *t10, *t11; HERO_NODEBUG HeroMapHeader *h3_own3 = {0}, *t7, *t8, *t12, *t13; HERO_NODEBUG int64_t t3, t9; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
-#line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-bb0:
-    t1 = hero_array_new(&h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc, 1);
-#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    t10 = h2_own2;
-#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    h2_own2 = t1;
-#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_array_decref(t10);
-#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    t11 = h0_xs;
-#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_array_incref(t1);
-#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    h0_xs = t1;
-#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_array_decref(t11);
-    t2 = h0_xs;
-#line 5029 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
-#line 5029 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_print_int(t3);
-#line 5029 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_print_end();
-    t4 = h0_xs;
-#line 5030 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    t5 = h0_xs;
-#line 5030 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    t6 = hero_array_eq(t4, t5);
-#line 5030 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_print_bool(t6);
-#line 5030 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_print_end();
-    t7 = hero_map_new(&h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc, &hero_desc_int, 0);
-#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    t12 = h3_own3;
-#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    h3_own3 = t7;
-#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_map_decref(t12);
-#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    t13 = h1_m;
-#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_map_incref(t7);
-#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    h1_m = t7;
-#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_map_decref(t13);
-    t8 = h1_m;
-#line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    t9 = hero_map_len(t8);
-#line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_print_int(t9);
-#line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    hero_print_end();
-#line 24171 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void) { HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t2, *t4, *t5, *t10, *t11; HERO_NODEBUG HeroMapHeader *h3_own3 = {0}, *t7, *t8, *t12, *t13; HERO_NODEBUG int64_t t3, t9; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc, 1); t10 = h2_own2; h2_own2 = t1; hero_array_decref(t10); t11 = h0_xs; hero_array_incref(t1); h0_xs = t1; hero_array_decref(t11);
+    t2 = h0_xs; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); hero_print_int(t3); hero_print_end();
+    t4 = h0_xs; t5 = h0_xs; t6 = hero_array_eq(t4, t5); hero_print_bool(t6); hero_print_end();
+    t7 = hero_map_new(&h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc, &hero_desc_int, 0); t12 = h3_own3; h3_own3 = t7; hero_map_decref(t12); t13 = h1_m; hero_map_incref(t7); h1_m = t7; hero_map_decref(t13);
+    t8 = h1_m; t9 = hero_map_len(t8); hero_print_int(t9); hero_print_end();
+#line 24119 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_own2);

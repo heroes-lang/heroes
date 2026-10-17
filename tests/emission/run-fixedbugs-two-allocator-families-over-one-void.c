@@ -136,16 +136,16 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 35 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugstwoallocatorfamiliesoveronevoid_arena_free(void * a0) { (void)(arena_free)(a0); }
-#line 37 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
+#line 37
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugstwoallocatorfamiliesoveronevoid_heap_free(void * a0) { (void)(heap_free)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 #pragma clang diagnostic pop
@@ -166,51 +166,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugstwoallocatorfamiliesoveronevoid_main(void);
 
 #line 39 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-void h_fixedbugstwoallocatorfamiliesoveronevoid_main(void) {
-#line 39 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    void * h0_a; void * h1_h; HERO_NODEBUG void *t1, *t2, *t3, *t4; HERO_ENTRY_STOP; goto bb0;
-#line 39 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-bb0:
-    t1 = arena_new();
-#line 40 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    hero_handle_acquired(t1, "arena_free");
-#line 40 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    h0_a = t1;
-    t2 = heap_new();
-#line 41 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    hero_handle_acquired(t2, "heap_free");
-#line 41 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    h1_h = t2;
-#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    t3 = h0_a;
-#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    {
-#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    hero_handle_alive(t3, "the argument `b` of `arena_free`");
-#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "arena_free", NULL);
-#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    (void)arena_free(t3);
-#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
-#line 45 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    }
-    t4 = h1_h;
-#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    {
-#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    hero_handle_alive(t4, "the argument `b` of `heap_free`");
-#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t4, "heap_free", NULL);
-#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    (void)heap_free(t4);
-#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    if (hero_handle_ended(t4, hero_life_0_0) && h1_h == t4) h1_h = hero_handle_dead();
-#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    }
-#line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    return;
-#line 214 "fixedbugstwoallocatorfamiliesoveronevoid.c"
+void h_fixedbugstwoallocatorfamiliesoveronevoid_main(void) { void * h0_a; void * h1_h; HERO_NODEBUG void *t1, *t2, *t3, *t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = arena_new(); hero_handle_acquired(t1, "arena_free"); h0_a = t1;
+    t2 = heap_new(); hero_handle_acquired(t2, "heap_free"); h1_h = t2;
+#line 45
+    t3 = h0_a; { hero_handle_alive(t3, "the argument `b` of `arena_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "arena_free", NULL); (void)arena_free(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); }
+    t4 = h1_h; { hero_handle_alive(t4, "the argument `b` of `heap_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t4, "heap_free", NULL); (void)heap_free(t4); if (hero_handle_ended(t4, hero_life_0_0) && h1_h == t4) h1_h = hero_handle_dead(); } return;
+#line 176 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstwoallocatorfamiliesoveronevoid_Arena_eq(void * const *a, void * const *b) {
     return hero_handle_eq(*a, *b);

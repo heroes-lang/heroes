@@ -123,11 +123,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 133 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
 #pragma clang diagnostic pop
@@ -157,26 +157,10 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void) {
-#line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    struct old_pair h0_p; HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct old_pair t2; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-bb0:
-    t1 = INT64_C(5);
-#line 17 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    t2 = (struct old_pair){.a = t1};
-#line 17 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    h0_p = t2;
-#line 17 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    hero_pad_fill(&h0_p, sizeof(struct old_pair), 1, hero_pad_g_0, hero_pad_n_0);
-    t3 = h0_p.a;
-#line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    hero_print_int(t3);
-#line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    return;
-#line 180 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
+void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void) { struct old_pair h0_p; HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct old_pair t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(5); t2 = (struct old_pair){.a = t1}; h0_p = t2; hero_pad_fill(&h0_p, sizeof(struct old_pair), 1, hero_pad_g_0, hero_pad_n_0);
+    t3 = h0_p.a; hero_print_int(t3); hero_print_end(); return;
+#line 164 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs584adeprecatedrecordasalocalbuildssilent_OldPair_eq(const struct old_pair *a, const struct old_pair *b) {
     if (!(a->a == b->a)) return false;

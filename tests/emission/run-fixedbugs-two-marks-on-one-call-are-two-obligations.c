@@ -137,11 +137,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugstwomarksononecalla
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 147 "fixedbugstwomarksononecallaretwoobligations.c"
 #pragma clang diagnostic pop
@@ -163,69 +163,19 @@ void h_fixedbugstwomarksononecallaretwoobligations_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 void h_fixedbugstwomarksononecallaretwoobligations_main(void) {
-#line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
+#line 25
 #define h0_a (*hero_lend_h0_a)
-#line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
+#line 25
 #define h1_b (*hero_lend_h1_b)
-#line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a"); Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b"); HERO_NODEBUG Slot *t1, *t4; HERO_NODEBUG Conn *t2, *t5; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-bb0:
-    t1 = ((void *)0);
-#line 26 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    h0_a = t1;
-    t2 = ((void *)0);
-#line 27 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    h1_b = t2;
-    t3 = INT64_C(1);
-#line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_lend_local_name(hero_lend_h0_a, "both_open", "a");
-#line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_lend_local_name(hero_lend_h1_b, "both_open", "b");
-#line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    (void)both_open(t3, &h0_a, &h1_b);
-#line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_acquired(h0_a, "slot_close");
-#line 28 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_acquired(h1_b, "conn_close");
-    t4 = h0_a;
-#line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    {
-#line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_alive(t4, "the argument `s` of `slot_close`");
-#line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t4, "slot_close", NULL);
-#line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    (void)slot_close(t4);
-#line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    if (hero_handle_ended(t4, hero_life_0_0) && h0_a == t4) h0_a = hero_handle_dead();
-#line 29 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    }
-    t5 = h1_b;
-#line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    {
-#line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_handle_alive(t5, "the argument `c` of `conn_close`");
-#line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "conn_close", NULL);
-#line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    (void)conn_close(t5);
-#line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    if (hero_handle_ended(t5, hero_life_0_0) && h1_b == t5) h1_b = hero_handle_dead();
-#line 30 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    }
-    t6 = HERO_STR_LIT(hero_str_455ecde8);
-#line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_print_str(t6);
-#line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_print_end();
-#line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_lend_local_give(hero_lend_h1_b);
-#line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    hero_lend_local_give(hero_lend_h0_a);
-#line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    return;
-#line 229 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 25
+    Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a"); Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b"); HERO_NODEBUG Slot *t1, *t4; HERO_NODEBUG Conn *t2, *t5; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = ((void *)0); h0_a = t1;
+    t2 = ((void *)0); h1_b = t2;
+    t3 = INT64_C(1); hero_lend_local_name(hero_lend_h0_a, "both_open", "a"); hero_lend_local_name(hero_lend_h1_b, "both_open", "b"); (void)both_open(t3, &h0_a, &h1_b); hero_handle_acquired(h0_a, "slot_close"); hero_handle_acquired(h1_b, "conn_close");
+    t4 = h0_a; { hero_handle_alive(t4, "the argument `s` of `slot_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t4, "slot_close", NULL); (void)slot_close(t4); if (hero_handle_ended(t4, hero_life_0_0) && h0_a == t4) h0_a = hero_handle_dead(); }
+    t5 = h1_b; { hero_handle_alive(t5, "the argument `c` of `conn_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "conn_close", NULL); (void)conn_close(t5); if (hero_handle_ended(t5, hero_life_0_0) && h1_b == t5) h1_b = hero_handle_dead(); }
+    t6 = HERO_STR_LIT(hero_str_455ecde8); hero_print_str(t6); hero_print_end(); hero_lend_local_give(hero_lend_h1_b); hero_lend_local_give(hero_lend_h0_a); return;
+#line 179 "fixedbugstwomarksononecallaretwoobligations.c"
 }
 #undef h0_a
 #undef h1_b

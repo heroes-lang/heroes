@@ -89,11 +89,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 99 "fixedbugs283textastringspellswithisheldasitself.c"
 #pragma clang diagnostic pop
@@ -112,130 +112,16 @@ void h_fixedbugs283textastringspellswithisheldasitself_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 10 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-HeroStr h_fixedbugs283textastringspellswithisheldasitself_bytes_of(HeroStr h0_s) {
-#line 10 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    HeroStr h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t5, *t8, *t11, *t27, *t28; HERO_NODEBUG int64_t h3_i0, t2, t4, t6, t7, t9, t12, t13, t18, t22, t23, t24; int64_t h4_i; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t3, t14, t15, t16, t17, t20, t21, t25, t26, t29, t30, t31, t32; HERO_NODEBUG bool t10; HERO_NODEBUG uint8_t t19; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_0);
-#line 11 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t26 = h1_out;
-#line 11 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_incref(t1);
-#line 11 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h1_out = t1;
-#line 11 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t26);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t2 = INT64_C(0);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t3 = h0_s;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t4 = hero_str_len(t3);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t5 = h_library_range(t2, t4);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t27 = h5_own5;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h5_own5 = t5;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_array_decref(t27);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t28 = h2_xs0;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_array_incref(t5);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h2_xs0 = t5;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_array_decref(t28);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t6 = INT64_C(0);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h3_i0 = t6;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    goto bb1;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-bb1:
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t7 = h3_i0;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t8 = h2_xs0;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t10 = t7 < t9;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    if (t10) goto bb2; else goto bb4;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-bb2:
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t11 = h2_xs0;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t12 = h3_i0;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h4_i = t13;
-    t14 = h1_out;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t15 = HERO_STR_LIT(hero_str_20);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t16 = hero_str_concat(t14, t15);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t29 = h6_own6;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h6_own6 = t16;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t29);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t17 = h0_s;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t18 = h4_i;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? ((void)hero_str_byte(t17, t18), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t20 = hero_int_to_str(t19);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t30 = h7_own7;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h7_own7 = t20;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t30);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t21 = hero_str_concat(t16, t20);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t31 = h8_own8;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h8_own8 = t21;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t31);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t32 = h1_out;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_incref(t21);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h1_out = t21;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t32);
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    goto bb3;
-#line 14 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-bb3:
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t22 = h3_i0;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t23 = INT64_C(1);
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow();
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h3_i0 = t24;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    goto bb1;
-#line 13 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-bb4:
-#line 16 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
+HeroStr h_fixedbugs283textastringspellswithisheldasitself_bytes_of(HeroStr h0_s) { HeroStr h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t5, *t8, *t11, *t27, *t28; HERO_NODEBUG int64_t h3_i0, t2, t4, t6, t7, t9, t12, t13, t18, t22, t23, t24; int64_t h4_i; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t3, t14, t15, t16, t17, t20, t21, t25, t26, t29, t30, t31, t32; HERO_NODEBUG bool t10; HERO_NODEBUG uint8_t t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_0); t26 = h1_out; hero_str_incref(t1); h1_out = t1; hero_str_decref(t26);
+#line 13
+    t2 = INT64_C(0); t3 = h0_s; t4 = hero_str_len(t3); t5 = h_library_range(t2, t4); t27 = h5_own5; h5_own5 = t5; hero_array_decref(t27); t28 = h2_xs0; hero_array_incref(t5); h2_xs0 = t5; hero_array_decref(t28); t6 = INT64_C(0); h3_i0 = t6; goto bb1; bb1: t7 = h3_i0; t8 = h2_xs0; t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); t10 = t7 < t9; if (t10) goto bb2; else goto bb4; bb2: t11 = h2_xs0; t12 = h3_i0; t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); h4_i = t13;
+    t14 = h1_out; t15 = HERO_STR_LIT(hero_str_20); t16 = hero_str_concat(t14, t15); t29 = h6_own6; h6_own6 = t16; hero_str_decref(t29); t17 = h0_s; t18 = h4_i; t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? ((void)hero_str_byte(t17, t18), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]); t20 = hero_int_to_str(t19); t30 = h7_own7; h7_own7 = t20; hero_str_decref(t30); t21 = hero_str_concat(t16, t20); t31 = h8_own8; h8_own8 = t21; hero_str_decref(t31); t32 = h1_out; hero_str_incref(t21); h1_out = t21; hero_str_decref(t32); goto bb3; bb3:
+#line 13
+    t22 = h3_i0; t23 = INT64_C(1); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow(); h3_i0 = t24; goto bb1; bb4:
+#line 16
     t25 = h1_out;
-#line 239 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 125 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_incref(t25);
     hero_str_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -247,114 +133,14 @@ bb4:
 }
 
 #line 18 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-void h_fixedbugs283textastringspellswithisheldasitself_main(void) {
-#line 18 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}, h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_78a78e9a);
-#line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t2 = HERO_STR_LIT(hero_str_2db5e0ec);
-#line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t3 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t2);
-#line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t19 = h0_own0;
-#line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h0_own0 = t3;
-#line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t19);
-#line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t1);
-#line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t3);
-#line 19 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_end();
-    t4 = HERO_STR_LIT(hero_str_4c45f684);
-#line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t5 = HERO_STR_LIT(hero_str_5e529a7);
-#line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t6 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t5);
-#line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t20 = h1_own1;
-#line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h1_own1 = t6;
-#line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t20);
-#line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t4);
-#line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t6);
-#line 20 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_end();
-    t7 = HERO_STR_LIT(hero_str_343b2199);
-#line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t8 = HERO_STR_LIT(hero_str_2fb9cd2f);
-#line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t9 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t8);
-#line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t21 = h2_own2;
-#line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h2_own2 = t9;
-#line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t21);
-#line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t7);
-#line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t9);
-#line 21 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_end();
-    t10 = HERO_STR_LIT(hero_str_9506771);
-#line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t11 = HERO_STR_LIT(hero_str_2ca7000d);
-#line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t12 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t11);
-#line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t22 = h3_own3;
-#line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h3_own3 = t12;
-#line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t22);
-#line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t10);
-#line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t12);
-#line 22 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_end();
-    t13 = HERO_STR_LIT(hero_str_24829e4a);
-#line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t14 = HERO_STR_LIT(hero_str_451c6397);
-#line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t15 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t14);
-#line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t23 = h4_own4;
-#line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h4_own4 = t15;
-#line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t23);
-#line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t13);
-#line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t15);
-#line 23 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_end();
-    t16 = HERO_STR_LIT(hero_str_22cdf42d);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t17 = HERO_STR_LIT(hero_str_d3286cf);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t18 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t17);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    t24 = h5_own5;
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    h5_own5 = t18;
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_str_decref(t24);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t16);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_str(t18);
-#line 24 "tests/golden/run/fixedbugs-283-text-a-string-spells-with-is-held-as-itself.hero"
-    hero_print_end();
-#line 358 "fixedbugs283textastringspellswithisheldasitself.c"
+void h_fixedbugs283textastringspellswithisheldasitself_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_78a78e9a); t2 = HERO_STR_LIT(hero_str_2db5e0ec); t3 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t2); t19 = h0_own0; h0_own0 = t3; hero_str_decref(t19); hero_print_str(t1); hero_print_str(t3); hero_print_end();
+    t4 = HERO_STR_LIT(hero_str_4c45f684); t5 = HERO_STR_LIT(hero_str_5e529a7); t6 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t5); t20 = h1_own1; h1_own1 = t6; hero_str_decref(t20); hero_print_str(t4); hero_print_str(t6); hero_print_end();
+    t7 = HERO_STR_LIT(hero_str_343b2199); t8 = HERO_STR_LIT(hero_str_2fb9cd2f); t9 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t8); t21 = h2_own2; h2_own2 = t9; hero_str_decref(t21); hero_print_str(t7); hero_print_str(t9); hero_print_end();
+    t10 = HERO_STR_LIT(hero_str_9506771); t11 = HERO_STR_LIT(hero_str_2ca7000d); t12 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t11); t22 = h3_own3; h3_own3 = t12; hero_str_decref(t22); hero_print_str(t10); hero_print_str(t12); hero_print_end();
+    t13 = HERO_STR_LIT(hero_str_24829e4a); t14 = HERO_STR_LIT(hero_str_451c6397); t15 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t14); t23 = h4_own4; h4_own4 = t15; hero_str_decref(t23); hero_print_str(t13); hero_print_str(t15); hero_print_end();
+    t16 = HERO_STR_LIT(hero_str_22cdf42d); t17 = HERO_STR_LIT(hero_str_d3286cf); t18 = h_fixedbugs283textastringspellswithisheldasitself_bytes_of(t17); t24 = h5_own5; h5_own5 = t18; hero_str_decref(t24); hero_print_str(t16); hero_print_str(t18); hero_print_end();
+#line 144 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_str_release_at(&h0_own0);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -365,58 +151,14 @@ bb0:
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 26 "<heroes library>"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 27 "<heroes library>"
-    t13 = h4_own4;
-#line 27 "<heroes library>"
-    h4_own4 = t1;
-#line 27 "<heroes library>"
-    hero_array_decref(t13);
-#line 27 "<heroes library>"
-    t14 = h2_out;
-#line 27 "<heroes library>"
-    hero_array_incref(t1);
-#line 27 "<heroes library>"
-    h2_out = t1;
-#line 27 "<heroes library>"
-    hero_array_decref(t14);
-    t2 = h0_from;
-#line 28 "<heroes library>"
-    h3_i = t2;
-#line 28 "<heroes library>"
-    goto bb1;
-#line 28 "<heroes library>"
-bb1:
-    t3 = h3_i;
-#line 29 "<heroes library>"
-    t4 = h1_to;
-#line 29 "<heroes library>"
-    t5 = t3 < t4;
-#line 29 "<heroes library>"
-    if (t5) goto bb2; else goto bb3;
-#line 29 "<heroes library>"
-bb2:
-    t7 = h3_i;
-#line 30 "<heroes library>"
-    hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i;
-#line 31 "<heroes library>"
-    t10 = INT64_C(1);
-#line 31 "<heroes library>"
-    if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 31 "<heroes library>"
-    h3_i = t11;
-#line 31 "<heroes library>"
-    goto bb1;
-#line 31 "<heroes library>"
-bb3:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
+    t2 = h0_from; h3_i = t2; goto bb1; bb1:
+    t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 420 "fixedbugs283textastringspellswithisheldasitself.c"
+#line 162 "fixedbugs283textastringspellswithisheldasitself.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

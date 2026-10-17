@@ -144,11 +144,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handlereferencejoinsthelife
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 154 "handlereferencejoinsthelifeitfinds.c"
 #pragma clang diagnostic pop
@@ -167,110 +167,16 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_handlereferencejoinsthelifeitfinds_main(void);
 
 #line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-void h_handlereferencejoinsthelifeitfinds_main(void) {
-#line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    ob * h0_a; ob * h1_b; int32_t h2_rc; HERO_NODEBUG int64_t t1, t9; HERO_NODEBUG ob *t2, *t3, *t4, *t5, *t8, *t12, *t13, *t14; HERO_NODEBUG int32_t t6, t11; HERO_NODEBUG HeroStr t7, t10, t15; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 17 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    t2 = ob_new(t1);
-#line 17 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_acquired(t2, "ob_put");
-#line 17 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    h0_a = t2;
-    t3 = h0_a;
-#line 18 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_alive(t3, "the argument `o` of `ob_get`");
-#line 18 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    t4 = ob_get(t3);
-#line 18 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_retained(t4, "ob_put", 0);
-#line 18 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    h1_b = t4;
-    t5 = h0_a;
-#line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_alive(t5, "the argument `o` of `ob_up_ref`");
-#line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    t6 = ob_up_ref(t5);
-#line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_retained(t5, "ob_put", 0);
-#line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    if (t6 == 1LL) {
-#line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    } else {
-#line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    }
-#line 19 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    h2_rc = t6;
-    t7 = HERO_STR_LIT(hero_str_7b9bb5d3);
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    t8 = h0_a;
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_alive(t8, "the argument `o` of `ob_refs`");
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    t9 = ob_refs(t8);
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    t10 = HERO_STR_LIT(hero_str_45d6e555);
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    t11 = h2_rc;
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_print_str(t7);
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_print_int(t9);
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_print_str(t10);
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_print_int(t11);
-#line 20 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_print_end();
-    t12 = h1_b;
-#line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    {
-#line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_alive(t12, "the argument `o` of `ob_put`");
-#line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "ob_put", NULL);
-#line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    (void)ob_put(t12);
-#line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    if (hero_handle_ended(t12, hero_life_0_0) && h1_b == t12) h1_b = hero_handle_dead();
-#line 21 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    }
-    t13 = h0_a;
-#line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    {
-#line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_alive(t13, "the argument `o` of `ob_put`");
-#line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t13, "ob_put", NULL);
-#line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    (void)ob_put(t13);
-#line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    if (hero_handle_ended(t13, hero_life_0_0) && h0_a == t13) h0_a = hero_handle_dead();
-#line 22 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    }
-    t14 = h0_a;
-#line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    {
-#line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_handle_alive(t14, "the argument `o` of `ob_put`");
-#line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t14, "ob_put", NULL);
-#line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    (void)ob_put(t14);
-#line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    if (hero_handle_ended(t14, hero_life_0_0) && h0_a == t14) h0_a = hero_handle_dead();
-#line 23 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    }
-    t15 = HERO_STR_LIT(hero_str_3f94e3d);
-#line 24 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_print_str(t15);
-#line 24 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    hero_print_end();
-#line 24 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    return;
-#line 274 "handlereferencejoinsthelifeitfinds.c"
+void h_handlereferencejoinsthelifeitfinds_main(void) { ob * h0_a; ob * h1_b; int32_t h2_rc; HERO_NODEBUG int64_t t1, t9; HERO_NODEBUG ob *t2, *t3, *t4, *t5, *t8, *t12, *t13, *t14; HERO_NODEBUG int32_t t6, t11; HERO_NODEBUG HeroStr t7, t10, t15; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); t2 = ob_new(t1); hero_handle_acquired(t2, "ob_put"); h0_a = t2;
+    t3 = h0_a; hero_handle_alive(t3, "the argument `o` of `ob_get`"); t4 = ob_get(t3); hero_handle_retained(t4, "ob_put", 0); h1_b = t4;
+    t5 = h0_a; hero_handle_alive(t5, "the argument `o` of `ob_up_ref`"); t6 = ob_up_ref(t5); hero_handle_retained(t5, "ob_put", 0); if (t6 == 1LL) { } else { } h2_rc = t6;
+    t7 = HERO_STR_LIT(hero_str_7b9bb5d3); t8 = h0_a; hero_handle_alive(t8, "the argument `o` of `ob_refs`"); t9 = ob_refs(t8); t10 = HERO_STR_LIT(hero_str_45d6e555); t11 = h2_rc; hero_print_str(t7); hero_print_int(t9); hero_print_str(t10); hero_print_int(t11); hero_print_end();
+    t12 = h1_b; { hero_handle_alive(t12, "the argument `o` of `ob_put`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "ob_put", NULL); (void)ob_put(t12); if (hero_handle_ended(t12, hero_life_0_0) && h1_b == t12) h1_b = hero_handle_dead(); }
+    t13 = h0_a; { hero_handle_alive(t13, "the argument `o` of `ob_put`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t13, "ob_put", NULL); (void)ob_put(t13); if (hero_handle_ended(t13, hero_life_0_0) && h0_a == t13) h0_a = hero_handle_dead(); }
+    t14 = h0_a; { hero_handle_alive(t14, "the argument `o` of `ob_put`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t14, "ob_put", NULL); (void)ob_put(t14); if (hero_handle_ended(t14, hero_life_0_0) && h0_a == t14) h0_a = hero_handle_dead(); }
+    t15 = HERO_STR_LIT(hero_str_3f94e3d); hero_print_str(t15); hero_print_end(); return;
+#line 180 "handlereferencejoinsthelifeitfinds.c"
 }
 HERO_TU_LOCAL bool h_handlereferencejoinsthelifeitfinds_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

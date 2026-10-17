@@ -98,11 +98,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_join(int64
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 108 "main.c"
 #pragma clang diagnostic pop
@@ -137,112 +137,32 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 
 #line 27 "examples/wordbands/main.hero"
-int64_t h_main_BANDS(void) {
-#line 27 "examples/wordbands/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 27 "examples/wordbands/main.hero"
-bb0:
-    t1 = INT64_C(8);
-#line 28 "examples/wordbands/main.hero"
-    return t1;
+int64_t h_main_BANDS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(8); return t1;
+#line 143 "main.c"
+}
+
+#line 30 "examples/wordbands/main.hero"
+int64_t h_main_LINES(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(300); return t1;
 #line 149 "main.c"
 }
 
-#line 30 "examples/wordbands/main.hero"
-int64_t h_main_LINES(void) {
-#line 30 "examples/wordbands/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 30 "examples/wordbands/main.hero"
-bb0:
-    t1 = INT64_C(300);
-#line 31 "examples/wordbands/main.hero"
-    return t1;
-#line 161 "main.c"
-}
-
 #line 35 "examples/wordbands/main.hero"
-HeroStr h_main_text_of(int64_t h0_index) {
-#line 35 "examples/wordbands/main.hero"
-    HeroArrayHeader * h1_pieces = {0}; int64_t h2_n; int64_t h3_which; HERO_NODEBUG int64_t h4_s0, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t17, t18, t20, t21, t23, t24, t35, t36, t37; HERO_NODEBUG HeroStr h5_r0 = {0}, h8_own8 = {0}, t26, t27, t28, t29, t30, t31, t33, t39, t40, t43, t44, t45, t46, t47, t48, t49; HeroStr h6_word = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t38, *t41, *t42; HERO_NODEBUG bool t5, t16, t19, t22, t25; HERO_ENTRY_STOP; goto bb0;
-#line 35 "examples/wordbands/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 36 "examples/wordbands/main.hero"
-    t41 = h7_own7;
-#line 36 "examples/wordbands/main.hero"
-    h7_own7 = t1;
-#line 36 "examples/wordbands/main.hero"
-    hero_array_decref(t41);
-#line 36 "examples/wordbands/main.hero"
-    t42 = h1_pieces;
-#line 36 "examples/wordbands/main.hero"
-    hero_array_incref(t1);
-#line 36 "examples/wordbands/main.hero"
-    h1_pieces = t1;
-#line 36 "examples/wordbands/main.hero"
-    hero_array_decref(t42);
-    t2 = INT64_C(0);
-#line 37 "examples/wordbands/main.hero"
-    h2_n = t2;
-#line 37 "examples/wordbands/main.hero"
-    goto bb1;
-#line 37 "examples/wordbands/main.hero"
-bb1:
-#line 39 "examples/wordbands/main.hero"
-    t3 = h2_n;
-#line 39 "examples/wordbands/main.hero"
-    t4 = h_main_LINES();
-#line 39 "examples/wordbands/main.hero"
-    t5 = t3 < t4;
-#line 39 "examples/wordbands/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 39 "examples/wordbands/main.hero"
-bb2:
-    t6 = h0_index;
-#line 40 "examples/wordbands/main.hero"
-    t7 = h_main_LINES();
-#line 40 "examples/wordbands/main.hero"
-    if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow();
-#line 40 "examples/wordbands/main.hero"
-    t9 = h2_n;
-#line 40 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow();
-#line 40 "examples/wordbands/main.hero"
-    t11 = INT64_C(5);
-#line 40 "examples/wordbands/main.hero"
-    if (t11 == 0) hero_panic("division by zero");
-#line 40 "examples/wordbands/main.hero"
-    if (t10 == INT64_MIN && t11 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 40 "examples/wordbands/main.hero"
-    t12 = t10 % t11;
-#line 40 "examples/wordbands/main.hero"
-    h3_which = t12;
-#line 42 "examples/wordbands/main.hero"
-    t13 = h3_which;
-#line 42 "examples/wordbands/main.hero"
-    h4_s0 = t13;
-#line 42 "examples/wordbands/main.hero"
-    t14 = h4_s0;
+HeroStr h_main_text_of(int64_t h0_index) { HeroArrayHeader * h1_pieces = {0}; int64_t h2_n; int64_t h3_which; HERO_NODEBUG int64_t h4_s0, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t17, t18, t20, t21, t23, t24, t35, t36, t37; HERO_NODEBUG HeroStr h5_r0 = {0}, h8_own8 = {0}, t26, t27, t28, t29, t30, t31, t33, t39, t40, t43, t44, t45, t46, t47, t48, t49; HeroStr h6_word = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t38, *t41, *t42; HERO_NODEBUG bool t5, t16, t19, t22, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t41 = h7_own7; h7_own7 = t1; hero_array_decref(t41); t42 = h1_pieces; hero_array_incref(t1); h1_pieces = t1; hero_array_decref(t42);
+    t2 = INT64_C(0); h2_n = t2; goto bb1; bb1:
+#line 39
+    t3 = h2_n; t4 = h_main_LINES(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h0_index; t7 = h_main_LINES(); if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow(); t9 = h2_n; if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow(); t11 = INT64_C(5); if (t11 == 0) hero_panic("division by zero"); if (t10 == INT64_MIN && t11 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t12 = t10 % t11; h3_which = t12;
+#line 42
+    t13 = h3_which; h4_s0 = t13; t14 = h4_s0;
     t15 = INT64_C(0);
-#line 42 "examples/wordbands/main.hero"
-    t16 = t14 == t15;
-#line 42 "examples/wordbands/main.hero"
-    if (t16) goto bb5; else goto bb6;
-#line 42 "examples/wordbands/main.hero"
-bb3:
-#line 52 "examples/wordbands/main.hero"
-    t38 = h1_pieces;
-#line 52 "examples/wordbands/main.hero"
-    t39 = HERO_STR_LIT(hero_str_20);
-#line 52 "examples/wordbands/main.hero"
-    t40 = hero_str_join(t38, t39);
-#line 52 "examples/wordbands/main.hero"
-    t43 = h8_own8;
-#line 52 "examples/wordbands/main.hero"
-    h8_own8 = t40;
-#line 52 "examples/wordbands/main.hero"
-    hero_str_decref(t43);
-#line 246 "main.c"
+#line 42
+    t16 = t14 == t15; if (t16) goto bb5; else goto bb6; bb3:
+#line 52
+    t38 = h1_pieces; t39 = HERO_STR_LIT(hero_str_20); t40 = hero_str_join(t38, t39); t43 = h8_own8; h8_own8 = t40; hero_str_decref(t43);
+#line 166 "main.c"
     hero_str_incref(t40);
     hero_array_release_at(&h1_pieces);
     hero_str_release_at(&h5_r0);
@@ -252,408 +172,68 @@ bb3:
     return t40;
 bb4:
 #line 42 "examples/wordbands/main.hero"
-    t31 = h5_r0;
-#line 42 "examples/wordbands/main.hero"
-    t44 = h6_word;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_incref(t31);
-#line 42 "examples/wordbands/main.hero"
-    h6_word = t31;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_decref(t44);
-#line 49 "examples/wordbands/main.hero"
-    t33 = h6_word;
-#line 49 "examples/wordbands/main.hero"
-    hero_array_push_owned(&h1_pieces, &t33);
-    t35 = h2_n;
-#line 50 "examples/wordbands/main.hero"
-    t36 = INT64_C(1);
-#line 50 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow();
-#line 50 "examples/wordbands/main.hero"
-    h2_n = t37;
-#line 50 "examples/wordbands/main.hero"
-    goto bb1;
-#line 50 "examples/wordbands/main.hero"
-bb5:
-#line 43 "examples/wordbands/main.hero"
+    t31 = h5_r0; t44 = h6_word; hero_str_incref(t31); h6_word = t31; hero_str_decref(t44);
+#line 49
+    t33 = h6_word; hero_array_push_owned(&h1_pieces, &t33);
+    t35 = h2_n; t36 = INT64_C(1); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow(); h2_n = t37; goto bb1; bb5:
+#line 43
     t26 = HERO_STR_LIT(hero_str_35485bab);
-#line 42 "examples/wordbands/main.hero"
-    t45 = h5_r0;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_incref(t26);
-#line 42 "examples/wordbands/main.hero"
-    h5_r0 = t26;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_decref(t45);
-#line 42 "examples/wordbands/main.hero"
-    goto bb4;
-#line 42 "examples/wordbands/main.hero"
-bb6:
-#line 42 "examples/wordbands/main.hero"
-    t17 = h4_s0;
-#line 44 "examples/wordbands/main.hero"
+#line 42
+    t45 = h5_r0; hero_str_incref(t26); h5_r0 = t26; hero_str_decref(t45); goto bb4; bb6: t17 = h4_s0;
+#line 44
     t18 = INT64_C(1);
-#line 42 "examples/wordbands/main.hero"
-    t19 = t17 == t18;
-#line 42 "examples/wordbands/main.hero"
-    if (t19) goto bb7; else goto bb8;
-#line 42 "examples/wordbands/main.hero"
-bb7:
-#line 44 "examples/wordbands/main.hero"
+#line 42
+    t19 = t17 == t18; if (t19) goto bb7; else goto bb8; bb7:
+#line 44
     t27 = HERO_STR_LIT(hero_str_d3c63a0);
-#line 42 "examples/wordbands/main.hero"
-    t46 = h5_r0;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_incref(t27);
-#line 42 "examples/wordbands/main.hero"
-    h5_r0 = t27;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_decref(t46);
-#line 42 "examples/wordbands/main.hero"
-    goto bb4;
-#line 42 "examples/wordbands/main.hero"
-bb8:
-#line 42 "examples/wordbands/main.hero"
-    t20 = h4_s0;
-#line 45 "examples/wordbands/main.hero"
+#line 42
+    t46 = h5_r0; hero_str_incref(t27); h5_r0 = t27; hero_str_decref(t46); goto bb4; bb8: t20 = h4_s0;
+#line 45
     t21 = INT64_C(2);
-#line 42 "examples/wordbands/main.hero"
-    t22 = t20 == t21;
-#line 42 "examples/wordbands/main.hero"
-    if (t22) goto bb9; else goto bb10;
-#line 42 "examples/wordbands/main.hero"
-bb9:
-#line 45 "examples/wordbands/main.hero"
+#line 42
+    t22 = t20 == t21; if (t22) goto bb9; else goto bb10; bb9:
+#line 45
     t28 = HERO_STR_LIT(hero_str_1d20855d);
-#line 42 "examples/wordbands/main.hero"
-    t47 = h5_r0;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_incref(t28);
-#line 42 "examples/wordbands/main.hero"
-    h5_r0 = t28;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_decref(t47);
-#line 42 "examples/wordbands/main.hero"
-    goto bb4;
-#line 42 "examples/wordbands/main.hero"
-bb10:
-#line 42 "examples/wordbands/main.hero"
-    t23 = h4_s0;
-#line 46 "examples/wordbands/main.hero"
+#line 42
+    t47 = h5_r0; hero_str_incref(t28); h5_r0 = t28; hero_str_decref(t47); goto bb4; bb10: t23 = h4_s0;
+#line 46
     t24 = INT64_C(3);
-#line 42 "examples/wordbands/main.hero"
-    t25 = t23 == t24;
-#line 42 "examples/wordbands/main.hero"
-    if (t25) goto bb11; else goto bb12;
-#line 42 "examples/wordbands/main.hero"
-bb11:
-#line 46 "examples/wordbands/main.hero"
+#line 42
+    t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb11:
+#line 46
     t29 = HERO_STR_LIT(hero_str_69005961);
-#line 42 "examples/wordbands/main.hero"
-    t48 = h5_r0;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_incref(t29);
-#line 42 "examples/wordbands/main.hero"
-    h5_r0 = t29;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_decref(t48);
-#line 42 "examples/wordbands/main.hero"
-    goto bb4;
-#line 42 "examples/wordbands/main.hero"
-bb12:
-#line 42 "examples/wordbands/main.hero"
-    goto bb13;
-#line 42 "examples/wordbands/main.hero"
-bb13:
-#line 47 "examples/wordbands/main.hero"
+#line 42
+    t48 = h5_r0; hero_str_incref(t29); h5_r0 = t29; hero_str_decref(t48); goto bb4; bb12: goto bb13; bb13:
+#line 47
     t30 = HERO_STR_LIT(hero_str_45336354);
-#line 42 "examples/wordbands/main.hero"
-    t49 = h5_r0;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_incref(t30);
-#line 42 "examples/wordbands/main.hero"
-    h5_r0 = t30;
-#line 42 "examples/wordbands/main.hero"
-    hero_str_decref(t49);
-#line 42 "examples/wordbands/main.hero"
-    goto bb4;
-#line 382 "main.c"
+#line 42
+    t49 = h5_r0; hero_str_incref(t30); h5_r0 = t30; hero_str_decref(t49); goto bb4;
+#line 212 "main.c"
 }
 
 #line 56 "examples/wordbands/main.hero"
-int64_t h_main_longest_word_count(int64_t h0_index) {
-#line 56 "examples/wordbands/main.hero"
-    hero_thread_guard("main.longest_word_count"); HeroMapHeader * h1_counts = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h9_xs1 = {0}, *h16_own16 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *t4, *t7, *t10, *t33, *t34, *t37, *t40, *t67, *t68, *t73, *t74, *t75; HERO_NODEBUG int64_t h3_i0, h6_r0, h10_i1, h13_r1, t2, t5, t6, t8, t11, t18, t19, t22, t23, t24, t25, t26, t27, t28, t29, t31, t35, t36, t38, t41, t44, t46, t53, t54, t57, t58, t59, t60, t61, t62, t63; HeroStr h4_word = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h12_f1 = {0}, h17_own17 = {0}, h20_own20 = {0}, t16, t17, t21, t51, t52, t56, t70, t71, t78, t79; HeroStr h7_best = {0}; int64_t h8_seen; HeroStr h11_key = {0}; HERO_NODEBUG HeroMapHeader *h14_own14 = {0}, *t1, *t14, *t32, *t49, *t64, *t65; HERO_NODEBUG HeroStr h15_own15 = {0}, t3, t12, t13, t15, t30, t42, t43, t45, t48, t50, t66, t69, t72, t76, t77; HERO_NODEBUG bool t9, t20, t39, t47, t55; HERO_ENTRY_STOP; goto bb0;
-#line 56 "examples/wordbands/main.hero"
-bb0:
-    t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
-#line 57 "examples/wordbands/main.hero"
-    t64 = h14_own14;
-#line 57 "examples/wordbands/main.hero"
-    h14_own14 = t1;
-#line 57 "examples/wordbands/main.hero"
-    hero_map_decref(t64);
-#line 57 "examples/wordbands/main.hero"
-    t65 = h1_counts;
-#line 57 "examples/wordbands/main.hero"
-    hero_map_incref(t1);
-#line 57 "examples/wordbands/main.hero"
-    h1_counts = t1;
-#line 57 "examples/wordbands/main.hero"
-    hero_map_decref(t65);
-#line 59 "examples/wordbands/main.hero"
-    t2 = h0_index;
-#line 59 "examples/wordbands/main.hero"
-    t3 = h_main_text_of(t2);
-#line 59 "examples/wordbands/main.hero"
-    t66 = h15_own15;
-#line 59 "examples/wordbands/main.hero"
-    h15_own15 = t3;
-#line 59 "examples/wordbands/main.hero"
-    hero_str_decref(t66);
-#line 59 "examples/wordbands/main.hero"
-    t4 = h_main_split_words(t3);
-#line 59 "examples/wordbands/main.hero"
-    t67 = h16_own16;
-#line 59 "examples/wordbands/main.hero"
-    h16_own16 = t4;
-#line 59 "examples/wordbands/main.hero"
-    hero_array_decref(t67);
-#line 59 "examples/wordbands/main.hero"
-    t68 = h2_xs0;
-#line 59 "examples/wordbands/main.hero"
-    hero_array_incref(t4);
-#line 59 "examples/wordbands/main.hero"
-    h2_xs0 = t4;
-#line 59 "examples/wordbands/main.hero"
-    hero_array_decref(t68);
-#line 59 "examples/wordbands/main.hero"
-    t5 = INT64_C(0);
-#line 59 "examples/wordbands/main.hero"
-    h3_i0 = t5;
-#line 59 "examples/wordbands/main.hero"
-    goto bb1;
-#line 59 "examples/wordbands/main.hero"
-bb1:
-#line 59 "examples/wordbands/main.hero"
-    t6 = h3_i0;
-#line 59 "examples/wordbands/main.hero"
-    t7 = h2_xs0;
-#line 59 "examples/wordbands/main.hero"
-    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
-#line 59 "examples/wordbands/main.hero"
-    t9 = t6 < t8;
-#line 59 "examples/wordbands/main.hero"
-    if (t9) goto bb2; else goto bb4;
-#line 59 "examples/wordbands/main.hero"
-bb2:
-#line 59 "examples/wordbands/main.hero"
-    t10 = h2_xs0;
-#line 59 "examples/wordbands/main.hero"
-    t11 = h3_i0;
-#line 59 "examples/wordbands/main.hero"
-    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
-#line 59 "examples/wordbands/main.hero"
-    t69 = h4_word;
-#line 59 "examples/wordbands/main.hero"
-    hero_str_incref(t12);
-#line 59 "examples/wordbands/main.hero"
-    h4_word = t12;
-#line 59 "examples/wordbands/main.hero"
-    hero_str_decref(t69);
-    t13 = h4_word;
-#line 60 "examples/wordbands/main.hero"
-    t14 = h1_counts;
-#line 60 "examples/wordbands/main.hero"
-    t15 = h4_word;
-#line 60 "examples/wordbands/main.hero"
-    {
-#line 60 "examples/wordbands/main.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t14, &t15);
-#line 60 "examples/wordbands/main.hero"
-      if (found == NULL) {
-#line 60 "examples/wordbands/main.hero"
-        t16 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 60 "examples/wordbands/main.hero"
-      } else {
-#line 60 "examples/wordbands/main.hero"
-        t16 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 60 "examples/wordbands/main.hero"
-        (&hero_desc_int)->copy(&t16.as.ok, found);
-#line 60 "examples/wordbands/main.hero"
-      }
-#line 60 "examples/wordbands/main.hero"
-    }
-#line 60 "examples/wordbands/main.hero"
-    t70 = h17_own17;
-#line 60 "examples/wordbands/main.hero"
-    h17_own17 = t16;
-#line 60 "examples/wordbands/main.hero"
-    h_0opt_e201354_release(&t70);
-#line 60 "examples/wordbands/main.hero"
-    t71 = h5_f0;
-#line 60 "examples/wordbands/main.hero"
-    h_0opt_e201354_retain(&t16);
-#line 60 "examples/wordbands/main.hero"
-    h5_f0 = t16;
-#line 60 "examples/wordbands/main.hero"
-    h_0opt_e201354_release(&t71);
-#line 60 "examples/wordbands/main.hero"
-    t17 = h5_f0;
-#line 60 "examples/wordbands/main.hero"
-    t18 = t17.tag;
-#line 60 "examples/wordbands/main.hero"
-    t19 = INT64_C(0);
-#line 60 "examples/wordbands/main.hero"
-    t20 = t18 == t19;
-#line 60 "examples/wordbands/main.hero"
-    if (t20) goto bb5; else goto bb6;
-#line 60 "examples/wordbands/main.hero"
-bb3:
-#line 59 "examples/wordbands/main.hero"
-    t27 = h3_i0;
-#line 59 "examples/wordbands/main.hero"
-    t28 = INT64_C(1);
-#line 59 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 59 "examples/wordbands/main.hero"
-    h3_i0 = t29;
-#line 59 "examples/wordbands/main.hero"
-    goto bb1;
-#line 59 "examples/wordbands/main.hero"
-bb4:
-#line 62 "examples/wordbands/main.hero"
-    t30 = HERO_STR_LIT(hero_str_0);
-#line 62 "examples/wordbands/main.hero"
-    t72 = h7_best;
-#line 62 "examples/wordbands/main.hero"
-    hero_str_incref(t30);
-#line 62 "examples/wordbands/main.hero"
-    h7_best = t30;
-#line 62 "examples/wordbands/main.hero"
-    hero_str_decref(t72);
-    t31 = INT64_C(0);
-#line 63 "examples/wordbands/main.hero"
-    h8_seen = t31;
-#line 65 "examples/wordbands/main.hero"
-    t32 = h1_counts;
-#line 65 "examples/wordbands/main.hero"
-    t33 = hero_map_keys(t32);
-#line 65 "examples/wordbands/main.hero"
-    t73 = h18_own18;
-#line 65 "examples/wordbands/main.hero"
-    h18_own18 = t33;
-#line 65 "examples/wordbands/main.hero"
-    hero_array_decref(t73);
-#line 65 "examples/wordbands/main.hero"
-    t34 = hero_array_sort(t33);
-#line 65 "examples/wordbands/main.hero"
-    t74 = h19_own19;
-#line 65 "examples/wordbands/main.hero"
-    h19_own19 = t34;
-#line 65 "examples/wordbands/main.hero"
-    hero_array_decref(t74);
-#line 65 "examples/wordbands/main.hero"
-    t75 = h9_xs1;
-#line 65 "examples/wordbands/main.hero"
-    hero_array_incref(t34);
-#line 65 "examples/wordbands/main.hero"
-    h9_xs1 = t34;
-#line 65 "examples/wordbands/main.hero"
-    hero_array_decref(t75);
-#line 65 "examples/wordbands/main.hero"
-    t35 = INT64_C(0);
-#line 65 "examples/wordbands/main.hero"
-    h10_i1 = t35;
-#line 65 "examples/wordbands/main.hero"
-    goto bb8;
-#line 65 "examples/wordbands/main.hero"
-bb5:
-#line 60 "examples/wordbands/main.hero"
-    t21 = h5_f0;
-#line 60 "examples/wordbands/main.hero"
-    t22 = t21.as.ok;
-#line 60 "examples/wordbands/main.hero"
-    h6_r0 = t22;
-#line 60 "examples/wordbands/main.hero"
-    goto bb7;
-#line 60 "examples/wordbands/main.hero"
-bb6:
-#line 60 "examples/wordbands/main.hero"
-    t23 = INT64_C(0);
-#line 60 "examples/wordbands/main.hero"
-    h6_r0 = t23;
-#line 60 "examples/wordbands/main.hero"
-    goto bb7;
-#line 60 "examples/wordbands/main.hero"
-bb7:
-#line 60 "examples/wordbands/main.hero"
-    t24 = h6_r0;
-#line 60 "examples/wordbands/main.hero"
-    t25 = INT64_C(1);
-#line 60 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow();
-#line 60 "examples/wordbands/main.hero"
-    hero_map_set(&(h1_counts), &t13, &t26);
-#line 60 "examples/wordbands/main.hero"
-    goto bb3;
-#line 60 "examples/wordbands/main.hero"
-bb8:
-#line 65 "examples/wordbands/main.hero"
-    t36 = h10_i1;
-#line 65 "examples/wordbands/main.hero"
-    t37 = h9_xs1;
-#line 65 "examples/wordbands/main.hero"
-    t38 = ((void)(t37 == NULL ? ((void)hero_array_len(t37), hero_unreachable()) : (void)0), t37->len);
-#line 65 "examples/wordbands/main.hero"
-    t39 = t36 < t38;
-#line 65 "examples/wordbands/main.hero"
-    if (t39) goto bb9; else goto bb11;
-#line 65 "examples/wordbands/main.hero"
-bb9:
-#line 65 "examples/wordbands/main.hero"
-    t40 = h9_xs1;
-#line 65 "examples/wordbands/main.hero"
-    t41 = h10_i1;
-#line 65 "examples/wordbands/main.hero"
-    t42 = ((void)((t40 == NULL || t41 < 0 || t41 >= t40->len) ? ((void)hero_array_at(t40, t41), hero_unreachable()) : (void)0), (void)(t40->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t40 + 1))[t41]);
-#line 65 "examples/wordbands/main.hero"
-    t76 = h11_key;
-#line 65 "examples/wordbands/main.hero"
-    hero_str_incref(t42);
-#line 65 "examples/wordbands/main.hero"
-    h11_key = t42;
-#line 65 "examples/wordbands/main.hero"
-    hero_str_decref(t76);
-    t43 = h11_key;
-#line 66 "examples/wordbands/main.hero"
-    t44 = hero_str_len(t43);
-#line 66 "examples/wordbands/main.hero"
-    t45 = h7_best;
-#line 66 "examples/wordbands/main.hero"
-    t46 = hero_str_len(t45);
-#line 66 "examples/wordbands/main.hero"
-    t47 = t44 > t46;
-#line 66 "examples/wordbands/main.hero"
-    if (t47) goto bb13; else goto bb14;
-#line 66 "examples/wordbands/main.hero"
-bb10:
-#line 65 "examples/wordbands/main.hero"
-    t60 = h10_i1;
-#line 65 "examples/wordbands/main.hero"
-    t61 = INT64_C(1);
-#line 65 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t60, t61, &t62)) hero_panic_overflow();
-#line 65 "examples/wordbands/main.hero"
-    h10_i1 = t62;
-#line 65 "examples/wordbands/main.hero"
-    goto bb8;
-#line 65 "examples/wordbands/main.hero"
-bb11:
-#line 70 "examples/wordbands/main.hero"
+int64_t h_main_longest_word_count(int64_t h0_index) { hero_thread_guard("main.longest_word_count"); HeroMapHeader * h1_counts = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h9_xs1 = {0}, *h16_own16 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *t4, *t7, *t10, *t33, *t34, *t37, *t40, *t67, *t68, *t73, *t74, *t75; HERO_NODEBUG int64_t h3_i0, h6_r0, h10_i1, h13_r1, t2, t5, t6, t8, t11, t18, t19, t22, t23, t24, t25, t26, t27, t28, t29, t31, t35, t36, t38, t41, t44, t46, t53, t54, t57, t58, t59, t60, t61, t62, t63; HeroStr h4_word = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h12_f1 = {0}, h17_own17 = {0}, h20_own20 = {0}, t16, t17, t21, t51, t52, t56, t70, t71, t78, t79; HeroStr h7_best = {0}; int64_t h8_seen; HeroStr h11_key = {0}; HERO_NODEBUG HeroMapHeader *h14_own14 = {0}, *t1, *t14, *t32, *t49, *t64, *t65; HERO_NODEBUG HeroStr h15_own15 = {0}, t3, t12, t13, t15, t30, t42, t43, t45, t48, t50, t66, t69, t72, t76, t77; HERO_NODEBUG bool t9, t20, t39, t47, t55; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t64 = h14_own14; h14_own14 = t1; hero_map_decref(t64); t65 = h1_counts; hero_map_incref(t1); h1_counts = t1; hero_map_decref(t65);
+#line 59
+    t2 = h0_index; t3 = h_main_text_of(t2); t66 = h15_own15; h15_own15 = t3; hero_str_decref(t66); t4 = h_main_split_words(t3); t67 = h16_own16; h16_own16 = t4; hero_array_decref(t67); t68 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t68); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]); t69 = h4_word; hero_str_incref(t12); h4_word = t12; hero_str_decref(t69);
+    t13 = h4_word; t14 = h1_counts; t15 = h4_word; { HERO_NODEBUG const void *found = hero_map_find(t14, &t15); if (found == NULL) { t16 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t16 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t16.as.ok, found); } } t70 = h17_own17; h17_own17 = t16; h_0opt_e201354_release(&t70); t71 = h5_f0; h_0opt_e201354_retain(&t16); h5_f0 = t16; h_0opt_e201354_release(&t71); t17 = h5_f0; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb5; else goto bb6; bb3:
+#line 59
+    t27 = h3_i0; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow(); h3_i0 = t29; goto bb1; bb4:
+#line 62
+    t30 = HERO_STR_LIT(hero_str_0); t72 = h7_best; hero_str_incref(t30); h7_best = t30; hero_str_decref(t72);
+    t31 = INT64_C(0); h8_seen = t31;
+#line 65
+    t32 = h1_counts; t33 = hero_map_keys(t32); t73 = h18_own18; h18_own18 = t33; hero_array_decref(t73); t34 = hero_array_sort(t33); t74 = h19_own19; h19_own19 = t34; hero_array_decref(t74); t75 = h9_xs1; hero_array_incref(t34); h9_xs1 = t34; hero_array_decref(t75); t35 = INT64_C(0); h10_i1 = t35; goto bb8; bb5:
+#line 60
+    t21 = h5_f0; t22 = t21.as.ok; h6_r0 = t22; goto bb7; bb6: t23 = INT64_C(0); h6_r0 = t23; goto bb7; bb7: t24 = h6_r0; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow(); hero_map_set(&(h1_counts), &t13, &t26); goto bb3; bb8:
+#line 65
+    t36 = h10_i1; t37 = h9_xs1; t38 = ((void)(t37 == NULL ? ((void)hero_array_len(t37), hero_unreachable()) : (void)0), t37->len); t39 = t36 < t38; if (t39) goto bb9; else goto bb11; bb9: t40 = h9_xs1; t41 = h10_i1; t42 = ((void)((t40 == NULL || t41 < 0 || t41 >= t40->len) ? ((void)hero_array_at(t40, t41), hero_unreachable()) : (void)0), (void)(t40->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t40 + 1))[t41]); t76 = h11_key; hero_str_incref(t42); h11_key = t42; hero_str_decref(t76);
+    t43 = h11_key; t44 = hero_str_len(t43); t45 = h7_best; t46 = hero_str_len(t45); t47 = t44 > t46; if (t47) goto bb13; else goto bb14; bb10:
+#line 65
+    t60 = h10_i1; t61 = INT64_C(1); if (__builtin_add_overflow(t60, t61, &t62)) hero_panic_overflow(); h10_i1 = t62; goto bb8; bb11:
+#line 70
     t63 = h8_seen;
-#line 657 "main.c"
+#line 237 "main.c"
     hero_map_release_at(&h1_counts);
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_word);
@@ -674,91 +254,9 @@ bb12:
     goto bb10;
 bb13:
 #line 67 "examples/wordbands/main.hero"
-    t48 = h11_key;
-#line 67 "examples/wordbands/main.hero"
-    t77 = h7_best;
-#line 67 "examples/wordbands/main.hero"
-    hero_str_incref(t48);
-#line 67 "examples/wordbands/main.hero"
-    h7_best = t48;
-#line 67 "examples/wordbands/main.hero"
-    hero_str_decref(t77);
-    t49 = h1_counts;
-#line 68 "examples/wordbands/main.hero"
-    t50 = h11_key;
-#line 68 "examples/wordbands/main.hero"
-    {
-#line 68 "examples/wordbands/main.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t49, &t50);
-#line 68 "examples/wordbands/main.hero"
-      if (found == NULL) {
-#line 68 "examples/wordbands/main.hero"
-        t51 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 68 "examples/wordbands/main.hero"
-      } else {
-#line 68 "examples/wordbands/main.hero"
-        t51 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 68 "examples/wordbands/main.hero"
-        (&hero_desc_int)->copy(&t51.as.ok, found);
-#line 68 "examples/wordbands/main.hero"
-      }
-#line 68 "examples/wordbands/main.hero"
-    }
-#line 68 "examples/wordbands/main.hero"
-    t78 = h20_own20;
-#line 68 "examples/wordbands/main.hero"
-    h20_own20 = t51;
-#line 68 "examples/wordbands/main.hero"
-    h_0opt_e201354_release(&t78);
-#line 68 "examples/wordbands/main.hero"
-    t79 = h12_f1;
-#line 68 "examples/wordbands/main.hero"
-    h_0opt_e201354_retain(&t51);
-#line 68 "examples/wordbands/main.hero"
-    h12_f1 = t51;
-#line 68 "examples/wordbands/main.hero"
-    h_0opt_e201354_release(&t79);
-#line 68 "examples/wordbands/main.hero"
-    t52 = h12_f1;
-#line 68 "examples/wordbands/main.hero"
-    t53 = t52.tag;
-#line 68 "examples/wordbands/main.hero"
-    t54 = INT64_C(0);
-#line 68 "examples/wordbands/main.hero"
-    t55 = t53 == t54;
-#line 68 "examples/wordbands/main.hero"
-    if (t55) goto bb15; else goto bb16;
-#line 68 "examples/wordbands/main.hero"
-bb14:
-#line 68 "examples/wordbands/main.hero"
-    goto bb12;
-#line 68 "examples/wordbands/main.hero"
-bb15:
-#line 68 "examples/wordbands/main.hero"
-    t56 = h12_f1;
-#line 68 "examples/wordbands/main.hero"
-    t57 = t56.as.ok;
-#line 68 "examples/wordbands/main.hero"
-    h13_r1 = t57;
-#line 68 "examples/wordbands/main.hero"
-    goto bb17;
-#line 68 "examples/wordbands/main.hero"
-bb16:
-#line 68 "examples/wordbands/main.hero"
-    t58 = INT64_C(0);
-#line 68 "examples/wordbands/main.hero"
-    h13_r1 = t58;
-#line 68 "examples/wordbands/main.hero"
-    goto bb17;
-#line 68 "examples/wordbands/main.hero"
-bb17:
-#line 68 "examples/wordbands/main.hero"
-    t59 = h13_r1;
-#line 68 "examples/wordbands/main.hero"
-    h8_seen = t59;
-#line 68 "examples/wordbands/main.hero"
-    goto bb12;
-#line 762 "main.c"
+    t48 = h11_key; t77 = h7_best; hero_str_incref(t48); h7_best = t48; hero_str_decref(t77);
+    t49 = h1_counts; t50 = h11_key; { HERO_NODEBUG const void *found = hero_map_find(t49, &t50); if (found == NULL) { t51 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t51 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t51.as.ok, found); } } t78 = h20_own20; h20_own20 = t51; h_0opt_e201354_release(&t78); t79 = h12_f1; h_0opt_e201354_retain(&t51); h12_f1 = t51; h_0opt_e201354_release(&t79); t52 = h12_f1; t53 = t52.tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto bb15; else goto bb16; bb14: goto bb12; bb15: t56 = h12_f1; t57 = t56.as.ok; h13_r1 = t57; goto bb17; bb16: t58 = INT64_C(0); h13_r1 = t58; goto bb17; bb17: t59 = h13_r1; h8_seen = t59; goto bb12;
+#line 260 "main.c"
 }
 
 int64_t h_0cb_main_longest_word_count(int64_t h0_index) {
@@ -767,194 +265,26 @@ int64_t h_0cb_main_longest_word_count(int64_t h0_index) {
 }
 
 #line 74 "examples/wordbands/main.hero"
-HeroArrayHeader * h_main_split_words(HeroStr h0_text) {
-#line 74 "examples/wordbands/main.hero"
-    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_current = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h10_own10 = {0}, *t1, *t2, *t4, *t7, *t10, *t16, *t21, *t25, *t32, *t37, *t41, *t42, *t43, *t44, *t45, *t46, *t47, *t50, *t51; HERO_NODEBUG int64_t h4_i0, t5, t6, t8, t11, t17, t18, t29, t30, t31, t33, t34; HeroStr h5_ch = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}, h11_own11 = {0}, t3, t12, t13, t14, t22, t23, t27, t38, t39, t48, t49, t52; HERO_NODEBUG bool t9, t15, t19, t35; HERO_ENTRY_STOP; goto bb0;
-#line 74 "examples/wordbands/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 75 "examples/wordbands/main.hero"
-    t42 = h6_own6;
-#line 75 "examples/wordbands/main.hero"
-    h6_own6 = t1;
-#line 75 "examples/wordbands/main.hero"
-    hero_array_decref(t42);
-#line 75 "examples/wordbands/main.hero"
-    t43 = h1_out;
-#line 75 "examples/wordbands/main.hero"
-    hero_array_incref(t1);
-#line 75 "examples/wordbands/main.hero"
-    h1_out = t1;
-#line 75 "examples/wordbands/main.hero"
-    hero_array_decref(t43);
-    t2 = hero_array_new(&hero_desc_str, 1);
-#line 76 "examples/wordbands/main.hero"
-    t44 = h7_own7;
-#line 76 "examples/wordbands/main.hero"
-    h7_own7 = t2;
-#line 76 "examples/wordbands/main.hero"
-    hero_array_decref(t44);
-#line 76 "examples/wordbands/main.hero"
-    t45 = h2_current;
-#line 76 "examples/wordbands/main.hero"
-    hero_array_incref(t2);
-#line 76 "examples/wordbands/main.hero"
-    h2_current = t2;
-#line 76 "examples/wordbands/main.hero"
-    hero_array_decref(t45);
-#line 78 "examples/wordbands/main.hero"
-    t3 = h0_text;
-#line 78 "examples/wordbands/main.hero"
-    t4 = hero_str_chars(t3);
-#line 78 "examples/wordbands/main.hero"
-    t46 = h8_own8;
-#line 78 "examples/wordbands/main.hero"
-    h8_own8 = t4;
-#line 78 "examples/wordbands/main.hero"
-    hero_array_decref(t46);
-#line 78 "examples/wordbands/main.hero"
-    t47 = h3_xs0;
-#line 78 "examples/wordbands/main.hero"
-    hero_array_incref(t4);
-#line 78 "examples/wordbands/main.hero"
-    h3_xs0 = t4;
-#line 78 "examples/wordbands/main.hero"
-    hero_array_decref(t47);
-#line 78 "examples/wordbands/main.hero"
-    t5 = INT64_C(0);
-#line 78 "examples/wordbands/main.hero"
-    h4_i0 = t5;
-#line 78 "examples/wordbands/main.hero"
-    goto bb1;
-#line 78 "examples/wordbands/main.hero"
-bb1:
-#line 78 "examples/wordbands/main.hero"
-    t6 = h4_i0;
-#line 78 "examples/wordbands/main.hero"
-    t7 = h3_xs0;
-#line 78 "examples/wordbands/main.hero"
-    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
-#line 78 "examples/wordbands/main.hero"
-    t9 = t6 < t8;
-#line 78 "examples/wordbands/main.hero"
-    if (t9) goto bb2; else goto bb4;
-#line 78 "examples/wordbands/main.hero"
-bb2:
-#line 78 "examples/wordbands/main.hero"
-    t10 = h3_xs0;
-#line 78 "examples/wordbands/main.hero"
-    t11 = h4_i0;
-#line 78 "examples/wordbands/main.hero"
-    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
-#line 78 "examples/wordbands/main.hero"
-    t48 = h5_ch;
-#line 78 "examples/wordbands/main.hero"
-    hero_str_incref(t12);
-#line 78 "examples/wordbands/main.hero"
-    h5_ch = t12;
-#line 78 "examples/wordbands/main.hero"
-    hero_str_decref(t48);
-    t13 = h5_ch;
-#line 79 "examples/wordbands/main.hero"
-    t14 = HERO_STR_LIT(hero_str_20);
-#line 79 "examples/wordbands/main.hero"
-    t15 = hero_str_eq(t13, t14);
-#line 79 "examples/wordbands/main.hero"
-    if (t15) goto bb6; else goto bb7;
-#line 79 "examples/wordbands/main.hero"
-bb3:
-#line 78 "examples/wordbands/main.hero"
-    t29 = h4_i0;
-#line 78 "examples/wordbands/main.hero"
-    t30 = INT64_C(1);
-#line 78 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow();
-#line 78 "examples/wordbands/main.hero"
-    h4_i0 = t31;
-#line 78 "examples/wordbands/main.hero"
-    goto bb1;
-#line 78 "examples/wordbands/main.hero"
-bb4:
-#line 86 "examples/wordbands/main.hero"
-    t32 = h2_current;
-#line 86 "examples/wordbands/main.hero"
-    t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len);
-#line 86 "examples/wordbands/main.hero"
-    t34 = INT64_C(0);
-#line 86 "examples/wordbands/main.hero"
-    t35 = t33 > t34;
-#line 86 "examples/wordbands/main.hero"
-    if (t35) goto bb12; else goto bb13;
-#line 86 "examples/wordbands/main.hero"
-bb5:
-#line 86 "examples/wordbands/main.hero"
-    goto bb3;
-#line 86 "examples/wordbands/main.hero"
-bb6:
-#line 80 "examples/wordbands/main.hero"
-    t16 = h2_current;
-#line 80 "examples/wordbands/main.hero"
-    t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
-#line 80 "examples/wordbands/main.hero"
-    t18 = INT64_C(0);
-#line 80 "examples/wordbands/main.hero"
-    t19 = t17 > t18;
-#line 80 "examples/wordbands/main.hero"
-    if (t19) goto bb9; else goto bb10;
-#line 80 "examples/wordbands/main.hero"
-bb7:
-#line 84 "examples/wordbands/main.hero"
-    t27 = h5_ch;
-#line 84 "examples/wordbands/main.hero"
-    hero_array_push_owned(&h2_current, &t27);
-#line 84 "examples/wordbands/main.hero"
-    goto bb5;
-#line 84 "examples/wordbands/main.hero"
-bb8:
-#line 84 "examples/wordbands/main.hero"
-    goto bb5;
-#line 84 "examples/wordbands/main.hero"
-bb9:
-#line 81 "examples/wordbands/main.hero"
-    t21 = h2_current;
-#line 81 "examples/wordbands/main.hero"
-    t22 = HERO_STR_LIT(hero_str_0);
-#line 81 "examples/wordbands/main.hero"
-    t23 = hero_str_join(t21, t22);
-#line 81 "examples/wordbands/main.hero"
-    t49 = h9_own9;
-#line 81 "examples/wordbands/main.hero"
-    h9_own9 = t23;
-#line 81 "examples/wordbands/main.hero"
-    hero_str_decref(t49);
-#line 81 "examples/wordbands/main.hero"
-    hero_array_push_owned(&h1_out, &t23);
-    t25 = hero_array_new(&hero_desc_str, 1);
-#line 82 "examples/wordbands/main.hero"
-    t50 = h10_own10;
-#line 82 "examples/wordbands/main.hero"
-    h10_own10 = t25;
-#line 82 "examples/wordbands/main.hero"
-    hero_array_decref(t50);
-#line 82 "examples/wordbands/main.hero"
-    t51 = h2_current;
-#line 82 "examples/wordbands/main.hero"
-    hero_array_incref(t25);
-#line 82 "examples/wordbands/main.hero"
-    h2_current = t25;
-#line 82 "examples/wordbands/main.hero"
-    hero_array_decref(t51);
-#line 82 "examples/wordbands/main.hero"
-    goto bb8;
-#line 82 "examples/wordbands/main.hero"
-bb10:
-#line 82 "examples/wordbands/main.hero"
-    goto bb8;
-#line 82 "examples/wordbands/main.hero"
-bb11:
-#line 89 "examples/wordbands/main.hero"
+HeroArrayHeader * h_main_split_words(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_current = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h10_own10 = {0}, *t1, *t2, *t4, *t7, *t10, *t16, *t21, *t25, *t32, *t37, *t41, *t42, *t43, *t44, *t45, *t46, *t47, *t50, *t51; HERO_NODEBUG int64_t h4_i0, t5, t6, t8, t11, t17, t18, t29, t30, t31, t33, t34; HeroStr h5_ch = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}, h11_own11 = {0}, t3, t12, t13, t14, t22, t23, t27, t38, t39, t48, t49, t52; HERO_NODEBUG bool t9, t15, t19, t35; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t42 = h6_own6; h6_own6 = t1; hero_array_decref(t42); t43 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t43);
+    t2 = hero_array_new(&hero_desc_str, 1); t44 = h7_own7; h7_own7 = t2; hero_array_decref(t44); t45 = h2_current; hero_array_incref(t2); h2_current = t2; hero_array_decref(t45);
+#line 78
+    t3 = h0_text; t4 = hero_str_chars(t3); t46 = h8_own8; h8_own8 = t4; hero_array_decref(t46); t47 = h3_xs0; hero_array_incref(t4); h3_xs0 = t4; hero_array_decref(t47); t5 = INT64_C(0); h4_i0 = t5; goto bb1; bb1: t6 = h4_i0; t7 = h3_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h3_xs0; t11 = h4_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]); t48 = h5_ch; hero_str_incref(t12); h5_ch = t12; hero_str_decref(t48);
+    t13 = h5_ch; t14 = HERO_STR_LIT(hero_str_20); t15 = hero_str_eq(t13, t14); if (t15) goto bb6; else goto bb7; bb3:
+#line 78
+    t29 = h4_i0; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow(); h4_i0 = t31; goto bb1; bb4:
+#line 86
+    t32 = h2_current; t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len); t34 = INT64_C(0); t35 = t33 > t34; if (t35) goto bb12; else goto bb13; bb5: goto bb3; bb6:
+#line 80
+    t16 = h2_current; t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len); t18 = INT64_C(0); t19 = t17 > t18; if (t19) goto bb9; else goto bb10; bb7:
+#line 84
+    t27 = h5_ch; hero_array_push_owned(&h2_current, &t27); goto bb5; bb8: goto bb5; bb9:
+#line 81
+    t21 = h2_current; t22 = HERO_STR_LIT(hero_str_0); t23 = hero_str_join(t21, t22); t49 = h9_own9; h9_own9 = t23; hero_str_decref(t49); hero_array_push_owned(&h1_out, &t23);
+    t25 = hero_array_new(&hero_desc_str, 1); t50 = h10_own10; h10_own10 = t25; hero_array_decref(t50); t51 = h2_current; hero_array_incref(t25); h2_current = t25; hero_array_decref(t51); goto bb8; bb10: goto bb8; bb11:
+#line 89
     t41 = h1_out;
-#line 958 "main.c"
+#line 288 "main.c"
     hero_array_incref(t41);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_current);
@@ -969,154 +299,28 @@ bb11:
     return t41;
 bb12:
 #line 87 "examples/wordbands/main.hero"
-    t37 = h2_current;
-#line 87 "examples/wordbands/main.hero"
-    t38 = HERO_STR_LIT(hero_str_0);
-#line 87 "examples/wordbands/main.hero"
-    t39 = hero_str_join(t37, t38);
-#line 87 "examples/wordbands/main.hero"
-    t52 = h11_own11;
-#line 87 "examples/wordbands/main.hero"
-    h11_own11 = t39;
-#line 87 "examples/wordbands/main.hero"
-    hero_str_decref(t52);
-#line 87 "examples/wordbands/main.hero"
-    hero_array_push_owned(&h1_out, &t39);
-#line 87 "examples/wordbands/main.hero"
-    goto bb11;
-#line 87 "examples/wordbands/main.hero"
-bb13:
-#line 87 "examples/wordbands/main.hero"
-    goto bb11;
-#line 992 "main.c"
+    t37 = h2_current; t38 = HERO_STR_LIT(hero_str_0); t39 = hero_str_join(t37, t38); t52 = h11_own11; h11_own11 = t39; hero_str_decref(t52); hero_array_push_owned(&h1_out, &t39); goto bb11; bb13: goto bb11;
+#line 304 "main.c"
 }
 
 #line 91 "examples/wordbands/main.hero"
-int64_t h_main_together(void) {
-#line 91 "examples/wordbands/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t15, *t18, *t21, *t32, *t33, *t34; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t8, t9, t11, t12, t13, t14, t16, t17, t19, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31; int64_t h5_h; HERO_NODEBUG bool t5, t20; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_ENTRY_STOP; goto bb0;
-#line 91 "examples/wordbands/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 92 "examples/wordbands/main.hero"
-    t32 = h6_own6;
-#line 92 "examples/wordbands/main.hero"
-    h6_own6 = t1;
-#line 92 "examples/wordbands/main.hero"
-    hero_array_decref(t32);
-#line 92 "examples/wordbands/main.hero"
-    t33 = h0_handles;
-#line 92 "examples/wordbands/main.hero"
-    hero_array_incref(t1);
-#line 92 "examples/wordbands/main.hero"
-    h0_handles = t1;
-#line 92 "examples/wordbands/main.hero"
-    hero_array_decref(t33);
-    t2 = INT64_C(0);
-#line 93 "examples/wordbands/main.hero"
-    h1_i = t2;
-#line 93 "examples/wordbands/main.hero"
-    goto bb1;
-#line 93 "examples/wordbands/main.hero"
-bb1:
-#line 95 "examples/wordbands/main.hero"
-    t3 = h1_i;
-#line 95 "examples/wordbands/main.hero"
-    t4 = h_main_BANDS();
-#line 95 "examples/wordbands/main.hero"
-    t5 = t3 < t4;
-#line 95 "examples/wordbands/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 95 "examples/wordbands/main.hero"
-bb2:
-    t7 = h_main_longest_word_count;
-#line 96 "examples/wordbands/main.hero"
-    t8 = h1_i;
-#line 96 "examples/wordbands/main.hero"
-    t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
-#line 96 "examples/wordbands/main.hero"
-    hero_array_push_owned(&h0_handles, &t9);
-    t11 = h1_i;
-#line 97 "examples/wordbands/main.hero"
-    t12 = INT64_C(1);
-#line 97 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 97 "examples/wordbands/main.hero"
-    h1_i = t13;
-#line 97 "examples/wordbands/main.hero"
-    goto bb1;
-#line 97 "examples/wordbands/main.hero"
-bb3:
-#line 99 "examples/wordbands/main.hero"
-    t14 = INT64_C(0);
-#line 99 "examples/wordbands/main.hero"
-    h2_total = t14;
-#line 101 "examples/wordbands/main.hero"
-    t15 = h0_handles;
-#line 101 "examples/wordbands/main.hero"
-    t34 = h3_xs0;
-#line 101 "examples/wordbands/main.hero"
-    hero_array_incref(t15);
-#line 101 "examples/wordbands/main.hero"
-    h3_xs0 = t15;
-#line 101 "examples/wordbands/main.hero"
-    hero_array_decref(t34);
-#line 101 "examples/wordbands/main.hero"
-    t16 = INT64_C(0);
-#line 101 "examples/wordbands/main.hero"
-    h4_i0 = t16;
-#line 101 "examples/wordbands/main.hero"
-    goto bb4;
-#line 101 "examples/wordbands/main.hero"
-bb4:
-#line 101 "examples/wordbands/main.hero"
-    t17 = h4_i0;
-#line 101 "examples/wordbands/main.hero"
-    t18 = h3_xs0;
-#line 101 "examples/wordbands/main.hero"
-    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
-#line 101 "examples/wordbands/main.hero"
-    t20 = t17 < t19;
-#line 101 "examples/wordbands/main.hero"
-    if (t20) goto bb5; else goto bb7;
-#line 101 "examples/wordbands/main.hero"
-bb5:
-#line 101 "examples/wordbands/main.hero"
-    t21 = h3_xs0;
-#line 101 "examples/wordbands/main.hero"
-    t22 = h4_i0;
-#line 101 "examples/wordbands/main.hero"
-    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
-#line 101 "examples/wordbands/main.hero"
-    h5_h = t23;
-    t24 = h2_total;
-#line 102 "examples/wordbands/main.hero"
-    t25 = h5_h;
-#line 102 "examples/wordbands/main.hero"
-    t26 = hero_thread_join(t25);
-#line 102 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t24, t26, &t27)) hero_panic_overflow();
-#line 102 "examples/wordbands/main.hero"
-    h2_total = t27;
-#line 102 "examples/wordbands/main.hero"
-    goto bb6;
-#line 102 "examples/wordbands/main.hero"
-bb6:
-#line 101 "examples/wordbands/main.hero"
-    t28 = h4_i0;
-#line 101 "examples/wordbands/main.hero"
-    t29 = INT64_C(1);
-#line 101 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow();
-#line 101 "examples/wordbands/main.hero"
-    h4_i0 = t30;
-#line 101 "examples/wordbands/main.hero"
-    goto bb4;
-#line 101 "examples/wordbands/main.hero"
-bb7:
-#line 104 "examples/wordbands/main.hero"
+int64_t h_main_together(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t15, *t18, *t21, *t32, *t33, *t34; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t8, t9, t11, t12, t13, t14, t16, t17, t19, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31; int64_t h5_h; HERO_NODEBUG bool t5, t20; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t32 = h6_own6; h6_own6 = t1; hero_array_decref(t32); t33 = h0_handles; hero_array_incref(t1); h0_handles = t1; hero_array_decref(t33);
+    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
+#line 95
+    t3 = h1_i; t4 = h_main_BANDS(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h_main_longest_word_count; t8 = h1_i; t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8); hero_array_push_owned(&h0_handles, &t9);
+    t11 = h1_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); h1_i = t13; goto bb1; bb3:
+#line 99
+    t14 = INT64_C(0); h2_total = t14;
+#line 101
+    t15 = h0_handles; t34 = h3_xs0; hero_array_incref(t15); h3_xs0 = t15; hero_array_decref(t34); t16 = INT64_C(0); h4_i0 = t16; goto bb4; bb4: t17 = h4_i0; t18 = h3_xs0; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = t17 < t19; if (t20) goto bb5; else goto bb7; bb5: t21 = h3_xs0; t22 = h4_i0; t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]); h5_h = t23;
+    t24 = h2_total; t25 = h5_h; t26 = hero_thread_join(t25); if (__builtin_add_overflow(t24, t26, &t27)) hero_panic_overflow(); h2_total = t27; goto bb6; bb6:
+#line 101
+    t28 = h4_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow(); h4_i0 = t30; goto bb4; bb7:
+#line 104
     t31 = h2_total;
-#line 1120 "main.c"
+#line 324 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -1124,84 +328,22 @@ bb7:
 }
 
 #line 106 "examples/wordbands/main.hero"
-int64_t h_main_alone(void) {
-#line 106 "examples/wordbands/main.hero"
-    int64_t h0_total; int64_t h1_i; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 106 "examples/wordbands/main.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 107 "examples/wordbands/main.hero"
-    h0_total = t1;
-    t2 = INT64_C(0);
-#line 108 "examples/wordbands/main.hero"
-    h1_i = t2;
-#line 108 "examples/wordbands/main.hero"
-    goto bb1;
-#line 108 "examples/wordbands/main.hero"
-bb1:
-#line 110 "examples/wordbands/main.hero"
-    t3 = h1_i;
-#line 110 "examples/wordbands/main.hero"
-    t4 = h_main_BANDS();
-#line 110 "examples/wordbands/main.hero"
-    t5 = t3 < t4;
-#line 110 "examples/wordbands/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 110 "examples/wordbands/main.hero"
-bb2:
-    t6 = h0_total;
-#line 111 "examples/wordbands/main.hero"
-    t7 = h1_i;
-#line 111 "examples/wordbands/main.hero"
-    t8 = h_main_longest_word_count(t7);
-#line 111 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow();
-#line 111 "examples/wordbands/main.hero"
-    h0_total = t9;
-    t10 = h1_i;
-#line 112 "examples/wordbands/main.hero"
-    t11 = INT64_C(1);
-#line 112 "examples/wordbands/main.hero"
-    if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 112 "examples/wordbands/main.hero"
-    h1_i = t12;
-#line 112 "examples/wordbands/main.hero"
-    goto bb1;
-#line 112 "examples/wordbands/main.hero"
-bb3:
-#line 114 "examples/wordbands/main.hero"
-    t13 = h0_total;
-#line 114 "examples/wordbands/main.hero"
-    return t13;
-#line 1177 "main.c"
+int64_t h_main_alone(void) { int64_t h0_total; int64_t h1_i; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_total = t1;
+    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
+#line 110
+    t3 = h1_i; t4 = h_main_BANDS(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h0_total; t7 = h1_i; t8 = h_main_longest_word_count(t7); if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow(); h0_total = t9;
+    t10 = h1_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h1_i = t12; goto bb1; bb3:
+#line 114
+    t13 = h0_total; return t13;
+#line 341 "main.c"
 }
 
 #line 116 "examples/wordbands/main.hero"
-void h_main_main(void) {
-#line 116 "examples/wordbands/main.hero"
-    HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto bb0;
-#line 116 "examples/wordbands/main.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_64ba1395);
-#line 117 "examples/wordbands/main.hero"
-    t2 = h_main_BANDS();
-#line 117 "examples/wordbands/main.hero"
-    t3 = HERO_STR_LIT(hero_str_7f3b381d);
-#line 117 "examples/wordbands/main.hero"
-    t4 = h_main_together();
-#line 117 "examples/wordbands/main.hero"
-    hero_print_str(t1);
-#line 117 "examples/wordbands/main.hero"
-    hero_print_int(t2);
-#line 117 "examples/wordbands/main.hero"
-    hero_print_str(t3);
-#line 117 "examples/wordbands/main.hero"
-    hero_print_int(t4);
-#line 117 "examples/wordbands/main.hero"
-    hero_print_end();
-#line 117 "examples/wordbands/main.hero"
-    return;
-#line 1205 "main.c"
+void h_main_main(void) { HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_64ba1395); t2 = h_main_BANDS(); t3 = HERO_STR_LIT(hero_str_7f3b381d); t4 = h_main_together(); hero_print_str(t1); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end(); return;
+#line 347 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

@@ -62,15 +62,13 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #endif
 
 #line 35 "tests/golden/run/ffi-a-char-array-member.hero"
-_Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-flex Tag name");
-#line 35 "tests/golden/run/ffi-a-char-array-member.hero"
-_Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
+_Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-flex Tag name"); _Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
 _Static_assert(__builtin_classify_type(((Tag *)0)->id) == 1 && sizeof(((Tag *)0)->id) == sizeof(int32_t) && (_Generic(((Tag *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tag id");
-#line 70 "ffiachararraymember.c"
+#line 68 "ffiachararraymember.c"
 
 #line 34 "tests/golden/run/ffi-a-char-array-member.hero"
 _Static_assert(__builtin_classify_type(*(Tag *)0) != 13, "heroes-ffi-union Tag name id");
-#line 74 "ffiachararraymember.c"
+#line 72 "ffiachararraymember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -157,13 +155,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffiachararraymember_tag_fir
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "ffiachararraymember.c"
+#line 165 "ffiachararraymember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiachararraymember_Tag_eq(const Tag *a, const Tag *b);
@@ -192,164 +190,26 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 39 "tests/golden/run/ffi-a-char-array-member.hero"
-void h_ffiachararraymember_main(void) {
-#line 39 "tests/golden/run/ffi-a-char-array-member.hero"
-    Tag h0_t; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_f1 = {0}, h3_f2 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t10, t11, t15, t17, t23, t24, t28, t30, t34, t35, t39, t41, t43, t44, t45, t46, t47, t48; HERO_NODEBUG int8_t t1, t2, t3, t4, t22; HERO_NODEBUG int32_t t6, t9, t33; HERO_NODEBUG Tag t7, t8, t19; HERO_NODEBUG int64_t t12, t13, t18, t21, t25, t26, t31, t36, t37, t42; HERO_NODEBUG bool t14, t27, t38; HERO_NODEBUG HeroFailure t16, t29, t40; HERO_NODEBUG HeroStr t32; HERO_ENTRY_STOP; goto bb0;
-#line 39 "tests/golden/run/ffi-a-char-array-member.hero"
-bb0:
-#line 42 "tests/golden/run/ffi-a-char-array-member.hero"
-    t1 = INT64_C(68);
-#line 42 "tests/golden/run/ffi-a-char-array-member.hero"
-    t2 = INT64_C(0);
-#line 42 "tests/golden/run/ffi-a-char-array-member.hero"
-    t3 = INT64_C(0);
-#line 42 "tests/golden/run/ffi-a-char-array-member.hero"
-    t4 = INT64_C(0);
-#line 42 "tests/golden/run/ffi-a-char-array-member.hero"
-    t6 = INT64_C(7);
-#line 42 "tests/golden/run/ffi-a-char-array-member.hero"
-    t7 = (Tag){.name = {t1, t2, t3, t4}, .id = t6};
-#line 42 "tests/golden/run/ffi-a-char-array-member.hero"
-    h0_t = t7;
-#line 42 "tests/golden/run/ffi-a-char-array-member.hero"
-    hero_pad_fill(&h0_t, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
-    t8 = h0_t;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t9 = tag_first(t8);
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t9};
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t43 = h4_own4;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    h4_own4 = t10;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    h_0opt_e201354_release(&t43);
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t44 = h1_f0;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    h_0opt_e201354_retain(&t10);
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    h1_f0 = t10;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    h_0opt_e201354_release(&t44);
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t11 = h1_f0;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t12 = t11.tag;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t13 = INT64_C(0);
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t14 = t12 == t13;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    if (t14) goto bb1; else goto bb2;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-bb1:
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t17 = h1_f0;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t18 = t17.as.ok;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    hero_print_int(t18);
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    hero_print_end();
-    t19 = h0_t;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t21 = INT64_C(0);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t22 = t19.name[((uint64_t)(t21) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t21))];
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t22};
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t45 = h5_own5;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h5_own5 = t23;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h_0opt_e201354_release(&t45);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t46 = h2_f1;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h_0opt_e201354_retain(&t23);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h2_f1 = t23;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h_0opt_e201354_release(&t46);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t24 = h2_f1;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t25 = t24.tag;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t26 = INT64_C(0);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t27 = t25 == t26;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    if (t27) goto bb3; else goto bb4;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-bb2:
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t15 = h1_f0;
-#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
-    t16 = t15.as.err;
-#line 293 "ffiachararraymember.c"
+void h_ffiachararraymember_main(void) { Tag h0_t; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_f1 = {0}, h3_f2 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t10, t11, t15, t17, t23, t24, t28, t30, t34, t35, t39, t41, t43, t44, t45, t46, t47, t48; HERO_NODEBUG int8_t t1, t2, t3, t4, t22; HERO_NODEBUG int32_t t6, t9, t33; HERO_NODEBUG Tag t7, t8, t19; HERO_NODEBUG int64_t t12, t13, t18, t21, t25, t26, t31, t36, t37, t42; HERO_NODEBUG bool t14, t27, t38; HERO_NODEBUG HeroFailure t16, t29, t40; HERO_NODEBUG HeroStr t32; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 42
+    t1 = INT64_C(68); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t6 = INT64_C(7); t7 = (Tag){.name = {t1, t2, t3, t4}, .id = t6}; h0_t = t7; hero_pad_fill(&h0_t, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
+    t8 = h0_t; t9 = tag_first(t8); t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t9}; t43 = h4_own4; h4_own4 = t10; h_0opt_e201354_release(&t43); t44 = h1_f0; h_0opt_e201354_retain(&t10); h1_f0 = t10; h_0opt_e201354_release(&t44); t11 = h1_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb1; else goto bb2; bb1: t17 = h1_f0; t18 = t17.as.ok; hero_print_int(t18); hero_print_end();
+    t19 = h0_t; t21 = INT64_C(0); t22 = t19.name[((uint64_t)(t21) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t21))]; t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t22}; t45 = h5_own5; h5_own5 = t23; h_0opt_e201354_release(&t45); t46 = h2_f1; h_0opt_e201354_retain(&t23); h2_f1 = t23; h_0opt_e201354_release(&t46); t24 = h2_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb3; else goto bb4; bb2:
+#line 43
+    t15 = h1_f0; t16 = t15.as.err;
+#line 201 "ffiachararraymember.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb3:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t30 = h2_f1;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t31 = t30.as.ok;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t32 = HERO_STR_LIT(hero_str_20);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t33 = h0_t.id;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t34 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t33};
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t47 = h6_own6;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h6_own6 = t34;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h_0opt_e201354_release(&t47);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t48 = h3_f2;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h_0opt_e201354_retain(&t34);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h3_f2 = t34;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    h_0opt_e201354_release(&t48);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t35 = h3_f2;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t36 = t35.tag;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t37 = INT64_C(0);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t38 = t36 == t37;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    if (t38) goto bb5; else goto bb6;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-bb4:
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t28 = h2_f1;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t29 = t28.as.err;
-#line 337 "ffiachararraymember.c"
+    t30 = h2_f1; t31 = t30.as.ok; t32 = HERO_STR_LIT(hero_str_20); t33 = h0_t.id; t34 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t33}; t47 = h6_own6; h6_own6 = t34; h_0opt_e201354_release(&t47); t48 = h3_f2; h_0opt_e201354_retain(&t34); h3_f2 = t34; h_0opt_e201354_release(&t48); t35 = h3_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb5; else goto bb6; bb4: t28 = h2_f1; t29 = t28.as.err;
+#line 207 "ffiachararraymember.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb5:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t41 = h3_f2;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t42 = t41.as.ok;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    hero_print_int(t31);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    hero_print_str(t32);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    hero_print_int(t42);
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    hero_print_end();
-#line 353 "ffiachararraymember.c"
+    t41 = h3_f2; t42 = t41.as.ok; hero_print_int(t31); hero_print_str(t32); hero_print_int(t42); hero_print_end();
+#line 213 "ffiachararraymember.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
     h_0opt_e201354_release(hero_slot_escape(&h3_f2));
@@ -359,10 +219,8 @@ bb5:
     return;
 bb6:
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t39 = h3_f2;
-#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
-    t40 = t39.as.err;
-#line 366 "ffiachararraymember.c"
+    t39 = h3_f2; t40 = t39.as.err;
+#line 224 "ffiachararraymember.c"
     hero_panic_must(t40);
     hero_unreachable();
 }

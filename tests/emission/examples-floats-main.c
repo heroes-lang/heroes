@@ -76,11 +76,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 86 "main.c"
 #pragma clang diagnostic pop
@@ -106,226 +106,52 @@ HeroStr h_main_report(HeroArrayHeader * h0_readings);
 void h_main_main(void);
 
 #line 29 "examples/floats/main.hero"
-double h_main_a_nan(void) {
-#line 29 "examples/floats/main.hero"
-    HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 29 "examples/floats/main.hero"
-bb0:
-    t1 = 0x0p+0;
-#line 30 "examples/floats/main.hero"
-    t2 = 0x0p+0;
-#line 30 "examples/floats/main.hero"
-    t3 = t1 / t2;
-#line 30 "examples/floats/main.hero"
-    return t3;
-#line 122 "main.c"
+double h_main_a_nan(void) { HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x0p+0; t2 = 0x0p+0; t3 = t1 / t2; return t3;
+#line 112 "main.c"
 }
 
 #line 32 "examples/floats/main.hero"
-double h_main_an_infinity(void) {
-#line 32 "examples/floats/main.hero"
-    HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 32 "examples/floats/main.hero"
-bb0:
-    t1 = 0x1p+0;
-#line 33 "examples/floats/main.hero"
-    t2 = 0x0p+0;
-#line 33 "examples/floats/main.hero"
-    t3 = t1 / t2;
-#line 33 "examples/floats/main.hero"
-    return t3;
-#line 138 "main.c"
+double h_main_an_infinity(void) { HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1p+0; t2 = 0x0p+0; t3 = t1 / t2; return t3;
+#line 118 "main.c"
 }
 
 #line 35 "examples/floats/main.hero"
-double h_main_a_negative_infinity(void) {
-#line 35 "examples/floats/main.hero"
-    HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 35 "examples/floats/main.hero"
-bb0:
-    t1 = 0x0p+0;
-#line 36 "examples/floats/main.hero"
-    t2 = 0x1p+0;
-#line 36 "examples/floats/main.hero"
-    t3 = 0x0p+0;
-#line 36 "examples/floats/main.hero"
-    t4 = t2 / t3;
-#line 36 "examples/floats/main.hero"
-    t5 = t1 - t4;
-#line 36 "examples/floats/main.hero"
-    return t5;
-#line 158 "main.c"
+double h_main_a_negative_infinity(void) { HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x0p+0; t2 = 0x1p+0; t3 = 0x0p+0; t4 = t2 / t3; t5 = t1 - t4; return t5;
+#line 124 "main.c"
 }
 
 #line 39 "examples/floats/main.hero"
-bool h_main_is_nan(double h0_x) {
-#line 39 "examples/floats/main.hero"
-    HERO_NODEBUG double t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
-#line 39 "examples/floats/main.hero"
-bb0:
-    t1 = h0_x;
-#line 40 "examples/floats/main.hero"
-    t2 = h0_x;
-#line 40 "examples/floats/main.hero"
-    t3 = t1 != t2;
-#line 40 "examples/floats/main.hero"
-    return t3;
-#line 174 "main.c"
+bool h_main_is_nan(double h0_x) { HERO_NODEBUG double t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; t2 = h0_x; t3 = t1 != t2; return t3;
+#line 130 "main.c"
 }
 
 #line 44 "examples/floats/main.hero"
-bool h_main_is_infinite(double h0_x) {
-#line 44 "examples/floats/main.hero"
-    HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG double t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 44 "examples/floats/main.hero"
-bb0:
-    t1 = h0_x;
-#line 45 "examples/floats/main.hero"
-    t2 = h_main_an_infinity();
-#line 45 "examples/floats/main.hero"
-    t3 = t1 == t2;
-#line 45 "examples/floats/main.hero"
-    h1_b0 = t3;
-#line 45 "examples/floats/main.hero"
-    if (t3) goto bb2; else goto bb1;
-#line 45 "examples/floats/main.hero"
-bb1:
-#line 45 "examples/floats/main.hero"
-    t4 = h0_x;
-#line 45 "examples/floats/main.hero"
-    t5 = h_main_a_negative_infinity();
-#line 45 "examples/floats/main.hero"
-    t6 = t4 == t5;
-#line 45 "examples/floats/main.hero"
-    h1_b0 = t6;
-#line 45 "examples/floats/main.hero"
-    goto bb2;
-#line 45 "examples/floats/main.hero"
-bb2:
-#line 45 "examples/floats/main.hero"
-    t7 = h1_b0;
-#line 45 "examples/floats/main.hero"
-    return t7;
-#line 210 "main.c"
+bool h_main_is_infinite(double h0_x) { HERO_NODEBUG bool h1_b0, t3, t6, t7; HERO_NODEBUG double t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; t2 = h_main_an_infinity(); t3 = t1 == t2; h1_b0 = t3; if (t3) goto bb2; else goto bb1; bb1: t4 = h0_x; t5 = h_main_a_negative_infinity(); t6 = t4 == t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
+#line 136 "main.c"
 }
 
 #line 47 "examples/floats/main.hero"
-bool h_main_is_a_number(double h0_x) {
-#line 47 "examples/floats/main.hero"
-    HERO_NODEBUG bool h1_b0, t2, t3, t5, t6, t7; HERO_NODEBUG double t1, t4; HERO_ENTRY_STOP; goto bb0;
-#line 47 "examples/floats/main.hero"
-bb0:
-    t1 = h0_x;
-#line 48 "examples/floats/main.hero"
-    t2 = h_main_is_nan(t1);
-#line 48 "examples/floats/main.hero"
-    t3 = !t2;
-#line 48 "examples/floats/main.hero"
-    h1_b0 = t3;
-#line 48 "examples/floats/main.hero"
-    if (t3) goto bb1; else goto bb2;
-#line 48 "examples/floats/main.hero"
-bb1:
-#line 48 "examples/floats/main.hero"
-    t4 = h0_x;
-#line 48 "examples/floats/main.hero"
-    t5 = h_main_is_infinite(t4);
-#line 48 "examples/floats/main.hero"
-    t6 = !t5;
-#line 48 "examples/floats/main.hero"
-    h1_b0 = t6;
-#line 48 "examples/floats/main.hero"
-    goto bb2;
-#line 48 "examples/floats/main.hero"
-bb2:
-#line 48 "examples/floats/main.hero"
-    t7 = h1_b0;
-#line 48 "examples/floats/main.hero"
-    return t7;
-#line 246 "main.c"
+bool h_main_is_a_number(double h0_x) { HERO_NODEBUG bool h1_b0, t2, t3, t5, t6, t7; HERO_NODEBUG double t1, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; t2 = h_main_is_nan(t1); t3 = !t2; h1_b0 = t3; if (t3) goto bb1; else goto bb2; bb1: t4 = h0_x; t5 = h_main_is_infinite(t4); t6 = !t5; h1_b0 = t6; goto bb2; bb2: t7 = h1_b0; return t7;
+#line 142 "main.c"
 }
 
 #line 52 "examples/floats/main.hero"
-HeroArrayHeader * h_main_usable(HeroArrayHeader * h0_readings) {
-#line 52 "examples/floats/main.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t16, t17, t18; double h4_one; HERO_NODEBUG bool t7, t12; HERO_NODEBUG double t10, t11, t14; HERO_ENTRY_STOP; goto bb0;
-#line 52 "examples/floats/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_f64, 1);
-#line 53 "examples/floats/main.hero"
-    t20 = h5_own5;
-#line 53 "examples/floats/main.hero"
-    h5_own5 = t1;
-#line 53 "examples/floats/main.hero"
-    hero_array_decref(t20);
-#line 53 "examples/floats/main.hero"
-    t21 = h1_out;
-#line 53 "examples/floats/main.hero"
-    hero_array_incref(t1);
-#line 53 "examples/floats/main.hero"
-    h1_out = t1;
-#line 53 "examples/floats/main.hero"
-    hero_array_decref(t21);
-#line 55 "examples/floats/main.hero"
-    t2 = h0_readings;
-#line 55 "examples/floats/main.hero"
-    t22 = h2_xs0;
-#line 55 "examples/floats/main.hero"
-    hero_array_incref(t2);
-#line 55 "examples/floats/main.hero"
-    h2_xs0 = t2;
-#line 55 "examples/floats/main.hero"
-    hero_array_decref(t22);
-#line 55 "examples/floats/main.hero"
-    t3 = INT64_C(0);
-#line 55 "examples/floats/main.hero"
-    h3_i0 = t3;
-#line 55 "examples/floats/main.hero"
-    goto bb1;
-#line 55 "examples/floats/main.hero"
-bb1:
-#line 55 "examples/floats/main.hero"
-    t4 = h3_i0;
-#line 55 "examples/floats/main.hero"
-    t5 = h2_xs0;
-#line 55 "examples/floats/main.hero"
-    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 55 "examples/floats/main.hero"
-    t7 = t4 < t6;
-#line 55 "examples/floats/main.hero"
-    if (t7) goto bb2; else goto bb4;
-#line 55 "examples/floats/main.hero"
-bb2:
-#line 55 "examples/floats/main.hero"
-    t8 = h2_xs0;
-#line 55 "examples/floats/main.hero"
-    t9 = h3_i0;
-#line 55 "examples/floats/main.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]);
-#line 55 "examples/floats/main.hero"
-    h4_one = t10;
-    t11 = h4_one;
-#line 56 "examples/floats/main.hero"
-    t12 = h_main_is_a_number(t11);
-#line 56 "examples/floats/main.hero"
-    if (t12) goto bb6; else goto bb7;
-#line 56 "examples/floats/main.hero"
-bb3:
-#line 55 "examples/floats/main.hero"
-    t16 = h3_i0;
-#line 55 "examples/floats/main.hero"
-    t17 = INT64_C(1);
-#line 55 "examples/floats/main.hero"
-    if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
-#line 55 "examples/floats/main.hero"
-    h3_i0 = t18;
-#line 55 "examples/floats/main.hero"
-    goto bb1;
-#line 55 "examples/floats/main.hero"
-bb4:
-#line 59 "examples/floats/main.hero"
+HeroArrayHeader * h_main_usable(HeroArrayHeader * h0_readings) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t16, t17, t18; double h4_one; HERO_NODEBUG bool t7, t12; HERO_NODEBUG double t10, t11, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_f64, 1); t20 = h5_own5; h5_own5 = t1; hero_array_decref(t20); t21 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t21);
+#line 55
+    t2 = h0_readings; t22 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t22); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t8 + 1))[t9]); h4_one = t10;
+    t11 = h4_one; t12 = h_main_is_a_number(t11); if (t12) goto bb6; else goto bb7; bb3:
+#line 55
+    t16 = h3_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); h3_i0 = t18; goto bb1; bb4:
+#line 59
     t19 = h1_out;
-#line 329 "main.c"
+#line 155 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -335,147 +161,29 @@ bb5:
     goto bb3;
 bb6:
 #line 57 "examples/floats/main.hero"
-    t14 = h4_one;
-#line 57 "examples/floats/main.hero"
-    hero_array_push_owned(&h1_out, &t14);
-#line 57 "examples/floats/main.hero"
-    goto bb5;
-#line 57 "examples/floats/main.hero"
-bb7:
-#line 57 "examples/floats/main.hero"
-    goto bb5;
-#line 348 "main.c"
+    t14 = h4_one; hero_array_push_owned(&h1_out, &t14); goto bb5; bb7: goto bb5;
+#line 166 "main.c"
 }
 
 #line 64 "examples/floats/main.hero"
-double h_main_mean(HeroArrayHeader * h0_readings) {
-#line 64 "examples/floats/main.hero"
-    HeroArrayHeader * h1_good = {0}; double h2_total; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h7_own7 = {0}, *t1, *t2, *t3, *t9, *t12, *t15, *t25, *t30, *t31, *t32; HERO_NODEBUG int64_t h4_i0, t4, t5, t10, t11, t13, t16, t21, t22, t23, t26; double h5_one; HERO_NODEBUG double h6_ret0, t7, t8, t17, t18, t19, t20, t24, t27, t28, t29; HERO_NODEBUG bool t6, t14; HERO_ENTRY_STOP; goto bb0;
-#line 64 "examples/floats/main.hero"
-bb0:
-    t1 = h0_readings;
-#line 65 "examples/floats/main.hero"
-    t2 = h_main_usable(t1);
-#line 65 "examples/floats/main.hero"
-    t30 = h7_own7;
-#line 65 "examples/floats/main.hero"
-    h7_own7 = t2;
-#line 65 "examples/floats/main.hero"
-    hero_array_decref(t30);
-#line 65 "examples/floats/main.hero"
-    t31 = h1_good;
-#line 65 "examples/floats/main.hero"
-    hero_array_incref(t2);
-#line 65 "examples/floats/main.hero"
-    h1_good = t2;
-#line 65 "examples/floats/main.hero"
-    hero_array_decref(t31);
-#line 67 "examples/floats/main.hero"
-    t3 = h1_good;
-#line 67 "examples/floats/main.hero"
-    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 67 "examples/floats/main.hero"
-    t5 = INT64_C(0);
-#line 67 "examples/floats/main.hero"
-    t6 = t4 == t5;
-#line 67 "examples/floats/main.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 67 "examples/floats/main.hero"
-bb1:
-#line 69 "examples/floats/main.hero"
-    t8 = 0x0p+0;
-#line 69 "examples/floats/main.hero"
-    h2_total = t8;
-#line 71 "examples/floats/main.hero"
-    t9 = h1_good;
-#line 71 "examples/floats/main.hero"
-    t32 = h3_xs0;
-#line 71 "examples/floats/main.hero"
-    hero_array_incref(t9);
-#line 71 "examples/floats/main.hero"
-    h3_xs0 = t9;
-#line 71 "examples/floats/main.hero"
-    hero_array_decref(t32);
-#line 71 "examples/floats/main.hero"
-    t10 = INT64_C(0);
-#line 71 "examples/floats/main.hero"
-    h4_i0 = t10;
-#line 71 "examples/floats/main.hero"
-    goto bb4;
-#line 71 "examples/floats/main.hero"
-bb2:
-#line 68 "examples/floats/main.hero"
-    t7 = h_main_a_nan();
-#line 68 "examples/floats/main.hero"
-    h6_ret0 = t7;
-#line 68 "examples/floats/main.hero"
-    goto bb8;
-#line 68 "examples/floats/main.hero"
-bb3:
-#line 68 "examples/floats/main.hero"
-    goto bb1;
-#line 68 "examples/floats/main.hero"
-bb4:
-#line 71 "examples/floats/main.hero"
-    t11 = h4_i0;
-#line 71 "examples/floats/main.hero"
-    t12 = h3_xs0;
-#line 71 "examples/floats/main.hero"
-    t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
-#line 71 "examples/floats/main.hero"
-    t14 = t11 < t13;
-#line 71 "examples/floats/main.hero"
-    if (t14) goto bb5; else goto bb7;
-#line 71 "examples/floats/main.hero"
-bb5:
-#line 71 "examples/floats/main.hero"
-    t15 = h3_xs0;
-#line 71 "examples/floats/main.hero"
-    t16 = h4_i0;
-#line 71 "examples/floats/main.hero"
-    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t15 + 1))[t16]);
-#line 71 "examples/floats/main.hero"
-    h5_one = t17;
-    t18 = h2_total;
-#line 72 "examples/floats/main.hero"
-    t19 = h5_one;
-#line 72 "examples/floats/main.hero"
-    t20 = t18 + t19;
-#line 72 "examples/floats/main.hero"
-    h2_total = t20;
-#line 72 "examples/floats/main.hero"
-    goto bb6;
-#line 72 "examples/floats/main.hero"
-bb6:
-#line 71 "examples/floats/main.hero"
-    t21 = h4_i0;
-#line 71 "examples/floats/main.hero"
-    t22 = INT64_C(1);
-#line 71 "examples/floats/main.hero"
-    if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow();
-#line 71 "examples/floats/main.hero"
-    h4_i0 = t23;
-#line 71 "examples/floats/main.hero"
-    goto bb4;
-#line 71 "examples/floats/main.hero"
-bb7:
-#line 74 "examples/floats/main.hero"
-    t24 = h2_total;
-#line 74 "examples/floats/main.hero"
-    t25 = h1_good;
-#line 74 "examples/floats/main.hero"
-    t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
-#line 74 "examples/floats/main.hero"
-    t27 = hero_int_to_f64(t26);
-#line 74 "examples/floats/main.hero"
-    t28 = t24 / t27;
-#line 74 "examples/floats/main.hero"
-    h6_ret0 = t28;
-#line 74 "examples/floats/main.hero"
-    goto bb8;
-#line 74 "examples/floats/main.hero"
-bb8:
-#line 479 "main.c"
+double h_main_mean(HeroArrayHeader * h0_readings) { HeroArrayHeader * h1_good = {0}; double h2_total; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h7_own7 = {0}, *t1, *t2, *t3, *t9, *t12, *t15, *t25, *t30, *t31, *t32; HERO_NODEBUG int64_t h4_i0, t4, t5, t10, t11, t13, t16, t21, t22, t23, t26; double h5_one; HERO_NODEBUG double h6_ret0, t7, t8, t17, t18, t19, t20, t24, t27, t28, t29; HERO_NODEBUG bool t6, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_readings; t2 = h_main_usable(t1); t30 = h7_own7; h7_own7 = t2; hero_array_decref(t30); t31 = h1_good; hero_array_incref(t2); h1_good = t2; hero_array_decref(t31);
+#line 67
+    t3 = h1_good; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 69
+    t8 = 0x0p+0; h2_total = t8;
+#line 71
+    t9 = h1_good; t32 = h3_xs0; hero_array_incref(t9); h3_xs0 = t9; hero_array_decref(t32); t10 = INT64_C(0); h4_i0 = t10; goto bb4; bb2:
+#line 68
+    t7 = h_main_a_nan(); h6_ret0 = t7; goto bb8; bb3: goto bb1; bb4:
+#line 71
+    t11 = h4_i0; t12 = h3_xs0; t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len); t14 = t11 < t13; if (t14) goto bb5; else goto bb7; bb5: t15 = h3_xs0; t16 = h4_i0; t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t15 + 1))[t16]); h5_one = t17;
+    t18 = h2_total; t19 = h5_one; t20 = t18 + t19; h2_total = t20; goto bb6; bb6:
+#line 71
+    t21 = h4_i0; t22 = INT64_C(1); if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow(); h4_i0 = t23; goto bb4; bb7:
+#line 74
+    t24 = h2_total; t25 = h1_good; t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len); t27 = hero_int_to_f64(t26); t28 = t24 / t27; h6_ret0 = t28; goto bb8; bb8:
+#line 187 "main.c"
     t29 = h6_ret0;
     hero_array_release_at(&h1_good);
     hero_array_release_at(&h3_xs0);
@@ -484,120 +192,16 @@ bb8:
 }
 
 #line 82 "examples/floats/main.hero"
-HeroStr h_main_report(HeroArrayHeader * h0_readings) {
-#line 82 "examples/floats/main.hero"
-    HeroArrayHeader * h1_rows = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t2, *t3, *t4, *t7, *t10, *t20, *t23, *t24, *t25, *t26, *t27; HERO_NODEBUG int64_t h3_i0, t5, t6, t8, t11, t17, t18, t19; double h4_one; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t15, t21, t22, t28, t29; HERO_NODEBUG bool t9; HERO_NODEBUG double t12, t14; HERO_ENTRY_STOP; goto bb0;
-#line 82 "examples/floats/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 83 "examples/floats/main.hero"
-    t23 = h5_own5;
-#line 83 "examples/floats/main.hero"
-    h5_own5 = t1;
-#line 83 "examples/floats/main.hero"
-    hero_array_decref(t23);
-#line 83 "examples/floats/main.hero"
-    t24 = h1_rows;
-#line 83 "examples/floats/main.hero"
-    hero_array_incref(t1);
-#line 83 "examples/floats/main.hero"
-    h1_rows = t1;
-#line 83 "examples/floats/main.hero"
-    hero_array_decref(t24);
-#line 85 "examples/floats/main.hero"
-    t2 = h0_readings;
-#line 85 "examples/floats/main.hero"
-    t3 = h_main_usable(t2);
-#line 85 "examples/floats/main.hero"
-    t25 = h6_own6;
-#line 85 "examples/floats/main.hero"
-    h6_own6 = t3;
-#line 85 "examples/floats/main.hero"
-    hero_array_decref(t25);
-#line 85 "examples/floats/main.hero"
-    t4 = hero_array_sort(t3);
-#line 85 "examples/floats/main.hero"
-    t26 = h7_own7;
-#line 85 "examples/floats/main.hero"
-    h7_own7 = t4;
-#line 85 "examples/floats/main.hero"
-    hero_array_decref(t26);
-#line 85 "examples/floats/main.hero"
-    t27 = h2_xs0;
-#line 85 "examples/floats/main.hero"
-    hero_array_incref(t4);
-#line 85 "examples/floats/main.hero"
-    h2_xs0 = t4;
-#line 85 "examples/floats/main.hero"
-    hero_array_decref(t27);
-#line 85 "examples/floats/main.hero"
-    t5 = INT64_C(0);
-#line 85 "examples/floats/main.hero"
-    h3_i0 = t5;
-#line 85 "examples/floats/main.hero"
-    goto bb1;
-#line 85 "examples/floats/main.hero"
-bb1:
-#line 85 "examples/floats/main.hero"
-    t6 = h3_i0;
-#line 85 "examples/floats/main.hero"
-    t7 = h2_xs0;
-#line 85 "examples/floats/main.hero"
-    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
-#line 85 "examples/floats/main.hero"
-    t9 = t6 < t8;
-#line 85 "examples/floats/main.hero"
-    if (t9) goto bb2; else goto bb4;
-#line 85 "examples/floats/main.hero"
-bb2:
-#line 85 "examples/floats/main.hero"
-    t10 = h2_xs0;
-#line 85 "examples/floats/main.hero"
-    t11 = h3_i0;
-#line 85 "examples/floats/main.hero"
-    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t10 + 1))[t11]);
-#line 85 "examples/floats/main.hero"
-    h4_one = t12;
-    t14 = h4_one;
-#line 86 "examples/floats/main.hero"
-    t15 = hero_f64_to_str(t14);
-#line 86 "examples/floats/main.hero"
-    t28 = h8_own8;
-#line 86 "examples/floats/main.hero"
-    h8_own8 = t15;
-#line 86 "examples/floats/main.hero"
-    hero_str_decref(t28);
-#line 86 "examples/floats/main.hero"
-    hero_array_push_owned(&h1_rows, &t15);
-#line 86 "examples/floats/main.hero"
-    goto bb3;
-#line 86 "examples/floats/main.hero"
-bb3:
-#line 85 "examples/floats/main.hero"
-    t17 = h3_i0;
-#line 85 "examples/floats/main.hero"
-    t18 = INT64_C(1);
-#line 85 "examples/floats/main.hero"
-    if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 85 "examples/floats/main.hero"
-    h3_i0 = t19;
-#line 85 "examples/floats/main.hero"
-    goto bb1;
-#line 85 "examples/floats/main.hero"
-bb4:
-#line 88 "examples/floats/main.hero"
-    t20 = h1_rows;
-#line 88 "examples/floats/main.hero"
-    t21 = HERO_STR_LIT(hero_str_20);
-#line 88 "examples/floats/main.hero"
-    t22 = hero_str_join(t20, t21);
-#line 88 "examples/floats/main.hero"
-    t29 = h9_own9;
-#line 88 "examples/floats/main.hero"
-    h9_own9 = t22;
-#line 88 "examples/floats/main.hero"
-    hero_str_decref(t29);
-#line 601 "main.c"
+HeroStr h_main_report(HeroArrayHeader * h0_readings) { HeroArrayHeader * h1_rows = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t2, *t3, *t4, *t7, *t10, *t20, *t23, *t24, *t25, *t26, *t27; HERO_NODEBUG int64_t h3_i0, t5, t6, t8, t11, t17, t18, t19; double h4_one; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t15, t21, t22, t28, t29; HERO_NODEBUG bool t9; HERO_NODEBUG double t12, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t23 = h5_own5; h5_own5 = t1; hero_array_decref(t23); t24 = h1_rows; hero_array_incref(t1); h1_rows = t1; hero_array_decref(t24);
+#line 85
+    t2 = h0_readings; t3 = h_main_usable(t2); t25 = h6_own6; h6_own6 = t3; hero_array_decref(t25); t4 = hero_array_sort(t3); t26 = h7_own7; h7_own7 = t4; hero_array_decref(t26); t27 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t27); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t10 + 1))[t11]); h4_one = t12;
+    t14 = h4_one; t15 = hero_f64_to_str(t14); t28 = h8_own8; h8_own8 = t15; hero_str_decref(t28); hero_array_push_owned(&h1_rows, &t15); goto bb3; bb3:
+#line 85
+    t17 = h3_i0; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow(); h3_i0 = t19; goto bb1; bb4:
+#line 88
+    t20 = h1_rows; t21 = HERO_STR_LIT(hero_str_20); t22 = hero_str_join(t20, t21); t29 = h9_own9; h9_own9 = t22; hero_str_decref(t29);
+#line 205 "main.c"
     hero_str_incref(t22);
     hero_array_release_at(&h1_rows);
     hero_array_release_at(&h2_xs0);
@@ -610,305 +214,39 @@ bb4:
 }
 
 #line 90 "examples/floats/main.hero"
-void h_main_main(void) {
-#line 90 "examples/floats/main.hero"
-    double h0_n; double h1_up; double h2_down; HeroArrayHeader * h3_readings = {0}; HeroArrayHeader * h4_empty = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h11_own11 = {0}, h12_own12 = {0}, t5, t7, t9, t11, t66, t68, t73, t74, t75, t76, t80, t81; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h10_own10 = {0}, *h13_own13 = {0}, *t60, *t61, *t62, *t64, *t67, *t69, *t70, *t77, *t78, *t79, *t82, *t83; HERO_NODEBUG double t1, t2, t3, t4, t6, t8, t10, t12, t13, t15, t16, t18, t20, t22, t23, t25, t26, t28, t30, t32, t34, t35, t36, t38, t39, t40, t42, t43, t44, t45, t47, t48, t49, t51, t52, t53, t54, t55, t56, t57, t58, t59, t65, t71; HERO_NODEBUG bool t14, t17, t19, t21, t24, t27, t29, t31, t33, t37, t41, t46, t50, t72; HERO_NODEBUG int64_t t63; HERO_ENTRY_STOP; goto bb0;
-#line 90 "examples/floats/main.hero"
-bb0:
-    t1 = h_main_a_nan();
-#line 91 "examples/floats/main.hero"
-    h0_n = t1;
-    t2 = h_main_an_infinity();
-#line 92 "examples/floats/main.hero"
-    h1_up = t2;
-    t3 = h_main_a_negative_infinity();
-#line 93 "examples/floats/main.hero"
-    h2_down = t3;
-#line 97 "examples/floats/main.hero"
-    t4 = h0_n;
-#line 97 "examples/floats/main.hero"
-    t5 = hero_f64_to_str(t4);
-#line 97 "examples/floats/main.hero"
-    t73 = h5_own5;
-#line 97 "examples/floats/main.hero"
-    h5_own5 = t5;
-#line 97 "examples/floats/main.hero"
-    hero_str_decref(t73);
-#line 97 "examples/floats/main.hero"
-    hero_print_str(t5);
-#line 97 "examples/floats/main.hero"
-    hero_print_end();
-    t6 = h1_up;
-#line 98 "examples/floats/main.hero"
-    t7 = hero_f64_to_str(t6);
-#line 98 "examples/floats/main.hero"
-    t74 = h6_own6;
-#line 98 "examples/floats/main.hero"
-    h6_own6 = t7;
-#line 98 "examples/floats/main.hero"
-    hero_str_decref(t74);
-#line 98 "examples/floats/main.hero"
-    hero_print_str(t7);
-#line 98 "examples/floats/main.hero"
-    hero_print_end();
-    t8 = h2_down;
-#line 99 "examples/floats/main.hero"
-    t9 = hero_f64_to_str(t8);
-#line 99 "examples/floats/main.hero"
-    t75 = h7_own7;
-#line 99 "examples/floats/main.hero"
-    h7_own7 = t9;
-#line 99 "examples/floats/main.hero"
-    hero_str_decref(t75);
-#line 99 "examples/floats/main.hero"
-    hero_print_str(t9);
-#line 99 "examples/floats/main.hero"
-    hero_print_end();
-    t10 = 0x1p+0;
-#line 100 "examples/floats/main.hero"
-    t11 = hero_f64_to_str(t10);
-#line 100 "examples/floats/main.hero"
-    t76 = h8_own8;
-#line 100 "examples/floats/main.hero"
-    h8_own8 = t11;
-#line 100 "examples/floats/main.hero"
-    hero_str_decref(t76);
-#line 100 "examples/floats/main.hero"
-    hero_print_str(t11);
-#line 100 "examples/floats/main.hero"
-    hero_print_end();
-#line 103 "examples/floats/main.hero"
-    t12 = h0_n;
-#line 103 "examples/floats/main.hero"
-    t13 = h0_n;
-#line 103 "examples/floats/main.hero"
-    t14 = t12 == t13;
-#line 103 "examples/floats/main.hero"
-    hero_print_bool(t14);
-#line 103 "examples/floats/main.hero"
-    hero_print_end();
-    t15 = h0_n;
-#line 104 "examples/floats/main.hero"
-    t16 = h0_n;
-#line 104 "examples/floats/main.hero"
-    t17 = t15 != t16;
-#line 104 "examples/floats/main.hero"
-    hero_print_bool(t17);
-#line 104 "examples/floats/main.hero"
-    hero_print_end();
-    t18 = h0_n;
-#line 105 "examples/floats/main.hero"
-    t19 = h_main_is_nan(t18);
-#line 105 "examples/floats/main.hero"
-    hero_print_bool(t19);
-#line 105 "examples/floats/main.hero"
-    hero_print_end();
-    t20 = 0x1p+0;
-#line 106 "examples/floats/main.hero"
-    t21 = h_main_is_nan(t20);
-#line 106 "examples/floats/main.hero"
-    hero_print_bool(t21);
-#line 106 "examples/floats/main.hero"
-    hero_print_end();
-#line 109 "examples/floats/main.hero"
-    t22 = h1_up;
-#line 109 "examples/floats/main.hero"
-    t23 = h1_up;
-#line 109 "examples/floats/main.hero"
-    t24 = t22 == t23;
-#line 109 "examples/floats/main.hero"
-    hero_print_bool(t24);
-#line 109 "examples/floats/main.hero"
-    hero_print_end();
-    t25 = h1_up;
-#line 110 "examples/floats/main.hero"
-    t26 = h2_down;
-#line 110 "examples/floats/main.hero"
-    t27 = t25 == t26;
-#line 110 "examples/floats/main.hero"
-    hero_print_bool(t27);
-#line 110 "examples/floats/main.hero"
-    hero_print_end();
-    t28 = h1_up;
-#line 111 "examples/floats/main.hero"
-    t29 = h_main_is_infinite(t28);
-#line 111 "examples/floats/main.hero"
-    hero_print_bool(t29);
-#line 111 "examples/floats/main.hero"
-    hero_print_end();
-    t30 = h2_down;
-#line 112 "examples/floats/main.hero"
-    t31 = h_main_is_infinite(t30);
-#line 112 "examples/floats/main.hero"
-    hero_print_bool(t31);
-#line 112 "examples/floats/main.hero"
-    hero_print_end();
-    t32 = 0x1p+0;
-#line 113 "examples/floats/main.hero"
-    t33 = h_main_is_infinite(t32);
-#line 113 "examples/floats/main.hero"
-    hero_print_bool(t33);
-#line 113 "examples/floats/main.hero"
-    hero_print_end();
-#line 117 "examples/floats/main.hero"
-    t34 = h1_up;
-#line 117 "examples/floats/main.hero"
-    t35 = h1_up;
-#line 117 "examples/floats/main.hero"
-    t36 = t34 - t35;
-#line 117 "examples/floats/main.hero"
-    t37 = h_main_is_nan(t36);
-#line 117 "examples/floats/main.hero"
-    hero_print_bool(t37);
-#line 117 "examples/floats/main.hero"
-    hero_print_end();
-    t38 = h0_n;
-#line 118 "examples/floats/main.hero"
-    t39 = 0x1p+0;
-#line 118 "examples/floats/main.hero"
-    t40 = t38 + t39;
-#line 118 "examples/floats/main.hero"
-    t41 = h_main_is_nan(t40);
-#line 118 "examples/floats/main.hero"
-    hero_print_bool(t41);
-#line 118 "examples/floats/main.hero"
-    hero_print_end();
-    t42 = h1_up;
-#line 119 "examples/floats/main.hero"
-    t43 = 0x1p+0;
-#line 119 "examples/floats/main.hero"
-    t44 = t42 + t43;
-#line 119 "examples/floats/main.hero"
-    t45 = h1_up;
-#line 119 "examples/floats/main.hero"
-    t46 = t44 == t45;
-#line 119 "examples/floats/main.hero"
-    hero_print_bool(t46);
-#line 119 "examples/floats/main.hero"
-    hero_print_end();
-    t47 = h1_up;
-#line 120 "examples/floats/main.hero"
-    t48 = h2_down;
-#line 120 "examples/floats/main.hero"
-    t49 = t47 + t48;
-#line 120 "examples/floats/main.hero"
-    t50 = h_main_is_nan(t49);
-#line 120 "examples/floats/main.hero"
-    hero_print_bool(t50);
-#line 120 "examples/floats/main.hero"
-    hero_print_end();
-#line 123 "examples/floats/main.hero"
-    t51 = 0x1.4p+1;
-#line 123 "examples/floats/main.hero"
-    t52 = 0x0p+0;
-#line 123 "examples/floats/main.hero"
-    t53 = 0x0p+0;
-#line 123 "examples/floats/main.hero"
-    t54 = t52 / t53;
-#line 123 "examples/floats/main.hero"
-    t55 = 0x1.8p+0;
-#line 123 "examples/floats/main.hero"
-    t56 = 0x1p+0;
-#line 123 "examples/floats/main.hero"
-    t57 = 0x0p+0;
-#line 123 "examples/floats/main.hero"
-    t58 = t56 / t57;
-#line 123 "examples/floats/main.hero"
-    t59 = 0x1.cp+1;
-#line 123 "examples/floats/main.hero"
-    t60 = hero_array_new(&hero_desc_f64, 5);
-#line 123 "examples/floats/main.hero"
-    hero_array_push_owned(&t60, &t51);
-#line 123 "examples/floats/main.hero"
-    hero_array_push_owned(&t60, &t54);
-#line 123 "examples/floats/main.hero"
-    hero_array_push_owned(&t60, &t55);
-#line 123 "examples/floats/main.hero"
-    hero_array_push_owned(&t60, &t58);
-#line 123 "examples/floats/main.hero"
-    hero_array_push_owned(&t60, &t59);
-#line 123 "examples/floats/main.hero"
-    t77 = h9_own9;
-#line 123 "examples/floats/main.hero"
-    h9_own9 = t60;
-#line 123 "examples/floats/main.hero"
-    hero_array_decref(t77);
-#line 123 "examples/floats/main.hero"
-    t78 = h3_readings;
-#line 123 "examples/floats/main.hero"
-    hero_array_incref(t60);
-#line 123 "examples/floats/main.hero"
-    h3_readings = t60;
-#line 123 "examples/floats/main.hero"
-    hero_array_decref(t78);
-    t61 = h3_readings;
-#line 124 "examples/floats/main.hero"
-    t62 = h_main_usable(t61);
-#line 124 "examples/floats/main.hero"
-    t79 = h10_own10;
-#line 124 "examples/floats/main.hero"
-    h10_own10 = t62;
-#line 124 "examples/floats/main.hero"
-    hero_array_decref(t79);
-#line 124 "examples/floats/main.hero"
-    t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len);
-#line 124 "examples/floats/main.hero"
-    hero_print_int(t63);
-#line 124 "examples/floats/main.hero"
-    hero_print_end();
-    t64 = h3_readings;
-#line 125 "examples/floats/main.hero"
-    t65 = h_main_mean(t64);
-#line 125 "examples/floats/main.hero"
-    t66 = hero_f64_to_str(t65);
-#line 125 "examples/floats/main.hero"
-    t80 = h11_own11;
-#line 125 "examples/floats/main.hero"
-    h11_own11 = t66;
-#line 125 "examples/floats/main.hero"
-    hero_str_decref(t80);
-#line 125 "examples/floats/main.hero"
-    hero_print_str(t66);
-#line 125 "examples/floats/main.hero"
-    hero_print_end();
-    t67 = h3_readings;
-#line 126 "examples/floats/main.hero"
-    t68 = h_main_report(t67);
-#line 126 "examples/floats/main.hero"
-    t81 = h12_own12;
-#line 126 "examples/floats/main.hero"
-    h12_own12 = t68;
-#line 126 "examples/floats/main.hero"
-    hero_str_decref(t81);
-#line 126 "examples/floats/main.hero"
-    hero_print_str(t68);
-#line 126 "examples/floats/main.hero"
-    hero_print_end();
-    t69 = hero_array_new(&hero_desc_f64, 1);
-#line 127 "examples/floats/main.hero"
-    t82 = h13_own13;
-#line 127 "examples/floats/main.hero"
-    h13_own13 = t69;
-#line 127 "examples/floats/main.hero"
-    hero_array_decref(t82);
-#line 127 "examples/floats/main.hero"
-    t83 = h4_empty;
-#line 127 "examples/floats/main.hero"
-    hero_array_incref(t69);
-#line 127 "examples/floats/main.hero"
-    h4_empty = t69;
-#line 127 "examples/floats/main.hero"
-    hero_array_decref(t83);
-    t70 = h4_empty;
-#line 128 "examples/floats/main.hero"
-    t71 = h_main_mean(t70);
-#line 128 "examples/floats/main.hero"
-    t72 = h_main_is_nan(t71);
-#line 128 "examples/floats/main.hero"
-    hero_print_bool(t72);
-#line 128 "examples/floats/main.hero"
-    hero_print_end();
-#line 912 "main.c"
+void h_main_main(void) { double h0_n; double h1_up; double h2_down; HeroArrayHeader * h3_readings = {0}; HeroArrayHeader * h4_empty = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h11_own11 = {0}, h12_own12 = {0}, t5, t7, t9, t11, t66, t68, t73, t74, t75, t76, t80, t81; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h10_own10 = {0}, *h13_own13 = {0}, *t60, *t61, *t62, *t64, *t67, *t69, *t70, *t77, *t78, *t79, *t82, *t83; HERO_NODEBUG double t1, t2, t3, t4, t6, t8, t10, t12, t13, t15, t16, t18, t20, t22, t23, t25, t26, t28, t30, t32, t34, t35, t36, t38, t39, t40, t42, t43, t44, t45, t47, t48, t49, t51, t52, t53, t54, t55, t56, t57, t58, t59, t65, t71; HERO_NODEBUG bool t14, t17, t19, t21, t24, t27, t29, t31, t33, t37, t41, t46, t50, t72; HERO_NODEBUG int64_t t63; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_main_a_nan(); h0_n = t1;
+    t2 = h_main_an_infinity(); h1_up = t2;
+    t3 = h_main_a_negative_infinity(); h2_down = t3;
+#line 97
+    t4 = h0_n; t5 = hero_f64_to_str(t4); t73 = h5_own5; h5_own5 = t5; hero_str_decref(t73); hero_print_str(t5); hero_print_end();
+    t6 = h1_up; t7 = hero_f64_to_str(t6); t74 = h6_own6; h6_own6 = t7; hero_str_decref(t74); hero_print_str(t7); hero_print_end();
+    t8 = h2_down; t9 = hero_f64_to_str(t8); t75 = h7_own7; h7_own7 = t9; hero_str_decref(t75); hero_print_str(t9); hero_print_end();
+    t10 = 0x1p+0; t11 = hero_f64_to_str(t10); t76 = h8_own8; h8_own8 = t11; hero_str_decref(t76); hero_print_str(t11); hero_print_end();
+#line 103
+    t12 = h0_n; t13 = h0_n; t14 = t12 == t13; hero_print_bool(t14); hero_print_end();
+    t15 = h0_n; t16 = h0_n; t17 = t15 != t16; hero_print_bool(t17); hero_print_end();
+    t18 = h0_n; t19 = h_main_is_nan(t18); hero_print_bool(t19); hero_print_end();
+    t20 = 0x1p+0; t21 = h_main_is_nan(t20); hero_print_bool(t21); hero_print_end();
+#line 109
+    t22 = h1_up; t23 = h1_up; t24 = t22 == t23; hero_print_bool(t24); hero_print_end();
+    t25 = h1_up; t26 = h2_down; t27 = t25 == t26; hero_print_bool(t27); hero_print_end();
+    t28 = h1_up; t29 = h_main_is_infinite(t28); hero_print_bool(t29); hero_print_end();
+    t30 = h2_down; t31 = h_main_is_infinite(t30); hero_print_bool(t31); hero_print_end();
+    t32 = 0x1p+0; t33 = h_main_is_infinite(t32); hero_print_bool(t33); hero_print_end();
+#line 117
+    t34 = h1_up; t35 = h1_up; t36 = t34 - t35; t37 = h_main_is_nan(t36); hero_print_bool(t37); hero_print_end();
+    t38 = h0_n; t39 = 0x1p+0; t40 = t38 + t39; t41 = h_main_is_nan(t40); hero_print_bool(t41); hero_print_end();
+    t42 = h1_up; t43 = 0x1p+0; t44 = t42 + t43; t45 = h1_up; t46 = t44 == t45; hero_print_bool(t46); hero_print_end();
+    t47 = h1_up; t48 = h2_down; t49 = t47 + t48; t50 = h_main_is_nan(t49); hero_print_bool(t50); hero_print_end();
+#line 123
+    t51 = 0x1.4p+1; t52 = 0x0p+0; t53 = 0x0p+0; t54 = t52 / t53; t55 = 0x1.8p+0; t56 = 0x1p+0; t57 = 0x0p+0; t58 = t56 / t57; t59 = 0x1.cp+1; t60 = hero_array_new(&hero_desc_f64, 5); hero_array_push_owned(&t60, &t51); hero_array_push_owned(&t60, &t54); hero_array_push_owned(&t60, &t55); hero_array_push_owned(&t60, &t58); hero_array_push_owned(&t60, &t59); t77 = h9_own9; h9_own9 = t60; hero_array_decref(t77); t78 = h3_readings; hero_array_incref(t60); h3_readings = t60; hero_array_decref(t78);
+    t61 = h3_readings; t62 = h_main_usable(t61); t79 = h10_own10; h10_own10 = t62; hero_array_decref(t79); t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len); hero_print_int(t63); hero_print_end();
+    t64 = h3_readings; t65 = h_main_mean(t64); t66 = hero_f64_to_str(t65); t80 = h11_own11; h11_own11 = t66; hero_str_decref(t80); hero_print_str(t66); hero_print_end();
+    t67 = h3_readings; t68 = h_main_report(t67); t81 = h12_own12; h12_own12 = t68; hero_str_decref(t81); hero_print_str(t68); hero_print_end();
+    t69 = hero_array_new(&hero_desc_f64, 1); t82 = h13_own13; h13_own13 = t69; hero_array_decref(t82); t83 = h4_empty; hero_array_incref(t69); h4_empty = t69; hero_array_decref(t83);
+    t70 = h4_empty; t71 = h_main_mean(t70); t72 = h_main_is_nan(t71); hero_print_bool(t72); hero_print_end();
+#line 250 "main.c"
     hero_array_release_at(&h3_readings);
     hero_array_release_at(&h4_empty);
     hero_str_release_at(&h5_own5);

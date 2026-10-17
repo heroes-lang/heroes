@@ -141,11 +141,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handletransferintoanullresu
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "handletransferintoanullresultisnotmade.c"
 #pragma clang diagnostic pop
@@ -164,173 +164,23 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_handletransferintoanullresultisnotmade_main(void);
 
 #line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-void h_handletransferintoanullresultisnotmade_main(void) {
-#line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    mem * h0_p; mem * h1_q; mem * h2_r; mem * h3_t; HERO_NODEBUG int64_t t1, t4, t11, t13, t16, t23; HERO_NODEBUG mem *t2, *t3, *t5, *t6, *t7, *t10, *t12, *t14, *t15, *t17, *t18, *t19, *t22, *t24; HERO_NODEBUG bool t8, t20; HERO_NODEBUG HeroStr t9, t21; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-bb0:
-    t1 = INT64_C(8);
-#line 15 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t2 = mem_new(t1);
-#line 15 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_acquired(t2, "mem_free");
-#line 15 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    h0_p = t2;
-    t3 = h0_p;
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t4 = INT64_C(100);
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    {
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_alive(t3, "the argument `old` of `grow`");
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_transferring(t3, "mem_free");
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t5 = grow(t3, t4);
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    if (t5 != NULL) {
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_p == t3) h0_p = hero_handle_dead();
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    } else {
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_kept(t3, hero_life_0_0);
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    }
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_acquired(t5, "mem_free");
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    }
-#line 16 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    h1_q = t5;
-#line 18 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t6 = h1_q;
-#line 18 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t7 = ((void *)0);
-#line 18 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t8 = h_handletransferintoanullresultisnotmade_Mem_eq(&t6, &t7);
-#line 18 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    if (t8) goto bb2; else goto bb3;
-#line 18 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-bb1:
-#line 21 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t13 = INT64_C(8);
-#line 21 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t14 = mem_new(t13);
-#line 21 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_acquired(t14, "mem_free");
-#line 21 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    h2_r = t14;
-    t15 = h2_r;
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t16 = INT64_C(32);
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    {
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_alive(t15, "the argument `old` of `grow`");
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_transferring(t15, "mem_free");
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t17 = grow(t15, t16);
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    if (t17 != NULL) {
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    if (hero_handle_ended(t15, hero_life_0_0) && h2_r == t15) h2_r = hero_handle_dead();
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    } else {
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_kept(t15, hero_life_0_0);
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    }
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_acquired(t17, "mem_free");
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    }
-#line 22 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    h3_t = t17;
-#line 24 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t18 = h3_t;
-#line 24 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t19 = ((void *)0);
-#line 24 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t20 = !h_handletransferintoanullresultisnotmade_Mem_eq(&t18, &t19);
-#line 24 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    if (t20) goto bb5; else goto bb6;
-#line 24 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-bb2:
-#line 19 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t9 = HERO_STR_LIT(hero_str_1e4f0b6f);
-#line 19 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t10 = h0_p;
-#line 19 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_alive(t10, "the argument `m` of `mem_size`");
-#line 19 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t11 = mem_size(t10);
-#line 19 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_print_str(t9);
-#line 19 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_print_int(t11);
-#line 19 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_print_end();
-    t12 = h0_p;
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    {
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_alive(t12, "the argument `m` of `mem_free`");
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "mem_free", NULL);
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    (void)mem_free(t12);
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    if (hero_handle_ended(t12, hero_life_0_0) && h0_p == t12) h0_p = hero_handle_dead();
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    }
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    goto bb1;
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-bb3:
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    goto bb1;
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-bb4:
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    return;
-#line 20 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-bb5:
-#line 25 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t21 = HERO_STR_LIT(hero_str_614b144d);
-#line 25 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t22 = h3_t;
-#line 25 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_alive(t22, "the argument `m` of `mem_size`");
-#line 25 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    t23 = mem_size(t22);
-#line 25 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_print_str(t21);
-#line 25 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_print_int(t23);
-#line 25 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_print_end();
-    t24 = h3_t;
-#line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    {
-#line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    hero_handle_alive(t24, "the argument `m` of `mem_free`");
-#line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t24, "mem_free", NULL);
-#line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    (void)mem_free(t24);
-#line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    if (hero_handle_ended(t24, hero_life_0_0) && h3_t == t24) h3_t = hero_handle_dead();
-#line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    }
-#line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    goto bb4;
-#line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-bb6:
-#line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    goto bb4;
-#line 334 "handletransferintoanullresultisnotmade.c"
+void h_handletransferintoanullresultisnotmade_main(void) { mem * h0_p; mem * h1_q; mem * h2_r; mem * h3_t; HERO_NODEBUG int64_t t1, t4, t11, t13, t16, t23; HERO_NODEBUG mem *t2, *t3, *t5, *t6, *t7, *t10, *t12, *t14, *t15, *t17, *t18, *t19, *t22, *t24; HERO_NODEBUG bool t8, t20; HERO_NODEBUG HeroStr t9, t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(8); t2 = mem_new(t1); hero_handle_acquired(t2, "mem_free"); h0_p = t2;
+    t3 = h0_p; t4 = INT64_C(100); { hero_handle_alive(t3, "the argument `old` of `grow`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_transferring(t3, "mem_free"); t5 = grow(t3, t4); if (t5 != NULL) { if (hero_handle_ended(t3, hero_life_0_0) && h0_p == t3) h0_p = hero_handle_dead(); } else { hero_handle_kept(t3, hero_life_0_0); } hero_handle_acquired(t5, "mem_free"); } h1_q = t5;
+#line 18
+    t6 = h1_q; t7 = ((void *)0); t8 = h_handletransferintoanullresultisnotmade_Mem_eq(&t6, &t7); if (t8) goto bb2; else goto bb3; bb1:
+#line 21
+    t13 = INT64_C(8); t14 = mem_new(t13); hero_handle_acquired(t14, "mem_free"); h2_r = t14;
+    t15 = h2_r; t16 = INT64_C(32); { hero_handle_alive(t15, "the argument `old` of `grow`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_transferring(t15, "mem_free"); t17 = grow(t15, t16); if (t17 != NULL) { if (hero_handle_ended(t15, hero_life_0_0) && h2_r == t15) h2_r = hero_handle_dead(); } else { hero_handle_kept(t15, hero_life_0_0); } hero_handle_acquired(t17, "mem_free"); } h3_t = t17;
+#line 24
+    t18 = h3_t; t19 = ((void *)0); t20 = !h_handletransferintoanullresultisnotmade_Mem_eq(&t18, &t19); if (t20) goto bb5; else goto bb6; bb2:
+#line 19
+    t9 = HERO_STR_LIT(hero_str_1e4f0b6f); t10 = h0_p; hero_handle_alive(t10, "the argument `m` of `mem_size`"); t11 = mem_size(t10); hero_print_str(t9); hero_print_int(t11); hero_print_end();
+    t12 = h0_p; { hero_handle_alive(t12, "the argument `m` of `mem_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "mem_free", NULL); (void)mem_free(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_p == t12) h0_p = hero_handle_dead(); } goto bb1; bb3: goto bb1; bb4: return; bb5:
+#line 25
+    t21 = HERO_STR_LIT(hero_str_614b144d); t22 = h3_t; hero_handle_alive(t22, "the argument `m` of `mem_size`"); t23 = mem_size(t22); hero_print_str(t21); hero_print_int(t23); hero_print_end();
+    t24 = h3_t; { hero_handle_alive(t24, "the argument `m` of `mem_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t24, "mem_free", NULL); (void)mem_free(t24); if (hero_handle_ended(t24, hero_life_0_0) && h3_t == t24) h3_t = hero_handle_dead(); } goto bb4; bb6: goto bb4;
+#line 184 "handletransferintoanullresultisnotmade.c"
 }
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_Mem_eq(mem * const *a, mem * const *b) {
     return hero_handle_eq(*a, *b);

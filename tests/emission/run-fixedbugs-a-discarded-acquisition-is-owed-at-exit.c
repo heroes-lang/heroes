@@ -135,11 +135,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsadiscardedacquisit
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 145 "fixedbugsadiscardedacquisitionisowedatexit.c"
 #pragma clang diagnostic pop
@@ -158,26 +158,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsadiscardedacquisitionisowedatexit_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-void h_fixedbugsadiscardedacquisitionisowedatexit_main(void) {
-#line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-    HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-bb0:
-    {
-#line 10 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-    HERO_NODEBUG __typeof__(ob_new()) hero_when = ob_new();
-#line 10 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-    hero_handle_acquired(hero_when, "ob_put");
-#line 10 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-    }
-    t2 = HERO_STR_LIT(hero_str_4c173d0e);
-#line 11 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-    hero_print_str(t2);
-#line 11 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-    hero_print_end();
-#line 11 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-    return;
-#line 181 "fixedbugsadiscardedacquisitionisowedatexit.c"
+void h_fixedbugsadiscardedacquisitionisowedatexit_main(void) { HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    { HERO_NODEBUG __typeof__(ob_new()) hero_when = ob_new(); hero_handle_acquired(hero_when, "ob_put"); }
+    t2 = HERO_STR_LIT(hero_str_4c173d0e); hero_print_str(t2); hero_print_end(); return;
+#line 165 "fixedbugsadiscardedacquisitionisowedatexit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsadiscardedacquisitionisowedatexit_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

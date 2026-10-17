@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread.c"
 #pragma clang diagnostic pop
@@ -96,68 +96,20 @@ int64_t h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_V(void)
 void h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_main(void);
 
 #line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-int64_t h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_V(void) {
-#line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4, *t5, *t8, *t9; HERO_NODEBUG int64_t t1, t2, t3, t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    t2 = INT64_C(2);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    t3 = INT64_C(3);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    t4 = hero_array_new(&hero_desc_int, 3);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_array_push_owned(&t4, &t1);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_array_push_owned(&t4, &t2);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_array_push_owned(&t4, &t3);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    t8 = h1_own1;
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    h1_own1 = t4;
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_array_decref(t8);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    t9 = h0_xs;
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_array_incref(t4);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    h0_xs = t4;
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_array_decref(t9);
-    t5 = h0_xs;
-#line 9 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    t6 = INT64_C(5);
-#line 9 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
-#line 137 "fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread.c"
+int64_t h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_V(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4, *t5, *t8, *t9; HERO_NODEBUG int64_t t1, t2, t3, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t8 = h1_own1; h1_own1 = t4; hero_array_decref(t8); t9 = h0_xs; hero_array_incref(t4); h0_xs = t4; hero_array_decref(t9);
+    t5 = h0_xs; t6 = INT64_C(5); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
+#line 103 "fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return t7;
 }
 
 #line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-void h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_main(void) {
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 12 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_print_int(t1);
-#line 12 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_print_end();
-    t2 = h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_V();
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_print_int(t2);
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    hero_print_end();
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    return;
-#line 161 "fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread.c"
+void h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); hero_print_int(t1); hero_print_end();
+    t2 = h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_V(); hero_print_int(t2); hero_print_end(); return;
+#line 113 "fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

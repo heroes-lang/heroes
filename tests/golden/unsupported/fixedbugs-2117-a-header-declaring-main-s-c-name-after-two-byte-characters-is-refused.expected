@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-2117-a-header-declaring-main-s-c-name-after-two-byte-characters-is-refused.h`, the header this group names, does not compile: its line 3 declares `h_fixedbugs2117aheaderdeclaringmainscnameaftertwobytecharactersisrefused_main`, which the C this compiler writes for this program declares too, after the groups' headers, and clang refuses the two: conflicting types for 'h_fixedbugs2117aheaderdeclaringmainscnameaftertwobytecharactersisrefused_main'
+  at tests/golden/unsupported/fixedbugs-2117-a-header-declaring-main-s-c-name-after-two-byte-characters-is-refused.hero:13:8
+     |
+  13 | extern "fixedbugs-2117-a-header-declaring-main-s-c-name-after-two-byte-characters-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2117-a-header-declaring-main-s-c-name-after-two-byte-characters-is-refused.h` line 3 reads `/* éé */ int h_fixedbugs2117aheaderdeclaringmainscnameaftertwobytecharactersisrefused_main(int x);`
+  note: this compiler's `h_fixedbugs2117aheaderdeclaringmainscnameaftertwobytecharactersisrefused_main` is the name the C it writes gives this program's function `main`, at line 16
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `h_fixedbugs2117aheaderdeclaringmainscnameaftertwobytecharactersisrefused_main` in `fixedbugs-2117-a-header-declaring-main-s-c-name-after-two-byte-characters-is-refused.h`, the name this compiler gives this program's function `main`

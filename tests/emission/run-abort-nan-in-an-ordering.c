@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "abortnaninanordering.c"
 #pragma clang diagnostic pop
@@ -95,64 +95,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_abortnaninanordering_main(void);
 
 #line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
-void h_abortnaninanordering_main(void) {
-#line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    double h0_zero; double h1_n; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t8, t9, t11, t12, t14, t15; HERO_NODEBUG bool t7, t10, t13, t16; HERO_ENTRY_STOP; goto bb0;
-#line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
-bb0:
-    t1 = 0x0p+0;
-#line 44 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    h0_zero = t1;
-    t2 = h0_zero;
-#line 45 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t3 = h0_zero;
-#line 45 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t4 = t2 / t3;
-#line 45 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    h1_n = t4;
-    t5 = h1_n;
-#line 46 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t6 = h1_n;
-#line 46 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t7 = t5 == t6;
-#line 46 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    hero_print_bool(t7);
-#line 46 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    hero_print_end();
-    t8 = h1_n;
-#line 47 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t9 = h1_n;
-#line 47 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t10 = t8 != t9;
-#line 47 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    hero_print_bool(t10);
-#line 47 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    hero_print_end();
-    t11 = 0x1p+0;
-#line 48 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t12 = 0x1p+1;
-#line 48 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    if (t11 != t11 || t12 != t12) hero_panic("a nan in `<`: it is neither less nor greater, so both arms would be false");
-#line 48 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t13 = t11 < t12;
-#line 48 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    hero_print_bool(t13);
-#line 48 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    hero_print_end();
-    t14 = h1_n;
-#line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t15 = 0x1p+0;
-#line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    if (t14 != t14 || t15 != t15) hero_panic("a nan in `<`: it is neither less nor greater, so both arms would be false");
-#line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    t16 = t14 < t15;
-#line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    hero_print_bool(t16);
-#line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    hero_print_end();
-#line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    return;
-#line 156 "abortnaninanordering.c"
+void h_abortnaninanordering_main(void) { double h0_zero; double h1_n; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t8, t9, t11, t12, t14, t15; HERO_NODEBUG bool t7, t10, t13, t16; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x0p+0; h0_zero = t1;
+    t2 = h0_zero; t3 = h0_zero; t4 = t2 / t3; h1_n = t4;
+    t5 = h1_n; t6 = h1_n; t7 = t5 == t6; hero_print_bool(t7); hero_print_end();
+    t8 = h1_n; t9 = h1_n; t10 = t8 != t9; hero_print_bool(t10); hero_print_end();
+    t11 = 0x1p+0; t12 = 0x1p+1; if (t11 != t11 || t12 != t12) hero_panic("a nan in `<`: it is neither less nor greater, so both arms would be false"); t13 = t11 < t12; hero_print_bool(t13); hero_print_end();
+    t14 = h1_n; t15 = 0x1p+0; if (t14 != t14 || t15 != t15) hero_panic("a nan in `<`: it is neither less nor greater, so both arms would be false"); t16 = t14 < t15; hero_print_bool(t16); hero_print_end(); return;
+#line 106 "abortnaninanordering.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

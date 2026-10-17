@@ -102,11 +102,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 112 "fixedbugs174avaluearmorblockthatendsitspath.c"
 #pragma clang diagnostic pop
@@ -150,896 +150,262 @@ void h_library_exit(int64_t h0_code);
 HERO_TU_LOCAL int64_t h_fixedbugs174avaluearmorblockthatendsitspath_first_1b9a87(HeroArrayHeader * h0_xs);
 
 #line 20 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_exit_arm(int64_t h0_k) {
-#line 20 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 20 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 21 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_s0 = t1;
-#line 21 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h1_s0;
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_exit_arm(int64_t h0_k) { HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(0);
-#line 21 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 == t3;
-#line 21 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 21 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 21 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = h2_r0;
-#line 21 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_x = t7;
-#line 25 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = h3_x;
-#line 25 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t8;
-#line 25 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 22 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = INT64_C(3);
-#line 22 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t5);
-#line 22 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 22 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 22 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 22 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 22 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
+#line 21
+    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t7 = h2_r0; h3_x = t7;
+#line 25
+    t8 = h3_x; return t8; bb2:
+#line 22
+    t5 = INT64_C(3); h_library_exit(t5); hero_unreachable(); hero_unreachable(); bb3: goto bb4; bb4:
     t6 = INT64_C(20);
-#line 21 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_r0 = t6;
-#line 21 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 200 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 21
+    h2_r0 = t6; goto bb1;
+#line 166 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 27 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_assert_false_arm(int64_t h0_k) {
-#line 27 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t7, t8, t9; int64_t h3_x; HERO_NODEBUG bool t4, t6; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
-#line 27 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_s0 = t1;
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h1_s0;
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_assert_false_arm(int64_t h0_k) { HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t7, t8, t9; int64_t h3_x; HERO_NODEBUG bool t4, t6; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(0);
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 == t3;
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = h2_r0;
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_x = t8;
-#line 32 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t9 = h3_x;
-#line 32 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t9;
-#line 32 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 29 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = HERO_STR_LIT(hero_str_b928f19);
-#line 29 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = false;
-#line 29 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t6) goto bb5; else goto bb6;
-#line 29 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 29 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 29 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
+#line 28
+    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t8 = h2_r0; h3_x = t8;
+#line 32
+    t9 = h3_x; return t9; bb2:
+#line 29
+    t5 = HERO_STR_LIT(hero_str_b928f19); t6 = false; if (t6) goto bb5; else goto bb6; bb3: goto bb4; bb4:
     t7 = INT64_C(20);
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_r0 = t7;
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb5:
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 28 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb6:
-#line 254 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 28
+    h2_r0 = t7; goto bb1; bb5: hero_unreachable(); bb6:
+#line 182 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_panic_assert(t5);
     hero_unreachable();
 }
 
 #line 34 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_while_true_block(int64_t h0_k) {
-#line 34 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    int64_t h1_n; HERO_NODEBUG int64_t h2_s0, h3_r0, t1, t2, t3, t4, t7, t8, t9, t10, t11, t12, t13, t14; int64_t h4_x; HERO_NODEBUG bool t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 34 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 35 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_n = t1;
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h0_k;
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_s0 = t2;
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t3 = h2_s0;
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_while_true_block(int64_t h0_k) { int64_t h1_n; HERO_NODEBUG int64_t h2_s0, h3_r0, t1, t2, t3, t4, t7, t8, t9, t10, t11, t12, t13, t14; int64_t h4_x; HERO_NODEBUG bool t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_n = t1;
+#line 37
+    t2 = h0_k; h2_s0 = t2; t3 = h2_s0;
     t4 = INT64_C(0);
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = t3 == t4;
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t11 = h3_r0;
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h4_x = t11;
-#line 43 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t12 = h4_x;
-#line 43 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t13 = h1_n;
-#line 43 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 43 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t14;
-#line 43 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 43 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb5;
-#line 43 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 43 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 43 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
-#line 41 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
+#line 37
+    t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1: t11 = h3_r0; h4_x = t11;
+#line 43
+    t12 = h4_x; t13 = h1_n; if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow(); return t14; bb2: goto bb5; bb3: goto bb4; bb4:
+#line 41
     t10 = INT64_C(20);
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_r0 = t10;
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 37 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb5:
-#line 39 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = true;
-#line 39 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t6) goto bb6; else goto bb7;
-#line 39 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb6:
-    t7 = h1_n;
-#line 40 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = INT64_C(1);
-#line 40 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 40 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_n = t9;
-#line 40 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb5;
-#line 40 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb7:
-#line 40 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 330 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 37
+    h3_r0 = t10; goto bb1; bb5:
+#line 39
+    t6 = true; if (t6) goto bb6; else goto bb7; bb6:
+    t7 = h1_n; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); h1_n = t9; goto bb5; bb7: hero_unreachable();
+#line 204 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 45 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_block_exit_last(int64_t h0_k) {
-#line 45 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8, t9; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 45 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 46 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_s0 = t1;
-#line 46 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h1_s0;
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_block_exit_last(int64_t h0_k) { HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8, t9; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(0);
-#line 46 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 == t3;
-#line 46 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 46 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 46 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = h2_r0;
-#line 46 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_x = t8;
-#line 52 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t9 = h3_x;
-#line 52 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t9;
-#line 52 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 48 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = INT64_C(0);
-#line 48 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t5);
-#line 48 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t6 = INT64_C(3);
-#line 49 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t6);
-#line 49 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 49 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 49 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 49 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 49 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
+#line 46
+    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t8 = h2_r0; h3_x = t8;
+#line 52
+    t9 = h3_x; return t9; bb2:
+#line 48
+    t5 = INT64_C(0); hero_print_int(t5); hero_print_end();
+    t6 = INT64_C(3); h_library_exit(t6); hero_unreachable(); hero_unreachable(); bb3: goto bb4; bb4:
     t7 = INT64_C(20);
-#line 46 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_r0 = t7;
-#line 46 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 385 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 46
+    h2_r0 = t7; goto bb1;
+#line 221 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 57 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_value_if_branch(int64_t h0_k) {
-#line 57 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_r0, t1, t2, t4, t5, t6, t7; int64_t h2_x; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
-#line 57 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 58 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = INT64_C(0);
-#line 58 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t3 = t1 == t2;
-#line 58 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 58 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 58 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = h1_r0;
-#line 58 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_x = t6;
-#line 63 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = h2_x;
-#line 63 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t7;
-#line 63 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 59 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = INT64_C(3);
-#line 59 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t4);
-#line 59 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 59 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 59 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 61 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_value_if_branch(int64_t h0_k) { HERO_NODEBUG int64_t h1_r0, t1, t2, t4, t5, t6, t7; int64_t h2_x; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1: t6 = h1_r0; h2_x = t6;
+#line 63
+    t7 = h2_x; return t7; bb2:
+#line 59
+    t4 = INT64_C(3); h_library_exit(t4); hero_unreachable(); hero_unreachable(); bb3:
+#line 61
     t5 = INT64_C(20);
-#line 58 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_r0 = t5;
-#line 58 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 429 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 58
+    h1_r0 = t5; goto bb1;
+#line 235 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 65 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_checked_binding(int64_t h0_k) {
-#line 65 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 65 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 66 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_s0 = t1;
-#line 66 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h1_s0;
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_checked_binding(int64_t h0_k) { HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(0);
-#line 66 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 == t3;
-#line 66 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 66 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 66 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = h2_r0;
-#line 66 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_x = t7;
-#line 70 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = h3_x;
-#line 70 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t8;
-#line 70 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 67 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = INT64_C(3);
-#line 67 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t5);
-#line 67 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 67 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 67 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 67 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 67 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
+#line 66
+    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t7 = h2_r0; h3_x = t7;
+#line 70
+    t8 = h3_x; return t8; bb2:
+#line 67
+    t5 = INT64_C(3); h_library_exit(t5); hero_unreachable(); hero_unreachable(); bb3: goto bb4; bb4:
     t6 = INT64_C(21);
-#line 66 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_r0 = t6;
-#line 66 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 479 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 66
+    h2_r0 = t6; goto bb1;
+#line 251 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 72 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_returned_match(int64_t h0_k) {
-#line 72 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 72 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_s0 = t1;
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h1_s0;
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_returned_match(int64_t h0_k) { HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(0);
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 == t3;
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = h2_r0;
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t7;
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-    t5 = INT64_C(3);
-#line 74 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t5);
-#line 74 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 74 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 74 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 74 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 74 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
+#line 73
+    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t7 = h2_r0; return t7; bb2:
+    t5 = INT64_C(3); h_library_exit(t5); hero_unreachable(); hero_unreachable(); bb3: goto bb4; bb4:
     t6 = INT64_C(22);
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_r0 = t6;
-#line 73 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 524 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 73
+    h2_r0 = t6; goto bb1;
+#line 264 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 77 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_returned_assert(h_fixedbugs174avaluearmorblockthatendsitspath_Color h0_c) {
-#line 77 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, t3, t4, t7; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
-#line 77 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_c;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_s0 = t1;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h1_s0;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t3 = t2.tag;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    switch (t3) {
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-        case 0: goto bb2;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-        case 1: goto bb3;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-        default: hero_unreachable();
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    }
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = h2_r0;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t7;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_returned_assert(h_fixedbugs174avaluearmorblockthatendsitspath_Color h0_c) { HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, t3, t4, t7; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t7 = h2_r0; return t7; bb2:
     t4 = INT64_C(23);
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_r0 = t4;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 78 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 80 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = HERO_STR_LIT(hero_str_b928f19);
-#line 80 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = false;
-#line 80 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t6) goto bb4; else goto bb5;
-#line 80 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
-#line 80 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 80 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb5:
-#line 577 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 78
+    h2_r0 = t4; goto bb1; bb3:
+#line 80
+    t5 = HERO_STR_LIT(hero_str_b928f19); t6 = false; if (t6) goto bb4; else goto bb5; bb4: hero_unreachable(); bb5:
+#line 275 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_panic_assert(t5);
     hero_unreachable();
 }
 
 #line 82 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_a_line_after_the_end(int64_t h0_k) {
-#line 82 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8, t9; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 82 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 83 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_s0 = t1;
-#line 83 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h1_s0;
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_a_line_after_the_end(int64_t h0_k) { HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8, t9; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(0);
-#line 83 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 == t3;
-#line 83 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 83 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 83 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = h2_r0;
-#line 83 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_x = t8;
-#line 89 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t9 = h3_x;
-#line 89 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t9;
-#line 89 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 85 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = INT64_C(3);
-#line 85 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t5);
-#line 85 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-    t6 = INT64_C(2);
-#line 86 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t6);
-#line 86 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-#line 86 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 86 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 86 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 86 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
+#line 83
+    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t8 = h2_r0; h3_x = t8;
+#line 89
+    t9 = h3_x; return t9; bb2:
+#line 85
+    t5 = INT64_C(3); h_library_exit(t5); hero_unreachable();
+    t6 = INT64_C(2); hero_print_int(t6); hero_print_end(); hero_unreachable(); bb3: goto bb4; bb4:
     t7 = INT64_C(24);
-#line 83 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_r0 = t7;
-#line 83 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 634 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 83
+    h2_r0 = t7; goto bb1;
+#line 294 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 91 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_every_branch_ends_then_a_line(int64_t h0_k, int64_t h1_j) {
-#line 91 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h2_s0, h3_r0, t1, t2, t3, t5, t6, t8, t9, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
-#line 91 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_s0 = t1;
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h2_s0;
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_every_branch_ends_then_a_line(int64_t h0_k, int64_t h1_j) { HERO_NODEBUG int64_t h2_s0, h3_r0, t1, t2, t3, t5, t6, t8, t9, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; h2_s0 = t1; t2 = h2_s0;
     t3 = INT64_C(0);
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 == t3;
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t12 = h3_r0;
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h4_x = t12;
-#line 102 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t13 = h4_x;
-#line 102 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t13;
-#line 102 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 94 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = h1_j;
-#line 94 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = INT64_C(0);
-#line 94 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = t5 == t6;
-#line 94 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t7) goto bb6; else goto bb7;
-#line 94 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 94 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 94 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
-#line 100 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
+#line 92
+    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t12 = h3_r0; h4_x = t12;
+#line 102
+    t13 = h4_x; return t13; bb2:
+#line 94
+    t5 = h1_j; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb6; else goto bb7; bb3: goto bb4; bb4:
+#line 100
     t11 = INT64_C(25);
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_r0 = t11;
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 92 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb5:
-#line 99 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t10 = INT64_C(3);
-#line 99 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t10);
-#line 99 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-#line 99 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 99 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb6:
-#line 95 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = INT64_C(1);
-#line 95 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t8);
-#line 95 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 95 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb5;
-#line 95 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb7:
-#line 97 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t9 = INT64_C(2);
-#line 97 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t9);
-#line 97 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 97 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb5;
-#line 715 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 92
+    h3_r0 = t11; goto bb1; bb5:
+#line 99
+    t10 = INT64_C(3); hero_print_int(t10); hero_print_end(); hero_unreachable(); bb6:
+#line 95
+    t8 = INT64_C(1); h_library_exit(t8); hero_unreachable(); goto bb5; bb7:
+#line 97
+    t9 = INT64_C(2); h_library_exit(t9); hero_unreachable(); goto bb5;
+#line 317 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 104 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_else_if_chain(int64_t h0_k) {
-#line 104 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_r0, t1, t2, t6, t7, t10, t11, t12, t13, t14, t15; int64_t h2_x; HERO_NODEBUG bool t3, t5, t8, t9; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
-#line 104 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 105 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = INT64_C(0);
-#line 105 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t3 = t1 == t2;
-#line 105 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 105 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 105 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t14 = h1_r0;
-#line 105 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_x = t14;
-#line 113 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t15 = h2_x;
-#line 113 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t15;
-#line 113 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 106 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = HERO_STR_LIT(hero_str_b928f19);
-#line 106 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = false;
-#line 106 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t5) goto bb4; else goto bb5;
-#line 106 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-    t6 = h0_k;
-#line 107 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = INT64_C(1);
-#line 107 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = t6 == t7;
-#line 107 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t8) goto bb6; else goto bb7;
-#line 107 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
-#line 107 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 107 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb5:
-#line 764 "fixedbugs174avaluearmorblockthatendsitspath.c"
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_else_if_chain(int64_t h0_k) { HERO_NODEBUG int64_t h1_r0, t1, t2, t6, t7, t10, t11, t12, t13, t14, t15; int64_t h2_x; HERO_NODEBUG bool t3, t5, t8, t9; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1: t14 = h1_r0; h2_x = t14;
+#line 113
+    t15 = h2_x; return t15; bb2:
+#line 106
+    t4 = HERO_STR_LIT(hero_str_b928f19); t5 = false; if (t5) goto bb4; else goto bb5; bb3:
+    t6 = h0_k; t7 = INT64_C(1); t8 = t6 == t7; if (t8) goto bb6; else goto bb7; bb4: hero_unreachable(); bb5:
+#line 328 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_panic_assert(t4);
     hero_unreachable();
 bb6:
     goto bb8;
 bb7:
 #line 111 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t11 = h0_k;
-#line 111 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t12 = INT64_C(2);
-#line 111 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (__builtin_mul_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 105 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_r0 = t13;
-#line 105 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 105 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb8:
-#line 108 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t9 = true;
-#line 108 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t9) goto bb9; else goto bb10;
-#line 108 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb9:
-    t10 = INT64_C(0);
-#line 109 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t10);
-#line 109 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-#line 109 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb8;
-#line 109 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb10:
-#line 109 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 799 "fixedbugs174avaluearmorblockthatendsitspath.c"
+    t11 = h0_k; t12 = INT64_C(2); if (__builtin_mul_overflow(t11, t12, &t13)) hero_panic_overflow();
+#line 105
+    h1_r0 = t13; goto bb1; bb8:
+#line 108
+    t9 = true; if (t9) goto bb9; else goto bb10; bb9:
+    t10 = INT64_C(0); hero_print_int(t10); hero_print_end(); goto bb8; bb10: hero_unreachable();
+#line 341 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 115 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-HeroStr h_fixedbugs174avaluearmorblockthatendsitspath_text_arm(int64_t h0_k) {
-#line 115 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0, t1, t2, t3, t5; HERO_NODEBUG HeroStr h2_r0 = {0}, t6, t7, t8, t9, t10; HeroStr h3_s = {0}; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 115 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_s0 = t1;
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h1_s0;
+HeroStr h_fixedbugs174avaluearmorblockthatendsitspath_text_arm(int64_t h0_k) { HERO_NODEBUG int64_t h1_s0, t1, t2, t3, t5; HERO_NODEBUG HeroStr h2_r0 = {0}, t6, t7, t8, t9, t10; HeroStr h3_s = {0}; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(0);
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 == t3;
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = h2_r0;
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t9 = h3_s;
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_incref(t7);
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_s = t7;
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_decref(t9);
-#line 120 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
+#line 116
+    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t7 = h2_r0; t9 = h3_s; hero_str_incref(t7); h3_s = t7; hero_str_decref(t9);
+#line 120
     t8 = h3_s;
-#line 832 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 352 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_str_incref(t8);
     hero_str_release_at(&h2_r0);
     hero_str_release_at(&h3_s);
     return t8;
 bb2:
 #line 117 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = INT64_C(3);
-#line 117 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t5);
-#line 117 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 117 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 117 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 117 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 117 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
+    t5 = INT64_C(3); h_library_exit(t5); hero_unreachable(); hero_unreachable(); bb3: goto bb4; bb4:
     t6 = HERO_STR_LIT(hero_str_eb4aa2b);
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t10 = h2_r0;
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_incref(t6);
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_r0 = t6;
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_decref(t10);
-#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 863 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 116
+    t10 = h2_r0; hero_str_incref(t6); h2_r0 = t6; hero_str_decref(t10); goto bb1;
+#line 363 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 123 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_counted_then_exit(int64_t h0_k) {
-#line 123 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t6, t10, t11, t12, t13; HeroStr h3_t = {0}; int64_t h4_x; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t5, t7, t8, t9, t14, t15, t16; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 123 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_s0 = t1;
-#line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h1_s0;
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_counted_then_exit(int64_t h0_k) { HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t6, t10, t11, t12, t13; HeroStr h3_t = {0}; int64_t h4_x; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t5, t7, t8, t9, t14, t15, t16; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(0);
-#line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 == t3;
-#line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t12 = h2_r0;
-#line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h4_x = t12;
-#line 131 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
+#line 124
+    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t12 = h2_r0; h4_x = t12;
+#line 131
     t13 = h4_x;
-#line 890 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 374 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_str_release_at(&h3_t);
     hero_str_release_at(&h5_own5);
     hero_str_release_at(&h6_own6);
     return t13;
 bb2:
 #line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = HERO_STR_LIT(hero_str_61);
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = h0_k;
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = hero_int_to_str(t6);
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t14 = h5_own5;
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h5_own5 = t7;
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_decref(t14);
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = hero_str_concat(t5, t7);
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t15 = h6_own6;
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h6_own6 = t8;
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_decref(t15);
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t16 = h3_t;
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_incref(t8);
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_t = t8;
-#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_decref(t16);
-    t9 = h3_t;
-#line 127 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_str(t9);
-#line 127 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t10 = INT64_C(3);
-#line 128 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t10);
-#line 128 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 128 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 128 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 128 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 128 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
+    t5 = HERO_STR_LIT(hero_str_61); t6 = h0_k; t7 = hero_int_to_str(t6); t14 = h5_own5; h5_own5 = t7; hero_str_decref(t14); t8 = hero_str_concat(t5, t7); t15 = h6_own6; h6_own6 = t8; hero_str_decref(t15); t16 = h3_t; hero_str_incref(t8); h3_t = t8; hero_str_decref(t16);
+    t9 = h3_t; hero_print_str(t9); hero_print_end();
+    t10 = INT64_C(3); h_library_exit(t10); hero_unreachable(); hero_unreachable(); bb3: goto bb4; bb4:
     t11 = INT64_C(26);
-#line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_r0 = t11;
-#line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 947 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 124
+    h2_r0 = t11; goto bb1;
+#line 387 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 139 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-int64_t h_fixedbugs174avaluearmorblockthatendsitspath_bump(int64_t *ph0_n) {
-#line 139 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t7, t8; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
-#line 139 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = (*ph0_n);
-#line 140 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = INT64_C(1);
-#line 140 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 140 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    (*ph0_n) = t3;
-#line 142 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = (*ph0_n);
-#line 142 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = INT64_C(0);
-#line 142 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = t4 > t5;
-#line 142 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 142 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 144 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = INT64_C(1);
-#line 144 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t8);
-#line 144 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 144 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 144 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 143 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = (*ph0_n);
-#line 143 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t7;
-#line 143 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 143 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 991 "fixedbugs174avaluearmorblockthatendsitspath.c"
+int64_t h_fixedbugs174avaluearmorblockthatendsitspath_bump(int64_t *ph0_n) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t7, t8; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_n); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); (*ph0_n) = t3;
+#line 142
+    t4 = (*ph0_n); t5 = INT64_C(0); t6 = t4 > t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 144
+    t8 = INT64_C(1); h_library_exit(t8); hero_unreachable(); hero_unreachable(); bb2:
+#line 143
+    t7 = (*ph0_n); return t7; bb3: goto bb1;
+#line 399 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 151 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-h_0opt_e201354 h_fixedbugs174avaluearmorblockthatendsitspath_half(int64_t h0_k) {
-#line 151 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t9, t12; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5, t11; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
-#line 151 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 152 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = INT64_C(2);
-#line 152 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t2 == 0) hero_panic("division by zero");
-#line 152 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 152 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t3 = t1 % t2;
-#line 152 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = INT64_C(0);
-#line 152 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = t3 == t4;
-#line 152 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 152 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 154 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t10 = HERO_STR_LIT(hero_str_b928f19);
-#line 154 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t11 = false;
-#line 154 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t11) goto bb4; else goto bb5;
-#line 154 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = h0_k;
-#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = INT64_C(2);
-#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t7 == 0) hero_panic("division by zero");
-#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow();
-#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = t6 / t7;
-#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8};
-#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t12 = h1_own1;
-#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_own1 = t9;
-#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_0opt_e201354_release(&t12);
-#line 1043 "fixedbugs174avaluearmorblockthatendsitspath.c"
+h_0opt_e201354 h_fixedbugs174avaluearmorblockthatendsitspath_half(int64_t h0_k) { HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t9, t12; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5, t11; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; t2 = INT64_C(2); if (t2 == 0) hero_panic("division by zero"); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+#line 154
+    t10 = HERO_STR_LIT(hero_str_b928f19); t11 = false; if (t11) goto bb4; else goto bb5; bb2:
+#line 153
+    t6 = h0_k; t7 = INT64_C(2); if (t7 == 0) hero_panic("division by zero"); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow(); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t12 = h1_own1; h1_own1 = t9; h_0opt_e201354_release(&t12);
+#line 409 "fixedbugs174avaluearmorblockthatendsitspath.c"
     h_0opt_e201354_retain(&t9);
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t9;
@@ -1053,33 +419,13 @@ bb5:
 }
 
 #line 156 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-HeroStr h_fixedbugs174avaluearmorblockthatendsitspath_named(int64_t h0_k) {
-#line 156 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t t1, t2, t5; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
-#line 156 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_k;
-#line 157 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = INT64_C(0);
-#line 157 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t3 = t1 == t2;
-#line 157 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 157 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 159 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = INT64_C(1);
-#line 159 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t5);
-#line 159 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 159 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 159 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 158 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
+HeroStr h_fixedbugs174avaluearmorblockthatendsitspath_named(int64_t h0_k) { HERO_NODEBUG int64_t t1, t2, t5; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_k; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 159
+    t5 = INT64_C(1); h_library_exit(t5); hero_unreachable(); hero_unreachable(); bb2:
+#line 158
     t4 = HERO_STR_LIT(hero_str_1073a930);
-#line 1083 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 429 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_str_incref(t4);
     return t4;
 bb3:
@@ -1087,276 +433,42 @@ bb3:
 }
 
 #line 161 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-h_fixedbugs174avaluearmorblockthatendsitspath_P h_fixedbugs174avaluearmorblockthatendsitspath_located(int64_t h0_n) {
-#line 161 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    int64_t h1_i; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t8, t9, t11, t12, t13; HERO_NODEBUG bool t2, t7; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t10; HERO_ENTRY_STOP; goto bb0;
-#line 161 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 162 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_i = t1;
-#line 162 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 162 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 164 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = true;
-#line 164 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t2) goto bb2; else goto bb3;
-#line 164 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-    t3 = h1_i;
-#line 165 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = h1_i;
-#line 165 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (__builtin_mul_overflow(t3, t4, &t5)) hero_panic_overflow();
-#line 165 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = h0_n;
-#line 165 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = t5 >= t6;
-#line 165 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t7) goto bb5; else goto bb6;
-#line 165 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 165 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 165 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb4:
-#line 167 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t11 = h1_i;
-#line 167 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t12 = INT64_C(1);
-#line 167 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 167 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_i = t13;
-#line 167 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 167 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb5:
-#line 166 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = h1_i;
-#line 166 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t9 = h0_n;
-#line 166 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t10 = (h_fixedbugs174avaluearmorblockthatendsitspath_P){.f_x = t8, .f_y = t9};
-#line 166 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t10;
-#line 166 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb6:
-#line 166 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb4;
-#line 1150 "fixedbugs174avaluearmorblockthatendsitspath.c"
+h_fixedbugs174avaluearmorblockthatendsitspath_P h_fixedbugs174avaluearmorblockthatendsitspath_located(int64_t h0_n) { int64_t h1_i; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t8, t9, t11, t12, t13; HERO_NODEBUG bool t2, t7; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_i = t1; goto bb1; bb1:
+#line 164
+    t2 = true; if (t2) goto bb2; else goto bb3; bb2:
+    t3 = h1_i; t4 = h1_i; if (__builtin_mul_overflow(t3, t4, &t5)) hero_panic_overflow(); t6 = h0_n; t7 = t5 >= t6; if (t7) goto bb5; else goto bb6; bb3: hero_unreachable(); bb4:
+#line 167
+    t11 = h1_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); h1_i = t13; goto bb1; bb5:
+#line 166
+    t8 = h1_i; t9 = h0_n; t10 = (h_fixedbugs174avaluearmorblockthatendsitspath_P){.f_x = t8, .f_y = t9}; return t10; bb6: goto bb4;
+#line 446 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 169 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-void h_fixedbugs174avaluearmorblockthatendsitspath_main(void) {
-#line 169 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    int64_t h0_v; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h5_own5 = {0}, t36, t37, t41, t43, t54, t55; h_fixedbugs174avaluearmorblockthatendsitspath_P h2_p; HERO_NODEBUG HeroStr h3_own3 = {0}, h6_own6 = {0}, t25, t46, t50, t52, t56; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t33, *t53; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t16, t17, t18, t19, t20, t21, t22, t23, t24, t26, t27, t28, t29, t30, t31, t32, t34, t35, t38, t39, t44, t45, t47, t49, t51; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color t15; HERO_NODEBUG bool t40; HERO_NODEBUG HeroFailure t42; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t48; HERO_ENTRY_STOP; goto bb0;
-#line 169 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = INT64_C(5);
-#line 170 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = h_fixedbugs174avaluearmorblockthatendsitspath_exit_arm(t1);
-#line 170 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t2);
-#line 170 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t3 = INT64_C(5);
-#line 171 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = h_fixedbugs174avaluearmorblockthatendsitspath_assert_false_arm(t3);
-#line 171 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t4);
-#line 171 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t5 = INT64_C(5);
-#line 172 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = h_fixedbugs174avaluearmorblockthatendsitspath_while_true_block(t5);
-#line 172 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t6);
-#line 172 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t7 = INT64_C(5);
-#line 173 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = h_fixedbugs174avaluearmorblockthatendsitspath_block_exit_last(t7);
-#line 173 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t8);
-#line 173 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t9 = INT64_C(5);
-#line 174 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t10 = h_fixedbugs174avaluearmorblockthatendsitspath_value_if_branch(t9);
-#line 174 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t10);
-#line 174 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t11 = INT64_C(5);
-#line 175 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t12 = h_fixedbugs174avaluearmorblockthatendsitspath_checked_binding(t11);
-#line 175 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t12);
-#line 175 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t13 = INT64_C(5);
-#line 176 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t14 = h_fixedbugs174avaluearmorblockthatendsitspath_returned_match(t13);
-#line 176 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t14);
-#line 176 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t15 = (h_fixedbugs174avaluearmorblockthatendsitspath_Color){.tag = h_fixedbugs174avaluearmorblockthatendsitspath_Color_tag_red};
-#line 177 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t16 = h_fixedbugs174avaluearmorblockthatendsitspath_returned_assert(t15);
-#line 177 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t16);
-#line 177 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t17 = INT64_C(5);
-#line 178 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t18 = h_fixedbugs174avaluearmorblockthatendsitspath_a_line_after_the_end(t17);
-#line 178 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t18);
-#line 178 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t19 = INT64_C(5);
-#line 179 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t20 = INT64_C(0);
-#line 179 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t21 = h_fixedbugs174avaluearmorblockthatendsitspath_every_branch_ends_then_a_line(t19, t20);
-#line 179 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t21);
-#line 179 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t22 = INT64_C(13);
-#line 180 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t23 = h_fixedbugs174avaluearmorblockthatendsitspath_else_if_chain(t22);
-#line 180 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t23);
-#line 180 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t24 = INT64_C(5);
-#line 181 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t25 = h_fixedbugs174avaluearmorblockthatendsitspath_text_arm(t24);
-#line 181 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t52 = h3_own3;
-#line 181 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h3_own3 = t25;
-#line 181 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_decref(t52);
-#line 181 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_str(t25);
-#line 181 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t26 = INT64_C(5);
-#line 182 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t27 = h_fixedbugs174avaluearmorblockthatendsitspath_counted_then_exit(t26);
-#line 182 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t27);
-#line 182 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t28 = INT64_C(1);
-#line 183 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h0_v = t28;
-    t29 = h_fixedbugs174avaluearmorblockthatendsitspath_bump(&h0_v);
-#line 184 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t29);
-#line 184 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t30 = h0_v;
-#line 185 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t30);
-#line 185 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t31 = INT64_C(27);
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t32 = INT64_C(28);
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t33 = hero_array_new(&hero_desc_int, 2);
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_array_push_owned(&t33, &t31);
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_array_push_owned(&t33, &t32);
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t53 = h4_own4;
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h4_own4 = t33;
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_array_decref(t53);
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t34 = h_fixedbugs174avaluearmorblockthatendsitspath_first_1b9a87(t33);
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t34);
-#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t35 = INT64_C(58);
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t36 = h_fixedbugs174avaluearmorblockthatendsitspath_half(t35);
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t54 = h5_own5;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h5_own5 = t36;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_0opt_e201354_release(&t54);
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t55 = h1_f0;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_0opt_e201354_retain(&t36);
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h1_f0 = t36;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_0opt_e201354_release(&t55);
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t37 = h1_f0;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t38 = t37.tag;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t39 = INT64_C(0);
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t40 = t38 == t39;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t40) goto bb1; else goto bb2;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t43 = h1_f0;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t44 = t43.as.ok;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t44);
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t45 = INT64_C(0);
-#line 188 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t46 = h_fixedbugs174avaluearmorblockthatendsitspath_named(t45);
-#line 188 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t56 = h6_own6;
-#line 188 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h6_own6 = t46;
-#line 188 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_str_decref(t56);
-#line 188 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_str(t46);
-#line 188 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-    t47 = INT64_C(10);
-#line 189 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t48 = h_fixedbugs174avaluearmorblockthatendsitspath_located(t47);
-#line 189 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h2_p = t48;
-    t49 = h2_p.f_x;
-#line 190 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t50 = HERO_STR_LIT(hero_str_20);
-#line 190 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t51 = h2_p.f_y;
-#line 190 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t49);
-#line 190 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_str(t50);
-#line 190 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_int(t51);
-#line 190 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_print_end();
-#line 1360 "fixedbugs174avaluearmorblockthatendsitspath.c"
+void h_fixedbugs174avaluearmorblockthatendsitspath_main(void) { int64_t h0_v; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h5_own5 = {0}, t36, t37, t41, t43, t54, t55; h_fixedbugs174avaluearmorblockthatendsitspath_P h2_p; HERO_NODEBUG HeroStr h3_own3 = {0}, h6_own6 = {0}, t25, t46, t50, t52, t56; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t33, *t53; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t16, t17, t18, t19, t20, t21, t22, t23, t24, t26, t27, t28, t29, t30, t31, t32, t34, t35, t38, t39, t44, t45, t47, t49, t51; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color t15; HERO_NODEBUG bool t40; HERO_NODEBUG HeroFailure t42; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t48; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(5); t2 = h_fixedbugs174avaluearmorblockthatendsitspath_exit_arm(t1); hero_print_int(t2); hero_print_end();
+    t3 = INT64_C(5); t4 = h_fixedbugs174avaluearmorblockthatendsitspath_assert_false_arm(t3); hero_print_int(t4); hero_print_end();
+    t5 = INT64_C(5); t6 = h_fixedbugs174avaluearmorblockthatendsitspath_while_true_block(t5); hero_print_int(t6); hero_print_end();
+    t7 = INT64_C(5); t8 = h_fixedbugs174avaluearmorblockthatendsitspath_block_exit_last(t7); hero_print_int(t8); hero_print_end();
+    t9 = INT64_C(5); t10 = h_fixedbugs174avaluearmorblockthatendsitspath_value_if_branch(t9); hero_print_int(t10); hero_print_end();
+    t11 = INT64_C(5); t12 = h_fixedbugs174avaluearmorblockthatendsitspath_checked_binding(t11); hero_print_int(t12); hero_print_end();
+    t13 = INT64_C(5); t14 = h_fixedbugs174avaluearmorblockthatendsitspath_returned_match(t13); hero_print_int(t14); hero_print_end();
+    t15 = (h_fixedbugs174avaluearmorblockthatendsitspath_Color){.tag = h_fixedbugs174avaluearmorblockthatendsitspath_Color_tag_red}; t16 = h_fixedbugs174avaluearmorblockthatendsitspath_returned_assert(t15); hero_print_int(t16); hero_print_end();
+    t17 = INT64_C(5); t18 = h_fixedbugs174avaluearmorblockthatendsitspath_a_line_after_the_end(t17); hero_print_int(t18); hero_print_end();
+    t19 = INT64_C(5); t20 = INT64_C(0); t21 = h_fixedbugs174avaluearmorblockthatendsitspath_every_branch_ends_then_a_line(t19, t20); hero_print_int(t21); hero_print_end();
+    t22 = INT64_C(13); t23 = h_fixedbugs174avaluearmorblockthatendsitspath_else_if_chain(t22); hero_print_int(t23); hero_print_end();
+    t24 = INT64_C(5); t25 = h_fixedbugs174avaluearmorblockthatendsitspath_text_arm(t24); t52 = h3_own3; h3_own3 = t25; hero_str_decref(t52); hero_print_str(t25); hero_print_end();
+    t26 = INT64_C(5); t27 = h_fixedbugs174avaluearmorblockthatendsitspath_counted_then_exit(t26); hero_print_int(t27); hero_print_end();
+    t28 = INT64_C(1); h0_v = t28;
+    t29 = h_fixedbugs174avaluearmorblockthatendsitspath_bump(&h0_v); hero_print_int(t29); hero_print_end();
+    t30 = h0_v; hero_print_int(t30); hero_print_end();
+    t31 = INT64_C(27); t32 = INT64_C(28); t33 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t33, &t31); hero_array_push_owned(&t33, &t32); t53 = h4_own4; h4_own4 = t33; hero_array_decref(t53); t34 = h_fixedbugs174avaluearmorblockthatendsitspath_first_1b9a87(t33); hero_print_int(t34); hero_print_end();
+    t35 = INT64_C(58); t36 = h_fixedbugs174avaluearmorblockthatendsitspath_half(t35); t54 = h5_own5; h5_own5 = t36; h_0opt_e201354_release(&t54); t55 = h1_f0; h_0opt_e201354_retain(&t36); h1_f0 = t36; h_0opt_e201354_release(&t55); t37 = h1_f0; t38 = t37.tag; t39 = INT64_C(0); t40 = t38 == t39; if (t40) goto bb1; else goto bb2; bb1: t43 = h1_f0; t44 = t43.as.ok; hero_print_int(t44); hero_print_end();
+    t45 = INT64_C(0); t46 = h_fixedbugs174avaluearmorblockthatendsitspath_named(t45); t56 = h6_own6; h6_own6 = t46; hero_str_decref(t56); hero_print_str(t46); hero_print_end();
+    t47 = INT64_C(10); t48 = h_fixedbugs174avaluearmorblockthatendsitspath_located(t47); h2_p = t48;
+    t49 = h2_p.f_x; t50 = HERO_STR_LIT(hero_str_20); t51 = h2_p.f_y; hero_print_int(t49); hero_print_str(t50); hero_print_int(t51); hero_print_end();
+#line 472 "fixedbugs174avaluearmorblockthatendsitspath.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);
@@ -1365,70 +477,26 @@ bb1:
     return;
 bb2:
 #line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t41 = h1_f0;
-#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t42 = t41.as.err;
-#line 1372 "fixedbugs174avaluearmorblockthatendsitspath.c"
+    t41 = h1_f0; t42 = t41.as.err;
+#line 482 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_panic_must(t42);
     hero_unreachable();
 }
 
 #line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) {
-#line 227 "<heroes library>"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 227 "<heroes library>"
-bb0:
-    t1 = h0_code;
-#line 228 "<heroes library>"
-    (void)hero_exit(t1);
-#line 228 "<heroes library>"
-    return;
-#line 1388 "fixedbugs174avaluearmorblockthatendsitspath.c"
+void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; (void)hero_exit(t1); return;
+#line 490 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 146 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-/* first<i64> */
-#line 146 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-HERO_TU_LOCAL int64_t h_fixedbugs174avaluearmorblockthatendsitspath_first_1b9a87(HeroArrayHeader * h0_xs) {
-#line 146 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG HeroArrayHeader *t1, *t5; HERO_NODEBUG int64_t t2, t3, t6, t7, t8; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 146 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb0:
-    t1 = h0_xs;
-#line 147 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
-#line 147 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t3 = INT64_C(0);
-#line 147 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t4 = t2 > t3;
-#line 147 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 147 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb1:
-#line 149 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t8 = INT64_C(1);
-#line 149 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    h_library_exit(t8);
-#line 149 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 149 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    hero_unreachable();
-#line 149 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb2:
-#line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t5 = h0_xs;
-#line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t6 = INT64_C(0);
-#line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
-#line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    return t7;
-#line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-bb3:
-#line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    goto bb1;
-#line 1432 "fixedbugs174avaluearmorblockthatendsitspath.c"
+/* first<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs174avaluearmorblockthatendsitspath_first_1b9a87(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1, *t5; HERO_NODEBUG int64_t t2, t3, t6, t7, t8; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 149
+    t8 = INT64_C(1); h_library_exit(t8); hero_unreachable(); hero_unreachable(); bb2:
+#line 148
+    t5 = h0_xs; t6 = INT64_C(0); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]); return t7; bb3: goto bb1;
+#line 500 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs174avaluearmorblockthatendsitspath_Color_eq(const h_fixedbugs174avaluearmorblockthatendsitspath_Color *a, const h_fixedbugs174avaluearmorblockthatendsitspath_Color *b) {
     if (a->tag != b->tag) return false;

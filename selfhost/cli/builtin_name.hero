@@ -32,7 +32,7 @@ use emit/clang_place
 use emit/ffi_lookup
 use cli/group_file
 use cli/runtime_key
-use cli/runtime_name
+use cli/caret_bytes
 use cli/clang_first
 use cli/clang_excerpt
 use cli/declared_after
@@ -49,8 +49,10 @@ constant GUARD: str
     "unguarded header; consider using #ifdef guards or #pragma once"
 
 # The refusal, on the group's string, or none where clang's first error is
-# not this class. `runtime` is the runtime's directory as clang was given it.
-function told(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> diag.Diagnostic?
+# not this class. `runtime` is the runtime's directory as clang was given it,
+# and `again` compiles the unit once more where the caret's name is asked
+# (`cli/caret_bytes.hero`, defect 2117).
+function told(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @again: caret_bytes.Again) -> diag.Diagnostic?
     rows = ffi_lookup.lines(text: stderr)
     first = clang_first.first_error(rows)?
     steps = clang_place.stack(stderr: stderr, line: rows[first.row])
@@ -59,11 +61,11 @@ function told(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) ->
     if steps.len() != 2 || group_file.compilers(path: first.place.path, compiled: steps[0].path, runtime: own)
         return fail(code: "none", msg: "the error lies in no header the compiled file includes")
     group = group_file.group_of(s, decls, path: first.place.path)?
-    name = runtime_name.caret_name(rows, after: first.row)?
-    _ = clang_place.offset_of(text: first.message, needle: "'" + name + "'")?
 
     if !one_place(rows, first: first, including: steps[0])
         return fail(code: "none", msg: "a note places the earlier declaration elsewhere")
+    name = caret_bytes.name(rows, after: first.row, @again)?
+    _ = clang_place.offset_of(text: first.message, needle: "'" + name + "'")?
     line = declared_after.Line(
         group: group,
         row: first.place.row,
@@ -132,10 +134,11 @@ function included_again(unit: str, row: str, file: str) -> str
 test "a header declaring a name clang declares itself at that very line is refused as its own (defect 2051)"
     s = source.new_source(name: "efabs.hero", text: TEXT)
     decls = parse.parse(TEXT).decls
+    again: caret_bytes.Again @= caret_bytes.none()
     unit = "build/tu-1/efabs.c"
     note = included_again(unit: unit, row: "20", file: "./e_fabs.h")
     mac = words(unit: unit, end: "\n", error: ERROR, first: note, second: note, guard: GUARDED)
-    said = told(stderr: mac, s: s, decls: decls, runtime: "runtime").must()
+    said = told(stderr: mac, s: s, decls: decls, runtime: "runtime", @again).must()
     assert said.code == "ffi_header_refused"
     assert source.span_text(s, said.span) == "\"e_fabs.h\""
     assert said.message == "`e_fabs.h`, the header this group names, does not compile: its line 1 declares `fabs`, which clang itself declares first, at that very line, as a name of C's own, and clang refuses the two: redefinition of 'fabs' as different kind of symbol"
@@ -154,7 +157,7 @@ test "a header declaring a name clang declares itself at that very line is refus
         second: included_again(unit: box, row: "20", file: "./e_fabs.h"),
         guard: GUARDED
     )
-    assert told(stderr: windows, s: s, decls: decls, runtime: "runtime").must().message == said.message
+    assert told(stderr: windows, s: s, decls: decls, runtime: "runtime", @again).must().message == said.message
 
 # What is not this class: a header read twice, its notes at two lines; a
 # note naming another file; the guard asked at another line; a note that is
@@ -162,6 +165,7 @@ test "a header declaring a name clang declares itself at that very line is refus
 test "a note placing the earlier declaration anywhere else leaves the refusal the compiler's (defect 2051)"
     s = source.new_source(name: "efabs.hero", text: TEXT)
     decls = parse.parse(TEXT).decls
+    again: caret_bytes.Again @= caret_bytes.none()
     unit = "build/tu-1/efabs.c"
     note = included_again(unit: unit, row: "20", file: "./e_fabs.h")
     twice = words(
@@ -206,8 +210,8 @@ test "a note placing the earlier declaration anywhere else leaves the refusal th
     )
 
     for text in [twice, other, elsewhere, neither, quoted]
-        assert told(stderr: text, s: s, decls: decls, runtime: "runtime").is_err()
+        assert told(stderr: text, s: s, decls: decls, runtime: "runtime", @again).is_err()
 
     # And no note at the include line at all, only the guard's.
     alone = "In file included from " + unit + ":20:\n" + ERROR + "\n    1 | int fabs;\n      |     ^\nIn file included from " + unit + ":20:\n" + GUARDED + "\n"
-    assert told(stderr: alone, s: s, decls: decls, runtime: "runtime").is_err()
+    assert told(stderr: alone, s: s, decls: decls, runtime: "runtime", @again).is_err()

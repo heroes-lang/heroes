@@ -128,11 +128,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 138 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
 #pragma clang diagnostic pop
@@ -180,23 +180,9 @@ int64_t h_fixedbugs584adeprecatedenumeratorreadbuildssilent_OLD_LIMIT(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
-void h_fixedbugs584adeprecatedenumeratorreadbuildssilent_main(void) {
-#line 16 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
-bb0:
-    t1 = h_fixedbugs584adeprecatedenumeratorreadbuildssilent_OLD_LIMIT();
-#line 17 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
-    t2 = INT64_C(6);
-#line 17 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
-    if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 17 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
-    hero_print_int(t3);
-#line 17 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
-    hero_print_end();
-#line 17 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
-    return;
-#line 200 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
+void h_fixedbugs584adeprecatedenumeratorreadbuildssilent_main(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs584adeprecatedenumeratorreadbuildssilent_OLD_LIMIT(); t2 = INT64_C(6); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); hero_print_int(t3); hero_print_end(); return;
+#line 186 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

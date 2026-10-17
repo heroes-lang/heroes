@@ -90,11 +90,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 100 "sugarvariantcase.c"
 #pragma clang diagnostic pop
@@ -116,70 +116,22 @@ int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t);
 h_sugarvariantcase_Token h_sugarvariantcase_one(void);
 
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
-int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t) {
-#line 9 "tests/golden/ir/sugar-variant-case.hero"
-    HERO_NODEBUG h_sugarvariantcase_Token h1_s0, t1, t2, t4; HERO_NODEBUG int64_t h2_r0, t3, t6, t7, t8; h_sugarvariantcase_Token_c_num h3_n; HERO_NODEBUG h_sugarvariantcase_Token_c_num t5; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/ir/sugar-variant-case.hero"
-bb0:
-    t1 = h0_t;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    h1_s0 = t1;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    t2 = h1_s0;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    t3 = t2.tag;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    switch (t3) {
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-        case 0: goto bb2;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-        case 1: goto bb3;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-        default: hero_unreachable();
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    }
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-bb1:
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    t8 = h2_r0;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    return t8;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-bb2:
-    t4 = h1_s0;
-#line 11 "tests/golden/ir/sugar-variant-case.hero"
-    t5 = t4.as.c_num;
-#line 11 "tests/golden/ir/sugar-variant-case.hero"
-    h3_n = t5;
-#line 11 "tests/golden/ir/sugar-variant-case.hero"
-    t6 = h3_n.f_v;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    h2_r0 = t6;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    goto bb1;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-bb3:
-#line 12 "tests/golden/ir/sugar-variant-case.hero"
+int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t) { HERO_NODEBUG h_sugarvariantcase_Token h1_s0, t1, t2, t4; HERO_NODEBUG int64_t h2_r0, t3, t6, t7, t8; h_sugarvariantcase_Token_c_num h3_n; HERO_NODEBUG h_sugarvariantcase_Token_c_num t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_t; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0; return t8; bb2:
+    t4 = h1_s0; t5 = t4.as.c_num; h3_n = t5; t6 = h3_n.f_v;
+#line 10
+    h2_r0 = t6; goto bb1; bb3:
+#line 12
     t7 = INT64_C(0);
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    h2_r0 = t7;
-#line 10 "tests/golden/ir/sugar-variant-case.hero"
-    goto bb1;
-#line 169 "sugarvariantcase.c"
+#line 10
+    h2_r0 = t7; goto bb1;
+#line 129 "sugarvariantcase.c"
 }
 
 #line 14 "tests/golden/ir/sugar-variant-case.hero"
-h_sugarvariantcase_Token h_sugarvariantcase_one(void) {
-#line 14 "tests/golden/ir/sugar-variant-case.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_sugarvariantcase_Token t2; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/ir/sugar-variant-case.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 15 "tests/golden/ir/sugar-variant-case.hero"
-    t2 = (h_sugarvariantcase_Token){.tag = h_sugarvariantcase_Token_tag_num, .as.c_num = {.f_v = t1}};
-#line 15 "tests/golden/ir/sugar-variant-case.hero"
-    return t2;
-#line 183 "sugarvariantcase.c"
+h_sugarvariantcase_Token h_sugarvariantcase_one(void) { HERO_NODEBUG int64_t t1; HERO_NODEBUG h_sugarvariantcase_Token t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = (h_sugarvariantcase_Token){.tag = h_sugarvariantcase_Token_tag_num, .as.c_num = {.f_v = t1}}; return t2;
+#line 135 "sugarvariantcase.c"
 }
 HERO_TU_LOCAL bool h_sugarvariantcase_Token_c_num_eq(const h_sugarvariantcase_Token_c_num *a, const h_sugarvariantcase_Token_c_num *b) {
     if (!(a->f_v == b->f_v)) return false;

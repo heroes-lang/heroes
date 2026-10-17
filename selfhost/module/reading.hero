@@ -67,6 +67,37 @@ function source_text(path: str) -> Text?
     shown = got.slice(from: marks, to: got.len())
     return ok(Text(text: shown, faults: not_text.faults_of(marks: got.slice(from: 0, to: marks), text: shown)))
 
+# The file at `path` with each byte that is not text kept as one `?`, so an
+# offset in it is the file's own: what `cli/caret_bytes.hero` reads a name
+# at, where clang's column counts the file's bytes (defect 2117). A U+FFFD
+# the file itself held, its mark `--`, stays as it was.
+function bytes_kept(path: str) -> str?
+    status: i64 @= 0
+    marks: i64 @= 0
+    got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status != HERO_OS_OK && status != HERO_OS_NOT_TEXT
+        return fail(code: "read_failed", msg: "could not read " + path)
+
+    if marks == 0
+        return ok(got)
+    parts: [str] @= []
+    from: i64 @= marks
+    at: i64 @= marks
+    mark: i64 @= 0
+
+    while at + 2 < got.len()
+        if got[at] == 0xef && got[at + 1] == 0xbf && got[at + 2] == 0xbd
+            if got.slice(from: 2 * mark, to: 2 * mark + 2) != "--"
+                parts @ parts.push(got.slice(from: from, to: at)).push("?")
+                from @ at + 3
+            mark @ mark + 1
+            at @ at + 3
+        else
+            at @ at + 1
+
+    return ok(parts.push(got.slice(from: from, to: got.len())).join(""))
+
 # The module `name` as `edited` holds it, where a round of `check --apply`
 # has written it and not yet the disk, or the file at `opened` (defect 607).
 function text_at(opened: str, name: str, edited: [source.InputFile]) -> Text?
@@ -329,6 +360,16 @@ test "a file that is not UTF-8 has a key no file of text can have"
     for spelled in ["not UTF-8, 2 bytes of marks:\n" + answer, answer, held.text]
         assert !write_file(path: "build/selftest-reading-spelled.h", text: spelled).is_err()
         assert key_of("build/selftest-reading-spelled.h").must() != held.key
+
+# Defect 2117: the byte 0xE9 kept as one `?`, every offset the file's own, a
+# U+FFFD the file held kept whole, and a file of text as it is.
+test "a file's bytes are kept one for one, a byte that is not text as a question mark"
+    kept = bytes_kept("tests/golden/surface-fixtures/notext227/latin1.h").must()
+    assert kept.len() == 342
+    assert kept.slice(from: 89, to: 97) == "caf? as "
+    assert !write_file(path: "build/selftest-reading-held.h", text: "a�b\n").is_err()
+    assert bytes_kept("build/selftest-reading-held.h").must() == "a�b\n"
+    assert bytes_kept("build/selftest-reading-no-such.h").is_err()
 
 test "a file of text reads with no faults, and a missing one fails as read_file does"
     assert !write_file(path: "build/selftest-reading-text.hero", text: "# café\n").is_err()

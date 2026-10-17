@@ -40,6 +40,7 @@ use cli/header_meaning
 use cli/dump_meaning
 use cli/two_ways_ask
 use cli/clang_first
+use cli/caret_bytes
 use cli/header_refused
 use cli/headers_together
 
@@ -132,9 +133,13 @@ function bound(s: source.Source, decls: [ast.Decl]) -> {str: [str]}
 
 # The one file clang refuses: the two groups' headers it refuses together
 # where its note points into another's (`header_refused.sides`), else its
-# first error on the first group of the program.
+# first error on the first group of the program. Its unit is thrown away
+# once compiled (`order_trial.compiled_once`), so it is never compiled again
+# for a caret's name (`cli/caret_bytes.hero`): a name clang's excerpt does
+# not give leaves the reading to its first error, which is the same telling.
 function uncompiled(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, said: str, message: str) -> diag.Diagnostic
-    read = clang_first.reading(stderr: said, s: s, decls: decls, runtime: t.runtime)
+    again: caret_bytes.Again @= caret_bytes.none()
+    read = clang_first.reading(stderr: said, s: s, decls: decls, runtime: t.runtime, @again)
 
     if !read.is_err()
         two = header_refused.sides(read.must())

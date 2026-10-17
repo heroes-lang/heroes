@@ -146,17 +146,17 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs589acallofmktemplinkssilentonlinux_mktemp(void * a0) { (void)(mktemp)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs589acallofmktemplinkssilentonlinux_malloc(uint64_t a0) { (void)(malloc)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs589acallofmktemplinkssilentonlinux_free(void * a0) { (void)(free)(a0); }
-#line 24 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
+#line 24
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs589acallofmktemplinkssilentonlinux_strcpy(void * a0, const char * a1) { (void)(strcpy)(a0, a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs589acallofmktemplinkssilentonlinux_strlen(void * a0) { (void)(strlen)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 162 "fixedbugs589acallofmktemplinkssilentonlinux.c"
 #pragma clang diagnostic pop
@@ -208,88 +208,20 @@ int32_t h_fixedbugs589acallofmktemplinkssilentonlinux_PR_GET_PDEATHSIG(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 27 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-void h_fixedbugs589acallofmktemplinkssilentonlinux_main(void) {
-#line 27 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    HERO_NODEBUG h_0opt_fbbb698 h0_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t9, t21, t22; void * h1_p; void * h2_named; HERO_NODEBUG int64_t t1, t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG uint64_t t10, t19; HERO_NODEBUG void *t11, *t12, *t16, *t17, *t18, *t20; HERO_NODEBUG HeroStr t13; HERO_NODEBUG const char *t14; HERO_ENTRY_STOP; goto bb0;
-#line 27 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-bb0:
-    t1 = INT64_C(32);
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    if (t1 >= 0LL) {
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-        t2 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t1};
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    } else {
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-        t2 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    }
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t21 = h3_own3;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    h3_own3 = t2;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    h_0opt_fbbb698_release(&t21);
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t22 = h0_f0;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    h_0opt_fbbb698_retain(&t2);
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    h0_f0 = t2;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    h_0opt_fbbb698_release(&t22);
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t3 = h0_f0;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t4 = t3.tag;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t5 = INT64_C(0);
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t6 = t4 == t5;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    if (t6) goto bb1; else goto bb2;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-bb1:
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t9 = h0_f0;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t10 = t9.as.ok;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t11 = (void *)malloc(t10);
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    h1_p = t11;
-    t12 = h1_p;
-#line 29 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t13 = HERO_STR_LIT(hero_str_52c92387);
-#line 29 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t14 = hero_str_lend(t13);
-#line 29 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    (void)strcpy(t12, hero_cstr_nonnull(t14));
-    t16 = h1_p;
-#line 30 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t17 = (void *)mktemp(t16);
-#line 30 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    h2_named = t17;
-    t18 = h2_named;
-#line 31 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t19 = strlen(t18);
-#line 31 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    hero_print_uint(t19);
-#line 31 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    hero_print_end();
-    t20 = h1_p;
-#line 32 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    (void)free(t20);
-#line 284 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+void h_fixedbugs589acallofmktemplinkssilentonlinux_main(void) { HERO_NODEBUG h_0opt_fbbb698 h0_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t9, t21, t22; void * h1_p; void * h2_named; HERO_NODEBUG int64_t t1, t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG uint64_t t10, t19; HERO_NODEBUG void *t11, *t12, *t16, *t17, *t18, *t20; HERO_NODEBUG HeroStr t13; HERO_NODEBUG const char *t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(32); if (t1 >= 0LL) { t2 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t1}; } else { t2 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t21 = h3_own3; h3_own3 = t2; h_0opt_fbbb698_release(&t21); t22 = h0_f0; h_0opt_fbbb698_retain(&t2); h0_f0 = t2; h_0opt_fbbb698_release(&t22); t3 = h0_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h0_f0; t10 = t9.as.ok; t11 = (void *)malloc(t10); h1_p = t11;
+    t12 = h1_p; t13 = HERO_STR_LIT(hero_str_52c92387); t14 = hero_str_lend(t13); (void)strcpy(t12, hero_cstr_nonnull(t14));
+    t16 = h1_p; t17 = (void *)mktemp(t16); h2_named = t17;
+    t18 = h2_named; t19 = strlen(t18); hero_print_uint(t19); hero_print_end();
+    t20 = h1_p; (void)free(t20);
+#line 218 "fixedbugs589acallofmktemplinkssilentonlinux.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h0_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h3_own3));
     return;
 bb2:
 #line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t7 = h0_f0;
-#line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    t8 = t7.as.err;
-#line 293 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+    t7 = h0_f0; t8 = t7.as.err;
+#line 225 "fixedbugs589acallofmktemplinkssilentonlinux.c"
     hero_panic_must(t8);
     hero_unreachable();
 }

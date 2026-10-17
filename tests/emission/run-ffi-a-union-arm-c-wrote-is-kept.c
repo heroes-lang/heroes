@@ -59,9 +59,9 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
 _Static_assert(__builtin_classify_type(((UN *)0)->c) == 1 && sizeof(((UN *)0)->c) == sizeof(int8_t) && (_Generic(((UN *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UN c");
-#line 13 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
+#line 13
 _Static_assert(__builtin_classify_type(((V *)0)->fd) == 1 && sizeof(((V *)0)->fd) == sizeof(int32_t) && (_Generic(((V *)0)->fd, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field V fd");
-#line 15 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
+#line 15
 _Static_assert(__builtin_classify_type(((struct nu *)0)->kind) == 1 && sizeof(((struct nu *)0)->kind) == sizeof(int32_t) && (_Generic(((struct nu *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Nu kind");
 _Static_assert(_Generic(&((struct nu *)0)->via, V *: 1, default: 0) && sizeof(((struct nu *)0)->via) == sizeof(V), "heroes-ffi-field Nu via");
 #line 68 "ffiaunionarmcwroteiskept.c"
@@ -151,11 +151,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffiaunionarmcwroteiskept_nu
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 161 "ffiaunionarmcwroteiskept.c"
 #pragma clang diagnostic pop
@@ -191,67 +191,19 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 22 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
 void h_ffiaunionarmcwroteiskept_main(void) {
-#line 22 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
+#line 22
 #define h0_u (*hero_lend_h0_u)
-#line 22 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
+#line 22
 #define h1_n (*hero_lend_h1_n)
-#line 22 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    UN *const hero_lend_h0_u = (UN *)hero_lend_local(sizeof(UN), "ffiaunionarmcwroteiskept.main", "u"); struct nu *const hero_lend_h1_n = (struct nu *)hero_lend_local(sizeof(struct nu), "ffiaunionarmcwroteiskept.main", "n"); HERO_NODEBUG int8_t t1; HERO_NODEBUG UN t2; HERO_NODEBUG double t3; HERO_NODEBUG int32_t t4, t5; HERO_NODEBUG V t6; HERO_NODEBUG struct nu t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 23 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    t2 = (UN){.c = t1};
-#line 23 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    h0_u = t2;
-#line 23 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0);
-    hero_lend_local_name(hero_lend_h0_u, "un_set", "p");
-#line 24 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0);
-#line 24 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    (void)un_set(&h0_u);
-    hero_lend_local_name(hero_lend_h0_u, "un_get", "p");
-#line 25 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0);
-#line 25 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    t3 = un_get(&h0_u);
-#line 25 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_print_f64(t3);
-#line 25 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_print_end();
-    t4 = INT64_C(1);
-#line 26 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    t5 = INT64_C(0);
-#line 26 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    t6 = (V){.fd = t5};
-#line 26 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    t7 = (struct nu){.kind = t4, .via = t6};
-#line 26 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    h1_n = t7;
-#line 26 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2);
-    hero_lend_local_name(hero_lend_h1_n, "nu_set", "p");
-#line 27 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2);
-#line 27 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    (void)nu_set(&h1_n);
-    hero_lend_local_name(hero_lend_h1_n, "nu_get", "p");
-#line 28 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2);
-#line 28 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    t8 = nu_get(&h1_n);
-#line 28 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_print_int(t8);
-#line 28 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_print_end();
-#line 28 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_lend_local_give(hero_lend_h1_n);
-#line 28 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    hero_lend_local_give(hero_lend_h0_u);
-#line 28 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
-    return;
-#line 255 "ffiaunionarmcwroteiskept.c"
+#line 22
+    UN *const hero_lend_h0_u = (UN *)hero_lend_local(sizeof(UN), "ffiaunionarmcwroteiskept.main", "u"); struct nu *const hero_lend_h1_n = (struct nu *)hero_lend_local(sizeof(struct nu), "ffiaunionarmcwroteiskept.main", "n"); HERO_NODEBUG int8_t t1; HERO_NODEBUG UN t2; HERO_NODEBUG double t3; HERO_NODEBUG int32_t t4, t5; HERO_NODEBUG V t6; HERO_NODEBUG struct nu t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = (UN){.c = t1}; h0_u = t2; hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0);
+    hero_lend_local_name(hero_lend_h0_u, "un_set", "p"); hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0); (void)un_set(&h0_u);
+    hero_lend_local_name(hero_lend_h0_u, "un_get", "p"); hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0); t3 = un_get(&h0_u); hero_print_f64(t3); hero_print_end();
+    t4 = INT64_C(1); t5 = INT64_C(0); t6 = (V){.fd = t5}; t7 = (struct nu){.kind = t4, .via = t6}; h1_n = t7; hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2);
+    hero_lend_local_name(hero_lend_h1_n, "nu_set", "p"); hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2); (void)nu_set(&h1_n);
+    hero_lend_local_name(hero_lend_h1_n, "nu_get", "p"); hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2); t8 = nu_get(&h1_n); hero_print_int(t8); hero_print_end(); hero_lend_local_give(hero_lend_h1_n); hero_lend_local_give(hero_lend_h0_u); return;
+#line 207 "ffiaunionarmcwroteiskept.c"
 }
 #undef h0_u
 #undef h1_n

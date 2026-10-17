@@ -133,11 +133,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "fixedbugsachandlerthatrecoversleavesnoline.c"
 #pragma clang diagnostic pop
@@ -154,50 +154,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsachandlerthatrecoversleavesnoline_main(void);
 
 #line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-void h_fixedbugsachandlerthatrecoversleavesnoline_main(void) {
-#line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t4, t6, t10, t11; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_NODEBUG int32_t t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
-#line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_3205);
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    t2 = UINT64_C(4);
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    t3 = hero_str_repeat(t1, t2);
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    t10 = h2_own2;
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    h2_own2 = t3;
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    hero_str_decref(t10);
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    t11 = h0_word;
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    hero_str_incref(t3);
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    h0_word = t3;
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    hero_str_decref(t11);
-    t4 = h0_word;
-#line 28 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    t5 = hero_str_held(t4);
-#line 28 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    h1_held = t5;
-    t6 = HERO_STR_LIT(hero_str_46d0b2be);
-#line 29 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    t7 = try_abort();
-#line 29 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    t8 = try_trap();
-#line 29 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 29 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    hero_print_str(t6);
-#line 29 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    hero_print_int(t9);
-#line 29 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    hero_print_end();
+void h_fixedbugsachandlerthatrecoversleavesnoline_main(void) { HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t4, t6, t10, t11; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_NODEBUG int32_t t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_3205); t2 = UINT64_C(4); t3 = hero_str_repeat(t1, t2); t10 = h2_own2; h2_own2 = t3; hero_str_decref(t10); t11 = h0_word; hero_str_incref(t3); h0_word = t3; hero_str_decref(t11);
+    t4 = h0_word; t5 = hero_str_held(t4); h1_held = t5;
+    t6 = HERO_STR_LIT(hero_str_46d0b2be); t7 = try_abort(); t8 = try_trap(); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); hero_print_str(t6); hero_print_int(t9); hero_print_end();
     hero_held_release(&h1_held);
-#line 201 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 163 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

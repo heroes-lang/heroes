@@ -149,21 +149,18 @@ test "an array field's two assertions are two counted lines, each under the fiel
     # of `name` land on line 3, of `tail` on line 4, as C reads them. Read
     # off the directives rather than pinned to them, since a directive the
     # claim already holds is not written (defect 263): `tail`'s flex
-    # question reaches line 4 by C's own count, one line after `name`'s.
+    # question reaches line 4 by C's own count, one line after `name`'s, and
+    # each field's two share its physical line (panel 219's R1).
     landed = landed_at(rows)
-    assert has(text: rows[1], needle: "heroes-ffi-flex Probe name")
+    assert has(text: rows[1], needle: "heroes-ffi-flex Probe name") && has(text: rows[1], needle: "heroes-ffi-field Probe name")
     assert landed[1] == "t.hero:3"
-    assert has(text: rows[3], needle: "heroes-ffi-field Probe name")
-    assert landed[3] == "t.hero:3"
-    assert has(text: rows[4], needle: "heroes-ffi-flex Probe tail")
-    assert landed[4] == "t.hero:4"
-    assert has(text: rows[6], needle: "heroes-ffi-field Probe tail")
-    assert landed[6] == "t.hero:4"
+    assert has(text: rows[2], needle: "heroes-ffi-flex Probe tail") && has(text: rows[2], needle: "heroes-ffi-field Probe tail")
+    assert landed[2] == "t.hero:4"
 
-    # And the restore of the generated file names its own next line: row 8
-    # of the output says the line after it is 9, which it is.
-    assert rows[7] == "#line 9 \"t.c\""
-    assert rows.len() == 9
+    # And the restore of the generated file names its own next line: row 4
+    # of the output says the line after it is 5, which it is.
+    assert rows[3] == "#line 5 \"t.c\""
+    assert rows.len() == 5
 
 # Where C places each row: `file:line` as the `#line`s before it say, C
 # counting one a row after each, and "" for a directive or a row no
@@ -182,7 +179,9 @@ function landed_at(rows: [str]) -> [str]
                 number @ number * 10 + (row[at] - '0').to_i64().must()
                 at @ at + 1
 
-            file @ row.slice(from: at + 2, to: row.len() - 1)
+            # A bare `#line N` keeps the file clang presumes (panel 219).
+            if at < row.len()
+                file @ row.slice(from: at + 2, to: row.len() - 1)
             next @ number
             out @ out.push("")
         else

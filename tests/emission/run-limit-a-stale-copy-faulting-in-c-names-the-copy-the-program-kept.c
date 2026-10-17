@@ -144,11 +144,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_limitastalecopyfaultingincn
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 154 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 #pragma clang diagnostic pop
@@ -167,92 +167,16 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void);
 
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void) {
-#line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    outer * h0_a; outer * h1_kept; outer * h2_b; HERO_NODEBUG outer *t1, *t2, *t4, *t6, *t7, *t9, *t10, *t13, *t15; HERO_NODEBUG HeroStr t3, t8, t12; HERO_NODEBUG int64_t t5, t14; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
-#line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-bb0:
-    t1 = make();
-#line 25 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_handle_acquired(t1, "release");
-#line 25 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    h0_a = t1;
-    t2 = h0_a;
-#line 26 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    h1_kept = t2;
-    t3 = HERO_STR_LIT(hero_str_63c4e8c6);
-#line 27 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    t4 = h0_a;
-#line 27 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_handle_alive(t4, "the argument `o` of `value`");
-#line 27 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    t5 = value(t4);
-#line 27 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_print_str(t3);
-#line 27 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_print_int(t5);
-#line 27 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_print_end();
-    t6 = h0_a;
-#line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    {
-#line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_handle_alive(t6, "the argument `o` of `release`");
-#line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t6, "release", NULL);
-#line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    (void)release(t6);
-#line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
-#line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    }
-    t7 = make_again();
-#line 29 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_handle_acquired(t7, "release");
-#line 29 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    h2_b = t7;
-    t8 = HERO_STR_LIT(hero_str_2731e935);
-#line 30 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    t9 = h1_kept;
-#line 30 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    t10 = ((void *)0);
-#line 30 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    t11 = h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(&t9, &t10);
-#line 30 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_print_str(t8);
-#line 30 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_print_bool(t11);
-#line 30 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_print_end();
-    t12 = HERO_STR_LIT(hero_str_3043d2a7);
-#line 31 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    t13 = h1_kept;
-#line 31 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_handle_alive(t13, "the argument `o` of `value`");
-#line 31 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    t14 = value(t13);
-#line 31 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_print_str(t12);
-#line 31 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_print_int(t14);
-#line 31 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_print_end();
-    t15 = h2_b;
-#line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    {
-#line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    hero_handle_alive(t15, "the argument `o` of `release`");
-#line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t15, "release", NULL);
-#line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    (void)release(t15);
-#line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    if (hero_handle_ended(t15, hero_life_0_0) && h2_b == t15) h2_b = hero_handle_dead();
-#line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    }
-#line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    return;
-#line 256 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void) { outer * h0_a; outer * h1_kept; outer * h2_b; HERO_NODEBUG outer *t1, *t2, *t4, *t6, *t7, *t9, *t10, *t13, *t15; HERO_NODEBUG HeroStr t3, t8, t12; HERO_NODEBUG int64_t t5, t14; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = make(); hero_handle_acquired(t1, "release"); h0_a = t1;
+    t2 = h0_a; h1_kept = t2;
+    t3 = HERO_STR_LIT(hero_str_63c4e8c6); t4 = h0_a; hero_handle_alive(t4, "the argument `o` of `value`"); t5 = value(t4); hero_print_str(t3); hero_print_int(t5); hero_print_end();
+    t6 = h0_a; { hero_handle_alive(t6, "the argument `o` of `release`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t6, "release", NULL); (void)release(t6); if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead(); }
+    t7 = make_again(); hero_handle_acquired(t7, "release"); h2_b = t7;
+    t8 = HERO_STR_LIT(hero_str_2731e935); t9 = h1_kept; t10 = ((void *)0); t11 = h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(&t9, &t10); hero_print_str(t8); hero_print_bool(t11); hero_print_end();
+    t12 = HERO_STR_LIT(hero_str_3043d2a7); t13 = h1_kept; hero_handle_alive(t13, "the argument `o` of `value`"); t14 = value(t13); hero_print_str(t12); hero_print_int(t14); hero_print_end();
+    t15 = h2_b; { hero_handle_alive(t15, "the argument `o` of `release`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t15, "release", NULL); (void)release(t15); if (hero_handle_ended(t15, hero_life_0_0) && h2_b == t15) h2_b = hero_handle_dead(); } return;
+#line 180 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 }
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

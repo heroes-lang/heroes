@@ -132,11 +132,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 142 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
@@ -560,94 +560,24 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 28 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-void h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_main(void) {
-#line 28 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    struct pt h0_r; struct pt h1_o; HERO_NODEBUG int32_t t1, t2, t3, t4, t5, t6, t7, t9, t11, t13, t15, t16; HERO_NODEBUG uint32_t t8; HERO_NODEBUG double t10; HERO_NODEBUG struct pt t12, t14; HERO_ENTRY_STOP; goto bb0;
-#line 28 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-bb0:
-    t1 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B();
-#line 29 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t1);
-#line 29 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t2 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT();
-#line 30 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t2);
-#line 30 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t3 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_SIZE();
-#line 31 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t3);
-#line 31 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t4 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_OFF();
-#line 32 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t4);
-#line 32 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t5 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_30();
-#line 33 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t5);
-#line 33 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t6 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_FDIV();
-#line 34 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t6);
-#line 34 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t7 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FROME();
-#line 35 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t7);
-#line 35 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t8 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_WRAP();
-#line 36 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t8);
-#line 36 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t9 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_NEGOK();
-#line 37 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t9);
-#line 37 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t10 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FOK();
-#line 38 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_f64(t10);
-#line 38 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t11 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_BCPV();
-#line 39 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t11);
-#line 39 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t12 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK();
-#line 40 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    h0_r = t12;
-#line 40 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_pad_fill(&h0_r, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
-    t13 = h0_r.x;
-#line 41 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t13);
-#line 41 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t14 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK();
-#line 42 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    h1_o = t14;
-#line 42 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_pad_fill(&h1_o, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
-    t15 = h1_o.x;
-#line 43 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t15);
-#line 43 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-    t16 = h1_o.y;
-#line 44 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_int(t16);
-#line 44 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    hero_print_end();
-#line 44 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    return;
-#line 651 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+void h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_main(void) { struct pt h0_r; struct pt h1_o; HERO_NODEBUG int32_t t1, t2, t3, t4, t5, t6, t7, t9, t11, t13, t15, t16; HERO_NODEBUG uint32_t t8; HERO_NODEBUG double t10; HERO_NODEBUG struct pt t12, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B(); hero_print_int(t1); hero_print_end();
+    t2 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT(); hero_print_int(t2); hero_print_end();
+    t3 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_SIZE(); hero_print_int(t3); hero_print_end();
+    t4 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_OFF(); hero_print_int(t4); hero_print_end();
+    t5 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_30(); hero_print_int(t5); hero_print_end();
+    t6 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_FDIV(); hero_print_int(t6); hero_print_end();
+    t7 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FROME(); hero_print_int(t7); hero_print_end();
+    t8 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_WRAP(); hero_print_int(t8); hero_print_end();
+    t9 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_NEGOK(); hero_print_int(t9); hero_print_end();
+    t10 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FOK(); hero_print_f64(t10); hero_print_end();
+    t11 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_BCPV(); hero_print_int(t11); hero_print_end();
+    t12 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK(); h0_r = t12; hero_pad_fill(&h0_r, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
+    t13 = h0_r.x; hero_print_int(t13); hero_print_end();
+    t14 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(); h1_o = t14; hero_pad_fill(&h1_o, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
+    t15 = h1_o.x; hero_print_int(t15); hero_print_end();
+    t16 = h1_o.y; hero_print_int(t16); hero_print_end(); return;
+#line 581 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

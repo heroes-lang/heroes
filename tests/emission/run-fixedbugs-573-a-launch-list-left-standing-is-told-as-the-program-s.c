@@ -85,11 +85,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs573alaunchlistleft
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 95 "fixedbugs573alaunchlistleftstandingistoldastheprograms.c"
 #pragma clang diagnostic pop
@@ -108,103 +108,23 @@ HeroArrayHeader * h_library_args(void);
 
 #line 19 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
 void h_fixedbugs573alaunchlistleftstandingistoldastheprograms_main(void) {
-#line 19 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
+#line 19
 #define h0_status (*hero_lend_h0_status)
-#line 19 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
+#line 19
 #define h1_marks (*hero_lend_h1_marks)
-#line 19 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs573alaunchlistleftstandingistoldastheprograms.main", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs573alaunchlistleftstandingistoldastheprograms.main", "marks"); HeroStr h2_program = {0}; int64_t h3_code; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t20; HERO_NODEBUG HeroStr h5_own5 = {0}, t7, t8, t9, t10, t12, t14, t16, t21, t22; HERO_NODEBUG int64_t t2, t3, t5, t6, t18, t19; HERO_NODEBUG bool t4; HERO_NODEBUG const char *t11, *t13, *t15, *t17; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-bb0:
-    t1 = h_library_args();
-#line 20 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t20 = h4_own4;
-#line 20 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    h4_own4 = t1;
-#line 20 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    hero_array_decref(t20);
-#line 20 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
-#line 20 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t3 = INT64_C(0);
-#line 20 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t4 = t2 > t3;
-#line 20 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 20 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-bb1:
-#line 22 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t5 = INT64_C(0);
-#line 22 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    h0_status = t5;
-    t6 = INT64_C(0);
-#line 23 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    h1_marks = t6;
-    hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status");
-#line 24 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks");
-#line 24 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t7 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks);
-#line 24 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t21 = h5_own5;
-#line 24 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    h5_own5 = t7;
-#line 24 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    hero_str_decref(t21);
-#line 24 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t22 = h2_program;
-#line 24 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    hero_str_incref(t7);
-#line 24 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    h2_program = t7;
-#line 24 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    hero_str_decref(t22);
+#line 19
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs573alaunchlistleftstandingistoldastheprograms.main", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs573alaunchlistleftstandingistoldastheprograms.main", "marks"); HeroStr h2_program = {0}; int64_t h3_code; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t20; HERO_NODEBUG HeroStr h5_own5 = {0}, t7, t8, t9, t10, t12, t14, t16, t21, t22; HERO_NODEBUG int64_t t2, t3, t5, t6, t18, t19; HERO_NODEBUG bool t4; HERO_NODEBUG const char *t11, *t13, *t15, *t17; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_library_args(); t20 = h4_own4; h4_own4 = t1; hero_array_decref(t20); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 22
+    t5 = INT64_C(0); h0_status = t5;
+    t6 = INT64_C(0); h1_marks = t6;
+    hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t7 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); t21 = h5_own5; h5_own5 = t7; hero_str_decref(t21); t22 = h2_program; hero_str_incref(t7); h2_program = t7; hero_str_decref(t22);
     (void)hero_run_reset();
-    t8 = h2_program;
-#line 26 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    (void)hero_run_arg(t8);
-    t9 = HERO_STR_LIT(hero_str_3498eaad);
-#line 27 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    (void)hero_run_arg(t9);
-    t10 = h2_program;
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t11 = hero_str_lend(t10);
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t12 = HERO_STR_LIT(hero_str_0);
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t13 = hero_str_lend(t12);
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t14 = HERO_STR_LIT(hero_str_0);
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t15 = hero_str_lend(t14);
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t16 = HERO_STR_LIT(hero_str_0);
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t17 = hero_str_lend(t16);
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    hero_lend_local_name(hero_lend_h0_status, "hero_run_go", "status");
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    t18 = hero_run_go(hero_cstr_nonnull(t11), hero_cstr_nonnull(t13), hero_cstr_nonnull(t15), hero_cstr_nonnull(t17), (void *)&h0_status);
-#line 28 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    h3_code = t18;
-    t19 = h3_code;
-#line 29 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    hero_print_int(t19);
-#line 29 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    hero_print_end();
-#line 29 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    goto bb4;
-#line 29 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-bb2:
-#line 29 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    goto bb4;
-#line 29 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-bb3:
-#line 29 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    goto bb1;
-#line 29 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-bb4:
-#line 208 "fixedbugs573alaunchlistleftstandingistoldastheprograms.c"
+    t8 = h2_program; (void)hero_run_arg(t8);
+    t9 = HERO_STR_LIT(hero_str_3498eaad); (void)hero_run_arg(t9);
+    t10 = h2_program; t11 = hero_str_lend(t10); t12 = HERO_STR_LIT(hero_str_0); t13 = hero_str_lend(t12); t14 = HERO_STR_LIT(hero_str_0); t15 = hero_str_lend(t14); t16 = HERO_STR_LIT(hero_str_0); t17 = hero_str_lend(t16); hero_lend_local_name(hero_lend_h0_status, "hero_run_go", "status"); t18 = hero_run_go(hero_cstr_nonnull(t11), hero_cstr_nonnull(t13), hero_cstr_nonnull(t15), hero_cstr_nonnull(t17), (void *)&h0_status); h3_code = t18;
+    t19 = h3_code; hero_print_int(t19); hero_print_end(); goto bb4; bb2: goto bb4; bb3: goto bb1; bb4:
+#line 128 "fixedbugs573alaunchlistleftstandingistoldastheprograms.c"
     hero_str_release_at(&h2_program);
     hero_array_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -216,66 +136,14 @@ bb4:
 #undef h1_marks
 
 #line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(void) {
-#line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 196 "<heroes library>"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 197 "<heroes library>"
-    t14 = h2_own2;
-#line 197 "<heroes library>"
-    h2_own2 = t1;
-#line 197 "<heroes library>"
-    hero_array_decref(t14);
-#line 197 "<heroes library>"
-    t15 = h0_out;
-#line 197 "<heroes library>"
-    hero_array_incref(t1);
-#line 197 "<heroes library>"
-    h0_out = t1;
-#line 197 "<heroes library>"
-    hero_array_decref(t15);
-    t2 = INT64_C(0);
-#line 198 "<heroes library>"
-    h1_i = t2;
-#line 198 "<heroes library>"
-    goto bb1;
-#line 198 "<heroes library>"
-bb1:
-    t3 = h1_i;
-#line 199 "<heroes library>"
-    t4 = hero_args_count();
-#line 199 "<heroes library>"
-    t5 = t3 < t4;
-#line 199 "<heroes library>"
-    if (t5) goto bb2; else goto bb3;
-#line 199 "<heroes library>"
-bb2:
-    t7 = h1_i;
-#line 200 "<heroes library>"
-    t8 = hero_args_at(t7);
-#line 200 "<heroes library>"
-    t16 = h3_own3;
-#line 200 "<heroes library>"
-    h3_own3 = t8;
-#line 200 "<heroes library>"
-    hero_str_decref(t16);
-#line 200 "<heroes library>"
-    hero_array_push_owned(&h0_out, &t8);
-    t10 = h1_i;
-#line 201 "<heroes library>"
-    t11 = INT64_C(1);
-#line 201 "<heroes library>"
-    if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 201 "<heroes library>"
-    h1_i = t12;
-#line 201 "<heroes library>"
-    goto bb1;
-#line 201 "<heroes library>"
-bb3:
+HeroArrayHeader * h_library_args(void) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t14 = h2_own2; h2_own2 = t1; hero_array_decref(t14); t15 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t15);
+    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
+    t3 = h1_i; t4 = hero_args_count(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h1_i; t8 = hero_args_at(t7); t16 = h3_own3; h3_own3 = t8; hero_str_decref(t16); hero_array_push_owned(&h0_out, &t8);
+    t10 = h1_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h1_i = t12; goto bb1; bb3:
     t13 = h0_out;
-#line 279 "fixedbugs573alaunchlistleftstandingistoldastheprograms.c"
+#line 147 "fixedbugs573alaunchlistleftstandingistoldastheprograms.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

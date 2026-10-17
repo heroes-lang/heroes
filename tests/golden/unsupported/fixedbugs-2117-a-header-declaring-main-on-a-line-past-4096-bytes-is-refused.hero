@@ -1,0 +1,15 @@
+# fixedbugs, defect 2117, 2026-10-17, panel 214's shape x1 past 4,096 bytes.
+#
+# SYMPTOM: `int main(void);` on a header's line past 4,096 bytes was told
+# `internal error: compiling the generated C failed` at exit 2: clang quotes
+# no such line under its note, and the reader read the name under the note's
+# caret in the line clang quoted.
+#
+# FIX: the name is read from the header's bytes (`cli/caret_bytes.hero`),
+# told as a name the C this compiler writes keeps to itself, exit 1.
+
+extern "fixedbugs-2117-a-header-declaring-main-on-a-line-past-4096-bytes-is-refused.h"  #~ ffi_header_refused
+    function x1_f() -> i32
+
+function main()
+    print(x1_f())

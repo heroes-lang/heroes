@@ -133,11 +133,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs322asanitisernames
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "fixedbugs322asanitisernamestheherolineateverylevel.c"
 #pragma clang diagnostic pop
@@ -154,26 +154,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs322asanitisernamestheherolineateverylevel_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-void h_fixedbugs322asanitisernamestheherolineateverylevel_main(void) {
-#line 19 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_68eb8936);
-#line 20 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-    hero_print_str(t1);
-#line 20 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-    hero_print_end();
-    t2 = INT64_C(7);
-#line 21 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-    t3 = read_after_free(t2);
-#line 21 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-    hero_print_int(t3);
-#line 21 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-    hero_print_end();
-#line 21 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-    return;
-#line 177 "fixedbugs322asanitisernamestheherolineateverylevel.c"
+void h_fixedbugs322asanitisernamestheherolineateverylevel_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_68eb8936); hero_print_str(t1); hero_print_end();
+    t2 = INT64_C(7); t3 = read_after_free(t2); hero_print_int(t3); hero_print_end(); return;
+#line 161 "fixedbugs322asanitisernamestheherolineateverylevel.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

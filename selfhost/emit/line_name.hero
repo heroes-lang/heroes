@@ -1,0 +1,111 @@
+# What a `#line` says (design.md §3.1; defect 262; panel 219's R1, ratified
+# 2026-10-17): its line always, and its file's name only where the file
+# clang presumes changes, since a `#line` with no name keeps the presumed
+# one (C11 § 6.10.4). The name is spelled once for each turn of the lines to
+# a file rather than at every directive (defect 262): the generated file's
+# with the writer, and the last source file's kept beside its name, since a
+# unit's lines come from one file at a time. The compiler's own fused
+# emission wrote 586,947 `#line`s naming 403 files, its lines turning from
+# one source file to another 408 times, and a name was spelled at every
+# directive, 1,174,304 times with the per-module units (measured
+# 2026-10-04).
+#
+# **The file clang presumes is the last directive's, and only the writer's
+# own are seen.** A line the emitter hands the writer that carries a `#line`
+# of its own moves it where the writer cannot follow, so the next directive
+# is named again (`forget`); the file clang presumes before any directive is
+# the physical one, which no directive names, so the first is named too.
+
+use emit/c_text
+
+record Names
+    generated: str
+    generated_name: str
+    named_file: str
+    named: str
+    # The file clang presumes from the last directive, "" where unknown.
+    presumed: str
+
+function new_names(generated: str) -> Names
+    name = c_text.line_name(generated)
+    return Names(generated: generated, generated_name: name, named_file: generated, named: name, presumed: "")
+
+# The directive for line `at` of `file`: its number alone where clang
+# already presumes that file, so the name is written where it changes and
+# nowhere else.
+function directive(@n: Names, file: str, at: i64) -> str
+    if file == n.presumed
+        return "#line " + at.to_str()
+    said = c_text.line_at(at: at, name: spelled(@n, file))
+    n.presumed @ file
+    return said
+
+# A file's name as its `#line` spells it, escaped once rather than at every
+# directive (defect 262): the generated file's was spelled with the names,
+# and a source file's is spelled when the lines turn to it and kept while
+# they stay there.
+function spelled(@n: Names, file: str) -> str
+    if file == n.generated
+        return n.generated_name
+
+    if file != n.named_file
+        n.named_file @ file
+        n.named @ c_text.line_name(file)
+    return n.named
+
+# Where a line the emitter wrote carries a `#line` of its own, the file
+# clang presumes is no longer known, and the next directive names its file.
+function forget(@n: Names, text: str)
+    if holds_directive(text)
+        n.presumed @ ""
+
+# Whether `text` holds a `#line` directive on one of its lines, as the
+# preprocessor reads one: blanks before the `#` and between it and the word
+# allowed, the word ended by a blank. Compared byte by byte, so no slice is
+# taken where a character might be split.
+function holds_directive(text: str) -> bool
+    start: i64 @= 0
+
+    while start < text.len()
+        hash = past_blanks(text, at: start)
+
+        if hash < text.len() && text[hash] == '#'
+            word = past_blanks(text, at: hash + 1)
+
+            if word + 4 <= text.len() && text[word] == 'l' && text[word + 1] == 'i' && text[word + 2] == 'n' && text[word + 3] == 'e' && (word + 4 == text.len() || text[word + 4] == ' ' || text[word + 4] == '\t')
+                return true
+
+        while start < text.len() && text[start] != '\n'
+            start @ start + 1
+
+        start @ start + 1
+
+    return false
+
+function past_blanks(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\t')
+        i @ i + 1
+
+    return i
+
+## Tests
+
+test "a #line names its file where the file clang presumes changes, and only there (panel 219)"
+    n: Names @= new_names("m.c")
+    assert directive(@n, file: "a.hero", at: 3) == "#line 3 \"a.hero\""
+    assert directive(@n, file: "a.hero", at: 4) == "#line 4"
+    assert directive(@n, file: "m.c", at: 9) == "#line 9 \"m.c\""
+    assert directive(@n, file: "a.hero", at: 5) == "#line 5 \"a.hero\""
+
+    # A line holding a `#line` directive, as the preprocessor reads one,
+    # leaves the presumed file unknown; one holding the word elsewhere, or a
+    # two-byte character where the word would end, does not.
+    for kept in ["x = 1; // #line 2", "//éé", "#lin", "#linex 2", "a = b #line"]
+        forget(@n, text: kept)
+        assert directive(@n, file: "a.hero", at: 6) == "#line 6"
+
+    for moved in ["#line 7 \"b.hero\"", "a;\n#line 2", "a;\n  #  line 2", "\t#line\t9"]
+        forget(@n, text: moved)
+        assert directive(@n, file: "a.hero", at: 8) == "#line 8 \"a.hero\""

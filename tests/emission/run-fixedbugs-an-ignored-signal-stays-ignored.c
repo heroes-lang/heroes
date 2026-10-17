@@ -132,11 +132,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 142 "fixedbugsanignoredsignalstaysignored.c"
 #pragma clang diagnostic pop
@@ -153,46 +153,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsanignoredsignalstaysignored_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-void h_fixedbugsanignoredsignalstaysignored_main(void) {
-#line 15 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t4, t6, t8, t9; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_NODEBUG int32_t t7; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_3205);
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    t2 = UINT64_C(4);
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    t3 = hero_str_repeat(t1, t2);
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    t8 = h2_own2;
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    h2_own2 = t3;
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    hero_str_decref(t8);
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    t9 = h0_word;
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    hero_str_incref(t3);
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    h0_word = t3;
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    hero_str_decref(t9);
-    t4 = h0_word;
-#line 17 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    t5 = hero_str_held(t4);
-#line 17 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    h1_held = t5;
-    t6 = HERO_STR_LIT(hero_str_628aec41);
-#line 18 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    t7 = raise_ignored();
-#line 18 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    hero_print_str(t6);
-#line 18 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    hero_print_int(t7);
-#line 18 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    hero_print_end();
+void h_fixedbugsanignoredsignalstaysignored_main(void) { HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t4, t6, t8, t9; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_NODEBUG int32_t t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_3205); t2 = UINT64_C(4); t3 = hero_str_repeat(t1, t2); t8 = h2_own2; h2_own2 = t3; hero_str_decref(t8); t9 = h0_word; hero_str_incref(t3); h0_word = t3; hero_str_decref(t9);
+    t4 = h0_word; t5 = hero_str_held(t4); h1_held = t5;
+    t6 = HERO_STR_LIT(hero_str_628aec41); t7 = raise_ignored(); hero_print_str(t6); hero_print_int(t7); hero_print_end();
     hero_held_release(&h1_held);
-#line 196 "fixedbugsanignoredsignalstaysignored.c"
+#line 162 "fixedbugsanignoredsignalstaysignored.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

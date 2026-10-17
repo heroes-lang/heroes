@@ -141,11 +141,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs168awholerecordbes
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "fixedbugs168awholerecordbesideasamenamedheader.c"
 #pragma clang diagnostic pop
@@ -172,42 +172,12 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-void h_fixedbugs168awholerecordbesideasamenamedheader_main(void) {
-#line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    E h0_p; E h1_q; HERO_NODEBUG int32_t t1, t3, t8; HERO_NODEBUG E t2, t4, t5, t6; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 20 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    t2 = hero_168_make(t1);
-#line 20 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    h0_p = t2;
-#line 20 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    hero_pad_fill(&h0_p, sizeof(E), 1, hero_pad_g_0, hero_pad_n_0);
-    t3 = INT64_C(1);
-#line 21 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    t4 = hero_168_make(t3);
-#line 21 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    h1_q = t4;
-#line 21 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    hero_pad_fill(&h1_q, sizeof(E), 1, hero_pad_g_0, hero_pad_n_0);
-    t5 = h0_p;
-#line 22 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    t6 = h1_q;
-#line 22 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    t7 = h_fixedbugs168awholerecordbesideasamenamedheader_E_eq(&t5, &t6);
-#line 22 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    hero_print_bool(t7);
-#line 22 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    hero_print_end();
-    t8 = h0_p.x;
-#line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    hero_print_int(t8);
-#line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    return;
-#line 211 "fixedbugs168awholerecordbesideasamenamedheader.c"
+void h_fixedbugs168awholerecordbesideasamenamedheader_main(void) { E h0_p; E h1_q; HERO_NODEBUG int32_t t1, t3, t8; HERO_NODEBUG E t2, t4, t5, t6; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = hero_168_make(t1); h0_p = t2; hero_pad_fill(&h0_p, sizeof(E), 1, hero_pad_g_0, hero_pad_n_0);
+    t3 = INT64_C(1); t4 = hero_168_make(t3); h1_q = t4; hero_pad_fill(&h1_q, sizeof(E), 1, hero_pad_g_0, hero_pad_n_0);
+    t5 = h0_p; t6 = h1_q; t7 = h_fixedbugs168awholerecordbesideasamenamedheader_E_eq(&t5, &t6); hero_print_bool(t7); hero_print_end();
+    t8 = h0_p.x; hero_print_int(t8); hero_print_end(); return;
+#line 181 "fixedbugs168awholerecordbesideasamenamedheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_E_eq(const E *a, const E *b) {
     if (!(a->x == b->x)) return false;

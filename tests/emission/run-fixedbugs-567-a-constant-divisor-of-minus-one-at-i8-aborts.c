@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs567aconstantdivisorofminusoneati8aborts.c"
 #pragma clang diagnostic pop
@@ -95,50 +95,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs567aconstantdivisorofminusoneati8aborts_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-void h_fixedbugs567aconstantdivisorofminusoneati8aborts_main(void) {
-#line 11 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    int8_t h0_x; HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-bb0:
-    t1 = INT64_C(-127);
-#line 12 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    h0_x = t1;
-    t2 = h0_x;
-#line 13 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    t3 = INT64_C(-1);
-#line 13 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    if (t3 == 0) hero_panic("division by zero");
-#line 13 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    if (t2 == INT8_MIN && t3 == INT8_C(-1)) hero_panic_overflow();
-#line 13 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    t4 = t2 / t3;
-#line 13 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    hero_print_int(t4);
-#line 13 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    hero_print_end();
-    t5 = h0_x;
-#line 14 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    t6 = INT64_C(1);
-#line 14 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 14 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    h0_x = t7;
-    t8 = h0_x;
-#line 15 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    t9 = INT64_C(-1);
-#line 15 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    if (t9 == 0) hero_panic("division by zero");
-#line 15 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    if (t8 == INT8_MIN && t9 == INT8_C(-1)) hero_panic_overflow();
-#line 15 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    t10 = t8 / t9;
-#line 15 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    hero_print_int(t10);
-#line 15 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    hero_print_end();
-#line 15 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    return;
-#line 142 "fixedbugs567aconstantdivisorofminusoneati8aborts.c"
+void h_fixedbugs567aconstantdivisorofminusoneati8aborts_main(void) { int8_t h0_x; HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(-127); h0_x = t1;
+    t2 = h0_x; t3 = INT64_C(-1); if (t3 == 0) hero_panic("division by zero"); if (t2 == INT8_MIN && t3 == INT8_C(-1)) hero_panic_overflow(); t4 = t2 / t3; hero_print_int(t4); hero_print_end();
+    t5 = h0_x; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow(); h0_x = t7;
+    t8 = h0_x; t9 = INT64_C(-1); if (t9 == 0) hero_panic("division by zero"); if (t8 == INT8_MIN && t9 == INT8_C(-1)) hero_panic_overflow(); t10 = t8 / t9; hero_print_int(t10); hero_print_end(); return;
+#line 104 "fixedbugs567aconstantdivisorofminusoneati8aborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

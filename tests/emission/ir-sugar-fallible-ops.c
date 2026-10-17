@@ -82,11 +82,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 92 "sugarfallibleops.c"
 #pragma clang diagnostic pop
@@ -107,120 +107,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v);
 
 #line 4 "tests/golden/ir/sugar-fallible-ops.hero"
-int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v) {
-#line 4 "tests/golden/ir/sugar-fallible-ops.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, t1, t2, t6, t7, t11, t15, t16, t20, t22, t25, t26, t27; HERO_NODEBUG int64_t h3_r0, h5_ret0, t3, t4, t8, t9, t12, t13, t14, t17, t18, t23, t24; HERO_NODEBUG bool t5, t10, t19; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0;
-#line 4 "tests/golden/ir/sugar-fallible-ops.hero"
-bb0:
-    t1 = h0_v;
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    t25 = h1_f0;
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    h_0opt_e201354_retain(&t1);
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    h1_f0 = t1;
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    h_0opt_e201354_release(&t25);
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    t2 = h1_f0;
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    t3 = t2.tag;
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    t4 = INT64_C(1);
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    t5 = t3 == t4;
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
-bb1:
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t15 = h0_v;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t26 = h4_f2;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    h_0opt_e201354_retain(&t15);
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    h4_f2 = t15;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    h_0opt_e201354_release(&t26);
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t16 = h4_f2;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t17 = t16.tag;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t18 = INT64_C(0);
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t19 = t17 == t18;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    if (t19) goto bb7; else goto bb8;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-bb2:
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t6 = h0_v;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t27 = h2_f1;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    h_0opt_e201354_retain(&t6);
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    h2_f1 = t6;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    h_0opt_e201354_release(&t27);
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t7 = h2_f1;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t8 = t7.tag;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t9 = INT64_C(0);
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t10 = t8 == t9;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    if (t10) goto bb4; else goto bb5;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-bb3:
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    goto bb1;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-bb4:
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t11 = h2_f1;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t12 = t11.as.ok;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    h3_r0 = t12;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    goto bb6;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-bb5:
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t13 = INT64_C(0);
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    h3_r0 = t13;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    goto bb6;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-bb6:
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    t14 = h3_r0;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    h5_ret0 = t14;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-    goto bb9;
-#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
-bb7:
-    t22 = h4_f2;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t23 = t22.as.ok;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    h5_ret0 = t23;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    goto bb9;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-bb8:
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t20 = h4_f2;
-#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
-    t21 = t20.as.err;
-#line 224 "sugarfallibleops.c"
+int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, t1, t2, t6, t7, t11, t15, t16, t20, t22, t25, t26, t27; HERO_NODEBUG int64_t h3_r0, h5_ret0, t3, t4, t8, t9, t12, t13, t14, t17, t18, t23, t24; HERO_NODEBUG bool t5, t10, t19; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_v; t25 = h1_f0; h_0opt_e201354_retain(&t1); h1_f0 = t1; h_0opt_e201354_release(&t25); t2 = h1_f0; t3 = t2.tag; t4 = INT64_C(1); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+#line 7
+    t15 = h0_v; t26 = h4_f2; h_0opt_e201354_retain(&t15); h4_f2 = t15; h_0opt_e201354_release(&t26); t16 = h4_f2; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb7; else goto bb8; bb2:
+#line 6
+    t6 = h0_v; t27 = h2_f1; h_0opt_e201354_retain(&t6); h2_f1 = t6; h_0opt_e201354_release(&t27); t7 = h2_f1; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb4; else goto bb5; bb3: goto bb1; bb4: t11 = h2_f1; t12 = t11.as.ok; h3_r0 = t12; goto bb6; bb5: t13 = INT64_C(0); h3_r0 = t13; goto bb6; bb6: t14 = h3_r0; h5_ret0 = t14; goto bb9; bb7:
+    t22 = h4_f2; t23 = t22.as.ok; h5_ret0 = t23; goto bb9; bb8: t20 = h4_f2; t21 = t20.as.err;
+#line 118 "sugarfallibleops.c"
     hero_panic_must(t21);
     hero_unreachable();
 bb9:

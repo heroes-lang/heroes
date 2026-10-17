@@ -63,10 +63,8 @@ _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((str
 #line 64 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 
 #line 20 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-_Static_assert(__builtin_classify_type(*(struct pt *)0) != 13 || sizeof(((struct pt *)0)->x) == sizeof(struct pt), "heroes-ffi-union-narrow Pt x");
-#line 20 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-_Static_assert(__builtin_classify_type(*(struct pt *)0) != 13 || sizeof(((struct pt *)0)->y) == sizeof(struct pt), "heroes-ffi-union-narrow Pt y");
-#line 70 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+_Static_assert(__builtin_classify_type(*(struct pt *)0) != 13 || sizeof(((struct pt *)0)->x) == sizeof(struct pt), "heroes-ffi-union-narrow Pt x"); _Static_assert(__builtin_classify_type(*(struct pt *)0) != 13 || sizeof(((struct pt *)0)->y) == sizeof(struct pt), "heroes-ffi-union-narrow Pt y");
+#line 68 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -140,13 +138,13 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 148 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094aconstanttheheaderspellsasabracelist_Pt_eq(const struct pt *a, const struct pt *b);
@@ -173,7 +171,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 23 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
 struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
-#line 177 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 175 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -185,7 +183,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 23 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
     static struct pt hero_constant_value = PT_INIT;
-#line 189 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 187 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -203,38 +201,12 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 25 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-void h_fixedbugs094aconstanttheheaderspellsasabracelist_main(void) {
-#line 25 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    struct pt h0_p; HERO_NODEBUG struct pt t1, t4, t5; HERO_NODEBUG int32_t t2, t3; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-bb0:
-    t1 = h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT();
-#line 26 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    h0_p = t1;
-#line 26 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    hero_pad_fill(&h0_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_p.x;
-#line 27 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    hero_print_int(t2);
-#line 27 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    hero_print_end();
-    t3 = h0_p.y;
-#line 28 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    hero_print_int(t3);
-#line 28 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    hero_print_end();
-    t4 = h0_p;
-#line 29 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    t5 = h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT();
-#line 29 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    t6 = h_fixedbugs094aconstanttheheaderspellsasabracelist_Pt_eq(&t4, &t5);
-#line 29 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    hero_print_bool(t6);
-#line 29 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    hero_print_end();
-#line 29 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    return;
-#line 238 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+void h_fixedbugs094aconstanttheheaderspellsasabracelist_main(void) { struct pt h0_p; HERO_NODEBUG struct pt t1, t4, t5; HERO_NODEBUG int32_t t2, t3; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(); h0_p = t1; hero_pad_fill(&h0_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
+    t2 = h0_p.x; hero_print_int(t2); hero_print_end();
+    t3 = h0_p.y; hero_print_int(t3); hero_print_end();
+    t4 = h0_p; t5 = h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(); t6 = h_fixedbugs094aconstanttheheaderspellsasabracelist_Pt_eq(&t4, &t5); hero_print_bool(t6); hero_print_end(); return;
+#line 210 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094aconstanttheheaderspellsasabracelist_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

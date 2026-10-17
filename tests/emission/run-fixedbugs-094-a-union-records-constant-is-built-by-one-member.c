@@ -140,11 +140,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 150 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
@@ -241,34 +241,12 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-void h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main(void) {
-#line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    Num h0_n; Num h1_g; HERO_NODEBUG Num t1, t3; HERO_NODEBUG int32_t t2; HERO_NODEBUG float t4; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-bb0:
-    t1 = h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT();
-#line 14 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    h0_n = t1;
-#line 14 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    hero_pad_fill(&h0_n, sizeof(Num), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_n.i;
-#line 15 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    hero_print_int(t2);
-#line 15 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    hero_print_end();
-    t3 = h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F();
-#line 16 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    h1_g = t3;
-#line 16 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    hero_pad_fill(&h1_g, sizeof(Num), 1, hero_pad_g_0, hero_pad_n_0);
-    t4 = h1_g.f;
-#line 17 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    hero_print_f32(t4);
-#line 17 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    hero_print_end();
-#line 17 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    return;
-#line 272 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+void h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main(void) { Num h0_n; Num h1_g; HERO_NODEBUG Num t1, t3; HERO_NODEBUG int32_t t2; HERO_NODEBUG float t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(); h0_n = t1; hero_pad_fill(&h0_n, sizeof(Num), 1, hero_pad_g_0, hero_pad_n_0);
+    t2 = h0_n.i; hero_print_int(t2); hero_print_end();
+    t3 = h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(); h1_g = t3; hero_pad_fill(&h1_g, sizeof(Num), 1, hero_pad_g_0, hero_pad_n_0);
+    t4 = h1_g.f; hero_print_f32(t4); hero_print_end(); return;
+#line 250 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_Num_eq(const Num *a, const Num *b) {
     if (!(a->i == b->i)) return false;

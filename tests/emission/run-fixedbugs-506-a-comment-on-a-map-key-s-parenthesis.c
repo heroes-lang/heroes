@@ -97,11 +97,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 107 "fixedbugs506acommentonamapkeysparenthesis.c"
 #pragma clang diagnostic pop
@@ -127,329 +127,55 @@ void h_fixedbugs506acommentonamapkeysparenthesis_show(HeroMapHeader * h0_m);
 void h_fixedbugs506acommentonamapkeysparenthesis_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-void h_fixedbugs506acommentonamapkeysparenthesis_show(HeroMapHeader * h0_m) {
-#line 11 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t6, t7, t11, t15, t16; HERO_NODEBUG int64_t h2_r0, t2, t8, t9, t12, t13, t14; HERO_NODEBUG HeroMapHeader *t1, *t4; HERO_NODEBUG HeroStr t3, t5; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-bb0:
-    t1 = h0_m;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t2 = hero_map_len(t1);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t3 = HERO_STR_LIT(hero_str_20);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t4 = h0_m;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t5 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    {
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t4, &t5);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-      if (found == NULL) {
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-        t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-      } else {
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-        t6 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-        (&hero_desc_int)->copy(&t6.as.ok, found);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-      }
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    }
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t15 = h3_own3;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h3_own3 = t6;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_0opt_e201354_release(&t15);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t16 = h1_f0;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_0opt_e201354_retain(&t6);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h1_f0 = t6;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_0opt_e201354_release(&t16);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t7 = h1_f0;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t8 = t7.tag;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t9 = INT64_C(0);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t10 = t8 == t9;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    if (t10) goto bb1; else goto bb2;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-bb1:
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t11 = h1_f0;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t12 = t11.as.ok;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h2_r0 = t12;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    goto bb3;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-bb2:
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t13 = INT64_C(0);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h2_r0 = t13;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    goto bb3;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-bb3:
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t14 = h2_r0;
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_print_int(t2);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_print_str(t3);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_print_int(t14);
-#line 12 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_print_end();
-#line 217 "fixedbugs506acommentonamapkeysparenthesis.c"
+void h_fixedbugs506acommentonamapkeysparenthesis_show(HeroMapHeader * h0_m) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t6, t7, t11, t15, t16; HERO_NODEBUG int64_t h2_r0, t2, t8, t9, t12, t13, t14; HERO_NODEBUG HeroMapHeader *t1, *t4; HERO_NODEBUG HeroStr t3, t5; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_m; t2 = hero_map_len(t1); t3 = HERO_STR_LIT(hero_str_20); t4 = h0_m; t5 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG const void *found = hero_map_find(t4, &t5); if (found == NULL) { t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t6 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t6.as.ok, found); } } t15 = h3_own3; h3_own3 = t6; h_0opt_e201354_release(&t15); t16 = h1_f0; h_0opt_e201354_retain(&t6); h1_f0 = t6; h_0opt_e201354_release(&t16); t7 = h1_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb1; else goto bb2; bb1: t11 = h1_f0; t12 = t11.as.ok; h2_r0 = t12; goto bb3; bb2: t13 = INT64_C(0); h2_r0 = t13; goto bb3; bb3: t14 = h2_r0; hero_print_int(t2); hero_print_str(t3); hero_print_int(t14); hero_print_end();
+#line 133 "fixedbugs506acommentonamapkeysparenthesis.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return;
 }
 
 #line 14 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-void h_fixedbugs506acommentonamapkeysparenthesis_main(void) {
-#line 14 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    HeroMapHeader * h0_first = {0}; HeroMapHeader * h1_second = {0}; HeroMapHeader * h2_third = {0}; HeroMapHeader * h3_nested = {0}; HERO_NODEBUG h_0opt_7e3a44cc h4_f0 = {0}, h12_own12 = {0}, t24, t25, t29, t46, t47; HERO_NODEBUG HeroMapHeader *h5_r0 = {0}, *h6_own6 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *t3, *t10, *t13, *t17, *t18, *t19, *t20, *t21, *t22, *t30, *t31, *t32, *t35, *t36, *t37, *t39, *t40, *t41, *t42, *t43, *t44, *t45, *t48, *t49, *t50, *t51; HERO_NODEBUG HeroStr h7_own7 = {0}, t1, t4, t6, t7, t8, t11, t14, t15, t23, t33, t38; HERO_NODEBUG int64_t t2, t5, t9, t12, t16, t26, t27, t34; HERO_NODEBUG bool t28; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-bb0:
-#line 18 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
+void h_fixedbugs506acommentonamapkeysparenthesis_main(void) { HeroMapHeader * h0_first = {0}; HeroMapHeader * h1_second = {0}; HeroMapHeader * h2_third = {0}; HeroMapHeader * h3_nested = {0}; HERO_NODEBUG h_0opt_7e3a44cc h4_f0 = {0}, h12_own12 = {0}, t24, t25, t29, t46, t47; HERO_NODEBUG HeroMapHeader *h5_r0 = {0}, *h6_own6 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *t3, *t10, *t13, *t17, *t18, *t19, *t20, *t21, *t22, *t30, *t31, *t32, *t35, *t36, *t37, *t39, *t40, *t41, *t42, *t43, *t44, *t45, *t48, *t49, *t50, *t51; HERO_NODEBUG HeroStr h7_own7 = {0}, t1, t4, t6, t7, t8, t11, t14, t15, t23, t33, t38; HERO_NODEBUG int64_t t2, t5, t9, t12, t16, t26, t27, t34; HERO_NODEBUG bool t28; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 18
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
     t2 = INT64_C(8);
-#line 16 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t3 = hero_map_new(&hero_desc_str, &hero_desc_int, 1);
-#line 16 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_put(t3, &t1, &t2);
-#line 16 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t36 = h6_own6;
-#line 16 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h6_own6 = t3;
-#line 16 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t36);
-#line 16 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t37 = h0_first;
-#line 16 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_incref(t3);
-#line 16 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h0_first = t3;
-#line 16 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t37);
-#line 24 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t4 = HERO_STR_LIT(hero_str_eb4ac31);
-#line 24 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t5 = INT64_C(7);
-#line 26 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t6 = HERO_STR_LIT(hero_str_20286c);
-#line 26 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t7 = HERO_STR_LIT(hero_str_352e);
-#line 26 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t8 = hero_str_concat(t6, t7);
-#line 26 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t38 = h7_own7;
-#line 26 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h7_own7 = t8;
-#line 26 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_str_decref(t38);
+#line 16
+    t3 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t3, &t1, &t2); t36 = h6_own6; h6_own6 = t3; hero_map_decref(t36); t37 = h0_first; hero_map_incref(t3); h0_first = t3; hero_map_decref(t37);
+#line 24
+    t4 = HERO_STR_LIT(hero_str_eb4ac31); t5 = INT64_C(7);
+#line 26
+    t6 = HERO_STR_LIT(hero_str_20286c); t7 = HERO_STR_LIT(hero_str_352e); t8 = hero_str_concat(t6, t7); t38 = h7_own7; h7_own7 = t8; hero_str_decref(t38);
     t9 = INT64_C(9);
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t10 = hero_map_new(&hero_desc_str, &hero_desc_int, 2);
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_put(t10, &t4, &t5);
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_put(t10, &t8, &t9);
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t39 = h8_own8;
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h8_own8 = t10;
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t39);
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t40 = h1_second;
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_incref(t10);
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h1_second = t10;
-#line 23 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t40);
-#line 34 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
+#line 23
+    t10 = hero_map_new(&hero_desc_str, &hero_desc_int, 2); hero_map_put(t10, &t4, &t5); hero_map_put(t10, &t8, &t9); t39 = h8_own8; h8_own8 = t10; hero_map_decref(t39); t40 = h1_second; hero_map_incref(t10); h1_second = t10; hero_map_decref(t40);
+#line 34
     t11 = HERO_STR_LIT(hero_str_6bb5e50a);
     t12 = INT64_C(10);
-#line 31 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t13 = hero_map_new(&hero_desc_str, &hero_desc_int, 1);
-#line 31 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_put(t13, &t11, &t12);
-#line 31 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t41 = h9_own9;
-#line 31 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h9_own9 = t13;
-#line 31 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t41);
-#line 31 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t42 = h2_third;
-#line 31 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_incref(t13);
-#line 31 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h2_third = t13;
-#line 31 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t42);
-#line 40 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
+#line 31
+    t13 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t13, &t11, &t12); t41 = h9_own9; h9_own9 = t13; hero_map_decref(t41); t42 = h2_third; hero_map_incref(t13); h2_third = t13; hero_map_decref(t42);
+#line 40
     t14 = HERO_STR_LIT(hero_str_61);
-#line 42 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
+#line 42
     t15 = HERO_STR_LIT(hero_str_6bb5e50a);
     t16 = INT64_C(11);
-#line 40 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t17 = hero_map_new(&hero_desc_str, &hero_desc_int, 1);
-#line 40 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_put(t17, &t15, &t16);
-#line 40 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t43 = h10_own10;
-#line 40 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h10_own10 = t17;
-#line 40 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t43);
-#line 39 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t18 = hero_map_new(&hero_desc_str, &hero_desc_map, 1);
-#line 39 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_put(t18, &t14, &t17);
-#line 39 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t44 = h11_own11;
-#line 39 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h11_own11 = t18;
-#line 39 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t44);
-#line 39 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t45 = h3_nested;
-#line 39 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_incref(t18);
-#line 39 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h3_nested = t18;
-#line 39 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t45);
-#line 46 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t19 = h0_first;
-#line 46 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_fixedbugs506acommentonamapkeysparenthesis_show(t19);
-    t20 = h1_second;
-#line 47 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_fixedbugs506acommentonamapkeysparenthesis_show(t20);
-    t21 = h2_third;
-#line 48 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_fixedbugs506acommentonamapkeysparenthesis_show(t21);
-    t22 = h3_nested;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t23 = HERO_STR_LIT(hero_str_61);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    {
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t22, &t23);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-      if (found == NULL) {
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-        t24 = (h_0opt_7e3a44cc){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-      } else {
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-        t24 = (h_0opt_7e3a44cc){.tag = INT64_C(0)};
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-        (&hero_desc_map)->copy(&t24.as.ok, found);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-      }
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    }
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t46 = h12_own12;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h12_own12 = t24;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_0opt_7e3a44cc_release(&t46);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t47 = h4_f0;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_0opt_7e3a44cc_retain(&t24);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h4_f0 = t24;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_0opt_7e3a44cc_release(&t47);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t25 = h4_f0;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t26 = t25.tag;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t27 = INT64_C(0);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t28 = t26 == t27;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    if (t28) goto bb1; else goto bb2;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-bb1:
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t29 = h4_f0;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t30 = t29.as.ok;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t48 = h5_r0;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_incref(t30);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h5_r0 = t30;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t48);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    goto bb3;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-bb2:
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t31 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t49 = h13_own13;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h13_own13 = t31;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t49);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t50 = h5_r0;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_incref(t31);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h5_r0 = t31;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t50);
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    goto bb3;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-bb3:
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t32 = h5_r0;
-#line 49 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h_fixedbugs506acommentonamapkeysparenthesis_show(t32);
-#line 55 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
+#line 40
+    t17 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t17, &t15, &t16); t43 = h10_own10; h10_own10 = t17; hero_map_decref(t43);
+#line 39
+    t18 = hero_map_new(&hero_desc_str, &hero_desc_map, 1); hero_map_put(t18, &t14, &t17); t44 = h11_own11; h11_own11 = t18; hero_map_decref(t44); t45 = h3_nested; hero_map_incref(t18); h3_nested = t18; hero_map_decref(t45);
+#line 46
+    t19 = h0_first; h_fixedbugs506acommentonamapkeysparenthesis_show(t19);
+    t20 = h1_second; h_fixedbugs506acommentonamapkeysparenthesis_show(t20);
+    t21 = h2_third; h_fixedbugs506acommentonamapkeysparenthesis_show(t21);
+    t22 = h3_nested; t23 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG const void *found = hero_map_find(t22, &t23); if (found == NULL) { t24 = (h_0opt_7e3a44cc){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t24 = (h_0opt_7e3a44cc){.tag = INT64_C(0)}; (&hero_desc_map)->copy(&t24.as.ok, found); } } t46 = h12_own12; h12_own12 = t24; h_0opt_7e3a44cc_release(&t46); t47 = h4_f0; h_0opt_7e3a44cc_retain(&t24); h4_f0 = t24; h_0opt_7e3a44cc_release(&t47); t25 = h4_f0; t26 = t25.tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto bb1; else goto bb2; bb1: t29 = h4_f0; t30 = t29.as.ok; t48 = h5_r0; hero_map_incref(t30); h5_r0 = t30; hero_map_decref(t48); goto bb3; bb2: t31 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t49 = h13_own13; h13_own13 = t31; hero_map_decref(t49); t50 = h5_r0; hero_map_incref(t31); h5_r0 = t31; hero_map_decref(t50); goto bb3; bb3: t32 = h5_r0; h_fixedbugs506acommentonamapkeysparenthesis_show(t32);
+#line 55
     t33 = HERO_STR_LIT(hero_str_6bb5e50a);
     t34 = INT64_C(12);
-#line 53 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t35 = hero_map_new(&hero_desc_str, &hero_desc_int, 1);
-#line 53 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_put(t35, &t33, &t34);
-#line 53 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    t51 = h14_own14;
-#line 53 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    h14_own14 = t35;
-#line 53 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
-    hero_map_decref(t51);
-#line 52 "tests/golden/run/fixedbugs-506-a-comment-on-a-map-key-s-parenthesis.hero"
+#line 53
+    t35 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t35, &t33, &t34); t51 = h14_own14; h14_own14 = t35; hero_map_decref(t51);
+#line 52
     h_fixedbugs506acommentonamapkeysparenthesis_show(t35);
-#line 453 "fixedbugs506acommentonamapkeysparenthesis.c"
+#line 179 "fixedbugs506acommentonamapkeysparenthesis.c"
     hero_map_release_at(&h0_first);
     hero_map_release_at(&h1_second);
     hero_map_release_at(&h2_third);

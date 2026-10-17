@@ -66,10 +66,8 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #endif
 
 #line 36 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-_Static_assert(sizeof(struct slot) - __builtin_offsetof(struct slot, name) != 0, "heroes-ffi-flex Slot name");
-#line 36 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-_Static_assert(_Generic(&((struct slot *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot name");
-#line 73 "ffiafilledrecordisaskedfor.c"
+_Static_assert(sizeof(struct slot) - __builtin_offsetof(struct slot, name) != 0, "heroes-ffi-flex Slot name"); _Static_assert(_Generic(&((struct slot *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot name");
+#line 71 "ffiafilledrecordisaskedfor.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -152,13 +150,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffiafilledrecordisaskedfor_
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 162 "ffiafilledrecordisaskedfor.c"
+#line 160 "ffiafilledrecordisaskedfor.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiafilledrecordisaskedfor_Slot_eq(const struct slot *a, const struct slot *b);
@@ -194,141 +192,29 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-struct slot h_ffiafilledrecordisaskedfor_blank(void) {
-#line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot t10; HERO_ENTRY_STOP; goto bb0;
-#line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t2 = INT64_C(0);
-#line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t3 = INT64_C(0);
-#line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t4 = INT64_C(0);
-#line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t5 = INT64_C(0);
-#line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t6 = INT64_C(0);
-#line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t7 = INT64_C(0);
-#line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t8 = INT64_C(0);
-#line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t10 = (struct slot){.name = {t1, t2, t3, t4, t5, t6, t7, t8}};
-#line 43 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    return t10;
-#line 222 "ffiafilledrecordisaskedfor.c"
+struct slot h_ffiafilledrecordisaskedfor_blank(void) { HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t10 = (struct slot){.name = {t1, t2, t3, t4, t5, t6, t7, t8}}; return t10;
+#line 198 "ffiafilledrecordisaskedfor.c"
 }
 
 #line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 void h_ffiafilledrecordisaskedfor_main(void) {
-#line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
+#line 45
 #define h0_s (*hero_lend_h0_s)
-#line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    struct slot *const hero_lend_h0_s = (struct slot *)hero_lend_local(sizeof(struct slot), "ffiafilledrecordisaskedfor.main", "s"); HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t3, t4, t8, t23, t24; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}, h4_own4 = {0}, t14, t15, t19, t21, t25, t26; HERO_NODEBUG struct slot t1, t12; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t16, t17; HERO_NODEBUG bool t7, t18; HERO_NODEBUG HeroFailure t9, t20; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0;
-#line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-bb0:
-    t1 = h_ffiafilledrecordisaskedfor_blank();
-#line 46 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h0_s = t1;
-#line 46 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0);
-    hero_lend_local_name(hero_lend_h0_s, "slot_fill", "s");
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0);
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t2 = slot_fill(&h0_s);
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t2};
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t23 = h3_own3;
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h3_own3 = t3;
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h_0opt_e201354_release(&t23);
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t24 = h1_f0;
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h_0opt_e201354_retain(&t3);
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h1_f0 = t3;
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h_0opt_e201354_release(&t24);
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t4 = h1_f0;
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t5 = t4.tag;
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t6 = INT64_C(0);
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t7 = t5 == t6;
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    if (t7) goto bb1; else goto bb2;
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-bb1:
-    t12 = h0_s;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    {
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-        HERO_NODEBUG int64_t hero_vb_status = 0;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-        HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t12.name), INT64_C(8), &hero_vb_status);
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-        if (hero_vb_status == HERO_STR_OK) {
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-            t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text};
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-        } else {
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-            t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()};
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-        }
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    }
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t25 = h4_own4;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h4_own4 = t14;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h_0opt_f87774a_release(&t25);
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t26 = h2_f1;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h_0opt_f87774a_retain(&t14);
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h2_f1 = t14;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    h_0opt_f87774a_release(&t26);
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t15 = h2_f1;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t16 = t15.tag;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t17 = INT64_C(0);
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t18 = t16 == t17;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    if (t18) goto bb3; else goto bb4;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-bb2:
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t8 = h1_f0;
-#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t9 = t8.as.err;
-#line 320 "ffiafilledrecordisaskedfor.c"
+#line 45
+    struct slot *const hero_lend_h0_s = (struct slot *)hero_lend_local(sizeof(struct slot), "ffiafilledrecordisaskedfor.main", "s"); HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t3, t4, t8, t23, t24; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}, h4_own4 = {0}, t14, t15, t19, t21, t25, t26; HERO_NODEBUG struct slot t1, t12; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t16, t17; HERO_NODEBUG bool t7, t18; HERO_NODEBUG HeroFailure t9, t20; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_ffiafilledrecordisaskedfor_blank(); h0_s = t1; hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0);
+    hero_lend_local_name(hero_lend_h0_s, "slot_fill", "s"); hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0); t2 = slot_fill(&h0_s); t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t2}; t23 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t23); t24 = h1_f0; h_0opt_e201354_retain(&t3); h1_f0 = t3; h_0opt_e201354_release(&t24); t4 = h1_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1:
+    t12 = h0_s; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t12.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t25 = h4_own4; h4_own4 = t14; h_0opt_f87774a_release(&t25); t26 = h2_f1; h_0opt_f87774a_retain(&t14); h2_f1 = t14; h_0opt_f87774a_release(&t26); t15 = h2_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
+#line 47
+    t8 = h1_f0; t9 = t8.as.err;
+#line 212 "ffiafilledrecordisaskedfor.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t21 = h2_f1;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t22 = t21.as.ok;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    hero_print_str(t22);
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    hero_print_end();
-#line 332 "ffiafilledrecordisaskedfor.c"
+    t21 = h2_f1; t22 = t21.as.ok; hero_print_str(t22); hero_print_end();
+#line 218 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
@@ -337,10 +223,8 @@ bb3:
     return;
 bb4:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t19 = h2_f1;
-#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t20 = t19.as.err;
-#line 344 "ffiafilledrecordisaskedfor.c"
+    t19 = h2_f1; t20 = t19.as.err;
+#line 228 "ffiafilledrecordisaskedfor.c"
     hero_panic_must(t20);
     hero_unreachable();
 }

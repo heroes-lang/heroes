@@ -83,11 +83,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 93 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 #pragma clang diagnostic pop
@@ -116,868 +116,226 @@ int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(h_fixedbugs13
 void h_fixedbugs139valuearmsthatjumporgiveavalue_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_bound(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) {
-#line 15 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, h4_ret0, t3, t4, t5, t6, t7, t8; int64_t h3_x; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = h0_c;
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_s0 = t1;
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = h1_s0;
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t3 = t2.tag;
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    switch (t3) {
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 0: goto bb2;
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 1: goto bb3;
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        default: hero_unreachable();
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    }
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t6 = h2_r0;
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_x = t6;
-#line 20 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t7 = h3_x;
-#line 20 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h4_ret0 = t7;
-#line 20 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 20 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
-#line 17 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t4 = INT64_C(0);
-#line 17 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h4_ret0 = t4;
-#line 17 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 17 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_bound(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) { HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, h4_ret0, t3, t4, t5, t6, t7, t8; int64_t h3_x; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t6 = h2_r0; h3_x = t6;
+#line 20
+    t7 = h3_x; h4_ret0 = t7; goto bb4; bb2:
+#line 17
+    t4 = INT64_C(0); h4_ret0 = t4; goto bb4; bb3:
     t5 = INT64_C(5);
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_r0 = t5;
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 16 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb4:
-#line 171 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 16
+    h2_r0 = t5; goto bb1; bb4:
+#line 129 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     t8 = h4_ret0;
     return t8;
 }
 
 #line 22 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) {
-#line 22 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, h4_ret0, t3, t4, t5, t6, t7, t8; int64_t h3_x; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = h0_c;
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_s0 = t1;
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = h1_s0;
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t3 = t2.tag;
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    switch (t3) {
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 0: goto bb2;
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 1: goto bb3;
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        default: hero_unreachable();
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    }
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t6 = h2_r0;
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_x = t6;
-#line 27 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t7 = h3_x;
-#line 27 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h4_ret0 = t7;
-#line 27 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 27 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
-#line 24 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) { HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, h4_ret0, t3, t4, t5, t6, t7, t8; int64_t h3_x; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t6 = h2_r0; h3_x = t6;
+#line 27
+    t7 = h3_x; h4_ret0 = t7; goto bb4; bb2:
+#line 24
     t4 = INT64_C(7);
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_r0 = t4;
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 23 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
-#line 25 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t5 = INT64_C(8);
-#line 25 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h4_ret0 = t5;
-#line 25 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 25 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb4:
-#line 229 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 23
+    h2_r0 = t4; goto bb1; bb3:
+#line 25
+    t5 = INT64_C(8); h4_ret0 = t5; goto bb4; bb4:
+#line 145 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     t8 = h4_ret0;
     return t8;
 }
 
 #line 29 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_returned(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) {
-#line 29 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 29 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = h0_c;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_s0 = t1;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = h1_s0;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t3 = t2.tag;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    switch (t3) {
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 0: goto bb2;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 1: goto bb3;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        default: hero_unreachable();
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    }
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t6 = h2_r0;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    return t6;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_returned(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) { HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t6 = h2_r0; return t6; bb2:
     t4 = INT64_C(1);
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_r0 = t4;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
-#line 32 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 30
+    h2_r0 = t4; goto bb1; bb3:
+#line 32
     t5 = INT64_C(2);
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_r0 = t5;
-#line 30 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 278 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 30
+    h2_r0 = t5; goto bb1;
+#line 160 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_nested(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c, h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_d) {
-#line 34 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h2_s0, h4_s1, t1, t2, t4, t5; HERO_NODEBUG int64_t h3_r0, h5_r1, t3, t6, t7, t8, t9, t10, t11, t12; int64_t h6_x; HERO_ENTRY_STOP; goto bb0;
-#line 34 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = h0_c;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_s0 = t1;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = h2_s0;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t3 = t2.tag;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    switch (t3) {
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 0: goto bb2;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 1: goto bb3;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        default: hero_unreachable();
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    }
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t11 = h3_r0;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h6_x = t11;
-#line 41 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t12 = h6_x;
-#line 41 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    return t12;
-#line 41 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t4 = h1_d;
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h4_s1 = t4;
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t5 = h4_s1;
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t6 = t5.tag;
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    switch (t6) {
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 0: goto bb5;
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 1: goto bb6;
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        default: hero_unreachable();
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    }
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
-#line 39 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_nested(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c, h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_d) { HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h2_s0, h4_s1, t1, t2, t4, t5; HERO_NODEBUG int64_t h3_r0, h5_r1, t3, t6, t7, t8, t9, t10, t11, t12; int64_t h6_x; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; h2_s0 = t1; t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t11 = h3_r0; h6_x = t11;
+#line 41
+    t12 = h6_x; return t12; bb2:
+#line 36
+    t4 = h1_d; h4_s1 = t4; t5 = h4_s1; t6 = t5.tag; switch (t6) { case 0: goto bb5; case 1: goto bb6; default: hero_unreachable(); } bb3:
+#line 39
     t10 = INT64_C(13);
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_r0 = t10;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb4:
+#line 35
+    h3_r0 = t10; goto bb1; bb4:
     t9 = h5_r1;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_r0 = t9;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 35 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb5:
-#line 37 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 35
+    h3_r0 = t9; goto bb1; bb5:
+#line 37
     t7 = INT64_C(11);
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h5_r1 = t7;
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb6:
-#line 38 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 36
+    h5_r1 = t7; goto bb4; bb6:
+#line 38
     t8 = INT64_C(12);
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h5_r1 = t8;
-#line 36 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 365 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 36
+    h5_r1 = t8; goto bb4;
+#line 185 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 43 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_first_nonzero(HeroArrayHeader * h0_xs) {
-#line 43 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    int64_t h1_found; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t24; HERO_NODEBUG int64_t h3_i0, h5_s0, h6_r0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t15, t16, t17, t18, t19, t20, t21, t22, t23; int64_t h4_x; int64_t h7_y; HERO_NODEBUG bool t7, t14; HERO_ENTRY_STOP; goto bb0;
-#line 43 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 44 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_found = t1;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = h0_xs;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t24 = h2_xs0;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_array_incref(t2);
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_xs0 = t2;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_array_decref(t24);
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t3 = INT64_C(0);
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_i0 = t3;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t4 = h3_i0;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t5 = h2_xs0;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t7 = t4 < t6;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t7) goto bb2; else goto bb4;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t8 = h2_xs0;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t9 = h3_i0;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h4_x = t10;
-    t11 = h4_x;
-#line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h5_s0 = t11;
-#line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t12 = h5_s0;
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_first_nonzero(HeroArrayHeader * h0_xs) { int64_t h1_found; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t24; HERO_NODEBUG int64_t h3_i0, h5_s0, h6_r0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t15, t16, t17, t18, t19, t20, t21, t22, t23; int64_t h4_x; int64_t h7_y; HERO_NODEBUG bool t7, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_found = t1;
+#line 46
+    t2 = h0_xs; t24 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t24); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
+    t11 = h4_x; h5_s0 = t11; t12 = h5_s0;
     t13 = INT64_C(0);
-#line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t14 = t12 == t13;
-#line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t14) goto bb6; else goto bb7;
-#line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t20 = h3_i0;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t21 = INT64_C(1);
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow();
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_i0 = t22;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 46 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb4:
-#line 54 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 47
+    t14 = t12 == t13; if (t14) goto bb6; else goto bb7; bb3:
+#line 46
+    t20 = h3_i0; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow(); h3_i0 = t22; goto bb1; bb4:
+#line 54
     t23 = h1_found;
-#line 441 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 201 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     hero_array_release_at(&h2_xs0);
     return t23;
 bb5:
 #line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t18 = h6_r0;
-#line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h7_y = t18;
-#line 51 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t19 = h7_y;
-#line 51 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_found = t19;
-#line 51 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 51 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb6:
-#line 51 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb3;
-#line 51 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb7:
-#line 51 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb8;
-#line 51 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb8:
-#line 49 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t15 = h4_x;
-#line 49 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t16 = INT64_C(10);
-#line 49 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h6_r0 = t17;
-#line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb5;
-#line 475 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+    t18 = h6_r0; h7_y = t18;
+#line 51
+    t19 = h7_y; h1_found = t19; goto bb4; bb6: goto bb3; bb7: goto bb8; bb8:
+#line 49
+    t15 = h4_x; t16 = INT64_C(10); if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow();
+#line 47
+    h6_r0 = t17; goto bb5;
+#line 213 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 56 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(bool h0_b) {
-#line 56 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG int64_t h1_r0, h3_ret0, t2, t3, t4, t5, t6; int64_t h2_x; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0;
-#line 56 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = h0_b;
-#line 57 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t1) goto bb2; else goto bb3;
-#line 57 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 57 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t4 = h1_r0;
-#line 57 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_x = t4;
-#line 61 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t5 = h2_x;
-#line 61 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_ret0 = t5;
-#line 61 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 61 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
-#line 58 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = INT64_C(3);
-#line 58 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_ret0 = t2;
-#line 58 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 58 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
-#line 60 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(bool h0_b) { HERO_NODEBUG int64_t h1_r0, h3_ret0, t2, t3, t4, t5, t6; int64_t h2_x; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_b; if (t1) goto bb2; else goto bb3; bb1: t4 = h1_r0; h2_x = t4;
+#line 61
+    t5 = h2_x; h3_ret0 = t5; goto bb4; bb2:
+#line 58
+    t2 = INT64_C(3); h3_ret0 = t2; goto bb4; bb3:
+#line 60
     t3 = INT64_C(4);
-#line 57 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_r0 = t3;
-#line 57 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 57 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb4:
-#line 517 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 57
+    h1_r0 = t3; goto bb1; bb4:
+#line 227 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     t6 = h3_ret0;
     return t6;
 }
 
 #line 63 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed_if(bool h0_b) {
-#line 63 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG int64_t h1_r0, h3_ret0, t2, t3, t4, t5, t6; int64_t h2_x; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0;
-#line 63 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = h0_b;
-#line 64 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t1) goto bb2; else goto bb3;
-#line 64 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 64 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t4 = h1_r0;
-#line 64 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_x = t4;
-#line 68 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t5 = h2_x;
-#line 68 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_ret0 = t5;
-#line 68 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 68 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
-#line 65 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed_if(bool h0_b) { HERO_NODEBUG int64_t h1_r0, h3_ret0, t2, t3, t4, t5, t6; int64_t h2_x; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_b; if (t1) goto bb2; else goto bb3; bb1: t4 = h1_r0; h2_x = t4;
+#line 68
+    t5 = h2_x; h3_ret0 = t5; goto bb4; bb2:
+#line 65
     t2 = INT64_C(5);
-#line 64 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_r0 = t2;
-#line 64 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 64 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
-#line 67 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t3 = INT64_C(6);
-#line 67 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_ret0 = t3;
-#line 67 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 67 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb4:
-#line 561 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 64
+    h1_r0 = t2; goto bb1; bb3:
+#line 67
+    t3 = INT64_C(6); h3_ret0 = t3; goto bb4; bb4:
+#line 243 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     t6 = h3_ret0;
     return t6;
 }
 
 #line 70 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_statement_before_value(bool h0_b) {
-#line 70 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG int64_t h1_r0, h2_s0, t2, t3, t4, t6, t7, t8, t9, t10, t11; int64_t h3_x; HERO_NODEBUG bool t1, t5; HERO_ENTRY_STOP; goto bb0;
-#line 70 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = h0_b;
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t1) goto bb2; else goto bb3;
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t10 = h1_r0;
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_x = t10;
-#line 79 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t11 = h3_x;
-#line 79 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    return t11;
-#line 79 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
-#line 72 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = INT64_C(1);
-#line 72 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_s0 = t2;
-#line 72 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t3 = h2_s0;
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_statement_before_value(bool h0_b) { HERO_NODEBUG int64_t h1_r0, h2_s0, t2, t3, t4, t6, t7, t8, t9, t10, t11; int64_t h3_x; HERO_NODEBUG bool t1, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_b; if (t1) goto bb2; else goto bb3; bb1: t10 = h1_r0; h3_x = t10;
+#line 79
+    t11 = h3_x; return t11; bb2:
+#line 72
+    t2 = INT64_C(1); h2_s0 = t2; t3 = h2_s0;
     t4 = INT64_C(1);
-#line 72 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t5 = t3 == t4;
-#line 72 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t5) goto bb5; else goto bb6;
-#line 72 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
-#line 78 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 72
+    t5 = t3 == t4; if (t5) goto bb5; else goto bb6; bb3:
+#line 78
     t9 = INT64_C(22);
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_r0 = t9;
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb4:
-#line 76 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 71
+    h1_r0 = t9; goto bb1; bb4:
+#line 76
     t8 = INT64_C(21);
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_r0 = t8;
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 71 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb5:
-#line 73 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t6 = INT64_C(20);
-#line 73 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t6);
-#line 73 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-#line 73 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 73 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb6:
-#line 73 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb7;
-#line 73 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb7:
-    t7 = INT64_C(29);
-#line 74 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t7);
-#line 74 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-#line 74 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 637 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 71
+    h1_r0 = t8; goto bb1; bb5:
+#line 73
+    t6 = INT64_C(20); hero_print_int(t6); hero_print_end(); goto bb4; bb6: goto bb7; bb7:
+    t7 = INT64_C(29); hero_print_int(t7); hero_print_end(); goto bb4;
+#line 269 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 81 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_values(bool h0_b) {
-#line 81 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG int64_t h1_r0, h2_s0, h3_s1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t13, t14, t15, t16, t17; int64_t h4_x; HERO_NODEBUG bool t1, t5, t12; HERO_ENTRY_STOP; goto bb0;
-#line 81 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = h0_b;
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t1) goto bb2; else goto bb3;
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t16 = h1_r0;
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h4_x = t16;
-#line 94 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t17 = h4_x;
-#line 94 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    return t17;
-#line 94 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
-#line 83 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = INT64_C(1);
-#line 83 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_s0 = t2;
-#line 83 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t3 = h2_s0;
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_values(bool h0_b) { HERO_NODEBUG int64_t h1_r0, h2_s0, h3_s1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t13, t14, t15, t16, t17; int64_t h4_x; HERO_NODEBUG bool t1, t5, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_b; if (t1) goto bb2; else goto bb3; bb1: t16 = h1_r0; h4_x = t16;
+#line 94
+    t17 = h4_x; return t17; bb2:
+#line 83
+    t2 = INT64_C(1); h2_s0 = t2; t3 = h2_s0;
     t4 = INT64_C(1);
-#line 83 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t5 = t3 == t4;
-#line 83 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t5) goto bb5; else goto bb6;
-#line 83 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
-#line 89 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t9 = INT64_C(2);
-#line 89 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h3_s1 = t9;
-#line 89 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t10 = h3_s1;
+#line 83
+    t5 = t3 == t4; if (t5) goto bb5; else goto bb6; bb3:
+#line 89
+    t9 = INT64_C(2); h3_s1 = t9; t10 = h3_s1;
     t11 = INT64_C(2);
-#line 89 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t12 = t10 == t11;
-#line 89 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t12) goto bb9; else goto bb10;
-#line 89 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb4:
-#line 87 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 89
+    t12 = t10 == t11; if (t12) goto bb9; else goto bb10; bb4:
+#line 87
     t8 = INT64_C(31);
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_r0 = t8;
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb5:
-#line 84 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t6 = INT64_C(30);
-#line 84 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t6);
-#line 84 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-#line 84 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 84 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb6:
-#line 84 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb7;
-#line 84 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb7:
-    t7 = INT64_C(39);
-#line 85 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t7);
-#line 85 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-#line 85 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 85 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb8:
-#line 93 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
+#line 82
+    h1_r0 = t8; goto bb1; bb5:
+#line 84
+    t6 = INT64_C(30); hero_print_int(t6); hero_print_end(); goto bb4; bb6: goto bb7; bb7:
+    t7 = INT64_C(39); hero_print_int(t7); hero_print_end(); goto bb4; bb8:
+#line 93
     t15 = INT64_C(33);
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_r0 = t15;
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 82 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb9:
-#line 90 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t13 = INT64_C(32);
-#line 90 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t13);
-#line 90 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-#line 90 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb8;
-#line 90 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb10:
-#line 90 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb11;
-#line 90 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb11:
-    t14 = INT64_C(39);
-#line 91 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t14);
-#line 91 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-#line 91 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb8;
-#line 747 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+#line 82
+    h1_r0 = t15; goto bb1; bb9:
+#line 90
+    t13 = INT64_C(32); hero_print_int(t13); hero_print_end(); goto bb8; bb10: goto bb11; bb11:
+    t14 = INT64_C(39); hero_print_int(t14); hero_print_end(); goto bb8;
+#line 301 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 96 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) {
-#line 96 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    int64_t h1_n; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h2_s0, t2, t3; HERO_NODEBUG int64_t t1, t4, t5, t6, t8, t9, t10, t11, t12; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
-#line 96 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 97 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_n = t1;
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = h0_c;
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h2_s0 = t2;
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t3 = h2_s0;
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t4 = t3.tag;
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    switch (t4) {
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 0: goto bb2;
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        case 1: goto bb3;
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-        default: hero_unreachable();
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    }
-#line 99 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb1:
-#line 104 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t12 = h1_n;
-#line 104 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    return t12;
-#line 104 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb2:
-#line 104 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 104 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb3:
-#line 102 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t11 = INT64_C(40);
-#line 102 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_n = t11;
-#line 102 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 102 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb4:
-#line 100 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t5 = h1_n;
-#line 100 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t6 = INT64_C(3);
-#line 100 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t7 = t5 < t6;
-#line 100 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (t7) goto bb5; else goto bb6;
-#line 100 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb5:
-    t8 = h1_n;
-#line 101 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t9 = INT64_C(1);
-#line 101 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow();
-#line 101 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h1_n = t10;
-#line 101 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb4;
-#line 101 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb6:
-#line 101 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    goto bb1;
-#line 820 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) { int64_t h1_n; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h2_s0, t2, t3; HERO_NODEBUG int64_t t1, t4, t5, t6, t8, t9, t10, t11, t12; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_n = t1;
+#line 99
+    t2 = h0_c; h2_s0 = t2; t3 = h2_s0; t4 = t3.tag; switch (t4) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1:
+#line 104
+    t12 = h1_n; return t12; bb2: goto bb4; bb3:
+#line 102
+    t11 = INT64_C(40); h1_n = t11; goto bb1; bb4:
+#line 100
+    t5 = h1_n; t6 = INT64_C(3); t7 = t5 < t6; if (t7) goto bb5; else goto bb6; bb5:
+    t8 = h1_n; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow(); h1_n = t10; goto bb4; bb6: goto bb1;
+#line 316 "fixedbugs139valuearmsthatjumporgiveavalue.c"
 }
 
 #line 106 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-void h_fixedbugs139valuearmsthatjumporgiveavalue_main(void) {
-#line 106 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t21, *t43; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t1, t3, t5, t7, t9, t11, t12, t14, t15, t39, t41; HERO_NODEBUG int64_t t2, t4, t6, t8, t10, t13, t16, t17, t18, t19, t20, t22, t24, t26, t28, t30, t32, t34, t36, t38, t40, t42; HERO_NODEBUG bool t23, t25, t27, t29, t31, t33, t35, t37; HERO_ENTRY_STOP; goto bb0;
-#line 106 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-bb0:
-    t1 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red};
-#line 107 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t2 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound(t1);
-#line 107 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t2);
-#line 107 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t3 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue};
-#line 108 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t4 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound(t3);
-#line 108 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t4);
-#line 108 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t5 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red};
-#line 109 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t6 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed(t5);
-#line 109 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t6);
-#line 109 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t7 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue};
-#line 110 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t8 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed(t7);
-#line 110 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t8);
-#line 110 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t9 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue};
-#line 111 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t10 = h_fixedbugs139valuearmsthatjumporgiveavalue_returned(t9);
-#line 111 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t10);
-#line 111 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t11 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red};
-#line 112 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t12 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue};
-#line 112 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t13 = h_fixedbugs139valuearmsthatjumporgiveavalue_nested(t11, t12);
-#line 112 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t13);
-#line 112 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t14 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue};
-#line 113 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t15 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red};
-#line 113 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t16 = h_fixedbugs139valuearmsthatjumporgiveavalue_nested(t14, t15);
-#line 113 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t16);
-#line 113 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t17 = INT64_C(0);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t18 = INT64_C(0);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t19 = INT64_C(4);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t20 = INT64_C(5);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t21 = hero_array_new(&hero_desc_int, 4);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_array_push_owned(&t21, &t17);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_array_push_owned(&t21, &t18);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_array_push_owned(&t21, &t19);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_array_push_owned(&t21, &t20);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t43 = h0_own0;
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    h0_own0 = t21;
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_array_decref(t43);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t22 = h_fixedbugs139valuearmsthatjumporgiveavalue_first_nonzero(t21);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t22);
-#line 114 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t23 = true;
-#line 115 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t24 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(t23);
-#line 115 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t24);
-#line 115 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t25 = false;
-#line 116 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t26 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(t25);
-#line 116 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t26);
-#line 116 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t27 = true;
-#line 117 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t28 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_if(t27);
-#line 117 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t28);
-#line 117 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t29 = false;
-#line 118 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t30 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_if(t29);
-#line 118 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t30);
-#line 118 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t31 = true;
-#line 119 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t32 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_before_value(t31);
-#line 119 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t32);
-#line 119 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t33 = false;
-#line 120 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t34 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_before_value(t33);
-#line 120 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t34);
-#line 120 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t35 = true;
-#line 121 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t36 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_values(t35);
-#line 121 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t36);
-#line 121 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t37 = false;
-#line 122 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t38 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_values(t37);
-#line 122 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t38);
-#line 122 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t39 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red};
-#line 123 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t40 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(t39);
-#line 123 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t40);
-#line 123 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-    t41 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue};
-#line 124 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    t42 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(t41);
-#line 124 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_int(t42);
-#line 124 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    hero_print_end();
-#line 981 "fixedbugs139valuearmsthatjumporgiveavalue.c"
+void h_fixedbugs139valuearmsthatjumporgiveavalue_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t21, *t43; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t1, t3, t5, t7, t9, t11, t12, t14, t15, t39, t41; HERO_NODEBUG int64_t t2, t4, t6, t8, t10, t13, t16, t17, t18, t19, t20, t22, t24, t26, t28, t30, t32, t34, t36, t38, t40, t42; HERO_NODEBUG bool t23, t25, t27, t29, t31, t33, t35, t37; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t2 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound(t1); hero_print_int(t2); hero_print_end();
+    t3 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t4 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound(t3); hero_print_int(t4); hero_print_end();
+    t5 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t6 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed(t5); hero_print_int(t6); hero_print_end();
+    t7 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t8 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed(t7); hero_print_int(t8); hero_print_end();
+    t9 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t10 = h_fixedbugs139valuearmsthatjumporgiveavalue_returned(t9); hero_print_int(t10); hero_print_end();
+    t11 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t12 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t13 = h_fixedbugs139valuearmsthatjumporgiveavalue_nested(t11, t12); hero_print_int(t13); hero_print_end();
+    t14 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t15 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t16 = h_fixedbugs139valuearmsthatjumporgiveavalue_nested(t14, t15); hero_print_int(t16); hero_print_end();
+    t17 = INT64_C(0); t18 = INT64_C(0); t19 = INT64_C(4); t20 = INT64_C(5); t21 = hero_array_new(&hero_desc_int, 4); hero_array_push_owned(&t21, &t17); hero_array_push_owned(&t21, &t18); hero_array_push_owned(&t21, &t19); hero_array_push_owned(&t21, &t20); t43 = h0_own0; h0_own0 = t21; hero_array_decref(t43); t22 = h_fixedbugs139valuearmsthatjumporgiveavalue_first_nonzero(t21); hero_print_int(t22); hero_print_end();
+    t23 = true; t24 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(t23); hero_print_int(t24); hero_print_end();
+    t25 = false; t26 = h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(t25); hero_print_int(t26); hero_print_end();
+    t27 = true; t28 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_if(t27); hero_print_int(t28); hero_print_end();
+    t29 = false; t30 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_if(t29); hero_print_int(t30); hero_print_end();
+    t31 = true; t32 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_before_value(t31); hero_print_int(t32); hero_print_end();
+    t33 = false; t34 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_before_value(t33); hero_print_int(t34); hero_print_end();
+    t35 = true; t36 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_values(t35); hero_print_int(t36); hero_print_end();
+    t37 = false; t38 = h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_values(t37); hero_print_int(t38); hero_print_end();
+    t39 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red}; t40 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(t39); hero_print_int(t40); hero_print_end();
+    t41 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_blue}; t42 = h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(t41); hero_print_int(t42); hero_print_end();
+#line 339 "fixedbugs139valuearmsthatjumporgiveavalue.c"
     hero_array_release_at(&h0_own0);
     return;
 }

@@ -89,11 +89,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 99 "main.c"
 #pragma clang diagnostic pop
@@ -121,195 +121,27 @@ HeroStr h_main_PASSAGE(void);
 void h_main_main(void);
 
 #line 23 "examples/words/main.hero"
-HeroArrayHeader * h_main_words_of(HeroStr h0_text) {
-#line 23 "examples/words/main.hero"
-    HeroArrayHeader * h1_out = {0}; HeroStr h2_piece = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t4, *t7, *t10, *t37, *t38, *t39, *t41, *t42; HERO_NODEBUG int64_t h4_i0, t5, t6, t8, t11, t20, t21, t27, t28, t29, t31, t32; HeroStr h5_ch = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t2, t3, t12, t13, t15, t16, t17, t18, t19, t24, t26, t30, t35, t40, t43, t44, t45, t46, t47; HERO_NODEBUG bool t9, t14, t22, t33; HERO_ENTRY_STOP; goto bb0;
-#line 23 "examples/words/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 24 "examples/words/main.hero"
-    t38 = h6_own6;
-#line 24 "examples/words/main.hero"
-    h6_own6 = t1;
-#line 24 "examples/words/main.hero"
-    hero_array_decref(t38);
-#line 24 "examples/words/main.hero"
-    t39 = h1_out;
-#line 24 "examples/words/main.hero"
-    hero_array_incref(t1);
-#line 24 "examples/words/main.hero"
-    h1_out = t1;
-#line 24 "examples/words/main.hero"
-    hero_array_decref(t39);
-    t2 = HERO_STR_LIT(hero_str_0);
-#line 25 "examples/words/main.hero"
-    t40 = h2_piece;
-#line 25 "examples/words/main.hero"
-    hero_str_incref(t2);
-#line 25 "examples/words/main.hero"
-    h2_piece = t2;
-#line 25 "examples/words/main.hero"
-    hero_str_decref(t40);
-#line 27 "examples/words/main.hero"
-    t3 = h0_text;
-#line 27 "examples/words/main.hero"
-    t4 = hero_str_chars(t3);
-#line 27 "examples/words/main.hero"
-    t41 = h7_own7;
-#line 27 "examples/words/main.hero"
-    h7_own7 = t4;
-#line 27 "examples/words/main.hero"
-    hero_array_decref(t41);
-#line 27 "examples/words/main.hero"
-    t42 = h3_xs0;
-#line 27 "examples/words/main.hero"
-    hero_array_incref(t4);
-#line 27 "examples/words/main.hero"
-    h3_xs0 = t4;
-#line 27 "examples/words/main.hero"
-    hero_array_decref(t42);
-#line 27 "examples/words/main.hero"
-    t5 = INT64_C(0);
-#line 27 "examples/words/main.hero"
-    h4_i0 = t5;
-#line 27 "examples/words/main.hero"
-    goto bb1;
-#line 27 "examples/words/main.hero"
-bb1:
-#line 27 "examples/words/main.hero"
-    t6 = h4_i0;
-#line 27 "examples/words/main.hero"
-    t7 = h3_xs0;
-#line 27 "examples/words/main.hero"
-    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
-#line 27 "examples/words/main.hero"
-    t9 = t6 < t8;
-#line 27 "examples/words/main.hero"
-    if (t9) goto bb2; else goto bb4;
-#line 27 "examples/words/main.hero"
-bb2:
-#line 27 "examples/words/main.hero"
-    t10 = h3_xs0;
-#line 27 "examples/words/main.hero"
-    t11 = h4_i0;
-#line 27 "examples/words/main.hero"
-    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
-#line 27 "examples/words/main.hero"
-    t43 = h5_ch;
-#line 27 "examples/words/main.hero"
-    hero_str_incref(t12);
-#line 27 "examples/words/main.hero"
-    h5_ch = t12;
-#line 27 "examples/words/main.hero"
-    hero_str_decref(t43);
-    t13 = h5_ch;
-#line 28 "examples/words/main.hero"
-    t14 = h_main_is_letter(t13);
-#line 28 "examples/words/main.hero"
-    if (t14) goto bb6; else goto bb7;
-#line 28 "examples/words/main.hero"
-bb3:
-#line 27 "examples/words/main.hero"
-    t27 = h4_i0;
-#line 27 "examples/words/main.hero"
-    t28 = INT64_C(1);
-#line 27 "examples/words/main.hero"
-    if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 27 "examples/words/main.hero"
-    h4_i0 = t29;
-#line 27 "examples/words/main.hero"
-    goto bb1;
-#line 27 "examples/words/main.hero"
-bb4:
-#line 35 "examples/words/main.hero"
-    t30 = h2_piece;
-#line 35 "examples/words/main.hero"
-    t31 = hero_str_len(t30);
-#line 35 "examples/words/main.hero"
-    t32 = INT64_C(0);
-#line 35 "examples/words/main.hero"
-    t33 = t31 > t32;
-#line 35 "examples/words/main.hero"
-    if (t33) goto bb12; else goto bb13;
-#line 35 "examples/words/main.hero"
-bb5:
-#line 35 "examples/words/main.hero"
-    goto bb3;
-#line 35 "examples/words/main.hero"
-bb6:
-#line 29 "examples/words/main.hero"
-    t15 = h2_piece;
-#line 29 "examples/words/main.hero"
-    t16 = h5_ch;
-#line 29 "examples/words/main.hero"
-    t17 = h_main_lowered(t16);
-#line 29 "examples/words/main.hero"
-    t44 = h8_own8;
-#line 29 "examples/words/main.hero"
-    h8_own8 = t17;
-#line 29 "examples/words/main.hero"
-    hero_str_decref(t44);
-#line 29 "examples/words/main.hero"
-    t18 = hero_str_concat(t15, t17);
-#line 29 "examples/words/main.hero"
-    t45 = h9_own9;
-#line 29 "examples/words/main.hero"
-    h9_own9 = t18;
-#line 29 "examples/words/main.hero"
-    hero_str_decref(t45);
-#line 29 "examples/words/main.hero"
-    t46 = h2_piece;
-#line 29 "examples/words/main.hero"
-    hero_str_incref(t18);
-#line 29 "examples/words/main.hero"
-    h2_piece = t18;
-#line 29 "examples/words/main.hero"
-    hero_str_decref(t46);
-#line 29 "examples/words/main.hero"
-    goto bb5;
-#line 29 "examples/words/main.hero"
-bb7:
-#line 31 "examples/words/main.hero"
-    t19 = h2_piece;
-#line 31 "examples/words/main.hero"
-    t20 = hero_str_len(t19);
-#line 31 "examples/words/main.hero"
-    t21 = INT64_C(0);
-#line 31 "examples/words/main.hero"
-    t22 = t20 > t21;
-#line 31 "examples/words/main.hero"
-    if (t22) goto bb9; else goto bb10;
-#line 31 "examples/words/main.hero"
-bb8:
-#line 33 "examples/words/main.hero"
-    t26 = HERO_STR_LIT(hero_str_0);
-#line 33 "examples/words/main.hero"
-    t47 = h2_piece;
-#line 33 "examples/words/main.hero"
-    hero_str_incref(t26);
-#line 33 "examples/words/main.hero"
-    h2_piece = t26;
-#line 33 "examples/words/main.hero"
-    hero_str_decref(t47);
-#line 33 "examples/words/main.hero"
-    goto bb5;
-#line 33 "examples/words/main.hero"
-bb9:
-#line 32 "examples/words/main.hero"
-    t24 = h2_piece;
-#line 32 "examples/words/main.hero"
-    hero_array_push_owned(&h1_out, &t24);
-#line 32 "examples/words/main.hero"
-    goto bb8;
-#line 32 "examples/words/main.hero"
-bb10:
-#line 32 "examples/words/main.hero"
-    goto bb8;
-#line 32 "examples/words/main.hero"
-bb11:
-#line 38 "examples/words/main.hero"
+HeroArrayHeader * h_main_words_of(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; HeroStr h2_piece = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t4, *t7, *t10, *t37, *t38, *t39, *t41, *t42; HERO_NODEBUG int64_t h4_i0, t5, t6, t8, t11, t20, t21, t27, t28, t29, t31, t32; HeroStr h5_ch = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t2, t3, t12, t13, t15, t16, t17, t18, t19, t24, t26, t30, t35, t40, t43, t44, t45, t46, t47; HERO_NODEBUG bool t9, t14, t22, t33; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t38 = h6_own6; h6_own6 = t1; hero_array_decref(t38); t39 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t39);
+    t2 = HERO_STR_LIT(hero_str_0); t40 = h2_piece; hero_str_incref(t2); h2_piece = t2; hero_str_decref(t40);
+#line 27
+    t3 = h0_text; t4 = hero_str_chars(t3); t41 = h7_own7; h7_own7 = t4; hero_array_decref(t41); t42 = h3_xs0; hero_array_incref(t4); h3_xs0 = t4; hero_array_decref(t42); t5 = INT64_C(0); h4_i0 = t5; goto bb1; bb1: t6 = h4_i0; t7 = h3_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h3_xs0; t11 = h4_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]); t43 = h5_ch; hero_str_incref(t12); h5_ch = t12; hero_str_decref(t43);
+    t13 = h5_ch; t14 = h_main_is_letter(t13); if (t14) goto bb6; else goto bb7; bb3:
+#line 27
+    t27 = h4_i0; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow(); h4_i0 = t29; goto bb1; bb4:
+#line 35
+    t30 = h2_piece; t31 = hero_str_len(t30); t32 = INT64_C(0); t33 = t31 > t32; if (t33) goto bb12; else goto bb13; bb5: goto bb3; bb6:
+#line 29
+    t15 = h2_piece; t16 = h5_ch; t17 = h_main_lowered(t16); t44 = h8_own8; h8_own8 = t17; hero_str_decref(t44); t18 = hero_str_concat(t15, t17); t45 = h9_own9; h9_own9 = t18; hero_str_decref(t45); t46 = h2_piece; hero_str_incref(t18); h2_piece = t18; hero_str_decref(t46); goto bb5; bb7:
+#line 31
+    t19 = h2_piece; t20 = hero_str_len(t19); t21 = INT64_C(0); t22 = t20 > t21; if (t22) goto bb9; else goto bb10; bb8:
+#line 33
+    t26 = HERO_STR_LIT(hero_str_0); t47 = h2_piece; hero_str_incref(t26); h2_piece = t26; hero_str_decref(t47); goto bb5; bb9:
+#line 32
+    t24 = h2_piece; hero_array_push_owned(&h1_out, &t24); goto bb8; bb10: goto bb8; bb11:
+#line 38
     t37 = h1_out;
-#line 313 "main.c"
+#line 145 "main.c"
     hero_array_incref(t37);
     hero_array_release_at(&h1_out);
     hero_str_release_at(&h2_piece);
@@ -322,230 +154,40 @@ bb11:
     return t37;
 bb12:
 #line 36 "examples/words/main.hero"
-    t35 = h2_piece;
-#line 36 "examples/words/main.hero"
-    hero_array_push_owned(&h1_out, &t35);
-#line 36 "examples/words/main.hero"
-    goto bb11;
-#line 36 "examples/words/main.hero"
-bb13:
-#line 36 "examples/words/main.hero"
-    goto bb11;
-#line 335 "main.c"
+    t35 = h2_piece; hero_array_push_owned(&h1_out, &t35); goto bb11; bb13: goto bb11;
+#line 159 "main.c"
 }
 
 #line 40 "examples/words/main.hero"
-bool h_main_is_letter(HeroStr h0_ch) {
-#line 40 "examples/words/main.hero"
-    uint8_t h1_b; HERO_NODEBUG bool h2_b0, h3_b1, h4_b2, h5_ret0, t4, t5, t11, t14, t15, t18, t21, t22, t23, t24; HERO_NODEBUG HeroStr t1, t6; HERO_NODEBUG int64_t t2, t3, t7; HERO_NODEBUG uint8_t t8, t9, t10, t12, t13, t16, t17, t19, t20; HERO_ENTRY_STOP; goto bb0;
-#line 40 "examples/words/main.hero"
-bb0:
-    t1 = h0_ch;
-#line 41 "examples/words/main.hero"
-    t2 = hero_str_len(t1);
-#line 41 "examples/words/main.hero"
-    t3 = INT64_C(1);
-#line 41 "examples/words/main.hero"
-    t4 = t2 != t3;
-#line 41 "examples/words/main.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 41 "examples/words/main.hero"
-bb1:
-#line 45 "examples/words/main.hero"
-    t6 = h0_ch;
-#line 45 "examples/words/main.hero"
-    t7 = INT64_C(0);
-#line 45 "examples/words/main.hero"
-    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
-#line 45 "examples/words/main.hero"
-    h1_b = t8;
-    t9 = h1_b;
-#line 46 "examples/words/main.hero"
-    t10 = UINT64_C(97);
-#line 46 "examples/words/main.hero"
-    t11 = t9 >= t10;
-#line 46 "examples/words/main.hero"
-    h3_b1 = t11;
-#line 46 "examples/words/main.hero"
-    if (t11) goto bb4; else goto bb5;
-#line 46 "examples/words/main.hero"
-bb2:
-#line 44 "examples/words/main.hero"
-    t5 = false;
-#line 44 "examples/words/main.hero"
-    h5_ret0 = t5;
-#line 44 "examples/words/main.hero"
-    goto bb10;
-#line 44 "examples/words/main.hero"
-bb3:
-#line 44 "examples/words/main.hero"
-    goto bb1;
-#line 44 "examples/words/main.hero"
-bb4:
-#line 46 "examples/words/main.hero"
-    t12 = h1_b;
-#line 46 "examples/words/main.hero"
-    t13 = UINT64_C(122);
-#line 46 "examples/words/main.hero"
-    t14 = t12 <= t13;
-#line 46 "examples/words/main.hero"
-    h3_b1 = t14;
-#line 46 "examples/words/main.hero"
-    goto bb5;
-#line 46 "examples/words/main.hero"
-bb5:
-#line 46 "examples/words/main.hero"
-    t15 = h3_b1;
-#line 46 "examples/words/main.hero"
-    h2_b0 = t15;
-#line 46 "examples/words/main.hero"
-    if (t15) goto bb7; else goto bb6;
-#line 46 "examples/words/main.hero"
-bb6:
-#line 46 "examples/words/main.hero"
-    t16 = h1_b;
-#line 46 "examples/words/main.hero"
-    t17 = UINT64_C(65);
-#line 46 "examples/words/main.hero"
-    t18 = t16 >= t17;
-#line 46 "examples/words/main.hero"
-    h4_b2 = t18;
-#line 46 "examples/words/main.hero"
-    if (t18) goto bb8; else goto bb9;
-#line 46 "examples/words/main.hero"
-bb7:
-#line 46 "examples/words/main.hero"
-    t23 = h2_b0;
-#line 46 "examples/words/main.hero"
-    h5_ret0 = t23;
-#line 46 "examples/words/main.hero"
-    goto bb10;
-#line 46 "examples/words/main.hero"
-bb8:
-#line 46 "examples/words/main.hero"
-    t19 = h1_b;
-#line 46 "examples/words/main.hero"
-    t20 = UINT64_C(90);
-#line 46 "examples/words/main.hero"
-    t21 = t19 <= t20;
-#line 46 "examples/words/main.hero"
-    h4_b2 = t21;
-#line 46 "examples/words/main.hero"
-    goto bb9;
-#line 46 "examples/words/main.hero"
-bb9:
-#line 46 "examples/words/main.hero"
-    t22 = h4_b2;
-#line 46 "examples/words/main.hero"
-    h2_b0 = t22;
-#line 46 "examples/words/main.hero"
-    goto bb7;
-#line 46 "examples/words/main.hero"
-bb10:
-#line 446 "main.c"
+bool h_main_is_letter(HeroStr h0_ch) { uint8_t h1_b; HERO_NODEBUG bool h2_b0, h3_b1, h4_b2, h5_ret0, t4, t5, t11, t14, t15, t18, t21, t22, t23, t24; HERO_NODEBUG HeroStr t1, t6; HERO_NODEBUG int64_t t2, t3, t7; HERO_NODEBUG uint8_t t8, t9, t10, t12, t13, t16, t17, t19, t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_ch; t2 = hero_str_len(t1); t3 = INT64_C(1); t4 = t2 != t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 45
+    t6 = h0_ch; t7 = INT64_C(0); t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); h1_b = t8;
+    t9 = h1_b; t10 = UINT64_C(97); t11 = t9 >= t10; h3_b1 = t11; if (t11) goto bb4; else goto bb5; bb2:
+#line 44
+    t5 = false; h5_ret0 = t5; goto bb10; bb3: goto bb1; bb4:
+#line 46
+    t12 = h1_b; t13 = UINT64_C(122); t14 = t12 <= t13; h3_b1 = t14; goto bb5; bb5: t15 = h3_b1; h2_b0 = t15; if (t15) goto bb7; else goto bb6; bb6: t16 = h1_b; t17 = UINT64_C(65); t18 = t16 >= t17; h4_b2 = t18; if (t18) goto bb8; else goto bb9; bb7: t23 = h2_b0; h5_ret0 = t23; goto bb10; bb8: t19 = h1_b; t20 = UINT64_C(90); t21 = t19 <= t20; h4_b2 = t21; goto bb9; bb9: t22 = h4_b2; h2_b0 = t22; goto bb7; bb10:
+#line 172 "main.c"
     t24 = h5_ret0;
     return t24;
 }
 
 #line 48 "examples/words/main.hero"
-HeroStr h_main_lowered(HeroStr h0_ch) {
-#line 48 "examples/words/main.hero"
-    uint8_t h1_b; HERO_NODEBUG bool h2_b0, t4, t11, t14, t15; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t1, t5, t6, t19, t20, t21, t22; HERO_NODEBUG int64_t t2, t3, t7; HERO_NODEBUG uint8_t t8, t9, t10, t12, t13, t16, t17, t18; HERO_ENTRY_STOP; goto bb0;
-#line 48 "examples/words/main.hero"
-bb0:
-    t1 = h0_ch;
-#line 49 "examples/words/main.hero"
-    t2 = hero_str_len(t1);
-#line 49 "examples/words/main.hero"
-    t3 = INT64_C(1);
-#line 49 "examples/words/main.hero"
-    t4 = t2 != t3;
-#line 49 "examples/words/main.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 49 "examples/words/main.hero"
-bb1:
-#line 51 "examples/words/main.hero"
-    t6 = h0_ch;
-#line 51 "examples/words/main.hero"
-    t7 = INT64_C(0);
-#line 51 "examples/words/main.hero"
-    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
-#line 51 "examples/words/main.hero"
-    h1_b = t8;
-#line 53 "examples/words/main.hero"
-    t9 = h1_b;
-#line 53 "examples/words/main.hero"
-    t10 = UINT64_C(65);
-#line 53 "examples/words/main.hero"
-    t11 = t9 >= t10;
-#line 53 "examples/words/main.hero"
-    h2_b0 = t11;
-#line 53 "examples/words/main.hero"
-    if (t11) goto bb5; else goto bb6;
-#line 53 "examples/words/main.hero"
-bb2:
-#line 50 "examples/words/main.hero"
-    t5 = h0_ch;
-#line 50 "examples/words/main.hero"
-    h3_ret0 = t5;
-#line 50 "examples/words/main.hero"
-    goto bb9;
-#line 50 "examples/words/main.hero"
-bb3:
-#line 50 "examples/words/main.hero"
-    goto bb1;
-#line 50 "examples/words/main.hero"
-bb4:
-#line 55 "examples/words/main.hero"
-    t20 = h0_ch;
-#line 55 "examples/words/main.hero"
-    h3_ret0 = t20;
-#line 55 "examples/words/main.hero"
-    goto bb9;
-#line 55 "examples/words/main.hero"
-bb5:
-#line 53 "examples/words/main.hero"
-    t12 = h1_b;
-#line 53 "examples/words/main.hero"
-    t13 = UINT64_C(90);
-#line 53 "examples/words/main.hero"
-    t14 = t12 <= t13;
-#line 53 "examples/words/main.hero"
-    h2_b0 = t14;
-#line 53 "examples/words/main.hero"
-    goto bb6;
-#line 53 "examples/words/main.hero"
-bb6:
-#line 53 "examples/words/main.hero"
-    t15 = h2_b0;
-#line 53 "examples/words/main.hero"
-    if (t15) goto bb7; else goto bb8;
-#line 53 "examples/words/main.hero"
-bb7:
-    t16 = h1_b;
-#line 54 "examples/words/main.hero"
-    t17 = UINT64_C(32);
-#line 54 "examples/words/main.hero"
-    if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
-#line 54 "examples/words/main.hero"
-    t19 = h_main_to_str_of_byte(t18);
-#line 54 "examples/words/main.hero"
-    t22 = h4_own4;
-#line 54 "examples/words/main.hero"
-    h4_own4 = t19;
-#line 54 "examples/words/main.hero"
-    hero_str_decref(t22);
-#line 54 "examples/words/main.hero"
-    h3_ret0 = t19;
-#line 54 "examples/words/main.hero"
-    goto bb9;
-#line 54 "examples/words/main.hero"
-bb8:
-#line 54 "examples/words/main.hero"
-    goto bb4;
-#line 54 "examples/words/main.hero"
-bb9:
-#line 549 "main.c"
+HeroStr h_main_lowered(HeroStr h0_ch) { uint8_t h1_b; HERO_NODEBUG bool h2_b0, t4, t11, t14, t15; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t1, t5, t6, t19, t20, t21, t22; HERO_NODEBUG int64_t t2, t3, t7; HERO_NODEBUG uint8_t t8, t9, t10, t12, t13, t16, t17, t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_ch; t2 = hero_str_len(t1); t3 = INT64_C(1); t4 = t2 != t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 51
+    t6 = h0_ch; t7 = INT64_C(0); t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); h1_b = t8;
+#line 53
+    t9 = h1_b; t10 = UINT64_C(65); t11 = t9 >= t10; h2_b0 = t11; if (t11) goto bb5; else goto bb6; bb2:
+#line 50
+    t5 = h0_ch; h3_ret0 = t5; goto bb9; bb3: goto bb1; bb4:
+#line 55
+    t20 = h0_ch; h3_ret0 = t20; goto bb9; bb5:
+#line 53
+    t12 = h1_b; t13 = UINT64_C(90); t14 = t12 <= t13; h2_b0 = t14; goto bb6; bb6: t15 = h2_b0; if (t15) goto bb7; else goto bb8; bb7:
+    t16 = h1_b; t17 = UINT64_C(32); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); t19 = h_main_to_str_of_byte(t18); t22 = h4_own4; h4_own4 = t19; hero_str_decref(t22); h3_ret0 = t19; goto bb9; bb8: goto bb4; bb9:
+#line 191 "main.c"
     t21 = h3_ret0;
     hero_str_incref(t21);
     hero_str_release_at(&h4_own4);
@@ -553,99 +195,19 @@ bb9:
 }
 
 #line 61 "examples/words/main.hero"
-HeroStr h_main_to_str_of_byte(uint8_t h0_b) {
-#line 61 "examples/words/main.hero"
-    HeroStr h1_lower = {0}; int64_t h2_i; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t1, t6, t11, t16, t20, t21, t22, t23; HERO_NODEBUG int64_t t2, t3, t4, t7, t12, t13, t14, t15, t17, t18, t19; HERO_NODEBUG bool t5, t10; HERO_NODEBUG uint8_t t8, t9; HERO_ENTRY_STOP; goto bb0;
-#line 61 "examples/words/main.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_67e2b857);
-#line 62 "examples/words/main.hero"
-    t22 = h1_lower;
-#line 62 "examples/words/main.hero"
-    hero_str_incref(t1);
-#line 62 "examples/words/main.hero"
-    h1_lower = t1;
-#line 62 "examples/words/main.hero"
-    hero_str_decref(t22);
-    t2 = INT64_C(0);
-#line 63 "examples/words/main.hero"
-    h2_i = t2;
-#line 63 "examples/words/main.hero"
-    goto bb1;
-#line 63 "examples/words/main.hero"
-bb1:
-#line 65 "examples/words/main.hero"
-    t3 = h2_i;
-#line 65 "examples/words/main.hero"
-    t4 = INT64_C(26);
-#line 65 "examples/words/main.hero"
-    t5 = t3 < t4;
-#line 65 "examples/words/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 65 "examples/words/main.hero"
-bb2:
-    t6 = h1_lower;
-#line 66 "examples/words/main.hero"
-    t7 = h2_i;
-#line 66 "examples/words/main.hero"
-    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
-#line 66 "examples/words/main.hero"
-    t9 = h0_b;
-#line 66 "examples/words/main.hero"
-    t10 = t8 == t9;
-#line 66 "examples/words/main.hero"
-    if (t10) goto bb5; else goto bb6;
-#line 66 "examples/words/main.hero"
-bb3:
-#line 70 "examples/words/main.hero"
-    t20 = HERO_STR_LIT(hero_str_3f);
-#line 70 "examples/words/main.hero"
-    h3_ret0 = t20;
-#line 70 "examples/words/main.hero"
-    goto bb7;
-#line 70 "examples/words/main.hero"
-bb4:
-#line 68 "examples/words/main.hero"
-    t17 = h2_i;
-#line 68 "examples/words/main.hero"
-    t18 = INT64_C(1);
-#line 68 "examples/words/main.hero"
-    if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 68 "examples/words/main.hero"
-    h2_i = t19;
-#line 68 "examples/words/main.hero"
-    goto bb1;
-#line 68 "examples/words/main.hero"
-bb5:
-#line 67 "examples/words/main.hero"
-    t11 = h1_lower;
-#line 67 "examples/words/main.hero"
-    t12 = h2_i;
-#line 67 "examples/words/main.hero"
-    t13 = h2_i;
-#line 67 "examples/words/main.hero"
-    t14 = INT64_C(1);
-#line 67 "examples/words/main.hero"
-    if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 67 "examples/words/main.hero"
-    t16 = hero_str_slice(t11, t12, t15);
-#line 67 "examples/words/main.hero"
-    t23 = h4_own4;
-#line 67 "examples/words/main.hero"
-    h4_own4 = t16;
-#line 67 "examples/words/main.hero"
-    hero_str_decref(t23);
-#line 67 "examples/words/main.hero"
-    h3_ret0 = t16;
-#line 67 "examples/words/main.hero"
-    goto bb7;
-#line 67 "examples/words/main.hero"
-bb6:
-#line 67 "examples/words/main.hero"
-    goto bb4;
-#line 67 "examples/words/main.hero"
-bb7:
-#line 649 "main.c"
+HeroStr h_main_to_str_of_byte(uint8_t h0_b) { HeroStr h1_lower = {0}; int64_t h2_i; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t1, t6, t11, t16, t20, t21, t22, t23; HERO_NODEBUG int64_t t2, t3, t4, t7, t12, t13, t14, t15, t17, t18, t19; HERO_NODEBUG bool t5, t10; HERO_NODEBUG uint8_t t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_67e2b857); t22 = h1_lower; hero_str_incref(t1); h1_lower = t1; hero_str_decref(t22);
+    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+#line 65
+    t3 = h2_i; t4 = INT64_C(26); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h1_lower; t7 = h2_i; t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); t9 = h0_b; t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb3:
+#line 70
+    t20 = HERO_STR_LIT(hero_str_3f); h3_ret0 = t20; goto bb7; bb4:
+#line 68
+    t17 = h2_i; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow(); h2_i = t19; goto bb1; bb5:
+#line 67
+    t11 = h1_lower; t12 = h2_i; t13 = h2_i; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); t16 = hero_str_slice(t11, t12, t15); t23 = h4_own4; h4_own4 = t16; hero_str_decref(t23); h3_ret0 = t16; goto bb7; bb6: goto bb4; bb7:
+#line 211 "main.c"
     t21 = h3_ret0;
     hero_str_incref(t21);
     hero_str_release_at(&h1_lower);
@@ -654,142 +216,16 @@ bb7:
 }
 
 #line 72 "examples/words/main.hero"
-HeroMapHeader * h_main_counted(HeroStr h0_text) {
-#line 72 "examples/words/main.hero"
-    HeroMapHeader * h1_tally = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h8_own8 = {0}, *t3, *t6, *t9, *t32, *t33; HERO_NODEBUG int64_t h3_i0, h6_r0, t4, t5, t7, t10, t17, t18, t21, t22, t23, t24, t25, t26, t27, t28; HeroStr h4_one = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h9_own9 = {0}, t15, t16, t20, t35, t36; HERO_NODEBUG HeroMapHeader *h7_own7 = {0}, *t1, *t13, *t29, *t30, *t31; HERO_NODEBUG HeroStr t2, t11, t12, t14, t34; HERO_NODEBUG bool t8, t19; HERO_ENTRY_STOP; goto bb0;
-#line 72 "examples/words/main.hero"
-bb0:
-    t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
-#line 73 "examples/words/main.hero"
-    t30 = h7_own7;
-#line 73 "examples/words/main.hero"
-    h7_own7 = t1;
-#line 73 "examples/words/main.hero"
-    hero_map_decref(t30);
-#line 73 "examples/words/main.hero"
-    t31 = h1_tally;
-#line 73 "examples/words/main.hero"
-    hero_map_incref(t1);
-#line 73 "examples/words/main.hero"
-    h1_tally = t1;
-#line 73 "examples/words/main.hero"
-    hero_map_decref(t31);
-#line 75 "examples/words/main.hero"
-    t2 = h0_text;
-#line 75 "examples/words/main.hero"
-    t3 = h_main_words_of(t2);
-#line 75 "examples/words/main.hero"
-    t32 = h8_own8;
-#line 75 "examples/words/main.hero"
-    h8_own8 = t3;
-#line 75 "examples/words/main.hero"
-    hero_array_decref(t32);
-#line 75 "examples/words/main.hero"
-    t33 = h2_xs0;
-#line 75 "examples/words/main.hero"
-    hero_array_incref(t3);
-#line 75 "examples/words/main.hero"
-    h2_xs0 = t3;
-#line 75 "examples/words/main.hero"
-    hero_array_decref(t33);
-#line 75 "examples/words/main.hero"
-    t4 = INT64_C(0);
-#line 75 "examples/words/main.hero"
-    h3_i0 = t4;
-#line 75 "examples/words/main.hero"
-    goto bb1;
-#line 75 "examples/words/main.hero"
-bb1:
-#line 75 "examples/words/main.hero"
-    t5 = h3_i0;
-#line 75 "examples/words/main.hero"
-    t6 = h2_xs0;
-#line 75 "examples/words/main.hero"
-    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 75 "examples/words/main.hero"
-    t8 = t5 < t7;
-#line 75 "examples/words/main.hero"
-    if (t8) goto bb2; else goto bb4;
-#line 75 "examples/words/main.hero"
-bb2:
-#line 75 "examples/words/main.hero"
-    t9 = h2_xs0;
-#line 75 "examples/words/main.hero"
-    t10 = h3_i0;
-#line 75 "examples/words/main.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
-#line 75 "examples/words/main.hero"
-    t34 = h4_one;
-#line 75 "examples/words/main.hero"
-    hero_str_incref(t11);
-#line 75 "examples/words/main.hero"
-    h4_one = t11;
-#line 75 "examples/words/main.hero"
-    hero_str_decref(t34);
-    t12 = h4_one;
-#line 76 "examples/words/main.hero"
-    t13 = h1_tally;
-#line 76 "examples/words/main.hero"
-    t14 = h4_one;
-#line 76 "examples/words/main.hero"
-    {
-#line 76 "examples/words/main.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t13, &t14);
-#line 76 "examples/words/main.hero"
-      if (found == NULL) {
-#line 76 "examples/words/main.hero"
-        t15 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 76 "examples/words/main.hero"
-      } else {
-#line 76 "examples/words/main.hero"
-        t15 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 76 "examples/words/main.hero"
-        (&hero_desc_int)->copy(&t15.as.ok, found);
-#line 76 "examples/words/main.hero"
-      }
-#line 76 "examples/words/main.hero"
-    }
-#line 76 "examples/words/main.hero"
-    t35 = h9_own9;
-#line 76 "examples/words/main.hero"
-    h9_own9 = t15;
-#line 76 "examples/words/main.hero"
-    h_0opt_e201354_release(&t35);
-#line 76 "examples/words/main.hero"
-    t36 = h5_f0;
-#line 76 "examples/words/main.hero"
-    h_0opt_e201354_retain(&t15);
-#line 76 "examples/words/main.hero"
-    h5_f0 = t15;
-#line 76 "examples/words/main.hero"
-    h_0opt_e201354_release(&t36);
-#line 76 "examples/words/main.hero"
-    t16 = h5_f0;
-#line 76 "examples/words/main.hero"
-    t17 = t16.tag;
-#line 76 "examples/words/main.hero"
-    t18 = INT64_C(0);
-#line 76 "examples/words/main.hero"
-    t19 = t17 == t18;
-#line 76 "examples/words/main.hero"
-    if (t19) goto bb5; else goto bb6;
-#line 76 "examples/words/main.hero"
-bb3:
-#line 75 "examples/words/main.hero"
-    t26 = h3_i0;
-#line 75 "examples/words/main.hero"
-    t27 = INT64_C(1);
-#line 75 "examples/words/main.hero"
-    if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow();
-#line 75 "examples/words/main.hero"
-    h3_i0 = t28;
-#line 75 "examples/words/main.hero"
-    goto bb1;
-#line 75 "examples/words/main.hero"
-bb4:
-#line 78 "examples/words/main.hero"
+HeroMapHeader * h_main_counted(HeroStr h0_text) { HeroMapHeader * h1_tally = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h8_own8 = {0}, *t3, *t6, *t9, *t32, *t33; HERO_NODEBUG int64_t h3_i0, h6_r0, t4, t5, t7, t10, t17, t18, t21, t22, t23, t24, t25, t26, t27, t28; HeroStr h4_one = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h9_own9 = {0}, t15, t16, t20, t35, t36; HERO_NODEBUG HeroMapHeader *h7_own7 = {0}, *t1, *t13, *t29, *t30, *t31; HERO_NODEBUG HeroStr t2, t11, t12, t14, t34; HERO_NODEBUG bool t8, t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t30 = h7_own7; h7_own7 = t1; hero_map_decref(t30); t31 = h1_tally; hero_map_incref(t1); h1_tally = t1; hero_map_decref(t31);
+#line 75
+    t2 = h0_text; t3 = h_main_words_of(t2); t32 = h8_own8; h8_own8 = t3; hero_array_decref(t32); t33 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t33); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t34 = h4_one; hero_str_incref(t11); h4_one = t11; hero_str_decref(t34);
+    t12 = h4_one; t13 = h1_tally; t14 = h4_one; { HERO_NODEBUG const void *found = hero_map_find(t13, &t14); if (found == NULL) { t15 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t15 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t15.as.ok, found); } } t35 = h9_own9; h9_own9 = t15; h_0opt_e201354_release(&t35); t36 = h5_f0; h_0opt_e201354_retain(&t15); h5_f0 = t15; h_0opt_e201354_release(&t36); t16 = h5_f0; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb5; else goto bb6; bb3:
+#line 75
+    t26 = h3_i0; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow(); h3_i0 = t28; goto bb1; bb4:
+#line 78
     t29 = h1_tally;
-#line 793 "main.c"
+#line 229 "main.c"
     hero_map_incref(t29);
     hero_map_release_at(&h1_tally);
     hero_array_release_at(&h2_xs0);
@@ -801,298 +237,42 @@ bb4:
     return t29;
 bb5:
 #line 76 "examples/words/main.hero"
-    t20 = h5_f0;
-#line 76 "examples/words/main.hero"
-    t21 = t20.as.ok;
-#line 76 "examples/words/main.hero"
-    h6_r0 = t21;
-#line 76 "examples/words/main.hero"
-    goto bb7;
-#line 76 "examples/words/main.hero"
-bb6:
-#line 76 "examples/words/main.hero"
-    t22 = INT64_C(0);
-#line 76 "examples/words/main.hero"
-    h6_r0 = t22;
-#line 76 "examples/words/main.hero"
-    goto bb7;
-#line 76 "examples/words/main.hero"
-bb7:
-#line 76 "examples/words/main.hero"
-    t23 = h6_r0;
-#line 76 "examples/words/main.hero"
-    t24 = INT64_C(1);
-#line 76 "examples/words/main.hero"
-    if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow();
-#line 76 "examples/words/main.hero"
-    hero_map_set(&(h1_tally), &t12, &t25);
-#line 76 "examples/words/main.hero"
-    goto bb3;
-#line 832 "main.c"
+    t20 = h5_f0; t21 = t20.as.ok; h6_r0 = t21; goto bb7; bb6: t22 = INT64_C(0); h6_r0 = t22; goto bb7; bb7: t23 = h6_r0; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow(); hero_map_set(&(h1_tally), &t12, &t25); goto bb3;
+#line 242 "main.c"
 }
 
 #line 88 "examples/words/main.hero"
-HeroStr h_main_report(HeroStr h0_text) {
-#line 88 "examples/words/main.hero"
-    HeroMapHeader * h1_tally = {0}; HeroArrayHeader * h2_rows = {0}; int64_t h3_most; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h10_xs1 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *t3, *t6, *t7, *t10, *t13, *t39, *t40, *t43, *t46, *t76, *t81, *t82, *t83, *t84, *t85, *t89, *t90, *t91; HERO_NODEBUG int64_t h5_i0, h11_i1, t4, t8, t9, t11, t14, t20, t21, t26, t27, t28, t30, t31, t32, t33, t34, t35, t36, t41, t42, t44, t47, t53, t54, t59, t60, t63, t70, t71, t72, t73, t74, t75; HeroStr h6_word = {0}; HERO_NODEBUG h_0opt_e201354 h7_f0 = {0}, h13_f1 = {0}, h18_own18 = {0}, h22_own22 = {0}, t18, t19, t23, t25, t51, t52, t56, t58, t87, t88, t94, t95; int64_t h8_n; int64_t h9_at; HeroStr h12_word = {0}; HERO_NODEBUG HeroMapHeader *h14_own14 = {0}, *t2, *t5, *t16, *t38, *t49, *t79, *t80; HERO_NODEBUG HeroStr h21_own21 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, t1, t15, t17, t48, t50, t64, t65, t66, t67, t68, t77, t78, t86, t92, t93, t96, t97, t98; HERO_NODEBUG bool t12, t22, t29, t37, t45, t55, t61; HERO_NODEBUG HeroFailure t24, t57; HERO_ENTRY_STOP; goto bb0;
-#line 88 "examples/words/main.hero"
-bb0:
-    t1 = h0_text;
-#line 89 "examples/words/main.hero"
-    t2 = h_main_counted(t1);
-#line 89 "examples/words/main.hero"
-    t79 = h14_own14;
-#line 89 "examples/words/main.hero"
-    h14_own14 = t2;
-#line 89 "examples/words/main.hero"
-    hero_map_decref(t79);
-#line 89 "examples/words/main.hero"
-    t80 = h1_tally;
-#line 89 "examples/words/main.hero"
-    hero_map_incref(t2);
-#line 89 "examples/words/main.hero"
-    h1_tally = t2;
-#line 89 "examples/words/main.hero"
-    hero_map_decref(t80);
-    t3 = hero_array_new(&hero_desc_str, 1);
-#line 90 "examples/words/main.hero"
-    t81 = h15_own15;
-#line 90 "examples/words/main.hero"
-    h15_own15 = t3;
-#line 90 "examples/words/main.hero"
-    hero_array_decref(t81);
-#line 90 "examples/words/main.hero"
-    t82 = h2_rows;
-#line 90 "examples/words/main.hero"
-    hero_array_incref(t3);
-#line 90 "examples/words/main.hero"
-    h2_rows = t3;
-#line 90 "examples/words/main.hero"
-    hero_array_decref(t82);
-    t4 = INT64_C(0);
-#line 91 "examples/words/main.hero"
-    h3_most = t4;
-#line 93 "examples/words/main.hero"
-    t5 = h1_tally;
-#line 93 "examples/words/main.hero"
-    t6 = hero_map_keys(t5);
-#line 93 "examples/words/main.hero"
-    t83 = h16_own16;
-#line 93 "examples/words/main.hero"
-    h16_own16 = t6;
-#line 93 "examples/words/main.hero"
-    hero_array_decref(t83);
-#line 93 "examples/words/main.hero"
-    t7 = hero_array_sort(t6);
-#line 93 "examples/words/main.hero"
-    t84 = h17_own17;
-#line 93 "examples/words/main.hero"
-    h17_own17 = t7;
-#line 93 "examples/words/main.hero"
-    hero_array_decref(t84);
-#line 93 "examples/words/main.hero"
-    t85 = h4_xs0;
-#line 93 "examples/words/main.hero"
-    hero_array_incref(t7);
-#line 93 "examples/words/main.hero"
-    h4_xs0 = t7;
-#line 93 "examples/words/main.hero"
-    hero_array_decref(t85);
-#line 93 "examples/words/main.hero"
-    t8 = INT64_C(0);
-#line 93 "examples/words/main.hero"
-    h5_i0 = t8;
-#line 93 "examples/words/main.hero"
-    goto bb1;
-#line 93 "examples/words/main.hero"
-bb1:
-#line 93 "examples/words/main.hero"
-    t9 = h5_i0;
-#line 93 "examples/words/main.hero"
-    t10 = h4_xs0;
-#line 93 "examples/words/main.hero"
-    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
-#line 93 "examples/words/main.hero"
-    t12 = t9 < t11;
-#line 93 "examples/words/main.hero"
-    if (t12) goto bb2; else goto bb4;
-#line 93 "examples/words/main.hero"
-bb2:
-#line 93 "examples/words/main.hero"
-    t13 = h4_xs0;
-#line 93 "examples/words/main.hero"
-    t14 = h5_i0;
-#line 93 "examples/words/main.hero"
-    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]);
-#line 93 "examples/words/main.hero"
-    t86 = h6_word;
-#line 93 "examples/words/main.hero"
-    hero_str_incref(t15);
-#line 93 "examples/words/main.hero"
-    h6_word = t15;
-#line 93 "examples/words/main.hero"
-    hero_str_decref(t86);
-    t16 = h1_tally;
-#line 94 "examples/words/main.hero"
-    t17 = h6_word;
-#line 94 "examples/words/main.hero"
-    {
-#line 94 "examples/words/main.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t16, &t17);
-#line 94 "examples/words/main.hero"
-      if (found == NULL) {
-#line 94 "examples/words/main.hero"
-        t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 94 "examples/words/main.hero"
-      } else {
-#line 94 "examples/words/main.hero"
-        t18 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 94 "examples/words/main.hero"
-        (&hero_desc_int)->copy(&t18.as.ok, found);
-#line 94 "examples/words/main.hero"
-      }
-#line 94 "examples/words/main.hero"
-    }
-#line 94 "examples/words/main.hero"
-    t87 = h18_own18;
-#line 94 "examples/words/main.hero"
-    h18_own18 = t18;
-#line 94 "examples/words/main.hero"
-    h_0opt_e201354_release(&t87);
-#line 94 "examples/words/main.hero"
-    t88 = h7_f0;
-#line 94 "examples/words/main.hero"
-    h_0opt_e201354_retain(&t18);
-#line 94 "examples/words/main.hero"
-    h7_f0 = t18;
-#line 94 "examples/words/main.hero"
-    h_0opt_e201354_release(&t88);
-#line 94 "examples/words/main.hero"
-    t19 = h7_f0;
-#line 94 "examples/words/main.hero"
-    t20 = t19.tag;
-#line 94 "examples/words/main.hero"
-    t21 = INT64_C(0);
-#line 94 "examples/words/main.hero"
-    t22 = t20 == t21;
-#line 94 "examples/words/main.hero"
-    if (t22) goto bb5; else goto bb6;
-#line 94 "examples/words/main.hero"
-bb3:
-#line 93 "examples/words/main.hero"
-    t31 = h5_i0;
-#line 93 "examples/words/main.hero"
-    t32 = INT64_C(1);
-#line 93 "examples/words/main.hero"
-    if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow();
-#line 93 "examples/words/main.hero"
-    h5_i0 = t33;
-#line 93 "examples/words/main.hero"
-    goto bb1;
-#line 93 "examples/words/main.hero"
-bb4:
-#line 102 "examples/words/main.hero"
-    t34 = h3_most;
-#line 102 "examples/words/main.hero"
-    h9_at = t34;
-#line 102 "examples/words/main.hero"
-    goto bb10;
-#line 102 "examples/words/main.hero"
-bb5:
-#line 94 "examples/words/main.hero"
-    t25 = h7_f0;
-#line 94 "examples/words/main.hero"
-    t26 = t25.as.ok;
-#line 94 "examples/words/main.hero"
-    h8_n = t26;
-#line 96 "examples/words/main.hero"
-    t27 = h8_n;
-#line 96 "examples/words/main.hero"
-    t28 = h3_most;
-#line 96 "examples/words/main.hero"
-    t29 = t27 > t28;
-#line 96 "examples/words/main.hero"
-    if (t29) goto bb8; else goto bb9;
-#line 96 "examples/words/main.hero"
-bb6:
-#line 94 "examples/words/main.hero"
-    t23 = h7_f0;
-#line 94 "examples/words/main.hero"
-    t24 = t23.as.err;
-#line 1023 "main.c"
+HeroStr h_main_report(HeroStr h0_text) { HeroMapHeader * h1_tally = {0}; HeroArrayHeader * h2_rows = {0}; int64_t h3_most; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h10_xs1 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *t3, *t6, *t7, *t10, *t13, *t39, *t40, *t43, *t46, *t76, *t81, *t82, *t83, *t84, *t85, *t89, *t90, *t91; HERO_NODEBUG int64_t h5_i0, h11_i1, t4, t8, t9, t11, t14, t20, t21, t26, t27, t28, t30, t31, t32, t33, t34, t35, t36, t41, t42, t44, t47, t53, t54, t59, t60, t63, t70, t71, t72, t73, t74, t75; HeroStr h6_word = {0}; HERO_NODEBUG h_0opt_e201354 h7_f0 = {0}, h13_f1 = {0}, h18_own18 = {0}, h22_own22 = {0}, t18, t19, t23, t25, t51, t52, t56, t58, t87, t88, t94, t95; int64_t h8_n; int64_t h9_at; HeroStr h12_word = {0}; HERO_NODEBUG HeroMapHeader *h14_own14 = {0}, *t2, *t5, *t16, *t38, *t49, *t79, *t80; HERO_NODEBUG HeroStr h21_own21 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, t1, t15, t17, t48, t50, t64, t65, t66, t67, t68, t77, t78, t86, t92, t93, t96, t97, t98; HERO_NODEBUG bool t12, t22, t29, t37, t45, t55, t61; HERO_NODEBUG HeroFailure t24, t57; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = h_main_counted(t1); t79 = h14_own14; h14_own14 = t2; hero_map_decref(t79); t80 = h1_tally; hero_map_incref(t2); h1_tally = t2; hero_map_decref(t80);
+    t3 = hero_array_new(&hero_desc_str, 1); t81 = h15_own15; h15_own15 = t3; hero_array_decref(t81); t82 = h2_rows; hero_array_incref(t3); h2_rows = t3; hero_array_decref(t82);
+    t4 = INT64_C(0); h3_most = t4;
+#line 93
+    t5 = h1_tally; t6 = hero_map_keys(t5); t83 = h16_own16; h16_own16 = t6; hero_array_decref(t83); t7 = hero_array_sort(t6); t84 = h17_own17; h17_own17 = t7; hero_array_decref(t84); t85 = h4_xs0; hero_array_incref(t7); h4_xs0 = t7; hero_array_decref(t85); t8 = INT64_C(0); h5_i0 = t8; goto bb1; bb1: t9 = h5_i0; t10 = h4_xs0; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = t9 < t11; if (t12) goto bb2; else goto bb4; bb2: t13 = h4_xs0; t14 = h5_i0; t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t13 + 1))[t14]); t86 = h6_word; hero_str_incref(t15); h6_word = t15; hero_str_decref(t86);
+    t16 = h1_tally; t17 = h6_word; { HERO_NODEBUG const void *found = hero_map_find(t16, &t17); if (found == NULL) { t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t18 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t18.as.ok, found); } } t87 = h18_own18; h18_own18 = t18; h_0opt_e201354_release(&t87); t88 = h7_f0; h_0opt_e201354_retain(&t18); h7_f0 = t18; h_0opt_e201354_release(&t88); t19 = h7_f0; t20 = t19.tag; t21 = INT64_C(0); t22 = t20 == t21; if (t22) goto bb5; else goto bb6; bb3:
+#line 93
+    t31 = h5_i0; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow(); h5_i0 = t33; goto bb1; bb4:
+#line 102
+    t34 = h3_most; h9_at = t34; goto bb10; bb5:
+#line 94
+    t25 = h7_f0; t26 = t25.as.ok; h8_n = t26;
+#line 96
+    t27 = h8_n; t28 = h3_most; t29 = t27 > t28; if (t29) goto bb8; else goto bb9; bb6:
+#line 94
+    t23 = h7_f0; t24 = t23.as.err;
+#line 263 "main.c"
     hero_panic_must(t24);
     hero_unreachable();
 bb7:
     goto bb3;
 bb8:
 #line 97 "examples/words/main.hero"
-    t30 = h8_n;
-#line 97 "examples/words/main.hero"
-    h3_most = t30;
-#line 97 "examples/words/main.hero"
-    goto bb7;
-#line 97 "examples/words/main.hero"
-bb9:
-#line 97 "examples/words/main.hero"
-    goto bb7;
-#line 97 "examples/words/main.hero"
-bb10:
-#line 104 "examples/words/main.hero"
-    t35 = h9_at;
-#line 104 "examples/words/main.hero"
-    t36 = INT64_C(0);
-#line 104 "examples/words/main.hero"
-    t37 = t35 > t36;
-#line 104 "examples/words/main.hero"
-    if (t37) goto bb11; else goto bb12;
-#line 104 "examples/words/main.hero"
-bb11:
-    t38 = h1_tally;
-#line 105 "examples/words/main.hero"
-    t39 = hero_map_keys(t38);
-#line 105 "examples/words/main.hero"
-    t89 = h19_own19;
-#line 105 "examples/words/main.hero"
-    h19_own19 = t39;
-#line 105 "examples/words/main.hero"
-    hero_array_decref(t89);
-#line 105 "examples/words/main.hero"
-    t40 = hero_array_sort(t39);
-#line 105 "examples/words/main.hero"
-    t90 = h20_own20;
-#line 105 "examples/words/main.hero"
-    h20_own20 = t40;
-#line 105 "examples/words/main.hero"
-    hero_array_decref(t90);
-#line 105 "examples/words/main.hero"
-    t91 = h10_xs1;
-#line 105 "examples/words/main.hero"
-    hero_array_incref(t40);
-#line 105 "examples/words/main.hero"
-    h10_xs1 = t40;
-#line 105 "examples/words/main.hero"
-    hero_array_decref(t91);
-#line 105 "examples/words/main.hero"
-    t41 = INT64_C(0);
-#line 105 "examples/words/main.hero"
-    h11_i1 = t41;
-#line 105 "examples/words/main.hero"
-    goto bb13;
-#line 105 "examples/words/main.hero"
-bb12:
-#line 111 "examples/words/main.hero"
-    t76 = h2_rows;
-#line 111 "examples/words/main.hero"
-    t77 = HERO_STR_LIT(hero_str_a);
-#line 111 "examples/words/main.hero"
-    t78 = hero_str_join(t76, t77);
-#line 111 "examples/words/main.hero"
-    t92 = h21_own21;
-#line 111 "examples/words/main.hero"
-    h21_own21 = t78;
-#line 111 "examples/words/main.hero"
-    hero_str_decref(t92);
-#line 1096 "main.c"
+    t30 = h8_n; h3_most = t30; goto bb7; bb9: goto bb7; bb10:
+#line 104
+    t35 = h9_at; t36 = INT64_C(0); t37 = t35 > t36; if (t37) goto bb11; else goto bb12; bb11:
+    t38 = h1_tally; t39 = hero_map_keys(t38); t89 = h19_own19; h19_own19 = t39; hero_array_decref(t89); t40 = hero_array_sort(t39); t90 = h20_own20; h20_own20 = t40; hero_array_decref(t90); t91 = h10_xs1; hero_array_incref(t40); h10_xs1 = t40; hero_array_decref(t91); t41 = INT64_C(0); h11_i1 = t41; goto bb13; bb12:
+#line 111
+    t76 = h2_rows; t77 = HERO_STR_LIT(hero_str_a); t78 = hero_str_join(t76, t77); t92 = h21_own21; h21_own21 = t78; hero_str_decref(t92);
+#line 276 "main.c"
     hero_str_incref(t78);
     hero_map_release_at(&h1_tally);
     hero_array_release_at(&h2_rows);
@@ -1117,268 +297,38 @@ bb12:
     return t78;
 bb13:
 #line 105 "examples/words/main.hero"
-    t42 = h11_i1;
-#line 105 "examples/words/main.hero"
-    t43 = h10_xs1;
-#line 105 "examples/words/main.hero"
-    t44 = ((void)(t43 == NULL ? ((void)hero_array_len(t43), hero_unreachable()) : (void)0), t43->len);
-#line 105 "examples/words/main.hero"
-    t45 = t42 < t44;
-#line 105 "examples/words/main.hero"
-    if (t45) goto bb14; else goto bb16;
-#line 105 "examples/words/main.hero"
-bb14:
-#line 105 "examples/words/main.hero"
-    t46 = h10_xs1;
-#line 105 "examples/words/main.hero"
-    t47 = h11_i1;
-#line 105 "examples/words/main.hero"
-    t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? ((void)hero_array_at(t46, t47), hero_unreachable()) : (void)0), (void)(t46->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t46 + 1))[t47]);
-#line 105 "examples/words/main.hero"
-    t93 = h12_word;
-#line 105 "examples/words/main.hero"
-    hero_str_incref(t48);
-#line 105 "examples/words/main.hero"
-    h12_word = t48;
-#line 105 "examples/words/main.hero"
-    hero_str_decref(t93);
-    t49 = h1_tally;
-#line 106 "examples/words/main.hero"
-    t50 = h12_word;
-#line 106 "examples/words/main.hero"
-    {
-#line 106 "examples/words/main.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t49, &t50);
-#line 106 "examples/words/main.hero"
-      if (found == NULL) {
-#line 106 "examples/words/main.hero"
-        t51 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 106 "examples/words/main.hero"
-      } else {
-#line 106 "examples/words/main.hero"
-        t51 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 106 "examples/words/main.hero"
-        (&hero_desc_int)->copy(&t51.as.ok, found);
-#line 106 "examples/words/main.hero"
-      }
-#line 106 "examples/words/main.hero"
-    }
-#line 106 "examples/words/main.hero"
-    t94 = h22_own22;
-#line 106 "examples/words/main.hero"
-    h22_own22 = t51;
-#line 106 "examples/words/main.hero"
-    h_0opt_e201354_release(&t94);
-#line 106 "examples/words/main.hero"
-    t95 = h13_f1;
-#line 106 "examples/words/main.hero"
-    h_0opt_e201354_retain(&t51);
-#line 106 "examples/words/main.hero"
-    h13_f1 = t51;
-#line 106 "examples/words/main.hero"
-    h_0opt_e201354_release(&t95);
-#line 106 "examples/words/main.hero"
-    t52 = h13_f1;
-#line 106 "examples/words/main.hero"
-    t53 = t52.tag;
-#line 106 "examples/words/main.hero"
-    t54 = INT64_C(0);
-#line 106 "examples/words/main.hero"
-    t55 = t53 == t54;
-#line 106 "examples/words/main.hero"
-    if (t55) goto bb18; else goto bb19;
-#line 106 "examples/words/main.hero"
-bb15:
-#line 105 "examples/words/main.hero"
-    t70 = h11_i1;
-#line 105 "examples/words/main.hero"
-    t71 = INT64_C(1);
-#line 105 "examples/words/main.hero"
-    if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow();
-#line 105 "examples/words/main.hero"
-    h11_i1 = t72;
-#line 105 "examples/words/main.hero"
-    goto bb13;
-#line 105 "examples/words/main.hero"
-bb16:
-#line 109 "examples/words/main.hero"
-    t73 = h9_at;
-#line 109 "examples/words/main.hero"
-    t74 = INT64_C(1);
-#line 109 "examples/words/main.hero"
-    if (__builtin_sub_overflow(t73, t74, &t75)) hero_panic_overflow();
-#line 109 "examples/words/main.hero"
-    h9_at = t75;
-#line 109 "examples/words/main.hero"
-    goto bb10;
-#line 109 "examples/words/main.hero"
-bb17:
-#line 109 "examples/words/main.hero"
-    goto bb15;
-#line 109 "examples/words/main.hero"
-bb18:
-#line 106 "examples/words/main.hero"
-    t58 = h13_f1;
-#line 106 "examples/words/main.hero"
-    t59 = t58.as.ok;
-#line 106 "examples/words/main.hero"
-    t60 = h9_at;
-#line 106 "examples/words/main.hero"
-    t61 = t59 == t60;
-#line 106 "examples/words/main.hero"
-    if (t61) goto bb20; else goto bb21;
-#line 106 "examples/words/main.hero"
-bb19:
-#line 106 "examples/words/main.hero"
-    t56 = h13_f1;
-#line 106 "examples/words/main.hero"
-    t57 = t56.as.err;
-#line 1237 "main.c"
+    t42 = h11_i1; t43 = h10_xs1; t44 = ((void)(t43 == NULL ? ((void)hero_array_len(t43), hero_unreachable()) : (void)0), t43->len); t45 = t42 < t44; if (t45) goto bb14; else goto bb16; bb14: t46 = h10_xs1; t47 = h11_i1; t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? ((void)hero_array_at(t46, t47), hero_unreachable()) : (void)0), (void)(t46->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t46 + 1))[t47]); t93 = h12_word; hero_str_incref(t48); h12_word = t48; hero_str_decref(t93);
+    t49 = h1_tally; t50 = h12_word; { HERO_NODEBUG const void *found = hero_map_find(t49, &t50); if (found == NULL) { t51 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t51 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t51.as.ok, found); } } t94 = h22_own22; h22_own22 = t51; h_0opt_e201354_release(&t94); t95 = h13_f1; h_0opt_e201354_retain(&t51); h13_f1 = t51; h_0opt_e201354_release(&t95); t52 = h13_f1; t53 = t52.tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto bb18; else goto bb19; bb15:
+#line 105
+    t70 = h11_i1; t71 = INT64_C(1); if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow(); h11_i1 = t72; goto bb13; bb16:
+#line 109
+    t73 = h9_at; t74 = INT64_C(1); if (__builtin_sub_overflow(t73, t74, &t75)) hero_panic_overflow(); h9_at = t75; goto bb10; bb17: goto bb15; bb18:
+#line 106
+    t58 = h13_f1; t59 = t58.as.ok; t60 = h9_at; t61 = t59 == t60; if (t61) goto bb20; else goto bb21; bb19: t56 = h13_f1; t57 = t56.as.err;
+#line 309 "main.c"
     hero_panic_must(t57);
     hero_unreachable();
 bb20:
 #line 107 "examples/words/main.hero"
-    t63 = h9_at;
-#line 107 "examples/words/main.hero"
-    t64 = hero_int_to_str(t63);
-#line 107 "examples/words/main.hero"
-    t96 = h23_own23;
-#line 107 "examples/words/main.hero"
-    h23_own23 = t64;
-#line 107 "examples/words/main.hero"
-    hero_str_decref(t96);
-#line 107 "examples/words/main.hero"
-    t65 = HERO_STR_LIT(hero_str_20);
-#line 107 "examples/words/main.hero"
-    t66 = hero_str_concat(t64, t65);
-#line 107 "examples/words/main.hero"
-    t97 = h24_own24;
-#line 107 "examples/words/main.hero"
-    h24_own24 = t66;
-#line 107 "examples/words/main.hero"
-    hero_str_decref(t97);
-#line 107 "examples/words/main.hero"
-    t67 = h12_word;
-#line 107 "examples/words/main.hero"
-    t68 = hero_str_concat(t66, t67);
-#line 107 "examples/words/main.hero"
-    t98 = h25_own25;
-#line 107 "examples/words/main.hero"
-    h25_own25 = t68;
-#line 107 "examples/words/main.hero"
-    hero_str_decref(t98);
-#line 107 "examples/words/main.hero"
-    hero_array_push_owned(&h2_rows, &t68);
-#line 107 "examples/words/main.hero"
-    goto bb17;
-#line 107 "examples/words/main.hero"
-bb21:
-#line 107 "examples/words/main.hero"
-    goto bb17;
-#line 1279 "main.c"
+    t63 = h9_at; t64 = hero_int_to_str(t63); t96 = h23_own23; h23_own23 = t64; hero_str_decref(t96); t65 = HERO_STR_LIT(hero_str_20); t66 = hero_str_concat(t64, t65); t97 = h24_own24; h24_own24 = t66; hero_str_decref(t97); t67 = h12_word; t68 = hero_str_concat(t66, t67); t98 = h25_own25; h25_own25 = t68; hero_str_decref(t98); hero_array_push_owned(&h2_rows, &t68); goto bb17; bb21: goto bb17;
+#line 315 "main.c"
 }
 
 #line 113 "examples/words/main.hero"
-HeroStr h_main_PASSAGE(void) {
-#line 113 "examples/words/main.hero"
-    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 113 "examples/words/main.hero"
-bb0:
+HeroStr h_main_PASSAGE(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_64abd0a6);
-#line 1289 "main.c"
+#line 321 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 116 "examples/words/main.hero"
-void h_main_main(void) {
-#line 116 "examples/words/main.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}, h2_own2 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t4, t8, t9, t10, t11, t12, t14, t17, t18, t19; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h4_own4 = {0}, *t2, *t6, *t13, *t16; HERO_NODEBUG HeroMapHeader *h3_own3 = {0}, *t5, *t15; HERO_NODEBUG int64_t t3, t7; HERO_ENTRY_STOP; goto bb0;
-#line 116 "examples/words/main.hero"
-bb0:
-    t1 = h_main_PASSAGE();
-#line 117 "examples/words/main.hero"
-    t12 = h0_own0;
-#line 117 "examples/words/main.hero"
-    h0_own0 = t1;
-#line 117 "examples/words/main.hero"
-    hero_str_decref(t12);
-#line 117 "examples/words/main.hero"
-    t2 = h_main_words_of(t1);
-#line 117 "examples/words/main.hero"
-    t13 = h1_own1;
-#line 117 "examples/words/main.hero"
-    h1_own1 = t2;
-#line 117 "examples/words/main.hero"
-    hero_array_decref(t13);
-#line 117 "examples/words/main.hero"
-    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
-#line 117 "examples/words/main.hero"
-    hero_print_int(t3);
-#line 117 "examples/words/main.hero"
-    hero_print_end();
-    t4 = h_main_PASSAGE();
-#line 118 "examples/words/main.hero"
-    t14 = h2_own2;
-#line 118 "examples/words/main.hero"
-    h2_own2 = t4;
-#line 118 "examples/words/main.hero"
-    hero_str_decref(t14);
-#line 118 "examples/words/main.hero"
-    t5 = h_main_counted(t4);
-#line 118 "examples/words/main.hero"
-    t15 = h3_own3;
-#line 118 "examples/words/main.hero"
-    h3_own3 = t5;
-#line 118 "examples/words/main.hero"
-    hero_map_decref(t15);
-#line 118 "examples/words/main.hero"
-    t6 = hero_map_keys(t5);
-#line 118 "examples/words/main.hero"
-    t16 = h4_own4;
-#line 118 "examples/words/main.hero"
-    h4_own4 = t6;
-#line 118 "examples/words/main.hero"
-    hero_array_decref(t16);
-#line 118 "examples/words/main.hero"
-    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 118 "examples/words/main.hero"
-    hero_print_int(t7);
-#line 118 "examples/words/main.hero"
-    hero_print_end();
-    t8 = h_main_PASSAGE();
-#line 119 "examples/words/main.hero"
-    t17 = h5_own5;
-#line 119 "examples/words/main.hero"
-    h5_own5 = t8;
-#line 119 "examples/words/main.hero"
-    hero_str_decref(t17);
-#line 119 "examples/words/main.hero"
-    t9 = h_main_report(t8);
-#line 119 "examples/words/main.hero"
-    t18 = h6_own6;
-#line 119 "examples/words/main.hero"
-    h6_own6 = t9;
-#line 119 "examples/words/main.hero"
-    hero_str_decref(t18);
-#line 119 "examples/words/main.hero"
-    hero_print_str(t9);
-#line 119 "examples/words/main.hero"
-    hero_print_end();
-    t10 = HERO_STR_LIT(hero_str_0);
-#line 120 "examples/words/main.hero"
-    t11 = h_main_report(t10);
-#line 120 "examples/words/main.hero"
-    t19 = h7_own7;
-#line 120 "examples/words/main.hero"
-    h7_own7 = t11;
-#line 120 "examples/words/main.hero"
-    hero_str_decref(t19);
-#line 120 "examples/words/main.hero"
-    hero_print_str(t11);
-#line 120 "examples/words/main.hero"
-    hero_print_end();
-#line 1382 "main.c"
+void h_main_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, h2_own2 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t4, t8, t9, t10, t11, t12, t14, t17, t18, t19; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h4_own4 = {0}, *t2, *t6, *t13, *t16; HERO_NODEBUG HeroMapHeader *h3_own3 = {0}, *t5, *t15; HERO_NODEBUG int64_t t3, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_main_PASSAGE(); t12 = h0_own0; h0_own0 = t1; hero_str_decref(t12); t2 = h_main_words_of(t1); t13 = h1_own1; h1_own1 = t2; hero_array_decref(t13); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); hero_print_int(t3); hero_print_end();
+    t4 = h_main_PASSAGE(); t14 = h2_own2; h2_own2 = t4; hero_str_decref(t14); t5 = h_main_counted(t4); t15 = h3_own3; h3_own3 = t5; hero_map_decref(t15); t6 = hero_map_keys(t5); t16 = h4_own4; h4_own4 = t6; hero_array_decref(t16); t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); hero_print_int(t7); hero_print_end();
+    t8 = h_main_PASSAGE(); t17 = h5_own5; h5_own5 = t8; hero_str_decref(t17); t9 = h_main_report(t8); t18 = h6_own6; h6_own6 = t9; hero_str_decref(t18); hero_print_str(t9); hero_print_end();
+    t10 = HERO_STR_LIT(hero_str_0); t11 = h_main_report(t10); t19 = h7_own7; h7_own7 = t11; hero_str_decref(t19); hero_print_str(t11); hero_print_end();
+#line 332 "main.c"
     hero_str_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

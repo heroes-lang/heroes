@@ -455,6 +455,6 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
     )
     got = writer.finish(w)
 
-    # The second content line under a source claim gets its restore —
-    # the writer's intent/claim repair, doing exactly its job.
-    assert got == "#line 2 \"t.hero\"\n    h_t_shout();\n#line 2 \"t.hero\"\n    t2 = INT64_C(7);\n"
+    # The second content line under a source claim is written on the
+    # first's line, where it took a restore until panel 219's R1.
+    assert got == "#line 2 \"t.hero\"\n    h_t_shout(); t2 = INT64_C(7);\n"

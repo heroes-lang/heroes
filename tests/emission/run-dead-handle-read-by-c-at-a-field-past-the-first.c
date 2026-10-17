@@ -141,11 +141,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_deadhandlereadbycatafieldpa
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "deadhandlereadbycatafieldpastthefirst.c"
 #pragma clang diagnostic pop
@@ -165,92 +165,20 @@ void h_deadhandlereadbycatafieldpastthefirst_main(void);
 
 #line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 void h_deadhandlereadbycatafieldpastthefirst_main(void) {
-#line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
+#line 19
 #define h0_cert (*hero_lend_h0_cert)
-#line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycatafieldpastthefirst.main", "cert"); HERO_NODEBUG ob *t1, *t5, *t11; HERO_NODEBUG int64_t t2, t3, t12; HERO_NODEBUG bool t4, t9; HERO_NODEBUG HeroStr t6, t10; HERO_NODEBUG int32_t t7, t8; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-bb0:
-    t1 = ob_new();
-#line 20 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    hero_handle_acquired(t1, "ob_put");
-#line 20 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    h0_cert = t1;
-#line 22 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t2 = one();
-#line 22 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t3 = INT64_C(1);
-#line 22 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t4 = t2 == t3;
-#line 22 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 22 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-bb1:
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t6 = HERO_STR_LIT(hero_str_1d67a62c);
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    hero_lend_local_name(hero_lend_h0_cert, "ob_far_cell", "a");
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t7 = ob_far_cell(&h0_cert);
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    hero_handle_retained(h0_cert, "ob_put", 0);
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    if (t7 == 1LL) {
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    } else {
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    }
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t8 = INT64_C(1);
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t9 = t7 == t8;
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    if (t9) goto bb4; else goto bb5;
-#line 24 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-bb2:
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t5 = h0_cert;
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    {
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    hero_handle_alive(t5, "the argument `a` of `ob_put`");
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "ob_put", NULL);
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    (void)ob_put(t5);
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    if (hero_handle_ended(t5, hero_life_0_0) && h0_cert == t5) h0_cert = hero_handle_dead();
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    }
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    goto bb1;
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-bb3:
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    goto bb1;
-#line 23 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-bb4:
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t10 = HERO_STR_LIT(hero_str_7034b02b);
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t11 = h0_cert;
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    hero_handle_alive(t11, "the argument `a` of `ob_refs`");
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    t12 = ob_refs(t11);
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    hero_print_str(t10);
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    hero_print_int(t12);
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    hero_print_end();
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    hero_lend_local_give(hero_lend_h0_cert);
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    return;
-#line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-bb5:
-#line 254 "deadhandlereadbycatafieldpastthefirst.c"
+#line 19
+    ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycatafieldpastthefirst.main", "cert"); HERO_NODEBUG ob *t1, *t5, *t11; HERO_NODEBUG int64_t t2, t3, t12; HERO_NODEBUG bool t4, t9; HERO_NODEBUG HeroStr t6, t10; HERO_NODEBUG int32_t t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = ob_new(); hero_handle_acquired(t1, "ob_put"); h0_cert = t1;
+#line 22
+    t2 = one(); t3 = INT64_C(1); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 24
+    t6 = HERO_STR_LIT(hero_str_1d67a62c); hero_lend_local_name(hero_lend_h0_cert, "ob_far_cell", "a"); t7 = ob_far_cell(&h0_cert); hero_handle_retained(h0_cert, "ob_put", 0); if (t7 == 1LL) { } else { } t8 = INT64_C(1); t9 = t7 == t8; if (t9) goto bb4; else goto bb5; bb2:
+#line 23
+    t5 = h0_cert; { hero_handle_alive(t5, "the argument `a` of `ob_put`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "ob_put", NULL); (void)ob_put(t5); if (hero_handle_ended(t5, hero_life_0_0) && h0_cert == t5) h0_cert = hero_handle_dead(); } goto bb1; bb3: goto bb1; bb4:
+#line 25
+    t10 = HERO_STR_LIT(hero_str_7034b02b); t11 = h0_cert; hero_handle_alive(t11, "the argument `a` of `ob_refs`"); t12 = ob_refs(t11); hero_print_str(t10); hero_print_int(t12); hero_print_end(); hero_lend_local_give(hero_lend_h0_cert); return; bb5:
+#line 182 "deadhandlereadbycatafieldpastthefirst.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }

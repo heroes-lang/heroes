@@ -144,16 +144,16 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsacallbackhandedthe
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_sn_value(sn * a0) { (void)(sn_value)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_sn_free_then(sn * a0, h_0fn_48ac9712 a1) { (void)(sn_free_then)(a0, a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_sn_park(sn * a0) { (void)(sn_park)(a0); }
-#line 26 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
+#line 26
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_sn_put(sn * a0) { (void)(sn_put)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 159 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 #pragma clang diagnostic pop
@@ -184,33 +184,11 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 
 #line 28 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(int64_t h0_offset) {
-#line 28 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.again"); sn * h1_m; HERO_NODEBUG sn *t1, *t2, *t3; HERO_NODEBUG int64_t t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 28 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-bb0:
-    t1 = sn_new();
-#line 29 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_acquired(t1, "sn_free|sn_free_then");
-#line 29 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    h1_m = t1;
-    t2 = h1_m;
-#line 30 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_alive(t2, "the argument `n` of `sn_park`");
-#line 30 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    (void)sn_park(t2);
-    t3 = h1_m;
-#line 31 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_alive(t3, "the argument `n` of `sn_value`");
-#line 31 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t4 = sn_value(t3);
-#line 31 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t5 = h0_offset;
-#line 31 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 31 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    return t6;
-#line 214 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(int64_t h0_offset) { hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.again"); sn * h1_m; HERO_NODEBUG sn *t1, *t2, *t3; HERO_NODEBUG int64_t t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = sn_new(); hero_handle_acquired(t1, "sn_free|sn_free_then"); h1_m = t1;
+    t2 = h1_m; hero_handle_alive(t2, "the argument `n` of `sn_park`"); (void)sn_park(t2);
+    t3 = h1_m; hero_handle_alive(t3, "the argument `n` of `sn_value`"); t4 = sn_value(t3); t5 = h0_offset; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow(); return t6;
+#line 192 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 }
 
 int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(int64_t h0_offset) {
@@ -219,44 +197,12 @@ int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_agai
 }
 
 #line 33 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(int64_t h0_offset) {
-#line 33 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.found"); sn * h1_r; int64_t h2_v; HERO_NODEBUG sn *t1, *t2, *t4; HERO_NODEBUG int64_t t3, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 33 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-bb0:
-    t1 = sn_find();
-#line 34 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_retained(t1, "sn_put", 0);
-#line 34 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    h1_r = t1;
-    t2 = h1_r;
-#line 35 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_alive(t2, "the argument `n` of `sn_value`");
-#line 35 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t3 = sn_value(t2);
-#line 35 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    h2_v = t3;
-    t4 = h1_r;
-#line 36 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    {
-#line 36 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_alive(t4, "the argument `n` of `sn_put`");
-#line 36 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t4, "sn_put", NULL);
-#line 36 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    (void)sn_put(t4);
-#line 36 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    if (hero_handle_ended(t4, hero_life_0_0) && h1_r == t4) h1_r = hero_handle_dead();
-#line 36 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    }
-    t5 = h2_v;
-#line 37 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t6 = h0_offset;
-#line 37 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 37 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    return t7;
-#line 260 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(int64_t h0_offset) { hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.found"); sn * h1_r; int64_t h2_v; HERO_NODEBUG sn *t1, *t2, *t4; HERO_NODEBUG int64_t t3, t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = sn_find(); hero_handle_retained(t1, "sn_put", 0); h1_r = t1;
+    t2 = h1_r; hero_handle_alive(t2, "the argument `n` of `sn_value`"); t3 = sn_value(t2); h2_v = t3;
+    t4 = h1_r; { hero_handle_alive(t4, "the argument `n` of `sn_put`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t4, "sn_put", NULL); (void)sn_put(t4); if (hero_handle_ended(t4, hero_life_0_0) && h1_r == t4) h1_r = hero_handle_dead(); }
+    t5 = h2_v; t6 = h0_offset; if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow(); return t7;
+#line 206 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 }
 
 int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(int64_t h0_offset) {
@@ -265,101 +211,15 @@ int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_foun
 }
 
 #line 39 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-void h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_main(void) {
-#line 39 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    sn * h0_a; sn * h1_b; sn * h2_c; HERO_NODEBUG sn *t1, *t3, *t6, *t8, *t10, *t11, *t13; HERO_NODEBUG HeroStr t2, t7, t12; HERO_NODEBUG h_0fn_48ac9712 t4, t14; HERO_NODEBUG int64_t t5, t9, t15; HERO_ENTRY_STOP; goto bb0;
-#line 39 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-bb0:
-    t1 = sn_new();
-#line 40 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_acquired(t1, "sn_free|sn_free_then");
-#line 40 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    h0_a = t1;
-    t2 = HERO_STR_LIT(hero_str_4e7b745b);
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t3 = h0_a;
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t4 = h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again;
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    {
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_alive(t3, "the argument `n` of `sn_free_then`");
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "sn_free_then", NULL);
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t5 = sn_free_then(t3, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t4));
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    }
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_print_str(t2);
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_print_int(t5);
-#line 41 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_print_end();
-    t6 = sn_unpark();
-#line 42 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_lent(t6);
-#line 42 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    h1_b = t6;
-    t7 = HERO_STR_LIT(hero_str_29afd6f);
-#line 43 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t8 = h1_b;
-#line 43 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_alive(t8, "the argument `n` of `sn_value`");
-#line 43 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t9 = sn_value(t8);
-#line 43 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_print_str(t7);
-#line 43 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_print_int(t9);
-#line 43 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_print_end();
-    t10 = h1_b;
-#line 44 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    {
-#line 44 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_alive(t10, "the argument `n` of `sn_free`");
-#line 44 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "sn_free", NULL);
-#line 44 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    (void)sn_free(t10);
-#line 44 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    if (hero_handle_ended(t10, hero_life_0_0) && h1_b == t10) h1_b = hero_handle_dead();
-#line 44 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    }
-    t11 = sn_new();
-#line 45 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_acquired(t11, "sn_free|sn_free_then");
-#line 45 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    h2_c = t11;
-    t12 = HERO_STR_LIT(hero_str_4779ef9d);
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t13 = h2_c;
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t14 = h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found;
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    {
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_handle_alive(t13, "the argument `n` of `sn_free_then`");
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t13, "sn_free_then", NULL);
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    t15 = sn_free_then(t13, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t14));
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    if (hero_handle_ended(t13, hero_life_0_0) && h2_c == t13) h2_c = hero_handle_dead();
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    }
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_print_str(t12);
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_print_int(t15);
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_print_end();
-#line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    return;
-#line 363 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+void h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_main(void) { sn * h0_a; sn * h1_b; sn * h2_c; HERO_NODEBUG sn *t1, *t3, *t6, *t8, *t10, *t11, *t13; HERO_NODEBUG HeroStr t2, t7, t12; HERO_NODEBUG h_0fn_48ac9712 t4, t14; HERO_NODEBUG int64_t t5, t9, t15; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = sn_new(); hero_handle_acquired(t1, "sn_free|sn_free_then"); h0_a = t1;
+    t2 = HERO_STR_LIT(hero_str_4e7b745b); t3 = h0_a; t4 = h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again; { hero_handle_alive(t3, "the argument `n` of `sn_free_then`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "sn_free_then", NULL); t5 = sn_free_then(t3, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t4)); if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); } hero_print_str(t2); hero_print_int(t5); hero_print_end();
+    t6 = sn_unpark(); hero_handle_lent(t6); h1_b = t6;
+    t7 = HERO_STR_LIT(hero_str_29afd6f); t8 = h1_b; hero_handle_alive(t8, "the argument `n` of `sn_value`"); t9 = sn_value(t8); hero_print_str(t7); hero_print_int(t9); hero_print_end();
+    t10 = h1_b; { hero_handle_alive(t10, "the argument `n` of `sn_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "sn_free", NULL); (void)sn_free(t10); if (hero_handle_ended(t10, hero_life_0_0) && h1_b == t10) h1_b = hero_handle_dead(); }
+    t11 = sn_new(); hero_handle_acquired(t11, "sn_free|sn_free_then"); h2_c = t11;
+    t12 = HERO_STR_LIT(hero_str_4779ef9d); t13 = h2_c; t14 = h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found; { hero_handle_alive(t13, "the argument `n` of `sn_free_then`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t13, "sn_free_then", NULL); t15 = sn_free_then(t13, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t14)); if (hero_handle_ended(t13, hero_life_0_0) && h2_c == t13) h2_c = hero_handle_dead(); } hero_print_str(t12); hero_print_int(t15); hero_print_end(); return;
+#line 223 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_S_eq(sn * const *a, sn * const *b) {
     return hero_handle_eq(*a, *b);

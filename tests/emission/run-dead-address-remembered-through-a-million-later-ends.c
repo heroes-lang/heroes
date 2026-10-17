@@ -138,11 +138,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_deadaddressrememberedthroug
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 148 "deadaddressrememberedthroughamillionlaterends.c"
 #pragma clang diagnostic pop
@@ -161,104 +161,20 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_deadaddressrememberedthroughamillionlaterends_main(void);
 
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-void h_deadaddressrememberedthroughamillionlaterends_main(void) {
-#line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; HERO_NODEBUG big *t1, *t2, *t3, *t8, *t9, *t16; HERO_NODEBUG int64_t t4, t5, t6, t10, t11, t12, t14, t17; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t13, t15; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-bb0:
-    t1 = big_new();
-#line 20 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_handle_acquired(t1, "big_free");
-#line 20 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    h0_target = t1;
-    t2 = h0_target;
-#line 21 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    h1_keep = t2;
-    t3 = h0_target;
-#line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    {
-#line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_handle_alive(t3, "the argument `n` of `big_free`");
-#line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "big_free", NULL);
-#line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    (void)big_free(t3);
-#line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_target == t3) h0_target = hero_handle_dead();
-#line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    }
-    t4 = INT64_C(0);
-#line 23 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    h2_i = t4;
-#line 23 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    goto bb1;
-#line 23 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-bb1:
-#line 25 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    t5 = h2_i;
-#line 25 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    t6 = INT64_C(1048575);
-#line 25 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    t7 = t5 < t6;
-#line 25 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    if (t7) goto bb2; else goto bb3;
-#line 25 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-bb2:
-    t8 = big_new();
-#line 26 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_handle_acquired(t8, "big_free");
-#line 26 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    h3_n = t8;
-    t9 = h3_n;
-#line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    {
-#line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_handle_alive(t9, "the argument `n` of `big_free`");
-#line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t9, "big_free", NULL);
-#line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    (void)big_free(t9);
-#line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    if (hero_handle_ended(t9, hero_life_0_0) && h3_n == t9) h3_n = hero_handle_dead();
-#line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    }
-    t10 = h2_i;
-#line 28 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    t11 = INT64_C(1);
-#line 28 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 28 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    h2_i = t12;
-#line 28 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    goto bb1;
-#line 28 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-bb3:
-#line 30 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    t13 = HERO_STR_LIT(hero_str_11c935bc);
-#line 30 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    t14 = h2_i;
-#line 30 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_print_str(t13);
-#line 30 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_print_int(t14);
-#line 30 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_print_end();
-    t15 = HERO_STR_LIT(hero_str_eb0c0ab);
-#line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    t16 = h1_keep;
-#line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_handle_alive(t16, "the argument `n` of `big_value`");
-#line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    t17 = big_value(t16);
-#line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_print_str(t15);
-#line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_print_int(t17);
-#line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    hero_print_end();
-#line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    return;
-#line 262 "deadaddressrememberedthroughamillionlaterends.c"
+void h_deadaddressrememberedthroughamillionlaterends_main(void) { big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; HERO_NODEBUG big *t1, *t2, *t3, *t8, *t9, *t16; HERO_NODEBUG int64_t t4, t5, t6, t10, t11, t12, t14, t17; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t13, t15; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = big_new(); hero_handle_acquired(t1, "big_free"); h0_target = t1;
+    t2 = h0_target; h1_keep = t2;
+    t3 = h0_target; { hero_handle_alive(t3, "the argument `n` of `big_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "big_free", NULL); (void)big_free(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_target == t3) h0_target = hero_handle_dead(); }
+    t4 = INT64_C(0); h2_i = t4; goto bb1; bb1:
+#line 25
+    t5 = h2_i; t6 = INT64_C(1048575); t7 = t5 < t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = big_new(); hero_handle_acquired(t8, "big_free"); h3_n = t8;
+    t9 = h3_n; { hero_handle_alive(t9, "the argument `n` of `big_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t9, "big_free", NULL); (void)big_free(t9); if (hero_handle_ended(t9, hero_life_0_0) && h3_n == t9) h3_n = hero_handle_dead(); }
+    t10 = h2_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h2_i = t12; goto bb1; bb3:
+#line 30
+    t13 = HERO_STR_LIT(hero_str_11c935bc); t14 = h2_i; hero_print_str(t13); hero_print_int(t14); hero_print_end();
+    t15 = HERO_STR_LIT(hero_str_eb0c0ab); t16 = h1_keep; hero_handle_alive(t16, "the argument `n` of `big_value`"); t17 = big_value(t16); hero_print_str(t15); hero_print_int(t17); hero_print_end(); return;
+#line 178 "deadaddressrememberedthroughamillionlaterends.c"
 }
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);

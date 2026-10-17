@@ -132,11 +132,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs451alocalcreadsaft
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 142 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
 #pragma clang diagnostic pop
@@ -155,46 +155,22 @@ void h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_main(
 
 #line 20 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
 int64_t h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_lend(void) {
-#line 20 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
+#line 20
 #define h0_n (*hero_lend_h0_n)
-#line 20 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.lend", "n"); HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 20 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 21 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    h0_n = t1;
-    hero_lend_local_name(hero_lend_h0_n, "cell_keep", "out");
-#line 22 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    (void)cell_keep((void *)&h0_n);
-    t2 = h0_n;
-#line 23 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    hero_lend_local_give(hero_lend_h0_n);
-#line 23 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    return t2;
-#line 176 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
+#line 20
+    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.lend", "n"); HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_n = t1;
+    hero_lend_local_name(hero_lend_h0_n, "cell_keep", "out"); (void)cell_keep((void *)&h0_n);
+    t2 = h0_n; hero_lend_local_give(hero_lend_h0_n); return t2;
+#line 166 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
 }
 #undef h0_n
 
 #line 25 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-void h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_main(void) {
-#line 25 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-bb0:
-    t1 = h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_lend();
-#line 26 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    hero_print_int(t1);
-#line 26 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    hero_print_end();
-    t2 = cell_read_later();
-#line 27 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    hero_print_int(t2);
-#line 27 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    hero_print_end();
-#line 27 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
-    return;
-#line 198 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
+void h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_lend(); hero_print_int(t1); hero_print_end();
+    t2 = cell_read_later(); hero_print_int(t2); hero_print_end(); return;
+#line 174 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

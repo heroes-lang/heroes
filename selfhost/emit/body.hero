@@ -102,7 +102,9 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     # THE ENTRY IS ONE PHYSICAL LINE UNDER THE FUNCTION'S OWN LINE (defect
     # 472, panel 200's R4): the thread guard, the prologue and the jump to the
     # first block, so a `step` into the function and a breakpoint on it stop
-    # on its `function` line and never on the generated C. One line, because
+    # on its `function` line and never on the generated C. Since panel 219's
+    # R1 it is written on the signature's physical line, which the same
+    # `.hero` line anchors (`emit/line_join.hero`). One line, because
     # `#line` anchors one line and C counts on from it: a second would claim
     # the author's next line for housekeeping (design.md §3.1), and a `#line`
     # before each grew the seed by 28% (the sitting's critic). The guard comes
@@ -223,15 +225,18 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     got = writer.finish(w)
     assert strings.holds(text: got, needle: "int64_t h_t_add(int64_t h0_a, int64_t h1_b) {")
 
-    # The entry, one line under the function's own (defect 472), its
-    # temporaries kept from the debugger (panel 213's R1).
+    # The entry on the function's own line (defect 472), its temporaries
+    # kept from the debugger (panel 213's R1), on its signature's physical
+    # line and the first block's label with it, and the body's lines on the
+    # next, each on the one before since panel 219's R1.
     assert strings.holds(
         text: got,
-        needle: "{\n#line 1 \"t.hero\"\n    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;\n"
+        needle: "#line 1 \"t.hero\"\nint64_t h_t_add(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:\n"
     )
-    assert strings.holds(text: got, needle: "bb0:")
-    assert strings.holds(text: got, needle: "    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();")
-    assert strings.holds(text: got, needle: "    return t3;")
+    assert strings.holds(
+        text: got,
+        needle: "\n    t1 = h0_a; t2 = h1_b; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;\n"
+    )
 
     # Deterministic: the same input prints the same bytes.
     again: writer.Writer @= writer.new_writer("t")

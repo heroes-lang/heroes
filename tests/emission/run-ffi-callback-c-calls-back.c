@@ -136,11 +136,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fficallbackccallsback_atexi
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 146 "fficallbackccallsback.c"
 #pragma clang diagnostic pop
@@ -165,19 +165,9 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 
 #line 24 "tests/golden/run/ffi-callback-c-calls-back.hero"
-void h_fficallbackccallsback_bye(void) {
-#line 24 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    hero_thread_guard("fficallbackccallsback.bye"); HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 24 "tests/golden/run/ffi-callback-c-calls-back.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_19e7c2);
-#line 25 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    hero_print_str(t1);
-#line 25 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    hero_print_end();
-#line 25 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    return;
-#line 181 "fficallbackccallsback.c"
+void h_fficallbackccallsback_bye(void) { hero_thread_guard("fficallbackccallsback.bye"); HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_19e7c2); hero_print_str(t1); hero_print_end(); return;
+#line 171 "fficallbackccallsback.c"
 }
 
 void h_0cb_fficallbackccallsback_bye(void) {
@@ -185,44 +175,12 @@ void h_0cb_fficallbackccallsback_bye(void) {
 }
 
 #line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
-void h_fficallbackccallsback_main(void) {
-#line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    HERO_NODEBUG HeroStr t1, t6; HERO_NODEBUG h_0fn_294870dd t2; HERO_NODEBUG int32_t t3, t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_43560e4d);
-#line 28 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    hero_print_str(t1);
-#line 28 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    hero_print_end();
-#line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    t2 = h_fficallbackccallsback_bye;
-#line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    t3 = atexit((h_0fn_294870dd)hero_callback_of((void (*)(void))t2));
-#line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    t4 = INT64_C(0);
-#line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    t5 = t3 != t4;
-#line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
-bb1:
-#line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    return;
-#line 32 "tests/golden/run/ffi-callback-c-calls-back.hero"
-bb2:
-    t6 = HERO_STR_LIT(hero_str_7bcd5f24);
-#line 33 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    hero_print_str(t6);
-#line 33 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    hero_print_end();
-#line 33 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    goto bb1;
-#line 33 "tests/golden/run/ffi-callback-c-calls-back.hero"
-bb3:
-#line 33 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    goto bb1;
-#line 226 "fficallbackccallsback.c"
+void h_fficallbackccallsback_main(void) { HERO_NODEBUG HeroStr t1, t6; HERO_NODEBUG h_0fn_294870dd t2; HERO_NODEBUG int32_t t3, t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
+#line 32
+    t2 = h_fficallbackccallsback_bye; t3 = atexit((h_0fn_294870dd)hero_callback_of((void (*)(void))t2)); t4 = INT64_C(0); t5 = t3 != t4; if (t5) goto bb2; else goto bb3; bb1: return; bb2:
+    t6 = HERO_STR_LIT(hero_str_7bcd5f24); hero_print_str(t6); hero_print_end(); goto bb1; bb3: goto bb1;
+#line 184 "fficallbackccallsback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

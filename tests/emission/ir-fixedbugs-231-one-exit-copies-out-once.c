@@ -87,11 +87,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 97 "fixedbugs231oneexitcopiesoutonce.c"
 #pragma clang diagnostic pop
@@ -114,75 +114,13 @@ h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_next(h_fixedbugs231oneexitcopi
 void h_fixedbugs231oneexitcopiesoutonce_main(void);
 
 #line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_known(HeroStr h0_word) {
-#line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    HERO_NODEBUG h_0opt_f87774a h1_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t6, t10, t11, t13, t14; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t4, t5, t7, t8, t9, t12; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb0:
-    t1 = h0_word;
-#line 15 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t2 = HERO_STR_LIT(hero_str_78);
-#line 15 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t3 = hero_str_eq(t1, t2);
-#line 15 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 15 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb1:
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t7 = h0_word;
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t8 = HERO_STR_LIT(hero_str_21);
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t9 = hero_str_concat(t7, t8);
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t12 = h2_own2;
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h2_own2 = t9;
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_decref(t12);
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t9);
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t10 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t9};
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t13 = h3_own3;
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h3_own3 = t10;
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t13);
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h1_ret0 = t10;
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb4;
-#line 17 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb2:
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t4 = HERO_STR_LIT(hero_str_d93bba2);
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t5 = h0_word;
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t4);
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t5);
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t14 = h4_own4;
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h4_own4 = t6;
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t14);
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h1_ret0 = t6;
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb4;
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb3:
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb1;
-#line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb4:
-#line 186 "fixedbugs231oneexitcopiesoutonce.c"
+h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_known(HeroStr h0_word) { HERO_NODEBUG h_0opt_f87774a h1_ret0 = {0}, h3_own3 = {0}, h4_own4 = {0}, t6, t10, t11, t13, t14; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t4, t5, t7, t8, t9, t12; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_word; t2 = HERO_STR_LIT(hero_str_78); t3 = hero_str_eq(t1, t2); if (t3) goto bb2; else goto bb3; bb1:
+#line 17
+    t7 = h0_word; t8 = HERO_STR_LIT(hero_str_21); t9 = hero_str_concat(t7, t8); t12 = h2_own2; h2_own2 = t9; hero_str_decref(t12); hero_str_incref(t9); t10 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t9}; t13 = h3_own3; h3_own3 = t10; h_0opt_f87774a_release(&t13); h1_ret0 = t10; goto bb4; bb2:
+#line 16
+    t4 = HERO_STR_LIT(hero_str_d93bba2); t5 = h0_word; hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t14 = h4_own4; h4_own4 = t6; h_0opt_f87774a_release(&t14); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
+#line 124 "fixedbugs231oneexitcopiesoutonce.c"
     t11 = h1_ret0;
     h_0opt_f87774a_retain(&t11);
     hero_str_release_at(&h2_own2);
@@ -192,139 +130,17 @@ bb4:
 }
 
 #line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_next(h_fixedbugs231oneexitcopiesoutonce_Reader *ph0_r) {
-#line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    HeroStr h1_word = {0}; HERO_NODEBUG h_0opt_f87774a h2_f0 = {0}, h3_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t15, t16, t20, t22, t23, t25, t26, t28, t29, t30, t31, t32; HERO_NODEBUG int64_t t1, t3, t9, t11, t12, t13, t17, t18; HERO_NODEBUG HeroArrayHeader *t2, *t8; HERO_NODEBUG bool t4, t19; HERO_NODEBUG HeroStr t5, t6, t10, t14, t24, t27; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb0:
-    t1 = (*ph0_r).f_pos;
-#line 20 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t2 = (*ph0_r).f_words;
-#line 20 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
-#line 20 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t4 = t1 >= t3;
-#line 20 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 20 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb1:
-#line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t8 = (*ph0_r).f_words;
-#line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t9 = (*ph0_r).f_pos;
-#line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
-#line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t27 = h1_word;
-#line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t10);
-#line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h1_word = t10;
-#line 22 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_decref(t27);
-    t11 = (*ph0_r).f_pos;
-#line 23 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t12 = INT64_C(1);
-#line 23 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 23 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    (*ph0_r).f_pos = t13;
-    t14 = h1_word;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t15 = h_fixedbugs231oneexitcopiesoutonce_known(t14);
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t28 = h4_own4;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h4_own4 = t15;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t28);
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t29 = h2_f0;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_retain(&t15);
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h2_f0 = t15;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t29);
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t16 = h2_f0;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t17 = t16.tag;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t18 = INT64_C(0);
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t19 = t17 == t18;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    if (t19) goto bb4; else goto bb5;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb2:
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t5 = HERO_STR_LIT(hero_str_1aab3b);
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t6 = HERO_STR_LIT(hero_str_48e8a9b3);
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t5);
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t6);
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t7 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t30 = h5_own5;
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h5_own5 = t7;
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t30);
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h3_ret0 = t7;
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb6;
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb3:
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb1;
-#line 21 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb4:
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t23 = h2_f0;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t24 = t23.as.ok;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t24);
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t25 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t24};
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t31 = h6_own6;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h6_own6 = t25;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t31);
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h3_ret0 = t25;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb6;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb5:
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t20 = h2_f0;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t21 = t20.as.err;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_failure_retain(&t21);
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t21};
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t32 = h7_own7;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h7_own7 = t22;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t32);
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h3_ret0 = t22;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb6;
-#line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb6:
-#line 328 "fixedbugs231oneexitcopiesoutonce.c"
+h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_next(h_fixedbugs231oneexitcopiesoutonce_Reader *ph0_r) { HeroStr h1_word = {0}; HERO_NODEBUG h_0opt_f87774a h2_f0 = {0}, h3_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t15, t16, t20, t22, t23, t25, t26, t28, t29, t30, t31, t32; HERO_NODEBUG int64_t t1, t3, t9, t11, t12, t13, t17, t18; HERO_NODEBUG HeroArrayHeader *t2, *t8; HERO_NODEBUG bool t4, t19; HERO_NODEBUG HeroStr t5, t6, t10, t14, t24, t27; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_r).f_pos; t2 = (*ph0_r).f_words; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = t1 >= t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 22
+    t8 = (*ph0_r).f_words; t9 = (*ph0_r).f_pos; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]); t27 = h1_word; hero_str_incref(t10); h1_word = t10; hero_str_decref(t27);
+    t11 = (*ph0_r).f_pos; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); (*ph0_r).f_pos = t13;
+    t14 = h1_word; t15 = h_fixedbugs231oneexitcopiesoutonce_known(t14); t28 = h4_own4; h4_own4 = t15; h_0opt_f87774a_release(&t28); t29 = h2_f0; h_0opt_f87774a_retain(&t15); h2_f0 = t15; h_0opt_f87774a_release(&t29); t16 = h2_f0; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb4; else goto bb5; bb2:
+#line 21
+    t5 = HERO_STR_LIT(hero_str_1aab3b); t6 = HERO_STR_LIT(hero_str_48e8a9b3); hero_str_incref(t5); hero_str_incref(t6); t7 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}}; t30 = h5_own5; h5_own5 = t7; h_0opt_f87774a_release(&t30); h3_ret0 = t7; goto bb6; bb3: goto bb1; bb4:
+#line 24
+    t23 = h2_f0; t24 = t23.as.ok; hero_str_incref(t24); t25 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t24}; t31 = h6_own6; h6_own6 = t25; h_0opt_f87774a_release(&t31); h3_ret0 = t25; goto bb6; bb5: t20 = h2_f0; t21 = t20.as.err; hero_failure_retain(&t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t21}; t32 = h7_own7; h7_own7 = t22; h_0opt_f87774a_release(&t32); h3_ret0 = t22; goto bb6; bb6:
+#line 144 "fixedbugs231oneexitcopiesoutonce.c"
     t26 = h3_ret0;
     h_0opt_f87774a_retain(&t26);
     hero_str_release_at(&h1_word);
@@ -337,238 +153,10 @@ bb6:
 }
 
 #line 26 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-void h_fixedbugs231oneexitcopiesoutonce_main(void) {
-#line 26 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_fixedbugs231oneexitcopiesoutonce_Reader h0_r = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t6, t7, t11, t15, t16, t20, t24, t25, t29, t37, t38, t41, t42, t45, t46; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_r1 = {0}, h6_r2 = {0}, t1, t2, t12, t13, t14, t21, t22, t23, t30, t31, t32, t39, t40, t43, t44, t47, t48; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t3, *t34; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader h8_own8 = {0}, t5, t35, t36; HERO_NODEBUG int64_t t4, t8, t9, t17, t18, t26, t27, t33; HERO_NODEBUG bool t10, t19, t28; HERO_ENTRY_STOP; goto bb0;
-#line 26 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_61);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t2 = HERO_STR_LIT(hero_str_78);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t3 = hero_array_new(&hero_desc_str, 2);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_array_push_owned(&t3, &t1);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_array_push_owned(&t3, &t2);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t34 = h7_own7;
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h7_own7 = t3;
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_array_decref(t34);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t4 = INT64_C(0);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_array_incref(t3);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t5 = (h_fixedbugs231oneexitcopiesoutonce_Reader){.f_words = t3, .f_pos = t4};
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t35 = h8_own8;
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h8_own8 = t5;
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_fixedbugs231oneexitcopiesoutonce_Reader_release(&t35);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t36 = h0_r;
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_fixedbugs231oneexitcopiesoutonce_Reader_retain(&t5);
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h0_r = t5;
-#line 27 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_fixedbugs231oneexitcopiesoutonce_Reader_release(&t36);
-    t6 = h_fixedbugs231oneexitcopiesoutonce_next(&h0_r);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t37 = h9_own9;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h9_own9 = t6;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t37);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t38 = h1_f0;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_retain(&t6);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h1_f0 = t6;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t38);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t7 = h1_f0;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t8 = t7.tag;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t9 = INT64_C(0);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t10 = t8 == t9;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    if (t10) goto bb1; else goto bb2;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb1:
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t11 = h1_f0;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t12 = t11.as.ok;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t39 = h2_r0;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t12);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h2_r0 = t12;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_decref(t39);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb3;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb2:
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t13 = HERO_STR_LIT(hero_str_2d);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t40 = h2_r0;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t13);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h2_r0 = t13;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_decref(t40);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb3;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb3:
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t14 = h2_r0;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t15 = h_fixedbugs231oneexitcopiesoutonce_next(&h0_r);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t41 = h10_own10;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h10_own10 = t15;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t41);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t42 = h3_f1;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_retain(&t15);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h3_f1 = t15;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t42);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t16 = h3_f1;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t17 = t16.tag;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t18 = INT64_C(0);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t19 = t17 == t18;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    if (t19) goto bb4; else goto bb5;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb4:
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t20 = h3_f1;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t21 = t20.as.ok;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t43 = h4_r1;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t21);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h4_r1 = t21;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_decref(t43);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb6;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb5:
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t22 = HERO_STR_LIT(hero_str_2d);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t44 = h4_r1;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t22);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h4_r1 = t22;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_decref(t44);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb6;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb6:
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t23 = h4_r1;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t24 = h_fixedbugs231oneexitcopiesoutonce_next(&h0_r);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t45 = h11_own11;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h11_own11 = t24;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t45);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t46 = h5_f2;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_retain(&t24);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h5_f2 = t24;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_0opt_f87774a_release(&t46);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t25 = h5_f2;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t26 = t25.tag;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t27 = INT64_C(0);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t28 = t26 == t27;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    if (t28) goto bb7; else goto bb8;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb7:
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t29 = h5_f2;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t30 = t29.as.ok;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t47 = h6_r2;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t30);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h6_r2 = t30;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_decref(t47);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb9;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb8:
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t31 = HERO_STR_LIT(hero_str_2d);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t48 = h6_r2;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_incref(t31);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h6_r2 = t31;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_str_decref(t48);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    goto bb9;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-bb9:
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t32 = h6_r2;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    t33 = h0_r.f_pos;
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_print_str(t14);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_print_str(t23);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_print_str(t32);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_print_int(t33);
-#line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    hero_print_end();
-#line 572 "fixedbugs231oneexitcopiesoutonce.c"
+void h_fixedbugs231oneexitcopiesoutonce_main(void) { h_fixedbugs231oneexitcopiesoutonce_Reader h0_r = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t6, t7, t11, t15, t16, t20, t24, t25, t29, t37, t38, t41, t42, t45, t46; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_r1 = {0}, h6_r2 = {0}, t1, t2, t12, t13, t14, t21, t22, t23, t30, t31, t32, t39, t40, t43, t44, t47, t48; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t3, *t34; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader h8_own8 = {0}, t5, t35, t36; HERO_NODEBUG int64_t t4, t8, t9, t17, t18, t26, t27, t33; HERO_NODEBUG bool t10, t19, t28; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_61); t2 = HERO_STR_LIT(hero_str_78); t3 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t34 = h7_own7; h7_own7 = t3; hero_array_decref(t34); t4 = INT64_C(0); hero_array_incref(t3); t5 = (h_fixedbugs231oneexitcopiesoutonce_Reader){.f_words = t3, .f_pos = t4}; t35 = h8_own8; h8_own8 = t5; h_fixedbugs231oneexitcopiesoutonce_Reader_release(&t35); t36 = h0_r; h_fixedbugs231oneexitcopiesoutonce_Reader_retain(&t5); h0_r = t5; h_fixedbugs231oneexitcopiesoutonce_Reader_release(&t36);
+    t6 = h_fixedbugs231oneexitcopiesoutonce_next(&h0_r); t37 = h9_own9; h9_own9 = t6; h_0opt_f87774a_release(&t37); t38 = h1_f0; h_0opt_f87774a_retain(&t6); h1_f0 = t6; h_0opt_f87774a_release(&t38); t7 = h1_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb1; else goto bb2; bb1: t11 = h1_f0; t12 = t11.as.ok; t39 = h2_r0; hero_str_incref(t12); h2_r0 = t12; hero_str_decref(t39); goto bb3; bb2: t13 = HERO_STR_LIT(hero_str_2d); t40 = h2_r0; hero_str_incref(t13); h2_r0 = t13; hero_str_decref(t40); goto bb3; bb3: t14 = h2_r0; t15 = h_fixedbugs231oneexitcopiesoutonce_next(&h0_r); t41 = h10_own10; h10_own10 = t15; h_0opt_f87774a_release(&t41); t42 = h3_f1; h_0opt_f87774a_retain(&t15); h3_f1 = t15; h_0opt_f87774a_release(&t42); t16 = h3_f1; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb4; else goto bb5; bb4: t20 = h3_f1; t21 = t20.as.ok; t43 = h4_r1; hero_str_incref(t21); h4_r1 = t21; hero_str_decref(t43); goto bb6; bb5: t22 = HERO_STR_LIT(hero_str_2d); t44 = h4_r1; hero_str_incref(t22); h4_r1 = t22; hero_str_decref(t44); goto bb6; bb6: t23 = h4_r1; t24 = h_fixedbugs231oneexitcopiesoutonce_next(&h0_r); t45 = h11_own11; h11_own11 = t24; h_0opt_f87774a_release(&t45); t46 = h5_f2; h_0opt_f87774a_retain(&t24); h5_f2 = t24; h_0opt_f87774a_release(&t46); t25 = h5_f2; t26 = t25.tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto bb7; else goto bb8; bb7: t29 = h5_f2; t30 = t29.as.ok; t47 = h6_r2; hero_str_incref(t30); h6_r2 = t30; hero_str_decref(t47); goto bb9; bb8: t31 = HERO_STR_LIT(hero_str_2d); t48 = h6_r2; hero_str_incref(t31); h6_r2 = t31; hero_str_decref(t48); goto bb9; bb9: t32 = h6_r2; t33 = h0_r.f_pos; hero_print_str(t14); hero_print_str(t23); hero_print_str(t32); hero_print_int(t33); hero_print_end();
+#line 160 "fixedbugs231oneexitcopiesoutonce.c"
     h_fixedbugs231oneexitcopiesoutonce_Reader_release(hero_slot_escape(&h0_r));
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);

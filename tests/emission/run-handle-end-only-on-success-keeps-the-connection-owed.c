@@ -138,11 +138,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handleendonlyonsuccesskeeps
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 148 "handleendonlyonsuccesskeepstheconnectionowed.c"
 #pragma clang diagnostic pop
@@ -161,87 +161,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_handleendonlyonsuccesskeepstheconnectionowed_main(void);
 
 #line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-void h_handleendonlyonsuccesskeepstheconnectionowed_main(void) {
-#line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db *t1, *t2, *t4, *t5; HERO_NODEBUG int32_t t3, t6, t8, t10; HERO_NODEBUG HeroStr t7, t9; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-bb0:
-    t1 = db_open();
-#line 13 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_acquired(t1, "db_close");
-#line 13 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    h0_d = t1;
-    t2 = h0_d;
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    {
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_alive(t2, "the argument `d` of `db_close`");
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL);
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    t3 = db_close(t2);
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    if (t3 == 0LL) {
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    if (hero_handle_ended(t2, hero_life_0_0) && h0_d == t2) h0_d = hero_handle_dead();
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    } else {
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_kept(t2, hero_life_0_0);
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    }
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    }
-#line 14 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    h1_first = t3;
-    t4 = h0_d;
-#line 15 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_alive(t4, "the argument `d` of `db_finalize`");
-#line 15 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    (void)db_finalize(t4);
-    t5 = h0_d;
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    {
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_alive(t5, "the argument `d` of `db_close`");
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "db_close", NULL);
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    t6 = db_close(t5);
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    if (t6 == 0LL) {
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    if (hero_handle_ended(t5, hero_life_0_0) && h0_d == t5) h0_d = hero_handle_dead();
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    } else {
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_handle_kept(t5, hero_life_0_0);
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    }
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    }
-#line 16 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    h2_second = t6;
-    t7 = HERO_STR_LIT(hero_str_32f019d1);
-#line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    t8 = h1_first;
-#line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    t9 = HERO_STR_LIT(hero_str_449e1190);
-#line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    t10 = h2_second;
-#line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_print_str(t7);
-#line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_print_int(t8);
-#line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_print_str(t9);
-#line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_print_int(t10);
-#line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    hero_print_end();
-#line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    return;
-#line 245 "handleendonlyonsuccesskeepstheconnectionowed.c"
+void h_handleendonlyonsuccesskeepstheconnectionowed_main(void) { db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db *t1, *t2, *t4, *t5; HERO_NODEBUG int32_t t3, t6, t8, t10; HERO_NODEBUG HeroStr t7, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = db_open(); hero_handle_acquired(t1, "db_close"); h0_d = t1;
+    t2 = h0_d; { hero_handle_alive(t2, "the argument `d` of `db_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL); t3 = db_close(t2); if (t3 == 0LL) { if (hero_handle_ended(t2, hero_life_0_0) && h0_d == t2) h0_d = hero_handle_dead(); } else { hero_handle_kept(t2, hero_life_0_0); } } h1_first = t3;
+    t4 = h0_d; hero_handle_alive(t4, "the argument `d` of `db_finalize`"); (void)db_finalize(t4);
+    t5 = h0_d; { hero_handle_alive(t5, "the argument `d` of `db_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "db_close", NULL); t6 = db_close(t5); if (t6 == 0LL) { if (hero_handle_ended(t5, hero_life_0_0) && h0_d == t5) h0_d = hero_handle_dead(); } else { hero_handle_kept(t5, hero_life_0_0); } } h2_second = t6;
+    t7 = HERO_STR_LIT(hero_str_32f019d1); t8 = h1_first; t9 = HERO_STR_LIT(hero_str_449e1190); t10 = h2_second; hero_print_str(t7); hero_print_int(t8); hero_print_str(t9); hero_print_int(t10); hero_print_end(); return;
+#line 171 "handleendonlyonsuccesskeepstheconnectionowed.c"
 }
 HERO_TU_LOCAL bool h_handleendonlyonsuccesskeepstheconnectionowed_Db_eq(db * const *a, db * const *b) {
     return hero_handle_eq(*a, *b);

@@ -86,11 +86,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 96 "fixedbugs382aconstantofstringsisonestaticblock.c"
 #pragma clang diagnostic pop
@@ -109,57 +109,15 @@ void h_fixedbugs382aconstantofstringsisonestaticblock_main(void);
 
 #if HERO_STATIC_CONSTANTS
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofstringsisonestaticblock_WORDS_8, HeroStr, &hero_desc_str, 7, HERO_STR_LIT(hero_str_6bb5e50a), HERO_STR_LIT(hero_str_0), HERO_STR_LIT(hero_str_76c1f302), HERO_STR_LIT(hero_str_dc8fefe), HERO_STR_LIT(hero_str_eb4ac31), HERO_STR_LIT(hero_str_6bb5e50a), HERO_STR_LIT(hero_str_6b221074));
-#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-HeroArrayHeader * h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(void) {
-#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofstringsisonestaticblock_WORDS_8);
-#line 118 "fixedbugs382aconstantofstringsisonestaticblock.c"
+HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofstringsisonestaticblock_WORDS_8, HeroStr, &hero_desc_str, 7, HERO_STR_LIT(hero_str_6bb5e50a), HERO_STR_LIT(hero_str_0), HERO_STR_LIT(hero_str_76c1f302), HERO_STR_LIT(hero_str_dc8fefe), HERO_STR_LIT(hero_str_eb4ac31), HERO_STR_LIT(hero_str_6bb5e50a), HERO_STR_LIT(hero_str_6b221074)); HeroArrayHeader * h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofstringsisonestaticblock_WORDS_8);
+#line 114 "fixedbugs382aconstantofstringsisonestaticblock.c"
 }
 #else
 
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-HeroArrayHeader * h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(void) {
-#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t8, *t9; HERO_NODEBUG HeroStr t1, t2, t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t2 = HERO_STR_LIT(hero_str_0);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t3 = HERO_STR_LIT(hero_str_76c1f302);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t4 = HERO_STR_LIT(hero_str_dc8fefe);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t5 = HERO_STR_LIT(hero_str_eb4ac31);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t6 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t7 = HERO_STR_LIT(hero_str_6b221074);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t8 = hero_array_new(&hero_desc_str, 7);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_push_owned(&t8, &t1);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_push_owned(&t8, &t2);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_push_owned(&t8, &t3);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_push_owned(&t8, &t4);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_push_owned(&t8, &t5);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_push_owned(&t8, &t6);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_push_owned(&t8, &t7);
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t9 = h0_own0;
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h0_own0 = t8;
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t9);
-#line 163 "fixedbugs382aconstantofstringsisonestaticblock.c"
+HeroArrayHeader * h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t8, *t9; HERO_NODEBUG HeroStr t1, t2, t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_6bb5e50a); t2 = HERO_STR_LIT(hero_str_0); t3 = HERO_STR_LIT(hero_str_76c1f302); t4 = HERO_STR_LIT(hero_str_dc8fefe); t5 = HERO_STR_LIT(hero_str_eb4ac31); t6 = HERO_STR_LIT(hero_str_6bb5e50a); t7 = HERO_STR_LIT(hero_str_6b221074); t8 = hero_array_new(&hero_desc_str, 7); hero_array_push_owned(&t8, &t1); hero_array_push_owned(&t8, &t2); hero_array_push_owned(&t8, &t3); hero_array_push_owned(&t8, &t4); hero_array_push_owned(&t8, &t5); hero_array_push_owned(&t8, &t6); hero_array_push_owned(&t8, &t7); t9 = h0_own0; h0_own0 = t8; hero_array_decref(t9);
+#line 121 "fixedbugs382aconstantofstringsisonestaticblock.c"
     hero_array_incref(t8);
     hero_array_release_at(&h0_own0);
     return t8;
@@ -167,357 +125,23 @@ bb0:
 #endif
 
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-void h_fixedbugs382aconstantofstringsisonestaticblock_main(void) {
-#line 11 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    int64_t h0_letters; int64_t h1_at; HeroArrayHeader * h2_xs = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *t7, *t19, *t22, *t27, *t30, *t34, *t37, *t38, *t41, *t44, *t49, *t52, *t55, *t56, *t58, *t64, *t68, *t73, *t75, *t76, *t77, *t78, *t79, *t80, *t82, *t83, *t85, *t86, *t88, *t89, *t90, *t91, *t92, *t93, *t95, *t96; HERO_NODEBUG HeroStr h9_own9 = {0}, h12_own12 = {0}, h15_own15 = {0}, h21_own21 = {0}, t11, t18, t21, t24, t26, t29, t32, t35, t36, t39, t40, t43, t46, t47, t48, t51, t54, t60, t62, t65, t66, t67, t70, t72, t81, t84, t87, t94; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t9, t10, t12, t13, t14, t15, t16, t17, t20, t23, t25, t28, t31, t42, t45, t50, t53, t59, t69, t71, t74; HERO_NODEBUG bool t5, t33, t57; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h0_letters = t1;
-    t2 = INT64_C(0);
-#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h1_at = t2;
-#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    goto bb1;
-#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-bb1:
-#line 15 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t3 = h1_at;
-#line 15 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t4 = INT64_C(700);
-#line 15 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t5 = t3 < t4;
-#line 15 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 15 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-bb2:
-    t6 = h0_letters;
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t7 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t75 = h3_own3;
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h3_own3 = t7;
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t75);
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t8 = h1_at;
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t9 = INT64_C(7);
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    if (t9 == 0) hero_panic("division by zero");
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    if (t8 == INT64_MIN && t9 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t10 = t8 % t9;
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t10]);
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t12 = hero_str_len(t11);
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    if (__builtin_add_overflow(t6, t12, &t13)) hero_panic_overflow();
-#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h0_letters = t13;
-    t14 = h1_at;
-#line 17 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t15 = INT64_C(1);
-#line 17 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 17 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h1_at = t16;
-#line 17 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    goto bb1;
-#line 17 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-bb3:
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t17 = h0_letters;
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t18 = HERO_STR_LIT(hero_str_20);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t19 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t76 = h4_own4;
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h4_own4 = t19;
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t76);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t21 = HERO_STR_LIT(hero_str_20);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t22 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t77 = h5_own5;
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h5_own5 = t22;
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t77);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t23 = INT64_C(1);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t22 + 1))[t23]);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t25 = hero_str_len(t24);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t26 = HERO_STR_LIT(hero_str_20);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t27 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t78 = h6_own6;
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h6_own6 = t27;
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t78);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t28 = INT64_C(0);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t27 + 1))[t28]);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t30 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t79 = h7_own7;
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h7_own7 = t30;
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t79);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t31 = INT64_C(5);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t30 + 1))[t31]);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t33 = hero_str_eq(t29, t32);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_int(t17);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t18);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_int(t20);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t21);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_int(t25);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t26);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_bool(t33);
-#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_end();
-    t34 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t80 = h8_own8;
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h8_own8 = t34;
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t80);
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t35 = HERO_STR_LIT(hero_str_7c);
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t36 = hero_str_join(t34, t35);
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t81 = h9_own9;
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h9_own9 = t36;
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_str_decref(t81);
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t36);
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_end();
-    t37 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t82 = h10_own10;
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h10_own10 = t37;
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t82);
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t38 = hero_array_sort(t37);
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t83 = h11_own11;
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h11_own11 = t38;
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t83);
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t39 = HERO_STR_LIT(hero_str_2c);
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t40 = hero_str_join(t38, t39);
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t84 = h12_own12;
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h12_own12 = t40;
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_str_decref(t84);
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t40);
-#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_end();
-    t41 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t85 = h13_own13;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h13_own13 = t41;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t85);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t42 = INT64_C(2);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t41 + 1))[t42]);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t44 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t86 = h14_own14;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h14_own14 = t44;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t86);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t45 = INT64_C(4);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? ((void)hero_array_at(t44, t45), hero_unreachable()) : (void)0), (void)(t44->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t44 + 1))[t45]);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t47 = hero_str_concat(t43, t46);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t87 = h15_own15;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h15_own15 = t47;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_str_decref(t87);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t48 = HERO_STR_LIT(hero_str_20);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t49 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t88 = h16_own16;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h16_own16 = t49;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t88);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t50 = INT64_C(4);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t51 = ((void)((t49 == NULL || t50 < 0 || t50 >= t49->len) ? ((void)hero_array_at(t49, t50), hero_unreachable()) : (void)0), (void)(t49->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t49 + 1))[t50]);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t52 = hero_str_chars(t51);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t89 = h17_own17;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h17_own17 = t52;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t89);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t53 = ((void)(t52 == NULL ? ((void)hero_array_len(t52), hero_unreachable()) : (void)0), t52->len);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t54 = HERO_STR_LIT(hero_str_20);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t55 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t90 = h18_own18;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h18_own18 = t55;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t90);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t56 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t91 = h19_own19;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h19_own19 = t56;
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t91);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t57 = hero_array_eq(t55, t56);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t47);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t48);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_int(t53);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t54);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_bool(t57);
-#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_end();
-    t58 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t92 = h20_own20;
-#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h20_own20 = t58;
-#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t92);
-#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t93 = h2_xs;
-#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_incref(t58);
-#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h2_xs = t58;
-#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t93);
-    t59 = INT64_C(1);
-#line 24 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t60 = HERO_STR_LIT(hero_str_318606e5);
-#line 24 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_str_incref(t60);
-#line 24 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_set(&(h2_xs), t59, &t60);
-    t62 = HERO_STR_LIT(hero_str_473ed093);
-#line 25 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_push_owned(&h2_xs, &t62);
-    t64 = h2_xs;
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t65 = HERO_STR_LIT(hero_str_20);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t66 = hero_str_join(t64, t65);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t94 = h21_own21;
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h21_own21 = t66;
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_str_decref(t94);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t67 = HERO_STR_LIT(hero_str_20);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t68 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t95 = h22_own22;
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h22_own22 = t68;
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t95);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t69 = INT64_C(1);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? ((void)hero_array_at(t68, t69), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t68 + 1))[t69]);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t71 = hero_str_len(t70);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t72 = HERO_STR_LIT(hero_str_20);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t73 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t96 = h23_own23;
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    h23_own23 = t73;
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_array_decref(t96);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t66);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t67);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_int(t71);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_str(t72);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_int(t74);
-#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
-    hero_print_end();
-#line 521 "fixedbugs382aconstantofstringsisonestaticblock.c"
+void h_fixedbugs382aconstantofstringsisonestaticblock_main(void) { int64_t h0_letters; int64_t h1_at; HeroArrayHeader * h2_xs = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *t7, *t19, *t22, *t27, *t30, *t34, *t37, *t38, *t41, *t44, *t49, *t52, *t55, *t56, *t58, *t64, *t68, *t73, *t75, *t76, *t77, *t78, *t79, *t80, *t82, *t83, *t85, *t86, *t88, *t89, *t90, *t91, *t92, *t93, *t95, *t96; HERO_NODEBUG HeroStr h9_own9 = {0}, h12_own12 = {0}, h15_own15 = {0}, h21_own21 = {0}, t11, t18, t21, t24, t26, t29, t32, t35, t36, t39, t40, t43, t46, t47, t48, t51, t54, t60, t62, t65, t66, t67, t70, t72, t81, t84, t87, t94; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t9, t10, t12, t13, t14, t15, t16, t17, t20, t23, t25, t28, t31, t42, t45, t50, t53, t59, t69, t71, t74; HERO_NODEBUG bool t5, t33, t57; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_letters = t1;
+    t2 = INT64_C(0); h1_at = t2; goto bb1; bb1:
+#line 15
+    t3 = h1_at; t4 = INT64_C(700); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h0_letters; t7 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t75 = h3_own3; h3_own3 = t7; hero_array_decref(t75); t8 = h1_at; t9 = INT64_C(7); if (t9 == 0) hero_panic("division by zero"); if (t8 == INT64_MIN && t9 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t10 = t8 % t9; t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t10]); t12 = hero_str_len(t11); if (__builtin_add_overflow(t6, t12, &t13)) hero_panic_overflow(); h0_letters = t13;
+    t14 = h1_at; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h1_at = t16; goto bb1; bb3:
+#line 19
+    t17 = h0_letters; t18 = HERO_STR_LIT(hero_str_20); t19 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t76 = h4_own4; h4_own4 = t19; hero_array_decref(t76); t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len); t21 = HERO_STR_LIT(hero_str_20); t22 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t77 = h5_own5; h5_own5 = t22; hero_array_decref(t77); t23 = INT64_C(1); t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t22 + 1))[t23]); t25 = hero_str_len(t24); t26 = HERO_STR_LIT(hero_str_20); t27 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t78 = h6_own6; h6_own6 = t27; hero_array_decref(t78); t28 = INT64_C(0); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t27 + 1))[t28]); t30 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t79 = h7_own7; h7_own7 = t30; hero_array_decref(t79); t31 = INT64_C(5); t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t30 + 1))[t31]); t33 = hero_str_eq(t29, t32); hero_print_int(t17); hero_print_str(t18); hero_print_int(t20); hero_print_str(t21); hero_print_int(t25); hero_print_str(t26); hero_print_bool(t33); hero_print_end();
+    t34 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t80 = h8_own8; h8_own8 = t34; hero_array_decref(t80); t35 = HERO_STR_LIT(hero_str_7c); t36 = hero_str_join(t34, t35); t81 = h9_own9; h9_own9 = t36; hero_str_decref(t81); hero_print_str(t36); hero_print_end();
+    t37 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t82 = h10_own10; h10_own10 = t37; hero_array_decref(t82); t38 = hero_array_sort(t37); t83 = h11_own11; h11_own11 = t38; hero_array_decref(t83); t39 = HERO_STR_LIT(hero_str_2c); t40 = hero_str_join(t38, t39); t84 = h12_own12; h12_own12 = t40; hero_str_decref(t84); hero_print_str(t40); hero_print_end();
+    t41 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t85 = h13_own13; h13_own13 = t41; hero_array_decref(t85); t42 = INT64_C(2); t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t41 + 1))[t42]); t44 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t86 = h14_own14; h14_own14 = t44; hero_array_decref(t86); t45 = INT64_C(4); t46 = ((void)((t44 == NULL || t45 < 0 || t45 >= t44->len) ? ((void)hero_array_at(t44, t45), hero_unreachable()) : (void)0), (void)(t44->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t44 + 1))[t45]); t47 = hero_str_concat(t43, t46); t87 = h15_own15; h15_own15 = t47; hero_str_decref(t87); t48 = HERO_STR_LIT(hero_str_20); t49 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t88 = h16_own16; h16_own16 = t49; hero_array_decref(t88); t50 = INT64_C(4); t51 = ((void)((t49 == NULL || t50 < 0 || t50 >= t49->len) ? ((void)hero_array_at(t49, t50), hero_unreachable()) : (void)0), (void)(t49->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t49 + 1))[t50]); t52 = hero_str_chars(t51); t89 = h17_own17; h17_own17 = t52; hero_array_decref(t89); t53 = ((void)(t52 == NULL ? ((void)hero_array_len(t52), hero_unreachable()) : (void)0), t52->len); t54 = HERO_STR_LIT(hero_str_20); t55 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t90 = h18_own18; h18_own18 = t55; hero_array_decref(t90); t56 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t91 = h19_own19; h19_own19 = t56; hero_array_decref(t91); t57 = hero_array_eq(t55, t56); hero_print_str(t47); hero_print_str(t48); hero_print_int(t53); hero_print_str(t54); hero_print_bool(t57); hero_print_end();
+    t58 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t92 = h20_own20; h20_own20 = t58; hero_array_decref(t92); t93 = h2_xs; hero_array_incref(t58); h2_xs = t58; hero_array_decref(t93);
+    t59 = INT64_C(1); t60 = HERO_STR_LIT(hero_str_318606e5); hero_str_incref(t60); hero_array_set(&(h2_xs), t59, &t60);
+    t62 = HERO_STR_LIT(hero_str_473ed093); hero_array_push_owned(&h2_xs, &t62);
+    t64 = h2_xs; t65 = HERO_STR_LIT(hero_str_20); t66 = hero_str_join(t64, t65); t94 = h21_own21; h21_own21 = t66; hero_str_decref(t94); t67 = HERO_STR_LIT(hero_str_20); t68 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t95 = h22_own22; h22_own22 = t68; hero_array_decref(t95); t69 = INT64_C(1); t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? ((void)hero_array_at(t68, t69), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t68 + 1))[t69]); t71 = hero_str_len(t70); t72 = HERO_STR_LIT(hero_str_20); t73 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(); t96 = h23_own23; h23_own23 = t73; hero_array_decref(t96); t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len); hero_print_str(t66); hero_print_str(t67); hero_print_int(t71); hero_print_str(t72); hero_print_int(t74); hero_print_end();
+#line 145 "fixedbugs382aconstantofstringsisonestaticblock.c"
     hero_array_release_at(&h2_xs);
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);

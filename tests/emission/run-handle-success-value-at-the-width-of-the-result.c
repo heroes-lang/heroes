@@ -140,11 +140,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handlesuccessvalueatthewidt
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 150 "handlesuccessvalueatthewidthoftheresult.c"
 #pragma clang diagnostic pop
@@ -163,91 +163,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_handlesuccessvalueatthewidthoftheresult_main(void);
 
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-void h_handlesuccessvalueatthewidthoftheresult_main(void) {
-#line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    ob * h0_a; ob * h1_b; uint64_t h2_total; bool h3_done; HERO_NODEBUG ob *t1, *t2, *t3, *t5; HERO_NODEBUG uint64_t t4, t8, t9; HERO_NODEBUG bool t6, t10, t12; HERO_NODEBUG HeroStr t7, t11; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-bb0:
-    t1 = ob_new();
-#line 14 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_handle_acquired(t1, "ob_put|ob_release_all|ob_try_put");
-#line 14 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    h0_a = t1;
-    t2 = ob_new();
-#line 15 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_handle_acquired(t2, "ob_put|ob_release_all|ob_try_put");
-#line 15 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    h1_b = t2;
-    t3 = h0_a;
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    {
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_handle_alive(t3, "the argument `o` of `ob_release_all`");
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "ob_release_all", NULL);
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    t4 = ob_release_all(t3);
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    if (t4 == 18446744073709551615ULL) {
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    } else {
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_handle_kept(t3, hero_life_0_0);
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    }
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    }
-#line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    h2_total = t4;
-    t5 = h1_b;
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    {
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_handle_alive(t5, "the argument `o` of `ob_try_put`");
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "ob_try_put", NULL);
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    t6 = ob_try_put(t5);
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    if (t6 == 1) {
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    if (hero_handle_ended(t5, hero_life_0_0) && h1_b == t5) h1_b = hero_handle_dead();
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    } else {
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_handle_kept(t5, hero_life_0_0);
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    }
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    }
-#line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    h3_done = t6;
-    t7 = HERO_STR_LIT(hero_str_3294dee);
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    t8 = h2_total;
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    t9 = UINT64_C(18446744073709551615);
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    t10 = t8 == t9;
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    t11 = HERO_STR_LIT(hero_str_20);
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    t12 = h3_done;
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_print_str(t7);
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_print_bool(t10);
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_print_str(t11);
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_print_bool(t12);
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    return;
-#line 251 "handlesuccessvalueatthewidthoftheresult.c"
+void h_handlesuccessvalueatthewidthoftheresult_main(void) { ob * h0_a; ob * h1_b; uint64_t h2_total; bool h3_done; HERO_NODEBUG ob *t1, *t2, *t3, *t5; HERO_NODEBUG uint64_t t4, t8, t9; HERO_NODEBUG bool t6, t10, t12; HERO_NODEBUG HeroStr t7, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = ob_new(); hero_handle_acquired(t1, "ob_put|ob_release_all|ob_try_put"); h0_a = t1;
+    t2 = ob_new(); hero_handle_acquired(t2, "ob_put|ob_release_all|ob_try_put"); h1_b = t2;
+    t3 = h0_a; { hero_handle_alive(t3, "the argument `o` of `ob_release_all`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "ob_release_all", NULL); t4 = ob_release_all(t3); if (t4 == 18446744073709551615ULL) { if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); } else { hero_handle_kept(t3, hero_life_0_0); } } h2_total = t4;
+    t5 = h1_b; { hero_handle_alive(t5, "the argument `o` of `ob_try_put`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "ob_try_put", NULL); t6 = ob_try_put(t5); if (t6 == 1) { if (hero_handle_ended(t5, hero_life_0_0) && h1_b == t5) h1_b = hero_handle_dead(); } else { hero_handle_kept(t5, hero_life_0_0); } } h3_done = t6;
+    t7 = HERO_STR_LIT(hero_str_3294dee); t8 = h2_total; t9 = UINT64_C(18446744073709551615); t10 = t8 == t9; t11 = HERO_STR_LIT(hero_str_20); t12 = h3_done; hero_print_str(t7); hero_print_bool(t10); hero_print_str(t11); hero_print_bool(t12); hero_print_end(); return;
+#line 173 "handlesuccessvalueatthewidthoftheresult.c"
 }
 HERO_TU_LOCAL bool h_handlesuccessvalueatthewidthoftheresult_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

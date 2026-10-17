@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "adversarialoverflowaborts.c"
 #pragma clang diagnostic pop
@@ -95,34 +95,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_adversarialoverflowaborts_main(void);
 
 #line 12 "tests/golden/run/adversarial-overflow-aborts.hero"
-void h_adversarialoverflowaborts_main(void) {
-#line 12 "tests/golden/run/adversarial-overflow-aborts.hero"
-    int64_t h0_big; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/run/adversarial-overflow-aborts.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 13 "tests/golden/run/adversarial-overflow-aborts.hero"
-    hero_print_int(t1);
-#line 13 "tests/golden/run/adversarial-overflow-aborts.hero"
-    hero_print_end();
-    t2 = INT64_C(9223372036854775807);
-#line 14 "tests/golden/run/adversarial-overflow-aborts.hero"
-    h0_big = t2;
-    t3 = h0_big;
-#line 15 "tests/golden/run/adversarial-overflow-aborts.hero"
-    t4 = INT64_C(1);
-#line 15 "tests/golden/run/adversarial-overflow-aborts.hero"
-    if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
-#line 15 "tests/golden/run/adversarial-overflow-aborts.hero"
-    h0_big = t5;
-    t6 = h0_big;
-#line 16 "tests/golden/run/adversarial-overflow-aborts.hero"
-    hero_print_int(t6);
-#line 16 "tests/golden/run/adversarial-overflow-aborts.hero"
-    hero_print_end();
-#line 16 "tests/golden/run/adversarial-overflow-aborts.hero"
-    return;
-#line 126 "adversarialoverflowaborts.c"
+void h_adversarialoverflowaborts_main(void) { int64_t h0_big; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); hero_print_int(t1); hero_print_end();
+    t2 = INT64_C(9223372036854775807); h0_big = t2;
+    t3 = h0_big; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow(); h0_big = t5;
+    t6 = h0_big; hero_print_int(t6); hero_print_end(); return;
+#line 104 "adversarialoverflowaborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -89,11 +89,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 99 "adversarialtrycopiesout.c"
 #pragma clang diagnostic pop
@@ -117,67 +117,13 @@ h_0opt_e201354 h_adversarialtrycopiesout_parsed(HeroStr h0_s);
 h_0opt_e201354 h_adversarialtrycopiesout_advance_over(h_adversarialtrycopiesout_Reader *ph0_r, HeroStr h1_s);
 
 #line 10 "tests/golden/ir/adversarial-try-copies-out.hero"
-h_0opt_e201354 h_adversarialtrycopiesout_parsed(HeroStr h0_s) {
-#line 10 "tests/golden/ir/adversarial-try-copies-out.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t7, t10, t11, t12, t13; HERO_NODEBUG HeroStr t1, t5, t6, t8; HERO_NODEBUG int64_t t2, t3, t9; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb0:
-    t1 = h0_s;
-#line 11 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t2 = hero_str_len(t1);
-#line 11 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t3 = INT64_C(0);
-#line 11 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t4 = t2 == t3;
-#line 11 "tests/golden/ir/adversarial-try-copies-out.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 11 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb1:
-#line 13 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t8 = h0_s;
-#line 13 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t9 = hero_str_len(t8);
-#line 13 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9};
-#line 13 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t12 = h2_own2;
-#line 13 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h2_own2 = t10;
-#line 13 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h_0opt_e201354_release(&t12);
-#line 13 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h1_ret0 = t10;
-#line 13 "tests/golden/ir/adversarial-try-copies-out.hero"
-    goto bb4;
-#line 13 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb2:
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t5 = HERO_STR_LIT(hero_str_7ba188c6);
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t6 = HERO_STR_LIT(hero_str_3f4c217a);
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    hero_str_incref(t5);
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    hero_str_incref(t6);
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t7 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t13 = h3_own3;
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h3_own3 = t7;
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h_0opt_e201354_release(&t13);
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h1_ret0 = t7;
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    goto bb4;
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb3:
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-    goto bb1;
-#line 12 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb4:
-#line 181 "adversarialtrycopiesout.c"
+h_0opt_e201354 h_adversarialtrycopiesout_parsed(HeroStr h0_s) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t7, t10, t11, t12, t13; HERO_NODEBUG HeroStr t1, t5, t6, t8; HERO_NODEBUG int64_t t2, t3, t9; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; t2 = hero_str_len(t1); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 13
+    t8 = h0_s; t9 = hero_str_len(t8); t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9}; t12 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t12); h1_ret0 = t10; goto bb4; bb2:
+#line 12
+    t5 = HERO_STR_LIT(hero_str_7ba188c6); t6 = HERO_STR_LIT(hero_str_3f4c217a); hero_str_incref(t5); hero_str_incref(t6); t7 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}}; t13 = h3_own3; h3_own3 = t7; h_0opt_e201354_release(&t13); h1_ret0 = t7; goto bb4; bb3: goto bb1; bb4:
+#line 127 "adversarialtrycopiesout.c"
     t11 = h1_ret0;
     h_0opt_e201354_retain(&t11);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -186,120 +132,18 @@ bb4:
 }
 
 #line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
-h_0opt_e201354 h_adversarialtrycopiesout_advance_over(h_adversarialtrycopiesout_Reader *ph0_r, HeroStr h1_s) {
-#line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
-    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t2, t3, t7, t9, t10, t16, t21, t22, t23, t24, t25, t26, t27; int64_t h3_n; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t4, t5, t11, t12, t13, t15, t17, t18, t19, t20; HERO_NODEBUG bool t6, t14; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb0:
-    t1 = h1_s;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t2 = h_adversarialtrycopiesout_parsed(t1);
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t23 = h5_own5;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h5_own5 = t2;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h_0opt_e201354_release(&t23);
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t24 = h2_f0;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h_0opt_e201354_retain(&t2);
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h2_f0 = t2;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h_0opt_e201354_release(&t24);
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t3 = h2_f0;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t4 = t3.tag;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t5 = INT64_C(0);
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t6 = t4 == t5;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    if (t6) goto bb1; else goto bb2;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb1:
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t10 = h2_f0;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t11 = t10.as.ok;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h3_n = t11;
-#line 18 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t12 = h3_n;
-#line 18 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t13 = INT64_C(0);
-#line 18 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t14 = t12 == t13;
-#line 18 "tests/golden/ir/adversarial-try-copies-out.hero"
-    if (t14) goto bb4; else goto bb5;
-#line 18 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb2:
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t7 = h2_f0;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t8 = t7.as.err;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    hero_failure_retain(&t8);
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t25 = h6_own6;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h6_own6 = t9;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h_0opt_e201354_release(&t25);
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h4_ret0 = t9;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-    goto bb6;
-#line 16 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb3:
-#line 20 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t17 = (*ph0_r).f_pos;
-#line 20 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t18 = h3_n;
-#line 20 "tests/golden/ir/adversarial-try-copies-out.hero"
-    if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 20 "tests/golden/ir/adversarial-try-copies-out.hero"
-    (*ph0_r).f_pos = t19;
-    t20 = h3_n;
-#line 21 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t21 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t20};
-#line 21 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t26 = h7_own7;
-#line 21 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h7_own7 = t21;
-#line 21 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h_0opt_e201354_release(&t26);
-#line 21 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h4_ret0 = t21;
-#line 21 "tests/golden/ir/adversarial-try-copies-out.hero"
-    goto bb6;
-#line 21 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb4:
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t15 = INT64_C(0);
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t15};
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-    t27 = h8_own8;
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h8_own8 = t16;
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h_0opt_e201354_release(&t27);
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-    h4_ret0 = t16;
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-    goto bb6;
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb5:
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-    goto bb3;
-#line 19 "tests/golden/ir/adversarial-try-copies-out.hero"
-bb6:
-#line 303 "adversarialtrycopiesout.c"
+h_0opt_e201354 h_adversarialtrycopiesout_advance_over(h_adversarialtrycopiesout_Reader *ph0_r, HeroStr h1_s) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t2, t3, t7, t9, t10, t16, t21, t22, t23, t24, t25, t26, t27; int64_t h3_n; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t4, t5, t11, t12, t13, t15, t17, t18, t19, t20; HERO_NODEBUG bool t6, t14; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_s; t2 = h_adversarialtrycopiesout_parsed(t1); t23 = h5_own5; h5_own5 = t2; h_0opt_e201354_release(&t23); t24 = h2_f0; h_0opt_e201354_retain(&t2); h2_f0 = t2; h_0opt_e201354_release(&t24); t3 = h2_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t10 = h2_f0; t11 = t10.as.ok; h3_n = t11;
+#line 18
+    t12 = h3_n; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb4; else goto bb5; bb2:
+#line 16
+    t7 = h2_f0; t8 = t7.as.err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8}; t25 = h6_own6; h6_own6 = t9; h_0opt_e201354_release(&t25); h4_ret0 = t9; goto bb6; bb3:
+#line 20
+    t17 = (*ph0_r).f_pos; t18 = h3_n; if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow(); (*ph0_r).f_pos = t19;
+    t20 = h3_n; t21 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t20}; t26 = h7_own7; h7_own7 = t21; h_0opt_e201354_release(&t26); h4_ret0 = t21; goto bb6; bb4:
+#line 19
+    t15 = INT64_C(0); t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t15}; t27 = h8_own8; h8_own8 = t16; h_0opt_e201354_release(&t27); h4_ret0 = t16; goto bb6; bb5: goto bb3; bb6:
+#line 147 "adversarialtrycopiesout.c"
     t22 = h4_ret0;
     h_0opt_e201354_retain(&t22);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));

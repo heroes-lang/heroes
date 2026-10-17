@@ -77,130 +77,128 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((D0 *)0)->i) == 1 && sizeof(((D0 *)0)->i) == sizeof(int32_t) && (_Generic(((D0 *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D0 i");
 _Static_assert(_Generic(&((D0 *)0)->f, float *: 1, default: 0) && sizeof(((D0 *)0)->f) == sizeof(float), "heroes-ffi-field D0 f");
 _Static_assert(__builtin_classify_type(((D0 *)0)->v) == 1 && sizeof(((D0 *)0)->v) == sizeof(int64_t) && (_Generic(((D0 *)0)->v, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D0 v");
-#line 21 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 21
 _Static_assert(_Generic(&((D1 *)0)->inner, D0 *: 1, default: 0) && sizeof(((D1 *)0)->inner) == sizeof(D0), "heroes-ffi-field D1 inner");
 _Static_assert(__builtin_classify_type(((D1 *)0)->n) == 1 && sizeof(((D1 *)0)->n) == sizeof(int32_t) && (_Generic(((D1 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D1 n");
-#line 24 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 24
 _Static_assert(_Generic(&((D2 *)0)->inner, D1 *: 1, default: 0) && sizeof(((D2 *)0)->inner) == sizeof(D1), "heroes-ffi-field D2 inner");
 _Static_assert(__builtin_classify_type(((D2 *)0)->n) == 1 && sizeof(((D2 *)0)->n) == sizeof(int32_t) && (_Generic(((D2 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D2 n");
-#line 27 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 27
 _Static_assert(_Generic(&((D3 *)0)->inner, D2 *: 1, default: 0) && sizeof(((D3 *)0)->inner) == sizeof(D2), "heroes-ffi-field D3 inner");
 _Static_assert(__builtin_classify_type(((D3 *)0)->n) == 1 && sizeof(((D3 *)0)->n) == sizeof(int32_t) && (_Generic(((D3 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D3 n");
-#line 30 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 30
 _Static_assert(_Generic(&((D4 *)0)->inner, D3 *: 1, default: 0) && sizeof(((D4 *)0)->inner) == sizeof(D3), "heroes-ffi-field D4 inner");
 _Static_assert(__builtin_classify_type(((D4 *)0)->n) == 1 && sizeof(((D4 *)0)->n) == sizeof(int32_t) && (_Generic(((D4 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D4 n");
-#line 33 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 33
 _Static_assert(_Generic(&((D5 *)0)->inner, D4 *: 1, default: 0) && sizeof(((D5 *)0)->inner) == sizeof(D4), "heroes-ffi-field D5 inner");
 _Static_assert(__builtin_classify_type(((D5 *)0)->n) == 1 && sizeof(((D5 *)0)->n) == sizeof(int32_t) && (_Generic(((D5 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D5 n");
-#line 36 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 36
 _Static_assert(_Generic(&((D6 *)0)->inner, D5 *: 1, default: 0) && sizeof(((D6 *)0)->inner) == sizeof(D5), "heroes-ffi-field D6 inner");
 _Static_assert(__builtin_classify_type(((D6 *)0)->n) == 1 && sizeof(((D6 *)0)->n) == sizeof(int32_t) && (_Generic(((D6 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D6 n");
-#line 39 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 39
 _Static_assert(_Generic(&((D7 *)0)->inner, D6 *: 1, default: 0) && sizeof(((D7 *)0)->inner) == sizeof(D6), "heroes-ffi-field D7 inner");
 _Static_assert(__builtin_classify_type(((D7 *)0)->n) == 1 && sizeof(((D7 *)0)->n) == sizeof(int32_t) && (_Generic(((D7 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D7 n");
-#line 42 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 42
 _Static_assert(_Generic(&((D8 *)0)->inner, D7 *: 1, default: 0) && sizeof(((D8 *)0)->inner) == sizeof(D7), "heroes-ffi-field D8 inner");
 _Static_assert(__builtin_classify_type(((D8 *)0)->n) == 1 && sizeof(((D8 *)0)->n) == sizeof(int32_t) && (_Generic(((D8 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D8 n");
-#line 45 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 45
 _Static_assert(_Generic(&((D9 *)0)->inner, D8 *: 1, default: 0) && sizeof(((D9 *)0)->inner) == sizeof(D8), "heroes-ffi-field D9 inner");
 _Static_assert(__builtin_classify_type(((D9 *)0)->n) == 1 && sizeof(((D9 *)0)->n) == sizeof(int32_t) && (_Generic(((D9 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D9 n");
-#line 48 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 48
 _Static_assert(_Generic(&((D10 *)0)->inner, D9 *: 1, default: 0) && sizeof(((D10 *)0)->inner) == sizeof(D9), "heroes-ffi-field D10 inner");
 _Static_assert(__builtin_classify_type(((D10 *)0)->n) == 1 && sizeof(((D10 *)0)->n) == sizeof(int32_t) && (_Generic(((D10 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D10 n");
-#line 51 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 51
 _Static_assert(_Generic(&((D11 *)0)->inner, D10 *: 1, default: 0) && sizeof(((D11 *)0)->inner) == sizeof(D10), "heroes-ffi-field D11 inner");
 _Static_assert(__builtin_classify_type(((D11 *)0)->n) == 1 && sizeof(((D11 *)0)->n) == sizeof(int32_t) && (_Generic(((D11 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D11 n");
-#line 54 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 54
 _Static_assert(_Generic(&((D12 *)0)->inner, D11 *: 1, default: 0) && sizeof(((D12 *)0)->inner) == sizeof(D11), "heroes-ffi-field D12 inner");
 _Static_assert(__builtin_classify_type(((D12 *)0)->n) == 1 && sizeof(((D12 *)0)->n) == sizeof(int32_t) && (_Generic(((D12 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D12 n");
-#line 57 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 57
 _Static_assert(_Generic(&((D13 *)0)->inner, D12 *: 1, default: 0) && sizeof(((D13 *)0)->inner) == sizeof(D12), "heroes-ffi-field D13 inner");
 _Static_assert(__builtin_classify_type(((D13 *)0)->n) == 1 && sizeof(((D13 *)0)->n) == sizeof(int32_t) && (_Generic(((D13 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D13 n");
-#line 60 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 60
 _Static_assert(_Generic(&((D14 *)0)->inner, D13 *: 1, default: 0) && sizeof(((D14 *)0)->inner) == sizeof(D13), "heroes-ffi-field D14 inner");
 _Static_assert(__builtin_classify_type(((D14 *)0)->n) == 1 && sizeof(((D14 *)0)->n) == sizeof(int32_t) && (_Generic(((D14 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D14 n");
-#line 63 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 63
 _Static_assert(_Generic(&((D15 *)0)->inner, D14 *: 1, default: 0) && sizeof(((D15 *)0)->inner) == sizeof(D14), "heroes-ffi-field D15 inner");
 _Static_assert(__builtin_classify_type(((D15 *)0)->n) == 1 && sizeof(((D15 *)0)->n) == sizeof(int32_t) && (_Generic(((D15 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D15 n");
-#line 66 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 66
 _Static_assert(_Generic(&((D16 *)0)->inner, D15 *: 1, default: 0) && sizeof(((D16 *)0)->inner) == sizeof(D15), "heroes-ffi-field D16 inner");
 _Static_assert(__builtin_classify_type(((D16 *)0)->n) == 1 && sizeof(((D16 *)0)->n) == sizeof(int32_t) && (_Generic(((D16 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D16 n");
-#line 69 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 69
 _Static_assert(_Generic(&((D17 *)0)->inner, D16 *: 1, default: 0) && sizeof(((D17 *)0)->inner) == sizeof(D16), "heroes-ffi-field D17 inner");
 _Static_assert(__builtin_classify_type(((D17 *)0)->n) == 1 && sizeof(((D17 *)0)->n) == sizeof(int32_t) && (_Generic(((D17 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D17 n");
-#line 72 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 72
 _Static_assert(_Generic(&((D18 *)0)->inner, D17 *: 1, default: 0) && sizeof(((D18 *)0)->inner) == sizeof(D17), "heroes-ffi-field D18 inner");
 _Static_assert(__builtin_classify_type(((D18 *)0)->n) == 1 && sizeof(((D18 *)0)->n) == sizeof(int32_t) && (_Generic(((D18 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D18 n");
-#line 75 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 75
 _Static_assert(_Generic(&((D19 *)0)->inner, D18 *: 1, default: 0) && sizeof(((D19 *)0)->inner) == sizeof(D18), "heroes-ffi-field D19 inner");
 _Static_assert(__builtin_classify_type(((D19 *)0)->n) == 1 && sizeof(((D19 *)0)->n) == sizeof(int32_t) && (_Generic(((D19 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D19 n");
-#line 78 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 78
 _Static_assert(_Generic(&((D20 *)0)->inner, D19 *: 1, default: 0) && sizeof(((D20 *)0)->inner) == sizeof(D19), "heroes-ffi-field D20 inner");
 _Static_assert(__builtin_classify_type(((D20 *)0)->n) == 1 && sizeof(((D20 *)0)->n) == sizeof(int32_t) && (_Generic(((D20 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D20 n");
-#line 81 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 81
 _Static_assert(_Generic(&((D21 *)0)->inner, D20 *: 1, default: 0) && sizeof(((D21 *)0)->inner) == sizeof(D20), "heroes-ffi-field D21 inner");
 _Static_assert(__builtin_classify_type(((D21 *)0)->n) == 1 && sizeof(((D21 *)0)->n) == sizeof(int32_t) && (_Generic(((D21 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D21 n");
-#line 84 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 84
 _Static_assert(_Generic(&((D22 *)0)->inner, D21 *: 1, default: 0) && sizeof(((D22 *)0)->inner) == sizeof(D21), "heroes-ffi-field D22 inner");
 _Static_assert(__builtin_classify_type(((D22 *)0)->n) == 1 && sizeof(((D22 *)0)->n) == sizeof(int32_t) && (_Generic(((D22 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D22 n");
-#line 87 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 87
 _Static_assert(_Generic(&((D23 *)0)->inner, D22 *: 1, default: 0) && sizeof(((D23 *)0)->inner) == sizeof(D22), "heroes-ffi-field D23 inner");
 _Static_assert(__builtin_classify_type(((D23 *)0)->n) == 1 && sizeof(((D23 *)0)->n) == sizeof(int32_t) && (_Generic(((D23 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D23 n");
-#line 90 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 90
 _Static_assert(_Generic(&((D24 *)0)->inner, D23 *: 1, default: 0) && sizeof(((D24 *)0)->inner) == sizeof(D23), "heroes-ffi-field D24 inner");
 _Static_assert(__builtin_classify_type(((D24 *)0)->n) == 1 && sizeof(((D24 *)0)->n) == sizeof(int32_t) && (_Generic(((D24 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D24 n");
-#line 93 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 93
 _Static_assert(_Generic(&((D25 *)0)->inner, D24 *: 1, default: 0) && sizeof(((D25 *)0)->inner) == sizeof(D24), "heroes-ffi-field D25 inner");
 _Static_assert(__builtin_classify_type(((D25 *)0)->n) == 1 && sizeof(((D25 *)0)->n) == sizeof(int32_t) && (_Generic(((D25 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D25 n");
-#line 96 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 96
 _Static_assert(_Generic(&((D26 *)0)->inner, D25 *: 1, default: 0) && sizeof(((D26 *)0)->inner) == sizeof(D25), "heroes-ffi-field D26 inner");
 _Static_assert(__builtin_classify_type(((D26 *)0)->n) == 1 && sizeof(((D26 *)0)->n) == sizeof(int32_t) && (_Generic(((D26 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D26 n");
-#line 99 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 99
 _Static_assert(_Generic(&((D27 *)0)->inner, D26 *: 1, default: 0) && sizeof(((D27 *)0)->inner) == sizeof(D26), "heroes-ffi-field D27 inner");
 _Static_assert(__builtin_classify_type(((D27 *)0)->n) == 1 && sizeof(((D27 *)0)->n) == sizeof(int32_t) && (_Generic(((D27 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D27 n");
-#line 102 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 102
 _Static_assert(_Generic(&((D28 *)0)->inner, D27 *: 1, default: 0) && sizeof(((D28 *)0)->inner) == sizeof(D27), "heroes-ffi-field D28 inner");
 _Static_assert(__builtin_classify_type(((D28 *)0)->n) == 1 && sizeof(((D28 *)0)->n) == sizeof(int32_t) && (_Generic(((D28 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D28 n");
-#line 105 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 105
 _Static_assert(_Generic(&((D29 *)0)->inner, D28 *: 1, default: 0) && sizeof(((D29 *)0)->inner) == sizeof(D28), "heroes-ffi-field D29 inner");
 _Static_assert(__builtin_classify_type(((D29 *)0)->n) == 1 && sizeof(((D29 *)0)->n) == sizeof(int32_t) && (_Generic(((D29 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D29 n");
-#line 108 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 108
 _Static_assert(_Generic(&((D30 *)0)->inner, D29 *: 1, default: 0) && sizeof(((D30 *)0)->inner) == sizeof(D29), "heroes-ffi-field D30 inner");
 _Static_assert(__builtin_classify_type(((D30 *)0)->n) == 1 && sizeof(((D30 *)0)->n) == sizeof(int32_t) && (_Generic(((D30 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D30 n");
-#line 111 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 111
 _Static_assert(_Generic(&((D31 *)0)->inner, D30 *: 1, default: 0) && sizeof(((D31 *)0)->inner) == sizeof(D30), "heroes-ffi-field D31 inner");
 _Static_assert(__builtin_classify_type(((D31 *)0)->n) == 1 && sizeof(((D31 *)0)->n) == sizeof(int32_t) && (_Generic(((D31 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D31 n");
-#line 114 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 114
 _Static_assert(_Generic(&((D32 *)0)->inner, D31 *: 1, default: 0) && sizeof(((D32 *)0)->inner) == sizeof(D31), "heroes-ffi-field D32 inner");
 _Static_assert(__builtin_classify_type(((D32 *)0)->n) == 1 && sizeof(((D32 *)0)->n) == sizeof(int32_t) && (_Generic(((D32 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D32 n");
-#line 117 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 117
 _Static_assert(_Generic(&((D33 *)0)->inner, D32 *: 1, default: 0) && sizeof(((D33 *)0)->inner) == sizeof(D32), "heroes-ffi-field D33 inner");
 _Static_assert(__builtin_classify_type(((D33 *)0)->n) == 1 && sizeof(((D33 *)0)->n) == sizeof(int32_t) && (_Generic(((D33 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D33 n");
-#line 120 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 120
 _Static_assert(_Generic(&((D34 *)0)->inner, D33 *: 1, default: 0) && sizeof(((D34 *)0)->inner) == sizeof(D33), "heroes-ffi-field D34 inner");
 _Static_assert(__builtin_classify_type(((D34 *)0)->n) == 1 && sizeof(((D34 *)0)->n) == sizeof(int32_t) && (_Generic(((D34 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D34 n");
-#line 123 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 123
 _Static_assert(_Generic(&((D35 *)0)->inner, D34 *: 1, default: 0) && sizeof(((D35 *)0)->inner) == sizeof(D34), "heroes-ffi-field D35 inner");
 _Static_assert(__builtin_classify_type(((D35 *)0)->n) == 1 && sizeof(((D35 *)0)->n) == sizeof(int32_t) && (_Generic(((D35 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D35 n");
-#line 126 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 126
 _Static_assert(_Generic(&((D36 *)0)->inner, D35 *: 1, default: 0) && sizeof(((D36 *)0)->inner) == sizeof(D35), "heroes-ffi-field D36 inner");
 _Static_assert(__builtin_classify_type(((D36 *)0)->n) == 1 && sizeof(((D36 *)0)->n) == sizeof(int32_t) && (_Generic(((D36 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D36 n");
-#line 129 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 129
 _Static_assert(_Generic(&((D37 *)0)->inner, D36 *: 1, default: 0) && sizeof(((D37 *)0)->inner) == sizeof(D36), "heroes-ffi-field D37 inner");
 _Static_assert(__builtin_classify_type(((D37 *)0)->n) == 1 && sizeof(((D37 *)0)->n) == sizeof(int32_t) && (_Generic(((D37 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D37 n");
-#line 132 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 132
 _Static_assert(_Generic(&((D38 *)0)->inner, D37 *: 1, default: 0) && sizeof(((D38 *)0)->inner) == sizeof(D37), "heroes-ffi-field D38 inner");
 _Static_assert(__builtin_classify_type(((D38 *)0)->n) == 1 && sizeof(((D38 *)0)->n) == sizeof(int32_t) && (_Generic(((D38 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D38 n");
-#line 135 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 135
 _Static_assert(_Generic(&((D39 *)0)->inner, D38 *: 1, default: 0) && sizeof(((D39 *)0)->inner) == sizeof(D38), "heroes-ffi-field D39 inner");
 _Static_assert(__builtin_classify_type(((D39 *)0)->n) == 1 && sizeof(((D39 *)0)->n) == sizeof(int32_t) && (_Generic(((D39 *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field D39 n");
-#line 138 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 138
 _Static_assert(_Generic(&((W *)0)->deep, D39 *: 1, default: 0) && sizeof(((W *)0)->deep) == sizeof(D39), "heroes-ffi-field W deep");
-_Static_assert(sizeof(W) - __builtin_offsetof(W, pair) != 0, "heroes-ffi-flex W pair");
-#line 139 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-_Static_assert(_Generic(&((W *)0)->pair, D38 (*)[2]: 1, default: 0) && sizeof(W) - __builtin_offsetof(W, pair) >= sizeof(D38[2]), "heroes-ffi-field W pair");
+_Static_assert(sizeof(W) - __builtin_offsetof(W, pair) != 0, "heroes-ffi-flex W pair"); _Static_assert(_Generic(&((W *)0)->pair, D38 (*)[2]: 1, default: 0) && sizeof(W) - __builtin_offsetof(W, pair) >= sizeof(D38[2]), "heroes-ffi-field W pair");
 _Static_assert(__builtin_classify_type(((W *)0)->tag) == 1 && sizeof(((W *)0)->tag) == sizeof(int32_t) && (_Generic(((W *)0)->tag, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field W tag");
-#line 204 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
+#line 202 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -275,13 +273,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2058restzeropastth
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 285 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
+#line 283 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_eq(const D0 *a, const D0 *b);
@@ -449,70 +447,16 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
 void h_fixedbugs2058restzeropastthedepthiswritteninc11_main(void) {
-#line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
+#line 143
 #define h0_w (*hero_lend_h0_w)
-#line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    W *const hero_lend_h0_w = (W *)hero_lend_local(sizeof(W), "fixedbugs2058restzeropastthedepthiswritteninc11.main", "w"); D33 h1_d; HERO_NODEBUG int32_t t1, t3, t5, t7; HERO_NODEBUG W t2; HERO_NODEBUG int64_t t4; HERO_NODEBUG D33 t6; HERO_ENTRY_STOP; goto bb0;
-#line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 144 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t2 = *(W *)__builtin_memset(&t2, 0, sizeof t2);
-#line 144 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    __builtin_memset(&t2, 0, sizeof t2);
-#line 144 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t2.tag = t1;
-#line 144 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    h0_w = t2;
-#line 144 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_40, hero_pad_n_40);
-#line 144 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) {
-#line 144 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_pad_fill((unsigned char *)(&h0_w) + hero_pad_k0 * sizeof(W) + __builtin_offsetof(W, pair), sizeof(D38), sizeof(((W *)0)->pair) / sizeof(D38), hero_pad_g_38, hero_pad_n_38);
-#line 144 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    }
-    t3 = h0_w.tag;
-#line 145 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_print_int(t3);
-#line 145 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_print_end();
-    hero_lend_local_name(hero_lend_h0_w, "w_deepest", "w");
-#line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_40, hero_pad_n_40);
-#line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) {
-#line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_pad_fill((unsigned char *)(&h0_w) + hero_pad_k0 * sizeof(W) + __builtin_offsetof(W, pair), sizeof(D38), sizeof(((W *)0)->pair) / sizeof(D38), hero_pad_g_38, hero_pad_n_38);
-#line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    }
-#line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t4 = w_deepest(&h0_w);
-#line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_print_int(t4);
-#line 146 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_print_end();
-    t5 = INT64_C(3);
-#line 147 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t6 = *(D33 *)__builtin_memset(&t6, 0, sizeof t6);
-#line 147 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    __builtin_memset(&t6, 0, sizeof t6);
-#line 147 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    t6.n = t5;
-#line 147 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    h1_d = t6;
-#line 147 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_pad_fill(&h1_d, sizeof(D33), 1, hero_pad_g_33, hero_pad_n_33);
-    t7 = h1_d.n;
-#line 148 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_print_int(t7);
-#line 148 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_print_end();
-#line 148 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    hero_lend_local_give(hero_lend_h0_w);
-#line 148 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    return;
-#line 516 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
+#line 143
+    W *const hero_lend_h0_w = (W *)hero_lend_local(sizeof(W), "fixedbugs2058restzeropastthedepthiswritteninc11.main", "w"); D33 h1_d; HERO_NODEBUG int32_t t1, t3, t5, t7; HERO_NODEBUG W t2; HERO_NODEBUG int64_t t4; HERO_NODEBUG D33 t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); t2 = *(W *)__builtin_memset(&t2, 0, sizeof t2); __builtin_memset(&t2, 0, sizeof t2); t2.tag = t1; h0_w = t2; hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_40, hero_pad_n_40); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_w) + hero_pad_k0 * sizeof(W) + __builtin_offsetof(W, pair), sizeof(D38), sizeof(((W *)0)->pair) / sizeof(D38), hero_pad_g_38, hero_pad_n_38); }
+    t3 = h0_w.tag; hero_print_int(t3); hero_print_end();
+    hero_lend_local_name(hero_lend_h0_w, "w_deepest", "w"); hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_40, hero_pad_n_40); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_w) + hero_pad_k0 * sizeof(W) + __builtin_offsetof(W, pair), sizeof(D38), sizeof(((W *)0)->pair) / sizeof(D38), hero_pad_g_38, hero_pad_n_38); } t4 = w_deepest(&h0_w); hero_print_int(t4); hero_print_end();
+    t5 = INT64_C(3); t6 = *(D33 *)__builtin_memset(&t6, 0, sizeof t6); __builtin_memset(&t6, 0, sizeof t6); t6.n = t5; h1_d = t6; hero_pad_fill(&h1_d, sizeof(D33), 1, hero_pad_g_33, hero_pad_n_33);
+    t7 = h1_d.n; hero_print_int(t7); hero_print_end(); hero_lend_local_give(hero_lend_h0_w); return;
+#line 460 "fixedbugs2058restzeropastthedepthiswritteninc11.c"
 }
 #undef h0_w
 HERO_TU_LOCAL bool h_fixedbugs2058restzeropastthedepthiswritteninc11_D0_eq(const D0 *a, const D0 *b) {

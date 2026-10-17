@@ -79,11 +79,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 89 "fixedbugs510aconstantholdingafunctioniscalled.c"
 #pragma clang diagnostic pop
@@ -105,126 +105,44 @@ h_0fn_4cb9330c h_fixedbugs510aconstantholdingafunctioniscalled_JOIN(void);
 void h_fixedbugs510aconstantholdingafunctioniscalled_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-int64_t h_fixedbugs510aconstantholdingafunctioniscalled_twice(int64_t h0_n) {
-#line 10 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-bb0:
-    t1 = h0_n;
-#line 11 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t2 = INT64_C(2);
-#line 11 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 11 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    return t3;
-#line 121 "fixedbugs510aconstantholdingafunctioniscalled.c"
+int64_t h_fixedbugs510aconstantholdingafunctioniscalled_twice(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
+#line 111 "fixedbugs510aconstantholdingafunctioniscalled.c"
 }
 
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-HeroStr h_fixedbugs510aconstantholdingafunctioniscalled_joined(HeroStr h0_from, HeroStr h1_to) {
-#line 13 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-bb0:
-    t1 = h0_from;
-#line 14 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t2 = h1_to;
-#line 14 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 14 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t4 = h2_own2;
-#line 14 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    h2_own2 = t3;
-#line 14 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    hero_str_decref(t4);
-#line 141 "fixedbugs510aconstantholdingafunctioniscalled.c"
+HeroStr h_fixedbugs510aconstantholdingafunctioniscalled_joined(HeroStr h0_from, HeroStr h1_to) { HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_from; t2 = h1_to; t3 = hero_str_concat(t1, t2); t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
+#line 117 "fixedbugs510aconstantholdingafunctioniscalled.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     return t3;
 }
 
 #line 16 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-h_0fn_48ac9712 h_fixedbugs510aconstantholdingafunctioniscalled_DOUBLE(void) {
-#line 16 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-bb0:
-    t1 = h_fixedbugs510aconstantholdingafunctioniscalled_twice;
-#line 17 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    return t1;
-#line 156 "fixedbugs510aconstantholdingafunctioniscalled.c"
+h_0fn_48ac9712 h_fixedbugs510aconstantholdingafunctioniscalled_DOUBLE(void) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs510aconstantholdingafunctioniscalled_twice; return t1;
+#line 126 "fixedbugs510aconstantholdingafunctioniscalled.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-h_0fn_48ac9712 h_fixedbugs510aconstantholdingafunctioniscalled_AGAIN(void) {
-#line 19 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-bb0:
-    t1 = h_fixedbugs510aconstantholdingafunctioniscalled_DOUBLE();
-#line 20 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    return t1;
-#line 168 "fixedbugs510aconstantholdingafunctioniscalled.c"
+h_0fn_48ac9712 h_fixedbugs510aconstantholdingafunctioniscalled_AGAIN(void) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs510aconstantholdingafunctioniscalled_DOUBLE(); return t1;
+#line 132 "fixedbugs510aconstantholdingafunctioniscalled.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-h_0fn_4cb9330c h_fixedbugs510aconstantholdingafunctioniscalled_JOIN(void) {
-#line 22 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    HERO_NODEBUG h_0fn_4cb9330c t1; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-bb0:
-    t1 = h_fixedbugs510aconstantholdingafunctioniscalled_joined;
-#line 23 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    return t1;
-#line 180 "fixedbugs510aconstantholdingafunctioniscalled.c"
+h_0fn_4cb9330c h_fixedbugs510aconstantholdingafunctioniscalled_JOIN(void) { HERO_NODEBUG h_0fn_4cb9330c t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs510aconstantholdingafunctioniscalled_joined; return t1;
+#line 138 "fixedbugs510aconstantholdingafunctioniscalled.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-void h_fixedbugs510aconstantholdingafunctioniscalled_main(void) {
-#line 25 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}, t10, t11, t12, t13; HERO_NODEBUG h_0fn_48ac9712 t1, t4, t5; HERO_NODEBUG int64_t t2, t3, t6, t7, t8; HERO_NODEBUG h_0fn_4cb9330c t9; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-bb0:
-    t1 = h_fixedbugs510aconstantholdingafunctioniscalled_DOUBLE();
-#line 26 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t2 = INT64_C(4);
-#line 26 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t3 = t1(t2);
-#line 26 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    hero_print_int(t3);
-#line 26 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    hero_print_end();
-    t4 = h_fixedbugs510aconstantholdingafunctioniscalled_AGAIN();
-#line 27 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t5 = h_fixedbugs510aconstantholdingafunctioniscalled_DOUBLE();
-#line 27 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t6 = INT64_C(5);
-#line 27 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t7 = t5(t6);
-#line 27 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t8 = t4(t7);
-#line 27 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    hero_print_int(t8);
-#line 27 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    hero_print_end();
-    t9 = h_fixedbugs510aconstantholdingafunctioniscalled_JOIN();
-#line 28 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t10 = HERO_STR_LIT(hero_str_1e1434ac);
-#line 28 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t11 = HERO_STR_LIT(hero_str_318606e5);
-#line 28 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t12 = t9(t10, t11);
-#line 28 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    t13 = h0_own0;
-#line 28 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    h0_own0 = t12;
-#line 28 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    hero_str_decref(t13);
-#line 28 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    hero_print_str(t12);
-#line 28 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    hero_print_end();
-#line 228 "fixedbugs510aconstantholdingafunctioniscalled.c"
+void h_fixedbugs510aconstantholdingafunctioniscalled_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t10, t11, t12, t13; HERO_NODEBUG h_0fn_48ac9712 t1, t4, t5; HERO_NODEBUG int64_t t2, t3, t6, t7, t8; HERO_NODEBUG h_0fn_4cb9330c t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs510aconstantholdingafunctioniscalled_DOUBLE(); t2 = INT64_C(4); t3 = t1(t2); hero_print_int(t3); hero_print_end();
+    t4 = h_fixedbugs510aconstantholdingafunctioniscalled_AGAIN(); t5 = h_fixedbugs510aconstantholdingafunctioniscalled_DOUBLE(); t6 = INT64_C(5); t7 = t5(t6); t8 = t4(t7); hero_print_int(t8); hero_print_end();
+    t9 = h_fixedbugs510aconstantholdingafunctioniscalled_JOIN(); t10 = HERO_STR_LIT(hero_str_1e1434ac); t11 = HERO_STR_LIT(hero_str_318606e5); t12 = t9(t10, t11); t13 = h0_own0; h0_own0 = t12; hero_str_decref(t13); hero_print_str(t12); hero_print_end();
+#line 146 "fixedbugs510aconstantholdingafunctioniscalled.c"
     hero_str_release_at(&h0_own0);
     return;
 }

@@ -141,11 +141,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handlealiveunderwhenafteraf
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "handlealiveunderwhenafterafailedend.c"
 #pragma clang diagnostic pop
@@ -164,100 +164,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_handlealiveunderwhenafterafailedend_main(void);
 
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-void h_handlealiveunderwhenafterafailedend_main(void) {
-#line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db *t1, *t2, *t7, *t9, *t10; HERO_NODEBUG int32_t t3, t5, t11, t13; HERO_NODEBUG HeroStr t4, t6, t12; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-bb0:
-    t1 = db_open();
-#line 15 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_acquired(t1, "db_close");
-#line 15 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    h0_d = t1;
-    t2 = h0_d;
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    {
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_alive(t2, "the argument `d` of `db_close`");
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL);
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    t3 = db_close(t2);
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    if (t3 == 0LL) {
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    if (hero_handle_ended(t2, hero_life_0_0) && h0_d == t2) h0_d = hero_handle_dead();
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    } else {
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_kept(t2, hero_life_0_0);
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    }
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    }
-#line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    h1_first = t3;
-    t4 = HERO_STR_LIT(hero_str_19c449f6);
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    t5 = h1_first;
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    t6 = HERO_STR_LIT(hero_str_79302ff3);
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    t7 = h0_d;
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_alive(t7, "the argument `d` of `db_open_stmts`");
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    t8 = db_open_stmts(t7);
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_print_str(t4);
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_print_int(t5);
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_print_str(t6);
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_print_int(t8);
-#line 17 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_print_end();
-    t9 = h0_d;
-#line 18 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_alive(t9, "the argument `d` of `db_finalize`");
-#line 18 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    (void)db_finalize(t9);
-    t10 = h0_d;
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    {
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_alive(t10, "the argument `d` of `db_close`");
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "db_close", NULL);
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    t11 = db_close(t10);
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    if (t11 == 0LL) {
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    if (hero_handle_ended(t10, hero_life_0_0) && h0_d == t10) h0_d = hero_handle_dead();
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    } else {
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_handle_kept(t10, hero_life_0_0);
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    }
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    }
-#line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    h2_second = t11;
-    t12 = HERO_STR_LIT(hero_str_68312d6c);
-#line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    t13 = h2_second;
-#line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_print_str(t12);
-#line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_print_int(t13);
-#line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    hero_print_end();
-#line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    return;
-#line 261 "handlealiveunderwhenafterafailedend.c"
+void h_handlealiveunderwhenafterafailedend_main(void) { db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db *t1, *t2, *t7, *t9, *t10; HERO_NODEBUG int32_t t3, t5, t11, t13; HERO_NODEBUG HeroStr t4, t6, t12; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = db_open(); hero_handle_acquired(t1, "db_close"); h0_d = t1;
+    t2 = h0_d; { hero_handle_alive(t2, "the argument `d` of `db_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL); t3 = db_close(t2); if (t3 == 0LL) { if (hero_handle_ended(t2, hero_life_0_0) && h0_d == t2) h0_d = hero_handle_dead(); } else { hero_handle_kept(t2, hero_life_0_0); } } h1_first = t3;
+    t4 = HERO_STR_LIT(hero_str_19c449f6); t5 = h1_first; t6 = HERO_STR_LIT(hero_str_79302ff3); t7 = h0_d; hero_handle_alive(t7, "the argument `d` of `db_open_stmts`"); t8 = db_open_stmts(t7); hero_print_str(t4); hero_print_int(t5); hero_print_str(t6); hero_print_int(t8); hero_print_end();
+    t9 = h0_d; hero_handle_alive(t9, "the argument `d` of `db_finalize`"); (void)db_finalize(t9);
+    t10 = h0_d; { hero_handle_alive(t10, "the argument `d` of `db_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "db_close", NULL); t11 = db_close(t10); if (t11 == 0LL) { if (hero_handle_ended(t10, hero_life_0_0) && h0_d == t10) h0_d = hero_handle_dead(); } else { hero_handle_kept(t10, hero_life_0_0); } } h2_second = t11;
+    t12 = HERO_STR_LIT(hero_str_68312d6c); t13 = h2_second; hero_print_str(t12); hero_print_int(t13); hero_print_end(); return;
+#line 175 "handlealiveunderwhenafterafailedend.c"
 }
 HERO_TU_LOCAL bool h_handlealiveunderwhenafterafailedend_Db_eq(db * const *a, db * const *b) {
     return hero_handle_eq(*a, *b);

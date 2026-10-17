@@ -87,11 +87,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 97 "fixedbugsacontextboundparameterthroughageneric.c"
 #pragma clang diagnostic pop
@@ -116,219 +116,25 @@ HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsacontextboundparameterthroughageneric_wa
 HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundparameterthroughageneric_wanted_1e58d9(HeroStr h0_what);
 
 #line 16 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-void h_fixedbugsacontextboundparameterthroughageneric_main(void) {
-#line 16 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h3_f2 = {0}, h9_own9 = {0}, h13_own13 = {0}, t4, t5, t9, t11, t27, t28, t44, t45, t51, t52; HERO_NODEBUG h_0opt_f87774a h1_f1 = {0}, h5_s0 = {0}, h11_own11 = {0}, h15_own15 = {0}, t16, t17, t21, t23, t34, t35, t37, t40, t47, t48, t55, t56; HeroArrayHeader * h2_none = {0}; HeroArrayHeader * h4_words = {0}; HeroStr h6_w = {0}; HeroFailure h7_e = {0}; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *h14_own14 = {0}, *t3, *t15, *t25, *t26, *t32, *t33, *t43, *t46, *t49, *t50, *t53, *t54; HERO_NODEBUG int64_t t1, t2, t6, t7, t12, t18, t19, t29, t30, t36; HERO_NODEBUG bool t8, t20, t31; HERO_NODEBUG HeroFailure t10, t22, t41, t58; HERO_NODEBUG HeroStr t13, t14, t24, t38, t39, t42, t57; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t2 = INT64_C(4);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t3 = hero_array_new(&hero_desc_int, 2);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_push_owned(&t3, &t1);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_push_owned(&t3, &t2);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t43 = h8_own8;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h8_own8 = t3;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_decref(t43);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t4 = h_fixedbugsacontextboundparameterthroughageneric_first_or_1b9a87(t3);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t44 = h9_own9;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h9_own9 = t4;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_e201354_release(&t44);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t45 = h0_f0;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_e201354_retain(&t4);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h0_f0 = t4;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_e201354_release(&t45);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t5 = h0_f0;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t6 = t5.tag;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t7 = INT64_C(0);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t8 = t6 == t7;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    if (t8) goto bb1; else goto bb2;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb1:
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t11 = h0_f0;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t12 = t11.as.ok;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_int(t12);
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_end();
-    t13 = HERO_STR_LIT(hero_str_61);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t14 = HERO_STR_LIT(hero_str_62);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t15 = hero_array_new(&hero_desc_str, 2);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_push_owned(&t15, &t13);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_push_owned(&t15, &t14);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t46 = h10_own10;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h10_own10 = t15;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_decref(t46);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t16 = h_fixedbugsacontextboundparameterthroughageneric_first_or_1e58d9(t15);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t47 = h11_own11;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h11_own11 = t16;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_f87774a_release(&t47);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t48 = h1_f1;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_f87774a_retain(&t16);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h1_f1 = t16;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_f87774a_release(&t48);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t17 = h1_f1;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t18 = t17.tag;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t19 = INT64_C(0);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t20 = t18 == t19;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    if (t20) goto bb3; else goto bb4;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb2:
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t9 = h0_f0;
-#line 17 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t10 = t9.as.err;
-#line 223 "fixedbugsacontextboundparameterthroughageneric.c"
+void h_fixedbugsacontextboundparameterthroughageneric_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h3_f2 = {0}, h9_own9 = {0}, h13_own13 = {0}, t4, t5, t9, t11, t27, t28, t44, t45, t51, t52; HERO_NODEBUG h_0opt_f87774a h1_f1 = {0}, h5_s0 = {0}, h11_own11 = {0}, h15_own15 = {0}, t16, t17, t21, t23, t34, t35, t37, t40, t47, t48, t55, t56; HeroArrayHeader * h2_none = {0}; HeroArrayHeader * h4_words = {0}; HeroStr h6_w = {0}; HeroFailure h7_e = {0}; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *h14_own14 = {0}, *t3, *t15, *t25, *t26, *t32, *t33, *t43, *t46, *t49, *t50, *t53, *t54; HERO_NODEBUG int64_t t1, t2, t6, t7, t12, t18, t19, t29, t30, t36; HERO_NODEBUG bool t8, t20, t31; HERO_NODEBUG HeroFailure t10, t22, t41, t58; HERO_NODEBUG HeroStr t13, t14, t24, t38, t39, t42, t57; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); t2 = INT64_C(4); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t43 = h8_own8; h8_own8 = t3; hero_array_decref(t43); t4 = h_fixedbugsacontextboundparameterthroughageneric_first_or_1b9a87(t3); t44 = h9_own9; h9_own9 = t4; h_0opt_e201354_release(&t44); t45 = h0_f0; h_0opt_e201354_retain(&t4); h0_f0 = t4; h_0opt_e201354_release(&t45); t5 = h0_f0; t6 = t5.tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb1; else goto bb2; bb1: t11 = h0_f0; t12 = t11.as.ok; hero_print_int(t12); hero_print_end();
+    t13 = HERO_STR_LIT(hero_str_61); t14 = HERO_STR_LIT(hero_str_62); t15 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t15, &t13); hero_array_push_owned(&t15, &t14); t46 = h10_own10; h10_own10 = t15; hero_array_decref(t46); t16 = h_fixedbugsacontextboundparameterthroughageneric_first_or_1e58d9(t15); t47 = h11_own11; h11_own11 = t16; h_0opt_f87774a_release(&t47); t48 = h1_f1; h_0opt_f87774a_retain(&t16); h1_f1 = t16; h_0opt_f87774a_release(&t48); t17 = h1_f1; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb3; else goto bb4; bb2:
+#line 17
+    t9 = h0_f0; t10 = t9.as.err;
+#line 125 "fixedbugsacontextboundparameterthroughageneric.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb3:
 #line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t23 = h1_f1;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t24 = t23.as.ok;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_str(t24);
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_end();
-    t25 = hero_array_new(&hero_desc_int, 1);
-#line 19 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t49 = h12_own12;
-#line 19 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h12_own12 = t25;
-#line 19 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_decref(t49);
-#line 19 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t50 = h2_none;
-#line 19 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_incref(t25);
-#line 19 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h2_none = t25;
-#line 19 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_decref(t50);
-    t26 = h2_none;
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t27 = h_fixedbugsacontextboundparameterthroughageneric_first_or_1b9a87(t26);
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t51 = h13_own13;
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h13_own13 = t27;
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_e201354_release(&t51);
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t52 = h3_f2;
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_e201354_retain(&t27);
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h3_f2 = t27;
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_e201354_release(&t52);
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t28 = h3_f2;
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t29 = t28.tag;
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t30 = INT64_C(1);
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t31 = t29 == t30;
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_bool(t31);
-#line 20 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_end();
-    t32 = hero_array_new(&hero_desc_str, 1);
-#line 21 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t53 = h14_own14;
-#line 21 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h14_own14 = t32;
-#line 21 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_decref(t53);
-#line 21 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t54 = h4_words;
-#line 21 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_incref(t32);
-#line 21 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h4_words = t32;
-#line 21 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_array_decref(t54);
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t33 = h4_words;
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t34 = h_fixedbugsacontextboundparameterthroughageneric_first_or_1e58d9(t33);
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t55 = h15_own15;
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h15_own15 = t34;
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_f87774a_release(&t55);
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t56 = h5_s0;
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_f87774a_retain(&t34);
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h5_s0 = t34;
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_f87774a_release(&t56);
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t35 = h5_s0;
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t36 = t35.tag;
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    switch (t36) {
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-        case 0: goto bb6;
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-        case 1: goto bb7;
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-        default: hero_unreachable();
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    }
-#line 23 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb4:
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t21 = h1_f1;
-#line 18 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t22 = t21.as.err;
-#line 332 "fixedbugsacontextboundparameterthroughageneric.c"
+    t23 = h1_f1; t24 = t23.as.ok; hero_print_str(t24); hero_print_end();
+    t25 = hero_array_new(&hero_desc_int, 1); t49 = h12_own12; h12_own12 = t25; hero_array_decref(t49); t50 = h2_none; hero_array_incref(t25); h2_none = t25; hero_array_decref(t50);
+    t26 = h2_none; t27 = h_fixedbugsacontextboundparameterthroughageneric_first_or_1b9a87(t26); t51 = h13_own13; h13_own13 = t27; h_0opt_e201354_release(&t51); t52 = h3_f2; h_0opt_e201354_retain(&t27); h3_f2 = t27; h_0opt_e201354_release(&t52); t28 = h3_f2; t29 = t28.tag; t30 = INT64_C(1); t31 = t29 == t30; hero_print_bool(t31); hero_print_end();
+    t32 = hero_array_new(&hero_desc_str, 1); t53 = h14_own14; h14_own14 = t32; hero_array_decref(t53); t54 = h4_words; hero_array_incref(t32); h4_words = t32; hero_array_decref(t54);
+#line 23
+    t33 = h4_words; t34 = h_fixedbugsacontextboundparameterthroughageneric_first_or_1e58d9(t33); t55 = h15_own15; h15_own15 = t34; h_0opt_f87774a_release(&t55); t56 = h5_s0; h_0opt_f87774a_retain(&t34); h5_s0 = t34; h_0opt_f87774a_release(&t56); t35 = h5_s0; t36 = t35.tag; switch (t36) { case 0: goto bb6; case 1: goto bb7; default: hero_unreachable(); } bb4:
+#line 18
+    t21 = h1_f1; t22 = t21.as.err;
+#line 138 "fixedbugsacontextboundparameterthroughageneric.c"
     hero_panic_must(t22);
     hero_unreachable();
 bb5:
@@ -351,109 +157,19 @@ bb5:
     return;
 bb6:
 #line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t37 = h5_s0;
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t38 = t37.as.ok;
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t57 = h6_w;
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_str_incref(t38);
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h6_w = t38;
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_str_decref(t57);
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t39 = h6_w;
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_str(t39);
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_end();
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    goto bb5;
-#line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb7:
-    t40 = h5_s0;
-#line 25 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t41 = t40.as.err;
-#line 25 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t58 = h7_e;
-#line 25 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_failure_retain(&t41);
-#line 25 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h7_e = t41;
-#line 25 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_failure_release(&t58);
-#line 25 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t42 = h7_e.msg;
-#line 25 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_str(t42);
-#line 25 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_print_end();
-#line 25 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    goto bb5;
-#line 395 "fixedbugsacontextboundparameterthroughageneric.c"
+    t37 = h5_s0; t38 = t37.as.ok; t57 = h6_w; hero_str_incref(t38); h6_w = t38; hero_str_decref(t57); t39 = h6_w; hero_print_str(t39); hero_print_end(); goto bb5; bb7:
+    t40 = h5_s0; t41 = t40.as.err; t58 = h7_e; hero_failure_retain(&t41); h7_e = t41; hero_failure_release(&t58); t42 = h7_e.msg; hero_print_str(t42); hero_print_end(); goto bb5;
+#line 163 "fixedbugsacontextboundparameterthroughageneric.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-/* first_or<i64> */
-#line 10 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsacontextboundparameterthroughageneric_first_or_1b9a87(HeroArrayHeader * h0_xs) {
-#line 10 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t10, t11, t12, t13; HERO_NODEBUG HeroArrayHeader *t1, *t7; HERO_NODEBUG int64_t t2, t3, t8, t9; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb0:
-    t1 = h0_xs;
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t3 = INT64_C(0);
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t4 = t2 == t3;
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb1:
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t7 = h0_xs;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t8 = INT64_C(0);
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9};
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t12 = h2_own2;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h2_own2 = t10;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_e201354_release(&t12);
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h1_ret0 = t10;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    goto bb4;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb2:
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t5 = HERO_STR_LIT(hero_str_5ea59ee0);
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t6 = h_fixedbugsacontextboundparameterthroughageneric_wanted_1b9a87(t5);
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t13 = h3_own3;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h3_own3 = t6;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_e201354_release(&t13);
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h1_ret0 = t6;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    goto bb4;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb3:
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    goto bb1;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb4:
-#line 457 "fixedbugsacontextboundparameterthroughageneric.c"
+/* first_or<i64> */ HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsacontextboundparameterthroughageneric_first_or_1b9a87(HeroArrayHeader * h0_xs) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t10, t11, t12, t13; HERO_NODEBUG HeroArrayHeader *t1, *t7; HERO_NODEBUG int64_t t2, t3, t8, t9; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 14
+    t7 = h0_xs; t8 = INT64_C(0); t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]); t10 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t9}; t12 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t12); h1_ret0 = t10; goto bb4; bb2:
+#line 12
+    t5 = HERO_STR_LIT(hero_str_5ea59ee0); t6 = h_fixedbugsacontextboundparameterthroughageneric_wanted_1b9a87(t5); t13 = h3_own3; h3_own3 = t6; h_0opt_e201354_release(&t13); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
+#line 173 "fixedbugsacontextboundparameterthroughageneric.c"
     t11 = h1_ret0;
     h_0opt_e201354_retain(&t11);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -462,67 +178,13 @@ bb4:
 }
 
 #line 10 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-/* first_or<str> */
-#line 10 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundparameterthroughageneric_first_or_1e58d9(HeroArrayHeader * h0_xs) {
-#line 10 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    HERO_NODEBUG h_0opt_f87774a h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t10, t11, t12, t13; HERO_NODEBUG HeroArrayHeader *t1, *t7; HERO_NODEBUG int64_t t2, t3, t8; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5, t9; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb0:
-    t1 = h0_xs;
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t3 = INT64_C(0);
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t4 = t2 == t3;
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 11 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb1:
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t7 = h0_xs;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t8 = INT64_C(0);
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_str_incref(t9);
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t10 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t9};
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t12 = h2_own2;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h2_own2 = t10;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_f87774a_release(&t12);
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h1_ret0 = t10;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    goto bb4;
-#line 14 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb2:
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t5 = HERO_STR_LIT(hero_str_5ea59ee0);
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t6 = h_fixedbugsacontextboundparameterthroughageneric_wanted_1e58d9(t5);
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t13 = h3_own3;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h3_own3 = t6;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_f87774a_release(&t13);
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h1_ret0 = t6;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    goto bb4;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb3:
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    goto bb1;
-#line 12 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb4:
-#line 526 "fixedbugsacontextboundparameterthroughageneric.c"
+/* first_or<str> */ HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundparameterthroughageneric_first_or_1e58d9(HeroArrayHeader * h0_xs) { HERO_NODEBUG h_0opt_f87774a h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t10, t11, t12, t13; HERO_NODEBUG HeroArrayHeader *t1, *t7; HERO_NODEBUG int64_t t2, t3, t8; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 14
+    t7 = h0_xs; t8 = INT64_C(0); t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]); hero_str_incref(t9); t10 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t9}; t12 = h2_own2; h2_own2 = t10; h_0opt_f87774a_release(&t12); h1_ret0 = t10; goto bb4; bb2:
+#line 12
+    t5 = HERO_STR_LIT(hero_str_5ea59ee0); t6 = h_fixedbugsacontextboundparameterthroughageneric_wanted_1e58d9(t5); t13 = h3_own3; h3_own3 = t6; h_0opt_f87774a_release(&t13); h1_ret0 = t6; goto bb4; bb3: goto bb1; bb4:
+#line 188 "fixedbugsacontextboundparameterthroughageneric.c"
     t11 = h1_ret0;
     h_0opt_f87774a_retain(&t11);
     h_0opt_f87774a_release(hero_slot_escape(&h2_own2));
@@ -531,58 +193,18 @@ bb4:
 }
 
 #line 7 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-/* wanted<i64> */
-#line 7 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsacontextboundparameterthroughageneric_wanted_1b9a87(HeroStr h0_what) {
-#line 7 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t2 = h0_what;
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_str_incref(t1);
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_str_incref(t2);
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}};
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t4 = h1_own1;
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h1_own1 = t3;
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_e201354_release(&t4);
-#line 557 "fixedbugsacontextboundparameterthroughageneric.c"
+/* wanted<i64> */ HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsacontextboundparameterthroughageneric_wanted_1b9a87(HeroStr h0_what) { HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_fab1332); t2 = h0_what; hero_str_incref(t1); hero_str_incref(t2); t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}; t4 = h1_own1; h1_own1 = t3; h_0opt_e201354_release(&t4);
+#line 199 "fixedbugsacontextboundparameterthroughageneric.c"
     h_0opt_e201354_retain(&t3);
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
 #line 7 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-/* wanted<str> */
-#line 7 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundparameterthroughageneric_wanted_1e58d9(HeroStr h0_what) {
-#line 7 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    HERO_NODEBUG h_0opt_f87774a h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t2 = h0_what;
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_str_incref(t1);
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    hero_str_incref(t2);
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t3 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}};
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    t4 = h1_own1;
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h1_own1 = t3;
-#line 8 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
-    h_0opt_f87774a_release(&t4);
-#line 586 "fixedbugsacontextboundparameterthroughageneric.c"
+/* wanted<str> */ HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundparameterthroughageneric_wanted_1e58d9(HeroStr h0_what) { HERO_NODEBUG h_0opt_f87774a h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_fab1332); t2 = h0_what; hero_str_incref(t1); hero_str_incref(t2); t3 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}; t4 = h1_own1; h1_own1 = t3; h_0opt_f87774a_release(&t4);
+#line 208 "fixedbugsacontextboundparameterthroughageneric.c"
     h_0opt_f87774a_retain(&t3);
     h_0opt_f87774a_release(hero_slot_escape(&h1_own1));
     return t3;

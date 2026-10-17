@@ -131,11 +131,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs590afpevalmethodin
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 141 "fixedbugs590afpevalmethodinaheaderthegroupsheaderincludes.c"
 #pragma clang diagnostic pop
@@ -152,25 +152,9 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs590afpevalmethodinaheaderthegroupsheaderincludes_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-void h_fixedbugs590afpevalmethodinaheaderthegroupsheaderincludes_main(void) {
-#line 11 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-bb0:
-    t1 = INT64_C(-7);
-#line 12 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-    t2 = llabs(t1);
-#line 12 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-    t3 = INT64_C(6);
-#line 12 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-    if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow();
-#line 12 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-    hero_print_int(t4);
-#line 12 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-    hero_print_end();
-#line 12 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-    return;
-#line 174 "fixedbugs590afpevalmethodinaheaderthegroupsheaderincludes.c"
+void h_fixedbugs590afpevalmethodinaheaderthegroupsheaderincludes_main(void) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(-7); t2 = llabs(t1); t3 = INT64_C(6); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow(); hero_print_int(t4); hero_print_end(); return;
+#line 158 "fixedbugs590afpevalmethodinaheaderthegroupsheaderincludes.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

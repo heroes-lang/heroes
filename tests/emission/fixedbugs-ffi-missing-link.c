@@ -131,11 +131,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 141 "ffimissinglink.c"
 #pragma clang diagnostic pop
@@ -152,23 +152,9 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_ffimissinglink_main(void);
 
 #line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
-void h_ffimissinglink_main(void) {
-#line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
-#line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_279ecc0f);
-#line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
-    t2 = sqlite3_libversion_number();
-#line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
-    hero_print_str(t1);
-#line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
-    hero_print_int(t2);
-#line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
-    hero_print_end();
-#line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
-    return;
-#line 172 "ffimissinglink.c"
+void h_ffimissinglink_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_279ecc0f); t2 = sqlite3_libversion_number(); hero_print_str(t1); hero_print_int(t2); hero_print_end(); return;
+#line 158 "ffimissinglink.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

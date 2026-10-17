@@ -76,11 +76,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 86 "fixedbugs382thelargestunsignedelementfits.c"
 #pragma clang diagnostic pop
@@ -102,41 +102,15 @@ void h_fixedbugs382thelargestunsignedelementfits_main(void);
 
 #if HERO_STATIC_CONSTANTS
 #line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BIG_4, uint64_t, &hero_desc_u64, 3, UINT64_C(18446744073709551615), UINT64_C(0), UINT64_C(9223372036854775808));
-#line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BIG(void) {
-#line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BIG_4);
-#line 111 "fixedbugs382thelargestunsignedelementfits.c"
+HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BIG_4, uint64_t, &hero_desc_u64, 3, UINT64_C(18446744073709551615), UINT64_C(0), UINT64_C(9223372036854775808)); HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BIG(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BIG_4);
+#line 107 "fixedbugs382thelargestunsignedelementfits.c"
 }
 #else
 
 #line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BIG(void) {
-#line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t4, *t5; HERO_NODEBUG uint64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-bb0:
-    t1 = UINT64_C(18446744073709551615);
-#line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t2 = UINT64_C(0);
-#line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t3 = UINT64_C(9223372036854775808);
-#line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t4 = hero_array_new(&hero_desc_u64, 3);
-#line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_push_owned(&t4, &t1);
-#line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_push_owned(&t4, &t2);
-#line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_push_owned(&t4, &t3);
-#line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t5 = h0_own0;
-#line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h0_own0 = t4;
-#line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t5);
-#line 140 "fixedbugs382thelargestunsignedelementfits.c"
+HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BIG(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t4, *t5; HERO_NODEBUG uint64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(18446744073709551615); t2 = UINT64_C(0); t3 = UINT64_C(9223372036854775808); t4 = hero_array_new(&hero_desc_u64, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t5 = h0_own0; h0_own0 = t4; hero_array_decref(t5);
+#line 114 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -145,41 +119,15 @@ bb0:
 
 #if HERO_STATIC_CONSTANTS
 #line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BYTES_4, uint8_t, &hero_desc_u8, 3, UINT64_C(0), UINT64_C(255), UINT64_C(97));
-#line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BYTES(void) {
-#line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BYTES_4);
-#line 154 "fixedbugs382thelargestunsignedelementfits.c"
+HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BYTES_4, uint8_t, &hero_desc_u8, 3, UINT64_C(0), UINT64_C(255), UINT64_C(97)); HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BYTES(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BYTES_4);
+#line 124 "fixedbugs382thelargestunsignedelementfits.c"
 }
 #else
 
 #line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BYTES(void) {
-#line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t4, *t5; HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-bb0:
-    t1 = UINT64_C(0);
-#line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t2 = UINT64_C(255);
-#line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t3 = UINT64_C(97);
-#line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t4 = hero_array_new(&hero_desc_u8, 3);
-#line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_push_owned(&t4, &t1);
-#line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_push_owned(&t4, &t2);
-#line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_push_owned(&t4, &t3);
-#line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t5 = h0_own0;
-#line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h0_own0 = t4;
-#line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t5);
-#line 183 "fixedbugs382thelargestunsignedelementfits.c"
+HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BYTES(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t4, *t5; HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(0); t2 = UINT64_C(255); t3 = UINT64_C(97); t4 = hero_array_new(&hero_desc_u8, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t5 = h0_own0; h0_own0 = t4; hero_array_decref(t5);
+#line 131 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -188,33 +136,15 @@ bb0:
 
 #if HERO_STATIC_CONSTANTS
 #line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_HALVES_2, uint16_t, &hero_desc_u16, 1, UINT64_C(65535));
-#line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_HALVES(void) {
-#line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_HALVES_2);
-#line 197 "fixedbugs382thelargestunsignedelementfits.c"
+HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_HALVES_2, uint16_t, &hero_desc_u16, 1, UINT64_C(65535)); HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_HALVES(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_HALVES_2);
+#line 141 "fixedbugs382thelargestunsignedelementfits.c"
 }
 #else
 
 #line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_HALVES(void) {
-#line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t2, *t3; HERO_NODEBUG uint16_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-bb0:
-    t1 = UINT64_C(65535);
-#line 13 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t2 = hero_array_new(&hero_desc_u16, 1);
-#line 13 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_push_owned(&t2, &t1);
-#line 13 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t3 = h0_own0;
-#line 13 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h0_own0 = t2;
-#line 13 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t3);
-#line 218 "fixedbugs382thelargestunsignedelementfits.c"
+HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_HALVES(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t2, *t3; HERO_NODEBUG uint16_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(65535); t2 = hero_array_new(&hero_desc_u16, 1); hero_array_push_owned(&t2, &t1); t3 = h0_own0; h0_own0 = t2; hero_array_decref(t3);
+#line 148 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_incref(t2);
     hero_array_release_at(&h0_own0);
     return t2;
@@ -223,37 +153,15 @@ bb0:
 
 #if HERO_STATIC_CONSTANTS
 #line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_WORDS_3, uint32_t, &hero_desc_u32, 2, UINT64_C(4294967295), UINT64_C(1));
-#line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_WORDS(void) {
-#line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_WORDS_3);
-#line 232 "fixedbugs382thelargestunsignedelementfits.c"
+HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_WORDS_3, uint32_t, &hero_desc_u32, 2, UINT64_C(4294967295), UINT64_C(1)); HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_WORDS(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_WORDS_3);
+#line 158 "fixedbugs382thelargestunsignedelementfits.c"
 }
 #else
 
 #line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_WORDS(void) {
-#line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG uint32_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-bb0:
-    t1 = UINT64_C(4294967295);
-#line 16 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t2 = UINT64_C(1);
-#line 16 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t3 = hero_array_new(&hero_desc_u32, 2);
-#line 16 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_push_owned(&t3, &t1);
-#line 16 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_push_owned(&t3, &t2);
-#line 16 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t4 = h0_own0;
-#line 16 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h0_own0 = t3;
-#line 16 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t4);
-#line 257 "fixedbugs382thelargestunsignedelementfits.c"
+HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_WORDS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG uint32_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(4294967295); t2 = UINT64_C(1); t3 = hero_array_new(&hero_desc_u32, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t4 = h0_own0; h0_own0 = t3; hero_array_decref(t4);
+#line 165 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_incref(t3);
     hero_array_release_at(&h0_own0);
     return t3;
@@ -261,233 +169,11 @@ bb0:
 #endif
 
 #line 18 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-void h_fixedbugs382thelargestunsignedelementfits_main(void) {
-#line 18 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *t1, *t5, *t9, *t13, *t16, *t20, *t24, *t28, *t32, *t36, *t39, *t40, *t44, *t46, *t49, *t50, *t51, *t52, *t53, *t54, *t55, *t56, *t57, *t58, *t59, *t60, *t61, *t62; HERO_NODEBUG int64_t t2, t6, t10, t14, t17, t21, t25, t29, t33, t37, t41, t45, t47, t48; HERO_NODEBUG uint64_t t3, t7, t11, t15, t18, t42; HERO_NODEBUG HeroStr t4, t8, t12, t23, t27, t31, t35, t43; HERO_NODEBUG bool t19; HERO_NODEBUG uint8_t t22, t26; HERO_NODEBUG uint16_t t30; HERO_NODEBUG uint32_t t34, t38; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-bb0:
-    t1 = h_fixedbugs382thelargestunsignedelementfits_BIG();
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t49 = h0_own0;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h0_own0 = t1;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t49);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t2 = INT64_C(0);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t1 + 1))[t2]);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t4 = HERO_STR_LIT(hero_str_20);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t5 = h_fixedbugs382thelargestunsignedelementfits_BIG();
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t50 = h1_own1;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h1_own1 = t5;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t50);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t6 = INT64_C(1);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t5 + 1))[t6]);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t8 = HERO_STR_LIT(hero_str_20);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t9 = h_fixedbugs382thelargestunsignedelementfits_BIG();
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t51 = h2_own2;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h2_own2 = t9;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t51);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t10 = INT64_C(2);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t9 + 1))[t10]);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t12 = HERO_STR_LIT(hero_str_20);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t13 = h_fixedbugs382thelargestunsignedelementfits_BIG();
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t52 = h3_own3;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h3_own3 = t13;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t52);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t14 = INT64_C(0);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t13 + 1))[t14]);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t16 = h_fixedbugs382thelargestunsignedelementfits_BIG();
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t53 = h4_own4;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h4_own4 = t16;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t53);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t17 = INT64_C(2);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t16 + 1))[t17]);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t19 = t15 > t18;
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_uint(t3);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_str(t4);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_uint(t7);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_str(t8);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_uint(t11);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_str(t12);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_bool(t19);
-#line 19 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_end();
-    t20 = h_fixedbugs382thelargestunsignedelementfits_BYTES();
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t54 = h5_own5;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h5_own5 = t20;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t54);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t21 = INT64_C(1);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t20 + 1))[t21]);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t23 = HERO_STR_LIT(hero_str_20);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t24 = h_fixedbugs382thelargestunsignedelementfits_BYTES();
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t55 = h6_own6;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h6_own6 = t24;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t55);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t25 = INT64_C(2);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t24 + 1))[t25]);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t27 = HERO_STR_LIT(hero_str_20);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t28 = h_fixedbugs382thelargestunsignedelementfits_HALVES();
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t56 = h7_own7;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h7_own7 = t28;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t56);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t29 = INT64_C(0);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(uint16_t) ? hero_unreachable() : (void)0), ((uint16_t const *)(const void *)(t28 + 1))[t29]);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t31 = HERO_STR_LIT(hero_str_20);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t32 = h_fixedbugs382thelargestunsignedelementfits_WORDS();
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t57 = h8_own8;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h8_own8 = t32;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t57);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t33 = INT64_C(0);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(uint32_t) ? hero_unreachable() : (void)0), ((uint32_t const *)(const void *)(t32 + 1))[t33]);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t35 = HERO_STR_LIT(hero_str_20);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t36 = h_fixedbugs382thelargestunsignedelementfits_WORDS();
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t58 = h9_own9;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h9_own9 = t36;
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t58);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t37 = INT64_C(1);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(uint32_t) ? hero_unreachable() : (void)0), ((uint32_t const *)(const void *)(t36 + 1))[t37]);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_int(t22);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_str(t23);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_int(t26);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_str(t27);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_int(t30);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_str(t31);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_int(t34);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_str(t35);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_int(t38);
-#line 20 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_end();
-    t39 = h_fixedbugs382thelargestunsignedelementfits_BIG();
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t59 = h10_own10;
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h10_own10 = t39;
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t59);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t40 = hero_array_sort(t39);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t60 = h11_own11;
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h11_own11 = t40;
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t60);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t41 = INT64_C(2);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t42 = ((void)((t40 == NULL || t41 < 0 || t41 >= t40->len) ? ((void)hero_array_at(t40, t41), hero_unreachable()) : (void)0), (void)(t40->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t40 + 1))[t41]);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t43 = HERO_STR_LIT(hero_str_20);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t44 = h_fixedbugs382thelargestunsignedelementfits_BIG();
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t61 = h12_own12;
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h12_own12 = t44;
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t61);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t46 = h_fixedbugs382thelargestunsignedelementfits_BYTES();
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t62 = h13_own13;
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    h13_own13 = t46;
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_array_decref(t62);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    t47 = ((void)(t46 == NULL ? ((void)hero_array_len(t46), hero_unreachable()) : (void)0), t46->len);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    if (__builtin_add_overflow(t45, t47, &t48)) hero_panic_overflow();
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_uint(t42);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_str(t43);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_int(t48);
-#line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    hero_print_end();
-#line 491 "fixedbugs382thelargestunsignedelementfits.c"
+void h_fixedbugs382thelargestunsignedelementfits_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *t1, *t5, *t9, *t13, *t16, *t20, *t24, *t28, *t32, *t36, *t39, *t40, *t44, *t46, *t49, *t50, *t51, *t52, *t53, *t54, *t55, *t56, *t57, *t58, *t59, *t60, *t61, *t62; HERO_NODEBUG int64_t t2, t6, t10, t14, t17, t21, t25, t29, t33, t37, t41, t45, t47, t48; HERO_NODEBUG uint64_t t3, t7, t11, t15, t18, t42; HERO_NODEBUG HeroStr t4, t8, t12, t23, t27, t31, t35, t43; HERO_NODEBUG bool t19; HERO_NODEBUG uint8_t t22, t26; HERO_NODEBUG uint16_t t30; HERO_NODEBUG uint32_t t34, t38; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs382thelargestunsignedelementfits_BIG(); t49 = h0_own0; h0_own0 = t1; hero_array_decref(t49); t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t1 + 1))[t2]); t4 = HERO_STR_LIT(hero_str_20); t5 = h_fixedbugs382thelargestunsignedelementfits_BIG(); t50 = h1_own1; h1_own1 = t5; hero_array_decref(t50); t6 = INT64_C(1); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t5 + 1))[t6]); t8 = HERO_STR_LIT(hero_str_20); t9 = h_fixedbugs382thelargestunsignedelementfits_BIG(); t51 = h2_own2; h2_own2 = t9; hero_array_decref(t51); t10 = INT64_C(2); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t9 + 1))[t10]); t12 = HERO_STR_LIT(hero_str_20); t13 = h_fixedbugs382thelargestunsignedelementfits_BIG(); t52 = h3_own3; h3_own3 = t13; hero_array_decref(t52); t14 = INT64_C(0); t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t13 + 1))[t14]); t16 = h_fixedbugs382thelargestunsignedelementfits_BIG(); t53 = h4_own4; h4_own4 = t16; hero_array_decref(t53); t17 = INT64_C(2); t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t16 + 1))[t17]); t19 = t15 > t18; hero_print_uint(t3); hero_print_str(t4); hero_print_uint(t7); hero_print_str(t8); hero_print_uint(t11); hero_print_str(t12); hero_print_bool(t19); hero_print_end();
+    t20 = h_fixedbugs382thelargestunsignedelementfits_BYTES(); t54 = h5_own5; h5_own5 = t20; hero_array_decref(t54); t21 = INT64_C(1); t22 = ((void)((t20 == NULL || t21 < 0 || t21 >= t20->len) ? ((void)hero_array_at(t20, t21), hero_unreachable()) : (void)0), (void)(t20->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t20 + 1))[t21]); t23 = HERO_STR_LIT(hero_str_20); t24 = h_fixedbugs382thelargestunsignedelementfits_BYTES(); t55 = h6_own6; h6_own6 = t24; hero_array_decref(t55); t25 = INT64_C(2); t26 = ((void)((t24 == NULL || t25 < 0 || t25 >= t24->len) ? ((void)hero_array_at(t24, t25), hero_unreachable()) : (void)0), (void)(t24->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t24 + 1))[t25]); t27 = HERO_STR_LIT(hero_str_20); t28 = h_fixedbugs382thelargestunsignedelementfits_HALVES(); t56 = h7_own7; h7_own7 = t28; hero_array_decref(t56); t29 = INT64_C(0); t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(uint16_t) ? hero_unreachable() : (void)0), ((uint16_t const *)(const void *)(t28 + 1))[t29]); t31 = HERO_STR_LIT(hero_str_20); t32 = h_fixedbugs382thelargestunsignedelementfits_WORDS(); t57 = h8_own8; h8_own8 = t32; hero_array_decref(t57); t33 = INT64_C(0); t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? ((void)hero_array_at(t32, t33), hero_unreachable()) : (void)0), (void)(t32->elem->size != sizeof(uint32_t) ? hero_unreachable() : (void)0), ((uint32_t const *)(const void *)(t32 + 1))[t33]); t35 = HERO_STR_LIT(hero_str_20); t36 = h_fixedbugs382thelargestunsignedelementfits_WORDS(); t58 = h9_own9; h9_own9 = t36; hero_array_decref(t58); t37 = INT64_C(1); t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(uint32_t) ? hero_unreachable() : (void)0), ((uint32_t const *)(const void *)(t36 + 1))[t37]); hero_print_int(t22); hero_print_str(t23); hero_print_int(t26); hero_print_str(t27); hero_print_int(t30); hero_print_str(t31); hero_print_int(t34); hero_print_str(t35); hero_print_int(t38); hero_print_end();
+    t39 = h_fixedbugs382thelargestunsignedelementfits_BIG(); t59 = h10_own10; h10_own10 = t39; hero_array_decref(t59); t40 = hero_array_sort(t39); t60 = h11_own11; h11_own11 = t40; hero_array_decref(t60); t41 = INT64_C(2); t42 = ((void)((t40 == NULL || t41 < 0 || t41 >= t40->len) ? ((void)hero_array_at(t40, t41), hero_unreachable()) : (void)0), (void)(t40->elem->size != sizeof(uint64_t) ? hero_unreachable() : (void)0), ((uint64_t const *)(const void *)(t40 + 1))[t41]); t43 = HERO_STR_LIT(hero_str_20); t44 = h_fixedbugs382thelargestunsignedelementfits_BIG(); t61 = h12_own12; h12_own12 = t44; hero_array_decref(t61); t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len); t46 = h_fixedbugs382thelargestunsignedelementfits_BYTES(); t62 = h13_own13; h13_own13 = t46; hero_array_decref(t62); t47 = ((void)(t46 == NULL ? ((void)hero_array_len(t46), hero_unreachable()) : (void)0), t46->len); if (__builtin_add_overflow(t45, t47, &t48)) hero_panic_overflow(); hero_print_uint(t42); hero_print_str(t43); hero_print_int(t48); hero_print_end();
+#line 177 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);

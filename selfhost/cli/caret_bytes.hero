@@ -1,0 +1,359 @@
+# The identifier clang's caret stands on, read from the bytes of the line
+# clang read (design.md §4.19, §4.17; CLAUDE.md §7's named exception; defect
+# 2117, 2026-10-17; panel 214's R1, *decided by a clang run and by a name's
+# form, never by clang's words*). The readers that tell a refusal as a
+# header's own ask which name a caret stands on: `cli/runtime_name.hero`,
+# `cli/declared_after.hero`, `cli/own_names.hero`, `cli/builtin_name.hero`.
+# They read it in the line clang QUOTED under the diagnostic, and that
+# excerpt is clang's drawing of the line, never the line. Apple clang 21,
+# Debian clang 22.1.8 and Ubuntu clang 18.1.3 quote no line longer than
+# 4,096 bytes, so a header's `#define t3 0` beside a `main` of 88 chained
+# bindings was told `ffi_header_refused` at exit 1 and beside 89, whose
+# prologue line is 4,100 bytes, `internal error` at exit 2; and the excerpt
+# is drawn in columns, a tab expanded and a character of two bytes one
+# column wide, so a header's `/* éé */` before the name put the caret two
+# bytes short of it and the name was not read.
+#
+# **Read where clang read it.** clang's column is a byte's, counted from 1 in
+# the line it read; that line is not the one `#line` names, `p89.hero:4`,
+# which the C this compiler writes re-anchors many lines to. So the unit is
+# compiled once more, `-fsyntax-only` under its own words and
+# `-fno-diagnostics-use-presumed-location`, which names each place as the
+# file and line clang read (measured 2026-10-17 alike on the three clangs
+# above): on the failure path alone, only where a reader asks a name, and
+# once per refusal (`Again`). Its k-th diagnostic is the first run's k-th,
+# held to the same column and the same words; the name is the identifier
+# that begins at that byte of that line of that file, its bytes the file's
+# own, a byte that is not text kept as one (`reading.bytes_kept`). Anything
+# else names nothing, and the refusal is left to the readers after.
+#
+# **Save where the drawing is the line** (`drawn_line`): an excerpt whose
+# every byte is printable ASCII, with no tab and no `...` of a line cut to
+# fit, is the line's own bytes, clang printing such a byte as itself; where
+# its gutter numbers the place's row and its caret stands at the place's
+# column, the name is read there, and the unit is not compiled again. That
+# is every refusal the readers told before this defect, so the second run
+# costs nothing where the excerpt already said the line.
+
+use emit/clang_place
+use emit/ffi_lookup
+use module/reading
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+
+# The words that make clang name the place it read rather than the one a
+# `#line` presumes.
+constant PHYSICAL: [str]
+    [
+        "-Xclang"
+        "-fno-diagnostics-use-presumed-location"
+    ]
+
+# How a refused unit is compiled again: its words and its file, `unit` empty
+# where it cannot be (`none`); whether it was, the rows clang wrote then, and
+# each file's bytes as they were read, by its path as clang named it.
+record Again
+    words: [str]
+    unit: str
+    dir: str
+    asked: bool
+    rows: [str]
+    files: {str: str}
+
+function of(words: [str], unit: str, dir: str) -> Again
+    no_rows: [str] = []
+    no_files: {str: str} = {}
+    return Again(words: words, unit: unit, dir: dir, asked: false, rows: no_rows, files: no_files)
+
+# A unit that cannot be compiled again, whose carets name nothing.
+function none() -> Again
+    no_words: [str] = []
+    return of(words: no_words, unit: "", dir: "")
+
+# What a run already said, read as the second run's rows, and the files'
+# bytes: a reading that compiles nothing.
+function given(said: str, files: {str: str}) -> Again
+    out: Again @= none()
+    out.asked @ true
+    out.rows @ ffi_lookup.lines(text: said)
+    out.files @ files
+    return out
+
+# Where a diagnostic row of clang's points, and what it says from its
+# severity on.
+record Spot
+    path: str
+    row: i64
+    column: i64
+    said: str
+
+# The line clang read under the diagnostic at row `after` of `rows`, and the
+# byte its caret stands on.
+record Caret
+    line: str
+    at: i64
+
+function caret(rows: [str], after: i64, @again: Again) -> Caret?
+    first = spot(row_at(rows, at: after))?
+    drawn = drawn_line(rows, after: after, at: first)
+
+    if !drawn.is_err()
+        return drawn
+    asked(@again)
+    there = nth(again.rows, count: ordinal(rows, at: after))?
+    second = spot(again.rows[there]).must()
+
+    if second.column != first.column || second.said != first.said
+        return fail(code: "none", msg: "the second run's diagnostic is another")
+    line = line_of(@again, path: second.path, row: second.row)?
+
+    if second.column < 1 || second.column > line.len()
+        return fail(code: "none", msg: "the column stands outside the line")
+    return ok(Caret(line: line, at: second.column - 1))
+
+# The identifier clang's caret stands on under the diagnostic at row `after`
+# of `rows`.
+function name(rows: [str], after: i64, @again: Again) -> str?
+    found = caret(rows, after: after, @again)?
+    return name_at(text: found.line, at: found.at)
+
+# The unit compiled again, once.
+function asked(@again: Again)
+    if again.asked
+        return
+    again.asked @ true
+
+    if again.unit == "" || process.mkdir_all(again.dir).is_err()
+        return
+    said_at = publish.private_name(again.dir + "/caret-stderr.txt")
+    line = response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only"], more: again.words),
+        dir: again.dir
+    )
+    ran = process.run(
+        program: "clang",
+        words: strings.with_all(list: line, more: PHYSICAL).push("-x").push("c").push(again.unit),
+        out: process.discard(),
+        err: said_at
+    )
+    said = read_back.words(said_at)
+    publish.discard(said_at)
+
+    if ran.started && !said.is_err()
+        again.rows @ ffi_lookup.lines(text: said.must())
+
+# The line clang drew under the diagnostic at row `after`, where the drawing
+# is the line's own bytes and its caret stands at the place's column, a
+# byte's; absent anywhere else.
+function drawn_line(rows: [str], after: i64, at: Spot) -> Caret?
+    quoted = clang_place.without_return(row_at(rows, at: after + 1))
+    marks = clang_place.without_return(row_at(rows, at: after + 2))
+    text = gutter(quoted, row: at.row)?
+    under = gutter(marks, row: 0)?
+    mark = clang_place.offset_of(text: marks.slice(from: under, to: marks.len()), needle: "^")?
+    line = quoted.slice(from: text, to: quoted.len())
+
+    if text != under || mark != at.column - 1 || !clang_place.offset_of(text: line, needle: "...").is_err()
+        return fail(code: "none", msg: "the excerpt is no drawing of the line's bytes")
+
+    for b in line.chars()
+        if b.len() != 1 || b[0] < ' ' || b[0] > '~'
+            return fail(code: "none", msg: "the excerpt is no drawing of the line's bytes")
+
+    return ok(Caret(line: line, at: mark))
+
+# Where a row of clang's excerpt begins past its gutter: spaces, the line's
+# number `row` on the quoted row and none on the caret's (`row` 0), then
+# `| `, the number's row ending ` | `.
+function gutter(text: str, row: i64) -> i64?
+    index: i64 @= 0
+
+    while index < text.len() && text[index] == ' '
+        index @ index + 1
+
+    if row > 0
+        digits = index
+
+        while index < text.len() && text[index] >= '0' && text[index] <= '9'
+            index @ index + 1
+
+        if index == digits || ffi_lookup.number(text.slice(from: digits, to: index)).default(-1) != row || !clang_place.same_bytes(text: text, from: index, part: " ")
+            return fail(code: "none", msg: "not clang's quoted row of this line")
+        index @ index + 1
+
+    if !clang_place.same_bytes(text: text, from: index, part: "| ")
+        return fail(code: "none", msg: "not clang's gutter")
+    return ok(index + 2)
+
+function row_at(rows: [str], at: i64) -> str
+    if at < 0 || at >= rows.len()
+        return ""
+    return rows[at]
+
+# A diagnostic row's place and words: `path:row:col: <severity>: ...`, at
+# the row's start, never a quoted line's, an include line or a row with no
+# place.
+function spot(line: str) -> Spot?
+    text = clang_place.without_return(line)
+
+    if text.len() == 0 || text[0] == ' ' || !clang_place.included(text).is_err()
+        return fail(code: "none", msg: "no diagnostic row")
+    end: i64 @= text.len()
+
+    for severity in clang_place.SEVERITIES
+        at = clang_place.offset_of(text: text, needle: severity)
+
+        if !at.is_err() && at.must() < end
+            end @ at.must()
+
+    if end == text.len()
+        return fail(code: "none", msg: "no diagnostic row")
+    column = clang_place.last_number(text.slice(from: 0, to: end))?
+    row = clang_place.last_number(column.head)?
+
+    if row.head.len() == 0
+        return fail(code: "none", msg: "no path before the line number")
+    return ok(Spot(path: row.head, row: row.number, column: column.number, said: text.slice(from: end, to: text.len())))
+
+# How many diagnostic rows stand before row `at`.
+function ordinal(rows: [str], at: i64) -> i64
+    count: i64 @= 0
+    index: i64 @= 0
+
+    while index < at && index < rows.len()
+        if !spot(rows[index]).is_err()
+            count @ count + 1
+        index @ index + 1
+
+    return count
+
+# The row of the diagnostic `count` diagnostics in.
+function nth(rows: [str], count: i64) -> i64?
+    seen: i64 @= 0
+    index: i64 @= 0
+
+    for row in rows
+        if !spot(row).is_err()
+            if seen == count
+                return ok(index)
+            seen @ seen + 1
+        index @ index + 1
+
+    return fail(code: "none", msg: "the second run wrote fewer diagnostics")
+
+# Line `row` of the file at `path`, its bytes read once, and only for a
+# unit compiled again: a reading `given` holds its files.
+function line_of(@again: Again, path: str, row: i64) -> str?
+    if again.files[path].is_err() && again.unit != ""
+        again.files[path] @ reading.bytes_kept(path)?
+    return line_at(text: again.files[path]?, row: row)
+
+# Line `row`, from 1, of `text`, ended as clang ends one: `\n`, `\r\n`, or a
+# `\r` alone.
+function line_at(text: str, row: i64) -> str?
+    at: i64 @= 0
+    line: i64 @= 1
+
+    while line < row
+        if at >= text.len()
+            return fail(code: "none", msg: "no such line")
+
+        if text[at] == '\n' || text[at] == '\r' && (at + 1 == text.len() || text[at + 1] != '\n')
+            line @ line + 1
+        at @ at + 1
+
+    if row < 1 || at > text.len()
+        return fail(code: "none", msg: "no such line")
+    stop: i64 @= at
+
+    while stop < text.len() && text[stop] != '\n' && text[stop] != '\r'
+        stop @ stop + 1
+
+    return ok(text.slice(from: at, to: stop))
+
+# The C identifier that begins at byte `at` of `text`, none where no name
+# begins there, the byte before it being of the name.
+function name_at(text: str, at: i64) -> str?
+    if at < 0 || at >= text.len() || text[at] >= '0' && text[at] <= '9' || !in_name(text[at]) || at > 0 && in_name(text[at - 1])
+        return fail(code: "none", msg: "no name begins there")
+    stop: i64 @= at
+
+    while stop < text.len() && in_name(text[stop])
+        stop @ stop + 1
+
+    return ok(text.slice(from: at, to: stop))
+
+function in_name(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+## Tests
+
+# DEFECT 2117: the name at a byte of the line clang read, wherever `#line`
+# said the line was. The first run's place is the program's `.hero`, the
+# second's the C file, and its 4,115-byte line, which clang quotes none of,
+# is read whole.
+test "the name under a caret is read at clang's byte in the line the second run names (defect 2117)"
+    long = "    " + "int32_t h0_x; ".repeat(292) + "int32_t t1, t2, t3, t4;"
+    assert long.len() == 4115
+    first = "p89.hero:4:4109: error: expected identifier or '('\n./m.h:2:12: note: expanded from macro 't3'\n    2 | #define t3 0\n      |            ^\n"
+    second = "build/tu-1/p89.c:102:4109: error: expected identifier or '('\n./m.h:2:12: note: expanded from macro 't3'\n    2 | #define t3 0\n      |            ^\n"
+    files = {"build/tu-1/p89.c": "\n".repeat(101) + long + "\n#line 4 \"p89.hero\"\n"}
+    again: Again @= given(said: second, files: files)
+    rows = ffi_lookup.lines(text: first)
+    assert name(rows, after: 0, @again).must() == "t3"
+
+    # The note's caret, read where clang drew its line, stands on the macro's
+    # `0`, which begins no name.
+    assert name(rows, after: 1, @again).is_err()
+
+    # A byte past ASCII and a tab before the name, which clang's excerpt
+    # draws in columns, the name at the line's end, and a line ended `\r\n`
+    # or by a `\r` alone, as clang ends them.
+    header = "x\r\n/* éé */\tint hero_str_len(int x);\rint t3"
+    told = "./bad.h:2:16: error: e\n    2 | /* éé */       int hero_str_len(int x);\n      |                    ^\n./bad.h:3:5: error: f\n"
+    again @ given(said: told, files: {"./bad.h": header})
+    rows_two = ffi_lookup.lines(text: told)
+    assert drawn_line(rows_two, after: 0, at: spot(rows_two[0]).must()).is_err()
+    assert name(rows_two, after: 0, @again).must() == "hero_str_len"
+    assert name(rows_two, after: 3, @again).must() == "t3"
+
+    # Nothing: a second run whose diagnostic says other words or stands at
+    # another column, one that wrote fewer, a byte inside a name, a column
+    # past the line, a unit that cannot be compiled again, and a row that is
+    # no diagnostic.
+    for said in ["./bad.h:2:16: error: g\n", "./bad.h:2:17: error: e\n", ""]
+        again @ given(said: said, files: {"./bad.h": header})
+        assert name(rows_two, after: 0, @again).is_err()
+
+    for said in ["./bad.h:2:17: error: e\n", "./bad.h:2:99: error: e\n"]
+        again @ given(said: said, files: {"./bad.h": header})
+        assert name(ffi_lookup.lines(text: said), after: 0, @again).is_err()
+
+    again @ none()
+    assert name(rows_two, after: 0, @again).is_err()
+    assert spot("    2 | ./bad.h:2:16: error: e").is_err()
+    assert spot("In file included from ./bad.h:2:").is_err()
+    assert line_at(text: "a\nb", row: 3).is_err()
+    assert line_at(text: "a\nb", row: 2).must() == "b"
+    assert name_at(text: "int64_t x;", at: 1).is_err()
+    assert name_at(text: "2x", at: 0).is_err()
+    assert name_at(text: "a_b9(", at: 0).must() == "a_b9"
+
+# Where clang's excerpt is the line's own bytes, its gutter numbering the
+# place's row and its caret at the place's column, the name is read there
+# with no second run; a gutter of another row, a caret elsewhere, a line cut
+# to fit and an excerpt holding a tab are not.
+test "an excerpt that is the line's own bytes is read with no second run (defect 2117)"
+    said = "./bad.h:2:19: error: e\n    2 | static inline int hero_str_len(int x);\n      |                   ^\n"
+    again: Again @= none()
+    assert name(ffi_lookup.lines(text: said), after: 0, @again).must() == "hero_str_len"
+
+    for other in ["./bad.h:3:19: error: e\n    2 | static inline int hero_str_len(int x);\n      |                   ^\n", "./bad.h:2:19: error: e\n    2 | static inline int hero_str_len(int x);\n      |                    ^\n", "./bad.h:2:19: error: e\n    2 | ...tic inline int hero_str_len(int x);\n      |                   ^\n", "./bad.h:2:19: error: e\n    2 | static\tinline int hero_str_len(int x);\n      |                   ^\n"]
+        assert name(ffi_lookup.lines(text: other), after: 0, @again).is_err()
+
+    assert gutter("      |  ^", row: 1).is_err()
+    assert gutter("    1 | x", row: 0).is_err()
+    assert gutter("   12 | x", row: 12).must() == 8

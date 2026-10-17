@@ -137,11 +137,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs570aheaderspragmal
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 147 "fixedbugs570aheaderspragmaleavesacorrectbindingbuilding.c"
 #pragma clang diagnostic pop
@@ -160,30 +160,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_main(void);
 
 #line 12 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-void h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_main(void) {
-#line 12 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    HERO_NODEBUG int32_t t1, t2, t4; HERO_NODEBUG struct a *t3; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-bb0:
-    t1 = INT64_C(-5);
-#line 13 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    t2 = abs(t1);
-#line 13 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    hero_print_int(t2);
-#line 13 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    hero_print_end();
-    t3 = ((void *)0);
-#line 14 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    hero_handle_alive(t3, "the argument `p` of `take_a`");
-#line 14 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    t4 = take_a(t3);
-#line 14 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    hero_print_int(t4);
-#line 14 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    hero_print_end();
-#line 14 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    return;
-#line 187 "fixedbugs570aheaderspragmaleavesacorrectbindingbuilding.c"
+void h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_main(void) { HERO_NODEBUG int32_t t1, t2, t4; HERO_NODEBUG struct a *t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(-5); t2 = abs(t1); hero_print_int(t2); hero_print_end();
+    t3 = ((void *)0); hero_handle_alive(t3, "the argument `p` of `take_a`"); t4 = take_a(t3); hero_print_int(t4); hero_print_end(); return;
+#line 167 "fixedbugs570aheaderspragmaleavesacorrectbindingbuilding.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_A_eq(struct a * const *a, struct a * const *b) {
     return hero_handle_eq(*a, *b);

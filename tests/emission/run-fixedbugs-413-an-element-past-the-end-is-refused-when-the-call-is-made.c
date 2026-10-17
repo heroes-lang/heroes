@@ -76,11 +76,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 86 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
 #pragma clang diagnostic pop
@@ -99,84 +99,24 @@ int64_t h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(int64_t
 void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_main(void);
 
 #line 7 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(int64_t *ph0_n, int64_t h1_k) {
-#line 7 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-bb0:
-    t1 = h1_k;
-#line 8 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    (*ph0_n) = t1;
-#line 8 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    return;
-#line 113 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(int64_t *ph0_n, int64_t h1_k) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_k; (*ph0_n) = t1; return;
+#line 105 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-int64_t h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(int64_t h0_k) {
-#line 10 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_6fc4002a);
-#line 11 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    t2 = h0_k;
-#line 11 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_print_str(t1);
-#line 11 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_print_int(t2);
-#line 11 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_print_end();
-    t3 = h0_k;
-#line 12 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    return t3;
-#line 134 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+int64_t h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(int64_t h0_k) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_6fc4002a); t2 = h0_k; hero_print_str(t1); hero_print_int(t2); hero_print_end();
+    t3 = h0_k; return t3;
+#line 112 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
 }
 
 #line 14 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_main(void) {
-#line 14 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t6, *t9, *t10; HERO_NODEBUG int64_t t1, t3, t4, t5, t7, t8; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    t2 = hero_array_new(&hero_desc_int, 1);
-#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_array_push_owned(&t2, &t1);
-#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    t9 = h1_own1;
-#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    h1_own1 = t2;
-#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_array_decref(t9);
-#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    t10 = h0_xs;
-#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_array_incref(t2);
-#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    h0_xs = t2;
-#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_array_decref(t10);
-    t3 = INT64_C(3);
-#line 16 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    t4 = INT64_C(5);
-#line 16 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    t5 = h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(t4);
-#line 16 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_array_unshare(&(h0_xs));
-#line 16 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(&(*((void)((h0_xs == NULL || t3 < 0 || t3 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t3), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t3)), t5);
-    t6 = h0_xs;
-#line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    t7 = INT64_C(0);
-#line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]);
-#line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_print_int(t8);
-#line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    hero_print_end();
-#line 180 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t6, *t9, *t10; HERO_NODEBUG int64_t t1, t3, t4, t5, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t9 = h1_own1; h1_own1 = t2; hero_array_decref(t9); t10 = h0_xs; hero_array_incref(t2); h0_xs = t2; hero_array_decref(t10);
+    t3 = INT64_C(3); t4 = INT64_C(5); t5 = h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(t4); hero_array_unshare(&(h0_xs)); h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(&(*((void)((h0_xs == NULL || t3 < 0 || t3 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t3), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t3)), t5);
+    t6 = h0_xs; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]); hero_print_int(t8); hero_print_end();
+#line 120 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

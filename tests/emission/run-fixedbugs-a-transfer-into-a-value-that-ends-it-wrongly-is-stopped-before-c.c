@@ -142,11 +142,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatransferintoavalu
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 152 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 #pragma clang diagnostic pop
@@ -167,67 +167,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void) {
-#line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    st * h0_s; wr * h1_w; HERO_NODEBUG st *t1, *t3; HERO_NODEBUG HeroStr t2, t6; HERO_NODEBUG wr *t4, *t5; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-bb0:
-    t1 = st_popen();
-#line 17 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_handle_acquired(t1, "st_pclose");
-#line 17 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    h0_s = t1;
-    t2 = HERO_STR_LIT(hero_str_4a02223e);
-#line 18 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_print_str(t2);
-#line 18 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_print_end();
-    t3 = h0_s;
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    {
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_handle_alive(t3, "the argument `s` of `wr_new`");
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_transferring(t3, "st_fclose");
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    t4 = wr_new(t3);
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    if (t4 != NULL) {
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_s == t3) h0_s = hero_handle_dead();
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    } else {
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_handle_kept(t3, hero_life_0_0);
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    }
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_handle_acquired(t4, "wr_free");
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    }
-#line 19 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    h1_w = t4;
-    t5 = h1_w;
-#line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    {
-#line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_handle_alive(t5, "the argument `w` of `wr_free`");
-#line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "wr_free", NULL);
-#line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    (void)wr_free(t5);
-#line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    if (hero_handle_ended(t5, hero_life_0_0) && h1_w == t5) h1_w = hero_handle_dead();
-#line 20 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    }
-    t6 = HERO_STR_LIT(hero_str_4414937d);
-#line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_print_str(t6);
-#line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    hero_print_end();
-#line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    return;
-#line 231 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void) { st * h0_s; wr * h1_w; HERO_NODEBUG st *t1, *t3; HERO_NODEBUG HeroStr t2, t6; HERO_NODEBUG wr *t4, *t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = st_popen(); hero_handle_acquired(t1, "st_pclose"); h0_s = t1;
+    t2 = HERO_STR_LIT(hero_str_4a02223e); hero_print_str(t2); hero_print_end();
+    t3 = h0_s; { hero_handle_alive(t3, "the argument `s` of `wr_new`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_transferring(t3, "st_fclose"); t4 = wr_new(t3); if (t4 != NULL) { if (hero_handle_ended(t3, hero_life_0_0) && h0_s == t3) h0_s = hero_handle_dead(); } else { hero_handle_kept(t3, hero_life_0_0); } hero_handle_acquired(t4, "wr_free"); } h1_w = t4;
+    t5 = h1_w; { hero_handle_alive(t5, "the argument `w` of `wr_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "wr_free", NULL); (void)wr_free(t5); if (hero_handle_ended(t5, hero_life_0_0) && h1_w == t5) h1_w = hero_handle_dead(); }
+    t6 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t6); hero_print_end(); return;
+#line 177 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_eq(st * const *a, st * const *b) {
     return hero_handle_eq(*a, *b);

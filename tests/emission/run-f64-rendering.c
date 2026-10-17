@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "f64rendering.c"
 #pragma clang diagnostic pop
@@ -95,71 +95,15 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_f64rendering_main(void);
 
 #line 19 "tests/golden/run/f64-rendering.hero"
-void h_f64rendering_main(void) {
-#line 19 "tests/golden/run/f64-rendering.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}, t16, t17; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/f64-rendering.hero"
-bb0:
-    t1 = 0x1.999999999999ap-4;
-#line 20 "tests/golden/run/f64-rendering.hero"
-    hero_print_f64(t1);
-#line 20 "tests/golden/run/f64-rendering.hero"
-    hero_print_end();
-    t2 = 0x1p+0;
-#line 21 "tests/golden/run/f64-rendering.hero"
-    hero_print_f64(t2);
-#line 21 "tests/golden/run/f64-rendering.hero"
-    hero_print_end();
-    t3 = 0x1.999999999999ap-4;
-#line 22 "tests/golden/run/f64-rendering.hero"
-    t4 = 0x1.999999999999ap-3;
-#line 22 "tests/golden/run/f64-rendering.hero"
-    t5 = t3 + t4;
-#line 22 "tests/golden/run/f64-rendering.hero"
-    hero_print_f64(t5);
-#line 22 "tests/golden/run/f64-rendering.hero"
-    hero_print_end();
-    t6 = 0x1.8p+1;
-#line 23 "tests/golden/run/f64-rendering.hero"
-    t7 = 0x1.cp+2;
-#line 23 "tests/golden/run/f64-rendering.hero"
-    t8 = t6 / t7;
-#line 23 "tests/golden/run/f64-rendering.hero"
-    hero_print_f64(t8);
-#line 23 "tests/golden/run/f64-rendering.hero"
-    hero_print_end();
-    t9 = 0x0p+0;
-#line 24 "tests/golden/run/f64-rendering.hero"
-    t10 = 0x1p+0;
-#line 24 "tests/golden/run/f64-rendering.hero"
-    t11 = t9 - t10;
-#line 24 "tests/golden/run/f64-rendering.hero"
-    hero_print_f64(t11);
-#line 24 "tests/golden/run/f64-rendering.hero"
-    hero_print_end();
-    t12 = 0x1p+1;
-#line 25 "tests/golden/run/f64-rendering.hero"
-    t13 = 0x1p-1;
-#line 25 "tests/golden/run/f64-rendering.hero"
-    t14 = t12 * t13;
-#line 25 "tests/golden/run/f64-rendering.hero"
-    hero_print_f64(t14);
-#line 25 "tests/golden/run/f64-rendering.hero"
-    hero_print_end();
-    t15 = 0x1p+0;
-#line 26 "tests/golden/run/f64-rendering.hero"
-    t16 = hero_f64_to_str(t15);
-#line 26 "tests/golden/run/f64-rendering.hero"
-    t17 = h0_own0;
-#line 26 "tests/golden/run/f64-rendering.hero"
-    h0_own0 = t16;
-#line 26 "tests/golden/run/f64-rendering.hero"
-    hero_str_decref(t17);
-#line 26 "tests/golden/run/f64-rendering.hero"
-    hero_print_str(t16);
-#line 26 "tests/golden/run/f64-rendering.hero"
-    hero_print_end();
-#line 163 "f64rendering.c"
+void h_f64rendering_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t16, t17; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1.999999999999ap-4; hero_print_f64(t1); hero_print_end();
+    t2 = 0x1p+0; hero_print_f64(t2); hero_print_end();
+    t3 = 0x1.999999999999ap-4; t4 = 0x1.999999999999ap-3; t5 = t3 + t4; hero_print_f64(t5); hero_print_end();
+    t6 = 0x1.8p+1; t7 = 0x1.cp+2; t8 = t6 / t7; hero_print_f64(t8); hero_print_end();
+    t9 = 0x0p+0; t10 = 0x1p+0; t11 = t9 - t10; hero_print_f64(t11); hero_print_end();
+    t12 = 0x1p+1; t13 = 0x1p-1; t14 = t12 * t13; hero_print_f64(t14); hero_print_end();
+    t15 = 0x1p+0; t16 = hero_f64_to_str(t15); t17 = h0_own0; h0_own0 = t16; hero_str_decref(t17); hero_print_str(t16); hero_print_end();
+#line 107 "f64rendering.c"
     hero_str_release_at(&h0_own0);
     return;
 }

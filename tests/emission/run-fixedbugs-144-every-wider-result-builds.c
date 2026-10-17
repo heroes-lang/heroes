@@ -217,11 +217,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 227 "fixedbugs144everywiderresultbuilds.c"
 #pragma clang diagnostic pop
@@ -238,410 +238,52 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs144everywiderresultbuilds_main(void);
 
 #line 67 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-void h_fixedbugs144everywiderresultbuilds_main(void) {
-#line 67 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    HERO_NODEBUG HeroStr t1, t3, t5, t7, t9, t11, t13, t15, t17, t19, t21, t23, t25, t27, t29, t31, t33, t35, t37, t39, t41, t43, t45, t47, t49, t51, t53, t55, t57, t59, t61, t63, t65, t67, t69, t71, t73, t75, t77, t79, t81, t83, t85, t87; HERO_NODEBUG int8_t t2, t20, t28; HERO_NODEBUG int16_t t4, t22, t30, t36, t50; HERO_NODEBUG int32_t t6, t24, t32, t38, t42, t52, t64; HERO_NODEBUG int64_t t8, t26, t34, t40, t44, t46, t48, t54, t66, t74; HERO_NODEBUG uint8_t t10, t56; HERO_NODEBUG uint16_t t12, t58, t68; HERO_NODEBUG uint32_t t14, t60, t70, t76; HERO_NODEBUG uint64_t t16, t62, t72, t78, t80, t82; HERO_NODEBUG bool t18; HERO_NODEBUG float t84; HERO_NODEBUG double t86, t88; HERO_ENTRY_STOP; goto bb0;
-#line 67 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_42cd28);
-#line 68 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t2 = bool_as_i8();
-#line 68 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t1);
-#line 68 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t2);
-#line 68 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t3 = HERO_STR_LIT(hero_str_213ddd85);
-#line 69 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t4 = bool_as_i16();
-#line 69 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t3);
-#line 69 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t4);
-#line 69 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t5 = HERO_STR_LIT(hero_str_21816c97);
-#line 70 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t6 = bool_as_i32();
-#line 70 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t5);
-#line 70 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t6);
-#line 70 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t7 = HERO_STR_LIT(hero_str_21e8db7a);
-#line 71 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t8 = bool_as_i64();
-#line 71 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t7);
-#line 71 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t8);
-#line 71 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t9 = HERO_STR_LIT(hero_str_1de706c);
-#line 72 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t10 = bool_as_u8();
-#line 72 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t9);
-#line 72 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t10);
-#line 72 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t11 = HERO_STR_LIT(hero_str_73e26952);
-#line 73 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t12 = bool_as_u16();
-#line 73 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t11);
-#line 73 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t12);
-#line 73 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t13 = HERO_STR_LIT(hero_str_7425f864);
-#line 74 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t14 = bool_as_u32();
-#line 74 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t13);
-#line 74 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t14);
-#line 74 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t15 = HERO_STR_LIT(hero_str_748d6747);
-#line 75 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t16 = bool_as_u64();
-#line 75 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t15);
-#line 75 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_uint(t16);
-#line 75 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t17 = HERO_STR_LIT(hero_str_6a0cdee7);
-#line 76 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t18 = bool_as_bool();
-#line 76 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t17);
-#line 76 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_bool(t18);
-#line 76 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t19 = HERO_STR_LIT(hero_str_66f443e8);
-#line 77 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t20 = char_as_i8();
-#line 77 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t19);
-#line 77 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t20);
-#line 77 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t21 = HERO_STR_LIT(hero_str_2e0da22e);
-#line 78 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t22 = char_as_i16();
-#line 78 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t21);
-#line 78 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t22);
-#line 78 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t23 = HERO_STR_LIT(hero_str_2e513140);
-#line 79 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t24 = char_as_i32();
-#line 79 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t23);
-#line 79 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t24);
-#line 79 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t25 = HERO_STR_LIT(hero_str_2eb8a023);
-#line 80 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t26 = char_as_i64();
-#line 80 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t25);
-#line 80 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t26);
-#line 80 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t27 = HERO_STR_LIT(hero_str_1f44bd63);
-#line 81 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t28 = schar_as_i8();
-#line 81 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t27);
-#line 81 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t28);
-#line 81 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t29 = HERO_STR_LIT(hero_str_7f3bcbd5);
-#line 82 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t30 = schar_as_i16();
-#line 82 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t29);
-#line 82 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t30);
-#line 82 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t31 = HERO_STR_LIT(hero_str_7f7f5ae7);
-#line 83 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t32 = schar_as_i32();
-#line 83 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t31);
-#line 83 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t32);
-#line 83 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t33 = HERO_STR_LIT(hero_str_7fe6c9ca);
-#line 84 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t34 = schar_as_i64();
-#line 84 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t33);
-#line 84 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t34);
-#line 84 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t35 = HERO_STR_LIT(hero_str_4fac1a0f);
-#line 85 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t36 = short_as_i16();
-#line 85 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t35);
-#line 85 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t36);
-#line 85 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t37 = HERO_STR_LIT(hero_str_4fefa921);
-#line 86 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t38 = short_as_i32();
-#line 86 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t37);
-#line 86 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t38);
-#line 86 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t39 = HERO_STR_LIT(hero_str_50571804);
-#line 87 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t40 = short_as_i64();
-#line 87 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t39);
-#line 87 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t40);
-#line 87 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t41 = HERO_STR_LIT(hero_str_7bd92ada);
-#line 88 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t42 = int_as_i32();
-#line 88 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t41);
-#line 88 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t42);
-#line 88 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t43 = HERO_STR_LIT(hero_str_7c4099bd);
-#line 89 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t44 = int_as_i64();
-#line 89 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t43);
-#line 89 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t44);
-#line 89 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t45 = HERO_STR_LIT(hero_str_79a87001);
-#line 90 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t46 = long_as_i64();
-#line 90 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t45);
-#line 90 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t46);
-#line 90 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t47 = HERO_STR_LIT(hero_str_45e596d7);
-#line 91 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t48 = llong_as_i64();
-#line 91 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t47);
-#line 91 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t48);
-#line 91 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t49 = HERO_STR_LIT(hero_str_79c1f998);
-#line 92 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t50 = uchar_as_i16();
-#line 92 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t49);
-#line 92 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t50);
-#line 92 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t51 = HERO_STR_LIT(hero_str_7a0588aa);
-#line 93 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t52 = uchar_as_i32();
-#line 93 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t51);
-#line 93 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t52);
-#line 93 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t53 = HERO_STR_LIT(hero_str_7a6cf78d);
-#line 94 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t54 = uchar_as_i64();
-#line 94 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t53);
-#line 94 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t54);
-#line 94 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t55 = HERO_STR_LIT(hero_str_1327c0c2);
-#line 95 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t56 = uchar_as_u8();
-#line 95 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t55);
-#line 95 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t56);
-#line 95 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t57 = HERO_STR_LIT(hero_str_4c668566);
-#line 96 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t58 = uchar_as_u16();
-#line 96 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t57);
-#line 96 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t58);
-#line 96 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t59 = HERO_STR_LIT(hero_str_4caa1478);
-#line 97 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t60 = uchar_as_u32();
-#line 97 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t59);
-#line 97 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t60);
-#line 97 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t61 = HERO_STR_LIT(hero_str_4d11835b);
-#line 98 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t62 = uchar_as_u64();
-#line 98 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t61);
-#line 98 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_uint(t62);
-#line 98 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t63 = HERO_STR_LIT(hero_str_d3864ad);
-#line 99 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t64 = ushort_as_i32();
-#line 99 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t63);
-#line 99 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t64);
-#line 99 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t65 = HERO_STR_LIT(hero_str_d9fd390);
-#line 100 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t66 = ushort_as_i64();
-#line 100 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t65);
-#line 100 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t66);
-#line 100 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t67 = HERO_STR_LIT(hero_str_5f996168);
-#line 101 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t68 = ushort_as_u16();
-#line 101 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t67);
-#line 101 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t68);
-#line 101 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t69 = HERO_STR_LIT(hero_str_5fdcf07a);
-#line 102 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t70 = ushort_as_u32();
-#line 102 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t69);
-#line 102 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t70);
-#line 102 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t71 = HERO_STR_LIT(hero_str_60445f5d);
-#line 103 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t72 = ushort_as_u64();
-#line 103 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t71);
-#line 103 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_uint(t72);
-#line 103 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t73 = HERO_STR_LIT(hero_str_26d87353);
-#line 104 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t74 = uint_as_i64();
-#line 104 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t73);
-#line 104 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t74);
-#line 104 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t75 = HERO_STR_LIT(hero_str_7915903d);
-#line 105 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t76 = uint_as_u32();
-#line 105 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t75);
-#line 105 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_int(t76);
-#line 105 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t77 = HERO_STR_LIT(hero_str_797cff20);
-#line 106 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t78 = uint_as_u64();
-#line 106 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t77);
-#line 106 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_uint(t78);
-#line 106 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t79 = HERO_STR_LIT(hero_str_1801533a);
-#line 107 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t80 = ulong_as_u64();
-#line 107 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t79);
-#line 107 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_uint(t80);
-#line 107 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t81 = HERO_STR_LIT(hero_str_40d8cdf1);
-#line 108 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t82 = ullong_as_u64();
-#line 108 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t81);
-#line 108 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_uint(t82);
-#line 108 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t83 = HERO_STR_LIT(hero_str_61f72f8);
-#line 109 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t84 = float_as_f32();
-#line 109 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t83);
-#line 109 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_f32(t84);
-#line 109 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t85 = HERO_STR_LIT(hero_str_686e1db);
-#line 110 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t86 = float_as_f64();
-#line 110 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t85);
-#line 110 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_f64(t86);
-#line 110 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-    t87 = HERO_STR_LIT(hero_str_61fadc34);
-#line 111 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    t88 = double_as_f64();
-#line 111 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_str(t87);
-#line 111 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_f64(t88);
-#line 111 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    hero_print_end();
-#line 111 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    return;
-#line 645 "fixedbugs144everywiderresultbuilds.c"
+void h_fixedbugs144everywiderresultbuilds_main(void) { HERO_NODEBUG HeroStr t1, t3, t5, t7, t9, t11, t13, t15, t17, t19, t21, t23, t25, t27, t29, t31, t33, t35, t37, t39, t41, t43, t45, t47, t49, t51, t53, t55, t57, t59, t61, t63, t65, t67, t69, t71, t73, t75, t77, t79, t81, t83, t85, t87; HERO_NODEBUG int8_t t2, t20, t28; HERO_NODEBUG int16_t t4, t22, t30, t36, t50; HERO_NODEBUG int32_t t6, t24, t32, t38, t42, t52, t64; HERO_NODEBUG int64_t t8, t26, t34, t40, t44, t46, t48, t54, t66, t74; HERO_NODEBUG uint8_t t10, t56; HERO_NODEBUG uint16_t t12, t58, t68; HERO_NODEBUG uint32_t t14, t60, t70, t76; HERO_NODEBUG uint64_t t16, t62, t72, t78, t80, t82; HERO_NODEBUG bool t18; HERO_NODEBUG float t84; HERO_NODEBUG double t86, t88; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_42cd28); t2 = bool_as_i8(); hero_print_str(t1); hero_print_int(t2); hero_print_end();
+    t3 = HERO_STR_LIT(hero_str_213ddd85); t4 = bool_as_i16(); hero_print_str(t3); hero_print_int(t4); hero_print_end();
+    t5 = HERO_STR_LIT(hero_str_21816c97); t6 = bool_as_i32(); hero_print_str(t5); hero_print_int(t6); hero_print_end();
+    t7 = HERO_STR_LIT(hero_str_21e8db7a); t8 = bool_as_i64(); hero_print_str(t7); hero_print_int(t8); hero_print_end();
+    t9 = HERO_STR_LIT(hero_str_1de706c); t10 = bool_as_u8(); hero_print_str(t9); hero_print_int(t10); hero_print_end();
+    t11 = HERO_STR_LIT(hero_str_73e26952); t12 = bool_as_u16(); hero_print_str(t11); hero_print_int(t12); hero_print_end();
+    t13 = HERO_STR_LIT(hero_str_7425f864); t14 = bool_as_u32(); hero_print_str(t13); hero_print_int(t14); hero_print_end();
+    t15 = HERO_STR_LIT(hero_str_748d6747); t16 = bool_as_u64(); hero_print_str(t15); hero_print_uint(t16); hero_print_end();
+    t17 = HERO_STR_LIT(hero_str_6a0cdee7); t18 = bool_as_bool(); hero_print_str(t17); hero_print_bool(t18); hero_print_end();
+    t19 = HERO_STR_LIT(hero_str_66f443e8); t20 = char_as_i8(); hero_print_str(t19); hero_print_int(t20); hero_print_end();
+    t21 = HERO_STR_LIT(hero_str_2e0da22e); t22 = char_as_i16(); hero_print_str(t21); hero_print_int(t22); hero_print_end();
+    t23 = HERO_STR_LIT(hero_str_2e513140); t24 = char_as_i32(); hero_print_str(t23); hero_print_int(t24); hero_print_end();
+    t25 = HERO_STR_LIT(hero_str_2eb8a023); t26 = char_as_i64(); hero_print_str(t25); hero_print_int(t26); hero_print_end();
+    t27 = HERO_STR_LIT(hero_str_1f44bd63); t28 = schar_as_i8(); hero_print_str(t27); hero_print_int(t28); hero_print_end();
+    t29 = HERO_STR_LIT(hero_str_7f3bcbd5); t30 = schar_as_i16(); hero_print_str(t29); hero_print_int(t30); hero_print_end();
+    t31 = HERO_STR_LIT(hero_str_7f7f5ae7); t32 = schar_as_i32(); hero_print_str(t31); hero_print_int(t32); hero_print_end();
+    t33 = HERO_STR_LIT(hero_str_7fe6c9ca); t34 = schar_as_i64(); hero_print_str(t33); hero_print_int(t34); hero_print_end();
+    t35 = HERO_STR_LIT(hero_str_4fac1a0f); t36 = short_as_i16(); hero_print_str(t35); hero_print_int(t36); hero_print_end();
+    t37 = HERO_STR_LIT(hero_str_4fefa921); t38 = short_as_i32(); hero_print_str(t37); hero_print_int(t38); hero_print_end();
+    t39 = HERO_STR_LIT(hero_str_50571804); t40 = short_as_i64(); hero_print_str(t39); hero_print_int(t40); hero_print_end();
+    t41 = HERO_STR_LIT(hero_str_7bd92ada); t42 = int_as_i32(); hero_print_str(t41); hero_print_int(t42); hero_print_end();
+    t43 = HERO_STR_LIT(hero_str_7c4099bd); t44 = int_as_i64(); hero_print_str(t43); hero_print_int(t44); hero_print_end();
+    t45 = HERO_STR_LIT(hero_str_79a87001); t46 = long_as_i64(); hero_print_str(t45); hero_print_int(t46); hero_print_end();
+    t47 = HERO_STR_LIT(hero_str_45e596d7); t48 = llong_as_i64(); hero_print_str(t47); hero_print_int(t48); hero_print_end();
+    t49 = HERO_STR_LIT(hero_str_79c1f998); t50 = uchar_as_i16(); hero_print_str(t49); hero_print_int(t50); hero_print_end();
+    t51 = HERO_STR_LIT(hero_str_7a0588aa); t52 = uchar_as_i32(); hero_print_str(t51); hero_print_int(t52); hero_print_end();
+    t53 = HERO_STR_LIT(hero_str_7a6cf78d); t54 = uchar_as_i64(); hero_print_str(t53); hero_print_int(t54); hero_print_end();
+    t55 = HERO_STR_LIT(hero_str_1327c0c2); t56 = uchar_as_u8(); hero_print_str(t55); hero_print_int(t56); hero_print_end();
+    t57 = HERO_STR_LIT(hero_str_4c668566); t58 = uchar_as_u16(); hero_print_str(t57); hero_print_int(t58); hero_print_end();
+    t59 = HERO_STR_LIT(hero_str_4caa1478); t60 = uchar_as_u32(); hero_print_str(t59); hero_print_int(t60); hero_print_end();
+    t61 = HERO_STR_LIT(hero_str_4d11835b); t62 = uchar_as_u64(); hero_print_str(t61); hero_print_uint(t62); hero_print_end();
+    t63 = HERO_STR_LIT(hero_str_d3864ad); t64 = ushort_as_i32(); hero_print_str(t63); hero_print_int(t64); hero_print_end();
+    t65 = HERO_STR_LIT(hero_str_d9fd390); t66 = ushort_as_i64(); hero_print_str(t65); hero_print_int(t66); hero_print_end();
+    t67 = HERO_STR_LIT(hero_str_5f996168); t68 = ushort_as_u16(); hero_print_str(t67); hero_print_int(t68); hero_print_end();
+    t69 = HERO_STR_LIT(hero_str_5fdcf07a); t70 = ushort_as_u32(); hero_print_str(t69); hero_print_int(t70); hero_print_end();
+    t71 = HERO_STR_LIT(hero_str_60445f5d); t72 = ushort_as_u64(); hero_print_str(t71); hero_print_uint(t72); hero_print_end();
+    t73 = HERO_STR_LIT(hero_str_26d87353); t74 = uint_as_i64(); hero_print_str(t73); hero_print_int(t74); hero_print_end();
+    t75 = HERO_STR_LIT(hero_str_7915903d); t76 = uint_as_u32(); hero_print_str(t75); hero_print_int(t76); hero_print_end();
+    t77 = HERO_STR_LIT(hero_str_797cff20); t78 = uint_as_u64(); hero_print_str(t77); hero_print_uint(t78); hero_print_end();
+    t79 = HERO_STR_LIT(hero_str_1801533a); t80 = ulong_as_u64(); hero_print_str(t79); hero_print_uint(t80); hero_print_end();
+    t81 = HERO_STR_LIT(hero_str_40d8cdf1); t82 = ullong_as_u64(); hero_print_str(t81); hero_print_uint(t82); hero_print_end();
+    t83 = HERO_STR_LIT(hero_str_61f72f8); t84 = float_as_f32(); hero_print_str(t83); hero_print_f32(t84); hero_print_end();
+    t85 = HERO_STR_LIT(hero_str_686e1db); t86 = float_as_f64(); hero_print_str(t85); hero_print_f64(t86); hero_print_end();
+    t87 = HERO_STR_LIT(hero_str_61fadc34); t88 = double_as_f64(); hero_print_str(t87); hero_print_f64(t88); hero_print_end(); return;
+#line 287 "fixedbugs144everywiderresultbuilds.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

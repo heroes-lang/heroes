@@ -133,11 +133,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_cfreesaleaseandtheruntimena
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "cfreesaleaseandtheruntimenamesit.c"
 #pragma clang diagnostic pop
@@ -154,35 +154,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_cfreesaleaseandtheruntimenamesit_main(void);
 
 #line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-void h_cfreesaleaseandtheruntimenamesit_main(void) {
-#line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1, t2, t6; HERO_NODEBUG const char *t3, *t5; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
-#line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_35d9fe9b);
-#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    t6 = h0_x;
-#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    hero_str_incref(t1);
-#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    h0_x = t1;
-#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    hero_str_decref(t6);
-    t2 = h0_x;
-#line 28 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    t3 = hero_str_held(t2);
-#line 28 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    h1_c = t3;
-    t4 = INT64_C(1);
-#line 29 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    hero_print_int(t4);
-#line 29 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    hero_print_end();
-    t5 = h1_c;
-#line 30 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    (void)eat(hero_cstr_nonnull(t5));
+void h_cfreesaleaseandtheruntimenamesit_main(void) { HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1, t2, t6; HERO_NODEBUG const char *t3, *t5; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_35d9fe9b); t6 = h0_x; hero_str_incref(t1); h0_x = t1; hero_str_decref(t6);
+    t2 = h0_x; t3 = hero_str_held(t2); h1_c = t3;
+    t4 = INT64_C(1); hero_print_int(t4); hero_print_end();
+    t5 = h1_c; (void)eat(hero_cstr_nonnull(t5));
     hero_held_release(&h1_c);
-#line 186 "cfreesaleaseandtheruntimenamesit.c"
+#line 164 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_release_at(&h0_x);
     return;
 }

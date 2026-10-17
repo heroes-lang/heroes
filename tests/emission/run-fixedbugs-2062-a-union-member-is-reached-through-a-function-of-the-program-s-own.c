@@ -138,11 +138,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2062aunionmemberis
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 148 "fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown.c"
 #pragma clang diagnostic pop
@@ -182,53 +182,15 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 14 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
 void h_fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown_main(void) {
-#line 14 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
+#line 14
 #define h0_t (*hero_lend_h0_t)
-#line 14 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown.main", "t"); HERO_NODEBUG int32_t t1, t3, t4, t5; HERO_NODEBUG struct tagged t2; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-bb0:
-    t1 = INT64_C(2);
-#line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    t2 = (struct tagged){0};
-#line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    __builtin_memset(&t2, 0, sizeof t2);
-#line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    t2.kind = t1;
-#line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    h0_t = t2;
-#line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
-    t3 = INT64_C(7);
-#line 16 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_lend_local_name(hero_lend_h0_t, "tagged_set_fd", "t");
-#line 16 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
-#line 16 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    (void)tagged_set_fd(&h0_t, t3);
-    hero_lend_local_name(hero_lend_h0_t, "tg_kind", "t");
-#line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
-#line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    t4 = tg_kind(&h0_t);
-#line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_print_int(t4);
-#line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_print_end();
-    hero_lend_local_name(hero_lend_h0_t, "tagged_fd", "t");
-#line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
-#line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    t5 = tagged_fd(&h0_t);
-#line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_print_int(t5);
-#line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    hero_lend_local_give(hero_lend_h0_t);
-#line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    return;
-#line 232 "fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown.c"
+#line 14
+    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown.main", "t"); HERO_NODEBUG int32_t t1, t3, t4, t5; HERO_NODEBUG struct tagged t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(2); t2 = (struct tagged){0}; __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; h0_t = t2; hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
+    t3 = INT64_C(7); hero_lend_local_name(hero_lend_h0_t, "tagged_set_fd", "t"); hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0); (void)tagged_set_fd(&h0_t, t3);
+    hero_lend_local_name(hero_lend_h0_t, "tg_kind", "t"); hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0); t4 = tg_kind(&h0_t); hero_print_int(t4); hero_print_end();
+    hero_lend_local_name(hero_lend_h0_t, "tagged_fd", "t"); hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0); t5 = tagged_fd(&h0_t); hero_print_int(t5); hero_print_end(); hero_lend_local_give(hero_lend_h0_t); return;
+#line 194 "fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown.c"
 }
 #undef h0_t
 HERO_TU_LOCAL bool h_fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown_Tagged_eq(const struct tagged *a, const struct tagged *b) {

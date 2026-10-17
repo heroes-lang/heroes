@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
 #pragma clang diagnostic pop
@@ -95,43 +95,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs389areadofanemptyarrayabortsintheruntimeswords_main(void);
 
 #line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-void h_fixedbugs389areadofanemptyarrayabortsintheruntimeswords_main(void) {
-#line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    HeroArrayHeader * h0_empty = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t7, *t8; HERO_NODEBUG int64_t t3, t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    t7 = h1_own1;
-#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    h1_own1 = t1;
-#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    hero_array_decref(t7);
-#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    t8 = h0_empty;
-#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    hero_array_incref(t1);
-#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    h0_empty = t1;
-#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    hero_array_decref(t8);
-    t2 = h0_empty;
-#line 7 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
-#line 7 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    hero_print_int(t3);
-#line 7 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    hero_print_end();
-    t4 = h0_empty;
-#line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    t5 = INT64_C(0);
-#line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
-#line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    hero_print_int(t6);
-#line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    hero_print_end();
-#line 135 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+void h_fixedbugs389areadofanemptyarrayabortsintheruntimeswords_main(void) { HeroArrayHeader * h0_empty = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t7, *t8; HERO_NODEBUG int64_t t3, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t7 = h1_own1; h1_own1 = t1; hero_array_decref(t7); t8 = h0_empty; hero_array_incref(t1); h0_empty = t1; hero_array_decref(t8);
+    t2 = h0_empty; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); hero_print_int(t3); hero_print_end();
+    t4 = h0_empty; t5 = INT64_C(0); t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]); hero_print_int(t6); hero_print_end();
+#line 103 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
     hero_array_release_at(&h0_empty);
     hero_array_release_at(&h1_own1);
     return;

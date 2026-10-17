@@ -132,11 +132,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 142 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 #pragma clang diagnostic pop
@@ -159,19 +159,9 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main(void);
 
 #line 22 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
-void h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main(void) {
-#line 22 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 23 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
-    hero_print_int(t1);
-#line 23 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
-    hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
-    return;
-#line 175 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+void h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); hero_print_int(t1); hero_print_end(); return;
+#line 165 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b) {
     return hero_handle_eq(*a, *b);

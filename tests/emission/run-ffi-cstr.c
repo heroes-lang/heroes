@@ -136,11 +136,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fficstr_puts(const char * a
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 146 "fficstr.c"
 #pragma clang diagnostic pop
@@ -158,59 +158,21 @@ HeroStr h_fficstr_shout(HeroStr h0_text);
 void h_fficstr_main(void);
 
 #line 15 "tests/golden/run/ffi-cstr.hero"
-HeroStr h_fficstr_shout(HeroStr h0_text) {
-#line 15 "tests/golden/run/ffi-cstr.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/ffi-cstr.hero"
-bb0:
-    t1 = h0_text;
-#line 16 "tests/golden/run/ffi-cstr.hero"
-    t2 = HERO_STR_LIT(hero_str_21);
-#line 16 "tests/golden/run/ffi-cstr.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 16 "tests/golden/run/ffi-cstr.hero"
-    t4 = h1_own1;
-#line 16 "tests/golden/run/ffi-cstr.hero"
-    h1_own1 = t3;
-#line 16 "tests/golden/run/ffi-cstr.hero"
-    hero_str_decref(t4);
-#line 178 "fficstr.c"
+HeroStr h_fficstr_shout(HeroStr h0_text) { HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t4 = h1_own1; h1_own1 = t3; hero_str_decref(t4);
+#line 164 "fficstr.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
 }
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
-void h_fficstr_main(void) {
-#line 18 "tests/golden/run/ffi-cstr.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t4, t5, t8, t9; HERO_NODEBUG const char *t2, *t6; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/ffi-cstr.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_79c9889a);
-#line 19 "tests/golden/run/ffi-cstr.hero"
-    t2 = hero_str_lend(t1);
-#line 19 "tests/golden/run/ffi-cstr.hero"
-    (void)puts(hero_cstr_nonnull(t2));
-#line 24 "tests/golden/run/ffi-cstr.hero"
-    t4 = HERO_STR_LIT(hero_str_5cc08313);
-#line 24 "tests/golden/run/ffi-cstr.hero"
-    t5 = h_fficstr_shout(t4);
-#line 24 "tests/golden/run/ffi-cstr.hero"
-    t9 = h0_own0;
-#line 24 "tests/golden/run/ffi-cstr.hero"
-    h0_own0 = t5;
-#line 24 "tests/golden/run/ffi-cstr.hero"
-    hero_str_decref(t9);
-#line 24 "tests/golden/run/ffi-cstr.hero"
-    t6 = hero_str_lend(t5);
-#line 24 "tests/golden/run/ffi-cstr.hero"
-    (void)puts(hero_cstr_nonnull(t6));
-    t8 = HERO_STR_LIT(hero_str_6251eb62);
-#line 25 "tests/golden/run/ffi-cstr.hero"
-    hero_print_str(t8);
-#line 25 "tests/golden/run/ffi-cstr.hero"
-    hero_print_end();
-#line 214 "fficstr.c"
+void h_fficstr_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t4, t5, t8, t9; HERO_NODEBUG const char *t2, *t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_79c9889a); t2 = hero_str_lend(t1); (void)puts(hero_cstr_nonnull(t2));
+#line 24
+    t4 = HERO_STR_LIT(hero_str_5cc08313); t5 = h_fficstr_shout(t4); t9 = h0_own0; h0_own0 = t5; hero_str_decref(t9); t6 = hero_str_lend(t5); (void)puts(hero_cstr_nonnull(t6));
+    t8 = HERO_STR_LIT(hero_str_6251eb62); hero_print_str(t8); hero_print_end();
+#line 176 "fficstr.c"
     hero_str_release_at(&h0_own0);
     return;
 }

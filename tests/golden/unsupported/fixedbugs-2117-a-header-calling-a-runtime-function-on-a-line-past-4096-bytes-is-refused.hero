@@ -1,0 +1,16 @@
+# fixedbugs, defect 2117, 2026-10-17, defect 2049's call past 4,096 bytes.
+#
+# SYMPTOM: `hero_str_len(8)` on a header's line past 4,096 bytes was told as
+# the runtime's `heroes_runtime.h` line, with no fix: clang quotes no such
+# line, and the reader read the call holding clang's caret in the line clang
+# quoted.
+#
+# FIX: the call is read from the header's bytes (`cli/caret_bytes.hero`),
+# told as the Heroes runtime's own function the line calls, exit 1, with a
+# `guess` fix.
+
+extern "fixedbugs-2117-a-header-calling-a-runtime-function-on-a-line-past-4096-bytes-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

@@ -58,11 +58,9 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #endif
 
 #line 9 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-_Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, nsap) != 0, "heroes-ffi-flex Slot nsap");
-#line 9 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-_Static_assert(_Generic(&((Slot *)0)->nsap, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot nsap");
+_Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, nsap) != 0, "heroes-ffi-flex Slot nsap"); _Static_assert(_Generic(&((Slot *)0)->nsap, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot nsap");
 _Static_assert(__builtin_classify_type(((Slot *)0)->id) == 1 && sizeof(((Slot *)0)->id) == sizeof(int64_t) && (_Generic(((Slot *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot id");
-#line 66 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 64 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -143,13 +141,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs570aconstantspragm
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 151 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_Slot_eq(const Slot *a, const Slot *b);
@@ -176,7 +174,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 15 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
 int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(void) {
-#line 180 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 178 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
     _Static_assert(HERO_RET_I32(QUIET_FIVE), "heroes-ffi-return QUIET_FIVE i32");
     _Static_assert(__builtin_constant_p(QUIET_FIVE), "heroes-ffi-const QUIET_FIVE");
 #pragma clang diagnostic push
@@ -188,7 +186,7 @@ int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(vo
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     return QUIET_FIVE;
-#line 192 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 190 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -205,50 +203,12 @@ int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(vo
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 17 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-void h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_main(void) {
-#line 17 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    __attribute__((unused)) Slot h0_t; HERO_NODEBUG Slot t1; HERO_NODEBUG void *t4, *t8; HERO_NODEBUG int64_t t5, t9, t10; HERO_NODEBUG int32_t t11, t12, t13; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-bb0:
-    t1 = slot_make();
-#line 18 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    h0_t = t1;
-#line 18 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    hero_pad_fill(&h0_t, sizeof(Slot), 1, hero_pad_g_0, hero_pad_n_0);
-    t4 = (void *)(h0_t.nsap);
-#line 19 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    t5 = INT64_C(8);
-#line 19 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap)), "heroes-ffi-extent slot_fill p n 675 687 692 693 8");
-#line 19 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_t.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 675 687 692 693 8 void *");
-#line 19 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    (void)slot_fill(t4, t5);
-    t8 = (void *)(h0_t.nsap);
-#line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    t9 = INT64_C(8);
-#line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap)), "heroes-ffi-extent slot_sum p n 717 729 734 735 8");
-#line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_t.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 717 729 734 735 8 const void *");
-#line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    t10 = slot_sum(t8, t9);
-#line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    hero_print_int(t10);
-#line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    hero_print_end();
-    t11 = h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE();
-#line 21 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    if (__builtin_sub_overflow(INT64_C(0), t11, &t12)) hero_panic_overflow();
-#line 21 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    t13 = abs(t12);
-#line 21 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    hero_print_int(t13);
-#line 21 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    hero_print_end();
-#line 21 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    return;
-#line 252 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+void h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_main(void) { __attribute__((unused)) Slot h0_t; HERO_NODEBUG Slot t1; HERO_NODEBUG void *t4, *t8; HERO_NODEBUG int64_t t5, t9, t10; HERO_NODEBUG int32_t t11, t12, t13; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = slot_make(); h0_t = t1; hero_pad_fill(&h0_t, sizeof(Slot), 1, hero_pad_g_0, hero_pad_n_0);
+    t4 = (void *)(h0_t.nsap); t5 = INT64_C(8); _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap)), "heroes-ffi-extent slot_fill p n 675 687 692 693 8"); _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_t.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 675 687 692 693 8 void *"); (void)slot_fill(t4, t5);
+    t8 = (void *)(h0_t.nsap); t9 = INT64_C(8); _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap)), "heroes-ffi-extent slot_sum p n 717 729 734 735 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_t.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 717 729 734 735 8 const void *"); t10 = slot_sum(t8, t9); hero_print_int(t10); hero_print_end();
+    t11 = h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(); if (__builtin_sub_overflow(INT64_C(0), t11, &t12)) hero_panic_overflow(); t13 = abs(t12); hero_print_int(t13); hero_print_end(); return;
+#line 212 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;

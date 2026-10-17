@@ -137,11 +137,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_limitacopyreadaftercreusedi
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 147 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 #pragma clang diagnostic pop
@@ -160,66 +160,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void);
 
 #line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void) {
-#line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    node * h0_a; node * h1_keep; node * h2_b; HERO_NODEBUG node *t1, *t2, *t3, *t4, *t6, *t8; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
-#line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-bb0:
-    t1 = node_new();
-#line 25 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    hero_handle_acquired(t1, "node_free");
-#line 25 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    h0_a = t1;
-    t2 = h0_a;
-#line 26 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    h1_keep = t2;
-    t3 = h0_a;
-#line 27 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    {
-#line 27 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    hero_handle_alive(t3, "the argument `n` of `node_free`");
-#line 27 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL);
-#line 27 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    (void)node_free(t3);
-#line 27 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
-#line 27 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    }
-    t4 = node_new();
-#line 28 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    hero_handle_acquired(t4, "node_free");
-#line 28 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    h2_b = t4;
-    t5 = HERO_STR_LIT(hero_str_1b811794);
-#line 29 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    t6 = h1_keep;
-#line 29 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    hero_handle_alive(t6, "the argument `n` of `node_value`");
-#line 29 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    t7 = node_value(t6);
-#line 29 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    hero_print_str(t5);
-#line 29 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    hero_print_int(t7);
-#line 29 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    hero_print_end();
-    t8 = h2_b;
-#line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    {
-#line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    hero_handle_alive(t8, "the argument `n` of `node_free`");
-#line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "node_free", NULL);
-#line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    (void)node_free(t8);
-#line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    if (hero_handle_ended(t8, hero_life_0_0) && h2_b == t8) h2_b = hero_handle_dead();
-#line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    }
-#line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    return;
-#line 223 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void) { node * h0_a; node * h1_keep; node * h2_b; HERO_NODEBUG node *t1, *t2, *t3, *t4, *t6, *t8; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = node_new(); hero_handle_acquired(t1, "node_free"); h0_a = t1;
+    t2 = h0_a; h1_keep = t2;
+    t3 = h0_a; { hero_handle_alive(t3, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL); (void)node_free(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); }
+    t4 = node_new(); hero_handle_acquired(t4, "node_free"); h2_b = t4;
+    t5 = HERO_STR_LIT(hero_str_1b811794); t6 = h1_keep; hero_handle_alive(t6, "the argument `n` of `node_value`"); t7 = node_value(t6); hero_print_str(t5); hero_print_int(t7); hero_print_end();
+    t8 = h2_b; { hero_handle_alive(t8, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "node_free", NULL); (void)node_free(t8); if (hero_handle_ended(t8, hero_life_0_0) && h2_b == t8) h2_b = hero_handle_dead(); } return;
+#line 171 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitacopyreadaftercreuseditsaddressisnotcaught_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

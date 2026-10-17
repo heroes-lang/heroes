@@ -135,11 +135,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_leaseckeepsthepointer_stash
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 145 "leaseckeepsthepointer.c"
 #pragma clang diagnostic pop
@@ -156,82 +156,16 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_leaseckeepsthepointer_main(void);
 
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-void h_leaseckeepsthepointer_main(void) {
-#line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    int64_t h0_at; const char * h1_label; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t5, t7, t8, t9, t10, t17, t18, t19; HERO_NODEBUG int64_t t1, t2, t3, t6, t14, t15, t16; HERO_NODEBUG bool t4; HERO_NODEBUG const char *t11, *t12; HERO_NODEBUG uint64_t t13; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 16 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    h0_at = t1;
-#line 16 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    goto bb1;
-#line 16 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-bb1:
-#line 18 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t2 = h0_at;
-#line 18 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t3 = INT64_C(3);
-#line 18 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t4 = t2 < t3;
-#line 18 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 18 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-bb2:
-    t5 = HERO_STR_LIT(hero_str_f63dcff);
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t6 = h0_at;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t7 = hero_int_to_str(t6);
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t17 = h2_own2;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    h2_own2 = t7;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    hero_str_decref(t17);
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t8 = hero_str_concat(t5, t7);
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t18 = h3_own3;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    h3_own3 = t8;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    hero_str_decref(t18);
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t9 = HERO_STR_LIT(hero_str_3390715c);
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t10 = hero_str_concat(t8, t9);
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t19 = h4_own4;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    h4_own4 = t10;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    hero_str_decref(t19);
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t11 = hero_str_held(t10);
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    h1_label = t11;
-    t12 = h1_label;
-#line 20 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    (void)stash_put(hero_cstr_nonnull(t12));
-    t13 = stash_len();
-#line 21 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    hero_print_uint(t13);
-#line 21 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    hero_print_end();
+void h_leaseckeepsthepointer_main(void) { int64_t h0_at; const char * h1_label; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t5, t7, t8, t9, t10, t17, t18, t19; HERO_NODEBUG int64_t t1, t2, t3, t6, t14, t15, t16; HERO_NODEBUG bool t4; HERO_NODEBUG const char *t11, *t12; HERO_NODEBUG uint64_t t13; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_at = t1; goto bb1; bb1:
+#line 18
+    t2 = h0_at; t3 = INT64_C(3); t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb2:
+    t5 = HERO_STR_LIT(hero_str_f63dcff); t6 = h0_at; t7 = hero_int_to_str(t6); t17 = h2_own2; h2_own2 = t7; hero_str_decref(t17); t8 = hero_str_concat(t5, t7); t18 = h3_own3; h3_own3 = t8; hero_str_decref(t18); t9 = HERO_STR_LIT(hero_str_3390715c); t10 = hero_str_concat(t8, t9); t19 = h4_own4; h4_own4 = t10; hero_str_decref(t19); t11 = hero_str_held(t10); h1_label = t11;
+    t12 = h1_label; (void)stash_put(hero_cstr_nonnull(t12));
+    t13 = stash_len(); hero_print_uint(t13); hero_print_end();
     hero_held_release(&h1_label);
-    t14 = h0_at;
-#line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    t15 = INT64_C(1);
-#line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    h0_at = t16;
-#line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    goto bb1;
-#line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-bb3:
-#line 235 "leaseckeepsthepointer.c"
+    t14 = h0_at; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h0_at = t16; goto bb1; bb3:
+#line 169 "leaseckeepsthepointer.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);

@@ -141,11 +141,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handleareferencethroughanou
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "handleareferencethroughanoutcell.c"
 #pragma clang diagnostic pop
@@ -165,94 +165,18 @@ void h_handleareferencethroughanoutcell_main(void);
 
 #line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
 void h_handleareferencethroughanoutcell_main(void) {
-#line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
+#line 13
 #define h1_b (*hero_lend_h1_b)
-#line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    ob * h0_a; ob * *const hero_lend_h1_b = (ob * *)hero_lend_local(sizeof(ob *), "handleareferencethroughanoutcell.main", "b"); int32_t h2_rc; HERO_NODEBUG ob *t1, *t2, *t3, *t8, *t10, *t11; HERO_NODEBUG int32_t t4, t6; HERO_NODEBUG HeroStr t5, t7, t12; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-bb0:
-    t1 = ob_new();
-#line 14 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_handle_acquired(t1, "ob_put");
-#line 14 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    h0_a = t1;
-    t2 = ((void *)0);
-#line 15 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    h1_b = t2;
-    t3 = h0_a;
-#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_lend_local_name(hero_lend_h1_b, "ob_dup", "out");
-#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_handle_alive(t3, "the argument `o` of `ob_dup`");
-#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    t4 = ob_dup(t3, &h1_b);
-#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_handle_retained(h1_b, "ob_put", 0);
-#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    if (t4 == 1LL) {
-#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    } else {
-#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    }
-#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    h2_rc = t4;
-    t5 = HERO_STR_LIT(hero_str_f60994f);
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    t6 = h2_rc;
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    t7 = HERO_STR_LIT(hero_str_11f05721);
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    t8 = h0_a;
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_handle_alive(t8, "the argument `o` of `ob_refs`");
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    t9 = ob_refs(t8);
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_print_str(t5);
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_print_int(t6);
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_print_str(t7);
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_print_int(t9);
-#line 17 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_print_end();
-    t10 = h1_b;
-#line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    {
-#line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_handle_alive(t10, "the argument `o` of `ob_put`");
-#line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "ob_put", NULL);
-#line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    (void)ob_put(t10);
-#line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    if (hero_handle_ended(t10, hero_life_0_0) && h1_b == t10) h1_b = hero_handle_dead();
-#line 18 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    }
-    t11 = h0_a;
-#line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    {
-#line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_handle_alive(t11, "the argument `o` of `ob_put`");
-#line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t11, "ob_put", NULL);
-#line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    (void)ob_put(t11);
-#line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    if (hero_handle_ended(t11, hero_life_0_0) && h0_a == t11) h0_a = hero_handle_dead();
-#line 19 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    }
-    t12 = HERO_STR_LIT(hero_str_455ecde8);
-#line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_print_str(t12);
-#line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_print_end();
-#line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    hero_lend_local_give(hero_lend_h1_b);
-#line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    return;
-#line 256 "handleareferencethroughanoutcell.c"
+#line 13
+    ob * h0_a; ob * *const hero_lend_h1_b = (ob * *)hero_lend_local(sizeof(ob *), "handleareferencethroughanoutcell.main", "b"); int32_t h2_rc; HERO_NODEBUG ob *t1, *t2, *t3, *t8, *t10, *t11; HERO_NODEBUG int32_t t4, t6; HERO_NODEBUG HeroStr t5, t7, t12; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = ob_new(); hero_handle_acquired(t1, "ob_put"); h0_a = t1;
+    t2 = ((void *)0); h1_b = t2;
+    t3 = h0_a; hero_lend_local_name(hero_lend_h1_b, "ob_dup", "out"); hero_handle_alive(t3, "the argument `o` of `ob_dup`"); t4 = ob_dup(t3, &h1_b); hero_handle_retained(h1_b, "ob_put", 0); if (t4 == 1LL) { } else { } h2_rc = t4;
+    t5 = HERO_STR_LIT(hero_str_f60994f); t6 = h2_rc; t7 = HERO_STR_LIT(hero_str_11f05721); t8 = h0_a; hero_handle_alive(t8, "the argument `o` of `ob_refs`"); t9 = ob_refs(t8); hero_print_str(t5); hero_print_int(t6); hero_print_str(t7); hero_print_int(t9); hero_print_end();
+    t10 = h1_b; { hero_handle_alive(t10, "the argument `o` of `ob_put`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "ob_put", NULL); (void)ob_put(t10); if (hero_handle_ended(t10, hero_life_0_0) && h1_b == t10) h1_b = hero_handle_dead(); }
+    t11 = h0_a; { hero_handle_alive(t11, "the argument `o` of `ob_put`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t11, "ob_put", NULL); (void)ob_put(t11); if (hero_handle_ended(t11, hero_life_0_0) && h0_a == t11) h0_a = hero_handle_dead(); }
+    t12 = HERO_STR_LIT(hero_str_455ecde8); hero_print_str(t12); hero_print_end(); hero_lend_local_give(hero_lend_h1_b); return;
+#line 180 "handleareferencethroughanoutcell.c"
 }
 #undef h1_b
 HERO_TU_LOCAL bool h_handleareferencethroughanoutcell_Ob_eq(ob * const *a, ob * const *b) {

@@ -138,16 +138,16 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 11 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2056aheadersownmacroofanameitbindsstands_sqrt(double a0) { (void)(sqrt)(a0); }
-#line 14 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
+#line 14
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2056aheadersownmacroofanameitbindsstands_fabs(double a0) { (void)(fabs)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 153 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
 #pragma clang diagnostic pop
@@ -164,30 +164,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs2056aheadersownmacroofanameitbindsstands_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-void h_fixedbugs2056aheadersownmacroofanameitbindsstands_main(void) {
-#line 16 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-bb0:
-    t1 = 0x1.8p+1;
-#line 17 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    t2 = -t1;
-#line 17 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    t3 = fabs(t2);
-#line 17 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    hero_print_f64(t3);
-#line 17 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    hero_print_end();
-    t4 = 0x1p+2;
-#line 18 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    t5 = sqrt(t4);
-#line 18 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    hero_print_f64(t5);
-#line 18 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    return;
-#line 191 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
+void h_fixedbugs2056aheadersownmacroofanameitbindsstands_main(void) { HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1.8p+1; t2 = -t1; t3 = fabs(t2); hero_print_f64(t3); hero_print_end();
+    t4 = 0x1p+2; t5 = sqrt(t4); hero_print_f64(t5); hero_print_end(); return;
+#line 171 "fixedbugs2056aheadersownmacroofanameitbindsstands.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

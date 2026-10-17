@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "adversarialjoinslot.c"
 #pragma clang diagnostic pop
@@ -97,207 +97,59 @@ int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b);
 void h_adversarialjoinslot_main(void);
 
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
-int64_t h_adversarialjoinslot_pick(bool h0_c) {
-#line 17 "tests/golden/run/adversarial-join-slot.hero"
-    HERO_NODEBUG int64_t h1_r0, t2, t3, t4, t5; int64_t h2_v; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/run/adversarial-join-slot.hero"
-bb0:
-    t1 = h0_c;
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
-    if (t1) goto bb2; else goto bb3;
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
-bb1:
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
-    t4 = h1_r0;
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
-    h2_v = t4;
-#line 22 "tests/golden/run/adversarial-join-slot.hero"
-    t5 = h2_v;
-#line 22 "tests/golden/run/adversarial-join-slot.hero"
-    return t5;
-#line 22 "tests/golden/run/adversarial-join-slot.hero"
-bb2:
-#line 19 "tests/golden/run/adversarial-join-slot.hero"
+int64_t h_adversarialjoinslot_pick(bool h0_c) { HERO_NODEBUG int64_t h1_r0, t2, t3, t4, t5; int64_t h2_v; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; if (t1) goto bb2; else goto bb3; bb1: t4 = h1_r0; h2_v = t4;
+#line 22
+    t5 = h2_v; return t5; bb2:
+#line 19
     t2 = INT64_C(1);
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
-    h1_r0 = t2;
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
-    goto bb1;
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
-bb3:
-#line 21 "tests/golden/run/adversarial-join-slot.hero"
+#line 18
+    h1_r0 = t2; goto bb1; bb3:
+#line 21
     t3 = INT64_C(2);
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
-    h1_r0 = t3;
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
-    goto bb1;
-#line 135 "adversarialjoinslot.c"
+#line 18
+    h1_r0 = t3; goto bb1;
+#line 113 "adversarialjoinslot.c"
 }
 
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
-int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b) {
-#line 24 "tests/golden/run/adversarial-join-slot.hero"
-    HERO_NODEBUG int64_t h2_r0, h3_r1, t3, t4, t5, t6, t7, t8; int64_t h4_v; HERO_NODEBUG bool t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 24 "tests/golden/run/adversarial-join-slot.hero"
-bb0:
-    t1 = h0_a;
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-    if (t1) goto bb2; else goto bb3;
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-bb1:
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-    t7 = h2_r0;
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-    h4_v = t7;
-#line 32 "tests/golden/run/adversarial-join-slot.hero"
-    t8 = h4_v;
-#line 32 "tests/golden/run/adversarial-join-slot.hero"
-    return t8;
-#line 32 "tests/golden/run/adversarial-join-slot.hero"
-bb2:
-#line 26 "tests/golden/run/adversarial-join-slot.hero"
-    t2 = h1_b;
-#line 26 "tests/golden/run/adversarial-join-slot.hero"
-    if (t2) goto bb5; else goto bb6;
-#line 26 "tests/golden/run/adversarial-join-slot.hero"
-bb3:
-#line 31 "tests/golden/run/adversarial-join-slot.hero"
+int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b) { HERO_NODEBUG int64_t h2_r0, h3_r1, t3, t4, t5, t6, t7, t8; int64_t h4_v; HERO_NODEBUG bool t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_a; if (t1) goto bb2; else goto bb3; bb1: t7 = h2_r0; h4_v = t7;
+#line 32
+    t8 = h4_v; return t8; bb2:
+#line 26
+    t2 = h1_b; if (t2) goto bb5; else goto bb6; bb3:
+#line 31
     t6 = INT64_C(30);
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-    h2_r0 = t6;
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-    goto bb1;
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-bb4:
+#line 25
+    h2_r0 = t6; goto bb1; bb4:
     t5 = h3_r1;
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-    h2_r0 = t5;
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-    goto bb1;
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
-bb5:
-#line 27 "tests/golden/run/adversarial-join-slot.hero"
+#line 25
+    h2_r0 = t5; goto bb1; bb5:
+#line 27
     t3 = INT64_C(10);
-#line 26 "tests/golden/run/adversarial-join-slot.hero"
-    h3_r1 = t3;
-#line 26 "tests/golden/run/adversarial-join-slot.hero"
-    goto bb4;
-#line 26 "tests/golden/run/adversarial-join-slot.hero"
-bb6:
-#line 29 "tests/golden/run/adversarial-join-slot.hero"
+#line 26
+    h3_r1 = t3; goto bb4; bb6:
+#line 29
     t4 = INT64_C(20);
-#line 26 "tests/golden/run/adversarial-join-slot.hero"
-    h3_r1 = t4;
-#line 26 "tests/golden/run/adversarial-join-slot.hero"
-    goto bb4;
-#line 194 "adversarialjoinslot.c"
+#line 26
+    h3_r1 = t4; goto bb4;
+#line 138 "adversarialjoinslot.c"
 }
 
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
-void h_adversarialjoinslot_main(void) {
-#line 34 "tests/golden/run/adversarial-join-slot.hero"
-    int64_t h0_i; int64_t h1_total; HERO_NODEBUG bool t1, t3, t5, t6, t8, t9, t11, t12, t18, t24; HERO_NODEBUG int64_t t2, t4, t7, t10, t13, t14, t15, t16, t17, t19, t20, t21, t22, t23, t25, t26, t27, t28, t29, t30; HERO_ENTRY_STOP; goto bb0;
-#line 34 "tests/golden/run/adversarial-join-slot.hero"
-bb0:
-    t1 = true;
-#line 35 "tests/golden/run/adversarial-join-slot.hero"
-    t2 = h_adversarialjoinslot_pick(t1);
-#line 35 "tests/golden/run/adversarial-join-slot.hero"
-    t3 = false;
-#line 35 "tests/golden/run/adversarial-join-slot.hero"
-    t4 = h_adversarialjoinslot_pick(t3);
-#line 35 "tests/golden/run/adversarial-join-slot.hero"
-    hero_print_int(t2);
-#line 35 "tests/golden/run/adversarial-join-slot.hero"
-    hero_print_int(t4);
-#line 35 "tests/golden/run/adversarial-join-slot.hero"
-    hero_print_end();
-    t5 = true;
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    t6 = true;
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    t7 = h_adversarialjoinslot_nested(t5, t6);
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    t8 = true;
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    t9 = false;
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    t10 = h_adversarialjoinslot_nested(t8, t9);
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    t11 = false;
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    t12 = false;
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    t13 = h_adversarialjoinslot_nested(t11, t12);
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    hero_print_int(t7);
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    hero_print_int(t10);
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    hero_print_int(t13);
-#line 36 "tests/golden/run/adversarial-join-slot.hero"
-    hero_print_end();
-    t14 = INT64_C(0);
-#line 37 "tests/golden/run/adversarial-join-slot.hero"
-    h0_i = t14;
-    t15 = INT64_C(0);
-#line 38 "tests/golden/run/adversarial-join-slot.hero"
-    h1_total = t15;
-#line 38 "tests/golden/run/adversarial-join-slot.hero"
-    goto bb1;
-#line 38 "tests/golden/run/adversarial-join-slot.hero"
-bb1:
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
-    t16 = h0_i;
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
-    t17 = INT64_C(4);
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
-    t18 = t16 < t17;
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
-    if (t18) goto bb2; else goto bb3;
-#line 40 "tests/golden/run/adversarial-join-slot.hero"
-bb2:
-    t19 = h1_total;
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    t20 = h0_i;
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    t21 = INT64_C(2);
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    if (t21 == 0) hero_panic("division by zero");
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    if (t20 == INT64_MIN && t21 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    t22 = t20 % t21;
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    t23 = INT64_C(0);
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    t24 = t22 == t23;
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    t25 = h_adversarialjoinslot_pick(t24);
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    if (__builtin_add_overflow(t19, t25, &t26)) hero_panic_overflow();
-#line 41 "tests/golden/run/adversarial-join-slot.hero"
-    h1_total = t26;
-    t27 = h0_i;
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
-    t28 = INT64_C(1);
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
-    if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
-    h0_i = t29;
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
-    goto bb1;
-#line 42 "tests/golden/run/adversarial-join-slot.hero"
-bb3:
-#line 44 "tests/golden/run/adversarial-join-slot.hero"
-    t30 = h1_total;
-#line 44 "tests/golden/run/adversarial-join-slot.hero"
-    hero_print_int(t30);
-#line 44 "tests/golden/run/adversarial-join-slot.hero"
-    hero_print_end();
-#line 44 "tests/golden/run/adversarial-join-slot.hero"
-    return;
-#line 301 "adversarialjoinslot.c"
+void h_adversarialjoinslot_main(void) { int64_t h0_i; int64_t h1_total; HERO_NODEBUG bool t1, t3, t5, t6, t8, t9, t11, t12, t18, t24; HERO_NODEBUG int64_t t2, t4, t7, t10, t13, t14, t15, t16, t17, t19, t20, t21, t22, t23, t25, t26, t27, t28, t29, t30; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = true; t2 = h_adversarialjoinslot_pick(t1); t3 = false; t4 = h_adversarialjoinslot_pick(t3); hero_print_int(t2); hero_print_int(t4); hero_print_end();
+    t5 = true; t6 = true; t7 = h_adversarialjoinslot_nested(t5, t6); t8 = true; t9 = false; t10 = h_adversarialjoinslot_nested(t8, t9); t11 = false; t12 = false; t13 = h_adversarialjoinslot_nested(t11, t12); hero_print_int(t7); hero_print_int(t10); hero_print_int(t13); hero_print_end();
+    t14 = INT64_C(0); h0_i = t14;
+    t15 = INT64_C(0); h1_total = t15; goto bb1; bb1:
+#line 40
+    t16 = h0_i; t17 = INT64_C(4); t18 = t16 < t17; if (t18) goto bb2; else goto bb3; bb2:
+    t19 = h1_total; t20 = h0_i; t21 = INT64_C(2); if (t21 == 0) hero_panic("division by zero"); if (t20 == INT64_MIN && t21 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t22 = t20 % t21; t23 = INT64_C(0); t24 = t22 == t23; t25 = h_adversarialjoinslot_pick(t24); if (__builtin_add_overflow(t19, t25, &t26)) hero_panic_overflow(); h1_total = t26;
+    t27 = h0_i; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow(); h0_i = t29; goto bb1; bb3:
+#line 44
+    t30 = h1_total; hero_print_int(t30); hero_print_end(); return;
+#line 153 "adversarialjoinslot.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

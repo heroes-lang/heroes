@@ -77,11 +77,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 87 "adversarialstrselfassign.c"
 #pragma clang diagnostic pop
@@ -98,156 +98,22 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_adversarialstrselfassign_main(void);
 
 #line 12 "tests/golden/run/adversarial-str-self-assign.hero"
-void h_adversarialstrselfassign_main(void) {
-#line 12 "tests/golden/run/adversarial-str-self-assign.hero"
-    HeroStr h0_s = {0}; HeroStr h1_out = {0}; int64_t h2_i; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t13, t17, t18, t22, t24, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36; HERO_NODEBUG int64_t t9, t10, t11, t14, t15, t16, t19, t20, t21, t23, t25, t26; HERO_NODEBUG bool t12; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/run/adversarial-str-self-assign.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_3205);
-#line 13 "tests/golden/run/adversarial-str-self-assign.hero"
-    t28 = h0_s;
-#line 13 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_incref(t1);
-#line 13 "tests/golden/run/adversarial-str-self-assign.hero"
-    h0_s = t1;
-#line 13 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_decref(t28);
-    t2 = h0_s;
-#line 14 "tests/golden/run/adversarial-str-self-assign.hero"
-    t29 = h0_s;
-#line 14 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_incref(t2);
-#line 14 "tests/golden/run/adversarial-str-self-assign.hero"
-    h0_s = t2;
-#line 14 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_decref(t29);
-    t3 = h0_s;
-#line 15 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_print_str(t3);
-#line 15 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_print_end();
-    t4 = h0_s;
-#line 16 "tests/golden/run/adversarial-str-self-assign.hero"
-    t5 = h0_s;
-#line 16 "tests/golden/run/adversarial-str-self-assign.hero"
-    t6 = hero_str_concat(t4, t5);
-#line 16 "tests/golden/run/adversarial-str-self-assign.hero"
-    t30 = h3_own3;
-#line 16 "tests/golden/run/adversarial-str-self-assign.hero"
-    h3_own3 = t6;
-#line 16 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_decref(t30);
-#line 16 "tests/golden/run/adversarial-str-self-assign.hero"
-    t31 = h0_s;
-#line 16 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_incref(t6);
-#line 16 "tests/golden/run/adversarial-str-self-assign.hero"
-    h0_s = t6;
-#line 16 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_decref(t31);
-    t7 = h0_s;
-#line 17 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_print_str(t7);
-#line 17 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_print_end();
-    t8 = HERO_STR_LIT(hero_str_0);
-#line 18 "tests/golden/run/adversarial-str-self-assign.hero"
-    t32 = h1_out;
-#line 18 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_incref(t8);
-#line 18 "tests/golden/run/adversarial-str-self-assign.hero"
-    h1_out = t8;
-#line 18 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_decref(t32);
-    t9 = INT64_C(0);
-#line 19 "tests/golden/run/adversarial-str-self-assign.hero"
-    h2_i = t9;
-#line 19 "tests/golden/run/adversarial-str-self-assign.hero"
-    goto bb1;
-#line 19 "tests/golden/run/adversarial-str-self-assign.hero"
-bb1:
-#line 21 "tests/golden/run/adversarial-str-self-assign.hero"
-    t10 = h2_i;
-#line 21 "tests/golden/run/adversarial-str-self-assign.hero"
-    t11 = INT64_C(50);
-#line 21 "tests/golden/run/adversarial-str-self-assign.hero"
-    t12 = t10 < t11;
-#line 21 "tests/golden/run/adversarial-str-self-assign.hero"
-    if (t12) goto bb2; else goto bb3;
-#line 21 "tests/golden/run/adversarial-str-self-assign.hero"
-bb2:
-    t13 = h1_out;
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    t14 = h2_i;
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    t15 = INT64_C(10);
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    if (t15 == 0) hero_panic("division by zero");
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    t16 = t14 % t15;
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    t17 = hero_int_to_str(t16);
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    t33 = h4_own4;
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    h4_own4 = t17;
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_decref(t33);
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    t18 = hero_str_concat(t13, t17);
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    t34 = h5_own5;
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    h5_own5 = t18;
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_decref(t34);
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    t35 = h1_out;
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_incref(t18);
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    h1_out = t18;
-#line 22 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_decref(t35);
-    t19 = h2_i;
-#line 23 "tests/golden/run/adversarial-str-self-assign.hero"
-    t20 = INT64_C(1);
-#line 23 "tests/golden/run/adversarial-str-self-assign.hero"
-    if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow();
-#line 23 "tests/golden/run/adversarial-str-self-assign.hero"
-    h2_i = t21;
-#line 23 "tests/golden/run/adversarial-str-self-assign.hero"
-    goto bb1;
-#line 23 "tests/golden/run/adversarial-str-self-assign.hero"
-bb3:
-#line 25 "tests/golden/run/adversarial-str-self-assign.hero"
-    t22 = h1_out;
-#line 25 "tests/golden/run/adversarial-str-self-assign.hero"
-    t23 = hero_str_len(t22);
-#line 25 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_print_int(t23);
-#line 25 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_print_end();
-    t24 = h1_out;
-#line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-    t25 = INT64_C(0);
-#line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-    t26 = INT64_C(10);
-#line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-    t27 = hero_str_slice(t24, t25, t26);
-#line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-    t36 = h6_own6;
-#line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-    h6_own6 = t27;
-#line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_str_decref(t36);
-#line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_print_str(t27);
-#line 26 "tests/golden/run/adversarial-str-self-assign.hero"
-    hero_print_end();
-#line 251 "adversarialstrselfassign.c"
+void h_adversarialstrselfassign_main(void) { HeroStr h0_s = {0}; HeroStr h1_out = {0}; int64_t h2_i; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t13, t17, t18, t22, t24, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36; HERO_NODEBUG int64_t t9, t10, t11, t14, t15, t16, t19, t20, t21, t23, t25, t26; HERO_NODEBUG bool t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_3205); t28 = h0_s; hero_str_incref(t1); h0_s = t1; hero_str_decref(t28);
+    t2 = h0_s; t29 = h0_s; hero_str_incref(t2); h0_s = t2; hero_str_decref(t29);
+    t3 = h0_s; hero_print_str(t3); hero_print_end();
+    t4 = h0_s; t5 = h0_s; t6 = hero_str_concat(t4, t5); t30 = h3_own3; h3_own3 = t6; hero_str_decref(t30); t31 = h0_s; hero_str_incref(t6); h0_s = t6; hero_str_decref(t31);
+    t7 = h0_s; hero_print_str(t7); hero_print_end();
+    t8 = HERO_STR_LIT(hero_str_0); t32 = h1_out; hero_str_incref(t8); h1_out = t8; hero_str_decref(t32);
+    t9 = INT64_C(0); h2_i = t9; goto bb1; bb1:
+#line 21
+    t10 = h2_i; t11 = INT64_C(50); t12 = t10 < t11; if (t12) goto bb2; else goto bb3; bb2:
+    t13 = h1_out; t14 = h2_i; t15 = INT64_C(10); if (t15 == 0) hero_panic("division by zero"); if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t16 = t14 % t15; t17 = hero_int_to_str(t16); t33 = h4_own4; h4_own4 = t17; hero_str_decref(t33); t18 = hero_str_concat(t13, t17); t34 = h5_own5; h5_own5 = t18; hero_str_decref(t34); t35 = h1_out; hero_str_incref(t18); h1_out = t18; hero_str_decref(t35);
+    t19 = h2_i; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow(); h2_i = t21; goto bb1; bb3:
+#line 25
+    t22 = h1_out; t23 = hero_str_len(t22); hero_print_int(t23); hero_print_end();
+    t24 = h1_out; t25 = INT64_C(0); t26 = INT64_C(10); t27 = hero_str_slice(t24, t25, t26); t36 = h6_own6; h6_own6 = t27; hero_str_decref(t36); hero_print_str(t27); hero_print_end();
+#line 117 "adversarialstrselfassign.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_out);
     hero_str_release_at(&h3_own3);

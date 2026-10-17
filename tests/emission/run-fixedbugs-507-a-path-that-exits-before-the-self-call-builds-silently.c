@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs507apaththatexitsbeforetheselfcallbuildssilently.c"
 #pragma clang diagnostic pop
@@ -98,96 +98,32 @@ void h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_main(void);
 void h_library_exit(int64_t h0_code);
 
 #line 9 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-int64_t h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_next(int64_t h0_n) {
-#line 9 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-bb0:
-    t1 = h0_n;
-#line 10 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    t2 = INT64_C(1);
-#line 10 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 10 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    return t3;
-#line 114 "fixedbugs507apaththatexitsbeforetheselfcallbuildssilently.c"
+int64_t h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_next(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
+#line 104 "fixedbugs507apaththatexitsbeforetheselfcallbuildssilently.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-int64_t h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_serve(int64_t h0_n) {
-#line 12 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-bb0:
-    t1 = h0_n;
-#line 13 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    t2 = INT64_C(3);
-#line 13 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    t3 = t1 > t2;
-#line 13 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 13 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-bb1:
-#line 15 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    t5 = h0_n;
-#line 15 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    hero_print_int(t5);
-#line 15 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    hero_print_end();
-    t6 = h0_n;
-#line 16 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    t7 = h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_next(t6);
-#line 16 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    t8 = h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_serve(t7);
-#line 16 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    return t8;
-#line 16 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-bb2:
-#line 14 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    t4 = INT64_C(0);
-#line 14 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    h_library_exit(t4);
-#line 14 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    hero_unreachable();
-#line 14 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    goto bb1;
-#line 14 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-bb3:
-#line 14 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    goto bb1;
-#line 159 "fixedbugs507apaththatexitsbeforetheselfcallbuildssilently.c"
+int64_t h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_serve(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(3); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 15
+    t5 = h0_n; hero_print_int(t5); hero_print_end();
+    t6 = h0_n; t7 = h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_next(t6); t8 = h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_serve(t7); return t8; bb2:
+#line 14
+    t4 = INT64_C(0); h_library_exit(t4); hero_unreachable(); goto bb1; bb3: goto bb1;
+#line 115 "fixedbugs507apaththatexitsbeforetheselfcallbuildssilently.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-void h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_main(void) {
-#line 18 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 19 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    t2 = h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_serve(t1);
-#line 19 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    hero_print_int(t2);
-#line 19 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    hero_print_end();
-#line 19 "tests/golden/run/fixedbugs-507-a-path-that-exits-before-the-self-call-builds-silently.hero"
-    return;
-#line 177 "fixedbugs507apaththatexitsbeforetheselfcallbuildssilently.c"
+void h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = h_fixedbugs507apaththatexitsbeforetheselfcallbuildssilently_serve(t1); hero_print_int(t2); hero_print_end(); return;
+#line 121 "fixedbugs507apaththatexitsbeforetheselfcallbuildssilently.c"
 }
 
 #line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) {
-#line 227 "<heroes library>"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 227 "<heroes library>"
-bb0:
-    t1 = h0_code;
-#line 228 "<heroes library>"
-    (void)hero_exit(t1);
-#line 228 "<heroes library>"
-    return;
-#line 191 "fixedbugs507apaththatexitsbeforetheselfcallbuildssilently.c"
+void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; (void)hero_exit(t1); return;
+#line 127 "fixedbugs507apaththatexitsbeforetheselfcallbuildssilently.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

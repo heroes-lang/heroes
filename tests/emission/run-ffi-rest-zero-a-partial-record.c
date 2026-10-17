@@ -137,11 +137,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffirestzeroapartialrecord_s
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 147 "ffirestzeroapartialrecord.c"
 #pragma clang diagnostic pop
@@ -181,59 +181,21 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-SP h_ffirestzeroapartialrecord_built(void) {
-#line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG SP t2; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-bb0:
-    t1 = INT64_C(4);
-#line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    t2 = (SP){0};
-#line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    __builtin_memset(&t2, 0, sizeof t2);
-#line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    t2.kind = t1;
-#line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    return t2;
-#line 199 "ffirestzeroapartialrecord.c"
+SP h_ffirestzeroapartialrecord_built(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG SP t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(4); t2 = (SP){0}; __builtin_memset(&t2, 0, sizeof t2); t2.kind = t1; return t2;
+#line 187 "ffirestzeroapartialrecord.c"
 }
 
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 void h_ffirestzeroapartialrecord_main(void) {
-#line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+#line 15
 #define h0_s (*hero_lend_h0_s)
-#line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s"); HERO_NODEBUG SP t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-bb0:
+#line 15
+    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s"); HERO_NODEBUG SP t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
     (void)dirty();
-    t1 = h_ffirestzeroapartialrecord_built();
-#line 17 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    h0_s = t1;
-#line 17 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_s.kind;
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    t3 = HERO_STR_LIT(hero_str_20);
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_lend_local_name(hero_lend_h0_s, "sp_union", "s");
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0);
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    t4 = sp_union(&h0_s);
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_print_int(t2);
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_print_str(t3);
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_print_int(t4);
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    hero_lend_local_give(hero_lend_h0_s);
-#line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    return;
-#line 237 "ffirestzeroapartialrecord.c"
+    t1 = h_ffirestzeroapartialrecord_built(); h0_s = t1; hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0);
+    t2 = h0_s.kind; t3 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h0_s, "sp_union", "s"); hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0); t4 = sp_union(&h0_s); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end(); hero_lend_local_give(hero_lend_h0_s); return;
+#line 199 "ffirestzeroapartialrecord.c"
 }
 #undef h0_s
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b) {

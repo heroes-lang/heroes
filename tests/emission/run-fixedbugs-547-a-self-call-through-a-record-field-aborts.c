@@ -79,11 +79,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 89 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
 #pragma clang diagnostic pop
@@ -103,44 +103,16 @@ int64_t h_fixedbugs547aselfcallthrougharecordfieldaborts_step(int64_t h0_n);
 void h_fixedbugs547aselfcallthrougharecordfieldaborts_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-int64_t h_fixedbugs547aselfcallthrougharecordfieldaborts_step(int64_t h0_n) {
-#line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    h_fixedbugs547aselfcallthrougharecordfieldaborts_Box h1_b; HERO_NODEBUG h_0fn_48ac9712 t1, t4; HERO_NODEBUG h_fixedbugs547aselfcallthrougharecordfieldaborts_Box t2, t3; HERO_NODEBUG int64_t t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-bb0:
-    t1 = h_fixedbugs547aselfcallthrougharecordfieldaborts_step;
-#line 14 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    t2 = (h_fixedbugs547aselfcallthrougharecordfieldaborts_Box){.f_f = t1};
-#line 14 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    h1_b = t2;
-    t3 = h1_b;
-#line 15 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    t4 = t3.f_f;
-#line 15 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    t5 = h0_n;
-#line 15 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    t6 = t4(t5);
-#line 15 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    return t6;
-#line 126 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
+int64_t h_fixedbugs547aselfcallthrougharecordfieldaborts_step(int64_t h0_n) { h_fixedbugs547aselfcallthrougharecordfieldaborts_Box h1_b; HERO_NODEBUG h_0fn_48ac9712 t1, t4; HERO_NODEBUG h_fixedbugs547aselfcallthrougharecordfieldaborts_Box t2, t3; HERO_NODEBUG int64_t t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs547aselfcallthrougharecordfieldaborts_step; t2 = (h_fixedbugs547aselfcallthrougharecordfieldaborts_Box){.f_f = t1}; h1_b = t2;
+    t3 = h1_b; t4 = t3.f_f; t5 = h0_n; t6 = t4(t5); return t6;
+#line 110 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-void h_fixedbugs547aselfcallthrougharecordfieldaborts_main(void) {
-#line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 18 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    t2 = h_fixedbugs547aselfcallthrougharecordfieldaborts_step(t1);
-#line 18 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    hero_print_int(t2);
-#line 18 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    return;
-#line 144 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
+void h_fixedbugs547aselfcallthrougharecordfieldaborts_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = h_fixedbugs547aselfcallthrougharecordfieldaborts_step(t1); hero_print_int(t2); hero_print_end(); return;
+#line 116 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs547aselfcallthrougharecordfieldaborts_Box_eq(const h_fixedbugs547aselfcallthrougharecordfieldaborts_Box *a, const h_fixedbugs547aselfcallthrougharecordfieldaborts_Box *b) {
     if (!(a->f_f == b->f_f)) return false;

@@ -76,11 +76,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 86 "fixedbugsarrayslicereachedclang.c"
 #pragma clang diagnostic pop
@@ -97,102 +97,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsarrayslicereachedclang_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-void h_fixedbugsarrayslicereachedclang_main(void) {
-#line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_ys = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t4, *t5, *t8, *t9, *t11, *t14, *t21, *t22, *t23, *t24; HERO_NODEBUG HeroStr h4_own4 = {0}, t17, t20, t25; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t10, t12, t13, t15, t16, t18, t19; HERO_ENTRY_STOP; goto bb0;
-#line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t2 = INT64_C(2);
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t3 = INT64_C(3);
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t4 = hero_array_new(&hero_desc_int, 3);
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_array_push_owned(&t4, &t1);
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_array_push_owned(&t4, &t2);
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_array_push_owned(&t4, &t3);
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t21 = h2_own2;
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    h2_own2 = t4;
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_array_decref(t21);
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t22 = h0_xs;
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_array_incref(t4);
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    h0_xs = t4;
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_array_decref(t22);
-    t5 = h0_xs;
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t6 = INT64_C(1);
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t7 = INT64_C(3);
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t8 = hero_array_slice(t5, t6, t7);
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t23 = h3_own3;
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    h3_own3 = t8;
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_array_decref(t23);
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t24 = h1_ys;
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_array_incref(t8);
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    h1_ys = t8;
-#line 35 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_array_decref(t24);
-    t9 = h1_ys;
-#line 36 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
-#line 36 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_print_int(t10);
-#line 36 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_print_end();
-    t11 = h1_ys;
-#line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t12 = INT64_C(0);
-#line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]);
-#line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t14 = h1_ys;
-#line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t15 = INT64_C(1);
-#line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]);
-#line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_print_int(t13);
-#line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_print_int(t16);
-#line 37 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_print_end();
-#line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t17 = HERO_STR_LIT(hero_str_33edea20);
-#line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t18 = INT64_C(1);
-#line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t19 = INT64_C(3);
-#line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t20 = hero_str_slice(t17, t18, t19);
-#line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    t25 = h4_own4;
-#line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    h4_own4 = t20;
-#line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_str_decref(t25);
-#line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_print_str(t20);
-#line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    hero_print_end();
-#line 196 "fixedbugsarrayslicereachedclang.c"
+void h_fixedbugsarrayslicereachedclang_main(void) { HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_ys = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t4, *t5, *t8, *t9, *t11, *t14, *t21, *t22, *t23, *t24; HERO_NODEBUG HeroStr h4_own4 = {0}, t17, t20, t25; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t10, t12, t13, t15, t16, t18, t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t21 = h2_own2; h2_own2 = t4; hero_array_decref(t21); t22 = h0_xs; hero_array_incref(t4); h0_xs = t4; hero_array_decref(t22);
+    t5 = h0_xs; t6 = INT64_C(1); t7 = INT64_C(3); t8 = hero_array_slice(t5, t6, t7); t23 = h3_own3; h3_own3 = t8; hero_array_decref(t23); t24 = h1_ys; hero_array_incref(t8); h1_ys = t8; hero_array_decref(t24);
+    t9 = h1_ys; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); hero_print_int(t10); hero_print_end();
+    t11 = h1_ys; t12 = INT64_C(0); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); t14 = h1_ys; t15 = INT64_C(1); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t14 + 1))[t15]); hero_print_int(t13); hero_print_int(t16); hero_print_end();
+#line 40
+    t17 = HERO_STR_LIT(hero_str_33edea20); t18 = INT64_C(1); t19 = INT64_C(3); t20 = hero_str_slice(t17, t18, t19); t25 = h4_own4; h4_own4 = t20; hero_str_decref(t25); hero_print_str(t20); hero_print_end();
+#line 108 "fixedbugsarrayslicereachedclang.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_own2);

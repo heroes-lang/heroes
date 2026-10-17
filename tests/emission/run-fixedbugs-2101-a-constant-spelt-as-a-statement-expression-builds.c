@@ -128,11 +128,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 138 "fixedbugs2101aconstantspeltasastatementexpressionbuilds.c"
 #pragma clang diagnostic pop
@@ -211,24 +211,10 @@ int32_t h_fixedbugs2101aconstantspeltasastatementexpressionbuilds_ST_TWO(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 22 "tests/golden/run/fixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds.hero"
-void h_fixedbugs2101aconstantspeltasastatementexpressionbuilds_main(void) {
-#line 22 "tests/golden/run/fixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds.hero"
-    HERO_NODEBUG int32_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds.hero"
-bb0:
-    t1 = h_fixedbugs2101aconstantspeltasastatementexpressionbuilds_ST_PURE();
-#line 23 "tests/golden/run/fixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds.hero"
-    hero_print_int(t1);
-#line 23 "tests/golden/run/fixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds.hero"
-    hero_print_end();
-    t2 = h_fixedbugs2101aconstantspeltasastatementexpressionbuilds_ST_TWO();
-#line 24 "tests/golden/run/fixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds.hero"
-    hero_print_int(t2);
-#line 24 "tests/golden/run/fixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds.hero"
-    hero_print_end();
-#line 24 "tests/golden/run/fixedbugs-2101-a-constant-spelt-as-a-statement-expression-builds.hero"
-    return;
-#line 232 "fixedbugs2101aconstantspeltasastatementexpressionbuilds.c"
+void h_fixedbugs2101aconstantspeltasastatementexpressionbuilds_main(void) { HERO_NODEBUG int32_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs2101aconstantspeltasastatementexpressionbuilds_ST_PURE(); hero_print_int(t1); hero_print_end();
+    t2 = h_fixedbugs2101aconstantspeltasastatementexpressionbuilds_ST_TWO(); hero_print_int(t2); hero_print_end(); return;
+#line 218 "fixedbugs2101aconstantspeltasastatementexpressionbuilds.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

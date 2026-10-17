@@ -94,11 +94,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 104 "interpolationholesandbraces.c"
 #pragma clang diagnostic pop
@@ -119,331 +119,19 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_interpolationholesandbraces_main(void);
 
 #line 14 "tests/golden/run/interpolation-holes-and-braces.hero"
-void h_interpolationholesandbraces_main(void) {
-#line 14 "tests/golden/run/interpolation-holes-and-braces.hero"
-    int64_t h0_n; HeroStr h1_word = {0}; HeroMapHeader * h2_m = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h15_own15 = {0}, t28, t29, t33, t35, t72, t73; double h4_x; bool h5_flag; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, t2, t4, t5, t6, t7, t8, t9, t10, t14, t16, t17, t18, t19, t20, t21, t22, t23, t27, t38, t39, t40, t41, t42, t43, t44, t45, t46, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86; HERO_NODEBUG HeroMapHeader *h14_own14 = {0}, *t25, *t26, *t70, *t71; HERO_NODEBUG int64_t t1, t3, t11, t12, t13, t15, t24, t30, t31, t36, t37, t51; HERO_NODEBUG bool t32, t48, t50; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG double t47, t49; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/interpolation-holes-and-braces.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 15 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h0_n = t1;
-    t2 = HERO_STR_LIT(hero_str_724db1e0);
-#line 16 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t61 = h1_word;
-#line 16 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_incref(t2);
-#line 16 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h1_word = t2;
-#line 16 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t61);
-    t3 = h0_n;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t4 = h1_word;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t5 = HERO_STR_LIT(hero_str_75f7c07a);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t6 = hero_int_to_str(t3);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t62 = h6_own6;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h6_own6 = t6;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t62);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t7 = HERO_STR_LIT(hero_str_1dce);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t8 = hero_str_concat(t5, t6);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t63 = h7_own7;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h7_own7 = t8;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t63);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t9 = hero_str_concat(t8, t7);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t64 = h8_own8;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h8_own8 = t9;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t64);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t10 = hero_str_concat(t9, t4);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t65 = h9_own9;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h9_own9 = t10;
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t65);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_str(t10);
-#line 17 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_end();
-    t11 = h0_n;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t12 = INT64_C(1);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t14 = h1_word;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t15 = hero_str_len(t14);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t16 = hero_int_to_str(t13);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t66 = h10_own10;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h10_own10 = t16;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t66);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t17 = HERO_STR_LIT(hero_str_56ec3c47);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t18 = hero_int_to_str(t15);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t67 = h11_own11;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h11_own11 = t18;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t67);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t19 = hero_str_concat(t16, t17);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t68 = h12_own12;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h12_own12 = t19;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t68);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t20 = hero_str_concat(t19, t18);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t69 = h13_own13;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h13_own13 = t20;
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t69);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_str(t20);
-#line 18 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_end();
-    t21 = HERO_STR_LIT(hero_str_3c921d75);
-#line 19 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_str(t21);
-#line 19 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_end();
-    t22 = HERO_STR_LIT(hero_str_0);
-#line 20 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_str(t22);
-#line 20 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_end();
-    t23 = HERO_STR_LIT(hero_str_6b);
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t24 = INT64_C(7);
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t25 = hero_map_new(&hero_desc_str, &hero_desc_int, 1);
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_map_put(t25, &t23, &t24);
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t70 = h14_own14;
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h14_own14 = t25;
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_map_decref(t70);
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t71 = h2_m;
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_map_incref(t25);
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h2_m = t25;
-#line 21 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_map_decref(t71);
-    t26 = h2_m;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t27 = HERO_STR_LIT(hero_str_6b);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    {
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t26, &t27);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-      if (found == NULL) {
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-        t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-      } else {
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-        t28 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-        (&hero_desc_int)->copy(&t28.as.ok, found);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-      }
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    }
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t72 = h15_own15;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h15_own15 = t28;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h_0opt_e201354_release(&t72);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t73 = h3_f0;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h_0opt_e201354_retain(&t28);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h3_f0 = t28;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h_0opt_e201354_release(&t73);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t29 = h3_f0;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t30 = t29.tag;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t31 = INT64_C(0);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t32 = t30 == t31;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    if (t32) goto bb1; else goto bb2;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-bb1:
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t35 = h3_f0;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t36 = t35.as.ok;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t37 = h0_n;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t38 = HERO_STR_LIT(hero_str_1bb71b);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t39 = hero_int_to_str(t37);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t74 = h16_own16;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h16_own16 = t39;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t74);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t40 = hero_str_concat(t38, t39);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t75 = h17_own17;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h17_own17 = t40;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t75);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t41 = HERO_STR_LIT(hero_str_eb4aad8);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t42 = hero_int_to_str(t36);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t76 = h18_own18;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h18_own18 = t42;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t76);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t43 = HERO_STR_LIT(hero_str_6f33a5d2);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t44 = hero_str_concat(t41, t42);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t77 = h19_own19;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h19_own19 = t44;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t77);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t45 = hero_str_concat(t44, t43);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t78 = h20_own20;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h20_own20 = t45;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t78);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t46 = hero_str_concat(t45, t40);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t79 = h21_own21;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h21_own21 = t46;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t79);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_str(t46);
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_end();
-    t47 = 0x1.4p+1;
-#line 23 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h4_x = t47;
-    t48 = true;
-#line 24 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h5_flag = t48;
-    t49 = h4_x;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t50 = h5_flag;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t51 = INT64_C(97);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t52 = hero_f64_to_str(t49);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t80 = h22_own22;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h22_own22 = t52;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t80);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t53 = HERO_STR_LIT(hero_str_20);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t54 = hero_bool_to_str(t50);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t81 = h23_own23;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h23_own23 = t54;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t81);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t55 = HERO_STR_LIT(hero_str_20);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t56 = hero_int_to_str(t51);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t82 = h24_own24;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h24_own24 = t56;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t82);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t57 = hero_str_concat(t52, t53);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t83 = h25_own25;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h25_own25 = t57;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t83);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t58 = hero_str_concat(t57, t54);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t84 = h26_own26;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h26_own26 = t58;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t84);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t59 = hero_str_concat(t58, t55);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t85 = h27_own27;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h27_own27 = t59;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t85);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t60 = hero_str_concat(t59, t56);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t86 = h28_own28;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    h28_own28 = t60;
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_str_decref(t86);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_str(t60);
-#line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
-    hero_print_end();
-#line 447 "interpolationholesandbraces.c"
+void h_interpolationholesandbraces_main(void) { int64_t h0_n; HeroStr h1_word = {0}; HeroMapHeader * h2_m = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h15_own15 = {0}, t28, t29, t33, t35, t72, t73; double h4_x; bool h5_flag; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, t2, t4, t5, t6, t7, t8, t9, t10, t14, t16, t17, t18, t19, t20, t21, t22, t23, t27, t38, t39, t40, t41, t42, t43, t44, t45, t46, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86; HERO_NODEBUG HeroMapHeader *h14_own14 = {0}, *t25, *t26, *t70, *t71; HERO_NODEBUG int64_t t1, t3, t11, t12, t13, t15, t24, t30, t31, t36, t37, t51; HERO_NODEBUG bool t32, t48, t50; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG double t47, t49; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); h0_n = t1;
+    t2 = HERO_STR_LIT(hero_str_724db1e0); t61 = h1_word; hero_str_incref(t2); h1_word = t2; hero_str_decref(t61);
+    t3 = h0_n; t4 = h1_word; t5 = HERO_STR_LIT(hero_str_75f7c07a); t6 = hero_int_to_str(t3); t62 = h6_own6; h6_own6 = t6; hero_str_decref(t62); t7 = HERO_STR_LIT(hero_str_1dce); t8 = hero_str_concat(t5, t6); t63 = h7_own7; h7_own7 = t8; hero_str_decref(t63); t9 = hero_str_concat(t8, t7); t64 = h8_own8; h8_own8 = t9; hero_str_decref(t64); t10 = hero_str_concat(t9, t4); t65 = h9_own9; h9_own9 = t10; hero_str_decref(t65); hero_print_str(t10); hero_print_end();
+    t11 = h0_n; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); t14 = h1_word; t15 = hero_str_len(t14); t16 = hero_int_to_str(t13); t66 = h10_own10; h10_own10 = t16; hero_str_decref(t66); t17 = HERO_STR_LIT(hero_str_56ec3c47); t18 = hero_int_to_str(t15); t67 = h11_own11; h11_own11 = t18; hero_str_decref(t67); t19 = hero_str_concat(t16, t17); t68 = h12_own12; h12_own12 = t19; hero_str_decref(t68); t20 = hero_str_concat(t19, t18); t69 = h13_own13; h13_own13 = t20; hero_str_decref(t69); hero_print_str(t20); hero_print_end();
+    t21 = HERO_STR_LIT(hero_str_3c921d75); hero_print_str(t21); hero_print_end();
+    t22 = HERO_STR_LIT(hero_str_0); hero_print_str(t22); hero_print_end();
+    t23 = HERO_STR_LIT(hero_str_6b); t24 = INT64_C(7); t25 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t25, &t23, &t24); t70 = h14_own14; h14_own14 = t25; hero_map_decref(t70); t71 = h2_m; hero_map_incref(t25); h2_m = t25; hero_map_decref(t71);
+    t26 = h2_m; t27 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG const void *found = hero_map_find(t26, &t27); if (found == NULL) { t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t28 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t28.as.ok, found); } } t72 = h15_own15; h15_own15 = t28; h_0opt_e201354_release(&t72); t73 = h3_f0; h_0opt_e201354_retain(&t28); h3_f0 = t28; h_0opt_e201354_release(&t73); t29 = h3_f0; t30 = t29.tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto bb1; else goto bb2; bb1: t35 = h3_f0; t36 = t35.as.ok; t37 = h0_n; t38 = HERO_STR_LIT(hero_str_1bb71b); t39 = hero_int_to_str(t37); t74 = h16_own16; h16_own16 = t39; hero_str_decref(t74); t40 = hero_str_concat(t38, t39); t75 = h17_own17; h17_own17 = t40; hero_str_decref(t75); t41 = HERO_STR_LIT(hero_str_eb4aad8); t42 = hero_int_to_str(t36); t76 = h18_own18; h18_own18 = t42; hero_str_decref(t76); t43 = HERO_STR_LIT(hero_str_6f33a5d2); t44 = hero_str_concat(t41, t42); t77 = h19_own19; h19_own19 = t44; hero_str_decref(t77); t45 = hero_str_concat(t44, t43); t78 = h20_own20; h20_own20 = t45; hero_str_decref(t78); t46 = hero_str_concat(t45, t40); t79 = h21_own21; h21_own21 = t46; hero_str_decref(t79); hero_print_str(t46); hero_print_end();
+    t47 = 0x1.4p+1; h4_x = t47;
+    t48 = true; h5_flag = t48;
+    t49 = h4_x; t50 = h5_flag; t51 = INT64_C(97); t52 = hero_f64_to_str(t49); t80 = h22_own22; h22_own22 = t52; hero_str_decref(t80); t53 = HERO_STR_LIT(hero_str_20); t54 = hero_bool_to_str(t50); t81 = h23_own23; h23_own23 = t54; hero_str_decref(t81); t55 = HERO_STR_LIT(hero_str_20); t56 = hero_int_to_str(t51); t82 = h24_own24; h24_own24 = t56; hero_str_decref(t82); t57 = hero_str_concat(t52, t53); t83 = h25_own25; h25_own25 = t57; hero_str_decref(t83); t58 = hero_str_concat(t57, t54); t84 = h26_own26; h26_own26 = t58; hero_str_decref(t84); t59 = hero_str_concat(t58, t55); t85 = h27_own27; h27_own27 = t59; hero_str_decref(t85); t60 = hero_str_concat(t59, t56); t86 = h28_own28; h28_own28 = t60; hero_str_decref(t86); hero_print_str(t60); hero_print_end();
+#line 135 "interpolationholesandbraces.c"
     hero_str_release_at(&h1_word);
     hero_map_release_at(&h2_m);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -473,10 +161,8 @@ bb1:
     return;
 bb2:
 #line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t33 = h3_f0;
-#line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
-    t34 = t33.as.err;
-#line 480 "interpolationholesandbraces.c"
+    t33 = h3_f0; t34 = t33.as.err;
+#line 166 "interpolationholesandbraces.c"
     hero_panic_must(t34);
     hero_unreachable();
 }

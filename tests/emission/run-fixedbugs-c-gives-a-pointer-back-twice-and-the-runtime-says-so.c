@@ -134,11 +134,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugscgivesapointerback
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 144 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
 #pragma clang diagnostic pop
@@ -155,28 +155,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void) {
-#line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-    void * h0_p; HERO_NODEBUG void *t1, *t2, *t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-bb0:
-    t1 = (void *)make();
-#line 26 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-    h0_p = t1;
-    t2 = h0_p;
-#line 27 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-    (void)release(t2);
-    t3 = h0_p;
-#line 28 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-    (void)release(t3);
-    t4 = HERO_STR_LIT(hero_str_4414937d);
-#line 29 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-    hero_print_str(t4);
-#line 29 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-    hero_print_end();
-#line 29 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-    return;
-#line 180 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
+void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void) { void * h0_p; HERO_NODEBUG void *t1, *t2, *t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (void *)make(); h0_p = t1;
+    t2 = h0_p; (void)release(t2);
+    t3 = h0_p; (void)release(t3);
+    t4 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t4); hero_print_end(); return;
+#line 164 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -75,11 +75,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 85 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
 #pragma clang diagnostic pop
@@ -101,101 +101,27 @@ void h_library_exit(int64_t h0_code);
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f);
 
 #line 8 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_stop_at_three(int64_t h0_n) {
-#line 8 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    HERO_NODEBUG int64_t t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
-#line 8 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-bb0:
-    t1 = h0_n;
-#line 9 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t2 = INT64_C(2);
-#line 9 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t3 = t1 > t2;
-#line 9 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 9 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-bb1:
-#line 11 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t5 = h0_n;
-#line 11 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_print_int(t5);
-#line 11 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_print_end();
-    t6 = h0_n;
-#line 12 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    return t6;
-#line 12 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-bb2:
-#line 10 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t4 = INT64_C(0);
-#line 10 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    h_library_exit(t4);
-#line 10 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_unreachable();
-#line 10 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    goto bb1;
-#line 10 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-bb3:
-#line 10 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    goto bb1;
-#line 142 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_stop_at_three(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(2); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 11
+    t5 = h0_n; hero_print_int(t5); hero_print_end();
+    t6 = h0_n; return t6; bb2:
+#line 10
+    t4 = INT64_C(0); h_library_exit(t4); hero_unreachable(); goto bb1; bb3: goto bb1;
+#line 112 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
 }
 
 #line 14 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_next(int64_t h0_n) {
-#line 14 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-bb0:
-    t1 = h0_n;
-#line 15 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t2 = INT64_C(1);
-#line 15 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 15 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    return t3;
-#line 158 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_next(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
+#line 118 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(HeroArrayHeader * h0_xs) {
-#line 17 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    HeroArrayHeader * h1_ys = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t1, *t3, *t4, *t6, *t8, *t9, *t10; HERO_NODEBUG h_0fn_48ac9712 t2, t5; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-bb0:
-    t1 = h0_xs;
-#line 18 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t2 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_stop_at_three;
-#line 18 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t3 = h_library_map_37f8817a(t1, t2);
-#line 18 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t8 = h2_own2;
-#line 18 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    h2_own2 = t3;
-#line 18 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_array_decref(t8);
-#line 18 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t9 = h1_ys;
-#line 18 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_array_incref(t3);
-#line 18 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    h1_ys = t3;
-#line 18 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_array_decref(t9);
-    t4 = h1_ys;
-#line 19 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t5 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_next;
-#line 19 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t6 = h_library_map_37f8817a(t4, t5);
-#line 19 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t10 = h3_own3;
-#line 19 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    h3_own3 = t6;
-#line 19 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_array_decref(t10);
-#line 19 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t7 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(t6);
-#line 199 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+int64_t h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(HeroArrayHeader * h0_xs) { HeroArrayHeader * h1_ys = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t1, *t3, *t4, *t6, *t8, *t9, *t10; HERO_NODEBUG h_0fn_48ac9712 t2, t5; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_xs; t2 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_stop_at_three; t3 = h_library_map_37f8817a(t1, t2); t8 = h2_own2; h2_own2 = t3; hero_array_decref(t8); t9 = h1_ys; hero_array_incref(t3); h1_ys = t3; hero_array_decref(t9);
+    t4 = h1_ys; t5 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_next; t6 = h_library_map_37f8817a(t4, t5); t10 = h3_own3; h3_own3 = t6; hero_array_decref(t10); t7 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(t6);
+#line 125 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_own2);
     hero_array_release_at(&h3_own3);
@@ -203,133 +129,29 @@ bb0:
 }
 
 #line 21 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-void h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_main(void) {
-#line 21 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t2, *t4; HERO_NODEBUG int64_t t1, t3; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 22 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t2 = hero_array_new(&hero_desc_int, 1);
-#line 22 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_array_push_owned(&t2, &t1);
-#line 22 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t4 = h0_own0;
-#line 22 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    h0_own0 = t2;
-#line 22 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_array_decref(t4);
-#line 22 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    t3 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(t2);
-#line 22 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_print_int(t3);
-#line 22 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
-    hero_print_end();
-#line 229 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+void h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t2, *t4; HERO_NODEBUG int64_t t1, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t4 = h0_own0; h0_own0 = t2; hero_array_decref(t4); t3 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(t2); hero_print_int(t3); hero_print_end();
+#line 135 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
     hero_array_release_at(&h0_own0);
     return;
 }
 
 #line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) {
-#line 227 "<heroes library>"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 227 "<heroes library>"
-bb0:
-    t1 = h0_code;
-#line 228 "<heroes library>"
-    (void)hero_exit(t1);
-#line 228 "<heroes library>"
-    return;
-#line 245 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; (void)hero_exit(t1); return;
+#line 143 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
 }
 
 #line 36 "<heroes library>"
-/* map<i64, i64> */
-#line 36 "<heroes library>"
-HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) {
-#line 36 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t13, t14, t16, t17, t18; int64_t h5_x; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_ENTRY_STOP; goto bb0;
-#line 36 "<heroes library>"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 37 "<heroes library>"
-    t20 = h6_own6;
-#line 37 "<heroes library>"
-    h6_own6 = t1;
-#line 37 "<heroes library>"
-    hero_array_decref(t20);
-#line 37 "<heroes library>"
-    t21 = h2_out;
-#line 37 "<heroes library>"
-    hero_array_incref(t1);
-#line 37 "<heroes library>"
-    h2_out = t1;
-#line 37 "<heroes library>"
-    hero_array_decref(t21);
-    t2 = h0_xs;
-#line 38 "<heroes library>"
-    t22 = h3_xs0;
-#line 38 "<heroes library>"
-    hero_array_incref(t2);
-#line 38 "<heroes library>"
-    h3_xs0 = t2;
-#line 38 "<heroes library>"
-    hero_array_decref(t22);
-#line 38 "<heroes library>"
-    t3 = INT64_C(0);
-#line 38 "<heroes library>"
-    h4_i0 = t3;
-#line 38 "<heroes library>"
-    goto bb1;
-#line 38 "<heroes library>"
-bb1:
-#line 38 "<heroes library>"
-    t4 = h4_i0;
-#line 38 "<heroes library>"
-    t5 = h3_xs0;
-#line 38 "<heroes library>"
-    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 38 "<heroes library>"
-    t7 = t4 < t6;
-#line 38 "<heroes library>"
-    if (t7) goto bb2; else goto bb4;
-#line 38 "<heroes library>"
-bb2:
-#line 38 "<heroes library>"
-    t8 = h3_xs0;
-#line 38 "<heroes library>"
-    t9 = h4_i0;
-#line 38 "<heroes library>"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
-#line 38 "<heroes library>"
-    h5_x = t10;
-    t12 = h1_f;
-#line 39 "<heroes library>"
-    t13 = h5_x;
-#line 39 "<heroes library>"
-    t14 = t12(t13);
-#line 39 "<heroes library>"
-    hero_array_push_owned(&h2_out, &t14);
-#line 39 "<heroes library>"
-    goto bb3;
-#line 39 "<heroes library>"
-bb3:
-#line 38 "<heroes library>"
-    t16 = h4_i0;
-#line 38 "<heroes library>"
-    t17 = INT64_C(1);
-#line 38 "<heroes library>"
-    if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
-#line 38 "<heroes library>"
-    h4_i0 = t18;
-#line 38 "<heroes library>"
-    goto bb1;
-#line 38 "<heroes library>"
-bb4:
-#line 40 "<heroes library>"
+/* map<i64, i64> */ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) { HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t13, t14, t16, t17, t18; int64_t h5_x; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t20 = h6_own6; h6_own6 = t1; hero_array_decref(t20); t21 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t21);
+    t2 = h0_xs; t22 = h3_xs0; hero_array_incref(t2); h3_xs0 = t2; hero_array_decref(t22); t3 = INT64_C(0); h4_i0 = t3; goto bb1; bb1: t4 = h4_i0; t5 = h3_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h3_xs0; t9 = h4_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h5_x = t10;
+    t12 = h1_f; t13 = h5_x; t14 = t12(t13); hero_array_push_owned(&h2_out, &t14); goto bb3; bb3:
+#line 38
+    t16 = h4_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); h4_i0 = t18; goto bb1; bb4:
+#line 40
     t19 = h2_out;
-#line 333 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
+#line 155 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);

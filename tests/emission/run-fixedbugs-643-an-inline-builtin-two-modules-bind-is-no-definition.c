@@ -134,11 +134,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs643other_abs(int32
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 144 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 #pragma clang diagnostic pop
@@ -156,42 +156,16 @@ void h_fixedbugs643aninlinebuiltintwomodulesbindisnodefinition_main(void);
 int32_t h_fixedbugs643other_magnitude(int32_t h0_x);
 
 #line 17 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-void h_fixedbugs643aninlinebuiltintwomodulesbindisnodefinition_main(void) {
-#line 17 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-    HERO_NODEBUG int32_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-bb0:
-    t1 = INT64_C(-3);
-#line 18 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-    t2 = abs(t1);
-#line 18 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-    hero_print_int(t2);
-#line 18 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-    hero_print_end();
-    t3 = INT64_C(-4);
-#line 19 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-    t4 = h_fixedbugs643other_magnitude(t3);
-#line 19 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-    hero_print_int(t4);
-#line 19 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-    hero_print_end();
-#line 19 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-    return;
-#line 181 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+void h_fixedbugs643aninlinebuiltintwomodulesbindisnodefinition_main(void) { HERO_NODEBUG int32_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(-3); t2 = abs(t1); hero_print_int(t2); hero_print_end();
+    t3 = INT64_C(-4); t4 = h_fixedbugs643other_magnitude(t3); hero_print_int(t4); hero_print_end(); return;
+#line 163 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs643/other.hero"
-int32_t h_fixedbugs643other_magnitude(int32_t h0_x) {
-#line 7 "tests/golden/run/fixedbugs643/other.hero"
-    HERO_NODEBUG int32_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/run/fixedbugs643/other.hero"
-bb0:
-    t1 = h0_x;
-#line 8 "tests/golden/run/fixedbugs643/other.hero"
-    t2 = abs(t1);
-#line 8 "tests/golden/run/fixedbugs643/other.hero"
-    return t2;
-#line 195 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+int32_t h_fixedbugs643other_magnitude(int32_t h0_x) { HERO_NODEBUG int32_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; t2 = abs(t1); return t2;
+#line 169 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

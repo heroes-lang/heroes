@@ -140,11 +140,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsareferencebesidean
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 150 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
 #pragma clang diagnostic pop
@@ -163,73 +163,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsareferencebesideanendinonecallischeckedfirst_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-void h_fixedbugsareferencebesideanendinonecallischeckedfirst_main(void) {
-#line 14 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    ob * h0_a; HERO_NODEBUG ob *t1, *t3, *t4, *t6; HERO_NODEBUG HeroStr t2, t7; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-bb0:
-    t1 = ob_new();
-#line 15 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_handle_acquired(t1, "ob_put|ob_swap");
-#line 15 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    h0_a = t1;
-    t2 = HERO_STR_LIT(hero_str_18a116ec);
-#line 16 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_print_str(t2);
-#line 16 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_print_end();
-    t3 = h0_a;
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    t4 = h0_a;
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    {
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_handle_alive(t3, "the argument `eaten` of `ob_swap`");
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_handle_alive(t4, "the argument `kept` of `ob_swap`");
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "ob_swap", NULL);
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    {
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    HERO_NODEBUG __typeof__(ob_swap(t3, t4)) hero_when = ob_swap(t3, t4);
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_handle_retained(t4, "ob_other", 1);
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    if (hero_when == 0LL) {
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    } else {
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_handle_kept(t3, hero_life_0_0);
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    }
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    }
-#line 17 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    }
-    t6 = h0_a;
-#line 18 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    {
-#line 18 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_handle_alive(t6, "the argument `o` of `ob_other`");
-#line 18 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t6, "ob_other", NULL);
-#line 18 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    (void)ob_other(t6);
-#line 18 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
-#line 18 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    }
-    t7 = HERO_STR_LIT(hero_str_4414937d);
-#line 19 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_print_str(t7);
-#line 19 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    hero_print_end();
-#line 19 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    return;
-#line 233 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
+void h_fixedbugsareferencebesideanendinonecallischeckedfirst_main(void) { ob * h0_a; HERO_NODEBUG ob *t1, *t3, *t4, *t6; HERO_NODEBUG HeroStr t2, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = ob_new(); hero_handle_acquired(t1, "ob_put|ob_swap"); h0_a = t1;
+    t2 = HERO_STR_LIT(hero_str_18a116ec); hero_print_str(t2); hero_print_end();
+    t3 = h0_a; t4 = h0_a; { hero_handle_alive(t3, "the argument `eaten` of `ob_swap`"); hero_handle_alive(t4, "the argument `kept` of `ob_swap`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "ob_swap", NULL); { HERO_NODEBUG __typeof__(ob_swap(t3, t4)) hero_when = ob_swap(t3, t4); hero_handle_retained(t4, "ob_other", 1); if (hero_when == 0LL) { if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); } else { hero_handle_kept(t3, hero_life_0_0); } } }
+    t6 = h0_a; { hero_handle_alive(t6, "the argument `o` of `ob_other`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t6, "ob_other", NULL); (void)ob_other(t6); if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead(); }
+    t7 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t7); hero_print_end(); return;
+#line 173 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareferencebesideanendinonecallischeckedfirst_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

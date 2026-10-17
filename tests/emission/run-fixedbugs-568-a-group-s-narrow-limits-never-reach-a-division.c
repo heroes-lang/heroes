@@ -129,11 +129,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 139 "fixedbugs568agroupsnarrowlimitsneverreachadivision.c"
 #pragma clang diagnostic pop
@@ -150,91 +150,19 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs568agroupsnarrowlimitsneverreachadivision_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-void h_fixedbugs568agroupsnarrowlimitsneverreachadivision_main(void) {
-#line 19 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    int8_t h0_a; int8_t h1_b; int16_t h2_c; int16_t h3_d; int32_t h4_e; int32_t h5_f; int32_t h6_x; HERO_NODEBUG int8_t t1, t2, t3, t4, t5; HERO_NODEBUG int16_t t6, t7, t8, t9, t10; HERO_NODEBUG int32_t t11, t12, t13, t14, t15, t16, t17, t18, t19, t20; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 20 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    h0_a = t1;
-    t2 = INT64_C(-1);
-#line 21 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    h1_b = t2;
-    t3 = h0_a;
-#line 22 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    t4 = h1_b;
-#line 22 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    if (t4 == 0) hero_panic("division by zero");
-#line 22 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    if (t3 == INT8_MIN && t4 == INT8_C(-1)) hero_panic_overflow();
-#line 22 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    t5 = t3 / t4;
-#line 22 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    hero_print_int(t5);
-#line 22 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    hero_print_end();
-    t6 = INT64_C(0);
-#line 23 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    h2_c = t6;
-    t7 = INT64_C(-1);
-#line 24 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    h3_d = t7;
-    t8 = h2_c;
-#line 25 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    t9 = h3_d;
-#line 25 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    if (t9 == 0) hero_panic("division by zero");
-#line 25 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    if (t8 == INT16_MIN && t9 == INT16_C(-1)) hero_panic_overflow();
-#line 25 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    t10 = t8 / t9;
-#line 25 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    hero_print_int(t10);
-#line 25 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    hero_print_end();
-    t11 = INT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    h4_e = t11;
-    t12 = INT64_C(-1);
-#line 27 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    h5_f = t12;
-    t13 = h4_e;
-#line 28 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    t14 = h5_f;
-#line 28 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    if (t14 == 0) hero_panic("division by zero");
-#line 28 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    if (t13 == INT32_MIN && t14 == INT32_C(-1)) hero_panic_overflow();
-#line 28 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    t15 = t13 / t14;
-#line 28 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    t16 = narrow_limits_answer();
-#line 28 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    hero_print_int(t15);
-#line 28 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    hero_print_int(t16);
-#line 28 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    hero_print_end();
-    t17 = INT64_C(-2147483648);
-#line 29 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    h6_x = t17;
-    t18 = h6_x;
-#line 30 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    t19 = h5_f;
-#line 30 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    if (t19 == 0) hero_panic("division by zero");
-#line 30 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    if (t18 == INT32_MIN && t19 == INT32_C(-1)) hero_panic_overflow();
-#line 30 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    t20 = t18 / t19;
-#line 30 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    hero_print_int(t20);
-#line 30 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    hero_print_end();
-#line 30 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    return;
-#line 238 "fixedbugs568agroupsnarrowlimitsneverreachadivision.c"
+void h_fixedbugs568agroupsnarrowlimitsneverreachadivision_main(void) { int8_t h0_a; int8_t h1_b; int16_t h2_c; int16_t h3_d; int32_t h4_e; int32_t h5_f; int32_t h6_x; HERO_NODEBUG int8_t t1, t2, t3, t4, t5; HERO_NODEBUG int16_t t6, t7, t8, t9, t10; HERO_NODEBUG int32_t t11, t12, t13, t14, t15, t16, t17, t18, t19, t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_a = t1;
+    t2 = INT64_C(-1); h1_b = t2;
+    t3 = h0_a; t4 = h1_b; if (t4 == 0) hero_panic("division by zero"); if (t3 == INT8_MIN && t4 == INT8_C(-1)) hero_panic_overflow(); t5 = t3 / t4; hero_print_int(t5); hero_print_end();
+    t6 = INT64_C(0); h2_c = t6;
+    t7 = INT64_C(-1); h3_d = t7;
+    t8 = h2_c; t9 = h3_d; if (t9 == 0) hero_panic("division by zero"); if (t8 == INT16_MIN && t9 == INT16_C(-1)) hero_panic_overflow(); t10 = t8 / t9; hero_print_int(t10); hero_print_end();
+    t11 = INT64_C(0); h4_e = t11;
+    t12 = INT64_C(-1); h5_f = t12;
+    t13 = h4_e; t14 = h5_f; if (t14 == 0) hero_panic("division by zero"); if (t13 == INT32_MIN && t14 == INT32_C(-1)) hero_panic_overflow(); t15 = t13 / t14; t16 = narrow_limits_answer(); hero_print_int(t15); hero_print_int(t16); hero_print_end();
+    t17 = INT64_C(-2147483648); h6_x = t17;
+    t18 = h6_x; t19 = h5_f; if (t19 == 0) hero_panic("division by zero"); if (t18 == INT32_MIN && t19 == INT32_C(-1)) hero_panic_overflow(); t20 = t18 / t19; hero_print_int(t20); hero_print_end(); return;
+#line 166 "fixedbugs568agroupsnarrowlimitsneverreachadivision.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

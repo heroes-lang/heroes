@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs577aconstantreadinafunctionsstepabortswhereitruns.c"
 #pragma clang diagnostic pop
@@ -96,43 +96,17 @@ uint8_t h_fixedbugs577aconstantreadinafunctionsstepabortswhereitruns_A(void);
 void h_fixedbugs577aconstantreadinafunctionsstepabortswhereitruns_main(void);
 
 #line 6 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-uint8_t h_fixedbugs577aconstantreadinafunctionsstepabortswhereitruns_A(void) {
-#line 6 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 6 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-bb0:
-    t1 = UINT64_C(200);
-#line 7 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    return t1;
-#line 108 "fixedbugs577aconstantreadinafunctionsstepabortswhereitruns.c"
+uint8_t h_fixedbugs577aconstantreadinafunctionsstepabortswhereitruns_A(void) { HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(200); return t1;
+#line 102 "fixedbugs577aconstantreadinafunctionsstepabortswhereitruns.c"
 }
 
 #line 9 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-void h_fixedbugs577aconstantreadinafunctionsstepabortswhereitruns_main(void) {
-#line 9 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    uint8_t h0_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 10 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    hero_print_int(t1);
-#line 10 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    hero_print_end();
-    t2 = h_fixedbugs577aconstantreadinafunctionsstepabortswhereitruns_A();
-#line 11 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    t3 = UINT64_C(100);
-#line 11 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow();
-#line 11 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    h0_x = t4;
-    t5 = h0_x;
-#line 12 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    hero_print_int(t5);
-#line 12 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    hero_print_end();
-#line 12 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    return;
-#line 136 "fixedbugs577aconstantreadinafunctionsstepabortswhereitruns.c"
+void h_fixedbugs577aconstantreadinafunctionsstepabortswhereitruns_main(void) { uint8_t h0_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); hero_print_int(t1); hero_print_end();
+    t2 = h_fixedbugs577aconstantreadinafunctionsstepabortswhereitruns_A(); t3 = UINT64_C(100); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow(); h0_x = t4;
+    t5 = h0_x; hero_print_int(t5); hero_print_end(); return;
+#line 110 "fixedbugs577aconstantreadinafunctionsstepabortswhereitruns.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

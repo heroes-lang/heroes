@@ -67,2005 +67,2005 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 27 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
 _Static_assert(__builtin_classify_type(((G0 *)0)->v) == 1 && sizeof(((G0 *)0)->v) == sizeof(int64_t) && (_Generic(((G0 *)0)->v, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field G0 v");
-#line 29 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 29
 _Static_assert(_Generic(&((G1 *)0)->inner, G0 *: 1, default: 0) && sizeof(((G1 *)0)->inner) == sizeof(G0), "heroes-ffi-field G1 inner");
-#line 31 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 31
 _Static_assert(_Generic(&((G2 *)0)->inner, G1 *: 1, default: 0) && sizeof(((G2 *)0)->inner) == sizeof(G1), "heroes-ffi-field G2 inner");
-#line 33 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 33
 _Static_assert(_Generic(&((G3 *)0)->inner, G2 *: 1, default: 0) && sizeof(((G3 *)0)->inner) == sizeof(G2), "heroes-ffi-field G3 inner");
-#line 35 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 35
 _Static_assert(_Generic(&((G4 *)0)->inner, G3 *: 1, default: 0) && sizeof(((G4 *)0)->inner) == sizeof(G3), "heroes-ffi-field G4 inner");
-#line 37 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 37
 _Static_assert(_Generic(&((G5 *)0)->inner, G4 *: 1, default: 0) && sizeof(((G5 *)0)->inner) == sizeof(G4), "heroes-ffi-field G5 inner");
-#line 39 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 39
 _Static_assert(_Generic(&((G6 *)0)->inner, G5 *: 1, default: 0) && sizeof(((G6 *)0)->inner) == sizeof(G5), "heroes-ffi-field G6 inner");
-#line 41 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 41
 _Static_assert(_Generic(&((G7 *)0)->inner, G6 *: 1, default: 0) && sizeof(((G7 *)0)->inner) == sizeof(G6), "heroes-ffi-field G7 inner");
-#line 43 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 43
 _Static_assert(_Generic(&((G8 *)0)->inner, G7 *: 1, default: 0) && sizeof(((G8 *)0)->inner) == sizeof(G7), "heroes-ffi-field G8 inner");
-#line 45 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 45
 _Static_assert(_Generic(&((G9 *)0)->inner, G8 *: 1, default: 0) && sizeof(((G9 *)0)->inner) == sizeof(G8), "heroes-ffi-field G9 inner");
-#line 47 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 47
 _Static_assert(_Generic(&((G10 *)0)->inner, G9 *: 1, default: 0) && sizeof(((G10 *)0)->inner) == sizeof(G9), "heroes-ffi-field G10 inner");
-#line 49 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 49
 _Static_assert(_Generic(&((G11 *)0)->inner, G10 *: 1, default: 0) && sizeof(((G11 *)0)->inner) == sizeof(G10), "heroes-ffi-field G11 inner");
-#line 51 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 51
 _Static_assert(_Generic(&((G12 *)0)->inner, G11 *: 1, default: 0) && sizeof(((G12 *)0)->inner) == sizeof(G11), "heroes-ffi-field G12 inner");
-#line 53 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 53
 _Static_assert(_Generic(&((G13 *)0)->inner, G12 *: 1, default: 0) && sizeof(((G13 *)0)->inner) == sizeof(G12), "heroes-ffi-field G13 inner");
-#line 55 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 55
 _Static_assert(_Generic(&((G14 *)0)->inner, G13 *: 1, default: 0) && sizeof(((G14 *)0)->inner) == sizeof(G13), "heroes-ffi-field G14 inner");
-#line 57 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 57
 _Static_assert(_Generic(&((G15 *)0)->inner, G14 *: 1, default: 0) && sizeof(((G15 *)0)->inner) == sizeof(G14), "heroes-ffi-field G15 inner");
-#line 59 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 59
 _Static_assert(_Generic(&((G16 *)0)->inner, G15 *: 1, default: 0) && sizeof(((G16 *)0)->inner) == sizeof(G15), "heroes-ffi-field G16 inner");
-#line 61 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 61
 _Static_assert(_Generic(&((G17 *)0)->inner, G16 *: 1, default: 0) && sizeof(((G17 *)0)->inner) == sizeof(G16), "heroes-ffi-field G17 inner");
-#line 63 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 63
 _Static_assert(_Generic(&((G18 *)0)->inner, G17 *: 1, default: 0) && sizeof(((G18 *)0)->inner) == sizeof(G17), "heroes-ffi-field G18 inner");
-#line 65 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 65
 _Static_assert(_Generic(&((G19 *)0)->inner, G18 *: 1, default: 0) && sizeof(((G19 *)0)->inner) == sizeof(G18), "heroes-ffi-field G19 inner");
-#line 67 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 67
 _Static_assert(_Generic(&((G20 *)0)->inner, G19 *: 1, default: 0) && sizeof(((G20 *)0)->inner) == sizeof(G19), "heroes-ffi-field G20 inner");
-#line 69 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 69
 _Static_assert(_Generic(&((G21 *)0)->inner, G20 *: 1, default: 0) && sizeof(((G21 *)0)->inner) == sizeof(G20), "heroes-ffi-field G21 inner");
-#line 71 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 71
 _Static_assert(_Generic(&((G22 *)0)->inner, G21 *: 1, default: 0) && sizeof(((G22 *)0)->inner) == sizeof(G21), "heroes-ffi-field G22 inner");
-#line 73 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 73
 _Static_assert(_Generic(&((G23 *)0)->inner, G22 *: 1, default: 0) && sizeof(((G23 *)0)->inner) == sizeof(G22), "heroes-ffi-field G23 inner");
-#line 75 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 75
 _Static_assert(_Generic(&((G24 *)0)->inner, G23 *: 1, default: 0) && sizeof(((G24 *)0)->inner) == sizeof(G23), "heroes-ffi-field G24 inner");
-#line 77 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 77
 _Static_assert(_Generic(&((G25 *)0)->inner, G24 *: 1, default: 0) && sizeof(((G25 *)0)->inner) == sizeof(G24), "heroes-ffi-field G25 inner");
-#line 79 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 79
 _Static_assert(_Generic(&((G26 *)0)->inner, G25 *: 1, default: 0) && sizeof(((G26 *)0)->inner) == sizeof(G25), "heroes-ffi-field G26 inner");
-#line 81 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 81
 _Static_assert(_Generic(&((G27 *)0)->inner, G26 *: 1, default: 0) && sizeof(((G27 *)0)->inner) == sizeof(G26), "heroes-ffi-field G27 inner");
-#line 83 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 83
 _Static_assert(_Generic(&((G28 *)0)->inner, G27 *: 1, default: 0) && sizeof(((G28 *)0)->inner) == sizeof(G27), "heroes-ffi-field G28 inner");
-#line 85 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 85
 _Static_assert(_Generic(&((G29 *)0)->inner, G28 *: 1, default: 0) && sizeof(((G29 *)0)->inner) == sizeof(G28), "heroes-ffi-field G29 inner");
-#line 87 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 87
 _Static_assert(_Generic(&((G30 *)0)->inner, G29 *: 1, default: 0) && sizeof(((G30 *)0)->inner) == sizeof(G29), "heroes-ffi-field G30 inner");
-#line 89 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 89
 _Static_assert(_Generic(&((G31 *)0)->inner, G30 *: 1, default: 0) && sizeof(((G31 *)0)->inner) == sizeof(G30), "heroes-ffi-field G31 inner");
-#line 91 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 91
 _Static_assert(_Generic(&((G32 *)0)->inner, G31 *: 1, default: 0) && sizeof(((G32 *)0)->inner) == sizeof(G31), "heroes-ffi-field G32 inner");
-#line 93 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 93
 _Static_assert(_Generic(&((G33 *)0)->inner, G32 *: 1, default: 0) && sizeof(((G33 *)0)->inner) == sizeof(G32), "heroes-ffi-field G33 inner");
-#line 95 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 95
 _Static_assert(_Generic(&((G34 *)0)->inner, G33 *: 1, default: 0) && sizeof(((G34 *)0)->inner) == sizeof(G33), "heroes-ffi-field G34 inner");
-#line 97 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 97
 _Static_assert(_Generic(&((G35 *)0)->inner, G34 *: 1, default: 0) && sizeof(((G35 *)0)->inner) == sizeof(G34), "heroes-ffi-field G35 inner");
-#line 99 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 99
 _Static_assert(_Generic(&((G36 *)0)->inner, G35 *: 1, default: 0) && sizeof(((G36 *)0)->inner) == sizeof(G35), "heroes-ffi-field G36 inner");
-#line 101 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 101
 _Static_assert(_Generic(&((G37 *)0)->inner, G36 *: 1, default: 0) && sizeof(((G37 *)0)->inner) == sizeof(G36), "heroes-ffi-field G37 inner");
-#line 103 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 103
 _Static_assert(_Generic(&((G38 *)0)->inner, G37 *: 1, default: 0) && sizeof(((G38 *)0)->inner) == sizeof(G37), "heroes-ffi-field G38 inner");
-#line 105 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 105
 _Static_assert(_Generic(&((G39 *)0)->inner, G38 *: 1, default: 0) && sizeof(((G39 *)0)->inner) == sizeof(G38), "heroes-ffi-field G39 inner");
-#line 107 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 107
 _Static_assert(_Generic(&((G40 *)0)->inner, G39 *: 1, default: 0) && sizeof(((G40 *)0)->inner) == sizeof(G39), "heroes-ffi-field G40 inner");
-#line 109 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 109
 _Static_assert(_Generic(&((G41 *)0)->inner, G40 *: 1, default: 0) && sizeof(((G41 *)0)->inner) == sizeof(G40), "heroes-ffi-field G41 inner");
-#line 111 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 111
 _Static_assert(_Generic(&((G42 *)0)->inner, G41 *: 1, default: 0) && sizeof(((G42 *)0)->inner) == sizeof(G41), "heroes-ffi-field G42 inner");
-#line 113 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 113
 _Static_assert(_Generic(&((G43 *)0)->inner, G42 *: 1, default: 0) && sizeof(((G43 *)0)->inner) == sizeof(G42), "heroes-ffi-field G43 inner");
-#line 115 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 115
 _Static_assert(_Generic(&((G44 *)0)->inner, G43 *: 1, default: 0) && sizeof(((G44 *)0)->inner) == sizeof(G43), "heroes-ffi-field G44 inner");
-#line 117 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 117
 _Static_assert(_Generic(&((G45 *)0)->inner, G44 *: 1, default: 0) && sizeof(((G45 *)0)->inner) == sizeof(G44), "heroes-ffi-field G45 inner");
-#line 119 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 119
 _Static_assert(_Generic(&((G46 *)0)->inner, G45 *: 1, default: 0) && sizeof(((G46 *)0)->inner) == sizeof(G45), "heroes-ffi-field G46 inner");
-#line 121 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 121
 _Static_assert(_Generic(&((G47 *)0)->inner, G46 *: 1, default: 0) && sizeof(((G47 *)0)->inner) == sizeof(G46), "heroes-ffi-field G47 inner");
-#line 123 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 123
 _Static_assert(_Generic(&((G48 *)0)->inner, G47 *: 1, default: 0) && sizeof(((G48 *)0)->inner) == sizeof(G47), "heroes-ffi-field G48 inner");
-#line 125 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 125
 _Static_assert(_Generic(&((G49 *)0)->inner, G48 *: 1, default: 0) && sizeof(((G49 *)0)->inner) == sizeof(G48), "heroes-ffi-field G49 inner");
-#line 127 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 127
 _Static_assert(_Generic(&((G50 *)0)->inner, G49 *: 1, default: 0) && sizeof(((G50 *)0)->inner) == sizeof(G49), "heroes-ffi-field G50 inner");
-#line 129 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 129
 _Static_assert(_Generic(&((G51 *)0)->inner, G50 *: 1, default: 0) && sizeof(((G51 *)0)->inner) == sizeof(G50), "heroes-ffi-field G51 inner");
-#line 131 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 131
 _Static_assert(_Generic(&((G52 *)0)->inner, G51 *: 1, default: 0) && sizeof(((G52 *)0)->inner) == sizeof(G51), "heroes-ffi-field G52 inner");
-#line 133 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 133
 _Static_assert(_Generic(&((G53 *)0)->inner, G52 *: 1, default: 0) && sizeof(((G53 *)0)->inner) == sizeof(G52), "heroes-ffi-field G53 inner");
-#line 135 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 135
 _Static_assert(_Generic(&((G54 *)0)->inner, G53 *: 1, default: 0) && sizeof(((G54 *)0)->inner) == sizeof(G53), "heroes-ffi-field G54 inner");
-#line 137 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 137
 _Static_assert(_Generic(&((G55 *)0)->inner, G54 *: 1, default: 0) && sizeof(((G55 *)0)->inner) == sizeof(G54), "heroes-ffi-field G55 inner");
-#line 139 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 139
 _Static_assert(_Generic(&((G56 *)0)->inner, G55 *: 1, default: 0) && sizeof(((G56 *)0)->inner) == sizeof(G55), "heroes-ffi-field G56 inner");
-#line 141 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 141
 _Static_assert(_Generic(&((G57 *)0)->inner, G56 *: 1, default: 0) && sizeof(((G57 *)0)->inner) == sizeof(G56), "heroes-ffi-field G57 inner");
-#line 143 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 143
 _Static_assert(_Generic(&((G58 *)0)->inner, G57 *: 1, default: 0) && sizeof(((G58 *)0)->inner) == sizeof(G57), "heroes-ffi-field G58 inner");
-#line 145 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 145
 _Static_assert(_Generic(&((G59 *)0)->inner, G58 *: 1, default: 0) && sizeof(((G59 *)0)->inner) == sizeof(G58), "heroes-ffi-field G59 inner");
-#line 147 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 147
 _Static_assert(_Generic(&((G60 *)0)->inner, G59 *: 1, default: 0) && sizeof(((G60 *)0)->inner) == sizeof(G59), "heroes-ffi-field G60 inner");
-#line 149 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 149
 _Static_assert(_Generic(&((G61 *)0)->inner, G60 *: 1, default: 0) && sizeof(((G61 *)0)->inner) == sizeof(G60), "heroes-ffi-field G61 inner");
-#line 151 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 151
 _Static_assert(_Generic(&((G62 *)0)->inner, G61 *: 1, default: 0) && sizeof(((G62 *)0)->inner) == sizeof(G61), "heroes-ffi-field G62 inner");
-#line 153 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 153
 _Static_assert(_Generic(&((G63 *)0)->inner, G62 *: 1, default: 0) && sizeof(((G63 *)0)->inner) == sizeof(G62), "heroes-ffi-field G63 inner");
-#line 155 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 155
 _Static_assert(_Generic(&((G64 *)0)->inner, G63 *: 1, default: 0) && sizeof(((G64 *)0)->inner) == sizeof(G63), "heroes-ffi-field G64 inner");
-#line 157 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 157
 _Static_assert(_Generic(&((G65 *)0)->inner, G64 *: 1, default: 0) && sizeof(((G65 *)0)->inner) == sizeof(G64), "heroes-ffi-field G65 inner");
-#line 159 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 159
 _Static_assert(_Generic(&((G66 *)0)->inner, G65 *: 1, default: 0) && sizeof(((G66 *)0)->inner) == sizeof(G65), "heroes-ffi-field G66 inner");
-#line 161 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 161
 _Static_assert(_Generic(&((G67 *)0)->inner, G66 *: 1, default: 0) && sizeof(((G67 *)0)->inner) == sizeof(G66), "heroes-ffi-field G67 inner");
-#line 163 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 163
 _Static_assert(_Generic(&((G68 *)0)->inner, G67 *: 1, default: 0) && sizeof(((G68 *)0)->inner) == sizeof(G67), "heroes-ffi-field G68 inner");
-#line 165 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 165
 _Static_assert(_Generic(&((G69 *)0)->inner, G68 *: 1, default: 0) && sizeof(((G69 *)0)->inner) == sizeof(G68), "heroes-ffi-field G69 inner");
-#line 167 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 167
 _Static_assert(_Generic(&((G70 *)0)->inner, G69 *: 1, default: 0) && sizeof(((G70 *)0)->inner) == sizeof(G69), "heroes-ffi-field G70 inner");
-#line 169 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 169
 _Static_assert(_Generic(&((G71 *)0)->inner, G70 *: 1, default: 0) && sizeof(((G71 *)0)->inner) == sizeof(G70), "heroes-ffi-field G71 inner");
-#line 171 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 171
 _Static_assert(_Generic(&((G72 *)0)->inner, G71 *: 1, default: 0) && sizeof(((G72 *)0)->inner) == sizeof(G71), "heroes-ffi-field G72 inner");
-#line 173 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 173
 _Static_assert(_Generic(&((G73 *)0)->inner, G72 *: 1, default: 0) && sizeof(((G73 *)0)->inner) == sizeof(G72), "heroes-ffi-field G73 inner");
-#line 175 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 175
 _Static_assert(_Generic(&((G74 *)0)->inner, G73 *: 1, default: 0) && sizeof(((G74 *)0)->inner) == sizeof(G73), "heroes-ffi-field G74 inner");
-#line 177 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 177
 _Static_assert(_Generic(&((G75 *)0)->inner, G74 *: 1, default: 0) && sizeof(((G75 *)0)->inner) == sizeof(G74), "heroes-ffi-field G75 inner");
-#line 179 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 179
 _Static_assert(_Generic(&((G76 *)0)->inner, G75 *: 1, default: 0) && sizeof(((G76 *)0)->inner) == sizeof(G75), "heroes-ffi-field G76 inner");
-#line 181 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 181
 _Static_assert(_Generic(&((G77 *)0)->inner, G76 *: 1, default: 0) && sizeof(((G77 *)0)->inner) == sizeof(G76), "heroes-ffi-field G77 inner");
-#line 183 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 183
 _Static_assert(_Generic(&((G78 *)0)->inner, G77 *: 1, default: 0) && sizeof(((G78 *)0)->inner) == sizeof(G77), "heroes-ffi-field G78 inner");
-#line 185 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 185
 _Static_assert(_Generic(&((G79 *)0)->inner, G78 *: 1, default: 0) && sizeof(((G79 *)0)->inner) == sizeof(G78), "heroes-ffi-field G79 inner");
-#line 187 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 187
 _Static_assert(_Generic(&((G80 *)0)->inner, G79 *: 1, default: 0) && sizeof(((G80 *)0)->inner) == sizeof(G79), "heroes-ffi-field G80 inner");
-#line 189 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 189
 _Static_assert(_Generic(&((G81 *)0)->inner, G80 *: 1, default: 0) && sizeof(((G81 *)0)->inner) == sizeof(G80), "heroes-ffi-field G81 inner");
-#line 191 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 191
 _Static_assert(_Generic(&((G82 *)0)->inner, G81 *: 1, default: 0) && sizeof(((G82 *)0)->inner) == sizeof(G81), "heroes-ffi-field G82 inner");
-#line 193 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 193
 _Static_assert(_Generic(&((G83 *)0)->inner, G82 *: 1, default: 0) && sizeof(((G83 *)0)->inner) == sizeof(G82), "heroes-ffi-field G83 inner");
-#line 195 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 195
 _Static_assert(_Generic(&((G84 *)0)->inner, G83 *: 1, default: 0) && sizeof(((G84 *)0)->inner) == sizeof(G83), "heroes-ffi-field G84 inner");
-#line 197 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 197
 _Static_assert(_Generic(&((G85 *)0)->inner, G84 *: 1, default: 0) && sizeof(((G85 *)0)->inner) == sizeof(G84), "heroes-ffi-field G85 inner");
-#line 199 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 199
 _Static_assert(_Generic(&((G86 *)0)->inner, G85 *: 1, default: 0) && sizeof(((G86 *)0)->inner) == sizeof(G85), "heroes-ffi-field G86 inner");
-#line 201 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 201
 _Static_assert(_Generic(&((G87 *)0)->inner, G86 *: 1, default: 0) && sizeof(((G87 *)0)->inner) == sizeof(G86), "heroes-ffi-field G87 inner");
-#line 203 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 203
 _Static_assert(_Generic(&((G88 *)0)->inner, G87 *: 1, default: 0) && sizeof(((G88 *)0)->inner) == sizeof(G87), "heroes-ffi-field G88 inner");
-#line 205 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 205
 _Static_assert(_Generic(&((G89 *)0)->inner, G88 *: 1, default: 0) && sizeof(((G89 *)0)->inner) == sizeof(G88), "heroes-ffi-field G89 inner");
-#line 207 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 207
 _Static_assert(_Generic(&((G90 *)0)->inner, G89 *: 1, default: 0) && sizeof(((G90 *)0)->inner) == sizeof(G89), "heroes-ffi-field G90 inner");
-#line 209 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 209
 _Static_assert(_Generic(&((G91 *)0)->inner, G90 *: 1, default: 0) && sizeof(((G91 *)0)->inner) == sizeof(G90), "heroes-ffi-field G91 inner");
-#line 211 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 211
 _Static_assert(_Generic(&((G92 *)0)->inner, G91 *: 1, default: 0) && sizeof(((G92 *)0)->inner) == sizeof(G91), "heroes-ffi-field G92 inner");
-#line 213 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 213
 _Static_assert(_Generic(&((G93 *)0)->inner, G92 *: 1, default: 0) && sizeof(((G93 *)0)->inner) == sizeof(G92), "heroes-ffi-field G93 inner");
-#line 215 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 215
 _Static_assert(_Generic(&((G94 *)0)->inner, G93 *: 1, default: 0) && sizeof(((G94 *)0)->inner) == sizeof(G93), "heroes-ffi-field G94 inner");
-#line 217 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 217
 _Static_assert(_Generic(&((G95 *)0)->inner, G94 *: 1, default: 0) && sizeof(((G95 *)0)->inner) == sizeof(G94), "heroes-ffi-field G95 inner");
-#line 219 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 219
 _Static_assert(_Generic(&((G96 *)0)->inner, G95 *: 1, default: 0) && sizeof(((G96 *)0)->inner) == sizeof(G95), "heroes-ffi-field G96 inner");
-#line 221 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 221
 _Static_assert(_Generic(&((G97 *)0)->inner, G96 *: 1, default: 0) && sizeof(((G97 *)0)->inner) == sizeof(G96), "heroes-ffi-field G97 inner");
-#line 223 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 223
 _Static_assert(_Generic(&((G98 *)0)->inner, G97 *: 1, default: 0) && sizeof(((G98 *)0)->inner) == sizeof(G97), "heroes-ffi-field G98 inner");
-#line 225 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 225
 _Static_assert(_Generic(&((G99 *)0)->inner, G98 *: 1, default: 0) && sizeof(((G99 *)0)->inner) == sizeof(G98), "heroes-ffi-field G99 inner");
-#line 227 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 227
 _Static_assert(_Generic(&((G100 *)0)->inner, G99 *: 1, default: 0) && sizeof(((G100 *)0)->inner) == sizeof(G99), "heroes-ffi-field G100 inner");
-#line 229 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 229
 _Static_assert(_Generic(&((G101 *)0)->inner, G100 *: 1, default: 0) && sizeof(((G101 *)0)->inner) == sizeof(G100), "heroes-ffi-field G101 inner");
-#line 231 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 231
 _Static_assert(_Generic(&((G102 *)0)->inner, G101 *: 1, default: 0) && sizeof(((G102 *)0)->inner) == sizeof(G101), "heroes-ffi-field G102 inner");
-#line 233 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 233
 _Static_assert(_Generic(&((G103 *)0)->inner, G102 *: 1, default: 0) && sizeof(((G103 *)0)->inner) == sizeof(G102), "heroes-ffi-field G103 inner");
-#line 235 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 235
 _Static_assert(_Generic(&((G104 *)0)->inner, G103 *: 1, default: 0) && sizeof(((G104 *)0)->inner) == sizeof(G103), "heroes-ffi-field G104 inner");
-#line 237 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 237
 _Static_assert(_Generic(&((G105 *)0)->inner, G104 *: 1, default: 0) && sizeof(((G105 *)0)->inner) == sizeof(G104), "heroes-ffi-field G105 inner");
-#line 239 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 239
 _Static_assert(_Generic(&((G106 *)0)->inner, G105 *: 1, default: 0) && sizeof(((G106 *)0)->inner) == sizeof(G105), "heroes-ffi-field G106 inner");
-#line 241 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 241
 _Static_assert(_Generic(&((G107 *)0)->inner, G106 *: 1, default: 0) && sizeof(((G107 *)0)->inner) == sizeof(G106), "heroes-ffi-field G107 inner");
-#line 243 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 243
 _Static_assert(_Generic(&((G108 *)0)->inner, G107 *: 1, default: 0) && sizeof(((G108 *)0)->inner) == sizeof(G107), "heroes-ffi-field G108 inner");
-#line 245 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 245
 _Static_assert(_Generic(&((G109 *)0)->inner, G108 *: 1, default: 0) && sizeof(((G109 *)0)->inner) == sizeof(G108), "heroes-ffi-field G109 inner");
-#line 247 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 247
 _Static_assert(_Generic(&((G110 *)0)->inner, G109 *: 1, default: 0) && sizeof(((G110 *)0)->inner) == sizeof(G109), "heroes-ffi-field G110 inner");
-#line 249 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 249
 _Static_assert(_Generic(&((G111 *)0)->inner, G110 *: 1, default: 0) && sizeof(((G111 *)0)->inner) == sizeof(G110), "heroes-ffi-field G111 inner");
-#line 251 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 251
 _Static_assert(_Generic(&((G112 *)0)->inner, G111 *: 1, default: 0) && sizeof(((G112 *)0)->inner) == sizeof(G111), "heroes-ffi-field G112 inner");
-#line 253 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 253
 _Static_assert(_Generic(&((G113 *)0)->inner, G112 *: 1, default: 0) && sizeof(((G113 *)0)->inner) == sizeof(G112), "heroes-ffi-field G113 inner");
-#line 255 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 255
 _Static_assert(_Generic(&((G114 *)0)->inner, G113 *: 1, default: 0) && sizeof(((G114 *)0)->inner) == sizeof(G113), "heroes-ffi-field G114 inner");
-#line 257 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 257
 _Static_assert(_Generic(&((G115 *)0)->inner, G114 *: 1, default: 0) && sizeof(((G115 *)0)->inner) == sizeof(G114), "heroes-ffi-field G115 inner");
-#line 259 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 259
 _Static_assert(_Generic(&((G116 *)0)->inner, G115 *: 1, default: 0) && sizeof(((G116 *)0)->inner) == sizeof(G115), "heroes-ffi-field G116 inner");
-#line 261 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 261
 _Static_assert(_Generic(&((G117 *)0)->inner, G116 *: 1, default: 0) && sizeof(((G117 *)0)->inner) == sizeof(G116), "heroes-ffi-field G117 inner");
-#line 263 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 263
 _Static_assert(_Generic(&((G118 *)0)->inner, G117 *: 1, default: 0) && sizeof(((G118 *)0)->inner) == sizeof(G117), "heroes-ffi-field G118 inner");
-#line 265 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 265
 _Static_assert(_Generic(&((G119 *)0)->inner, G118 *: 1, default: 0) && sizeof(((G119 *)0)->inner) == sizeof(G118), "heroes-ffi-field G119 inner");
-#line 267 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 267
 _Static_assert(_Generic(&((G120 *)0)->inner, G119 *: 1, default: 0) && sizeof(((G120 *)0)->inner) == sizeof(G119), "heroes-ffi-field G120 inner");
-#line 269 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 269
 _Static_assert(_Generic(&((G121 *)0)->inner, G120 *: 1, default: 0) && sizeof(((G121 *)0)->inner) == sizeof(G120), "heroes-ffi-field G121 inner");
-#line 271 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 271
 _Static_assert(_Generic(&((G122 *)0)->inner, G121 *: 1, default: 0) && sizeof(((G122 *)0)->inner) == sizeof(G121), "heroes-ffi-field G122 inner");
-#line 273 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 273
 _Static_assert(_Generic(&((G123 *)0)->inner, G122 *: 1, default: 0) && sizeof(((G123 *)0)->inner) == sizeof(G122), "heroes-ffi-field G123 inner");
-#line 275 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 275
 _Static_assert(_Generic(&((G124 *)0)->inner, G123 *: 1, default: 0) && sizeof(((G124 *)0)->inner) == sizeof(G123), "heroes-ffi-field G124 inner");
-#line 277 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 277
 _Static_assert(_Generic(&((G125 *)0)->inner, G124 *: 1, default: 0) && sizeof(((G125 *)0)->inner) == sizeof(G124), "heroes-ffi-field G125 inner");
-#line 279 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 279
 _Static_assert(_Generic(&((G126 *)0)->inner, G125 *: 1, default: 0) && sizeof(((G126 *)0)->inner) == sizeof(G125), "heroes-ffi-field G126 inner");
-#line 281 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 281
 _Static_assert(_Generic(&((G127 *)0)->inner, G126 *: 1, default: 0) && sizeof(((G127 *)0)->inner) == sizeof(G126), "heroes-ffi-field G127 inner");
-#line 283 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 283
 _Static_assert(_Generic(&((G128 *)0)->inner, G127 *: 1, default: 0) && sizeof(((G128 *)0)->inner) == sizeof(G127), "heroes-ffi-field G128 inner");
-#line 285 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 285
 _Static_assert(_Generic(&((G129 *)0)->inner, G128 *: 1, default: 0) && sizeof(((G129 *)0)->inner) == sizeof(G128), "heroes-ffi-field G129 inner");
-#line 287 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 287
 _Static_assert(_Generic(&((G130 *)0)->inner, G129 *: 1, default: 0) && sizeof(((G130 *)0)->inner) == sizeof(G129), "heroes-ffi-field G130 inner");
-#line 289 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 289
 _Static_assert(_Generic(&((G131 *)0)->inner, G130 *: 1, default: 0) && sizeof(((G131 *)0)->inner) == sizeof(G130), "heroes-ffi-field G131 inner");
-#line 291 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 291
 _Static_assert(_Generic(&((G132 *)0)->inner, G131 *: 1, default: 0) && sizeof(((G132 *)0)->inner) == sizeof(G131), "heroes-ffi-field G132 inner");
-#line 293 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 293
 _Static_assert(_Generic(&((G133 *)0)->inner, G132 *: 1, default: 0) && sizeof(((G133 *)0)->inner) == sizeof(G132), "heroes-ffi-field G133 inner");
-#line 295 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 295
 _Static_assert(_Generic(&((G134 *)0)->inner, G133 *: 1, default: 0) && sizeof(((G134 *)0)->inner) == sizeof(G133), "heroes-ffi-field G134 inner");
-#line 297 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 297
 _Static_assert(_Generic(&((G135 *)0)->inner, G134 *: 1, default: 0) && sizeof(((G135 *)0)->inner) == sizeof(G134), "heroes-ffi-field G135 inner");
-#line 299 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 299
 _Static_assert(_Generic(&((G136 *)0)->inner, G135 *: 1, default: 0) && sizeof(((G136 *)0)->inner) == sizeof(G135), "heroes-ffi-field G136 inner");
-#line 301 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 301
 _Static_assert(_Generic(&((G137 *)0)->inner, G136 *: 1, default: 0) && sizeof(((G137 *)0)->inner) == sizeof(G136), "heroes-ffi-field G137 inner");
-#line 303 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 303
 _Static_assert(_Generic(&((G138 *)0)->inner, G137 *: 1, default: 0) && sizeof(((G138 *)0)->inner) == sizeof(G137), "heroes-ffi-field G138 inner");
-#line 305 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 305
 _Static_assert(_Generic(&((G139 *)0)->inner, G138 *: 1, default: 0) && sizeof(((G139 *)0)->inner) == sizeof(G138), "heroes-ffi-field G139 inner");
-#line 307 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 307
 _Static_assert(_Generic(&((G140 *)0)->inner, G139 *: 1, default: 0) && sizeof(((G140 *)0)->inner) == sizeof(G139), "heroes-ffi-field G140 inner");
-#line 309 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 309
 _Static_assert(_Generic(&((G141 *)0)->inner, G140 *: 1, default: 0) && sizeof(((G141 *)0)->inner) == sizeof(G140), "heroes-ffi-field G141 inner");
-#line 311 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 311
 _Static_assert(_Generic(&((G142 *)0)->inner, G141 *: 1, default: 0) && sizeof(((G142 *)0)->inner) == sizeof(G141), "heroes-ffi-field G142 inner");
-#line 313 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 313
 _Static_assert(_Generic(&((G143 *)0)->inner, G142 *: 1, default: 0) && sizeof(((G143 *)0)->inner) == sizeof(G142), "heroes-ffi-field G143 inner");
-#line 315 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 315
 _Static_assert(_Generic(&((G144 *)0)->inner, G143 *: 1, default: 0) && sizeof(((G144 *)0)->inner) == sizeof(G143), "heroes-ffi-field G144 inner");
-#line 317 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 317
 _Static_assert(_Generic(&((G145 *)0)->inner, G144 *: 1, default: 0) && sizeof(((G145 *)0)->inner) == sizeof(G144), "heroes-ffi-field G145 inner");
-#line 319 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 319
 _Static_assert(_Generic(&((G146 *)0)->inner, G145 *: 1, default: 0) && sizeof(((G146 *)0)->inner) == sizeof(G145), "heroes-ffi-field G146 inner");
-#line 321 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 321
 _Static_assert(_Generic(&((G147 *)0)->inner, G146 *: 1, default: 0) && sizeof(((G147 *)0)->inner) == sizeof(G146), "heroes-ffi-field G147 inner");
-#line 323 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 323
 _Static_assert(_Generic(&((G148 *)0)->inner, G147 *: 1, default: 0) && sizeof(((G148 *)0)->inner) == sizeof(G147), "heroes-ffi-field G148 inner");
-#line 325 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 325
 _Static_assert(_Generic(&((G149 *)0)->inner, G148 *: 1, default: 0) && sizeof(((G149 *)0)->inner) == sizeof(G148), "heroes-ffi-field G149 inner");
-#line 327 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 327
 _Static_assert(_Generic(&((G150 *)0)->inner, G149 *: 1, default: 0) && sizeof(((G150 *)0)->inner) == sizeof(G149), "heroes-ffi-field G150 inner");
-#line 329 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 329
 _Static_assert(_Generic(&((G151 *)0)->inner, G150 *: 1, default: 0) && sizeof(((G151 *)0)->inner) == sizeof(G150), "heroes-ffi-field G151 inner");
-#line 331 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 331
 _Static_assert(_Generic(&((G152 *)0)->inner, G151 *: 1, default: 0) && sizeof(((G152 *)0)->inner) == sizeof(G151), "heroes-ffi-field G152 inner");
-#line 333 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 333
 _Static_assert(_Generic(&((G153 *)0)->inner, G152 *: 1, default: 0) && sizeof(((G153 *)0)->inner) == sizeof(G152), "heroes-ffi-field G153 inner");
-#line 335 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 335
 _Static_assert(_Generic(&((G154 *)0)->inner, G153 *: 1, default: 0) && sizeof(((G154 *)0)->inner) == sizeof(G153), "heroes-ffi-field G154 inner");
-#line 337 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 337
 _Static_assert(_Generic(&((G155 *)0)->inner, G154 *: 1, default: 0) && sizeof(((G155 *)0)->inner) == sizeof(G154), "heroes-ffi-field G155 inner");
-#line 339 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 339
 _Static_assert(_Generic(&((G156 *)0)->inner, G155 *: 1, default: 0) && sizeof(((G156 *)0)->inner) == sizeof(G155), "heroes-ffi-field G156 inner");
-#line 341 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 341
 _Static_assert(_Generic(&((G157 *)0)->inner, G156 *: 1, default: 0) && sizeof(((G157 *)0)->inner) == sizeof(G156), "heroes-ffi-field G157 inner");
-#line 343 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 343
 _Static_assert(_Generic(&((G158 *)0)->inner, G157 *: 1, default: 0) && sizeof(((G158 *)0)->inner) == sizeof(G157), "heroes-ffi-field G158 inner");
-#line 345 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 345
 _Static_assert(_Generic(&((G159 *)0)->inner, G158 *: 1, default: 0) && sizeof(((G159 *)0)->inner) == sizeof(G158), "heroes-ffi-field G159 inner");
-#line 347 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 347
 _Static_assert(_Generic(&((G160 *)0)->inner, G159 *: 1, default: 0) && sizeof(((G160 *)0)->inner) == sizeof(G159), "heroes-ffi-field G160 inner");
-#line 349 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 349
 _Static_assert(_Generic(&((G161 *)0)->inner, G160 *: 1, default: 0) && sizeof(((G161 *)0)->inner) == sizeof(G160), "heroes-ffi-field G161 inner");
-#line 351 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 351
 _Static_assert(_Generic(&((G162 *)0)->inner, G161 *: 1, default: 0) && sizeof(((G162 *)0)->inner) == sizeof(G161), "heroes-ffi-field G162 inner");
-#line 353 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 353
 _Static_assert(_Generic(&((G163 *)0)->inner, G162 *: 1, default: 0) && sizeof(((G163 *)0)->inner) == sizeof(G162), "heroes-ffi-field G163 inner");
-#line 355 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 355
 _Static_assert(_Generic(&((G164 *)0)->inner, G163 *: 1, default: 0) && sizeof(((G164 *)0)->inner) == sizeof(G163), "heroes-ffi-field G164 inner");
-#line 357 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 357
 _Static_assert(_Generic(&((G165 *)0)->inner, G164 *: 1, default: 0) && sizeof(((G165 *)0)->inner) == sizeof(G164), "heroes-ffi-field G165 inner");
-#line 359 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 359
 _Static_assert(_Generic(&((G166 *)0)->inner, G165 *: 1, default: 0) && sizeof(((G166 *)0)->inner) == sizeof(G165), "heroes-ffi-field G166 inner");
-#line 361 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 361
 _Static_assert(_Generic(&((G167 *)0)->inner, G166 *: 1, default: 0) && sizeof(((G167 *)0)->inner) == sizeof(G166), "heroes-ffi-field G167 inner");
-#line 363 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 363
 _Static_assert(_Generic(&((G168 *)0)->inner, G167 *: 1, default: 0) && sizeof(((G168 *)0)->inner) == sizeof(G167), "heroes-ffi-field G168 inner");
-#line 365 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 365
 _Static_assert(_Generic(&((G169 *)0)->inner, G168 *: 1, default: 0) && sizeof(((G169 *)0)->inner) == sizeof(G168), "heroes-ffi-field G169 inner");
-#line 367 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 367
 _Static_assert(_Generic(&((G170 *)0)->inner, G169 *: 1, default: 0) && sizeof(((G170 *)0)->inner) == sizeof(G169), "heroes-ffi-field G170 inner");
-#line 369 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 369
 _Static_assert(_Generic(&((G171 *)0)->inner, G170 *: 1, default: 0) && sizeof(((G171 *)0)->inner) == sizeof(G170), "heroes-ffi-field G171 inner");
-#line 371 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 371
 _Static_assert(_Generic(&((G172 *)0)->inner, G171 *: 1, default: 0) && sizeof(((G172 *)0)->inner) == sizeof(G171), "heroes-ffi-field G172 inner");
-#line 373 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 373
 _Static_assert(_Generic(&((G173 *)0)->inner, G172 *: 1, default: 0) && sizeof(((G173 *)0)->inner) == sizeof(G172), "heroes-ffi-field G173 inner");
-#line 375 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 375
 _Static_assert(_Generic(&((G174 *)0)->inner, G173 *: 1, default: 0) && sizeof(((G174 *)0)->inner) == sizeof(G173), "heroes-ffi-field G174 inner");
-#line 377 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 377
 _Static_assert(_Generic(&((G175 *)0)->inner, G174 *: 1, default: 0) && sizeof(((G175 *)0)->inner) == sizeof(G174), "heroes-ffi-field G175 inner");
-#line 379 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 379
 _Static_assert(_Generic(&((G176 *)0)->inner, G175 *: 1, default: 0) && sizeof(((G176 *)0)->inner) == sizeof(G175), "heroes-ffi-field G176 inner");
-#line 381 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 381
 _Static_assert(_Generic(&((G177 *)0)->inner, G176 *: 1, default: 0) && sizeof(((G177 *)0)->inner) == sizeof(G176), "heroes-ffi-field G177 inner");
-#line 383 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 383
 _Static_assert(_Generic(&((G178 *)0)->inner, G177 *: 1, default: 0) && sizeof(((G178 *)0)->inner) == sizeof(G177), "heroes-ffi-field G178 inner");
-#line 385 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 385
 _Static_assert(_Generic(&((G179 *)0)->inner, G178 *: 1, default: 0) && sizeof(((G179 *)0)->inner) == sizeof(G178), "heroes-ffi-field G179 inner");
-#line 387 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 387
 _Static_assert(_Generic(&((G180 *)0)->inner, G179 *: 1, default: 0) && sizeof(((G180 *)0)->inner) == sizeof(G179), "heroes-ffi-field G180 inner");
-#line 389 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 389
 _Static_assert(_Generic(&((G181 *)0)->inner, G180 *: 1, default: 0) && sizeof(((G181 *)0)->inner) == sizeof(G180), "heroes-ffi-field G181 inner");
-#line 391 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 391
 _Static_assert(_Generic(&((G182 *)0)->inner, G181 *: 1, default: 0) && sizeof(((G182 *)0)->inner) == sizeof(G181), "heroes-ffi-field G182 inner");
-#line 393 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 393
 _Static_assert(_Generic(&((G183 *)0)->inner, G182 *: 1, default: 0) && sizeof(((G183 *)0)->inner) == sizeof(G182), "heroes-ffi-field G183 inner");
-#line 395 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 395
 _Static_assert(_Generic(&((G184 *)0)->inner, G183 *: 1, default: 0) && sizeof(((G184 *)0)->inner) == sizeof(G183), "heroes-ffi-field G184 inner");
-#line 397 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 397
 _Static_assert(_Generic(&((G185 *)0)->inner, G184 *: 1, default: 0) && sizeof(((G185 *)0)->inner) == sizeof(G184), "heroes-ffi-field G185 inner");
-#line 399 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 399
 _Static_assert(_Generic(&((G186 *)0)->inner, G185 *: 1, default: 0) && sizeof(((G186 *)0)->inner) == sizeof(G185), "heroes-ffi-field G186 inner");
-#line 401 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 401
 _Static_assert(_Generic(&((G187 *)0)->inner, G186 *: 1, default: 0) && sizeof(((G187 *)0)->inner) == sizeof(G186), "heroes-ffi-field G187 inner");
-#line 403 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 403
 _Static_assert(_Generic(&((G188 *)0)->inner, G187 *: 1, default: 0) && sizeof(((G188 *)0)->inner) == sizeof(G187), "heroes-ffi-field G188 inner");
-#line 405 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 405
 _Static_assert(_Generic(&((G189 *)0)->inner, G188 *: 1, default: 0) && sizeof(((G189 *)0)->inner) == sizeof(G188), "heroes-ffi-field G189 inner");
-#line 407 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 407
 _Static_assert(_Generic(&((G190 *)0)->inner, G189 *: 1, default: 0) && sizeof(((G190 *)0)->inner) == sizeof(G189), "heroes-ffi-field G190 inner");
-#line 409 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 409
 _Static_assert(_Generic(&((G191 *)0)->inner, G190 *: 1, default: 0) && sizeof(((G191 *)0)->inner) == sizeof(G190), "heroes-ffi-field G191 inner");
-#line 411 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 411
 _Static_assert(_Generic(&((G192 *)0)->inner, G191 *: 1, default: 0) && sizeof(((G192 *)0)->inner) == sizeof(G191), "heroes-ffi-field G192 inner");
-#line 413 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 413
 _Static_assert(_Generic(&((G193 *)0)->inner, G192 *: 1, default: 0) && sizeof(((G193 *)0)->inner) == sizeof(G192), "heroes-ffi-field G193 inner");
-#line 415 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 415
 _Static_assert(_Generic(&((G194 *)0)->inner, G193 *: 1, default: 0) && sizeof(((G194 *)0)->inner) == sizeof(G193), "heroes-ffi-field G194 inner");
-#line 417 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 417
 _Static_assert(_Generic(&((G195 *)0)->inner, G194 *: 1, default: 0) && sizeof(((G195 *)0)->inner) == sizeof(G194), "heroes-ffi-field G195 inner");
-#line 419 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 419
 _Static_assert(_Generic(&((G196 *)0)->inner, G195 *: 1, default: 0) && sizeof(((G196 *)0)->inner) == sizeof(G195), "heroes-ffi-field G196 inner");
-#line 421 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 421
 _Static_assert(_Generic(&((G197 *)0)->inner, G196 *: 1, default: 0) && sizeof(((G197 *)0)->inner) == sizeof(G196), "heroes-ffi-field G197 inner");
-#line 423 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 423
 _Static_assert(_Generic(&((G198 *)0)->inner, G197 *: 1, default: 0) && sizeof(((G198 *)0)->inner) == sizeof(G197), "heroes-ffi-field G198 inner");
-#line 425 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 425
 _Static_assert(_Generic(&((G199 *)0)->inner, G198 *: 1, default: 0) && sizeof(((G199 *)0)->inner) == sizeof(G198), "heroes-ffi-field G199 inner");
-#line 427 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 427
 _Static_assert(_Generic(&((G200 *)0)->inner, G199 *: 1, default: 0) && sizeof(((G200 *)0)->inner) == sizeof(G199), "heroes-ffi-field G200 inner");
-#line 429 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 429
 _Static_assert(_Generic(&((G201 *)0)->inner, G200 *: 1, default: 0) && sizeof(((G201 *)0)->inner) == sizeof(G200), "heroes-ffi-field G201 inner");
-#line 431 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 431
 _Static_assert(_Generic(&((G202 *)0)->inner, G201 *: 1, default: 0) && sizeof(((G202 *)0)->inner) == sizeof(G201), "heroes-ffi-field G202 inner");
-#line 433 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 433
 _Static_assert(_Generic(&((G203 *)0)->inner, G202 *: 1, default: 0) && sizeof(((G203 *)0)->inner) == sizeof(G202), "heroes-ffi-field G203 inner");
-#line 435 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 435
 _Static_assert(_Generic(&((G204 *)0)->inner, G203 *: 1, default: 0) && sizeof(((G204 *)0)->inner) == sizeof(G203), "heroes-ffi-field G204 inner");
-#line 437 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 437
 _Static_assert(_Generic(&((G205 *)0)->inner, G204 *: 1, default: 0) && sizeof(((G205 *)0)->inner) == sizeof(G204), "heroes-ffi-field G205 inner");
-#line 439 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 439
 _Static_assert(_Generic(&((G206 *)0)->inner, G205 *: 1, default: 0) && sizeof(((G206 *)0)->inner) == sizeof(G205), "heroes-ffi-field G206 inner");
-#line 441 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 441
 _Static_assert(_Generic(&((G207 *)0)->inner, G206 *: 1, default: 0) && sizeof(((G207 *)0)->inner) == sizeof(G206), "heroes-ffi-field G207 inner");
-#line 443 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 443
 _Static_assert(_Generic(&((G208 *)0)->inner, G207 *: 1, default: 0) && sizeof(((G208 *)0)->inner) == sizeof(G207), "heroes-ffi-field G208 inner");
-#line 445 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 445
 _Static_assert(_Generic(&((G209 *)0)->inner, G208 *: 1, default: 0) && sizeof(((G209 *)0)->inner) == sizeof(G208), "heroes-ffi-field G209 inner");
-#line 447 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 447
 _Static_assert(_Generic(&((G210 *)0)->inner, G209 *: 1, default: 0) && sizeof(((G210 *)0)->inner) == sizeof(G209), "heroes-ffi-field G210 inner");
-#line 449 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 449
 _Static_assert(_Generic(&((G211 *)0)->inner, G210 *: 1, default: 0) && sizeof(((G211 *)0)->inner) == sizeof(G210), "heroes-ffi-field G211 inner");
-#line 451 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 451
 _Static_assert(_Generic(&((G212 *)0)->inner, G211 *: 1, default: 0) && sizeof(((G212 *)0)->inner) == sizeof(G211), "heroes-ffi-field G212 inner");
-#line 453 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 453
 _Static_assert(_Generic(&((G213 *)0)->inner, G212 *: 1, default: 0) && sizeof(((G213 *)0)->inner) == sizeof(G212), "heroes-ffi-field G213 inner");
-#line 455 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 455
 _Static_assert(_Generic(&((G214 *)0)->inner, G213 *: 1, default: 0) && sizeof(((G214 *)0)->inner) == sizeof(G213), "heroes-ffi-field G214 inner");
-#line 457 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 457
 _Static_assert(_Generic(&((G215 *)0)->inner, G214 *: 1, default: 0) && sizeof(((G215 *)0)->inner) == sizeof(G214), "heroes-ffi-field G215 inner");
-#line 459 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 459
 _Static_assert(_Generic(&((G216 *)0)->inner, G215 *: 1, default: 0) && sizeof(((G216 *)0)->inner) == sizeof(G215), "heroes-ffi-field G216 inner");
-#line 461 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 461
 _Static_assert(_Generic(&((G217 *)0)->inner, G216 *: 1, default: 0) && sizeof(((G217 *)0)->inner) == sizeof(G216), "heroes-ffi-field G217 inner");
-#line 463 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 463
 _Static_assert(_Generic(&((G218 *)0)->inner, G217 *: 1, default: 0) && sizeof(((G218 *)0)->inner) == sizeof(G217), "heroes-ffi-field G218 inner");
-#line 465 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 465
 _Static_assert(_Generic(&((G219 *)0)->inner, G218 *: 1, default: 0) && sizeof(((G219 *)0)->inner) == sizeof(G218), "heroes-ffi-field G219 inner");
-#line 467 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 467
 _Static_assert(_Generic(&((G220 *)0)->inner, G219 *: 1, default: 0) && sizeof(((G220 *)0)->inner) == sizeof(G219), "heroes-ffi-field G220 inner");
-#line 469 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 469
 _Static_assert(_Generic(&((G221 *)0)->inner, G220 *: 1, default: 0) && sizeof(((G221 *)0)->inner) == sizeof(G220), "heroes-ffi-field G221 inner");
-#line 471 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 471
 _Static_assert(_Generic(&((G222 *)0)->inner, G221 *: 1, default: 0) && sizeof(((G222 *)0)->inner) == sizeof(G221), "heroes-ffi-field G222 inner");
-#line 473 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 473
 _Static_assert(_Generic(&((G223 *)0)->inner, G222 *: 1, default: 0) && sizeof(((G223 *)0)->inner) == sizeof(G222), "heroes-ffi-field G223 inner");
-#line 475 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 475
 _Static_assert(_Generic(&((G224 *)0)->inner, G223 *: 1, default: 0) && sizeof(((G224 *)0)->inner) == sizeof(G223), "heroes-ffi-field G224 inner");
-#line 477 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 477
 _Static_assert(_Generic(&((G225 *)0)->inner, G224 *: 1, default: 0) && sizeof(((G225 *)0)->inner) == sizeof(G224), "heroes-ffi-field G225 inner");
-#line 479 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 479
 _Static_assert(_Generic(&((G226 *)0)->inner, G225 *: 1, default: 0) && sizeof(((G226 *)0)->inner) == sizeof(G225), "heroes-ffi-field G226 inner");
-#line 481 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 481
 _Static_assert(_Generic(&((G227 *)0)->inner, G226 *: 1, default: 0) && sizeof(((G227 *)0)->inner) == sizeof(G226), "heroes-ffi-field G227 inner");
-#line 483 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 483
 _Static_assert(_Generic(&((G228 *)0)->inner, G227 *: 1, default: 0) && sizeof(((G228 *)0)->inner) == sizeof(G227), "heroes-ffi-field G228 inner");
-#line 485 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 485
 _Static_assert(_Generic(&((G229 *)0)->inner, G228 *: 1, default: 0) && sizeof(((G229 *)0)->inner) == sizeof(G228), "heroes-ffi-field G229 inner");
-#line 487 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 487
 _Static_assert(_Generic(&((G230 *)0)->inner, G229 *: 1, default: 0) && sizeof(((G230 *)0)->inner) == sizeof(G229), "heroes-ffi-field G230 inner");
-#line 489 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 489
 _Static_assert(_Generic(&((G231 *)0)->inner, G230 *: 1, default: 0) && sizeof(((G231 *)0)->inner) == sizeof(G230), "heroes-ffi-field G231 inner");
-#line 491 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 491
 _Static_assert(_Generic(&((G232 *)0)->inner, G231 *: 1, default: 0) && sizeof(((G232 *)0)->inner) == sizeof(G231), "heroes-ffi-field G232 inner");
-#line 493 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 493
 _Static_assert(_Generic(&((G233 *)0)->inner, G232 *: 1, default: 0) && sizeof(((G233 *)0)->inner) == sizeof(G232), "heroes-ffi-field G233 inner");
-#line 495 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 495
 _Static_assert(_Generic(&((G234 *)0)->inner, G233 *: 1, default: 0) && sizeof(((G234 *)0)->inner) == sizeof(G233), "heroes-ffi-field G234 inner");
-#line 497 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 497
 _Static_assert(_Generic(&((G235 *)0)->inner, G234 *: 1, default: 0) && sizeof(((G235 *)0)->inner) == sizeof(G234), "heroes-ffi-field G235 inner");
-#line 499 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 499
 _Static_assert(_Generic(&((G236 *)0)->inner, G235 *: 1, default: 0) && sizeof(((G236 *)0)->inner) == sizeof(G235), "heroes-ffi-field G236 inner");
-#line 501 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 501
 _Static_assert(_Generic(&((G237 *)0)->inner, G236 *: 1, default: 0) && sizeof(((G237 *)0)->inner) == sizeof(G236), "heroes-ffi-field G237 inner");
-#line 503 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 503
 _Static_assert(_Generic(&((G238 *)0)->inner, G237 *: 1, default: 0) && sizeof(((G238 *)0)->inner) == sizeof(G237), "heroes-ffi-field G238 inner");
-#line 505 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 505
 _Static_assert(_Generic(&((G239 *)0)->inner, G238 *: 1, default: 0) && sizeof(((G239 *)0)->inner) == sizeof(G238), "heroes-ffi-field G239 inner");
-#line 507 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 507
 _Static_assert(_Generic(&((G240 *)0)->inner, G239 *: 1, default: 0) && sizeof(((G240 *)0)->inner) == sizeof(G239), "heroes-ffi-field G240 inner");
-#line 509 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 509
 _Static_assert(_Generic(&((G241 *)0)->inner, G240 *: 1, default: 0) && sizeof(((G241 *)0)->inner) == sizeof(G240), "heroes-ffi-field G241 inner");
-#line 511 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 511
 _Static_assert(_Generic(&((G242 *)0)->inner, G241 *: 1, default: 0) && sizeof(((G242 *)0)->inner) == sizeof(G241), "heroes-ffi-field G242 inner");
-#line 513 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 513
 _Static_assert(_Generic(&((G243 *)0)->inner, G242 *: 1, default: 0) && sizeof(((G243 *)0)->inner) == sizeof(G242), "heroes-ffi-field G243 inner");
-#line 515 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 515
 _Static_assert(_Generic(&((G244 *)0)->inner, G243 *: 1, default: 0) && sizeof(((G244 *)0)->inner) == sizeof(G243), "heroes-ffi-field G244 inner");
-#line 517 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 517
 _Static_assert(_Generic(&((G245 *)0)->inner, G244 *: 1, default: 0) && sizeof(((G245 *)0)->inner) == sizeof(G244), "heroes-ffi-field G245 inner");
-#line 519 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 519
 _Static_assert(_Generic(&((G246 *)0)->inner, G245 *: 1, default: 0) && sizeof(((G246 *)0)->inner) == sizeof(G245), "heroes-ffi-field G246 inner");
-#line 521 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 521
 _Static_assert(_Generic(&((G247 *)0)->inner, G246 *: 1, default: 0) && sizeof(((G247 *)0)->inner) == sizeof(G246), "heroes-ffi-field G247 inner");
-#line 523 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 523
 _Static_assert(_Generic(&((G248 *)0)->inner, G247 *: 1, default: 0) && sizeof(((G248 *)0)->inner) == sizeof(G247), "heroes-ffi-field G248 inner");
-#line 525 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 525
 _Static_assert(_Generic(&((G249 *)0)->inner, G248 *: 1, default: 0) && sizeof(((G249 *)0)->inner) == sizeof(G248), "heroes-ffi-field G249 inner");
-#line 527 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 527
 _Static_assert(_Generic(&((G250 *)0)->inner, G249 *: 1, default: 0) && sizeof(((G250 *)0)->inner) == sizeof(G249), "heroes-ffi-field G250 inner");
-#line 529 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 529
 _Static_assert(_Generic(&((G251 *)0)->inner, G250 *: 1, default: 0) && sizeof(((G251 *)0)->inner) == sizeof(G250), "heroes-ffi-field G251 inner");
-#line 531 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 531
 _Static_assert(_Generic(&((G252 *)0)->inner, G251 *: 1, default: 0) && sizeof(((G252 *)0)->inner) == sizeof(G251), "heroes-ffi-field G252 inner");
-#line 533 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 533
 _Static_assert(_Generic(&((G253 *)0)->inner, G252 *: 1, default: 0) && sizeof(((G253 *)0)->inner) == sizeof(G252), "heroes-ffi-field G253 inner");
-#line 535 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 535
 _Static_assert(_Generic(&((G254 *)0)->inner, G253 *: 1, default: 0) && sizeof(((G254 *)0)->inner) == sizeof(G253), "heroes-ffi-field G254 inner");
-#line 537 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 537
 _Static_assert(_Generic(&((G255 *)0)->inner, G254 *: 1, default: 0) && sizeof(((G255 *)0)->inner) == sizeof(G254), "heroes-ffi-field G255 inner");
-#line 539 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 539
 _Static_assert(_Generic(&((G256 *)0)->inner, G255 *: 1, default: 0) && sizeof(((G256 *)0)->inner) == sizeof(G255), "heroes-ffi-field G256 inner");
-#line 541 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 541
 _Static_assert(_Generic(&((G257 *)0)->inner, G256 *: 1, default: 0) && sizeof(((G257 *)0)->inner) == sizeof(G256), "heroes-ffi-field G257 inner");
-#line 543 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 543
 _Static_assert(_Generic(&((G258 *)0)->inner, G257 *: 1, default: 0) && sizeof(((G258 *)0)->inner) == sizeof(G257), "heroes-ffi-field G258 inner");
-#line 545 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 545
 _Static_assert(_Generic(&((G259 *)0)->inner, G258 *: 1, default: 0) && sizeof(((G259 *)0)->inner) == sizeof(G258), "heroes-ffi-field G259 inner");
-#line 547 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 547
 _Static_assert(_Generic(&((G260 *)0)->inner, G259 *: 1, default: 0) && sizeof(((G260 *)0)->inner) == sizeof(G259), "heroes-ffi-field G260 inner");
-#line 549 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 549
 _Static_assert(_Generic(&((G261 *)0)->inner, G260 *: 1, default: 0) && sizeof(((G261 *)0)->inner) == sizeof(G260), "heroes-ffi-field G261 inner");
-#line 551 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 551
 _Static_assert(_Generic(&((G262 *)0)->inner, G261 *: 1, default: 0) && sizeof(((G262 *)0)->inner) == sizeof(G261), "heroes-ffi-field G262 inner");
-#line 553 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 553
 _Static_assert(_Generic(&((G263 *)0)->inner, G262 *: 1, default: 0) && sizeof(((G263 *)0)->inner) == sizeof(G262), "heroes-ffi-field G263 inner");
-#line 555 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 555
 _Static_assert(_Generic(&((G264 *)0)->inner, G263 *: 1, default: 0) && sizeof(((G264 *)0)->inner) == sizeof(G263), "heroes-ffi-field G264 inner");
-#line 557 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 557
 _Static_assert(_Generic(&((G265 *)0)->inner, G264 *: 1, default: 0) && sizeof(((G265 *)0)->inner) == sizeof(G264), "heroes-ffi-field G265 inner");
-#line 559 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 559
 _Static_assert(_Generic(&((G266 *)0)->inner, G265 *: 1, default: 0) && sizeof(((G266 *)0)->inner) == sizeof(G265), "heroes-ffi-field G266 inner");
-#line 561 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 561
 _Static_assert(_Generic(&((G267 *)0)->inner, G266 *: 1, default: 0) && sizeof(((G267 *)0)->inner) == sizeof(G266), "heroes-ffi-field G267 inner");
-#line 563 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 563
 _Static_assert(_Generic(&((G268 *)0)->inner, G267 *: 1, default: 0) && sizeof(((G268 *)0)->inner) == sizeof(G267), "heroes-ffi-field G268 inner");
-#line 565 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 565
 _Static_assert(_Generic(&((G269 *)0)->inner, G268 *: 1, default: 0) && sizeof(((G269 *)0)->inner) == sizeof(G268), "heroes-ffi-field G269 inner");
-#line 567 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 567
 _Static_assert(_Generic(&((G270 *)0)->inner, G269 *: 1, default: 0) && sizeof(((G270 *)0)->inner) == sizeof(G269), "heroes-ffi-field G270 inner");
-#line 569 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 569
 _Static_assert(_Generic(&((G271 *)0)->inner, G270 *: 1, default: 0) && sizeof(((G271 *)0)->inner) == sizeof(G270), "heroes-ffi-field G271 inner");
-#line 571 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 571
 _Static_assert(_Generic(&((G272 *)0)->inner, G271 *: 1, default: 0) && sizeof(((G272 *)0)->inner) == sizeof(G271), "heroes-ffi-field G272 inner");
-#line 573 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 573
 _Static_assert(_Generic(&((G273 *)0)->inner, G272 *: 1, default: 0) && sizeof(((G273 *)0)->inner) == sizeof(G272), "heroes-ffi-field G273 inner");
-#line 575 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 575
 _Static_assert(_Generic(&((G274 *)0)->inner, G273 *: 1, default: 0) && sizeof(((G274 *)0)->inner) == sizeof(G273), "heroes-ffi-field G274 inner");
-#line 577 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 577
 _Static_assert(_Generic(&((G275 *)0)->inner, G274 *: 1, default: 0) && sizeof(((G275 *)0)->inner) == sizeof(G274), "heroes-ffi-field G275 inner");
-#line 579 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 579
 _Static_assert(_Generic(&((G276 *)0)->inner, G275 *: 1, default: 0) && sizeof(((G276 *)0)->inner) == sizeof(G275), "heroes-ffi-field G276 inner");
-#line 581 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 581
 _Static_assert(_Generic(&((G277 *)0)->inner, G276 *: 1, default: 0) && sizeof(((G277 *)0)->inner) == sizeof(G276), "heroes-ffi-field G277 inner");
-#line 583 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 583
 _Static_assert(_Generic(&((G278 *)0)->inner, G277 *: 1, default: 0) && sizeof(((G278 *)0)->inner) == sizeof(G277), "heroes-ffi-field G278 inner");
-#line 585 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 585
 _Static_assert(_Generic(&((G279 *)0)->inner, G278 *: 1, default: 0) && sizeof(((G279 *)0)->inner) == sizeof(G278), "heroes-ffi-field G279 inner");
-#line 587 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 587
 _Static_assert(_Generic(&((G280 *)0)->inner, G279 *: 1, default: 0) && sizeof(((G280 *)0)->inner) == sizeof(G279), "heroes-ffi-field G280 inner");
-#line 589 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 589
 _Static_assert(_Generic(&((G281 *)0)->inner, G280 *: 1, default: 0) && sizeof(((G281 *)0)->inner) == sizeof(G280), "heroes-ffi-field G281 inner");
-#line 591 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 591
 _Static_assert(_Generic(&((G282 *)0)->inner, G281 *: 1, default: 0) && sizeof(((G282 *)0)->inner) == sizeof(G281), "heroes-ffi-field G282 inner");
-#line 593 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 593
 _Static_assert(_Generic(&((G283 *)0)->inner, G282 *: 1, default: 0) && sizeof(((G283 *)0)->inner) == sizeof(G282), "heroes-ffi-field G283 inner");
-#line 595 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 595
 _Static_assert(_Generic(&((G284 *)0)->inner, G283 *: 1, default: 0) && sizeof(((G284 *)0)->inner) == sizeof(G283), "heroes-ffi-field G284 inner");
-#line 597 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 597
 _Static_assert(_Generic(&((G285 *)0)->inner, G284 *: 1, default: 0) && sizeof(((G285 *)0)->inner) == sizeof(G284), "heroes-ffi-field G285 inner");
-#line 599 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 599
 _Static_assert(_Generic(&((G286 *)0)->inner, G285 *: 1, default: 0) && sizeof(((G286 *)0)->inner) == sizeof(G285), "heroes-ffi-field G286 inner");
-#line 601 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 601
 _Static_assert(_Generic(&((G287 *)0)->inner, G286 *: 1, default: 0) && sizeof(((G287 *)0)->inner) == sizeof(G286), "heroes-ffi-field G287 inner");
-#line 603 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 603
 _Static_assert(_Generic(&((G288 *)0)->inner, G287 *: 1, default: 0) && sizeof(((G288 *)0)->inner) == sizeof(G287), "heroes-ffi-field G288 inner");
-#line 605 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 605
 _Static_assert(_Generic(&((G289 *)0)->inner, G288 *: 1, default: 0) && sizeof(((G289 *)0)->inner) == sizeof(G288), "heroes-ffi-field G289 inner");
-#line 607 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 607
 _Static_assert(_Generic(&((G290 *)0)->inner, G289 *: 1, default: 0) && sizeof(((G290 *)0)->inner) == sizeof(G289), "heroes-ffi-field G290 inner");
-#line 609 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 609
 _Static_assert(_Generic(&((G291 *)0)->inner, G290 *: 1, default: 0) && sizeof(((G291 *)0)->inner) == sizeof(G290), "heroes-ffi-field G291 inner");
-#line 611 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 611
 _Static_assert(_Generic(&((G292 *)0)->inner, G291 *: 1, default: 0) && sizeof(((G292 *)0)->inner) == sizeof(G291), "heroes-ffi-field G292 inner");
-#line 613 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 613
 _Static_assert(_Generic(&((G293 *)0)->inner, G292 *: 1, default: 0) && sizeof(((G293 *)0)->inner) == sizeof(G292), "heroes-ffi-field G293 inner");
-#line 615 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 615
 _Static_assert(_Generic(&((G294 *)0)->inner, G293 *: 1, default: 0) && sizeof(((G294 *)0)->inner) == sizeof(G293), "heroes-ffi-field G294 inner");
-#line 617 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 617
 _Static_assert(_Generic(&((G295 *)0)->inner, G294 *: 1, default: 0) && sizeof(((G295 *)0)->inner) == sizeof(G294), "heroes-ffi-field G295 inner");
-#line 619 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 619
 _Static_assert(_Generic(&((G296 *)0)->inner, G295 *: 1, default: 0) && sizeof(((G296 *)0)->inner) == sizeof(G295), "heroes-ffi-field G296 inner");
-#line 621 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 621
 _Static_assert(_Generic(&((G297 *)0)->inner, G296 *: 1, default: 0) && sizeof(((G297 *)0)->inner) == sizeof(G296), "heroes-ffi-field G297 inner");
-#line 623 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 623
 _Static_assert(_Generic(&((G298 *)0)->inner, G297 *: 1, default: 0) && sizeof(((G298 *)0)->inner) == sizeof(G297), "heroes-ffi-field G298 inner");
-#line 625 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 625
 _Static_assert(_Generic(&((G299 *)0)->inner, G298 *: 1, default: 0) && sizeof(((G299 *)0)->inner) == sizeof(G298), "heroes-ffi-field G299 inner");
-#line 627 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 627
 _Static_assert(_Generic(&((G300 *)0)->inner, G299 *: 1, default: 0) && sizeof(((G300 *)0)->inner) == sizeof(G299), "heroes-ffi-field G300 inner");
-#line 629 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 629
 _Static_assert(_Generic(&((G301 *)0)->inner, G300 *: 1, default: 0) && sizeof(((G301 *)0)->inner) == sizeof(G300), "heroes-ffi-field G301 inner");
-#line 631 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 631
 _Static_assert(_Generic(&((G302 *)0)->inner, G301 *: 1, default: 0) && sizeof(((G302 *)0)->inner) == sizeof(G301), "heroes-ffi-field G302 inner");
-#line 633 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 633
 _Static_assert(_Generic(&((G303 *)0)->inner, G302 *: 1, default: 0) && sizeof(((G303 *)0)->inner) == sizeof(G302), "heroes-ffi-field G303 inner");
-#line 635 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 635
 _Static_assert(_Generic(&((G304 *)0)->inner, G303 *: 1, default: 0) && sizeof(((G304 *)0)->inner) == sizeof(G303), "heroes-ffi-field G304 inner");
-#line 637 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 637
 _Static_assert(_Generic(&((G305 *)0)->inner, G304 *: 1, default: 0) && sizeof(((G305 *)0)->inner) == sizeof(G304), "heroes-ffi-field G305 inner");
-#line 639 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 639
 _Static_assert(_Generic(&((G306 *)0)->inner, G305 *: 1, default: 0) && sizeof(((G306 *)0)->inner) == sizeof(G305), "heroes-ffi-field G306 inner");
-#line 641 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 641
 _Static_assert(_Generic(&((G307 *)0)->inner, G306 *: 1, default: 0) && sizeof(((G307 *)0)->inner) == sizeof(G306), "heroes-ffi-field G307 inner");
-#line 643 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 643
 _Static_assert(_Generic(&((G308 *)0)->inner, G307 *: 1, default: 0) && sizeof(((G308 *)0)->inner) == sizeof(G307), "heroes-ffi-field G308 inner");
-#line 645 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 645
 _Static_assert(_Generic(&((G309 *)0)->inner, G308 *: 1, default: 0) && sizeof(((G309 *)0)->inner) == sizeof(G308), "heroes-ffi-field G309 inner");
-#line 647 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 647
 _Static_assert(_Generic(&((G310 *)0)->inner, G309 *: 1, default: 0) && sizeof(((G310 *)0)->inner) == sizeof(G309), "heroes-ffi-field G310 inner");
-#line 649 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 649
 _Static_assert(_Generic(&((G311 *)0)->inner, G310 *: 1, default: 0) && sizeof(((G311 *)0)->inner) == sizeof(G310), "heroes-ffi-field G311 inner");
-#line 651 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 651
 _Static_assert(_Generic(&((G312 *)0)->inner, G311 *: 1, default: 0) && sizeof(((G312 *)0)->inner) == sizeof(G311), "heroes-ffi-field G312 inner");
-#line 653 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 653
 _Static_assert(_Generic(&((G313 *)0)->inner, G312 *: 1, default: 0) && sizeof(((G313 *)0)->inner) == sizeof(G312), "heroes-ffi-field G313 inner");
-#line 655 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 655
 _Static_assert(_Generic(&((G314 *)0)->inner, G313 *: 1, default: 0) && sizeof(((G314 *)0)->inner) == sizeof(G313), "heroes-ffi-field G314 inner");
-#line 657 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 657
 _Static_assert(_Generic(&((G315 *)0)->inner, G314 *: 1, default: 0) && sizeof(((G315 *)0)->inner) == sizeof(G314), "heroes-ffi-field G315 inner");
-#line 659 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 659
 _Static_assert(_Generic(&((G316 *)0)->inner, G315 *: 1, default: 0) && sizeof(((G316 *)0)->inner) == sizeof(G315), "heroes-ffi-field G316 inner");
-#line 661 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 661
 _Static_assert(_Generic(&((G317 *)0)->inner, G316 *: 1, default: 0) && sizeof(((G317 *)0)->inner) == sizeof(G316), "heroes-ffi-field G317 inner");
-#line 663 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 663
 _Static_assert(_Generic(&((G318 *)0)->inner, G317 *: 1, default: 0) && sizeof(((G318 *)0)->inner) == sizeof(G317), "heroes-ffi-field G318 inner");
-#line 665 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 665
 _Static_assert(_Generic(&((G319 *)0)->inner, G318 *: 1, default: 0) && sizeof(((G319 *)0)->inner) == sizeof(G318), "heroes-ffi-field G319 inner");
-#line 667 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 667
 _Static_assert(_Generic(&((G320 *)0)->inner, G319 *: 1, default: 0) && sizeof(((G320 *)0)->inner) == sizeof(G319), "heroes-ffi-field G320 inner");
-#line 669 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 669
 _Static_assert(_Generic(&((G321 *)0)->inner, G320 *: 1, default: 0) && sizeof(((G321 *)0)->inner) == sizeof(G320), "heroes-ffi-field G321 inner");
-#line 671 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 671
 _Static_assert(_Generic(&((G322 *)0)->inner, G321 *: 1, default: 0) && sizeof(((G322 *)0)->inner) == sizeof(G321), "heroes-ffi-field G322 inner");
-#line 673 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 673
 _Static_assert(_Generic(&((G323 *)0)->inner, G322 *: 1, default: 0) && sizeof(((G323 *)0)->inner) == sizeof(G322), "heroes-ffi-field G323 inner");
-#line 675 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 675
 _Static_assert(_Generic(&((G324 *)0)->inner, G323 *: 1, default: 0) && sizeof(((G324 *)0)->inner) == sizeof(G323), "heroes-ffi-field G324 inner");
-#line 677 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 677
 _Static_assert(_Generic(&((G325 *)0)->inner, G324 *: 1, default: 0) && sizeof(((G325 *)0)->inner) == sizeof(G324), "heroes-ffi-field G325 inner");
-#line 679 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 679
 _Static_assert(_Generic(&((G326 *)0)->inner, G325 *: 1, default: 0) && sizeof(((G326 *)0)->inner) == sizeof(G325), "heroes-ffi-field G326 inner");
-#line 681 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 681
 _Static_assert(_Generic(&((G327 *)0)->inner, G326 *: 1, default: 0) && sizeof(((G327 *)0)->inner) == sizeof(G326), "heroes-ffi-field G327 inner");
-#line 683 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 683
 _Static_assert(_Generic(&((G328 *)0)->inner, G327 *: 1, default: 0) && sizeof(((G328 *)0)->inner) == sizeof(G327), "heroes-ffi-field G328 inner");
-#line 685 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 685
 _Static_assert(_Generic(&((G329 *)0)->inner, G328 *: 1, default: 0) && sizeof(((G329 *)0)->inner) == sizeof(G328), "heroes-ffi-field G329 inner");
-#line 687 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 687
 _Static_assert(_Generic(&((G330 *)0)->inner, G329 *: 1, default: 0) && sizeof(((G330 *)0)->inner) == sizeof(G329), "heroes-ffi-field G330 inner");
-#line 689 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 689
 _Static_assert(_Generic(&((G331 *)0)->inner, G330 *: 1, default: 0) && sizeof(((G331 *)0)->inner) == sizeof(G330), "heroes-ffi-field G331 inner");
-#line 691 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 691
 _Static_assert(_Generic(&((G332 *)0)->inner, G331 *: 1, default: 0) && sizeof(((G332 *)0)->inner) == sizeof(G331), "heroes-ffi-field G332 inner");
-#line 693 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 693
 _Static_assert(_Generic(&((G333 *)0)->inner, G332 *: 1, default: 0) && sizeof(((G333 *)0)->inner) == sizeof(G332), "heroes-ffi-field G333 inner");
-#line 695 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 695
 _Static_assert(_Generic(&((G334 *)0)->inner, G333 *: 1, default: 0) && sizeof(((G334 *)0)->inner) == sizeof(G333), "heroes-ffi-field G334 inner");
-#line 697 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 697
 _Static_assert(_Generic(&((G335 *)0)->inner, G334 *: 1, default: 0) && sizeof(((G335 *)0)->inner) == sizeof(G334), "heroes-ffi-field G335 inner");
-#line 699 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 699
 _Static_assert(_Generic(&((G336 *)0)->inner, G335 *: 1, default: 0) && sizeof(((G336 *)0)->inner) == sizeof(G335), "heroes-ffi-field G336 inner");
-#line 701 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 701
 _Static_assert(_Generic(&((G337 *)0)->inner, G336 *: 1, default: 0) && sizeof(((G337 *)0)->inner) == sizeof(G336), "heroes-ffi-field G337 inner");
-#line 703 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 703
 _Static_assert(_Generic(&((G338 *)0)->inner, G337 *: 1, default: 0) && sizeof(((G338 *)0)->inner) == sizeof(G337), "heroes-ffi-field G338 inner");
-#line 705 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 705
 _Static_assert(_Generic(&((G339 *)0)->inner, G338 *: 1, default: 0) && sizeof(((G339 *)0)->inner) == sizeof(G338), "heroes-ffi-field G339 inner");
-#line 707 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 707
 _Static_assert(_Generic(&((G340 *)0)->inner, G339 *: 1, default: 0) && sizeof(((G340 *)0)->inner) == sizeof(G339), "heroes-ffi-field G340 inner");
-#line 709 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 709
 _Static_assert(_Generic(&((G341 *)0)->inner, G340 *: 1, default: 0) && sizeof(((G341 *)0)->inner) == sizeof(G340), "heroes-ffi-field G341 inner");
-#line 711 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 711
 _Static_assert(_Generic(&((G342 *)0)->inner, G341 *: 1, default: 0) && sizeof(((G342 *)0)->inner) == sizeof(G341), "heroes-ffi-field G342 inner");
-#line 713 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 713
 _Static_assert(_Generic(&((G343 *)0)->inner, G342 *: 1, default: 0) && sizeof(((G343 *)0)->inner) == sizeof(G342), "heroes-ffi-field G343 inner");
-#line 715 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 715
 _Static_assert(_Generic(&((G344 *)0)->inner, G343 *: 1, default: 0) && sizeof(((G344 *)0)->inner) == sizeof(G343), "heroes-ffi-field G344 inner");
-#line 717 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 717
 _Static_assert(_Generic(&((G345 *)0)->inner, G344 *: 1, default: 0) && sizeof(((G345 *)0)->inner) == sizeof(G344), "heroes-ffi-field G345 inner");
-#line 719 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 719
 _Static_assert(_Generic(&((G346 *)0)->inner, G345 *: 1, default: 0) && sizeof(((G346 *)0)->inner) == sizeof(G345), "heroes-ffi-field G346 inner");
-#line 721 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 721
 _Static_assert(_Generic(&((G347 *)0)->inner, G346 *: 1, default: 0) && sizeof(((G347 *)0)->inner) == sizeof(G346), "heroes-ffi-field G347 inner");
-#line 723 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 723
 _Static_assert(_Generic(&((G348 *)0)->inner, G347 *: 1, default: 0) && sizeof(((G348 *)0)->inner) == sizeof(G347), "heroes-ffi-field G348 inner");
-#line 725 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 725
 _Static_assert(_Generic(&((G349 *)0)->inner, G348 *: 1, default: 0) && sizeof(((G349 *)0)->inner) == sizeof(G348), "heroes-ffi-field G349 inner");
-#line 727 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 727
 _Static_assert(_Generic(&((G350 *)0)->inner, G349 *: 1, default: 0) && sizeof(((G350 *)0)->inner) == sizeof(G349), "heroes-ffi-field G350 inner");
-#line 729 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 729
 _Static_assert(_Generic(&((G351 *)0)->inner, G350 *: 1, default: 0) && sizeof(((G351 *)0)->inner) == sizeof(G350), "heroes-ffi-field G351 inner");
-#line 731 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 731
 _Static_assert(_Generic(&((G352 *)0)->inner, G351 *: 1, default: 0) && sizeof(((G352 *)0)->inner) == sizeof(G351), "heroes-ffi-field G352 inner");
-#line 733 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 733
 _Static_assert(_Generic(&((G353 *)0)->inner, G352 *: 1, default: 0) && sizeof(((G353 *)0)->inner) == sizeof(G352), "heroes-ffi-field G353 inner");
-#line 735 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 735
 _Static_assert(_Generic(&((G354 *)0)->inner, G353 *: 1, default: 0) && sizeof(((G354 *)0)->inner) == sizeof(G353), "heroes-ffi-field G354 inner");
-#line 737 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 737
 _Static_assert(_Generic(&((G355 *)0)->inner, G354 *: 1, default: 0) && sizeof(((G355 *)0)->inner) == sizeof(G354), "heroes-ffi-field G355 inner");
-#line 739 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 739
 _Static_assert(_Generic(&((G356 *)0)->inner, G355 *: 1, default: 0) && sizeof(((G356 *)0)->inner) == sizeof(G355), "heroes-ffi-field G356 inner");
-#line 741 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 741
 _Static_assert(_Generic(&((G357 *)0)->inner, G356 *: 1, default: 0) && sizeof(((G357 *)0)->inner) == sizeof(G356), "heroes-ffi-field G357 inner");
-#line 743 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 743
 _Static_assert(_Generic(&((G358 *)0)->inner, G357 *: 1, default: 0) && sizeof(((G358 *)0)->inner) == sizeof(G357), "heroes-ffi-field G358 inner");
-#line 745 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 745
 _Static_assert(_Generic(&((G359 *)0)->inner, G358 *: 1, default: 0) && sizeof(((G359 *)0)->inner) == sizeof(G358), "heroes-ffi-field G359 inner");
-#line 747 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 747
 _Static_assert(_Generic(&((G360 *)0)->inner, G359 *: 1, default: 0) && sizeof(((G360 *)0)->inner) == sizeof(G359), "heroes-ffi-field G360 inner");
-#line 749 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 749
 _Static_assert(_Generic(&((G361 *)0)->inner, G360 *: 1, default: 0) && sizeof(((G361 *)0)->inner) == sizeof(G360), "heroes-ffi-field G361 inner");
-#line 751 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 751
 _Static_assert(_Generic(&((G362 *)0)->inner, G361 *: 1, default: 0) && sizeof(((G362 *)0)->inner) == sizeof(G361), "heroes-ffi-field G362 inner");
-#line 753 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 753
 _Static_assert(_Generic(&((G363 *)0)->inner, G362 *: 1, default: 0) && sizeof(((G363 *)0)->inner) == sizeof(G362), "heroes-ffi-field G363 inner");
-#line 755 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 755
 _Static_assert(_Generic(&((G364 *)0)->inner, G363 *: 1, default: 0) && sizeof(((G364 *)0)->inner) == sizeof(G363), "heroes-ffi-field G364 inner");
-#line 757 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 757
 _Static_assert(_Generic(&((G365 *)0)->inner, G364 *: 1, default: 0) && sizeof(((G365 *)0)->inner) == sizeof(G364), "heroes-ffi-field G365 inner");
-#line 759 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 759
 _Static_assert(_Generic(&((G366 *)0)->inner, G365 *: 1, default: 0) && sizeof(((G366 *)0)->inner) == sizeof(G365), "heroes-ffi-field G366 inner");
-#line 761 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 761
 _Static_assert(_Generic(&((G367 *)0)->inner, G366 *: 1, default: 0) && sizeof(((G367 *)0)->inner) == sizeof(G366), "heroes-ffi-field G367 inner");
-#line 763 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 763
 _Static_assert(_Generic(&((G368 *)0)->inner, G367 *: 1, default: 0) && sizeof(((G368 *)0)->inner) == sizeof(G367), "heroes-ffi-field G368 inner");
-#line 765 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 765
 _Static_assert(_Generic(&((G369 *)0)->inner, G368 *: 1, default: 0) && sizeof(((G369 *)0)->inner) == sizeof(G368), "heroes-ffi-field G369 inner");
-#line 767 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 767
 _Static_assert(_Generic(&((G370 *)0)->inner, G369 *: 1, default: 0) && sizeof(((G370 *)0)->inner) == sizeof(G369), "heroes-ffi-field G370 inner");
-#line 769 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 769
 _Static_assert(_Generic(&((G371 *)0)->inner, G370 *: 1, default: 0) && sizeof(((G371 *)0)->inner) == sizeof(G370), "heroes-ffi-field G371 inner");
-#line 771 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 771
 _Static_assert(_Generic(&((G372 *)0)->inner, G371 *: 1, default: 0) && sizeof(((G372 *)0)->inner) == sizeof(G371), "heroes-ffi-field G372 inner");
-#line 773 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 773
 _Static_assert(_Generic(&((G373 *)0)->inner, G372 *: 1, default: 0) && sizeof(((G373 *)0)->inner) == sizeof(G372), "heroes-ffi-field G373 inner");
-#line 775 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 775
 _Static_assert(_Generic(&((G374 *)0)->inner, G373 *: 1, default: 0) && sizeof(((G374 *)0)->inner) == sizeof(G373), "heroes-ffi-field G374 inner");
-#line 777 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 777
 _Static_assert(_Generic(&((G375 *)0)->inner, G374 *: 1, default: 0) && sizeof(((G375 *)0)->inner) == sizeof(G374), "heroes-ffi-field G375 inner");
-#line 779 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 779
 _Static_assert(_Generic(&((G376 *)0)->inner, G375 *: 1, default: 0) && sizeof(((G376 *)0)->inner) == sizeof(G375), "heroes-ffi-field G376 inner");
-#line 781 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 781
 _Static_assert(_Generic(&((G377 *)0)->inner, G376 *: 1, default: 0) && sizeof(((G377 *)0)->inner) == sizeof(G376), "heroes-ffi-field G377 inner");
-#line 783 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 783
 _Static_assert(_Generic(&((G378 *)0)->inner, G377 *: 1, default: 0) && sizeof(((G378 *)0)->inner) == sizeof(G377), "heroes-ffi-field G378 inner");
-#line 785 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 785
 _Static_assert(_Generic(&((G379 *)0)->inner, G378 *: 1, default: 0) && sizeof(((G379 *)0)->inner) == sizeof(G378), "heroes-ffi-field G379 inner");
-#line 787 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 787
 _Static_assert(_Generic(&((G380 *)0)->inner, G379 *: 1, default: 0) && sizeof(((G380 *)0)->inner) == sizeof(G379), "heroes-ffi-field G380 inner");
-#line 789 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 789
 _Static_assert(_Generic(&((G381 *)0)->inner, G380 *: 1, default: 0) && sizeof(((G381 *)0)->inner) == sizeof(G380), "heroes-ffi-field G381 inner");
-#line 791 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 791
 _Static_assert(_Generic(&((G382 *)0)->inner, G381 *: 1, default: 0) && sizeof(((G382 *)0)->inner) == sizeof(G381), "heroes-ffi-field G382 inner");
-#line 793 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 793
 _Static_assert(_Generic(&((G383 *)0)->inner, G382 *: 1, default: 0) && sizeof(((G383 *)0)->inner) == sizeof(G382), "heroes-ffi-field G383 inner");
-#line 795 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 795
 _Static_assert(_Generic(&((G384 *)0)->inner, G383 *: 1, default: 0) && sizeof(((G384 *)0)->inner) == sizeof(G383), "heroes-ffi-field G384 inner");
-#line 797 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 797
 _Static_assert(_Generic(&((G385 *)0)->inner, G384 *: 1, default: 0) && sizeof(((G385 *)0)->inner) == sizeof(G384), "heroes-ffi-field G385 inner");
-#line 799 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 799
 _Static_assert(_Generic(&((G386 *)0)->inner, G385 *: 1, default: 0) && sizeof(((G386 *)0)->inner) == sizeof(G385), "heroes-ffi-field G386 inner");
-#line 801 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 801
 _Static_assert(_Generic(&((G387 *)0)->inner, G386 *: 1, default: 0) && sizeof(((G387 *)0)->inner) == sizeof(G386), "heroes-ffi-field G387 inner");
-#line 803 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 803
 _Static_assert(_Generic(&((G388 *)0)->inner, G387 *: 1, default: 0) && sizeof(((G388 *)0)->inner) == sizeof(G387), "heroes-ffi-field G388 inner");
-#line 805 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 805
 _Static_assert(_Generic(&((G389 *)0)->inner, G388 *: 1, default: 0) && sizeof(((G389 *)0)->inner) == sizeof(G388), "heroes-ffi-field G389 inner");
-#line 807 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 807
 _Static_assert(_Generic(&((G390 *)0)->inner, G389 *: 1, default: 0) && sizeof(((G390 *)0)->inner) == sizeof(G389), "heroes-ffi-field G390 inner");
-#line 809 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 809
 _Static_assert(_Generic(&((G391 *)0)->inner, G390 *: 1, default: 0) && sizeof(((G391 *)0)->inner) == sizeof(G390), "heroes-ffi-field G391 inner");
-#line 811 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 811
 _Static_assert(_Generic(&((G392 *)0)->inner, G391 *: 1, default: 0) && sizeof(((G392 *)0)->inner) == sizeof(G391), "heroes-ffi-field G392 inner");
-#line 813 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 813
 _Static_assert(_Generic(&((G393 *)0)->inner, G392 *: 1, default: 0) && sizeof(((G393 *)0)->inner) == sizeof(G392), "heroes-ffi-field G393 inner");
-#line 815 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 815
 _Static_assert(_Generic(&((G394 *)0)->inner, G393 *: 1, default: 0) && sizeof(((G394 *)0)->inner) == sizeof(G393), "heroes-ffi-field G394 inner");
-#line 817 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 817
 _Static_assert(_Generic(&((G395 *)0)->inner, G394 *: 1, default: 0) && sizeof(((G395 *)0)->inner) == sizeof(G394), "heroes-ffi-field G395 inner");
-#line 819 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 819
 _Static_assert(_Generic(&((G396 *)0)->inner, G395 *: 1, default: 0) && sizeof(((G396 *)0)->inner) == sizeof(G395), "heroes-ffi-field G396 inner");
-#line 821 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 821
 _Static_assert(_Generic(&((G397 *)0)->inner, G396 *: 1, default: 0) && sizeof(((G397 *)0)->inner) == sizeof(G396), "heroes-ffi-field G397 inner");
-#line 823 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 823
 _Static_assert(_Generic(&((G398 *)0)->inner, G397 *: 1, default: 0) && sizeof(((G398 *)0)->inner) == sizeof(G397), "heroes-ffi-field G398 inner");
-#line 825 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 825
 _Static_assert(_Generic(&((G399 *)0)->inner, G398 *: 1, default: 0) && sizeof(((G399 *)0)->inner) == sizeof(G398), "heroes-ffi-field G399 inner");
-#line 827 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 827
 _Static_assert(_Generic(&((G400 *)0)->inner, G399 *: 1, default: 0) && sizeof(((G400 *)0)->inner) == sizeof(G399), "heroes-ffi-field G400 inner");
-#line 829 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 829
 _Static_assert(_Generic(&((G401 *)0)->inner, G400 *: 1, default: 0) && sizeof(((G401 *)0)->inner) == sizeof(G400), "heroes-ffi-field G401 inner");
-#line 831 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 831
 _Static_assert(_Generic(&((G402 *)0)->inner, G401 *: 1, default: 0) && sizeof(((G402 *)0)->inner) == sizeof(G401), "heroes-ffi-field G402 inner");
-#line 833 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 833
 _Static_assert(_Generic(&((G403 *)0)->inner, G402 *: 1, default: 0) && sizeof(((G403 *)0)->inner) == sizeof(G402), "heroes-ffi-field G403 inner");
-#line 835 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 835
 _Static_assert(_Generic(&((G404 *)0)->inner, G403 *: 1, default: 0) && sizeof(((G404 *)0)->inner) == sizeof(G403), "heroes-ffi-field G404 inner");
-#line 837 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 837
 _Static_assert(_Generic(&((G405 *)0)->inner, G404 *: 1, default: 0) && sizeof(((G405 *)0)->inner) == sizeof(G404), "heroes-ffi-field G405 inner");
-#line 839 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 839
 _Static_assert(_Generic(&((G406 *)0)->inner, G405 *: 1, default: 0) && sizeof(((G406 *)0)->inner) == sizeof(G405), "heroes-ffi-field G406 inner");
-#line 841 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 841
 _Static_assert(_Generic(&((G407 *)0)->inner, G406 *: 1, default: 0) && sizeof(((G407 *)0)->inner) == sizeof(G406), "heroes-ffi-field G407 inner");
-#line 843 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 843
 _Static_assert(_Generic(&((G408 *)0)->inner, G407 *: 1, default: 0) && sizeof(((G408 *)0)->inner) == sizeof(G407), "heroes-ffi-field G408 inner");
-#line 845 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 845
 _Static_assert(_Generic(&((G409 *)0)->inner, G408 *: 1, default: 0) && sizeof(((G409 *)0)->inner) == sizeof(G408), "heroes-ffi-field G409 inner");
-#line 847 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 847
 _Static_assert(_Generic(&((G410 *)0)->inner, G409 *: 1, default: 0) && sizeof(((G410 *)0)->inner) == sizeof(G409), "heroes-ffi-field G410 inner");
-#line 849 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 849
 _Static_assert(_Generic(&((G411 *)0)->inner, G410 *: 1, default: 0) && sizeof(((G411 *)0)->inner) == sizeof(G410), "heroes-ffi-field G411 inner");
-#line 851 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 851
 _Static_assert(_Generic(&((G412 *)0)->inner, G411 *: 1, default: 0) && sizeof(((G412 *)0)->inner) == sizeof(G411), "heroes-ffi-field G412 inner");
-#line 853 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 853
 _Static_assert(_Generic(&((G413 *)0)->inner, G412 *: 1, default: 0) && sizeof(((G413 *)0)->inner) == sizeof(G412), "heroes-ffi-field G413 inner");
-#line 855 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 855
 _Static_assert(_Generic(&((G414 *)0)->inner, G413 *: 1, default: 0) && sizeof(((G414 *)0)->inner) == sizeof(G413), "heroes-ffi-field G414 inner");
-#line 857 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 857
 _Static_assert(_Generic(&((G415 *)0)->inner, G414 *: 1, default: 0) && sizeof(((G415 *)0)->inner) == sizeof(G414), "heroes-ffi-field G415 inner");
-#line 859 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 859
 _Static_assert(_Generic(&((G416 *)0)->inner, G415 *: 1, default: 0) && sizeof(((G416 *)0)->inner) == sizeof(G415), "heroes-ffi-field G416 inner");
-#line 861 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 861
 _Static_assert(_Generic(&((G417 *)0)->inner, G416 *: 1, default: 0) && sizeof(((G417 *)0)->inner) == sizeof(G416), "heroes-ffi-field G417 inner");
-#line 863 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 863
 _Static_assert(_Generic(&((G418 *)0)->inner, G417 *: 1, default: 0) && sizeof(((G418 *)0)->inner) == sizeof(G417), "heroes-ffi-field G418 inner");
-#line 865 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 865
 _Static_assert(_Generic(&((G419 *)0)->inner, G418 *: 1, default: 0) && sizeof(((G419 *)0)->inner) == sizeof(G418), "heroes-ffi-field G419 inner");
-#line 867 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 867
 _Static_assert(_Generic(&((G420 *)0)->inner, G419 *: 1, default: 0) && sizeof(((G420 *)0)->inner) == sizeof(G419), "heroes-ffi-field G420 inner");
-#line 869 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 869
 _Static_assert(_Generic(&((G421 *)0)->inner, G420 *: 1, default: 0) && sizeof(((G421 *)0)->inner) == sizeof(G420), "heroes-ffi-field G421 inner");
-#line 871 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 871
 _Static_assert(_Generic(&((G422 *)0)->inner, G421 *: 1, default: 0) && sizeof(((G422 *)0)->inner) == sizeof(G421), "heroes-ffi-field G422 inner");
-#line 873 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 873
 _Static_assert(_Generic(&((G423 *)0)->inner, G422 *: 1, default: 0) && sizeof(((G423 *)0)->inner) == sizeof(G422), "heroes-ffi-field G423 inner");
-#line 875 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 875
 _Static_assert(_Generic(&((G424 *)0)->inner, G423 *: 1, default: 0) && sizeof(((G424 *)0)->inner) == sizeof(G423), "heroes-ffi-field G424 inner");
-#line 877 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 877
 _Static_assert(_Generic(&((G425 *)0)->inner, G424 *: 1, default: 0) && sizeof(((G425 *)0)->inner) == sizeof(G424), "heroes-ffi-field G425 inner");
-#line 879 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 879
 _Static_assert(_Generic(&((G426 *)0)->inner, G425 *: 1, default: 0) && sizeof(((G426 *)0)->inner) == sizeof(G425), "heroes-ffi-field G426 inner");
-#line 881 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 881
 _Static_assert(_Generic(&((G427 *)0)->inner, G426 *: 1, default: 0) && sizeof(((G427 *)0)->inner) == sizeof(G426), "heroes-ffi-field G427 inner");
-#line 883 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 883
 _Static_assert(_Generic(&((G428 *)0)->inner, G427 *: 1, default: 0) && sizeof(((G428 *)0)->inner) == sizeof(G427), "heroes-ffi-field G428 inner");
-#line 885 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 885
 _Static_assert(_Generic(&((G429 *)0)->inner, G428 *: 1, default: 0) && sizeof(((G429 *)0)->inner) == sizeof(G428), "heroes-ffi-field G429 inner");
-#line 887 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 887
 _Static_assert(_Generic(&((G430 *)0)->inner, G429 *: 1, default: 0) && sizeof(((G430 *)0)->inner) == sizeof(G429), "heroes-ffi-field G430 inner");
-#line 889 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 889
 _Static_assert(_Generic(&((G431 *)0)->inner, G430 *: 1, default: 0) && sizeof(((G431 *)0)->inner) == sizeof(G430), "heroes-ffi-field G431 inner");
-#line 891 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 891
 _Static_assert(_Generic(&((G432 *)0)->inner, G431 *: 1, default: 0) && sizeof(((G432 *)0)->inner) == sizeof(G431), "heroes-ffi-field G432 inner");
-#line 893 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 893
 _Static_assert(_Generic(&((G433 *)0)->inner, G432 *: 1, default: 0) && sizeof(((G433 *)0)->inner) == sizeof(G432), "heroes-ffi-field G433 inner");
-#line 895 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 895
 _Static_assert(_Generic(&((G434 *)0)->inner, G433 *: 1, default: 0) && sizeof(((G434 *)0)->inner) == sizeof(G433), "heroes-ffi-field G434 inner");
-#line 897 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 897
 _Static_assert(_Generic(&((G435 *)0)->inner, G434 *: 1, default: 0) && sizeof(((G435 *)0)->inner) == sizeof(G434), "heroes-ffi-field G435 inner");
-#line 899 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 899
 _Static_assert(_Generic(&((G436 *)0)->inner, G435 *: 1, default: 0) && sizeof(((G436 *)0)->inner) == sizeof(G435), "heroes-ffi-field G436 inner");
-#line 901 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 901
 _Static_assert(_Generic(&((G437 *)0)->inner, G436 *: 1, default: 0) && sizeof(((G437 *)0)->inner) == sizeof(G436), "heroes-ffi-field G437 inner");
-#line 903 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 903
 _Static_assert(_Generic(&((G438 *)0)->inner, G437 *: 1, default: 0) && sizeof(((G438 *)0)->inner) == sizeof(G437), "heroes-ffi-field G438 inner");
-#line 905 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 905
 _Static_assert(_Generic(&((G439 *)0)->inner, G438 *: 1, default: 0) && sizeof(((G439 *)0)->inner) == sizeof(G438), "heroes-ffi-field G439 inner");
-#line 907 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 907
 _Static_assert(_Generic(&((G440 *)0)->inner, G439 *: 1, default: 0) && sizeof(((G440 *)0)->inner) == sizeof(G439), "heroes-ffi-field G440 inner");
-#line 909 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 909
 _Static_assert(_Generic(&((G441 *)0)->inner, G440 *: 1, default: 0) && sizeof(((G441 *)0)->inner) == sizeof(G440), "heroes-ffi-field G441 inner");
-#line 911 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 911
 _Static_assert(_Generic(&((G442 *)0)->inner, G441 *: 1, default: 0) && sizeof(((G442 *)0)->inner) == sizeof(G441), "heroes-ffi-field G442 inner");
-#line 913 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 913
 _Static_assert(_Generic(&((G443 *)0)->inner, G442 *: 1, default: 0) && sizeof(((G443 *)0)->inner) == sizeof(G442), "heroes-ffi-field G443 inner");
-#line 915 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 915
 _Static_assert(_Generic(&((G444 *)0)->inner, G443 *: 1, default: 0) && sizeof(((G444 *)0)->inner) == sizeof(G443), "heroes-ffi-field G444 inner");
-#line 917 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 917
 _Static_assert(_Generic(&((G445 *)0)->inner, G444 *: 1, default: 0) && sizeof(((G445 *)0)->inner) == sizeof(G444), "heroes-ffi-field G445 inner");
-#line 919 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 919
 _Static_assert(_Generic(&((G446 *)0)->inner, G445 *: 1, default: 0) && sizeof(((G446 *)0)->inner) == sizeof(G445), "heroes-ffi-field G446 inner");
-#line 921 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 921
 _Static_assert(_Generic(&((G447 *)0)->inner, G446 *: 1, default: 0) && sizeof(((G447 *)0)->inner) == sizeof(G446), "heroes-ffi-field G447 inner");
-#line 923 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 923
 _Static_assert(_Generic(&((G448 *)0)->inner, G447 *: 1, default: 0) && sizeof(((G448 *)0)->inner) == sizeof(G447), "heroes-ffi-field G448 inner");
-#line 925 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 925
 _Static_assert(_Generic(&((G449 *)0)->inner, G448 *: 1, default: 0) && sizeof(((G449 *)0)->inner) == sizeof(G448), "heroes-ffi-field G449 inner");
-#line 927 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 927
 _Static_assert(_Generic(&((G450 *)0)->inner, G449 *: 1, default: 0) && sizeof(((G450 *)0)->inner) == sizeof(G449), "heroes-ffi-field G450 inner");
-#line 929 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 929
 _Static_assert(_Generic(&((G451 *)0)->inner, G450 *: 1, default: 0) && sizeof(((G451 *)0)->inner) == sizeof(G450), "heroes-ffi-field G451 inner");
-#line 931 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 931
 _Static_assert(_Generic(&((G452 *)0)->inner, G451 *: 1, default: 0) && sizeof(((G452 *)0)->inner) == sizeof(G451), "heroes-ffi-field G452 inner");
-#line 933 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 933
 _Static_assert(_Generic(&((G453 *)0)->inner, G452 *: 1, default: 0) && sizeof(((G453 *)0)->inner) == sizeof(G452), "heroes-ffi-field G453 inner");
-#line 935 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 935
 _Static_assert(_Generic(&((G454 *)0)->inner, G453 *: 1, default: 0) && sizeof(((G454 *)0)->inner) == sizeof(G453), "heroes-ffi-field G454 inner");
-#line 937 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 937
 _Static_assert(_Generic(&((G455 *)0)->inner, G454 *: 1, default: 0) && sizeof(((G455 *)0)->inner) == sizeof(G454), "heroes-ffi-field G455 inner");
-#line 939 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 939
 _Static_assert(_Generic(&((G456 *)0)->inner, G455 *: 1, default: 0) && sizeof(((G456 *)0)->inner) == sizeof(G455), "heroes-ffi-field G456 inner");
-#line 941 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 941
 _Static_assert(_Generic(&((G457 *)0)->inner, G456 *: 1, default: 0) && sizeof(((G457 *)0)->inner) == sizeof(G456), "heroes-ffi-field G457 inner");
-#line 943 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 943
 _Static_assert(_Generic(&((G458 *)0)->inner, G457 *: 1, default: 0) && sizeof(((G458 *)0)->inner) == sizeof(G457), "heroes-ffi-field G458 inner");
-#line 945 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 945
 _Static_assert(_Generic(&((G459 *)0)->inner, G458 *: 1, default: 0) && sizeof(((G459 *)0)->inner) == sizeof(G458), "heroes-ffi-field G459 inner");
-#line 947 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 947
 _Static_assert(_Generic(&((G460 *)0)->inner, G459 *: 1, default: 0) && sizeof(((G460 *)0)->inner) == sizeof(G459), "heroes-ffi-field G460 inner");
-#line 949 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 949
 _Static_assert(_Generic(&((G461 *)0)->inner, G460 *: 1, default: 0) && sizeof(((G461 *)0)->inner) == sizeof(G460), "heroes-ffi-field G461 inner");
-#line 951 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 951
 _Static_assert(_Generic(&((G462 *)0)->inner, G461 *: 1, default: 0) && sizeof(((G462 *)0)->inner) == sizeof(G461), "heroes-ffi-field G462 inner");
-#line 953 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 953
 _Static_assert(_Generic(&((G463 *)0)->inner, G462 *: 1, default: 0) && sizeof(((G463 *)0)->inner) == sizeof(G462), "heroes-ffi-field G463 inner");
-#line 955 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 955
 _Static_assert(_Generic(&((G464 *)0)->inner, G463 *: 1, default: 0) && sizeof(((G464 *)0)->inner) == sizeof(G463), "heroes-ffi-field G464 inner");
-#line 957 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 957
 _Static_assert(_Generic(&((G465 *)0)->inner, G464 *: 1, default: 0) && sizeof(((G465 *)0)->inner) == sizeof(G464), "heroes-ffi-field G465 inner");
-#line 959 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 959
 _Static_assert(_Generic(&((G466 *)0)->inner, G465 *: 1, default: 0) && sizeof(((G466 *)0)->inner) == sizeof(G465), "heroes-ffi-field G466 inner");
-#line 961 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 961
 _Static_assert(_Generic(&((G467 *)0)->inner, G466 *: 1, default: 0) && sizeof(((G467 *)0)->inner) == sizeof(G466), "heroes-ffi-field G467 inner");
-#line 963 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 963
 _Static_assert(_Generic(&((G468 *)0)->inner, G467 *: 1, default: 0) && sizeof(((G468 *)0)->inner) == sizeof(G467), "heroes-ffi-field G468 inner");
-#line 965 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 965
 _Static_assert(_Generic(&((G469 *)0)->inner, G468 *: 1, default: 0) && sizeof(((G469 *)0)->inner) == sizeof(G468), "heroes-ffi-field G469 inner");
-#line 967 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 967
 _Static_assert(_Generic(&((G470 *)0)->inner, G469 *: 1, default: 0) && sizeof(((G470 *)0)->inner) == sizeof(G469), "heroes-ffi-field G470 inner");
-#line 969 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 969
 _Static_assert(_Generic(&((G471 *)0)->inner, G470 *: 1, default: 0) && sizeof(((G471 *)0)->inner) == sizeof(G470), "heroes-ffi-field G471 inner");
-#line 971 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 971
 _Static_assert(_Generic(&((G472 *)0)->inner, G471 *: 1, default: 0) && sizeof(((G472 *)0)->inner) == sizeof(G471), "heroes-ffi-field G472 inner");
-#line 973 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 973
 _Static_assert(_Generic(&((G473 *)0)->inner, G472 *: 1, default: 0) && sizeof(((G473 *)0)->inner) == sizeof(G472), "heroes-ffi-field G473 inner");
-#line 975 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 975
 _Static_assert(_Generic(&((G474 *)0)->inner, G473 *: 1, default: 0) && sizeof(((G474 *)0)->inner) == sizeof(G473), "heroes-ffi-field G474 inner");
-#line 977 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 977
 _Static_assert(_Generic(&((G475 *)0)->inner, G474 *: 1, default: 0) && sizeof(((G475 *)0)->inner) == sizeof(G474), "heroes-ffi-field G475 inner");
-#line 979 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 979
 _Static_assert(_Generic(&((G476 *)0)->inner, G475 *: 1, default: 0) && sizeof(((G476 *)0)->inner) == sizeof(G475), "heroes-ffi-field G476 inner");
-#line 981 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 981
 _Static_assert(_Generic(&((G477 *)0)->inner, G476 *: 1, default: 0) && sizeof(((G477 *)0)->inner) == sizeof(G476), "heroes-ffi-field G477 inner");
-#line 983 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 983
 _Static_assert(_Generic(&((G478 *)0)->inner, G477 *: 1, default: 0) && sizeof(((G478 *)0)->inner) == sizeof(G477), "heroes-ffi-field G478 inner");
-#line 985 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 985
 _Static_assert(_Generic(&((G479 *)0)->inner, G478 *: 1, default: 0) && sizeof(((G479 *)0)->inner) == sizeof(G478), "heroes-ffi-field G479 inner");
-#line 987 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 987
 _Static_assert(_Generic(&((G480 *)0)->inner, G479 *: 1, default: 0) && sizeof(((G480 *)0)->inner) == sizeof(G479), "heroes-ffi-field G480 inner");
-#line 989 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 989
 _Static_assert(_Generic(&((G481 *)0)->inner, G480 *: 1, default: 0) && sizeof(((G481 *)0)->inner) == sizeof(G480), "heroes-ffi-field G481 inner");
-#line 991 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 991
 _Static_assert(_Generic(&((G482 *)0)->inner, G481 *: 1, default: 0) && sizeof(((G482 *)0)->inner) == sizeof(G481), "heroes-ffi-field G482 inner");
-#line 993 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 993
 _Static_assert(_Generic(&((G483 *)0)->inner, G482 *: 1, default: 0) && sizeof(((G483 *)0)->inner) == sizeof(G482), "heroes-ffi-field G483 inner");
-#line 995 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 995
 _Static_assert(_Generic(&((G484 *)0)->inner, G483 *: 1, default: 0) && sizeof(((G484 *)0)->inner) == sizeof(G483), "heroes-ffi-field G484 inner");
-#line 997 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 997
 _Static_assert(_Generic(&((G485 *)0)->inner, G484 *: 1, default: 0) && sizeof(((G485 *)0)->inner) == sizeof(G484), "heroes-ffi-field G485 inner");
-#line 999 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 999
 _Static_assert(_Generic(&((G486 *)0)->inner, G485 *: 1, default: 0) && sizeof(((G486 *)0)->inner) == sizeof(G485), "heroes-ffi-field G486 inner");
-#line 1001 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1001
 _Static_assert(_Generic(&((G487 *)0)->inner, G486 *: 1, default: 0) && sizeof(((G487 *)0)->inner) == sizeof(G486), "heroes-ffi-field G487 inner");
-#line 1003 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1003
 _Static_assert(_Generic(&((G488 *)0)->inner, G487 *: 1, default: 0) && sizeof(((G488 *)0)->inner) == sizeof(G487), "heroes-ffi-field G488 inner");
-#line 1005 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1005
 _Static_assert(_Generic(&((G489 *)0)->inner, G488 *: 1, default: 0) && sizeof(((G489 *)0)->inner) == sizeof(G488), "heroes-ffi-field G489 inner");
-#line 1007 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1007
 _Static_assert(_Generic(&((G490 *)0)->inner, G489 *: 1, default: 0) && sizeof(((G490 *)0)->inner) == sizeof(G489), "heroes-ffi-field G490 inner");
-#line 1009 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1009
 _Static_assert(_Generic(&((G491 *)0)->inner, G490 *: 1, default: 0) && sizeof(((G491 *)0)->inner) == sizeof(G490), "heroes-ffi-field G491 inner");
-#line 1011 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1011
 _Static_assert(_Generic(&((G492 *)0)->inner, G491 *: 1, default: 0) && sizeof(((G492 *)0)->inner) == sizeof(G491), "heroes-ffi-field G492 inner");
-#line 1013 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1013
 _Static_assert(_Generic(&((G493 *)0)->inner, G492 *: 1, default: 0) && sizeof(((G493 *)0)->inner) == sizeof(G492), "heroes-ffi-field G493 inner");
-#line 1015 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1015
 _Static_assert(_Generic(&((G494 *)0)->inner, G493 *: 1, default: 0) && sizeof(((G494 *)0)->inner) == sizeof(G493), "heroes-ffi-field G494 inner");
-#line 1017 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1017
 _Static_assert(_Generic(&((G495 *)0)->inner, G494 *: 1, default: 0) && sizeof(((G495 *)0)->inner) == sizeof(G494), "heroes-ffi-field G495 inner");
-#line 1019 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1019
 _Static_assert(_Generic(&((G496 *)0)->inner, G495 *: 1, default: 0) && sizeof(((G496 *)0)->inner) == sizeof(G495), "heroes-ffi-field G496 inner");
-#line 1021 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1021
 _Static_assert(_Generic(&((G497 *)0)->inner, G496 *: 1, default: 0) && sizeof(((G497 *)0)->inner) == sizeof(G496), "heroes-ffi-field G497 inner");
-#line 1023 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1023
 _Static_assert(_Generic(&((G498 *)0)->inner, G497 *: 1, default: 0) && sizeof(((G498 *)0)->inner) == sizeof(G497), "heroes-ffi-field G498 inner");
-#line 1025 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1025
 _Static_assert(_Generic(&((G499 *)0)->inner, G498 *: 1, default: 0) && sizeof(((G499 *)0)->inner) == sizeof(G498), "heroes-ffi-field G499 inner");
-#line 1027 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1027
 _Static_assert(_Generic(&((G500 *)0)->inner, G499 *: 1, default: 0) && sizeof(((G500 *)0)->inner) == sizeof(G499), "heroes-ffi-field G500 inner");
-#line 1029 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1029
 _Static_assert(_Generic(&((G501 *)0)->inner, G500 *: 1, default: 0) && sizeof(((G501 *)0)->inner) == sizeof(G500), "heroes-ffi-field G501 inner");
-#line 1031 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1031
 _Static_assert(_Generic(&((G502 *)0)->inner, G501 *: 1, default: 0) && sizeof(((G502 *)0)->inner) == sizeof(G501), "heroes-ffi-field G502 inner");
-#line 1033 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1033
 _Static_assert(_Generic(&((G503 *)0)->inner, G502 *: 1, default: 0) && sizeof(((G503 *)0)->inner) == sizeof(G502), "heroes-ffi-field G503 inner");
-#line 1035 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1035
 _Static_assert(_Generic(&((G504 *)0)->inner, G503 *: 1, default: 0) && sizeof(((G504 *)0)->inner) == sizeof(G503), "heroes-ffi-field G504 inner");
-#line 1037 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1037
 _Static_assert(_Generic(&((G505 *)0)->inner, G504 *: 1, default: 0) && sizeof(((G505 *)0)->inner) == sizeof(G504), "heroes-ffi-field G505 inner");
-#line 1039 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1039
 _Static_assert(_Generic(&((G506 *)0)->inner, G505 *: 1, default: 0) && sizeof(((G506 *)0)->inner) == sizeof(G505), "heroes-ffi-field G506 inner");
-#line 1041 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1041
 _Static_assert(_Generic(&((G507 *)0)->inner, G506 *: 1, default: 0) && sizeof(((G507 *)0)->inner) == sizeof(G506), "heroes-ffi-field G507 inner");
-#line 1043 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1043
 _Static_assert(_Generic(&((G508 *)0)->inner, G507 *: 1, default: 0) && sizeof(((G508 *)0)->inner) == sizeof(G507), "heroes-ffi-field G508 inner");
-#line 1045 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1045
 _Static_assert(_Generic(&((G509 *)0)->inner, G508 *: 1, default: 0) && sizeof(((G509 *)0)->inner) == sizeof(G508), "heroes-ffi-field G509 inner");
-#line 1047 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1047
 _Static_assert(_Generic(&((G510 *)0)->inner, G509 *: 1, default: 0) && sizeof(((G510 *)0)->inner) == sizeof(G509), "heroes-ffi-field G510 inner");
-#line 1049 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1049
 _Static_assert(_Generic(&((G511 *)0)->inner, G510 *: 1, default: 0) && sizeof(((G511 *)0)->inner) == sizeof(G510), "heroes-ffi-field G511 inner");
-#line 1051 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1051
 _Static_assert(_Generic(&((G512 *)0)->inner, G511 *: 1, default: 0) && sizeof(((G512 *)0)->inner) == sizeof(G511), "heroes-ffi-field G512 inner");
-#line 1053 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1053
 _Static_assert(_Generic(&((G513 *)0)->inner, G512 *: 1, default: 0) && sizeof(((G513 *)0)->inner) == sizeof(G512), "heroes-ffi-field G513 inner");
-#line 1055 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1055
 _Static_assert(_Generic(&((G514 *)0)->inner, G513 *: 1, default: 0) && sizeof(((G514 *)0)->inner) == sizeof(G513), "heroes-ffi-field G514 inner");
-#line 1057 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1057
 _Static_assert(_Generic(&((G515 *)0)->inner, G514 *: 1, default: 0) && sizeof(((G515 *)0)->inner) == sizeof(G514), "heroes-ffi-field G515 inner");
-#line 1059 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1059
 _Static_assert(_Generic(&((G516 *)0)->inner, G515 *: 1, default: 0) && sizeof(((G516 *)0)->inner) == sizeof(G515), "heroes-ffi-field G516 inner");
-#line 1061 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1061
 _Static_assert(_Generic(&((G517 *)0)->inner, G516 *: 1, default: 0) && sizeof(((G517 *)0)->inner) == sizeof(G516), "heroes-ffi-field G517 inner");
-#line 1063 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1063
 _Static_assert(_Generic(&((G518 *)0)->inner, G517 *: 1, default: 0) && sizeof(((G518 *)0)->inner) == sizeof(G517), "heroes-ffi-field G518 inner");
-#line 1065 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1065
 _Static_assert(_Generic(&((G519 *)0)->inner, G518 *: 1, default: 0) && sizeof(((G519 *)0)->inner) == sizeof(G518), "heroes-ffi-field G519 inner");
-#line 1067 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1067
 _Static_assert(_Generic(&((G520 *)0)->inner, G519 *: 1, default: 0) && sizeof(((G520 *)0)->inner) == sizeof(G519), "heroes-ffi-field G520 inner");
-#line 1069 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1069
 _Static_assert(_Generic(&((G521 *)0)->inner, G520 *: 1, default: 0) && sizeof(((G521 *)0)->inner) == sizeof(G520), "heroes-ffi-field G521 inner");
-#line 1071 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1071
 _Static_assert(_Generic(&((G522 *)0)->inner, G521 *: 1, default: 0) && sizeof(((G522 *)0)->inner) == sizeof(G521), "heroes-ffi-field G522 inner");
-#line 1073 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1073
 _Static_assert(_Generic(&((G523 *)0)->inner, G522 *: 1, default: 0) && sizeof(((G523 *)0)->inner) == sizeof(G522), "heroes-ffi-field G523 inner");
-#line 1075 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1075
 _Static_assert(_Generic(&((G524 *)0)->inner, G523 *: 1, default: 0) && sizeof(((G524 *)0)->inner) == sizeof(G523), "heroes-ffi-field G524 inner");
-#line 1077 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1077
 _Static_assert(_Generic(&((G525 *)0)->inner, G524 *: 1, default: 0) && sizeof(((G525 *)0)->inner) == sizeof(G524), "heroes-ffi-field G525 inner");
-#line 1079 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1079
 _Static_assert(_Generic(&((G526 *)0)->inner, G525 *: 1, default: 0) && sizeof(((G526 *)0)->inner) == sizeof(G525), "heroes-ffi-field G526 inner");
-#line 1081 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1081
 _Static_assert(_Generic(&((G527 *)0)->inner, G526 *: 1, default: 0) && sizeof(((G527 *)0)->inner) == sizeof(G526), "heroes-ffi-field G527 inner");
-#line 1083 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1083
 _Static_assert(_Generic(&((G528 *)0)->inner, G527 *: 1, default: 0) && sizeof(((G528 *)0)->inner) == sizeof(G527), "heroes-ffi-field G528 inner");
-#line 1085 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1085
 _Static_assert(_Generic(&((G529 *)0)->inner, G528 *: 1, default: 0) && sizeof(((G529 *)0)->inner) == sizeof(G528), "heroes-ffi-field G529 inner");
-#line 1087 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1087
 _Static_assert(_Generic(&((G530 *)0)->inner, G529 *: 1, default: 0) && sizeof(((G530 *)0)->inner) == sizeof(G529), "heroes-ffi-field G530 inner");
-#line 1089 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1089
 _Static_assert(_Generic(&((G531 *)0)->inner, G530 *: 1, default: 0) && sizeof(((G531 *)0)->inner) == sizeof(G530), "heroes-ffi-field G531 inner");
-#line 1091 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1091
 _Static_assert(_Generic(&((G532 *)0)->inner, G531 *: 1, default: 0) && sizeof(((G532 *)0)->inner) == sizeof(G531), "heroes-ffi-field G532 inner");
-#line 1093 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1093
 _Static_assert(_Generic(&((G533 *)0)->inner, G532 *: 1, default: 0) && sizeof(((G533 *)0)->inner) == sizeof(G532), "heroes-ffi-field G533 inner");
-#line 1095 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1095
 _Static_assert(_Generic(&((G534 *)0)->inner, G533 *: 1, default: 0) && sizeof(((G534 *)0)->inner) == sizeof(G533), "heroes-ffi-field G534 inner");
-#line 1097 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1097
 _Static_assert(_Generic(&((G535 *)0)->inner, G534 *: 1, default: 0) && sizeof(((G535 *)0)->inner) == sizeof(G534), "heroes-ffi-field G535 inner");
-#line 1099 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1099
 _Static_assert(_Generic(&((G536 *)0)->inner, G535 *: 1, default: 0) && sizeof(((G536 *)0)->inner) == sizeof(G535), "heroes-ffi-field G536 inner");
-#line 1101 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1101
 _Static_assert(_Generic(&((G537 *)0)->inner, G536 *: 1, default: 0) && sizeof(((G537 *)0)->inner) == sizeof(G536), "heroes-ffi-field G537 inner");
-#line 1103 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1103
 _Static_assert(_Generic(&((G538 *)0)->inner, G537 *: 1, default: 0) && sizeof(((G538 *)0)->inner) == sizeof(G537), "heroes-ffi-field G538 inner");
-#line 1105 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1105
 _Static_assert(_Generic(&((G539 *)0)->inner, G538 *: 1, default: 0) && sizeof(((G539 *)0)->inner) == sizeof(G538), "heroes-ffi-field G539 inner");
-#line 1107 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1107
 _Static_assert(_Generic(&((G540 *)0)->inner, G539 *: 1, default: 0) && sizeof(((G540 *)0)->inner) == sizeof(G539), "heroes-ffi-field G540 inner");
-#line 1109 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1109
 _Static_assert(_Generic(&((G541 *)0)->inner, G540 *: 1, default: 0) && sizeof(((G541 *)0)->inner) == sizeof(G540), "heroes-ffi-field G541 inner");
-#line 1111 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1111
 _Static_assert(_Generic(&((G542 *)0)->inner, G541 *: 1, default: 0) && sizeof(((G542 *)0)->inner) == sizeof(G541), "heroes-ffi-field G542 inner");
-#line 1113 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1113
 _Static_assert(_Generic(&((G543 *)0)->inner, G542 *: 1, default: 0) && sizeof(((G543 *)0)->inner) == sizeof(G542), "heroes-ffi-field G543 inner");
-#line 1115 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1115
 _Static_assert(_Generic(&((G544 *)0)->inner, G543 *: 1, default: 0) && sizeof(((G544 *)0)->inner) == sizeof(G543), "heroes-ffi-field G544 inner");
-#line 1117 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1117
 _Static_assert(_Generic(&((G545 *)0)->inner, G544 *: 1, default: 0) && sizeof(((G545 *)0)->inner) == sizeof(G544), "heroes-ffi-field G545 inner");
-#line 1119 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1119
 _Static_assert(_Generic(&((G546 *)0)->inner, G545 *: 1, default: 0) && sizeof(((G546 *)0)->inner) == sizeof(G545), "heroes-ffi-field G546 inner");
-#line 1121 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1121
 _Static_assert(_Generic(&((G547 *)0)->inner, G546 *: 1, default: 0) && sizeof(((G547 *)0)->inner) == sizeof(G546), "heroes-ffi-field G547 inner");
-#line 1123 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1123
 _Static_assert(_Generic(&((G548 *)0)->inner, G547 *: 1, default: 0) && sizeof(((G548 *)0)->inner) == sizeof(G547), "heroes-ffi-field G548 inner");
-#line 1125 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1125
 _Static_assert(_Generic(&((G549 *)0)->inner, G548 *: 1, default: 0) && sizeof(((G549 *)0)->inner) == sizeof(G548), "heroes-ffi-field G549 inner");
-#line 1127 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1127
 _Static_assert(_Generic(&((G550 *)0)->inner, G549 *: 1, default: 0) && sizeof(((G550 *)0)->inner) == sizeof(G549), "heroes-ffi-field G550 inner");
-#line 1129 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1129
 _Static_assert(_Generic(&((G551 *)0)->inner, G550 *: 1, default: 0) && sizeof(((G551 *)0)->inner) == sizeof(G550), "heroes-ffi-field G551 inner");
-#line 1131 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1131
 _Static_assert(_Generic(&((G552 *)0)->inner, G551 *: 1, default: 0) && sizeof(((G552 *)0)->inner) == sizeof(G551), "heroes-ffi-field G552 inner");
-#line 1133 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1133
 _Static_assert(_Generic(&((G553 *)0)->inner, G552 *: 1, default: 0) && sizeof(((G553 *)0)->inner) == sizeof(G552), "heroes-ffi-field G553 inner");
-#line 1135 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1135
 _Static_assert(_Generic(&((G554 *)0)->inner, G553 *: 1, default: 0) && sizeof(((G554 *)0)->inner) == sizeof(G553), "heroes-ffi-field G554 inner");
-#line 1137 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1137
 _Static_assert(_Generic(&((G555 *)0)->inner, G554 *: 1, default: 0) && sizeof(((G555 *)0)->inner) == sizeof(G554), "heroes-ffi-field G555 inner");
-#line 1139 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1139
 _Static_assert(_Generic(&((G556 *)0)->inner, G555 *: 1, default: 0) && sizeof(((G556 *)0)->inner) == sizeof(G555), "heroes-ffi-field G556 inner");
-#line 1141 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1141
 _Static_assert(_Generic(&((G557 *)0)->inner, G556 *: 1, default: 0) && sizeof(((G557 *)0)->inner) == sizeof(G556), "heroes-ffi-field G557 inner");
-#line 1143 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1143
 _Static_assert(_Generic(&((G558 *)0)->inner, G557 *: 1, default: 0) && sizeof(((G558 *)0)->inner) == sizeof(G557), "heroes-ffi-field G558 inner");
-#line 1145 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1145
 _Static_assert(_Generic(&((G559 *)0)->inner, G558 *: 1, default: 0) && sizeof(((G559 *)0)->inner) == sizeof(G558), "heroes-ffi-field G559 inner");
-#line 1147 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1147
 _Static_assert(_Generic(&((G560 *)0)->inner, G559 *: 1, default: 0) && sizeof(((G560 *)0)->inner) == sizeof(G559), "heroes-ffi-field G560 inner");
-#line 1149 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1149
 _Static_assert(_Generic(&((G561 *)0)->inner, G560 *: 1, default: 0) && sizeof(((G561 *)0)->inner) == sizeof(G560), "heroes-ffi-field G561 inner");
-#line 1151 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1151
 _Static_assert(_Generic(&((G562 *)0)->inner, G561 *: 1, default: 0) && sizeof(((G562 *)0)->inner) == sizeof(G561), "heroes-ffi-field G562 inner");
-#line 1153 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1153
 _Static_assert(_Generic(&((G563 *)0)->inner, G562 *: 1, default: 0) && sizeof(((G563 *)0)->inner) == sizeof(G562), "heroes-ffi-field G563 inner");
-#line 1155 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1155
 _Static_assert(_Generic(&((G564 *)0)->inner, G563 *: 1, default: 0) && sizeof(((G564 *)0)->inner) == sizeof(G563), "heroes-ffi-field G564 inner");
-#line 1157 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1157
 _Static_assert(_Generic(&((G565 *)0)->inner, G564 *: 1, default: 0) && sizeof(((G565 *)0)->inner) == sizeof(G564), "heroes-ffi-field G565 inner");
-#line 1159 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1159
 _Static_assert(_Generic(&((G566 *)0)->inner, G565 *: 1, default: 0) && sizeof(((G566 *)0)->inner) == sizeof(G565), "heroes-ffi-field G566 inner");
-#line 1161 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1161
 _Static_assert(_Generic(&((G567 *)0)->inner, G566 *: 1, default: 0) && sizeof(((G567 *)0)->inner) == sizeof(G566), "heroes-ffi-field G567 inner");
-#line 1163 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1163
 _Static_assert(_Generic(&((G568 *)0)->inner, G567 *: 1, default: 0) && sizeof(((G568 *)0)->inner) == sizeof(G567), "heroes-ffi-field G568 inner");
-#line 1165 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1165
 _Static_assert(_Generic(&((G569 *)0)->inner, G568 *: 1, default: 0) && sizeof(((G569 *)0)->inner) == sizeof(G568), "heroes-ffi-field G569 inner");
-#line 1167 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1167
 _Static_assert(_Generic(&((G570 *)0)->inner, G569 *: 1, default: 0) && sizeof(((G570 *)0)->inner) == sizeof(G569), "heroes-ffi-field G570 inner");
-#line 1169 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1169
 _Static_assert(_Generic(&((G571 *)0)->inner, G570 *: 1, default: 0) && sizeof(((G571 *)0)->inner) == sizeof(G570), "heroes-ffi-field G571 inner");
-#line 1171 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1171
 _Static_assert(_Generic(&((G572 *)0)->inner, G571 *: 1, default: 0) && sizeof(((G572 *)0)->inner) == sizeof(G571), "heroes-ffi-field G572 inner");
-#line 1173 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1173
 _Static_assert(_Generic(&((G573 *)0)->inner, G572 *: 1, default: 0) && sizeof(((G573 *)0)->inner) == sizeof(G572), "heroes-ffi-field G573 inner");
-#line 1175 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1175
 _Static_assert(_Generic(&((G574 *)0)->inner, G573 *: 1, default: 0) && sizeof(((G574 *)0)->inner) == sizeof(G573), "heroes-ffi-field G574 inner");
-#line 1177 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1177
 _Static_assert(_Generic(&((G575 *)0)->inner, G574 *: 1, default: 0) && sizeof(((G575 *)0)->inner) == sizeof(G574), "heroes-ffi-field G575 inner");
-#line 1179 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1179
 _Static_assert(_Generic(&((G576 *)0)->inner, G575 *: 1, default: 0) && sizeof(((G576 *)0)->inner) == sizeof(G575), "heroes-ffi-field G576 inner");
-#line 1181 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1181
 _Static_assert(_Generic(&((G577 *)0)->inner, G576 *: 1, default: 0) && sizeof(((G577 *)0)->inner) == sizeof(G576), "heroes-ffi-field G577 inner");
-#line 1183 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1183
 _Static_assert(_Generic(&((G578 *)0)->inner, G577 *: 1, default: 0) && sizeof(((G578 *)0)->inner) == sizeof(G577), "heroes-ffi-field G578 inner");
-#line 1185 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1185
 _Static_assert(_Generic(&((G579 *)0)->inner, G578 *: 1, default: 0) && sizeof(((G579 *)0)->inner) == sizeof(G578), "heroes-ffi-field G579 inner");
-#line 1187 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1187
 _Static_assert(_Generic(&((G580 *)0)->inner, G579 *: 1, default: 0) && sizeof(((G580 *)0)->inner) == sizeof(G579), "heroes-ffi-field G580 inner");
-#line 1189 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1189
 _Static_assert(_Generic(&((G581 *)0)->inner, G580 *: 1, default: 0) && sizeof(((G581 *)0)->inner) == sizeof(G580), "heroes-ffi-field G581 inner");
-#line 1191 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1191
 _Static_assert(_Generic(&((G582 *)0)->inner, G581 *: 1, default: 0) && sizeof(((G582 *)0)->inner) == sizeof(G581), "heroes-ffi-field G582 inner");
-#line 1193 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1193
 _Static_assert(_Generic(&((G583 *)0)->inner, G582 *: 1, default: 0) && sizeof(((G583 *)0)->inner) == sizeof(G582), "heroes-ffi-field G583 inner");
-#line 1195 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1195
 _Static_assert(_Generic(&((G584 *)0)->inner, G583 *: 1, default: 0) && sizeof(((G584 *)0)->inner) == sizeof(G583), "heroes-ffi-field G584 inner");
-#line 1197 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1197
 _Static_assert(_Generic(&((G585 *)0)->inner, G584 *: 1, default: 0) && sizeof(((G585 *)0)->inner) == sizeof(G584), "heroes-ffi-field G585 inner");
-#line 1199 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1199
 _Static_assert(_Generic(&((G586 *)0)->inner, G585 *: 1, default: 0) && sizeof(((G586 *)0)->inner) == sizeof(G585), "heroes-ffi-field G586 inner");
-#line 1201 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1201
 _Static_assert(_Generic(&((G587 *)0)->inner, G586 *: 1, default: 0) && sizeof(((G587 *)0)->inner) == sizeof(G586), "heroes-ffi-field G587 inner");
-#line 1203 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1203
 _Static_assert(_Generic(&((G588 *)0)->inner, G587 *: 1, default: 0) && sizeof(((G588 *)0)->inner) == sizeof(G587), "heroes-ffi-field G588 inner");
-#line 1205 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1205
 _Static_assert(_Generic(&((G589 *)0)->inner, G588 *: 1, default: 0) && sizeof(((G589 *)0)->inner) == sizeof(G588), "heroes-ffi-field G589 inner");
-#line 1207 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1207
 _Static_assert(_Generic(&((G590 *)0)->inner, G589 *: 1, default: 0) && sizeof(((G590 *)0)->inner) == sizeof(G589), "heroes-ffi-field G590 inner");
-#line 1209 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1209
 _Static_assert(_Generic(&((G591 *)0)->inner, G590 *: 1, default: 0) && sizeof(((G591 *)0)->inner) == sizeof(G590), "heroes-ffi-field G591 inner");
-#line 1211 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1211
 _Static_assert(_Generic(&((G592 *)0)->inner, G591 *: 1, default: 0) && sizeof(((G592 *)0)->inner) == sizeof(G591), "heroes-ffi-field G592 inner");
-#line 1213 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1213
 _Static_assert(_Generic(&((G593 *)0)->inner, G592 *: 1, default: 0) && sizeof(((G593 *)0)->inner) == sizeof(G592), "heroes-ffi-field G593 inner");
-#line 1215 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1215
 _Static_assert(_Generic(&((G594 *)0)->inner, G593 *: 1, default: 0) && sizeof(((G594 *)0)->inner) == sizeof(G593), "heroes-ffi-field G594 inner");
-#line 1217 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1217
 _Static_assert(_Generic(&((G595 *)0)->inner, G594 *: 1, default: 0) && sizeof(((G595 *)0)->inner) == sizeof(G594), "heroes-ffi-field G595 inner");
-#line 1219 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1219
 _Static_assert(_Generic(&((G596 *)0)->inner, G595 *: 1, default: 0) && sizeof(((G596 *)0)->inner) == sizeof(G595), "heroes-ffi-field G596 inner");
-#line 1221 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1221
 _Static_assert(_Generic(&((G597 *)0)->inner, G596 *: 1, default: 0) && sizeof(((G597 *)0)->inner) == sizeof(G596), "heroes-ffi-field G597 inner");
-#line 1223 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1223
 _Static_assert(_Generic(&((G598 *)0)->inner, G597 *: 1, default: 0) && sizeof(((G598 *)0)->inner) == sizeof(G597), "heroes-ffi-field G598 inner");
-#line 1225 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1225
 _Static_assert(_Generic(&((G599 *)0)->inner, G598 *: 1, default: 0) && sizeof(((G599 *)0)->inner) == sizeof(G598), "heroes-ffi-field G599 inner");
-#line 1227 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1227
 _Static_assert(_Generic(&((G600 *)0)->inner, G599 *: 1, default: 0) && sizeof(((G600 *)0)->inner) == sizeof(G599), "heroes-ffi-field G600 inner");
-#line 1229 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1229
 _Static_assert(_Generic(&((G601 *)0)->inner, G600 *: 1, default: 0) && sizeof(((G601 *)0)->inner) == sizeof(G600), "heroes-ffi-field G601 inner");
-#line 1231 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1231
 _Static_assert(_Generic(&((G602 *)0)->inner, G601 *: 1, default: 0) && sizeof(((G602 *)0)->inner) == sizeof(G601), "heroes-ffi-field G602 inner");
-#line 1233 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1233
 _Static_assert(_Generic(&((G603 *)0)->inner, G602 *: 1, default: 0) && sizeof(((G603 *)0)->inner) == sizeof(G602), "heroes-ffi-field G603 inner");
-#line 1235 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1235
 _Static_assert(_Generic(&((G604 *)0)->inner, G603 *: 1, default: 0) && sizeof(((G604 *)0)->inner) == sizeof(G603), "heroes-ffi-field G604 inner");
-#line 1237 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1237
 _Static_assert(_Generic(&((G605 *)0)->inner, G604 *: 1, default: 0) && sizeof(((G605 *)0)->inner) == sizeof(G604), "heroes-ffi-field G605 inner");
-#line 1239 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1239
 _Static_assert(_Generic(&((G606 *)0)->inner, G605 *: 1, default: 0) && sizeof(((G606 *)0)->inner) == sizeof(G605), "heroes-ffi-field G606 inner");
-#line 1241 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1241
 _Static_assert(_Generic(&((G607 *)0)->inner, G606 *: 1, default: 0) && sizeof(((G607 *)0)->inner) == sizeof(G606), "heroes-ffi-field G607 inner");
-#line 1243 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1243
 _Static_assert(_Generic(&((G608 *)0)->inner, G607 *: 1, default: 0) && sizeof(((G608 *)0)->inner) == sizeof(G607), "heroes-ffi-field G608 inner");
-#line 1245 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1245
 _Static_assert(_Generic(&((G609 *)0)->inner, G608 *: 1, default: 0) && sizeof(((G609 *)0)->inner) == sizeof(G608), "heroes-ffi-field G609 inner");
-#line 1247 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1247
 _Static_assert(_Generic(&((G610 *)0)->inner, G609 *: 1, default: 0) && sizeof(((G610 *)0)->inner) == sizeof(G609), "heroes-ffi-field G610 inner");
-#line 1249 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1249
 _Static_assert(_Generic(&((G611 *)0)->inner, G610 *: 1, default: 0) && sizeof(((G611 *)0)->inner) == sizeof(G610), "heroes-ffi-field G611 inner");
-#line 1251 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1251
 _Static_assert(_Generic(&((G612 *)0)->inner, G611 *: 1, default: 0) && sizeof(((G612 *)0)->inner) == sizeof(G611), "heroes-ffi-field G612 inner");
-#line 1253 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1253
 _Static_assert(_Generic(&((G613 *)0)->inner, G612 *: 1, default: 0) && sizeof(((G613 *)0)->inner) == sizeof(G612), "heroes-ffi-field G613 inner");
-#line 1255 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1255
 _Static_assert(_Generic(&((G614 *)0)->inner, G613 *: 1, default: 0) && sizeof(((G614 *)0)->inner) == sizeof(G613), "heroes-ffi-field G614 inner");
-#line 1257 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1257
 _Static_assert(_Generic(&((G615 *)0)->inner, G614 *: 1, default: 0) && sizeof(((G615 *)0)->inner) == sizeof(G614), "heroes-ffi-field G615 inner");
-#line 1259 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1259
 _Static_assert(_Generic(&((G616 *)0)->inner, G615 *: 1, default: 0) && sizeof(((G616 *)0)->inner) == sizeof(G615), "heroes-ffi-field G616 inner");
-#line 1261 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1261
 _Static_assert(_Generic(&((G617 *)0)->inner, G616 *: 1, default: 0) && sizeof(((G617 *)0)->inner) == sizeof(G616), "heroes-ffi-field G617 inner");
-#line 1263 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1263
 _Static_assert(_Generic(&((G618 *)0)->inner, G617 *: 1, default: 0) && sizeof(((G618 *)0)->inner) == sizeof(G617), "heroes-ffi-field G618 inner");
-#line 1265 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1265
 _Static_assert(_Generic(&((G619 *)0)->inner, G618 *: 1, default: 0) && sizeof(((G619 *)0)->inner) == sizeof(G618), "heroes-ffi-field G619 inner");
-#line 1267 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1267
 _Static_assert(_Generic(&((G620 *)0)->inner, G619 *: 1, default: 0) && sizeof(((G620 *)0)->inner) == sizeof(G619), "heroes-ffi-field G620 inner");
-#line 1269 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1269
 _Static_assert(_Generic(&((G621 *)0)->inner, G620 *: 1, default: 0) && sizeof(((G621 *)0)->inner) == sizeof(G620), "heroes-ffi-field G621 inner");
-#line 1271 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1271
 _Static_assert(_Generic(&((G622 *)0)->inner, G621 *: 1, default: 0) && sizeof(((G622 *)0)->inner) == sizeof(G621), "heroes-ffi-field G622 inner");
-#line 1273 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1273
 _Static_assert(_Generic(&((G623 *)0)->inner, G622 *: 1, default: 0) && sizeof(((G623 *)0)->inner) == sizeof(G622), "heroes-ffi-field G623 inner");
-#line 1275 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1275
 _Static_assert(_Generic(&((G624 *)0)->inner, G623 *: 1, default: 0) && sizeof(((G624 *)0)->inner) == sizeof(G623), "heroes-ffi-field G624 inner");
-#line 1277 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1277
 _Static_assert(_Generic(&((G625 *)0)->inner, G624 *: 1, default: 0) && sizeof(((G625 *)0)->inner) == sizeof(G624), "heroes-ffi-field G625 inner");
-#line 1279 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1279
 _Static_assert(_Generic(&((G626 *)0)->inner, G625 *: 1, default: 0) && sizeof(((G626 *)0)->inner) == sizeof(G625), "heroes-ffi-field G626 inner");
-#line 1281 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1281
 _Static_assert(_Generic(&((G627 *)0)->inner, G626 *: 1, default: 0) && sizeof(((G627 *)0)->inner) == sizeof(G626), "heroes-ffi-field G627 inner");
-#line 1283 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1283
 _Static_assert(_Generic(&((G628 *)0)->inner, G627 *: 1, default: 0) && sizeof(((G628 *)0)->inner) == sizeof(G627), "heroes-ffi-field G628 inner");
-#line 1285 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1285
 _Static_assert(_Generic(&((G629 *)0)->inner, G628 *: 1, default: 0) && sizeof(((G629 *)0)->inner) == sizeof(G628), "heroes-ffi-field G629 inner");
-#line 1287 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1287
 _Static_assert(_Generic(&((G630 *)0)->inner, G629 *: 1, default: 0) && sizeof(((G630 *)0)->inner) == sizeof(G629), "heroes-ffi-field G630 inner");
-#line 1289 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1289
 _Static_assert(_Generic(&((G631 *)0)->inner, G630 *: 1, default: 0) && sizeof(((G631 *)0)->inner) == sizeof(G630), "heroes-ffi-field G631 inner");
-#line 1291 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1291
 _Static_assert(_Generic(&((G632 *)0)->inner, G631 *: 1, default: 0) && sizeof(((G632 *)0)->inner) == sizeof(G631), "heroes-ffi-field G632 inner");
-#line 1293 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1293
 _Static_assert(_Generic(&((G633 *)0)->inner, G632 *: 1, default: 0) && sizeof(((G633 *)0)->inner) == sizeof(G632), "heroes-ffi-field G633 inner");
-#line 1295 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1295
 _Static_assert(_Generic(&((G634 *)0)->inner, G633 *: 1, default: 0) && sizeof(((G634 *)0)->inner) == sizeof(G633), "heroes-ffi-field G634 inner");
-#line 1297 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1297
 _Static_assert(_Generic(&((G635 *)0)->inner, G634 *: 1, default: 0) && sizeof(((G635 *)0)->inner) == sizeof(G634), "heroes-ffi-field G635 inner");
-#line 1299 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1299
 _Static_assert(_Generic(&((G636 *)0)->inner, G635 *: 1, default: 0) && sizeof(((G636 *)0)->inner) == sizeof(G635), "heroes-ffi-field G636 inner");
-#line 1301 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1301
 _Static_assert(_Generic(&((G637 *)0)->inner, G636 *: 1, default: 0) && sizeof(((G637 *)0)->inner) == sizeof(G636), "heroes-ffi-field G637 inner");
-#line 1303 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1303
 _Static_assert(_Generic(&((G638 *)0)->inner, G637 *: 1, default: 0) && sizeof(((G638 *)0)->inner) == sizeof(G637), "heroes-ffi-field G638 inner");
-#line 1305 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1305
 _Static_assert(_Generic(&((G639 *)0)->inner, G638 *: 1, default: 0) && sizeof(((G639 *)0)->inner) == sizeof(G638), "heroes-ffi-field G639 inner");
-#line 1307 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1307
 _Static_assert(_Generic(&((G640 *)0)->inner, G639 *: 1, default: 0) && sizeof(((G640 *)0)->inner) == sizeof(G639), "heroes-ffi-field G640 inner");
-#line 1309 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1309
 _Static_assert(_Generic(&((G641 *)0)->inner, G640 *: 1, default: 0) && sizeof(((G641 *)0)->inner) == sizeof(G640), "heroes-ffi-field G641 inner");
-#line 1311 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1311
 _Static_assert(_Generic(&((G642 *)0)->inner, G641 *: 1, default: 0) && sizeof(((G642 *)0)->inner) == sizeof(G641), "heroes-ffi-field G642 inner");
-#line 1313 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1313
 _Static_assert(_Generic(&((G643 *)0)->inner, G642 *: 1, default: 0) && sizeof(((G643 *)0)->inner) == sizeof(G642), "heroes-ffi-field G643 inner");
-#line 1315 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1315
 _Static_assert(_Generic(&((G644 *)0)->inner, G643 *: 1, default: 0) && sizeof(((G644 *)0)->inner) == sizeof(G643), "heroes-ffi-field G644 inner");
-#line 1317 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1317
 _Static_assert(_Generic(&((G645 *)0)->inner, G644 *: 1, default: 0) && sizeof(((G645 *)0)->inner) == sizeof(G644), "heroes-ffi-field G645 inner");
-#line 1319 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1319
 _Static_assert(_Generic(&((G646 *)0)->inner, G645 *: 1, default: 0) && sizeof(((G646 *)0)->inner) == sizeof(G645), "heroes-ffi-field G646 inner");
-#line 1321 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1321
 _Static_assert(_Generic(&((G647 *)0)->inner, G646 *: 1, default: 0) && sizeof(((G647 *)0)->inner) == sizeof(G646), "heroes-ffi-field G647 inner");
-#line 1323 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1323
 _Static_assert(_Generic(&((G648 *)0)->inner, G647 *: 1, default: 0) && sizeof(((G648 *)0)->inner) == sizeof(G647), "heroes-ffi-field G648 inner");
-#line 1325 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1325
 _Static_assert(_Generic(&((G649 *)0)->inner, G648 *: 1, default: 0) && sizeof(((G649 *)0)->inner) == sizeof(G648), "heroes-ffi-field G649 inner");
-#line 1327 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1327
 _Static_assert(_Generic(&((G650 *)0)->inner, G649 *: 1, default: 0) && sizeof(((G650 *)0)->inner) == sizeof(G649), "heroes-ffi-field G650 inner");
-#line 1329 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1329
 _Static_assert(_Generic(&((G651 *)0)->inner, G650 *: 1, default: 0) && sizeof(((G651 *)0)->inner) == sizeof(G650), "heroes-ffi-field G651 inner");
-#line 1331 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1331
 _Static_assert(_Generic(&((G652 *)0)->inner, G651 *: 1, default: 0) && sizeof(((G652 *)0)->inner) == sizeof(G651), "heroes-ffi-field G652 inner");
-#line 1333 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1333
 _Static_assert(_Generic(&((G653 *)0)->inner, G652 *: 1, default: 0) && sizeof(((G653 *)0)->inner) == sizeof(G652), "heroes-ffi-field G653 inner");
-#line 1335 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1335
 _Static_assert(_Generic(&((G654 *)0)->inner, G653 *: 1, default: 0) && sizeof(((G654 *)0)->inner) == sizeof(G653), "heroes-ffi-field G654 inner");
-#line 1337 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1337
 _Static_assert(_Generic(&((G655 *)0)->inner, G654 *: 1, default: 0) && sizeof(((G655 *)0)->inner) == sizeof(G654), "heroes-ffi-field G655 inner");
-#line 1339 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1339
 _Static_assert(_Generic(&((G656 *)0)->inner, G655 *: 1, default: 0) && sizeof(((G656 *)0)->inner) == sizeof(G655), "heroes-ffi-field G656 inner");
-#line 1341 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1341
 _Static_assert(_Generic(&((G657 *)0)->inner, G656 *: 1, default: 0) && sizeof(((G657 *)0)->inner) == sizeof(G656), "heroes-ffi-field G657 inner");
-#line 1343 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1343
 _Static_assert(_Generic(&((G658 *)0)->inner, G657 *: 1, default: 0) && sizeof(((G658 *)0)->inner) == sizeof(G657), "heroes-ffi-field G658 inner");
-#line 1345 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1345
 _Static_assert(_Generic(&((G659 *)0)->inner, G658 *: 1, default: 0) && sizeof(((G659 *)0)->inner) == sizeof(G658), "heroes-ffi-field G659 inner");
-#line 1347 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1347
 _Static_assert(_Generic(&((G660 *)0)->inner, G659 *: 1, default: 0) && sizeof(((G660 *)0)->inner) == sizeof(G659), "heroes-ffi-field G660 inner");
-#line 1349 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1349
 _Static_assert(_Generic(&((G661 *)0)->inner, G660 *: 1, default: 0) && sizeof(((G661 *)0)->inner) == sizeof(G660), "heroes-ffi-field G661 inner");
-#line 1351 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1351
 _Static_assert(_Generic(&((G662 *)0)->inner, G661 *: 1, default: 0) && sizeof(((G662 *)0)->inner) == sizeof(G661), "heroes-ffi-field G662 inner");
-#line 1353 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1353
 _Static_assert(_Generic(&((G663 *)0)->inner, G662 *: 1, default: 0) && sizeof(((G663 *)0)->inner) == sizeof(G662), "heroes-ffi-field G663 inner");
-#line 1355 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1355
 _Static_assert(_Generic(&((G664 *)0)->inner, G663 *: 1, default: 0) && sizeof(((G664 *)0)->inner) == sizeof(G663), "heroes-ffi-field G664 inner");
-#line 1357 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1357
 _Static_assert(_Generic(&((G665 *)0)->inner, G664 *: 1, default: 0) && sizeof(((G665 *)0)->inner) == sizeof(G664), "heroes-ffi-field G665 inner");
-#line 1359 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1359
 _Static_assert(_Generic(&((G666 *)0)->inner, G665 *: 1, default: 0) && sizeof(((G666 *)0)->inner) == sizeof(G665), "heroes-ffi-field G666 inner");
-#line 1361 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1361
 _Static_assert(_Generic(&((G667 *)0)->inner, G666 *: 1, default: 0) && sizeof(((G667 *)0)->inner) == sizeof(G666), "heroes-ffi-field G667 inner");
-#line 1363 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1363
 _Static_assert(_Generic(&((G668 *)0)->inner, G667 *: 1, default: 0) && sizeof(((G668 *)0)->inner) == sizeof(G667), "heroes-ffi-field G668 inner");
-#line 1365 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1365
 _Static_assert(_Generic(&((G669 *)0)->inner, G668 *: 1, default: 0) && sizeof(((G669 *)0)->inner) == sizeof(G668), "heroes-ffi-field G669 inner");
-#line 1367 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1367
 _Static_assert(_Generic(&((G670 *)0)->inner, G669 *: 1, default: 0) && sizeof(((G670 *)0)->inner) == sizeof(G669), "heroes-ffi-field G670 inner");
-#line 1369 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1369
 _Static_assert(_Generic(&((G671 *)0)->inner, G670 *: 1, default: 0) && sizeof(((G671 *)0)->inner) == sizeof(G670), "heroes-ffi-field G671 inner");
-#line 1371 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1371
 _Static_assert(_Generic(&((G672 *)0)->inner, G671 *: 1, default: 0) && sizeof(((G672 *)0)->inner) == sizeof(G671), "heroes-ffi-field G672 inner");
-#line 1373 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1373
 _Static_assert(_Generic(&((G673 *)0)->inner, G672 *: 1, default: 0) && sizeof(((G673 *)0)->inner) == sizeof(G672), "heroes-ffi-field G673 inner");
-#line 1375 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1375
 _Static_assert(_Generic(&((G674 *)0)->inner, G673 *: 1, default: 0) && sizeof(((G674 *)0)->inner) == sizeof(G673), "heroes-ffi-field G674 inner");
-#line 1377 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1377
 _Static_assert(_Generic(&((G675 *)0)->inner, G674 *: 1, default: 0) && sizeof(((G675 *)0)->inner) == sizeof(G674), "heroes-ffi-field G675 inner");
-#line 1379 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1379
 _Static_assert(_Generic(&((G676 *)0)->inner, G675 *: 1, default: 0) && sizeof(((G676 *)0)->inner) == sizeof(G675), "heroes-ffi-field G676 inner");
-#line 1381 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1381
 _Static_assert(_Generic(&((G677 *)0)->inner, G676 *: 1, default: 0) && sizeof(((G677 *)0)->inner) == sizeof(G676), "heroes-ffi-field G677 inner");
-#line 1383 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1383
 _Static_assert(_Generic(&((G678 *)0)->inner, G677 *: 1, default: 0) && sizeof(((G678 *)0)->inner) == sizeof(G677), "heroes-ffi-field G678 inner");
-#line 1385 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1385
 _Static_assert(_Generic(&((G679 *)0)->inner, G678 *: 1, default: 0) && sizeof(((G679 *)0)->inner) == sizeof(G678), "heroes-ffi-field G679 inner");
-#line 1387 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1387
 _Static_assert(_Generic(&((G680 *)0)->inner, G679 *: 1, default: 0) && sizeof(((G680 *)0)->inner) == sizeof(G679), "heroes-ffi-field G680 inner");
-#line 1389 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1389
 _Static_assert(_Generic(&((G681 *)0)->inner, G680 *: 1, default: 0) && sizeof(((G681 *)0)->inner) == sizeof(G680), "heroes-ffi-field G681 inner");
-#line 1391 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1391
 _Static_assert(_Generic(&((G682 *)0)->inner, G681 *: 1, default: 0) && sizeof(((G682 *)0)->inner) == sizeof(G681), "heroes-ffi-field G682 inner");
-#line 1393 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1393
 _Static_assert(_Generic(&((G683 *)0)->inner, G682 *: 1, default: 0) && sizeof(((G683 *)0)->inner) == sizeof(G682), "heroes-ffi-field G683 inner");
-#line 1395 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1395
 _Static_assert(_Generic(&((G684 *)0)->inner, G683 *: 1, default: 0) && sizeof(((G684 *)0)->inner) == sizeof(G683), "heroes-ffi-field G684 inner");
-#line 1397 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1397
 _Static_assert(_Generic(&((G685 *)0)->inner, G684 *: 1, default: 0) && sizeof(((G685 *)0)->inner) == sizeof(G684), "heroes-ffi-field G685 inner");
-#line 1399 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1399
 _Static_assert(_Generic(&((G686 *)0)->inner, G685 *: 1, default: 0) && sizeof(((G686 *)0)->inner) == sizeof(G685), "heroes-ffi-field G686 inner");
-#line 1401 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1401
 _Static_assert(_Generic(&((G687 *)0)->inner, G686 *: 1, default: 0) && sizeof(((G687 *)0)->inner) == sizeof(G686), "heroes-ffi-field G687 inner");
-#line 1403 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1403
 _Static_assert(_Generic(&((G688 *)0)->inner, G687 *: 1, default: 0) && sizeof(((G688 *)0)->inner) == sizeof(G687), "heroes-ffi-field G688 inner");
-#line 1405 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1405
 _Static_assert(_Generic(&((G689 *)0)->inner, G688 *: 1, default: 0) && sizeof(((G689 *)0)->inner) == sizeof(G688), "heroes-ffi-field G689 inner");
-#line 1407 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1407
 _Static_assert(_Generic(&((G690 *)0)->inner, G689 *: 1, default: 0) && sizeof(((G690 *)0)->inner) == sizeof(G689), "heroes-ffi-field G690 inner");
-#line 1409 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1409
 _Static_assert(_Generic(&((G691 *)0)->inner, G690 *: 1, default: 0) && sizeof(((G691 *)0)->inner) == sizeof(G690), "heroes-ffi-field G691 inner");
-#line 1411 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1411
 _Static_assert(_Generic(&((G692 *)0)->inner, G691 *: 1, default: 0) && sizeof(((G692 *)0)->inner) == sizeof(G691), "heroes-ffi-field G692 inner");
-#line 1413 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1413
 _Static_assert(_Generic(&((G693 *)0)->inner, G692 *: 1, default: 0) && sizeof(((G693 *)0)->inner) == sizeof(G692), "heroes-ffi-field G693 inner");
-#line 1415 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1415
 _Static_assert(_Generic(&((G694 *)0)->inner, G693 *: 1, default: 0) && sizeof(((G694 *)0)->inner) == sizeof(G693), "heroes-ffi-field G694 inner");
-#line 1417 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1417
 _Static_assert(_Generic(&((G695 *)0)->inner, G694 *: 1, default: 0) && sizeof(((G695 *)0)->inner) == sizeof(G694), "heroes-ffi-field G695 inner");
-#line 1419 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1419
 _Static_assert(_Generic(&((G696 *)0)->inner, G695 *: 1, default: 0) && sizeof(((G696 *)0)->inner) == sizeof(G695), "heroes-ffi-field G696 inner");
-#line 1421 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1421
 _Static_assert(_Generic(&((G697 *)0)->inner, G696 *: 1, default: 0) && sizeof(((G697 *)0)->inner) == sizeof(G696), "heroes-ffi-field G697 inner");
-#line 1423 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1423
 _Static_assert(_Generic(&((G698 *)0)->inner, G697 *: 1, default: 0) && sizeof(((G698 *)0)->inner) == sizeof(G697), "heroes-ffi-field G698 inner");
-#line 1425 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1425
 _Static_assert(_Generic(&((G699 *)0)->inner, G698 *: 1, default: 0) && sizeof(((G699 *)0)->inner) == sizeof(G698), "heroes-ffi-field G699 inner");
-#line 1427 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1427
 _Static_assert(_Generic(&((G700 *)0)->inner, G699 *: 1, default: 0) && sizeof(((G700 *)0)->inner) == sizeof(G699), "heroes-ffi-field G700 inner");
-#line 1429 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1429
 _Static_assert(_Generic(&((G701 *)0)->inner, G700 *: 1, default: 0) && sizeof(((G701 *)0)->inner) == sizeof(G700), "heroes-ffi-field G701 inner");
-#line 1431 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1431
 _Static_assert(_Generic(&((G702 *)0)->inner, G701 *: 1, default: 0) && sizeof(((G702 *)0)->inner) == sizeof(G701), "heroes-ffi-field G702 inner");
-#line 1433 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1433
 _Static_assert(_Generic(&((G703 *)0)->inner, G702 *: 1, default: 0) && sizeof(((G703 *)0)->inner) == sizeof(G702), "heroes-ffi-field G703 inner");
-#line 1435 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1435
 _Static_assert(_Generic(&((G704 *)0)->inner, G703 *: 1, default: 0) && sizeof(((G704 *)0)->inner) == sizeof(G703), "heroes-ffi-field G704 inner");
-#line 1437 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1437
 _Static_assert(_Generic(&((G705 *)0)->inner, G704 *: 1, default: 0) && sizeof(((G705 *)0)->inner) == sizeof(G704), "heroes-ffi-field G705 inner");
-#line 1439 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1439
 _Static_assert(_Generic(&((G706 *)0)->inner, G705 *: 1, default: 0) && sizeof(((G706 *)0)->inner) == sizeof(G705), "heroes-ffi-field G706 inner");
-#line 1441 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1441
 _Static_assert(_Generic(&((G707 *)0)->inner, G706 *: 1, default: 0) && sizeof(((G707 *)0)->inner) == sizeof(G706), "heroes-ffi-field G707 inner");
-#line 1443 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1443
 _Static_assert(_Generic(&((G708 *)0)->inner, G707 *: 1, default: 0) && sizeof(((G708 *)0)->inner) == sizeof(G707), "heroes-ffi-field G708 inner");
-#line 1445 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1445
 _Static_assert(_Generic(&((G709 *)0)->inner, G708 *: 1, default: 0) && sizeof(((G709 *)0)->inner) == sizeof(G708), "heroes-ffi-field G709 inner");
-#line 1447 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1447
 _Static_assert(_Generic(&((G710 *)0)->inner, G709 *: 1, default: 0) && sizeof(((G710 *)0)->inner) == sizeof(G709), "heroes-ffi-field G710 inner");
-#line 1449 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1449
 _Static_assert(_Generic(&((G711 *)0)->inner, G710 *: 1, default: 0) && sizeof(((G711 *)0)->inner) == sizeof(G710), "heroes-ffi-field G711 inner");
-#line 1451 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1451
 _Static_assert(_Generic(&((G712 *)0)->inner, G711 *: 1, default: 0) && sizeof(((G712 *)0)->inner) == sizeof(G711), "heroes-ffi-field G712 inner");
-#line 1453 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1453
 _Static_assert(_Generic(&((G713 *)0)->inner, G712 *: 1, default: 0) && sizeof(((G713 *)0)->inner) == sizeof(G712), "heroes-ffi-field G713 inner");
-#line 1455 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1455
 _Static_assert(_Generic(&((G714 *)0)->inner, G713 *: 1, default: 0) && sizeof(((G714 *)0)->inner) == sizeof(G713), "heroes-ffi-field G714 inner");
-#line 1457 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1457
 _Static_assert(_Generic(&((G715 *)0)->inner, G714 *: 1, default: 0) && sizeof(((G715 *)0)->inner) == sizeof(G714), "heroes-ffi-field G715 inner");
-#line 1459 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1459
 _Static_assert(_Generic(&((G716 *)0)->inner, G715 *: 1, default: 0) && sizeof(((G716 *)0)->inner) == sizeof(G715), "heroes-ffi-field G716 inner");
-#line 1461 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1461
 _Static_assert(_Generic(&((G717 *)0)->inner, G716 *: 1, default: 0) && sizeof(((G717 *)0)->inner) == sizeof(G716), "heroes-ffi-field G717 inner");
-#line 1463 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1463
 _Static_assert(_Generic(&((G718 *)0)->inner, G717 *: 1, default: 0) && sizeof(((G718 *)0)->inner) == sizeof(G717), "heroes-ffi-field G718 inner");
-#line 1465 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1465
 _Static_assert(_Generic(&((G719 *)0)->inner, G718 *: 1, default: 0) && sizeof(((G719 *)0)->inner) == sizeof(G718), "heroes-ffi-field G719 inner");
-#line 1467 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1467
 _Static_assert(_Generic(&((G720 *)0)->inner, G719 *: 1, default: 0) && sizeof(((G720 *)0)->inner) == sizeof(G719), "heroes-ffi-field G720 inner");
-#line 1469 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1469
 _Static_assert(_Generic(&((G721 *)0)->inner, G720 *: 1, default: 0) && sizeof(((G721 *)0)->inner) == sizeof(G720), "heroes-ffi-field G721 inner");
-#line 1471 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1471
 _Static_assert(_Generic(&((G722 *)0)->inner, G721 *: 1, default: 0) && sizeof(((G722 *)0)->inner) == sizeof(G721), "heroes-ffi-field G722 inner");
-#line 1473 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1473
 _Static_assert(_Generic(&((G723 *)0)->inner, G722 *: 1, default: 0) && sizeof(((G723 *)0)->inner) == sizeof(G722), "heroes-ffi-field G723 inner");
-#line 1475 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1475
 _Static_assert(_Generic(&((G724 *)0)->inner, G723 *: 1, default: 0) && sizeof(((G724 *)0)->inner) == sizeof(G723), "heroes-ffi-field G724 inner");
-#line 1477 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1477
 _Static_assert(_Generic(&((G725 *)0)->inner, G724 *: 1, default: 0) && sizeof(((G725 *)0)->inner) == sizeof(G724), "heroes-ffi-field G725 inner");
-#line 1479 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1479
 _Static_assert(_Generic(&((G726 *)0)->inner, G725 *: 1, default: 0) && sizeof(((G726 *)0)->inner) == sizeof(G725), "heroes-ffi-field G726 inner");
-#line 1481 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1481
 _Static_assert(_Generic(&((G727 *)0)->inner, G726 *: 1, default: 0) && sizeof(((G727 *)0)->inner) == sizeof(G726), "heroes-ffi-field G727 inner");
-#line 1483 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1483
 _Static_assert(_Generic(&((G728 *)0)->inner, G727 *: 1, default: 0) && sizeof(((G728 *)0)->inner) == sizeof(G727), "heroes-ffi-field G728 inner");
-#line 1485 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1485
 _Static_assert(_Generic(&((G729 *)0)->inner, G728 *: 1, default: 0) && sizeof(((G729 *)0)->inner) == sizeof(G728), "heroes-ffi-field G729 inner");
-#line 1487 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1487
 _Static_assert(_Generic(&((G730 *)0)->inner, G729 *: 1, default: 0) && sizeof(((G730 *)0)->inner) == sizeof(G729), "heroes-ffi-field G730 inner");
-#line 1489 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1489
 _Static_assert(_Generic(&((G731 *)0)->inner, G730 *: 1, default: 0) && sizeof(((G731 *)0)->inner) == sizeof(G730), "heroes-ffi-field G731 inner");
-#line 1491 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1491
 _Static_assert(_Generic(&((G732 *)0)->inner, G731 *: 1, default: 0) && sizeof(((G732 *)0)->inner) == sizeof(G731), "heroes-ffi-field G732 inner");
-#line 1493 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1493
 _Static_assert(_Generic(&((G733 *)0)->inner, G732 *: 1, default: 0) && sizeof(((G733 *)0)->inner) == sizeof(G732), "heroes-ffi-field G733 inner");
-#line 1495 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1495
 _Static_assert(_Generic(&((G734 *)0)->inner, G733 *: 1, default: 0) && sizeof(((G734 *)0)->inner) == sizeof(G733), "heroes-ffi-field G734 inner");
-#line 1497 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1497
 _Static_assert(_Generic(&((G735 *)0)->inner, G734 *: 1, default: 0) && sizeof(((G735 *)0)->inner) == sizeof(G734), "heroes-ffi-field G735 inner");
-#line 1499 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1499
 _Static_assert(_Generic(&((G736 *)0)->inner, G735 *: 1, default: 0) && sizeof(((G736 *)0)->inner) == sizeof(G735), "heroes-ffi-field G736 inner");
-#line 1501 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1501
 _Static_assert(_Generic(&((G737 *)0)->inner, G736 *: 1, default: 0) && sizeof(((G737 *)0)->inner) == sizeof(G736), "heroes-ffi-field G737 inner");
-#line 1503 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1503
 _Static_assert(_Generic(&((G738 *)0)->inner, G737 *: 1, default: 0) && sizeof(((G738 *)0)->inner) == sizeof(G737), "heroes-ffi-field G738 inner");
-#line 1505 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1505
 _Static_assert(_Generic(&((G739 *)0)->inner, G738 *: 1, default: 0) && sizeof(((G739 *)0)->inner) == sizeof(G738), "heroes-ffi-field G739 inner");
-#line 1507 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1507
 _Static_assert(_Generic(&((G740 *)0)->inner, G739 *: 1, default: 0) && sizeof(((G740 *)0)->inner) == sizeof(G739), "heroes-ffi-field G740 inner");
-#line 1509 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1509
 _Static_assert(_Generic(&((G741 *)0)->inner, G740 *: 1, default: 0) && sizeof(((G741 *)0)->inner) == sizeof(G740), "heroes-ffi-field G741 inner");
-#line 1511 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1511
 _Static_assert(_Generic(&((G742 *)0)->inner, G741 *: 1, default: 0) && sizeof(((G742 *)0)->inner) == sizeof(G741), "heroes-ffi-field G742 inner");
-#line 1513 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1513
 _Static_assert(_Generic(&((G743 *)0)->inner, G742 *: 1, default: 0) && sizeof(((G743 *)0)->inner) == sizeof(G742), "heroes-ffi-field G743 inner");
-#line 1515 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1515
 _Static_assert(_Generic(&((G744 *)0)->inner, G743 *: 1, default: 0) && sizeof(((G744 *)0)->inner) == sizeof(G743), "heroes-ffi-field G744 inner");
-#line 1517 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1517
 _Static_assert(_Generic(&((G745 *)0)->inner, G744 *: 1, default: 0) && sizeof(((G745 *)0)->inner) == sizeof(G744), "heroes-ffi-field G745 inner");
-#line 1519 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1519
 _Static_assert(_Generic(&((G746 *)0)->inner, G745 *: 1, default: 0) && sizeof(((G746 *)0)->inner) == sizeof(G745), "heroes-ffi-field G746 inner");
-#line 1521 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1521
 _Static_assert(_Generic(&((G747 *)0)->inner, G746 *: 1, default: 0) && sizeof(((G747 *)0)->inner) == sizeof(G746), "heroes-ffi-field G747 inner");
-#line 1523 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1523
 _Static_assert(_Generic(&((G748 *)0)->inner, G747 *: 1, default: 0) && sizeof(((G748 *)0)->inner) == sizeof(G747), "heroes-ffi-field G748 inner");
-#line 1525 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1525
 _Static_assert(_Generic(&((G749 *)0)->inner, G748 *: 1, default: 0) && sizeof(((G749 *)0)->inner) == sizeof(G748), "heroes-ffi-field G749 inner");
-#line 1527 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1527
 _Static_assert(_Generic(&((G750 *)0)->inner, G749 *: 1, default: 0) && sizeof(((G750 *)0)->inner) == sizeof(G749), "heroes-ffi-field G750 inner");
-#line 1529 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1529
 _Static_assert(_Generic(&((G751 *)0)->inner, G750 *: 1, default: 0) && sizeof(((G751 *)0)->inner) == sizeof(G750), "heroes-ffi-field G751 inner");
-#line 1531 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1531
 _Static_assert(_Generic(&((G752 *)0)->inner, G751 *: 1, default: 0) && sizeof(((G752 *)0)->inner) == sizeof(G751), "heroes-ffi-field G752 inner");
-#line 1533 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1533
 _Static_assert(_Generic(&((G753 *)0)->inner, G752 *: 1, default: 0) && sizeof(((G753 *)0)->inner) == sizeof(G752), "heroes-ffi-field G753 inner");
-#line 1535 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1535
 _Static_assert(_Generic(&((G754 *)0)->inner, G753 *: 1, default: 0) && sizeof(((G754 *)0)->inner) == sizeof(G753), "heroes-ffi-field G754 inner");
-#line 1537 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1537
 _Static_assert(_Generic(&((G755 *)0)->inner, G754 *: 1, default: 0) && sizeof(((G755 *)0)->inner) == sizeof(G754), "heroes-ffi-field G755 inner");
-#line 1539 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1539
 _Static_assert(_Generic(&((G756 *)0)->inner, G755 *: 1, default: 0) && sizeof(((G756 *)0)->inner) == sizeof(G755), "heroes-ffi-field G756 inner");
-#line 1541 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1541
 _Static_assert(_Generic(&((G757 *)0)->inner, G756 *: 1, default: 0) && sizeof(((G757 *)0)->inner) == sizeof(G756), "heroes-ffi-field G757 inner");
-#line 1543 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1543
 _Static_assert(_Generic(&((G758 *)0)->inner, G757 *: 1, default: 0) && sizeof(((G758 *)0)->inner) == sizeof(G757), "heroes-ffi-field G758 inner");
-#line 1545 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1545
 _Static_assert(_Generic(&((G759 *)0)->inner, G758 *: 1, default: 0) && sizeof(((G759 *)0)->inner) == sizeof(G758), "heroes-ffi-field G759 inner");
-#line 1547 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1547
 _Static_assert(_Generic(&((G760 *)0)->inner, G759 *: 1, default: 0) && sizeof(((G760 *)0)->inner) == sizeof(G759), "heroes-ffi-field G760 inner");
-#line 1549 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1549
 _Static_assert(_Generic(&((G761 *)0)->inner, G760 *: 1, default: 0) && sizeof(((G761 *)0)->inner) == sizeof(G760), "heroes-ffi-field G761 inner");
-#line 1551 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1551
 _Static_assert(_Generic(&((G762 *)0)->inner, G761 *: 1, default: 0) && sizeof(((G762 *)0)->inner) == sizeof(G761), "heroes-ffi-field G762 inner");
-#line 1553 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1553
 _Static_assert(_Generic(&((G763 *)0)->inner, G762 *: 1, default: 0) && sizeof(((G763 *)0)->inner) == sizeof(G762), "heroes-ffi-field G763 inner");
-#line 1555 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1555
 _Static_assert(_Generic(&((G764 *)0)->inner, G763 *: 1, default: 0) && sizeof(((G764 *)0)->inner) == sizeof(G763), "heroes-ffi-field G764 inner");
-#line 1557 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1557
 _Static_assert(_Generic(&((G765 *)0)->inner, G764 *: 1, default: 0) && sizeof(((G765 *)0)->inner) == sizeof(G764), "heroes-ffi-field G765 inner");
-#line 1559 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1559
 _Static_assert(_Generic(&((G766 *)0)->inner, G765 *: 1, default: 0) && sizeof(((G766 *)0)->inner) == sizeof(G765), "heroes-ffi-field G766 inner");
-#line 1561 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1561
 _Static_assert(_Generic(&((G767 *)0)->inner, G766 *: 1, default: 0) && sizeof(((G767 *)0)->inner) == sizeof(G766), "heroes-ffi-field G767 inner");
-#line 1563 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1563
 _Static_assert(_Generic(&((G768 *)0)->inner, G767 *: 1, default: 0) && sizeof(((G768 *)0)->inner) == sizeof(G767), "heroes-ffi-field G768 inner");
-#line 1565 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1565
 _Static_assert(_Generic(&((G769 *)0)->inner, G768 *: 1, default: 0) && sizeof(((G769 *)0)->inner) == sizeof(G768), "heroes-ffi-field G769 inner");
-#line 1567 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1567
 _Static_assert(_Generic(&((G770 *)0)->inner, G769 *: 1, default: 0) && sizeof(((G770 *)0)->inner) == sizeof(G769), "heroes-ffi-field G770 inner");
-#line 1569 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1569
 _Static_assert(_Generic(&((G771 *)0)->inner, G770 *: 1, default: 0) && sizeof(((G771 *)0)->inner) == sizeof(G770), "heroes-ffi-field G771 inner");
-#line 1571 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1571
 _Static_assert(_Generic(&((G772 *)0)->inner, G771 *: 1, default: 0) && sizeof(((G772 *)0)->inner) == sizeof(G771), "heroes-ffi-field G772 inner");
-#line 1573 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1573
 _Static_assert(_Generic(&((G773 *)0)->inner, G772 *: 1, default: 0) && sizeof(((G773 *)0)->inner) == sizeof(G772), "heroes-ffi-field G773 inner");
-#line 1575 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1575
 _Static_assert(_Generic(&((G774 *)0)->inner, G773 *: 1, default: 0) && sizeof(((G774 *)0)->inner) == sizeof(G773), "heroes-ffi-field G774 inner");
-#line 1577 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1577
 _Static_assert(_Generic(&((G775 *)0)->inner, G774 *: 1, default: 0) && sizeof(((G775 *)0)->inner) == sizeof(G774), "heroes-ffi-field G775 inner");
-#line 1579 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1579
 _Static_assert(_Generic(&((G776 *)0)->inner, G775 *: 1, default: 0) && sizeof(((G776 *)0)->inner) == sizeof(G775), "heroes-ffi-field G776 inner");
-#line 1581 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1581
 _Static_assert(_Generic(&((G777 *)0)->inner, G776 *: 1, default: 0) && sizeof(((G777 *)0)->inner) == sizeof(G776), "heroes-ffi-field G777 inner");
-#line 1583 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1583
 _Static_assert(_Generic(&((G778 *)0)->inner, G777 *: 1, default: 0) && sizeof(((G778 *)0)->inner) == sizeof(G777), "heroes-ffi-field G778 inner");
-#line 1585 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1585
 _Static_assert(_Generic(&((G779 *)0)->inner, G778 *: 1, default: 0) && sizeof(((G779 *)0)->inner) == sizeof(G778), "heroes-ffi-field G779 inner");
-#line 1587 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1587
 _Static_assert(_Generic(&((G780 *)0)->inner, G779 *: 1, default: 0) && sizeof(((G780 *)0)->inner) == sizeof(G779), "heroes-ffi-field G780 inner");
-#line 1589 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1589
 _Static_assert(_Generic(&((G781 *)0)->inner, G780 *: 1, default: 0) && sizeof(((G781 *)0)->inner) == sizeof(G780), "heroes-ffi-field G781 inner");
-#line 1591 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1591
 _Static_assert(_Generic(&((G782 *)0)->inner, G781 *: 1, default: 0) && sizeof(((G782 *)0)->inner) == sizeof(G781), "heroes-ffi-field G782 inner");
-#line 1593 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1593
 _Static_assert(_Generic(&((G783 *)0)->inner, G782 *: 1, default: 0) && sizeof(((G783 *)0)->inner) == sizeof(G782), "heroes-ffi-field G783 inner");
-#line 1595 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1595
 _Static_assert(_Generic(&((G784 *)0)->inner, G783 *: 1, default: 0) && sizeof(((G784 *)0)->inner) == sizeof(G783), "heroes-ffi-field G784 inner");
-#line 1597 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1597
 _Static_assert(_Generic(&((G785 *)0)->inner, G784 *: 1, default: 0) && sizeof(((G785 *)0)->inner) == sizeof(G784), "heroes-ffi-field G785 inner");
-#line 1599 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1599
 _Static_assert(_Generic(&((G786 *)0)->inner, G785 *: 1, default: 0) && sizeof(((G786 *)0)->inner) == sizeof(G785), "heroes-ffi-field G786 inner");
-#line 1601 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1601
 _Static_assert(_Generic(&((G787 *)0)->inner, G786 *: 1, default: 0) && sizeof(((G787 *)0)->inner) == sizeof(G786), "heroes-ffi-field G787 inner");
-#line 1603 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1603
 _Static_assert(_Generic(&((G788 *)0)->inner, G787 *: 1, default: 0) && sizeof(((G788 *)0)->inner) == sizeof(G787), "heroes-ffi-field G788 inner");
-#line 1605 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1605
 _Static_assert(_Generic(&((G789 *)0)->inner, G788 *: 1, default: 0) && sizeof(((G789 *)0)->inner) == sizeof(G788), "heroes-ffi-field G789 inner");
-#line 1607 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1607
 _Static_assert(_Generic(&((G790 *)0)->inner, G789 *: 1, default: 0) && sizeof(((G790 *)0)->inner) == sizeof(G789), "heroes-ffi-field G790 inner");
-#line 1609 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1609
 _Static_assert(_Generic(&((G791 *)0)->inner, G790 *: 1, default: 0) && sizeof(((G791 *)0)->inner) == sizeof(G790), "heroes-ffi-field G791 inner");
-#line 1611 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1611
 _Static_assert(_Generic(&((G792 *)0)->inner, G791 *: 1, default: 0) && sizeof(((G792 *)0)->inner) == sizeof(G791), "heroes-ffi-field G792 inner");
-#line 1613 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1613
 _Static_assert(_Generic(&((G793 *)0)->inner, G792 *: 1, default: 0) && sizeof(((G793 *)0)->inner) == sizeof(G792), "heroes-ffi-field G793 inner");
-#line 1615 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1615
 _Static_assert(_Generic(&((G794 *)0)->inner, G793 *: 1, default: 0) && sizeof(((G794 *)0)->inner) == sizeof(G793), "heroes-ffi-field G794 inner");
-#line 1617 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1617
 _Static_assert(_Generic(&((G795 *)0)->inner, G794 *: 1, default: 0) && sizeof(((G795 *)0)->inner) == sizeof(G794), "heroes-ffi-field G795 inner");
-#line 1619 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1619
 _Static_assert(_Generic(&((G796 *)0)->inner, G795 *: 1, default: 0) && sizeof(((G796 *)0)->inner) == sizeof(G795), "heroes-ffi-field G796 inner");
-#line 1621 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1621
 _Static_assert(_Generic(&((G797 *)0)->inner, G796 *: 1, default: 0) && sizeof(((G797 *)0)->inner) == sizeof(G796), "heroes-ffi-field G797 inner");
-#line 1623 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1623
 _Static_assert(_Generic(&((G798 *)0)->inner, G797 *: 1, default: 0) && sizeof(((G798 *)0)->inner) == sizeof(G797), "heroes-ffi-field G798 inner");
-#line 1625 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1625
 _Static_assert(_Generic(&((G799 *)0)->inner, G798 *: 1, default: 0) && sizeof(((G799 *)0)->inner) == sizeof(G798), "heroes-ffi-field G799 inner");
-#line 1627 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1627
 _Static_assert(_Generic(&((G800 *)0)->inner, G799 *: 1, default: 0) && sizeof(((G800 *)0)->inner) == sizeof(G799), "heroes-ffi-field G800 inner");
-#line 1629 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1629
 _Static_assert(_Generic(&((G801 *)0)->inner, G800 *: 1, default: 0) && sizeof(((G801 *)0)->inner) == sizeof(G800), "heroes-ffi-field G801 inner");
-#line 1631 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1631
 _Static_assert(_Generic(&((G802 *)0)->inner, G801 *: 1, default: 0) && sizeof(((G802 *)0)->inner) == sizeof(G801), "heroes-ffi-field G802 inner");
-#line 1633 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1633
 _Static_assert(_Generic(&((G803 *)0)->inner, G802 *: 1, default: 0) && sizeof(((G803 *)0)->inner) == sizeof(G802), "heroes-ffi-field G803 inner");
-#line 1635 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1635
 _Static_assert(_Generic(&((G804 *)0)->inner, G803 *: 1, default: 0) && sizeof(((G804 *)0)->inner) == sizeof(G803), "heroes-ffi-field G804 inner");
-#line 1637 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1637
 _Static_assert(_Generic(&((G805 *)0)->inner, G804 *: 1, default: 0) && sizeof(((G805 *)0)->inner) == sizeof(G804), "heroes-ffi-field G805 inner");
-#line 1639 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1639
 _Static_assert(_Generic(&((G806 *)0)->inner, G805 *: 1, default: 0) && sizeof(((G806 *)0)->inner) == sizeof(G805), "heroes-ffi-field G806 inner");
-#line 1641 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1641
 _Static_assert(_Generic(&((G807 *)0)->inner, G806 *: 1, default: 0) && sizeof(((G807 *)0)->inner) == sizeof(G806), "heroes-ffi-field G807 inner");
-#line 1643 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1643
 _Static_assert(_Generic(&((G808 *)0)->inner, G807 *: 1, default: 0) && sizeof(((G808 *)0)->inner) == sizeof(G807), "heroes-ffi-field G808 inner");
-#line 1645 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1645
 _Static_assert(_Generic(&((G809 *)0)->inner, G808 *: 1, default: 0) && sizeof(((G809 *)0)->inner) == sizeof(G808), "heroes-ffi-field G809 inner");
-#line 1647 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1647
 _Static_assert(_Generic(&((G810 *)0)->inner, G809 *: 1, default: 0) && sizeof(((G810 *)0)->inner) == sizeof(G809), "heroes-ffi-field G810 inner");
-#line 1649 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1649
 _Static_assert(_Generic(&((G811 *)0)->inner, G810 *: 1, default: 0) && sizeof(((G811 *)0)->inner) == sizeof(G810), "heroes-ffi-field G811 inner");
-#line 1651 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1651
 _Static_assert(_Generic(&((G812 *)0)->inner, G811 *: 1, default: 0) && sizeof(((G812 *)0)->inner) == sizeof(G811), "heroes-ffi-field G812 inner");
-#line 1653 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1653
 _Static_assert(_Generic(&((G813 *)0)->inner, G812 *: 1, default: 0) && sizeof(((G813 *)0)->inner) == sizeof(G812), "heroes-ffi-field G813 inner");
-#line 1655 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1655
 _Static_assert(_Generic(&((G814 *)0)->inner, G813 *: 1, default: 0) && sizeof(((G814 *)0)->inner) == sizeof(G813), "heroes-ffi-field G814 inner");
-#line 1657 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1657
 _Static_assert(_Generic(&((G815 *)0)->inner, G814 *: 1, default: 0) && sizeof(((G815 *)0)->inner) == sizeof(G814), "heroes-ffi-field G815 inner");
-#line 1659 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1659
 _Static_assert(_Generic(&((G816 *)0)->inner, G815 *: 1, default: 0) && sizeof(((G816 *)0)->inner) == sizeof(G815), "heroes-ffi-field G816 inner");
-#line 1661 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1661
 _Static_assert(_Generic(&((G817 *)0)->inner, G816 *: 1, default: 0) && sizeof(((G817 *)0)->inner) == sizeof(G816), "heroes-ffi-field G817 inner");
-#line 1663 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1663
 _Static_assert(_Generic(&((G818 *)0)->inner, G817 *: 1, default: 0) && sizeof(((G818 *)0)->inner) == sizeof(G817), "heroes-ffi-field G818 inner");
-#line 1665 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1665
 _Static_assert(_Generic(&((G819 *)0)->inner, G818 *: 1, default: 0) && sizeof(((G819 *)0)->inner) == sizeof(G818), "heroes-ffi-field G819 inner");
-#line 1667 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1667
 _Static_assert(_Generic(&((G820 *)0)->inner, G819 *: 1, default: 0) && sizeof(((G820 *)0)->inner) == sizeof(G819), "heroes-ffi-field G820 inner");
-#line 1669 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1669
 _Static_assert(_Generic(&((G821 *)0)->inner, G820 *: 1, default: 0) && sizeof(((G821 *)0)->inner) == sizeof(G820), "heroes-ffi-field G821 inner");
-#line 1671 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1671
 _Static_assert(_Generic(&((G822 *)0)->inner, G821 *: 1, default: 0) && sizeof(((G822 *)0)->inner) == sizeof(G821), "heroes-ffi-field G822 inner");
-#line 1673 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1673
 _Static_assert(_Generic(&((G823 *)0)->inner, G822 *: 1, default: 0) && sizeof(((G823 *)0)->inner) == sizeof(G822), "heroes-ffi-field G823 inner");
-#line 1675 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1675
 _Static_assert(_Generic(&((G824 *)0)->inner, G823 *: 1, default: 0) && sizeof(((G824 *)0)->inner) == sizeof(G823), "heroes-ffi-field G824 inner");
-#line 1677 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1677
 _Static_assert(_Generic(&((G825 *)0)->inner, G824 *: 1, default: 0) && sizeof(((G825 *)0)->inner) == sizeof(G824), "heroes-ffi-field G825 inner");
-#line 1679 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1679
 _Static_assert(_Generic(&((G826 *)0)->inner, G825 *: 1, default: 0) && sizeof(((G826 *)0)->inner) == sizeof(G825), "heroes-ffi-field G826 inner");
-#line 1681 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1681
 _Static_assert(_Generic(&((G827 *)0)->inner, G826 *: 1, default: 0) && sizeof(((G827 *)0)->inner) == sizeof(G826), "heroes-ffi-field G827 inner");
-#line 1683 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1683
 _Static_assert(_Generic(&((G828 *)0)->inner, G827 *: 1, default: 0) && sizeof(((G828 *)0)->inner) == sizeof(G827), "heroes-ffi-field G828 inner");
-#line 1685 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1685
 _Static_assert(_Generic(&((G829 *)0)->inner, G828 *: 1, default: 0) && sizeof(((G829 *)0)->inner) == sizeof(G828), "heroes-ffi-field G829 inner");
-#line 1687 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1687
 _Static_assert(_Generic(&((G830 *)0)->inner, G829 *: 1, default: 0) && sizeof(((G830 *)0)->inner) == sizeof(G829), "heroes-ffi-field G830 inner");
-#line 1689 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1689
 _Static_assert(_Generic(&((G831 *)0)->inner, G830 *: 1, default: 0) && sizeof(((G831 *)0)->inner) == sizeof(G830), "heroes-ffi-field G831 inner");
-#line 1691 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1691
 _Static_assert(_Generic(&((G832 *)0)->inner, G831 *: 1, default: 0) && sizeof(((G832 *)0)->inner) == sizeof(G831), "heroes-ffi-field G832 inner");
-#line 1693 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1693
 _Static_assert(_Generic(&((G833 *)0)->inner, G832 *: 1, default: 0) && sizeof(((G833 *)0)->inner) == sizeof(G832), "heroes-ffi-field G833 inner");
-#line 1695 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1695
 _Static_assert(_Generic(&((G834 *)0)->inner, G833 *: 1, default: 0) && sizeof(((G834 *)0)->inner) == sizeof(G833), "heroes-ffi-field G834 inner");
-#line 1697 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1697
 _Static_assert(_Generic(&((G835 *)0)->inner, G834 *: 1, default: 0) && sizeof(((G835 *)0)->inner) == sizeof(G834), "heroes-ffi-field G835 inner");
-#line 1699 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1699
 _Static_assert(_Generic(&((G836 *)0)->inner, G835 *: 1, default: 0) && sizeof(((G836 *)0)->inner) == sizeof(G835), "heroes-ffi-field G836 inner");
-#line 1701 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1701
 _Static_assert(_Generic(&((G837 *)0)->inner, G836 *: 1, default: 0) && sizeof(((G837 *)0)->inner) == sizeof(G836), "heroes-ffi-field G837 inner");
-#line 1703 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1703
 _Static_assert(_Generic(&((G838 *)0)->inner, G837 *: 1, default: 0) && sizeof(((G838 *)0)->inner) == sizeof(G837), "heroes-ffi-field G838 inner");
-#line 1705 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1705
 _Static_assert(_Generic(&((G839 *)0)->inner, G838 *: 1, default: 0) && sizeof(((G839 *)0)->inner) == sizeof(G838), "heroes-ffi-field G839 inner");
-#line 1707 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1707
 _Static_assert(_Generic(&((G840 *)0)->inner, G839 *: 1, default: 0) && sizeof(((G840 *)0)->inner) == sizeof(G839), "heroes-ffi-field G840 inner");
-#line 1709 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1709
 _Static_assert(_Generic(&((G841 *)0)->inner, G840 *: 1, default: 0) && sizeof(((G841 *)0)->inner) == sizeof(G840), "heroes-ffi-field G841 inner");
-#line 1711 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1711
 _Static_assert(_Generic(&((G842 *)0)->inner, G841 *: 1, default: 0) && sizeof(((G842 *)0)->inner) == sizeof(G841), "heroes-ffi-field G842 inner");
-#line 1713 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1713
 _Static_assert(_Generic(&((G843 *)0)->inner, G842 *: 1, default: 0) && sizeof(((G843 *)0)->inner) == sizeof(G842), "heroes-ffi-field G843 inner");
-#line 1715 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1715
 _Static_assert(_Generic(&((G844 *)0)->inner, G843 *: 1, default: 0) && sizeof(((G844 *)0)->inner) == sizeof(G843), "heroes-ffi-field G844 inner");
-#line 1717 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1717
 _Static_assert(_Generic(&((G845 *)0)->inner, G844 *: 1, default: 0) && sizeof(((G845 *)0)->inner) == sizeof(G844), "heroes-ffi-field G845 inner");
-#line 1719 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1719
 _Static_assert(_Generic(&((G846 *)0)->inner, G845 *: 1, default: 0) && sizeof(((G846 *)0)->inner) == sizeof(G845), "heroes-ffi-field G846 inner");
-#line 1721 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1721
 _Static_assert(_Generic(&((G847 *)0)->inner, G846 *: 1, default: 0) && sizeof(((G847 *)0)->inner) == sizeof(G846), "heroes-ffi-field G847 inner");
-#line 1723 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1723
 _Static_assert(_Generic(&((G848 *)0)->inner, G847 *: 1, default: 0) && sizeof(((G848 *)0)->inner) == sizeof(G847), "heroes-ffi-field G848 inner");
-#line 1725 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1725
 _Static_assert(_Generic(&((G849 *)0)->inner, G848 *: 1, default: 0) && sizeof(((G849 *)0)->inner) == sizeof(G848), "heroes-ffi-field G849 inner");
-#line 1727 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1727
 _Static_assert(_Generic(&((G850 *)0)->inner, G849 *: 1, default: 0) && sizeof(((G850 *)0)->inner) == sizeof(G849), "heroes-ffi-field G850 inner");
-#line 1729 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1729
 _Static_assert(_Generic(&((G851 *)0)->inner, G850 *: 1, default: 0) && sizeof(((G851 *)0)->inner) == sizeof(G850), "heroes-ffi-field G851 inner");
-#line 1731 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1731
 _Static_assert(_Generic(&((G852 *)0)->inner, G851 *: 1, default: 0) && sizeof(((G852 *)0)->inner) == sizeof(G851), "heroes-ffi-field G852 inner");
-#line 1733 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1733
 _Static_assert(_Generic(&((G853 *)0)->inner, G852 *: 1, default: 0) && sizeof(((G853 *)0)->inner) == sizeof(G852), "heroes-ffi-field G853 inner");
-#line 1735 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1735
 _Static_assert(_Generic(&((G854 *)0)->inner, G853 *: 1, default: 0) && sizeof(((G854 *)0)->inner) == sizeof(G853), "heroes-ffi-field G854 inner");
-#line 1737 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1737
 _Static_assert(_Generic(&((G855 *)0)->inner, G854 *: 1, default: 0) && sizeof(((G855 *)0)->inner) == sizeof(G854), "heroes-ffi-field G855 inner");
-#line 1739 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1739
 _Static_assert(_Generic(&((G856 *)0)->inner, G855 *: 1, default: 0) && sizeof(((G856 *)0)->inner) == sizeof(G855), "heroes-ffi-field G856 inner");
-#line 1741 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1741
 _Static_assert(_Generic(&((G857 *)0)->inner, G856 *: 1, default: 0) && sizeof(((G857 *)0)->inner) == sizeof(G856), "heroes-ffi-field G857 inner");
-#line 1743 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1743
 _Static_assert(_Generic(&((G858 *)0)->inner, G857 *: 1, default: 0) && sizeof(((G858 *)0)->inner) == sizeof(G857), "heroes-ffi-field G858 inner");
-#line 1745 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1745
 _Static_assert(_Generic(&((G859 *)0)->inner, G858 *: 1, default: 0) && sizeof(((G859 *)0)->inner) == sizeof(G858), "heroes-ffi-field G859 inner");
-#line 1747 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1747
 _Static_assert(_Generic(&((G860 *)0)->inner, G859 *: 1, default: 0) && sizeof(((G860 *)0)->inner) == sizeof(G859), "heroes-ffi-field G860 inner");
-#line 1749 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1749
 _Static_assert(_Generic(&((G861 *)0)->inner, G860 *: 1, default: 0) && sizeof(((G861 *)0)->inner) == sizeof(G860), "heroes-ffi-field G861 inner");
-#line 1751 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1751
 _Static_assert(_Generic(&((G862 *)0)->inner, G861 *: 1, default: 0) && sizeof(((G862 *)0)->inner) == sizeof(G861), "heroes-ffi-field G862 inner");
-#line 1753 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1753
 _Static_assert(_Generic(&((G863 *)0)->inner, G862 *: 1, default: 0) && sizeof(((G863 *)0)->inner) == sizeof(G862), "heroes-ffi-field G863 inner");
-#line 1755 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1755
 _Static_assert(_Generic(&((G864 *)0)->inner, G863 *: 1, default: 0) && sizeof(((G864 *)0)->inner) == sizeof(G863), "heroes-ffi-field G864 inner");
-#line 1757 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1757
 _Static_assert(_Generic(&((G865 *)0)->inner, G864 *: 1, default: 0) && sizeof(((G865 *)0)->inner) == sizeof(G864), "heroes-ffi-field G865 inner");
-#line 1759 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1759
 _Static_assert(_Generic(&((G866 *)0)->inner, G865 *: 1, default: 0) && sizeof(((G866 *)0)->inner) == sizeof(G865), "heroes-ffi-field G866 inner");
-#line 1761 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1761
 _Static_assert(_Generic(&((G867 *)0)->inner, G866 *: 1, default: 0) && sizeof(((G867 *)0)->inner) == sizeof(G866), "heroes-ffi-field G867 inner");
-#line 1763 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1763
 _Static_assert(_Generic(&((G868 *)0)->inner, G867 *: 1, default: 0) && sizeof(((G868 *)0)->inner) == sizeof(G867), "heroes-ffi-field G868 inner");
-#line 1765 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1765
 _Static_assert(_Generic(&((G869 *)0)->inner, G868 *: 1, default: 0) && sizeof(((G869 *)0)->inner) == sizeof(G868), "heroes-ffi-field G869 inner");
-#line 1767 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1767
 _Static_assert(_Generic(&((G870 *)0)->inner, G869 *: 1, default: 0) && sizeof(((G870 *)0)->inner) == sizeof(G869), "heroes-ffi-field G870 inner");
-#line 1769 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1769
 _Static_assert(_Generic(&((G871 *)0)->inner, G870 *: 1, default: 0) && sizeof(((G871 *)0)->inner) == sizeof(G870), "heroes-ffi-field G871 inner");
-#line 1771 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1771
 _Static_assert(_Generic(&((G872 *)0)->inner, G871 *: 1, default: 0) && sizeof(((G872 *)0)->inner) == sizeof(G871), "heroes-ffi-field G872 inner");
-#line 1773 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1773
 _Static_assert(_Generic(&((G873 *)0)->inner, G872 *: 1, default: 0) && sizeof(((G873 *)0)->inner) == sizeof(G872), "heroes-ffi-field G873 inner");
-#line 1775 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1775
 _Static_assert(_Generic(&((G874 *)0)->inner, G873 *: 1, default: 0) && sizeof(((G874 *)0)->inner) == sizeof(G873), "heroes-ffi-field G874 inner");
-#line 1777 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1777
 _Static_assert(_Generic(&((G875 *)0)->inner, G874 *: 1, default: 0) && sizeof(((G875 *)0)->inner) == sizeof(G874), "heroes-ffi-field G875 inner");
-#line 1779 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1779
 _Static_assert(_Generic(&((G876 *)0)->inner, G875 *: 1, default: 0) && sizeof(((G876 *)0)->inner) == sizeof(G875), "heroes-ffi-field G876 inner");
-#line 1781 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1781
 _Static_assert(_Generic(&((G877 *)0)->inner, G876 *: 1, default: 0) && sizeof(((G877 *)0)->inner) == sizeof(G876), "heroes-ffi-field G877 inner");
-#line 1783 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1783
 _Static_assert(_Generic(&((G878 *)0)->inner, G877 *: 1, default: 0) && sizeof(((G878 *)0)->inner) == sizeof(G877), "heroes-ffi-field G878 inner");
-#line 1785 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1785
 _Static_assert(_Generic(&((G879 *)0)->inner, G878 *: 1, default: 0) && sizeof(((G879 *)0)->inner) == sizeof(G878), "heroes-ffi-field G879 inner");
-#line 1787 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1787
 _Static_assert(_Generic(&((G880 *)0)->inner, G879 *: 1, default: 0) && sizeof(((G880 *)0)->inner) == sizeof(G879), "heroes-ffi-field G880 inner");
-#line 1789 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1789
 _Static_assert(_Generic(&((G881 *)0)->inner, G880 *: 1, default: 0) && sizeof(((G881 *)0)->inner) == sizeof(G880), "heroes-ffi-field G881 inner");
-#line 1791 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1791
 _Static_assert(_Generic(&((G882 *)0)->inner, G881 *: 1, default: 0) && sizeof(((G882 *)0)->inner) == sizeof(G881), "heroes-ffi-field G882 inner");
-#line 1793 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1793
 _Static_assert(_Generic(&((G883 *)0)->inner, G882 *: 1, default: 0) && sizeof(((G883 *)0)->inner) == sizeof(G882), "heroes-ffi-field G883 inner");
-#line 1795 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1795
 _Static_assert(_Generic(&((G884 *)0)->inner, G883 *: 1, default: 0) && sizeof(((G884 *)0)->inner) == sizeof(G883), "heroes-ffi-field G884 inner");
-#line 1797 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1797
 _Static_assert(_Generic(&((G885 *)0)->inner, G884 *: 1, default: 0) && sizeof(((G885 *)0)->inner) == sizeof(G884), "heroes-ffi-field G885 inner");
-#line 1799 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1799
 _Static_assert(_Generic(&((G886 *)0)->inner, G885 *: 1, default: 0) && sizeof(((G886 *)0)->inner) == sizeof(G885), "heroes-ffi-field G886 inner");
-#line 1801 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1801
 _Static_assert(_Generic(&((G887 *)0)->inner, G886 *: 1, default: 0) && sizeof(((G887 *)0)->inner) == sizeof(G886), "heroes-ffi-field G887 inner");
-#line 1803 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1803
 _Static_assert(_Generic(&((G888 *)0)->inner, G887 *: 1, default: 0) && sizeof(((G888 *)0)->inner) == sizeof(G887), "heroes-ffi-field G888 inner");
-#line 1805 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1805
 _Static_assert(_Generic(&((G889 *)0)->inner, G888 *: 1, default: 0) && sizeof(((G889 *)0)->inner) == sizeof(G888), "heroes-ffi-field G889 inner");
-#line 1807 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1807
 _Static_assert(_Generic(&((G890 *)0)->inner, G889 *: 1, default: 0) && sizeof(((G890 *)0)->inner) == sizeof(G889), "heroes-ffi-field G890 inner");
-#line 1809 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1809
 _Static_assert(_Generic(&((G891 *)0)->inner, G890 *: 1, default: 0) && sizeof(((G891 *)0)->inner) == sizeof(G890), "heroes-ffi-field G891 inner");
-#line 1811 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1811
 _Static_assert(_Generic(&((G892 *)0)->inner, G891 *: 1, default: 0) && sizeof(((G892 *)0)->inner) == sizeof(G891), "heroes-ffi-field G892 inner");
-#line 1813 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1813
 _Static_assert(_Generic(&((G893 *)0)->inner, G892 *: 1, default: 0) && sizeof(((G893 *)0)->inner) == sizeof(G892), "heroes-ffi-field G893 inner");
-#line 1815 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1815
 _Static_assert(_Generic(&((G894 *)0)->inner, G893 *: 1, default: 0) && sizeof(((G894 *)0)->inner) == sizeof(G893), "heroes-ffi-field G894 inner");
-#line 1817 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1817
 _Static_assert(_Generic(&((G895 *)0)->inner, G894 *: 1, default: 0) && sizeof(((G895 *)0)->inner) == sizeof(G894), "heroes-ffi-field G895 inner");
-#line 1819 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1819
 _Static_assert(_Generic(&((G896 *)0)->inner, G895 *: 1, default: 0) && sizeof(((G896 *)0)->inner) == sizeof(G895), "heroes-ffi-field G896 inner");
-#line 1821 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1821
 _Static_assert(_Generic(&((G897 *)0)->inner, G896 *: 1, default: 0) && sizeof(((G897 *)0)->inner) == sizeof(G896), "heroes-ffi-field G897 inner");
-#line 1823 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1823
 _Static_assert(_Generic(&((G898 *)0)->inner, G897 *: 1, default: 0) && sizeof(((G898 *)0)->inner) == sizeof(G897), "heroes-ffi-field G898 inner");
-#line 1825 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1825
 _Static_assert(_Generic(&((G899 *)0)->inner, G898 *: 1, default: 0) && sizeof(((G899 *)0)->inner) == sizeof(G898), "heroes-ffi-field G899 inner");
-#line 1827 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1827
 _Static_assert(_Generic(&((G900 *)0)->inner, G899 *: 1, default: 0) && sizeof(((G900 *)0)->inner) == sizeof(G899), "heroes-ffi-field G900 inner");
-#line 1829 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1829
 _Static_assert(_Generic(&((G901 *)0)->inner, G900 *: 1, default: 0) && sizeof(((G901 *)0)->inner) == sizeof(G900), "heroes-ffi-field G901 inner");
-#line 1831 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1831
 _Static_assert(_Generic(&((G902 *)0)->inner, G901 *: 1, default: 0) && sizeof(((G902 *)0)->inner) == sizeof(G901), "heroes-ffi-field G902 inner");
-#line 1833 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1833
 _Static_assert(_Generic(&((G903 *)0)->inner, G902 *: 1, default: 0) && sizeof(((G903 *)0)->inner) == sizeof(G902), "heroes-ffi-field G903 inner");
-#line 1835 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1835
 _Static_assert(_Generic(&((G904 *)0)->inner, G903 *: 1, default: 0) && sizeof(((G904 *)0)->inner) == sizeof(G903), "heroes-ffi-field G904 inner");
-#line 1837 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1837
 _Static_assert(_Generic(&((G905 *)0)->inner, G904 *: 1, default: 0) && sizeof(((G905 *)0)->inner) == sizeof(G904), "heroes-ffi-field G905 inner");
-#line 1839 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1839
 _Static_assert(_Generic(&((G906 *)0)->inner, G905 *: 1, default: 0) && sizeof(((G906 *)0)->inner) == sizeof(G905), "heroes-ffi-field G906 inner");
-#line 1841 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1841
 _Static_assert(_Generic(&((G907 *)0)->inner, G906 *: 1, default: 0) && sizeof(((G907 *)0)->inner) == sizeof(G906), "heroes-ffi-field G907 inner");
-#line 1843 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1843
 _Static_assert(_Generic(&((G908 *)0)->inner, G907 *: 1, default: 0) && sizeof(((G908 *)0)->inner) == sizeof(G907), "heroes-ffi-field G908 inner");
-#line 1845 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1845
 _Static_assert(_Generic(&((G909 *)0)->inner, G908 *: 1, default: 0) && sizeof(((G909 *)0)->inner) == sizeof(G908), "heroes-ffi-field G909 inner");
-#line 1847 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1847
 _Static_assert(_Generic(&((G910 *)0)->inner, G909 *: 1, default: 0) && sizeof(((G910 *)0)->inner) == sizeof(G909), "heroes-ffi-field G910 inner");
-#line 1849 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1849
 _Static_assert(_Generic(&((G911 *)0)->inner, G910 *: 1, default: 0) && sizeof(((G911 *)0)->inner) == sizeof(G910), "heroes-ffi-field G911 inner");
-#line 1851 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1851
 _Static_assert(_Generic(&((G912 *)0)->inner, G911 *: 1, default: 0) && sizeof(((G912 *)0)->inner) == sizeof(G911), "heroes-ffi-field G912 inner");
-#line 1853 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1853
 _Static_assert(_Generic(&((G913 *)0)->inner, G912 *: 1, default: 0) && sizeof(((G913 *)0)->inner) == sizeof(G912), "heroes-ffi-field G913 inner");
-#line 1855 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1855
 _Static_assert(_Generic(&((G914 *)0)->inner, G913 *: 1, default: 0) && sizeof(((G914 *)0)->inner) == sizeof(G913), "heroes-ffi-field G914 inner");
-#line 1857 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1857
 _Static_assert(_Generic(&((G915 *)0)->inner, G914 *: 1, default: 0) && sizeof(((G915 *)0)->inner) == sizeof(G914), "heroes-ffi-field G915 inner");
-#line 1859 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1859
 _Static_assert(_Generic(&((G916 *)0)->inner, G915 *: 1, default: 0) && sizeof(((G916 *)0)->inner) == sizeof(G915), "heroes-ffi-field G916 inner");
-#line 1861 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1861
 _Static_assert(_Generic(&((G917 *)0)->inner, G916 *: 1, default: 0) && sizeof(((G917 *)0)->inner) == sizeof(G916), "heroes-ffi-field G917 inner");
-#line 1863 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1863
 _Static_assert(_Generic(&((G918 *)0)->inner, G917 *: 1, default: 0) && sizeof(((G918 *)0)->inner) == sizeof(G917), "heroes-ffi-field G918 inner");
-#line 1865 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1865
 _Static_assert(_Generic(&((G919 *)0)->inner, G918 *: 1, default: 0) && sizeof(((G919 *)0)->inner) == sizeof(G918), "heroes-ffi-field G919 inner");
-#line 1867 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1867
 _Static_assert(_Generic(&((G920 *)0)->inner, G919 *: 1, default: 0) && sizeof(((G920 *)0)->inner) == sizeof(G919), "heroes-ffi-field G920 inner");
-#line 1869 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1869
 _Static_assert(_Generic(&((G921 *)0)->inner, G920 *: 1, default: 0) && sizeof(((G921 *)0)->inner) == sizeof(G920), "heroes-ffi-field G921 inner");
-#line 1871 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1871
 _Static_assert(_Generic(&((G922 *)0)->inner, G921 *: 1, default: 0) && sizeof(((G922 *)0)->inner) == sizeof(G921), "heroes-ffi-field G922 inner");
-#line 1873 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1873
 _Static_assert(_Generic(&((G923 *)0)->inner, G922 *: 1, default: 0) && sizeof(((G923 *)0)->inner) == sizeof(G922), "heroes-ffi-field G923 inner");
-#line 1875 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1875
 _Static_assert(_Generic(&((G924 *)0)->inner, G923 *: 1, default: 0) && sizeof(((G924 *)0)->inner) == sizeof(G923), "heroes-ffi-field G924 inner");
-#line 1877 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1877
 _Static_assert(_Generic(&((G925 *)0)->inner, G924 *: 1, default: 0) && sizeof(((G925 *)0)->inner) == sizeof(G924), "heroes-ffi-field G925 inner");
-#line 1879 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1879
 _Static_assert(_Generic(&((G926 *)0)->inner, G925 *: 1, default: 0) && sizeof(((G926 *)0)->inner) == sizeof(G925), "heroes-ffi-field G926 inner");
-#line 1881 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1881
 _Static_assert(_Generic(&((G927 *)0)->inner, G926 *: 1, default: 0) && sizeof(((G927 *)0)->inner) == sizeof(G926), "heroes-ffi-field G927 inner");
-#line 1883 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1883
 _Static_assert(_Generic(&((G928 *)0)->inner, G927 *: 1, default: 0) && sizeof(((G928 *)0)->inner) == sizeof(G927), "heroes-ffi-field G928 inner");
-#line 1885 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1885
 _Static_assert(_Generic(&((G929 *)0)->inner, G928 *: 1, default: 0) && sizeof(((G929 *)0)->inner) == sizeof(G928), "heroes-ffi-field G929 inner");
-#line 1887 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1887
 _Static_assert(_Generic(&((G930 *)0)->inner, G929 *: 1, default: 0) && sizeof(((G930 *)0)->inner) == sizeof(G929), "heroes-ffi-field G930 inner");
-#line 1889 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1889
 _Static_assert(_Generic(&((G931 *)0)->inner, G930 *: 1, default: 0) && sizeof(((G931 *)0)->inner) == sizeof(G930), "heroes-ffi-field G931 inner");
-#line 1891 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1891
 _Static_assert(_Generic(&((G932 *)0)->inner, G931 *: 1, default: 0) && sizeof(((G932 *)0)->inner) == sizeof(G931), "heroes-ffi-field G932 inner");
-#line 1893 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1893
 _Static_assert(_Generic(&((G933 *)0)->inner, G932 *: 1, default: 0) && sizeof(((G933 *)0)->inner) == sizeof(G932), "heroes-ffi-field G933 inner");
-#line 1895 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1895
 _Static_assert(_Generic(&((G934 *)0)->inner, G933 *: 1, default: 0) && sizeof(((G934 *)0)->inner) == sizeof(G933), "heroes-ffi-field G934 inner");
-#line 1897 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1897
 _Static_assert(_Generic(&((G935 *)0)->inner, G934 *: 1, default: 0) && sizeof(((G935 *)0)->inner) == sizeof(G934), "heroes-ffi-field G935 inner");
-#line 1899 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1899
 _Static_assert(_Generic(&((G936 *)0)->inner, G935 *: 1, default: 0) && sizeof(((G936 *)0)->inner) == sizeof(G935), "heroes-ffi-field G936 inner");
-#line 1901 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1901
 _Static_assert(_Generic(&((G937 *)0)->inner, G936 *: 1, default: 0) && sizeof(((G937 *)0)->inner) == sizeof(G936), "heroes-ffi-field G937 inner");
-#line 1903 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1903
 _Static_assert(_Generic(&((G938 *)0)->inner, G937 *: 1, default: 0) && sizeof(((G938 *)0)->inner) == sizeof(G937), "heroes-ffi-field G938 inner");
-#line 1905 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1905
 _Static_assert(_Generic(&((G939 *)0)->inner, G938 *: 1, default: 0) && sizeof(((G939 *)0)->inner) == sizeof(G938), "heroes-ffi-field G939 inner");
-#line 1907 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1907
 _Static_assert(_Generic(&((G940 *)0)->inner, G939 *: 1, default: 0) && sizeof(((G940 *)0)->inner) == sizeof(G939), "heroes-ffi-field G940 inner");
-#line 1909 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1909
 _Static_assert(_Generic(&((G941 *)0)->inner, G940 *: 1, default: 0) && sizeof(((G941 *)0)->inner) == sizeof(G940), "heroes-ffi-field G941 inner");
-#line 1911 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1911
 _Static_assert(_Generic(&((G942 *)0)->inner, G941 *: 1, default: 0) && sizeof(((G942 *)0)->inner) == sizeof(G941), "heroes-ffi-field G942 inner");
-#line 1913 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1913
 _Static_assert(_Generic(&((G943 *)0)->inner, G942 *: 1, default: 0) && sizeof(((G943 *)0)->inner) == sizeof(G942), "heroes-ffi-field G943 inner");
-#line 1915 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1915
 _Static_assert(_Generic(&((G944 *)0)->inner, G943 *: 1, default: 0) && sizeof(((G944 *)0)->inner) == sizeof(G943), "heroes-ffi-field G944 inner");
-#line 1917 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1917
 _Static_assert(_Generic(&((G945 *)0)->inner, G944 *: 1, default: 0) && sizeof(((G945 *)0)->inner) == sizeof(G944), "heroes-ffi-field G945 inner");
-#line 1919 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1919
 _Static_assert(_Generic(&((G946 *)0)->inner, G945 *: 1, default: 0) && sizeof(((G946 *)0)->inner) == sizeof(G945), "heroes-ffi-field G946 inner");
-#line 1921 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1921
 _Static_assert(_Generic(&((G947 *)0)->inner, G946 *: 1, default: 0) && sizeof(((G947 *)0)->inner) == sizeof(G946), "heroes-ffi-field G947 inner");
-#line 1923 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1923
 _Static_assert(_Generic(&((G948 *)0)->inner, G947 *: 1, default: 0) && sizeof(((G948 *)0)->inner) == sizeof(G947), "heroes-ffi-field G948 inner");
-#line 1925 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1925
 _Static_assert(_Generic(&((G949 *)0)->inner, G948 *: 1, default: 0) && sizeof(((G949 *)0)->inner) == sizeof(G948), "heroes-ffi-field G949 inner");
-#line 1927 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1927
 _Static_assert(_Generic(&((G950 *)0)->inner, G949 *: 1, default: 0) && sizeof(((G950 *)0)->inner) == sizeof(G949), "heroes-ffi-field G950 inner");
-#line 1929 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1929
 _Static_assert(_Generic(&((G951 *)0)->inner, G950 *: 1, default: 0) && sizeof(((G951 *)0)->inner) == sizeof(G950), "heroes-ffi-field G951 inner");
-#line 1931 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1931
 _Static_assert(_Generic(&((G952 *)0)->inner, G951 *: 1, default: 0) && sizeof(((G952 *)0)->inner) == sizeof(G951), "heroes-ffi-field G952 inner");
-#line 1933 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1933
 _Static_assert(_Generic(&((G953 *)0)->inner, G952 *: 1, default: 0) && sizeof(((G953 *)0)->inner) == sizeof(G952), "heroes-ffi-field G953 inner");
-#line 1935 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1935
 _Static_assert(_Generic(&((G954 *)0)->inner, G953 *: 1, default: 0) && sizeof(((G954 *)0)->inner) == sizeof(G953), "heroes-ffi-field G954 inner");
-#line 1937 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1937
 _Static_assert(_Generic(&((G955 *)0)->inner, G954 *: 1, default: 0) && sizeof(((G955 *)0)->inner) == sizeof(G954), "heroes-ffi-field G955 inner");
-#line 1939 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1939
 _Static_assert(_Generic(&((G956 *)0)->inner, G955 *: 1, default: 0) && sizeof(((G956 *)0)->inner) == sizeof(G955), "heroes-ffi-field G956 inner");
-#line 1941 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1941
 _Static_assert(_Generic(&((G957 *)0)->inner, G956 *: 1, default: 0) && sizeof(((G957 *)0)->inner) == sizeof(G956), "heroes-ffi-field G957 inner");
-#line 1943 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1943
 _Static_assert(_Generic(&((G958 *)0)->inner, G957 *: 1, default: 0) && sizeof(((G958 *)0)->inner) == sizeof(G957), "heroes-ffi-field G958 inner");
-#line 1945 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1945
 _Static_assert(_Generic(&((G959 *)0)->inner, G958 *: 1, default: 0) && sizeof(((G959 *)0)->inner) == sizeof(G958), "heroes-ffi-field G959 inner");
-#line 1947 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1947
 _Static_assert(_Generic(&((G960 *)0)->inner, G959 *: 1, default: 0) && sizeof(((G960 *)0)->inner) == sizeof(G959), "heroes-ffi-field G960 inner");
-#line 1949 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1949
 _Static_assert(_Generic(&((G961 *)0)->inner, G960 *: 1, default: 0) && sizeof(((G961 *)0)->inner) == sizeof(G960), "heroes-ffi-field G961 inner");
-#line 1951 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1951
 _Static_assert(_Generic(&((G962 *)0)->inner, G961 *: 1, default: 0) && sizeof(((G962 *)0)->inner) == sizeof(G961), "heroes-ffi-field G962 inner");
-#line 1953 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1953
 _Static_assert(_Generic(&((G963 *)0)->inner, G962 *: 1, default: 0) && sizeof(((G963 *)0)->inner) == sizeof(G962), "heroes-ffi-field G963 inner");
-#line 1955 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1955
 _Static_assert(_Generic(&((G964 *)0)->inner, G963 *: 1, default: 0) && sizeof(((G964 *)0)->inner) == sizeof(G963), "heroes-ffi-field G964 inner");
-#line 1957 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1957
 _Static_assert(_Generic(&((G965 *)0)->inner, G964 *: 1, default: 0) && sizeof(((G965 *)0)->inner) == sizeof(G964), "heroes-ffi-field G965 inner");
-#line 1959 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1959
 _Static_assert(_Generic(&((G966 *)0)->inner, G965 *: 1, default: 0) && sizeof(((G966 *)0)->inner) == sizeof(G965), "heroes-ffi-field G966 inner");
-#line 1961 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1961
 _Static_assert(_Generic(&((G967 *)0)->inner, G966 *: 1, default: 0) && sizeof(((G967 *)0)->inner) == sizeof(G966), "heroes-ffi-field G967 inner");
-#line 1963 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1963
 _Static_assert(_Generic(&((G968 *)0)->inner, G967 *: 1, default: 0) && sizeof(((G968 *)0)->inner) == sizeof(G967), "heroes-ffi-field G968 inner");
-#line 1965 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1965
 _Static_assert(_Generic(&((G969 *)0)->inner, G968 *: 1, default: 0) && sizeof(((G969 *)0)->inner) == sizeof(G968), "heroes-ffi-field G969 inner");
-#line 1967 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1967
 _Static_assert(_Generic(&((G970 *)0)->inner, G969 *: 1, default: 0) && sizeof(((G970 *)0)->inner) == sizeof(G969), "heroes-ffi-field G970 inner");
-#line 1969 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1969
 _Static_assert(_Generic(&((G971 *)0)->inner, G970 *: 1, default: 0) && sizeof(((G971 *)0)->inner) == sizeof(G970), "heroes-ffi-field G971 inner");
-#line 1971 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1971
 _Static_assert(_Generic(&((G972 *)0)->inner, G971 *: 1, default: 0) && sizeof(((G972 *)0)->inner) == sizeof(G971), "heroes-ffi-field G972 inner");
-#line 1973 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1973
 _Static_assert(_Generic(&((G973 *)0)->inner, G972 *: 1, default: 0) && sizeof(((G973 *)0)->inner) == sizeof(G972), "heroes-ffi-field G973 inner");
-#line 1975 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1975
 _Static_assert(_Generic(&((G974 *)0)->inner, G973 *: 1, default: 0) && sizeof(((G974 *)0)->inner) == sizeof(G973), "heroes-ffi-field G974 inner");
-#line 1977 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1977
 _Static_assert(_Generic(&((G975 *)0)->inner, G974 *: 1, default: 0) && sizeof(((G975 *)0)->inner) == sizeof(G974), "heroes-ffi-field G975 inner");
-#line 1979 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1979
 _Static_assert(_Generic(&((G976 *)0)->inner, G975 *: 1, default: 0) && sizeof(((G976 *)0)->inner) == sizeof(G975), "heroes-ffi-field G976 inner");
-#line 1981 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1981
 _Static_assert(_Generic(&((G977 *)0)->inner, G976 *: 1, default: 0) && sizeof(((G977 *)0)->inner) == sizeof(G976), "heroes-ffi-field G977 inner");
-#line 1983 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1983
 _Static_assert(_Generic(&((G978 *)0)->inner, G977 *: 1, default: 0) && sizeof(((G978 *)0)->inner) == sizeof(G977), "heroes-ffi-field G978 inner");
-#line 1985 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1985
 _Static_assert(_Generic(&((G979 *)0)->inner, G978 *: 1, default: 0) && sizeof(((G979 *)0)->inner) == sizeof(G978), "heroes-ffi-field G979 inner");
-#line 1987 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1987
 _Static_assert(_Generic(&((G980 *)0)->inner, G979 *: 1, default: 0) && sizeof(((G980 *)0)->inner) == sizeof(G979), "heroes-ffi-field G980 inner");
-#line 1989 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1989
 _Static_assert(_Generic(&((G981 *)0)->inner, G980 *: 1, default: 0) && sizeof(((G981 *)0)->inner) == sizeof(G980), "heroes-ffi-field G981 inner");
-#line 1991 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1991
 _Static_assert(_Generic(&((G982 *)0)->inner, G981 *: 1, default: 0) && sizeof(((G982 *)0)->inner) == sizeof(G981), "heroes-ffi-field G982 inner");
-#line 1993 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1993
 _Static_assert(_Generic(&((G983 *)0)->inner, G982 *: 1, default: 0) && sizeof(((G983 *)0)->inner) == sizeof(G982), "heroes-ffi-field G983 inner");
-#line 1995 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1995
 _Static_assert(_Generic(&((G984 *)0)->inner, G983 *: 1, default: 0) && sizeof(((G984 *)0)->inner) == sizeof(G983), "heroes-ffi-field G984 inner");
-#line 1997 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1997
 _Static_assert(_Generic(&((G985 *)0)->inner, G984 *: 1, default: 0) && sizeof(((G985 *)0)->inner) == sizeof(G984), "heroes-ffi-field G985 inner");
-#line 1999 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 1999
 _Static_assert(_Generic(&((G986 *)0)->inner, G985 *: 1, default: 0) && sizeof(((G986 *)0)->inner) == sizeof(G985), "heroes-ffi-field G986 inner");
-#line 2001 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2001
 _Static_assert(_Generic(&((G987 *)0)->inner, G986 *: 1, default: 0) && sizeof(((G987 *)0)->inner) == sizeof(G986), "heroes-ffi-field G987 inner");
-#line 2003 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2003
 _Static_assert(_Generic(&((G988 *)0)->inner, G987 *: 1, default: 0) && sizeof(((G988 *)0)->inner) == sizeof(G987), "heroes-ffi-field G988 inner");
-#line 2005 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2005
 _Static_assert(_Generic(&((G989 *)0)->inner, G988 *: 1, default: 0) && sizeof(((G989 *)0)->inner) == sizeof(G988), "heroes-ffi-field G989 inner");
-#line 2007 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2007
 _Static_assert(_Generic(&((G990 *)0)->inner, G989 *: 1, default: 0) && sizeof(((G990 *)0)->inner) == sizeof(G989), "heroes-ffi-field G990 inner");
-#line 2009 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2009
 _Static_assert(_Generic(&((G991 *)0)->inner, G990 *: 1, default: 0) && sizeof(((G991 *)0)->inner) == sizeof(G990), "heroes-ffi-field G991 inner");
-#line 2011 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2011
 _Static_assert(_Generic(&((G992 *)0)->inner, G991 *: 1, default: 0) && sizeof(((G992 *)0)->inner) == sizeof(G991), "heroes-ffi-field G992 inner");
-#line 2013 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2013
 _Static_assert(_Generic(&((G993 *)0)->inner, G992 *: 1, default: 0) && sizeof(((G993 *)0)->inner) == sizeof(G992), "heroes-ffi-field G993 inner");
-#line 2015 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2015
 _Static_assert(_Generic(&((G994 *)0)->inner, G993 *: 1, default: 0) && sizeof(((G994 *)0)->inner) == sizeof(G993), "heroes-ffi-field G994 inner");
-#line 2017 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2017
 _Static_assert(_Generic(&((G995 *)0)->inner, G994 *: 1, default: 0) && sizeof(((G995 *)0)->inner) == sizeof(G994), "heroes-ffi-field G995 inner");
-#line 2019 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2019
 _Static_assert(_Generic(&((G996 *)0)->inner, G995 *: 1, default: 0) && sizeof(((G996 *)0)->inner) == sizeof(G995), "heroes-ffi-field G996 inner");
-#line 2021 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2021
 _Static_assert(_Generic(&((G997 *)0)->inner, G996 *: 1, default: 0) && sizeof(((G997 *)0)->inner) == sizeof(G996), "heroes-ffi-field G997 inner");
-#line 2023 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2023
 _Static_assert(_Generic(&((G998 *)0)->inner, G997 *: 1, default: 0) && sizeof(((G998 *)0)->inner) == sizeof(G997), "heroes-ffi-field G998 inner");
-#line 2025 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2025
 _Static_assert(_Generic(&((G999 *)0)->inner, G998 *: 1, default: 0) && sizeof(((G999 *)0)->inner) == sizeof(G998), "heroes-ffi-field G999 inner");
-#line 2027 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+#line 2027
 _Static_assert(_Generic(&((TOP *)0)->inner, G999 *: 1, default: 0) && sizeof(((TOP *)0)->inner) == sizeof(G999), "heroes-ffi-field TOP inner");
 _Static_assert(__builtin_classify_type(((TOP *)0)->i) == 1 && sizeof(((TOP *)0)->i) == sizeof(int32_t) && (_Generic(((TOP *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field TOP i");
 #line 2072 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
@@ -2142,11 +2142,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 2152 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
 #pragma clang diagnostic pop
@@ -4165,21 +4165,9 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_main(void);
 
 #line 2031 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
-void h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_main(void) {
-#line 2031 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
-    HERO_NODEBUG TOP t1; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0;
-#line 2031 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
-bb0:
-    t1 = make_top();
-#line 2032 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
-    t2 = t1.i;
-#line 2032 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
-    hero_print_int(t2);
-#line 2032 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
-    hero_print_end();
-#line 2032 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
-    return;
-#line 4183 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
+void h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_main(void) { HERO_NODEBUG TOP t1; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = make_top(); t2 = t1.i; hero_print_int(t2); hero_print_end(); return;
+#line 4171 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_G0_eq(const G0 *a, const G0 *b) {
     if (!(a->v == b->v)) return false;

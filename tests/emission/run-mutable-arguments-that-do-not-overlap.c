@@ -84,11 +84,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 94 "mutableargumentsthatdonotoverlap.c"
 #pragma clang diagnostic pop
@@ -127,287 +127,55 @@ void h_mutableargumentsthatdonotoverlap_shift(int64_t *ph0_a, int64_t *ph1_b);
 void h_mutableargumentsthatdonotoverlap_main(void);
 
 #line 20 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-void h_mutableargumentsthatdonotoverlap_shift(int64_t *ph0_a, int64_t *ph1_b) {
-#line 20 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 20 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-bb0:
-    t1 = (*ph0_a);
-#line 21 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t2 = INT64_C(1);
-#line 21 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 21 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    (*ph0_a) = t3;
-    t4 = (*ph1_b);
-#line 22 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t5 = INT64_C(10);
-#line 22 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 22 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    (*ph1_b) = t6;
-#line 22 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    return;
-#line 152 "mutableargumentsthatdonotoverlap.c"
+void h_mutableargumentsthatdonotoverlap_shift(int64_t *ph0_a, int64_t *ph1_b) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_a); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); (*ph0_a) = t3;
+    t4 = (*ph1_b); t5 = INT64_C(10); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow(); (*ph1_b) = t6; return;
+#line 134 "mutableargumentsthatdonotoverlap.c"
 }
 
 #line 24 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-void h_mutableargumentsthatdonotoverlap_main(void) {
-#line 24 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h_mutableargumentsthatdonotoverlap_P h0_p; h_mutableargumentsthatdonotoverlap_P h1_q; HeroArrayHeader * h2_xs = {0}; HeroArrayHeader * h3_ys = {0}; h_mutableargumentsthatdonotoverlap_Nest h4_n; HeroArrayHeader * h5_ps = {0}; int64_t h6_u; int64_t h7_v; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h9_own9 = {0}, *t12, *t15, *t18, *t21, *t24, *t27, *t30, *t48, *t51, *t55, *t63, *t64, *t65, *t66, *t67; HERO_NODEBUG int64_t t1, t2, t4, t5, t7, t8, t9, t10, t11, t13, t14, t16, t17, t19, t20, t22, t23, t25, t26, t28, t29, t31, t32, t33, t34, t36, t38, t39, t40, t41, t42, t43, t45, t46, t49, t50, t52, t54, t56, t58, t59, t60, t61, t62; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t3, t6, t35, t44, t47, t53, t57; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_Nest t37; HERO_ENTRY_STOP; goto bb0;
-#line 24 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-bb0:
-#line 26 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t1 = INT64_C(0);
-#line 26 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t2 = INT64_C(0);
-#line 26 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t3 = (h_mutableargumentsthatdonotoverlap_P){.f_x = t1, .f_y = t2};
-#line 26 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h0_p = t3;
+void h_mutableargumentsthatdonotoverlap_main(void) { h_mutableargumentsthatdonotoverlap_P h0_p; h_mutableargumentsthatdonotoverlap_P h1_q; HeroArrayHeader * h2_xs = {0}; HeroArrayHeader * h3_ys = {0}; h_mutableargumentsthatdonotoverlap_Nest h4_n; HeroArrayHeader * h5_ps = {0}; int64_t h6_u; int64_t h7_v; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h9_own9 = {0}, *t12, *t15, *t18, *t21, *t24, *t27, *t30, *t48, *t51, *t55, *t63, *t64, *t65, *t66, *t67; HERO_NODEBUG int64_t t1, t2, t4, t5, t7, t8, t9, t10, t11, t13, t14, t16, t17, t19, t20, t22, t23, t25, t26, t28, t29, t31, t32, t33, t34, t36, t38, t39, t40, t41, t42, t43, t45, t46, t49, t50, t52, t54, t56, t58, t59, t60, t61, t62; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t3, t6, t35, t44, t47, t53, t57; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_Nest t37; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 26
+    t1 = INT64_C(0); t2 = INT64_C(0); t3 = (h_mutableargumentsthatdonotoverlap_P){.f_x = t1, .f_y = t2}; h0_p = t3;
     h_mutableargumentsthatdonotoverlap_shift(&h0_p.f_x, &h0_p.f_y);
-    t4 = h0_p.f_x;
-#line 28 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t4);
-#line 28 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t5 = h0_p.f_y;
-#line 29 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t5);
-#line 29 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-#line 33 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t6 = h0_p;
-#line 33 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h1_q = t6;
+    t4 = h0_p.f_x; hero_print_int(t4); hero_print_end();
+    t5 = h0_p.f_y; hero_print_int(t5); hero_print_end();
+#line 33
+    t6 = h0_p; h1_q = t6;
     h_mutableargumentsthatdonotoverlap_shift(&h0_p.f_x, &h0_p.f_y);
-    t7 = h0_p.f_x;
-#line 35 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t7);
-#line 35 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t8 = h1_q.f_x;
-#line 36 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t8);
-#line 36 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t9 = INT64_C(0);
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t10 = INT64_C(0);
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t11 = INT64_C(0);
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t12 = hero_array_new(&hero_desc_int, 3);
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_push_owned(&t12, &t9);
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_push_owned(&t12, &t10);
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_push_owned(&t12, &t11);
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t63 = h8_own8;
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h8_own8 = t12;
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_decref(t63);
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t64 = h2_xs;
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_incref(t12);
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h2_xs = t12;
-#line 39 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_decref(t64);
-    t13 = INT64_C(0);
-#line 40 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t14 = INT64_C(1);
-#line 40 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_unshare(&(h2_xs));
-#line 40 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_unshare(&(h2_xs));
-#line 40 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h_mutableargumentsthatdonotoverlap_shift(&(*((void)((h2_xs == NULL || t13 < 0 || t13 >= h2_xs->len) ? ((void)hero_array_at_mut(h2_xs, t13), hero_unreachable()) : (void)0), (void)(h2_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h2_xs + 1) + t13)), &(*((void)((h2_xs == NULL || t14 < 0 || t14 >= h2_xs->len) ? ((void)hero_array_at_mut(h2_xs, t14), hero_unreachable()) : (void)0), (void)(h2_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h2_xs + 1) + t14)));
-    t15 = h2_xs;
-#line 41 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t16 = INT64_C(0);
-#line 41 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t16]);
-#line 41 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t17);
-#line 41 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t18 = h2_xs;
-#line 42 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t19 = INT64_C(1);
-#line 42 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]);
-#line 42 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t20);
-#line 42 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t21 = h2_xs;
-#line 43 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t22 = INT64_C(2);
-#line 43 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
-#line 43 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t23);
-#line 43 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t24 = h2_xs;
-#line 44 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t65 = h3_ys;
-#line 44 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_incref(t24);
-#line 44 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h3_ys = t24;
-#line 44 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_decref(t65);
-    t25 = INT64_C(0);
-#line 45 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t26 = INT64_C(2);
-#line 45 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_unshare(&(h2_xs));
-#line 45 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_unshare(&(h2_xs));
-#line 45 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h_mutableargumentsthatdonotoverlap_shift(&(*((void)((h2_xs == NULL || t25 < 0 || t25 >= h2_xs->len) ? ((void)hero_array_at_mut(h2_xs, t25), hero_unreachable()) : (void)0), (void)(h2_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h2_xs + 1) + t25)), &(*((void)((h2_xs == NULL || t26 < 0 || t26 >= h2_xs->len) ? ((void)hero_array_at_mut(h2_xs, t26), hero_unreachable()) : (void)0), (void)(h2_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h2_xs + 1) + t26)));
-    t27 = h2_xs;
-#line 46 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t28 = INT64_C(0);
-#line 46 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t27 + 1))[t28]);
-#line 46 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t29);
-#line 46 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t30 = h3_ys;
-#line 47 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t31 = INT64_C(0);
-#line 47 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t30 + 1))[t31]);
-#line 47 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t32);
-#line 47 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-#line 50 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t33 = INT64_C(0);
-#line 50 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t34 = INT64_C(0);
-#line 50 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t35 = (h_mutableargumentsthatdonotoverlap_P){.f_x = t33, .f_y = t34};
-#line 50 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t36 = INT64_C(7);
-#line 50 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t37 = (h_mutableargumentsthatdonotoverlap_Nest){.f_inner = t35, .f_tag = t36};
-#line 50 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h4_n = t37;
+    t7 = h0_p.f_x; hero_print_int(t7); hero_print_end();
+    t8 = h1_q.f_x; hero_print_int(t8); hero_print_end();
+#line 39
+    t9 = INT64_C(0); t10 = INT64_C(0); t11 = INT64_C(0); t12 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t12, &t9); hero_array_push_owned(&t12, &t10); hero_array_push_owned(&t12, &t11); t63 = h8_own8; h8_own8 = t12; hero_array_decref(t63); t64 = h2_xs; hero_array_incref(t12); h2_xs = t12; hero_array_decref(t64);
+    t13 = INT64_C(0); t14 = INT64_C(1); hero_array_unshare(&(h2_xs)); hero_array_unshare(&(h2_xs)); h_mutableargumentsthatdonotoverlap_shift(&(*((void)((h2_xs == NULL || t13 < 0 || t13 >= h2_xs->len) ? ((void)hero_array_at_mut(h2_xs, t13), hero_unreachable()) : (void)0), (void)(h2_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h2_xs + 1) + t13)), &(*((void)((h2_xs == NULL || t14 < 0 || t14 >= h2_xs->len) ? ((void)hero_array_at_mut(h2_xs, t14), hero_unreachable()) : (void)0), (void)(h2_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h2_xs + 1) + t14)));
+    t15 = h2_xs; t16 = INT64_C(0); t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t16]); hero_print_int(t17); hero_print_end();
+    t18 = h2_xs; t19 = INT64_C(1); t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? ((void)hero_array_at(t18, t19), hero_unreachable()) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]); hero_print_int(t20); hero_print_end();
+    t21 = h2_xs; t22 = INT64_C(2); t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]); hero_print_int(t23); hero_print_end();
+    t24 = h2_xs; t65 = h3_ys; hero_array_incref(t24); h3_ys = t24; hero_array_decref(t65);
+    t25 = INT64_C(0); t26 = INT64_C(2); hero_array_unshare(&(h2_xs)); hero_array_unshare(&(h2_xs)); h_mutableargumentsthatdonotoverlap_shift(&(*((void)((h2_xs == NULL || t25 < 0 || t25 >= h2_xs->len) ? ((void)hero_array_at_mut(h2_xs, t25), hero_unreachable()) : (void)0), (void)(h2_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h2_xs + 1) + t25)), &(*((void)((h2_xs == NULL || t26 < 0 || t26 >= h2_xs->len) ? ((void)hero_array_at_mut(h2_xs, t26), hero_unreachable()) : (void)0), (void)(h2_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h2_xs + 1) + t26)));
+    t27 = h2_xs; t28 = INT64_C(0); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t27 + 1))[t28]); hero_print_int(t29); hero_print_end();
+    t30 = h3_ys; t31 = INT64_C(0); t32 = ((void)((t30 == NULL || t31 < 0 || t31 >= t30->len) ? ((void)hero_array_at(t30, t31), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t30 + 1))[t31]); hero_print_int(t32); hero_print_end();
+#line 50
+    t33 = INT64_C(0); t34 = INT64_C(0); t35 = (h_mutableargumentsthatdonotoverlap_P){.f_x = t33, .f_y = t34}; t36 = INT64_C(7); t37 = (h_mutableargumentsthatdonotoverlap_Nest){.f_inner = t35, .f_tag = t36}; h4_n = t37;
     h_mutableargumentsthatdonotoverlap_shift(&h4_n.f_inner.f_x, &h4_n.f_inner.f_y);
-    t38 = h4_n.f_inner.f_x;
-#line 52 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t38);
-#line 52 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t39 = h4_n.f_inner.f_y;
-#line 53 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t39);
-#line 53 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-#line 56 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
+    t38 = h4_n.f_inner.f_x; hero_print_int(t38); hero_print_end();
+    t39 = h4_n.f_inner.f_y; hero_print_int(t39); hero_print_end();
+#line 56
     h_mutableargumentsthatdonotoverlap_shift(&h4_n.f_inner.f_x, &h4_n.f_tag);
-    t40 = h4_n.f_inner.f_x;
-#line 57 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t40);
-#line 57 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t41 = h4_n.f_tag;
-#line 58 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t41);
-#line 58 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t42 = INT64_C(0);
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t43 = INT64_C(0);
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t44 = (h_mutableargumentsthatdonotoverlap_P){.f_x = t42, .f_y = t43};
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t45 = INT64_C(0);
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t46 = INT64_C(0);
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t47 = (h_mutableargumentsthatdonotoverlap_P){.f_x = t45, .f_y = t46};
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t48 = hero_array_new(&h_mutableargumentsthatdonotoverlap_P_desc, 2);
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_push_owned(&t48, &t44);
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_push_owned(&t48, &t47);
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t66 = h9_own9;
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h9_own9 = t48;
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_decref(t66);
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t67 = h5_ps;
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_incref(t48);
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h5_ps = t48;
-#line 62 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_decref(t67);
-    t49 = INT64_C(0);
-#line 63 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t50 = INT64_C(0);
-#line 63 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_unshare(&(h5_ps));
-#line 63 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_array_unshare(&(h5_ps));
-#line 63 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h_mutableargumentsthatdonotoverlap_shift(&(*((void)((h5_ps == NULL || t49 < 0 || t49 >= h5_ps->len) ? ((void)hero_array_at_mut(h5_ps, t49), hero_unreachable()) : (void)0), (void)(h5_ps->elem->size != sizeof(h_mutableargumentsthatdonotoverlap_P) ? hero_unreachable() : (void)0), (h_mutableargumentsthatdonotoverlap_P *)(void *)(h5_ps + 1) + t49)).f_x, &(*((void)((h5_ps == NULL || t50 < 0 || t50 >= h5_ps->len) ? ((void)hero_array_at_mut(h5_ps, t50), hero_unreachable()) : (void)0), (void)(h5_ps->elem->size != sizeof(h_mutableargumentsthatdonotoverlap_P) ? hero_unreachable() : (void)0), (h_mutableargumentsthatdonotoverlap_P *)(void *)(h5_ps + 1) + t50)).f_y);
-    t51 = h5_ps;
-#line 64 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t52 = INT64_C(0);
-#line 64 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t53 = ((void)((t51 == NULL || t52 < 0 || t52 >= t51->len) ? ((void)hero_array_at(t51, t52), hero_unreachable()) : (void)0), (void)(t51->elem->size != sizeof(h_mutableargumentsthatdonotoverlap_P) ? hero_unreachable() : (void)0), ((h_mutableargumentsthatdonotoverlap_P const *)(const void *)(t51 + 1))[t52]);
-#line 64 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t54 = t53.f_x;
-#line 64 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t54);
-#line 64 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t55 = h5_ps;
-#line 65 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t56 = INT64_C(0);
-#line 65 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(h_mutableargumentsthatdonotoverlap_P) ? hero_unreachable() : (void)0), ((h_mutableargumentsthatdonotoverlap_P const *)(const void *)(t55 + 1))[t56]);
-#line 65 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t58 = t57.f_y;
-#line 65 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t58);
-#line 65 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-#line 68 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    t59 = INT64_C(0);
-#line 68 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h6_u = t59;
-    t60 = INT64_C(0);
-#line 69 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h7_v = t60;
+    t40 = h4_n.f_inner.f_x; hero_print_int(t40); hero_print_end();
+    t41 = h4_n.f_tag; hero_print_int(t41); hero_print_end();
+#line 62
+    t42 = INT64_C(0); t43 = INT64_C(0); t44 = (h_mutableargumentsthatdonotoverlap_P){.f_x = t42, .f_y = t43}; t45 = INT64_C(0); t46 = INT64_C(0); t47 = (h_mutableargumentsthatdonotoverlap_P){.f_x = t45, .f_y = t46}; t48 = hero_array_new(&h_mutableargumentsthatdonotoverlap_P_desc, 2); hero_array_push_owned(&t48, &t44); hero_array_push_owned(&t48, &t47); t66 = h9_own9; h9_own9 = t48; hero_array_decref(t66); t67 = h5_ps; hero_array_incref(t48); h5_ps = t48; hero_array_decref(t67);
+    t49 = INT64_C(0); t50 = INT64_C(0); hero_array_unshare(&(h5_ps)); hero_array_unshare(&(h5_ps)); h_mutableargumentsthatdonotoverlap_shift(&(*((void)((h5_ps == NULL || t49 < 0 || t49 >= h5_ps->len) ? ((void)hero_array_at_mut(h5_ps, t49), hero_unreachable()) : (void)0), (void)(h5_ps->elem->size != sizeof(h_mutableargumentsthatdonotoverlap_P) ? hero_unreachable() : (void)0), (h_mutableargumentsthatdonotoverlap_P *)(void *)(h5_ps + 1) + t49)).f_x, &(*((void)((h5_ps == NULL || t50 < 0 || t50 >= h5_ps->len) ? ((void)hero_array_at_mut(h5_ps, t50), hero_unreachable()) : (void)0), (void)(h5_ps->elem->size != sizeof(h_mutableargumentsthatdonotoverlap_P) ? hero_unreachable() : (void)0), (h_mutableargumentsthatdonotoverlap_P *)(void *)(h5_ps + 1) + t50)).f_y);
+    t51 = h5_ps; t52 = INT64_C(0); t53 = ((void)((t51 == NULL || t52 < 0 || t52 >= t51->len) ? ((void)hero_array_at(t51, t52), hero_unreachable()) : (void)0), (void)(t51->elem->size != sizeof(h_mutableargumentsthatdonotoverlap_P) ? hero_unreachable() : (void)0), ((h_mutableargumentsthatdonotoverlap_P const *)(const void *)(t51 + 1))[t52]); t54 = t53.f_x; hero_print_int(t54); hero_print_end();
+    t55 = h5_ps; t56 = INT64_C(0); t57 = ((void)((t55 == NULL || t56 < 0 || t56 >= t55->len) ? ((void)hero_array_at(t55, t56), hero_unreachable()) : (void)0), (void)(t55->elem->size != sizeof(h_mutableargumentsthatdonotoverlap_P) ? hero_unreachable() : (void)0), ((h_mutableargumentsthatdonotoverlap_P const *)(const void *)(t55 + 1))[t56]); t58 = t57.f_y; hero_print_int(t58); hero_print_end();
+#line 68
+    t59 = INT64_C(0); h6_u = t59;
+    t60 = INT64_C(0); h7_v = t60;
     h_mutableargumentsthatdonotoverlap_shift(&h6_u, &h7_v);
-    t61 = h6_u;
-#line 71 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t61);
-#line 71 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-    t62 = h7_v;
-#line 72 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_int(t62);
-#line 72 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    hero_print_end();
-#line 411 "mutableargumentsthatdonotoverlap.c"
+    t61 = h6_u; hero_print_int(t61); hero_print_end();
+    t62 = h7_v; hero_print_int(t62); hero_print_end();
+#line 179 "mutableargumentsthatdonotoverlap.c"
     hero_array_release_at(&h2_xs);
     hero_array_release_at(&h3_ys);
     hero_array_release_at(&h5_ps);

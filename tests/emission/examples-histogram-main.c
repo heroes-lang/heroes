@@ -83,11 +83,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_join(int64
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 93 "main.c"
 #pragma clang diagnostic pop
@@ -115,197 +115,41 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 
 #line 22 "examples/histogram/main.hero"
-int64_t h_main_NUMBERS(void) {
-#line 22 "examples/histogram/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 22 "examples/histogram/main.hero"
-bb0:
-    t1 = INT64_C(20000);
-#line 23 "examples/histogram/main.hero"
-    return t1;
+int64_t h_main_NUMBERS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(20000); return t1;
+#line 121 "main.c"
+}
+
+#line 26 "examples/histogram/main.hero"
+int64_t h_main_value_at(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = h0_n; if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); t4 = INT64_C(99991); if (t4 == 0) hero_panic("division by zero"); if (t3 == INT64_MIN && t4 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t5 = t3 % t4; return t5;
 #line 127 "main.c"
 }
 
-#line 26 "examples/histogram/main.hero"
-int64_t h_main_value_at(int64_t h0_n) {
-#line 26 "examples/histogram/main.hero"
-    HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 26 "examples/histogram/main.hero"
-bb0:
-    t1 = h0_n;
-#line 27 "examples/histogram/main.hero"
-    t2 = h0_n;
-#line 27 "examples/histogram/main.hero"
-    if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 27 "examples/histogram/main.hero"
-    t4 = INT64_C(99991);
-#line 27 "examples/histogram/main.hero"
-    if (t4 == 0) hero_panic("division by zero");
-#line 27 "examples/histogram/main.hero"
-    if (t3 == INT64_MIN && t4 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 27 "examples/histogram/main.hero"
-    t5 = t3 % t4;
-#line 27 "examples/histogram/main.hero"
-    return t5;
-#line 151 "main.c"
-}
-
 #line 30 "examples/histogram/main.hero"
-int64_t h_main_count_of(int64_t h0_digit) {
-#line 30 "examples/histogram/main.hero"
-    hero_thread_guard("main.count_of"); int64_t h1_seen; int64_t h2_n; int64_t h3_v; HERO_NODEBUG bool h4_b0, t5, t10, t13, t14, t20, t25; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t11, t12, t15, t16, t17, t18, t19, t21, t22, t23, t24, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35; HERO_ENTRY_STOP; goto bb0;
-#line 30 "examples/histogram/main.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 31 "examples/histogram/main.hero"
-    h1_seen = t1;
-    t2 = INT64_C(0);
-#line 32 "examples/histogram/main.hero"
-    h2_n = t2;
-#line 32 "examples/histogram/main.hero"
-    goto bb1;
-#line 32 "examples/histogram/main.hero"
-bb1:
-#line 34 "examples/histogram/main.hero"
-    t3 = h2_n;
-#line 34 "examples/histogram/main.hero"
-    t4 = h_main_NUMBERS();
-#line 34 "examples/histogram/main.hero"
-    t5 = t3 < t4;
-#line 34 "examples/histogram/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 34 "examples/histogram/main.hero"
-bb2:
-    t6 = h2_n;
-#line 35 "examples/histogram/main.hero"
-    t7 = h_main_value_at(t6);
-#line 35 "examples/histogram/main.hero"
-    h3_v = t7;
-#line 37 "examples/histogram/main.hero"
-    t8 = h3_v;
-#line 37 "examples/histogram/main.hero"
-    t9 = INT64_C(0);
-#line 37 "examples/histogram/main.hero"
-    t10 = t8 == t9;
-#line 37 "examples/histogram/main.hero"
-    h4_b0 = t10;
-#line 37 "examples/histogram/main.hero"
-    if (t10) goto bb5; else goto bb6;
-#line 37 "examples/histogram/main.hero"
-bb3:
-#line 47 "examples/histogram/main.hero"
-    t35 = h1_seen;
-#line 47 "examples/histogram/main.hero"
-    return t35;
-#line 47 "examples/histogram/main.hero"
-bb4:
-#line 47 "examples/histogram/main.hero"
-    goto bb9;
-#line 47 "examples/histogram/main.hero"
-bb5:
-#line 37 "examples/histogram/main.hero"
-    t11 = h0_digit;
-#line 37 "examples/histogram/main.hero"
-    t12 = INT64_C(0);
-#line 37 "examples/histogram/main.hero"
-    t13 = t11 == t12;
-#line 37 "examples/histogram/main.hero"
-    h4_b0 = t13;
-#line 37 "examples/histogram/main.hero"
-    goto bb6;
-#line 37 "examples/histogram/main.hero"
-bb6:
-#line 37 "examples/histogram/main.hero"
-    t14 = h4_b0;
-#line 37 "examples/histogram/main.hero"
-    if (t14) goto bb7; else goto bb8;
-#line 37 "examples/histogram/main.hero"
-bb7:
-    t15 = h1_seen;
-#line 38 "examples/histogram/main.hero"
-    t16 = INT64_C(1);
-#line 38 "examples/histogram/main.hero"
-    if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 38 "examples/histogram/main.hero"
-    h1_seen = t17;
-#line 38 "examples/histogram/main.hero"
-    goto bb4;
-#line 38 "examples/histogram/main.hero"
-bb8:
-#line 38 "examples/histogram/main.hero"
-    goto bb4;
-#line 38 "examples/histogram/main.hero"
-bb9:
-#line 40 "examples/histogram/main.hero"
-    t18 = h3_v;
-#line 40 "examples/histogram/main.hero"
-    t19 = INT64_C(0);
-#line 40 "examples/histogram/main.hero"
-    t20 = t18 > t19;
-#line 40 "examples/histogram/main.hero"
-    if (t20) goto bb10; else goto bb11;
-#line 40 "examples/histogram/main.hero"
-bb10:
-    t21 = h3_v;
-#line 41 "examples/histogram/main.hero"
-    t22 = INT64_C(10);
-#line 41 "examples/histogram/main.hero"
-    if (t22 == 0) hero_panic("division by zero");
-#line 41 "examples/histogram/main.hero"
-    if (t21 == INT64_MIN && t22 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 41 "examples/histogram/main.hero"
-    t23 = t21 % t22;
-#line 41 "examples/histogram/main.hero"
-    t24 = h0_digit;
-#line 41 "examples/histogram/main.hero"
-    t25 = t23 == t24;
-#line 41 "examples/histogram/main.hero"
-    if (t25) goto bb13; else goto bb14;
-#line 41 "examples/histogram/main.hero"
-bb11:
-#line 45 "examples/histogram/main.hero"
-    t32 = h2_n;
-#line 45 "examples/histogram/main.hero"
-    t33 = INT64_C(1);
-#line 45 "examples/histogram/main.hero"
-    if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow();
-#line 45 "examples/histogram/main.hero"
-    h2_n = t34;
-#line 45 "examples/histogram/main.hero"
-    goto bb1;
-#line 45 "examples/histogram/main.hero"
-bb12:
-#line 43 "examples/histogram/main.hero"
-    t29 = h3_v;
-#line 43 "examples/histogram/main.hero"
-    t30 = INT64_C(10);
-#line 43 "examples/histogram/main.hero"
-    if (t30 == 0) hero_panic("division by zero");
-#line 43 "examples/histogram/main.hero"
-    if (t29 == INT64_MIN && t30 == INT64_C(-1)) hero_panic_overflow();
-#line 43 "examples/histogram/main.hero"
-    t31 = t29 / t30;
-#line 43 "examples/histogram/main.hero"
-    h3_v = t31;
-#line 43 "examples/histogram/main.hero"
-    goto bb9;
-#line 43 "examples/histogram/main.hero"
-bb13:
-#line 42 "examples/histogram/main.hero"
-    t26 = h1_seen;
-#line 42 "examples/histogram/main.hero"
-    t27 = INT64_C(1);
-#line 42 "examples/histogram/main.hero"
-    if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow();
-#line 42 "examples/histogram/main.hero"
-    h1_seen = t28;
-#line 42 "examples/histogram/main.hero"
-    goto bb12;
-#line 42 "examples/histogram/main.hero"
-bb14:
-#line 42 "examples/histogram/main.hero"
-    goto bb12;
-#line 309 "main.c"
+int64_t h_main_count_of(int64_t h0_digit) { hero_thread_guard("main.count_of"); int64_t h1_seen; int64_t h2_n; int64_t h3_v; HERO_NODEBUG bool h4_b0, t5, t10, t13, t14, t20, t25; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t11, t12, t15, t16, t17, t18, t19, t21, t22, t23, t24, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_seen = t1;
+    t2 = INT64_C(0); h2_n = t2; goto bb1; bb1:
+#line 34
+    t3 = h2_n; t4 = h_main_NUMBERS(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h2_n; t7 = h_main_value_at(t6); h3_v = t7;
+#line 37
+    t8 = h3_v; t9 = INT64_C(0); t10 = t8 == t9; h4_b0 = t10; if (t10) goto bb5; else goto bb6; bb3:
+#line 47
+    t35 = h1_seen; return t35; bb4: goto bb9; bb5:
+#line 37
+    t11 = h0_digit; t12 = INT64_C(0); t13 = t11 == t12; h4_b0 = t13; goto bb6; bb6: t14 = h4_b0; if (t14) goto bb7; else goto bb8; bb7:
+    t15 = h1_seen; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h1_seen = t17; goto bb4; bb8: goto bb4; bb9:
+#line 40
+    t18 = h3_v; t19 = INT64_C(0); t20 = t18 > t19; if (t20) goto bb10; else goto bb11; bb10:
+    t21 = h3_v; t22 = INT64_C(10); if (t22 == 0) hero_panic("division by zero"); if (t21 == INT64_MIN && t22 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t23 = t21 % t22; t24 = h0_digit; t25 = t23 == t24; if (t25) goto bb13; else goto bb14; bb11:
+#line 45
+    t32 = h2_n; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow(); h2_n = t34; goto bb1; bb12:
+#line 43
+    t29 = h3_v; t30 = INT64_C(10); if (t30 == 0) hero_panic("division by zero"); if (t29 == INT64_MIN && t30 == INT64_C(-1)) hero_panic_overflow(); t31 = t29 / t30; h3_v = t31; goto bb9; bb13:
+#line 42
+    t26 = h1_seen; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow(); h1_seen = t28; goto bb12; bb14: goto bb12;
+#line 153 "main.c"
 }
 
 int64_t h_0cb_main_count_of(int64_t h0_digit) {
@@ -314,139 +158,23 @@ int64_t h_0cb_main_count_of(int64_t h0_digit) {
 }
 
 #line 49 "examples/histogram/main.hero"
-HeroArrayHeader * h_main_counts(void) {
-#line 49 "examples/histogram/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_d; HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t14, *t15, *t18, *t21, *t31, *t32, *t33, *t34, *t35, *t36; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t8, t9, t11, t12, t13, t16, t17, t19, t22, t23, t25, t26, t28, t29, t30; int64_t h5_h; HERO_NODEBUG bool t5, t20; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_ENTRY_STOP; goto bb0;
-#line 49 "examples/histogram/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 50 "examples/histogram/main.hero"
-    t32 = h6_own6;
-#line 50 "examples/histogram/main.hero"
-    h6_own6 = t1;
-#line 50 "examples/histogram/main.hero"
-    hero_array_decref(t32);
-#line 50 "examples/histogram/main.hero"
-    t33 = h0_handles;
-#line 50 "examples/histogram/main.hero"
-    hero_array_incref(t1);
-#line 50 "examples/histogram/main.hero"
-    h0_handles = t1;
-#line 50 "examples/histogram/main.hero"
-    hero_array_decref(t33);
-    t2 = INT64_C(0);
-#line 51 "examples/histogram/main.hero"
-    h1_d = t2;
-#line 51 "examples/histogram/main.hero"
-    goto bb1;
-#line 51 "examples/histogram/main.hero"
-bb1:
-#line 53 "examples/histogram/main.hero"
-    t3 = h1_d;
-#line 53 "examples/histogram/main.hero"
-    t4 = INT64_C(10);
-#line 53 "examples/histogram/main.hero"
-    t5 = t3 < t4;
-#line 53 "examples/histogram/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 53 "examples/histogram/main.hero"
-bb2:
-    t7 = h_main_count_of;
-#line 54 "examples/histogram/main.hero"
-    t8 = h1_d;
-#line 54 "examples/histogram/main.hero"
-    t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8);
-#line 54 "examples/histogram/main.hero"
-    hero_array_push_owned(&h0_handles, &t9);
-    t11 = h1_d;
-#line 55 "examples/histogram/main.hero"
-    t12 = INT64_C(1);
-#line 55 "examples/histogram/main.hero"
-    if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 55 "examples/histogram/main.hero"
-    h1_d = t13;
-#line 55 "examples/histogram/main.hero"
-    goto bb1;
-#line 55 "examples/histogram/main.hero"
-bb3:
-#line 57 "examples/histogram/main.hero"
-    t14 = hero_array_new(&hero_desc_int, 1);
-#line 57 "examples/histogram/main.hero"
-    t34 = h7_own7;
-#line 57 "examples/histogram/main.hero"
-    h7_own7 = t14;
-#line 57 "examples/histogram/main.hero"
-    hero_array_decref(t34);
-#line 57 "examples/histogram/main.hero"
-    t35 = h2_out;
-#line 57 "examples/histogram/main.hero"
-    hero_array_incref(t14);
-#line 57 "examples/histogram/main.hero"
-    h2_out = t14;
-#line 57 "examples/histogram/main.hero"
-    hero_array_decref(t35);
-#line 59 "examples/histogram/main.hero"
-    t15 = h0_handles;
-#line 59 "examples/histogram/main.hero"
-    t36 = h3_xs0;
-#line 59 "examples/histogram/main.hero"
-    hero_array_incref(t15);
-#line 59 "examples/histogram/main.hero"
-    h3_xs0 = t15;
-#line 59 "examples/histogram/main.hero"
-    hero_array_decref(t36);
-#line 59 "examples/histogram/main.hero"
-    t16 = INT64_C(0);
-#line 59 "examples/histogram/main.hero"
-    h4_i0 = t16;
-#line 59 "examples/histogram/main.hero"
-    goto bb4;
-#line 59 "examples/histogram/main.hero"
-bb4:
-#line 59 "examples/histogram/main.hero"
-    t17 = h4_i0;
-#line 59 "examples/histogram/main.hero"
-    t18 = h3_xs0;
-#line 59 "examples/histogram/main.hero"
-    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
-#line 59 "examples/histogram/main.hero"
-    t20 = t17 < t19;
-#line 59 "examples/histogram/main.hero"
-    if (t20) goto bb5; else goto bb7;
-#line 59 "examples/histogram/main.hero"
-bb5:
-#line 59 "examples/histogram/main.hero"
-    t21 = h3_xs0;
-#line 59 "examples/histogram/main.hero"
-    t22 = h4_i0;
-#line 59 "examples/histogram/main.hero"
-    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
-#line 59 "examples/histogram/main.hero"
-    h5_h = t23;
-    t25 = h5_h;
-#line 60 "examples/histogram/main.hero"
-    t26 = hero_thread_join(t25);
-#line 60 "examples/histogram/main.hero"
-    hero_array_push_owned(&h2_out, &t26);
-#line 60 "examples/histogram/main.hero"
-    goto bb6;
-#line 60 "examples/histogram/main.hero"
-bb6:
-#line 59 "examples/histogram/main.hero"
-    t28 = h4_i0;
-#line 59 "examples/histogram/main.hero"
-    t29 = INT64_C(1);
-#line 59 "examples/histogram/main.hero"
-    if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow();
-#line 59 "examples/histogram/main.hero"
-    h4_i0 = t30;
-#line 59 "examples/histogram/main.hero"
-    goto bb4;
-#line 59 "examples/histogram/main.hero"
-bb7:
-#line 62 "examples/histogram/main.hero"
+HeroArrayHeader * h_main_counts(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_d; HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t14, *t15, *t18, *t21, *t31, *t32, *t33, *t34, *t35, *t36; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t8, t9, t11, t12, t13, t16, t17, t19, t22, t23, t25, t26, t28, t29, t30; int64_t h5_h; HERO_NODEBUG bool t5, t20; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t32 = h6_own6; h6_own6 = t1; hero_array_decref(t32); t33 = h0_handles; hero_array_incref(t1); h0_handles = t1; hero_array_decref(t33);
+    t2 = INT64_C(0); h1_d = t2; goto bb1; bb1:
+#line 53
+    t3 = h1_d; t4 = INT64_C(10); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h_main_count_of; t8 = h1_d; t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8); hero_array_push_owned(&h0_handles, &t9);
+    t11 = h1_d; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); h1_d = t13; goto bb1; bb3:
+#line 57
+    t14 = hero_array_new(&hero_desc_int, 1); t34 = h7_own7; h7_own7 = t14; hero_array_decref(t34); t35 = h2_out; hero_array_incref(t14); h2_out = t14; hero_array_decref(t35);
+#line 59
+    t15 = h0_handles; t36 = h3_xs0; hero_array_incref(t15); h3_xs0 = t15; hero_array_decref(t36); t16 = INT64_C(0); h4_i0 = t16; goto bb4; bb4: t17 = h4_i0; t18 = h3_xs0; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = t17 < t19; if (t20) goto bb5; else goto bb7; bb5: t21 = h3_xs0; t22 = h4_i0; t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]); h5_h = t23;
+    t25 = h5_h; t26 = hero_thread_join(t25); hero_array_push_owned(&h2_out, &t26); goto bb6; bb6:
+#line 59
+    t28 = h4_i0; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow(); h4_i0 = t30; goto bb4; bb7:
+#line 62
     t31 = h2_out;
-#line 450 "main.c"
+#line 178 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h2_out);
@@ -457,76 +185,14 @@ bb7:
 }
 
 #line 64 "examples/histogram/main.hero"
-void h_main_main(void) {
-#line 64 "examples/histogram/main.hero"
-    HeroArrayHeader * h0_found = {0}; int64_t h1_d; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t9, *t15, *t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12, t13, t14; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6, t8; HERO_ENTRY_STOP; goto bb0;
-#line 64 "examples/histogram/main.hero"
-bb0:
-    t1 = h_main_counts();
-#line 65 "examples/histogram/main.hero"
-    t15 = h2_own2;
-#line 65 "examples/histogram/main.hero"
-    h2_own2 = t1;
-#line 65 "examples/histogram/main.hero"
-    hero_array_decref(t15);
-#line 65 "examples/histogram/main.hero"
-    t16 = h0_found;
-#line 65 "examples/histogram/main.hero"
-    hero_array_incref(t1);
-#line 65 "examples/histogram/main.hero"
-    h0_found = t1;
-#line 65 "examples/histogram/main.hero"
-    hero_array_decref(t16);
-    t2 = INT64_C(0);
-#line 66 "examples/histogram/main.hero"
-    h1_d = t2;
-#line 66 "examples/histogram/main.hero"
-    goto bb1;
-#line 66 "examples/histogram/main.hero"
-bb1:
-#line 68 "examples/histogram/main.hero"
-    t3 = h1_d;
-#line 68 "examples/histogram/main.hero"
-    t4 = INT64_C(10);
-#line 68 "examples/histogram/main.hero"
-    t5 = t3 < t4;
-#line 68 "examples/histogram/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 68 "examples/histogram/main.hero"
-bb2:
-    t6 = HERO_STR_LIT(hero_str_b63ac2);
-#line 69 "examples/histogram/main.hero"
-    t7 = h1_d;
-#line 69 "examples/histogram/main.hero"
-    t8 = HERO_STR_LIT(hero_str_1dce);
-#line 69 "examples/histogram/main.hero"
-    t9 = h0_found;
-#line 69 "examples/histogram/main.hero"
-    t10 = h1_d;
-#line 69 "examples/histogram/main.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]);
-#line 69 "examples/histogram/main.hero"
-    hero_print_str(t6);
-#line 69 "examples/histogram/main.hero"
-    hero_print_int(t7);
-#line 69 "examples/histogram/main.hero"
-    hero_print_str(t8);
-#line 69 "examples/histogram/main.hero"
-    hero_print_int(t11);
-#line 69 "examples/histogram/main.hero"
-    hero_print_end();
-    t12 = h1_d;
-#line 70 "examples/histogram/main.hero"
-    t13 = INT64_C(1);
-#line 70 "examples/histogram/main.hero"
-    if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 70 "examples/histogram/main.hero"
-    h1_d = t14;
-#line 70 "examples/histogram/main.hero"
-    goto bb1;
-#line 70 "examples/histogram/main.hero"
-bb3:
-#line 530 "main.c"
+void h_main_main(void) { HeroArrayHeader * h0_found = {0}; int64_t h1_d; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t9, *t15, *t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12, t13, t14; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_main_counts(); t15 = h2_own2; h2_own2 = t1; hero_array_decref(t15); t16 = h0_found; hero_array_incref(t1); h0_found = t1; hero_array_decref(t16);
+    t2 = INT64_C(0); h1_d = t2; goto bb1; bb1:
+#line 68
+    t3 = h1_d; t4 = INT64_C(10); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = HERO_STR_LIT(hero_str_b63ac2); t7 = h1_d; t8 = HERO_STR_LIT(hero_str_1dce); t9 = h0_found; t10 = h1_d; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]); hero_print_str(t6); hero_print_int(t7); hero_print_str(t8); hero_print_int(t11); hero_print_end();
+    t12 = h1_d; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow(); h1_d = t14; goto bb1; bb3:
+#line 196 "main.c"
     hero_array_release_at(&h0_found);
     hero_array_release_at(&h2_own2);
     return;

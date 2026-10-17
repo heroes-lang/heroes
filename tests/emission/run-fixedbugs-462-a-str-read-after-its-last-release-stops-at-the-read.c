@@ -134,11 +134,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs462astrreadafterit
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 144 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
 #pragma clang diagnostic pop
@@ -155,65 +155,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void);
 
 #line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void) {
-#line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t3, t4, t5, t7, t9, t12, t13, t14, t15; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t6; HERO_NODEBUG int64_t t8, t10, t11; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_3205);
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t2 = UINT64_C(32768);
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t3 = hero_str_repeat(t1, t2);
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t13 = h1_own1;
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    h1_own1 = t3;
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_str_decref(t13);
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t14 = h0_word;
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_str_incref(t3);
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    h0_word = t3;
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_str_decref(t14);
-    t4 = HERO_STR_LIT(hero_str_88572c6);
-#line 24 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_print_str(t4);
-#line 24 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_print_end();
-    t5 = h0_word;
-#line 25 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t6 = hero_str_lend(t5);
-#line 25 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    (void)release_all(hero_cstr_nonnull(t6));
-    t7 = h0_word;
-#line 26 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t8 = hero_str_len(t7);
-#line 26 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_print_int(t8);
-#line 26 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_print_end();
-    t9 = h0_word;
-#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t10 = INT64_C(0);
-#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t11 = INT64_C(8);
-#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t12 = hero_str_slice(t9, t10, t11);
-#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    t15 = h2_own2;
-#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    h2_own2 = t12;
-#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_str_decref(t15);
-#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_print_str(t12);
-#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    hero_print_end();
-#line 217 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void) { HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t3, t4, t5, t7, t9, t12, t13, t14, t15; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t6; HERO_NODEBUG int64_t t8, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_3205); t2 = UINT64_C(32768); t3 = hero_str_repeat(t1, t2); t13 = h1_own1; h1_own1 = t3; hero_str_decref(t13); t14 = h0_word; hero_str_incref(t3); h0_word = t3; hero_str_decref(t14);
+    t4 = HERO_STR_LIT(hero_str_88572c6); hero_print_str(t4); hero_print_end();
+    t5 = h0_word; t6 = hero_str_lend(t5); (void)release_all(hero_cstr_nonnull(t6));
+    t7 = h0_word; t8 = hero_str_len(t7); hero_print_int(t8); hero_print_end();
+    t9 = h0_word; t10 = INT64_C(0); t11 = INT64_C(8); t12 = hero_str_slice(t9, t10, t11); t15 = h2_own2; h2_own2 = t12; hero_str_decref(t15); hero_print_str(t12); hero_print_end();
+#line 165 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
