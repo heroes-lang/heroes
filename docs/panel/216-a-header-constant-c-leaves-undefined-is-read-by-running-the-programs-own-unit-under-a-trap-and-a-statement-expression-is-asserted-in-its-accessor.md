@@ -209,4 +209,31 @@ a defined pointer shape.
 
 ## Author's verdict
 
-*Pending.*
+Pending: https://github.com/heroes-lang/heroes/issues/2110 asked for it, naming the sitting as
+`panel 216`, with its one question and the recommendation.
+
+**RATIFIED, 2026-10-17**, R1 to R5 as written above, the author answering in conversation on
+returning to the session that night, on the coordinator's summary, which put five decisions each
+with its measurement and a recommendation, the first this sitting's: meant as *I accept all your
+recommendations on the things I have to decide*. So **the question to the author is answered yes**:
+`heroes build` may run a program's header code to judge its constants, bounded as R1 bounds it, and
+the conservative resolution is not taken. Recorded as a reading (CLAUDE.md § 4). The author may
+overturn it.
+
+**What still stands between R1 and its landing**: the Windows box running the resuming trap probe
+and linking its unit without a change to the user's machine (R3's condition (i), both seats'),
+which only the author can start; condition (ii) is this answer. Defects 2075 and 2104 stay open
+until R1 lands.
+
+**Condition (i), measured 2026-10-17 on the Windows box** (clang 23.1.1, `x86_64-pc-windows-msvc`,
+the compiler built there from the seed at `71c762929`), the author having started it on being
+asked: the compiler-engineer's `ux2.sh` recipe in trap mode, each of the 48 shapes' own unit
+preprocessed under the program's words, compiled with the four checks and `-fsanitize-trap`,
+linked with the runtime alone and nothing installed: **44 trapped and 52 kept over the 96 cells,
+`diff`-identical cell by cell to this Mac's `pre48.txt`**; a trap ends the probe as *Illegal
+instruction*, exit 132 under the box's bash. And the resuming probe: one program binding `K_DIV`,
+`K_COMMA`, `K_FLT` and `K_FDIV`, its probe writing each accessor's index before calling it and
+started again after the one that trapped, read `K_DIV` and `K_FLT` trapped and the two others kept
+in 3 runs, at `-O0` and `-O2`. So both of R3's conditions stand met; R1 is built in its lane and
+judged by the CI's four legs after its push. The scripts are the coordinator's, `ux_trap.sh` and
+`resume.sh`, copied from the compiler-engineer's `ux2.sh` and the ffi-pragmatist's `resume.py`.
