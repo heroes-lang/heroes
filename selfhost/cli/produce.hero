@@ -128,6 +128,11 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # failure is the machine's, said as itself: the path and the reason.
     if object.is_err()
         if path_code(object) == "clang"
+            # A clang without its sanitizer runtime is the machine's, told so
+            # and never blamed on the compiler (defect 2108).
+            if options.sanitize && sanitizer_absent(failure_note(object))
+                io.eprint(text: NO_SANITIZER + "\n" + failure_note(object))
+                return fail(code: "failed", msg: "no sanitizer runtime")
             io.eprint(text: "internal error: the runtime did not compile\n" + failure_note(object))
             return fail(code: "failed", msg: "no runtime object")
         return fail(code: "failed", msg: failure_note(object))
@@ -276,7 +281,28 @@ function failure_note(failed: str?) -> str
         .ok    => return ""
         .err e => return e.msg
 
+# What `--sanitize` is told where this machine's clang has no sanitizer
+# runtime (defect 2108): `heroes run --sanitize` said *internal error: the
+# runtime did not compile* on Ubuntu clang 18.1.3 installed without its
+# recommends, whose include path holds no `sanitizer/` header, measured
+# 2026-10-17 in a clean `ubuntu:24.04`.
+constant NO_SANITIZER: str
+    "error: this machine's clang has no sanitizer runtime, so `--sanitize` cannot build here: the runtime's sanitizer headers are not on clang's include path, as its words below say. Some systems ship them apart from clang, Debian and Ubuntu as `libclang-rt-<version>-dev`; install that, or build without `--sanitize`"
+
+# Whether clang's words on the runtime say a sanitizer header is missing,
+# `fatal error: 'sanitizer/common_interface_defs.h' file not found`.
+function sanitizer_absent(note: str) -> bool
+    return !bytes.locate(text: note, needle: "'sanitizer/", from: 0).is_err() && !bytes.locate(text: note, needle: "file not found", from: 0).is_err()
+
 ## Tests
+
+# Defect 2108: clang's words on a missing sanitizer header are the machine's,
+# and any other refusal of the runtime stays the compiler's.
+test "a clang without its sanitizer runtime is told so, and nothing else is (defect 2108)"
+    said = "In file included from runtime/runtime.c:218:\nruntime/parts/os.c:459:10: fatal error: 'sanitizer/common_interface_defs.h' file not found\n"
+    assert sanitizer_absent(said)
+    assert !sanitizer_absent("runtime/parts/os.c:12:3: error: use of undeclared identifier 'x'\n")
+    assert !sanitizer_absent("fatal error: 'stdio.h' file not found\n")
 
 # A build that cannot put its binary or its C where the author asked,
 # with every other step fine: the failure names the path and says why, and
