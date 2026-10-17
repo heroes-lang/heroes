@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-2117-a-header-declaring-a-runtime-function-on-a-line-past-4096-bytes-is-refused.h`, the header this group names, does not compile: clang refuses it at line 4: conflicting types for 'hero_str_len'
+  at tests/golden/unsupported/fixedbugs-2117-a-header-declaring-a-runtime-function-on-a-line-past-4096-bytes-is-refused.hero:11:8
+     |
+  11 | extern "fixedbugs-2117-a-header-declaring-a-runtime-function-on-a-line-past-4096-bytes-is-refused.h"  #~ ffi_header_re…
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: clang adds, at the Heroes runtime's own `hero_str_len`, which every unit of this program declares before any group's header: previous declaration is here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `hero_str_len` in `fixedbugs-2117-a-header-declaring-a-runtime-function-on-a-line-past-4096-bytes-is-refused.h`, a name the Heroes runtime declares first in every unit

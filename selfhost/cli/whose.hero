@@ -29,6 +29,8 @@ use cli/inline_only
 use cli/renamed
 use cli/group_file
 use cli/opening_told
+use cli/caret_bytes
+use cli/units
 use diag
 use cli/deep_types
 use cli/link
@@ -188,8 +190,16 @@ function unit_words(under: compiling.Compiling, asking: [probing.Probing], unit_
 # (`cli/header_refused.hero`, defect 360): told on the group's string, and the
 # answer is yes.
 function told_header(message: str, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> bool
+    # The refused unit, compiled again once where a reader asks the name
+    # under one of clang's carets (`cli/caret_bytes.hero`, defect 2117).
+    again: caret_bytes.Again @= caret_bytes.of(
+        words: compiling.unit_words(under),
+        unit: units.generated_at(message),
+        dir: t.build + "/order"
+    )
+
     # A macro two groups' headers define two ways (panel 204's R2).
-    macro = macro_twice.told(message, s, art.decls, t, under: under, unit_headers: unit_headers)
+    macro = macro_twice.told(message, s, art.decls, t, under: under, unit_headers: unit_headers, @again)
 
     if macro.len() > 0
         _ = compile.stage(macro, s).is_err()
@@ -198,7 +208,8 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
         stderr: message,
         s: s,
         decls: art.decls,
-        runtime: t.runtime
+        runtime: t.runtime,
+        @again
     )
 
     if refusal.len() == 0
@@ -206,7 +217,7 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
 
     # A header refused on its own that compiles alone is two headers'
     # refusal, the earlier named (defect 557).
-    alone = header_refused.refused_alone(stderr: message, s: s, decls: art.decls, runtime: t.runtime)
+    alone = header_refused.refused_alone(stderr: message, s: s, decls: art.decls, runtime: t.runtime, @again)
 
     if !alone.is_err()
         before = header_alone.earlier(t, under: under, header: alone.must().header, headers: unit_headers)
@@ -220,7 +231,8 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
                     s: s,
                     decls: art.decls,
                     runtime: t.runtime,
-                    earlier: other.must()
+                    earlier: other.must(),
+                    @again
                 )
 
     # What the program needs instead of a repair, where clang says an order

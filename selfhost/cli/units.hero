@@ -57,6 +57,31 @@ use cli/kept
 use cli/response_file
 use cli/served
 
+# How a refused unit's message names the C clang refused, on its last line.
+constant GENERATED: str
+    "the generated C is at "
+
+# The C file a refused unit's message names, as `tu_object` wrote it; ""
+# where it names none, so no reader compiles it again
+# (`cli/caret_bytes.hero`, defect 2117).
+function generated_at(message: str) -> str
+    found: str @= ""
+    start: i64 @= 0
+
+    while start <= message.len()
+        stop: i64 @= start
+
+        while stop < message.len() && message[stop] != '\n'
+            stop @ stop + 1
+
+        row = message.slice(from: start, to: stop)
+
+        if strings.starts_with(text: row, prefix: GENERATED)
+            found @ row.slice(from: GENERATED.len(), to: row.len())
+        start @ stop + 1
+
+    return found
+
 # The distinct components of a compilation, in file-table order: the
 # root first, then each `use`d module, then the library. The order is
 # a function of the source table, so the link line is deterministic.
@@ -194,7 +219,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         # path on screen — printing the path here unconditionally sent
         # `build/tu-…` into diagnostics the surface rows pin as
         # `err_lacks("build/")`, measured on the fixedbugs corpus.
-        return fail(code: said_code(compiled), msg: failure_text(compiled) + "\nthe generated C is at " + c_file)
+        return fail(code: said_code(compiled), msg: failure_text(compiled) + "\n" + GENERATED + c_file)
     said: str @= ""
 
     if strings.trimmed(compiled.must()).len() > 0

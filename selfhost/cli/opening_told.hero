@@ -38,6 +38,7 @@ use cli/compiling
 use cli/order_trial
 use cli/group_file
 use cli/clang_first
+use cli/caret_bytes
 use cli/clang_excerpt
 use cli/header_refused
 use cli/headers_together
@@ -60,11 +61,8 @@ function told(art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, u
     count: i64 @= 1
 
     while count <= theirs.len()
-        ran = order_trial.compiled(
-            t,
-            words: words,
-            text: order_trial.opening(theirs.slice(from: 0, to: count), question: "")
-        )
+        text = order_trial.opening(theirs.slice(from: 0, to: count), question: "")
+        ran = order_trial.compiled(t, words: words, text: text)
 
         if !ran.asked
             return none
@@ -74,7 +72,12 @@ function told(art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, u
 
             if group.is_err()
                 return none
-            return of_group(stderr: ran.said, s: s, decls: art.decls, runtime: t.runtime, group: group.must())
+
+            # The opening clang refused, compiled again where a reading asks
+            # the name under a caret (`cli/caret_bytes.hero`, defect 2117).
+            unit = order_trial.written(t, text: text).default("")
+            again: caret_bytes.Again @= caret_bytes.of(words: words, unit: unit, dir: t.build + "/order")
+            return of_group(stderr: ran.said, s: s, decls: art.decls, runtime: t.runtime, group: group.must(), @again)
         count @ count + 1
 
     return none
@@ -113,8 +116,8 @@ function without_headers(text: str, headers: [str]) -> str
 # The refusal of the first prefix the opening refused, `group`'s header the
 # last of it, told on `group` alone: as the readers tell a header clang names,
 # where its stack or a note names that header, else on clang's own words.
-function of_group(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, group: group_file.Group) -> [diag.Diagnostic]
-    read = clang_first.read_as(stderr: stderr, s: s, decls: decls, runtime: runtime, involved: true)
+function of_group(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, group: group_file.Group, @again: caret_bytes.Again) -> [diag.Diagnostic]
+    read = clang_first.read_as(stderr: stderr, s: s, decls: decls, runtime: runtime, involved: true, @again)
 
     if !read.is_err() && read.must().group.span.start == group.span.start
         one = read.must()

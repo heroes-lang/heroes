@@ -34,7 +34,7 @@ use emit/clang_place
 use emit/ffi_lookup
 use cli/group_file
 use cli/runtime_key
-use cli/runtime_name
+use cli/caret_bytes
 use cli/standard_name
 use cli/clang_first
 use cli/clang_excerpt
@@ -49,22 +49,24 @@ use parse
 constant FORMS: str
     "`h_`, `hero_`, `Hero`, `HERO_`, `HEROES_` and `main`"
 
-# The refusal of either shape below, or none.
-function told(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> diag.Diagnostic?
-    found = kept(stderr: stderr, s: s, decls: decls, runtime: runtime)
+# The refusal of either shape below, or none. `again` compiles the unit once
+# more where the name under a caret is asked (`cli/caret_bytes.hero`, defect
+# 2117).
+function told(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @again: caret_bytes.Again) -> diag.Diagnostic?
+    found = kept(stderr: stderr, s: s, decls: decls, runtime: runtime, @again)
 
     if !found.is_err()
         return found
-    return met(stderr: stderr, s: s, decls: decls, runtime: runtime)
+    return met(stderr: stderr, s: s, decls: decls, runtime: runtime, @again)
 
 # The refusal where a group's header declares a name of those forms the C
 # this compiler writes declares too, or none.
-function kept(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> diag.Diagnostic?
+function kept(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @again: caret_bytes.Again) -> diag.Diagnostic?
     rows = ffi_lookup.lines(text: stderr)
     first = clang_first.first_error(rows)?
     steps = clang_place.stack(stderr: stderr, line: rows[first.row])
     own = runtime_key.made_of(runtime)?
-    line = declared_after.header_line(stderr: stderr, rows: rows, first: first, s: s, decls: decls, runtime: own)?
+    line = declared_after.header_line(stderr: stderr, rows: rows, first: first, s: s, decls: decls, runtime: own, @again)?
 
     if !in_programs_c(steps, s: s, decls: decls) || !reserved(line.name) || bound(name: line.name, s: s, decls: decls)
         return fail(code: "none", msg: "no name this compiler keeps to itself")
@@ -81,15 +83,19 @@ function kept(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) ->
 
 # The refusal where a group's header defines as a macro a name of those
 # forms, or the emitter's `f_<field>` or `t<N>`, which the C this compiler
-# writes uses where clang refuses it, or none.
-function met(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> diag.Diagnostic?
+# writes uses where clang refuses it, or none. The error's place is asked
+# first, so the unit is compiled again only for one in the program's C.
+function met(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @again: caret_bytes.Again) -> diag.Diagnostic?
     rows = ffi_lookup.lines(text: stderr)
     first = clang_first.first_error(rows)?
     steps = clang_place.stack(stderr: stderr, line: rows[first.row])
     own = runtime_key.made_of(runtime)?
-    name = runtime_name.caret_name(rows, after: first.row)?
 
-    if !in_programs_c(steps, s: s, decls: decls) || !reserved(name) && emitted_form(name) == "" || bound(name: name, s: s, decls: decls)
+    if !in_programs_c(steps, s: s, decls: decls) || clang_first.attached(rows, after: first.row).len() == 0
+        return fail(code: "none", msg: "no name this compiler keeps to itself")
+    name = caret_bytes.name(rows, after: first.row, @again)?
+
+    if !reserved(name) && emitted_form(name) == "" || bound(name: name, s: s, decls: decls)
         return fail(code: "none", msg: "no name this compiler keeps to itself")
 
     for note in clang_first.attached(rows, after: first.row)
@@ -196,20 +202,21 @@ constant TEXT: str
 test "a header declaring a name of the compiler's own forms is refused as its own (panel 214's R3)"
     s = source.new_source(name: "f_emit.hero", text: TEXT)
     decls = parse.parse(TEXT).decls
+    again: caret_bytes.Again @= caret_bytes.none()
 
     for name in ["h_femit_eight", "h_other_main", "main"]
         line = "femit.c:95:6: error: conflicting types for '" + name + "'\n   95 | void " + name + "(void);\n      |      ^\n"
         written = "In file included from build/tu-1/femit.c:20:\n./f_emit.h:1:5: note: previous declaration is here\n    1 | int " + name + "(int x);\n      |     ^\n"
-        said = kept(stderr: line + written, s: s, decls: decls, runtime: "runtime").must()
+        said = kept(stderr: line + written, s: s, decls: decls, runtime: "runtime", @again).must()
         assert said.notes[1] == "this compiler's `" + name + "` is a name the C it writes for every program declares, of the forms it keeps to itself: " + FORMS
 
     for wrong in ["eight", "femit_main"]
         line = "femit.c:95:6: error: conflicting types for '" + wrong + "'\n   95 | void " + wrong + "(void);\n      |      ^\n"
         written = "In file included from build/tu-1/femit.c:20:\n./f_emit.h:1:5: note: previous declaration is here\n    1 | int " + wrong + "(int x);\n      |     ^\n"
-        assert kept(stderr: line + written, s: s, decls: decls, runtime: "runtime").is_err()
+        assert kept(stderr: line + written, s: s, decls: decls, runtime: "runtime", @again).is_err()
 
     under = "In file included from build/tu-1/femit.c:30:\n./g.h:2:6: error: conflicting types for 'h_femit_main'\n    2 | void h_femit_main(void);\n      |      ^\nIn file included from build/tu-1/femit.c:20:\n./f_emit.h:1:5: note: previous declaration is here\n    1 | int h_femit_main(int x);\n      |     ^\n"
-    assert kept(stderr: under, s: s, decls: decls, runtime: "runtime").is_err()
+    assert kept(stderr: under, s: s, decls: decls, runtime: "runtime", @again).is_err()
 
 # A macro of a group's header named as the emitter names a field is the
 # header's, as clang's Apple 21 wrote it for the critic's `fm` (2026-10-14);
@@ -217,8 +224,9 @@ test "a header declaring a name of the compiler's own forms is refused as its ow
 test "a header's macro meeting the emitter's name of a field is refused as its own (panel 214's R3)"
     s = source.new_source(name: "f_emit.hero", text: TEXT)
     decls = parse.parse(TEXT).decls
+    again: caret_bytes.Again @= caret_bytes.none()
     said = "femit.c:81:13: error: expected member name or ';' after declaration specifiers\n   81 |     int64_t f_code;\n      |     ~~~~~~~ ^\nIn file included from build/tu-1/femit.c:22:\n./f_emit.h:1:16: note: expanded from macro 'f_code'\n    1 | #define f_code 0\n      |                ^\n"
-    d = met(stderr: said, s: s, decls: decls, runtime: "runtime").must()
+    d = met(stderr: said, s: s, decls: decls, runtime: "runtime", @again).must()
     assert d.code == "ffi_header_refused"
     assert d.message == "`f_emit.h`, the header this group names, does not compile in this program's unit: its line 1 defines `f_code` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: expected member name or ';' after declaration specifiers"
     assert d.notes[0] == "`f_emit.h` line 1 reads `#define f_code 0`"
@@ -226,7 +234,7 @@ test "a header's macro meeting the emitter's name of a field is refused as its o
     assert emitted_form("t") == ""
     assert emitted_form("tx1") == ""
     other = "femit.c:81:13: error: expected member name or ';' after declaration specifiers\n   81 |     int64_t code;\n      |     ~~~~~~~ ^\nIn file included from build/tu-1/femit.c:22:\n./f_emit.h:1:16: note: expanded from macro 'code'\n    1 | #define code 0\n      |                ^\n"
-    assert met(stderr: other, s: s, decls: decls, runtime: "runtime").is_err()
+    assert met(stderr: other, s: s, decls: decls, runtime: "runtime", @again).is_err()
 
 # **Panel 214's R4: the runtime's names held to those forms**, the one false
 # blame every route shares (the compiler-engineer's NC1): a runtime that

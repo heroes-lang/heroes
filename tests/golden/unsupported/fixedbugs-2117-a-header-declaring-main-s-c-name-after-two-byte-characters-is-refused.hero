@@ -1,0 +1,17 @@
+# fixedbugs, defect 2117, 2026-10-17, a shape beside the defect's.
+#
+# SYMPTOM: a header declaring `int h_<module>_main(int x);`, the name this
+# compiler writes for the program's `main`, after a comment holding `é` twice
+# was told `internal error: compiling the generated C failed` at exit 2:
+# clang draws its excerpt in columns, a character of two bytes one column
+# wide, so the caret the reader read stood two bytes short of the name.
+#
+# FIX: the name is read from the header's bytes at clang's column, a byte's
+# (`cli/caret_bytes.hero`), told as the one the C this compiler writes gives
+# the program's `main`, exit 1, with a `guess` fix.
+
+extern "fixedbugs-2117-a-header-declaring-main-s-c-name-after-two-byte-characters-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

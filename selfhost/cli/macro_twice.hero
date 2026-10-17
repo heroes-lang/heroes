@@ -25,6 +25,7 @@ use emit/ffi_lookup
 use cli/toolchain
 use cli/compiling
 use cli/clang_first
+use cli/caret_bytes
 use cli/header_refused
 use cli/headers_together
 use cli/order_trial
@@ -36,10 +37,11 @@ constant REDEFINED: str
 
 # The diagnostic, or none where clang's first error is not a macro two
 # groups' headers define two ways. `unit_headers` are the refused unit's, in
-# its order.
-function told(stderr: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> [diag.Diagnostic]
+# its order; `again` compiles the unit once more where a reading asks the
+# name under a caret (`cli/caret_bytes.hero`, defect 2117).
+function told(stderr: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str], @again: caret_bytes.Again) -> [diag.Diagnostic]
     none: [diag.Diagnostic] = []
-    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: t.runtime)
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: t.runtime, @again)
 
     if read.is_err() || clang_place.offset_of(text: read.must().first.message, needle: REDEFINED).is_err()
         return none

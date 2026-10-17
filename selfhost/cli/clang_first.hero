@@ -14,6 +14,7 @@ use cli/group_file
 use cli/runtime_key
 use cli/standard_name
 use cli/runtime_name
+use cli/caret_bytes
 
 # clang's first error, read: its row in the text, its place, and its message.
 record First
@@ -67,15 +68,15 @@ record Reading
     beside: group_file.Reached?
     note: Attached
 
-function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> Reading?
-    return read_as(stderr: stderr, s: s, decls: decls, runtime: runtime, involved: false)
+function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @again: caret_bytes.Again) -> Reading?
+    return read_as(stderr: stderr, s: s, decls: decls, runtime: runtime, involved: false, @again)
 
 # Panel 214's route O, a prototype: where the unit's opening is refused with
 # its groups' headers and compiles without them (`cli/whose.hero`), the
 # headers are what clang refused, so a file of the compiler's own after the
 # group in the stack, or a note in one, no longer makes it the compiler's:
 # the note is kept and told as the compiler's file it stands in.
-function read_as(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, involved: bool) -> Reading?
+function read_as(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, involved: bool, @again: caret_bytes.Again) -> Reading?
     rows = ffi_lookup.lines(text: stderr)
     first = first_error(rows)?
 
@@ -129,7 +130,7 @@ function read_as(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
     # save one the header's own line explains (`explaining`).
     for note in under
         if group_file.compilers(path: note.path, compiled: compiled, runtime: own)
-            explained = explaining(rows: rows, first: first, said: said, note: note, runtime: own)
+            explained = explaining(rows: rows, first: first, said: said, note: note, runtime: own, @again)
 
             if explained.is_err()
                 if !involved
@@ -193,7 +194,7 @@ function read_as(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
 # unit declares before any group's header (`cli/runtime_name.hero`); the
 # suggestion read in `said`, what clang wrote at the error's own place
 # (`at_error`).
-function explaining(rows: [str], first: First, said: [str], note: Attached, runtime: [str]) -> Attached?
+function explaining(rows: [str], first: First, said: [str], note: Attached, runtime: [str], @again: caret_bytes.Again) -> Attached?
     out: Attached @= note
     out.standard @ standard_name.declared(path: note.path, row: note.row, runtime: runtime)
 
@@ -205,12 +206,20 @@ function explaining(rows: [str], first: First, said: [str], note: Attached, runt
         note: note.index,
         path: note.path,
         row: note.row,
-        runtime: runtime
+        runtime: runtime,
+        @again
     )
 
     if !out.runtime.is_err()
         return ok(out)
-    out.called @ runtime_name.called(rows: rows, error: first.row, path: note.path, row: note.row, runtime: runtime)
+    out.called @ runtime_name.called(
+        rows: rows,
+        error: first.row,
+        path: note.path,
+        row: note.row,
+        runtime: runtime,
+        @again
+    )
 
     if !out.called.is_err()
         return ok(out)

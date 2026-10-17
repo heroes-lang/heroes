@@ -13,10 +13,13 @@
 # told (defects 060 and 360).
 #
 # **Asked of the two lines, never of a list of names.** The name is the
-# identifier clang's caret stands on in the line it quoted under the error,
-# the header's own; and the runtime's line, read from the runtime's own file
-# at the row clang's note names, holds that same identifier at the note's
-# column, where clang says the earlier declaration stands. Any other note in
+# identifier clang's caret stands on under the error, in the header's own
+# line, read from its bytes where a second clang run says clang read it
+# (`cli/caret_bytes.hero`, defect 2117: clang's excerpt of it was read until
+# then, which a line past 4,096 bytes has none of); and the runtime's line,
+# read from the runtime's own file at the row clang's note names, holds that
+# same identifier at the note's column, where clang says the earlier
+# declaration stands. Any other note in
 # the runtime's files is not this reading's, and neither is a note in the file
 # clang compiled, whose names the emitter writes after the groups
 # (`cli/declared_after.hero`).
@@ -30,10 +33,10 @@
 # stands at that name in the runtime's line, and clang's message ends `did
 # you mean 'HeroStr'?` (`suggested`).
 
-use bytes
 use emit/clang_place
 use emit/ffi_lookup
 use cli/standard_name
+use cli/caret_bytes
 
 constant NOTE: str
     ": note: "
@@ -42,29 +45,31 @@ constant NOTE: str
 # identifier clang's caret stands on under the error at row `error` of
 # `rows`, where the note at row `note`, at line `row` of `path`, one of
 # `runtime`'s files (`runtime_key.made_of`), points at that same identifier
-# in the runtime's own line; absent for any other note.
-function declared(rows: [str], error: i64, note: i64, path: str, row: i64, runtime: [str]) -> str?
-    name = caret_name(rows, after: error)?
+# in the runtime's own line; absent for any other note. The runtime's line
+# is asked first, so the unit is compiled again (`again`) only for a note
+# that stands on a name.
+function declared(rows: [str], error: i64, note: i64, path: str, row: i64, runtime: [str], @again: caret_bytes.Again) -> str?
     column = column_of(rows[note])?
     line = standard_name.line_of(path: path, row: row, runtime: runtime)?
-    said = name_at(text: line, at: column - 1)?
+    said = caret_bytes.name_at(text: line, at: column - 1)?
+    name = caret_bytes.name(rows, after: error, @again)?
 
     if said != name
         return fail(code: "none", msg: "the note is no declaration of the error's name")
     return ok(name)
 
-# The function of the runtime's own that the line clang quoted under the error
-# at row `error` of `rows` calls, where the note at line `row` of `path`, one
-# of `runtime`'s files, stands in that function's declaration: the name
-# before the runtime's line's first `(` is the one before the `(` whose
-# parentheses hold clang's caret, `hero_str_len(8)` under *passing 'int' to
-# parameter of incompatible type 'HeroStr'*; absent for any other note.
-function called(rows: [str], error: i64, path: str, row: i64, runtime: [str]) -> str?
+# The function of the runtime's own that the line under the error at row
+# `error` of `rows` calls, where the note at line `row` of `path`, one of
+# `runtime`'s files, stands in that function's declaration: the name before
+# the runtime's line's first `(` is the one before the `(` whose parentheses
+# hold clang's caret, `hero_str_len(8)` under *passing 'int' to parameter of
+# incompatible type 'HeroStr'*; absent for any other note.
+function called(rows: [str], error: i64, path: str, row: i64, runtime: [str], @again: caret_bytes.Again) -> str?
     line = standard_name.line_of(path: path, row: row, runtime: runtime)?
     opening = clang_place.offset_of(text: line, needle: "(")?
     name = name_before(text: line, at: opening, from: 0)?
-    caret = caret_of(rows, after: error)?
-    callee = callee_at(text: caret.quoted, at: caret.at, from: caret.start)?
+    caret = caret_bytes.caret(rows, after: error, @again)?
+    callee = callee_at(text: caret.line, at: caret.at, from: 0)?
 
     if callee != name
         return fail(code: "none", msg: "the caret stands in no call of the note's function")
@@ -83,7 +88,7 @@ function called(rows: [str], error: i64, path: str, row: i64, runtime: [str]) ->
 function suggested(rows: [str], said: [str], note: i64, path: str, row: i64, runtime: [str]) -> str?
     column = column_of(rows[note])?
     line = standard_name.line_of(path: path, row: row, runtime: runtime)?
-    name = name_at(text: line, at: column - 1)?
+    name = caret_bytes.name_at(text: line, at: column - 1)?
 
     for text in said
         if !clang_place.offset_of(text: text, needle: SUGGESTION + name + "'?").is_err()
@@ -93,36 +98,6 @@ function suggested(rows: [str], said: [str], note: i64, path: str, row: i64, run
 
 constant SUGGESTION: str
     "did you mean '"
-
-# The identifier clang's caret stands on in the line it quoted under the
-# diagnostic at row `after`.
-function caret_name(rows: [str], after: i64) -> str?
-    caret = caret_of(rows, after: after)?
-    return name_at(text: caret.quoted, at: caret.at)
-
-# The line clang quoted under the diagnostic at row `after`, the byte its
-# caret stands on, and where the line begins past its gutter: the excerpt
-# `    2 | static inline int f(...)`, then the caret's row
-# `      |                   ^`, both drawn from one gutter, so the caret's
-# offset past the gutter is its offset in the line as clang quoted it, a tab
-# expanded alike in both.
-record Caret
-    quoted: str
-    at: i64
-    start: i64
-
-function caret_of(rows: [str], after: i64) -> Caret?
-    if after + 2 >= rows.len()
-        return fail(code: "none", msg: "no excerpt under the diagnostic")
-    quoted = clang_place.without_return(rows[after + 1])
-    marks = clang_place.without_return(rows[after + 2])
-    text = gutter(quoted, numbered: true)?
-    under = gutter(marks, numbered: false)?
-
-    if text != under
-        return fail(code: "none", msg: "the excerpt and the caret stand on two gutters")
-    caret = clang_place.offset_of(text: marks.slice(from: under, to: marks.len()), needle: "^")?
-    return ok(Caret(quoted: quoted, at: under + caret, start: under))
 
 # The function whose call's parentheses hold byte `at` of `text`, read no
 # further back than byte `from`: the nearest `(` before it that no `)`
@@ -152,35 +127,12 @@ function name_before(text: str, at: i64, from: i64) -> str?
 
     start: i64 @= stop
 
-    while start > from && in_name(text[start - 1])
+    while start > from && caret_bytes.in_name(text[start - 1])
         start @ start - 1
 
     if start == stop
         return fail(code: "none", msg: "no name before it")
-    return name_at(text: text, at: start)
-
-# Where a row of clang's excerpt begins past its gutter: spaces, the line's
-# number on the quoted row and none on the caret's, then ` | ` (` |` where
-# the number is absent, its space being a pad).
-function gutter(row: str, numbered: bool) -> i64?
-    index: i64 @= 0
-
-    while index < row.len() && row[index] == ' '
-        index @ index + 1
-
-    if numbered
-        digits = index
-
-        while index < row.len() && bytes.is_digit(row[index])
-            index @ index + 1
-
-        if index == digits || !clang_place.same_bytes(text: row, from: index, part: " ")
-            return fail(code: "none", msg: "not clang's quoted row")
-        index @ index + 1
-
-    if !clang_place.same_bytes(text: row, from: index, part: "| ")
-        return fail(code: "none", msg: "not clang's gutter")
-    return ok(index + 2)
+    return caret_bytes.name_at(text: text, at: start)
 
 # The column a note line names, `path:row:col: note: ...`.
 function column_of(line: str) -> i64?
@@ -188,21 +140,6 @@ function column_of(line: str) -> i64?
     at = clang_place.offset_of(text: text, needle: NOTE)?
     tail = clang_place.last_number(text.slice(from: 0, to: at))?
     return ok(tail.number)
-
-# The C identifier that begins at byte `at` of `text`, none where no name
-# begins there, the byte before it being of the name.
-function name_at(text: str, at: i64) -> str?
-    if at < 0 || at >= text.len() || bytes.is_digit(text[at]) || !in_name(text[at]) || at > 0 && in_name(text[at - 1])
-        return fail(code: "none", msg: "no name begins there")
-    stop: i64 @= at
-
-    while stop < text.len() && in_name(text[stop])
-        stop @ stop + 1
-
-    return ok(text.slice(from: at, to: stop))
-
-function in_name(b: u8) -> bool
-    return bytes.is_alnum(b) || b == '_'
 
 ## Tests
 
@@ -220,35 +157,48 @@ test "a note at the runtime's own declaration of the name the error's caret stan
         caret: "                  ^",
         note: "runtime/heroes_runtime.h:" + length.to_str() + ":9"
     )
-    assert declared(rows: static, error: 0, note: 3, path: "runtime/heroes_runtime.h", row: length, runtime: runtime).must() == "hero_str_len"
+    again: caret_bytes.Again @= caret_bytes.none()
+    assert declared(rows: static, error: 0, note: 3, path: "runtime/heroes_runtime.h", row: length, runtime: runtime, @again).must() == "hero_str_len"
     typed = clang_rows(
         at: "1:13",
         line: "typedef int HeroStr;",
         caret: "            ^",
         note: "runtime/heroes_runtime.h:" + str_type.to_str() + ":3"
     )
-    assert declared(rows: typed, error: 0, note: 3, path: "runtime/heroes_runtime.h", row: str_type, runtime: runtime).must() == "HeroStr"
+    assert declared(rows: typed, error: 0, note: 3, path: "runtime/heroes_runtime.h", row: str_type, runtime: runtime, @again).must() == "HeroStr"
     os = clang_rows(
         at: "1:5",
         line: "int hero_os_pid(int x);",
         caret: "    ^",
         note: "runtime\\hero_os.h:" + pid.to_str() + ":9"
     )
-    assert declared(rows: os, error: 0, note: 3, path: "runtime\\hero_os.h", row: pid, runtime: runtime).must() == "hero_os_pid"
+    assert declared(rows: os, error: 0, note: 3, path: "runtime\\hero_os.h", row: pid, runtime: runtime, @again).must() == "hero_os_pid"
 
-    # A tab in the header's line, which clang expands alike in its excerpt and
-    # under its caret; and the Windows box's line endings.
+    # A tab in the header's line, one byte where clang's column counts it,
+    # however its excerpt draws it; and the Windows box's line endings.
     tabbed = [
         "./bad.h:1:5: error: conflicting types for 'hero_str_len'\r"
         "    1 | int     hero_str_len(int x);\r"
         "      |         ^\r"
         "runtime/heroes_runtime.h:" + length.to_str() + ":9: note: previous declaration is here\r"
     ]
-    assert declared(rows: tabbed, error: 0, note: 3, path: "runtime/heroes_runtime.h", row: length, runtime: runtime).must() == "hero_str_len"
+    again @ caret_bytes.given(said: tabbed.join("\n"), files: {"./bad.h": "int\thero_str_len(int x);\r\n"})
+    assert declared(rows: tabbed, error: 0, note: 3, path: "runtime/heroes_runtime.h", row: length, runtime: runtime, @again).must() == "hero_str_len"
+
+    # DEFECT 2117: the header's line read where clang quoted none of it, a
+    # line past 4,096 bytes, and past a character of two bytes, which its
+    # excerpt drew one column wide.
+    long = "/* éé */ " + " ".repeat(4096) + "static inline int hero_str_len(int x);"
+    unquoted = [
+        "./bad.h:1:4126: error: static declaration of 'hero_str_len' follows non-static declaration"
+        "runtime/heroes_runtime.h:" + length.to_str() + ":9: note: previous declaration is here"
+    ]
+    again @ caret_bytes.given(said: unquoted.join("\n"), files: {"./bad.h": long + "\n"})
+    assert declared(rows: unquoted, error: 0, note: 1, path: "runtime/heroes_runtime.h", row: length, runtime: runtime, @again).must() == "hero_str_len"
 
 # What is no such note: a parameter a call passed a wrong value to, a name a
 # misspelling resembles, a column off the name, a file that is not the
-# runtime's, and an excerpt clang did not draw.
+# runtime's, and a header's line no file holds.
 test "a note at another place of the runtime's line, or under no excerpt, names nothing (defect 2045)"
     runtime = ["runtime/runtime.c", "runtime/heroes_runtime.h"]
     length = row_of(path: "runtime/heroes_runtime.h", line: "int64_t hero_str_len(HeroStr s);")
@@ -259,13 +209,15 @@ test "a note at another place of the runtime's line, or under no excerpt, names 
         caret: "                                                    ^",
         note: "runtime/heroes_runtime.h:" + length.to_str() + ":30"
     )
+    again: caret_bytes.Again @= caret_bytes.none()
     assert declared(
         rows: call,
         error: 0,
         note: 3,
         path: "runtime/heroes_runtime.h",
         row: length,
-        runtime: runtime
+        runtime: runtime,
+        @again
     ).is_err()
     typo = clang_rows(
         at: "1:33",
@@ -279,7 +231,8 @@ test "a note at another place of the runtime's line, or under no excerpt, names 
         note: 3,
         path: "runtime/heroes_runtime.h",
         row: str_type,
-        runtime: runtime
+        runtime: runtime,
+        @again
     ).is_err()
     off = clang_rows(
         at: "1:19",
@@ -293,7 +246,8 @@ test "a note at another place of the runtime's line, or under no excerpt, names 
         note: 3,
         path: "runtime/heroes_runtime.h",
         row: length,
-        runtime: runtime
+        runtime: runtime,
+        @again
     ).is_err()
     static = clang_rows(
         at: "1:19",
@@ -301,7 +255,15 @@ test "a note at another place of the runtime's line, or under no excerpt, names 
         caret: "                  ^",
         note: "build/tu-1/t.c:" + length.to_str() + ":9"
     )
-    assert declared(rows: static, error: 0, note: 3, path: "build/tu-1/t.c", row: length, runtime: runtime).is_err()
+    assert declared(
+        rows: static,
+        error: 0,
+        note: 3,
+        path: "build/tu-1/t.c",
+        row: length,
+        runtime: runtime,
+        @again
+    ).is_err()
     bare = [
         "./bad.h:1:19: error: static declaration of 'hero_str_len' follows non-static declaration"
         "runtime/heroes_runtime.h:" + length.to_str() + ":9: note: previous declaration is here"
@@ -312,13 +274,9 @@ test "a note at another place of the runtime's line, or under no excerpt, names 
         note: 1,
         path: "runtime/heroes_runtime.h",
         row: length,
-        runtime: runtime
+        runtime: runtime,
+        @again
     ).is_err()
-    assert gutter("      |  ^", numbered: true).is_err()
-    assert gutter("    1 | x", numbered: false).is_err()
-    assert name_at(text: "int64_t x;", at: 1).is_err()
-    assert name_at(text: "2x", at: 0).is_err()
-    assert name_at(text: "a_b9(", at: 0).must() == "a_b9"
 
 # Clang's rows for an error at `at` of `./bad.h`, the line it quoted and its
 # caret, and a note at `note`.
@@ -361,8 +319,16 @@ test "the function whose call holds the caret, and a name clang suggests, are re
         caret: "                                                    ^",
         note: "runtime/heroes_runtime.h:" + length.to_str() + ":30"
     )
-    assert called(rows: call, error: 0, path: "runtime/heroes_runtime.h", row: length, runtime: runtime).must() == "hero_str_len"
-    assert called(rows: call, error: 0, path: "runtime/heroes_runtime.h", row: str_type, runtime: runtime).is_err()
+    again: caret_bytes.Again @= caret_bytes.none()
+    assert called(rows: call, error: 0, path: "runtime/heroes_runtime.h", row: length, runtime: runtime, @again).must() == "hero_str_len"
+    assert called(
+        rows: call,
+        error: 0,
+        path: "runtime/heroes_runtime.h",
+        row: str_type,
+        runtime: runtime,
+        @again
+    ).is_err()
     typo = clang_rows(
         at: "1:33",
         line: "static inline int eight(void) { HeroSt s; (void)s; return 8; }",
