@@ -84,3 +84,7 @@ B, recorded above.
 ## Author's verdict
 
 Pending.
+
+Asked for by https://github.com/heroes-lang/heroes/issues/2122, naming the sitting as `panel 220`.
+
+**Corrected 13:03, by `date`**: the head's *synthesised ... from 13:20* was written without reading the clock; `date` printed 13:02 after this file was committed.
