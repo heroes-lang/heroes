@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "abortarrayindex.c"
 #pragma clang diagnostic pop
@@ -95,57 +95,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_abortarrayindex_main(void);
 
 #line 4 "tests/golden/run/abort-array-index.hero"
-void h_abortarrayindex_main(void) {
-#line 4 "tests/golden/run/abort-array-index.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4, *t5, *t8, *t11, *t12; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t9, t10; HERO_ENTRY_STOP; goto bb0;
-#line 4 "tests/golden/run/abort-array-index.hero"
-bb0:
-    t1 = INT64_C(10);
-#line 5 "tests/golden/run/abort-array-index.hero"
-    t2 = INT64_C(20);
-#line 5 "tests/golden/run/abort-array-index.hero"
-    t3 = INT64_C(30);
-#line 5 "tests/golden/run/abort-array-index.hero"
-    t4 = hero_array_new(&hero_desc_int, 3);
-#line 5 "tests/golden/run/abort-array-index.hero"
-    hero_array_push_owned(&t4, &t1);
-#line 5 "tests/golden/run/abort-array-index.hero"
-    hero_array_push_owned(&t4, &t2);
-#line 5 "tests/golden/run/abort-array-index.hero"
-    hero_array_push_owned(&t4, &t3);
-#line 5 "tests/golden/run/abort-array-index.hero"
-    t11 = h1_own1;
-#line 5 "tests/golden/run/abort-array-index.hero"
-    h1_own1 = t4;
-#line 5 "tests/golden/run/abort-array-index.hero"
-    hero_array_decref(t11);
-#line 5 "tests/golden/run/abort-array-index.hero"
-    t12 = h0_xs;
-#line 5 "tests/golden/run/abort-array-index.hero"
-    hero_array_incref(t4);
-#line 5 "tests/golden/run/abort-array-index.hero"
-    h0_xs = t4;
-#line 5 "tests/golden/run/abort-array-index.hero"
-    hero_array_decref(t12);
-    t5 = h0_xs;
-#line 6 "tests/golden/run/abort-array-index.hero"
-    t6 = INT64_C(2);
-#line 6 "tests/golden/run/abort-array-index.hero"
-    t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]);
-#line 6 "tests/golden/run/abort-array-index.hero"
-    hero_print_int(t7);
-#line 6 "tests/golden/run/abort-array-index.hero"
-    hero_print_end();
-    t8 = h0_xs;
-#line 7 "tests/golden/run/abort-array-index.hero"
-    t9 = INT64_C(5);
-#line 7 "tests/golden/run/abort-array-index.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
-#line 7 "tests/golden/run/abort-array-index.hero"
-    hero_print_int(t10);
-#line 7 "tests/golden/run/abort-array-index.hero"
-    hero_print_end();
-#line 149 "abortarrayindex.c"
+void h_abortarrayindex_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4, *t5, *t8, *t11, *t12; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(10); t2 = INT64_C(20); t3 = INT64_C(30); t4 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t11 = h1_own1; h1_own1 = t4; hero_array_decref(t11); t12 = h0_xs; hero_array_incref(t4); h0_xs = t4; hero_array_decref(t12);
+    t5 = h0_xs; t6 = INT64_C(2); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? ((void)hero_array_at(t5, t6), hero_unreachable()) : (void)0), (void)(t5->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t5 + 1))[t6]); hero_print_int(t7); hero_print_end();
+    t8 = h0_xs; t9 = INT64_C(5); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); hero_print_int(t10); hero_print_end();
+#line 103 "abortarrayindex.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

@@ -81,11 +81,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 91 "crlfliteral.c"
 #pragma clang diagnostic pop
@@ -104,122 +104,18 @@ HeroStr h_crlfliteral_request(HeroStr h0_host, HeroStr h1_path);
 void h_crlfliteral_main(void);
 
 #line 8 "tests/golden/run/crlf-literal.hero"
-HeroStr h_crlfliteral_crlf(void) {
-#line 8 "tests/golden/run/crlf-literal.hero"
-    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 8 "tests/golden/run/crlf-literal.hero"
-bb0:
+HeroStr h_crlfliteral_crlf(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_6b1);
-#line 114 "crlfliteral.c"
+#line 110 "crlfliteral.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 11 "tests/golden/run/crlf-literal.hero"
-HeroStr h_crlfliteral_request(HeroStr h0_host, HeroStr h1_path) {
-#line 11 "tests/golden/run/crlf-literal.hero"
-    HeroStr h2_line = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/crlf-literal.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_995c286);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t2 = h1_path;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t17 = h3_own3;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    h3_own3 = t3;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t17);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t4 = HERO_STR_LIT(hero_str_59caaa51);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t5 = hero_str_concat(t3, t4);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t18 = h4_own4;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    h4_own4 = t5;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t18);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t6 = h_crlfliteral_crlf();
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t19 = h5_own5;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    h5_own5 = t6;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t19);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t7 = hero_str_concat(t5, t6);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t20 = h6_own6;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    h6_own6 = t7;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t20);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    t21 = h2_line;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    hero_str_incref(t7);
-#line 12 "tests/golden/run/crlf-literal.hero"
-    h2_line = t7;
-#line 12 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t21);
-    t8 = h2_line;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t9 = HERO_STR_LIT(hero_str_692ea516);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t10 = hero_str_concat(t8, t9);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t22 = h7_own7;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    h7_own7 = t10;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t22);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t11 = h0_host;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t12 = hero_str_concat(t10, t11);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t23 = h8_own8;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    h8_own8 = t12;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t23);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t13 = h_crlfliteral_crlf();
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t24 = h9_own9;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    h9_own9 = t13;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t24);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t14 = hero_str_concat(t12, t13);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t25 = h10_own10;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    h10_own10 = t14;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t25);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t15 = h_crlfliteral_crlf();
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t26 = h11_own11;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    h11_own11 = t15;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t26);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t16 = hero_str_concat(t14, t15);
-#line 13 "tests/golden/run/crlf-literal.hero"
-    t27 = h12_own12;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    h12_own12 = t16;
-#line 13 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t27);
-#line 223 "crlfliteral.c"
+HeroStr h_crlfliteral_request(HeroStr h0_host, HeroStr h1_path) { HeroStr h2_line = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_995c286); t2 = h1_path; t3 = hero_str_concat(t1, t2); t17 = h3_own3; h3_own3 = t3; hero_str_decref(t17); t4 = HERO_STR_LIT(hero_str_59caaa51); t5 = hero_str_concat(t3, t4); t18 = h4_own4; h4_own4 = t5; hero_str_decref(t18); t6 = h_crlfliteral_crlf(); t19 = h5_own5; h5_own5 = t6; hero_str_decref(t19); t7 = hero_str_concat(t5, t6); t20 = h6_own6; h6_own6 = t7; hero_str_decref(t20); t21 = h2_line; hero_str_incref(t7); h2_line = t7; hero_str_decref(t21);
+    t8 = h2_line; t9 = HERO_STR_LIT(hero_str_692ea516); t10 = hero_str_concat(t8, t9); t22 = h7_own7; h7_own7 = t10; hero_str_decref(t22); t11 = h0_host; t12 = hero_str_concat(t10, t11); t23 = h8_own8; h8_own8 = t12; hero_str_decref(t23); t13 = h_crlfliteral_crlf(); t24 = h9_own9; h9_own9 = t13; hero_str_decref(t24); t14 = hero_str_concat(t12, t13); t25 = h10_own10; h10_own10 = t14; hero_str_decref(t25); t15 = h_crlfliteral_crlf(); t26 = h11_own11; h11_own11 = t15; hero_str_decref(t26); t16 = hero_str_concat(t14, t15); t27 = h12_own12; h12_own12 = t16; hero_str_decref(t27);
+#line 119 "crlfliteral.c"
     hero_str_incref(t16);
     hero_str_release_at(&h2_line);
     hero_str_release_at(&h3_own3);
@@ -236,146 +132,22 @@ bb0:
 }
 
 #line 15 "tests/golden/run/crlf-literal.hero"
-void h_crlfliteral_main(void) {
-#line 15 "tests/golden/run/crlf-literal.hero"
-    HeroStr h0_e = {0}; HeroStr h1_r = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t1, t2, t4, t7, t11, t12, t13, t14, t16, t17, t22, t23, t28, t29, t34, t35, t40, t41, t42, t43; HERO_NODEBUG int64_t t3, t5, t8, t10, t15, t18, t19, t20, t24, t25, t26, t30, t31, t32, t36, t37, t38; HERO_NODEBUG uint8_t t6, t9, t21, t27, t33, t39; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/crlf-literal.hero"
-bb0:
-#line 17 "tests/golden/run/crlf-literal.hero"
-    t1 = h_crlfliteral_crlf();
-#line 17 "tests/golden/run/crlf-literal.hero"
-    t40 = h2_own2;
-#line 17 "tests/golden/run/crlf-literal.hero"
-    h2_own2 = t1;
-#line 17 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t40);
-#line 17 "tests/golden/run/crlf-literal.hero"
-    t41 = h0_e;
-#line 17 "tests/golden/run/crlf-literal.hero"
-    hero_str_incref(t1);
-#line 17 "tests/golden/run/crlf-literal.hero"
-    h0_e = t1;
-#line 17 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t41);
-    t2 = h0_e;
-#line 18 "tests/golden/run/crlf-literal.hero"
-    t3 = hero_str_len(t2);
-#line 18 "tests/golden/run/crlf-literal.hero"
-    hero_print_int(t3);
-#line 18 "tests/golden/run/crlf-literal.hero"
-    hero_print_end();
-    t4 = h0_e;
-#line 19 "tests/golden/run/crlf-literal.hero"
-    t5 = INT64_C(0);
-#line 19 "tests/golden/run/crlf-literal.hero"
-    t6 = ((void)((t4.ptr == NULL || t5 < 0 || t5 >= t4.len) ? ((void)hero_str_byte(t4, t5), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t4.ptr[t5]);
-#line 19 "tests/golden/run/crlf-literal.hero"
-    hero_print_int(t6);
-#line 19 "tests/golden/run/crlf-literal.hero"
-    hero_print_end();
-    t7 = h0_e;
-#line 20 "tests/golden/run/crlf-literal.hero"
-    t8 = INT64_C(1);
-#line 20 "tests/golden/run/crlf-literal.hero"
-    t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? ((void)hero_str_byte(t7, t8), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]);
-#line 20 "tests/golden/run/crlf-literal.hero"
-    hero_print_int(t9);
-#line 20 "tests/golden/run/crlf-literal.hero"
-    hero_print_end();
-#line 23 "tests/golden/run/crlf-literal.hero"
-    t10 = INT64_C(13);
-#line 23 "tests/golden/run/crlf-literal.hero"
-    hero_print_int(t10);
-#line 23 "tests/golden/run/crlf-literal.hero"
-    hero_print_end();
-#line 26 "tests/golden/run/crlf-literal.hero"
-    t11 = HERO_STR_LIT(hero_str_71c6be1f);
-#line 26 "tests/golden/run/crlf-literal.hero"
-    t12 = HERO_STR_LIT(hero_str_2f);
-#line 26 "tests/golden/run/crlf-literal.hero"
-    t13 = h_crlfliteral_request(t11, t12);
-#line 26 "tests/golden/run/crlf-literal.hero"
-    t42 = h3_own3;
-#line 26 "tests/golden/run/crlf-literal.hero"
-    h3_own3 = t13;
-#line 26 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t42);
-#line 26 "tests/golden/run/crlf-literal.hero"
-    t43 = h1_r;
-#line 26 "tests/golden/run/crlf-literal.hero"
-    hero_str_incref(t13);
-#line 26 "tests/golden/run/crlf-literal.hero"
-    h1_r = t13;
-#line 26 "tests/golden/run/crlf-literal.hero"
-    hero_str_decref(t43);
-    t14 = h1_r;
-#line 27 "tests/golden/run/crlf-literal.hero"
-    t15 = hero_str_len(t14);
-#line 27 "tests/golden/run/crlf-literal.hero"
-    hero_print_int(t15);
-#line 27 "tests/golden/run/crlf-literal.hero"
-    hero_print_end();
-    t16 = h1_r;
-#line 28 "tests/golden/run/crlf-literal.hero"
-    t17 = h1_r;
-#line 28 "tests/golden/run/crlf-literal.hero"
-    t18 = hero_str_len(t17);
-#line 28 "tests/golden/run/crlf-literal.hero"
-    t19 = INT64_C(4);
-#line 28 "tests/golden/run/crlf-literal.hero"
-    if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow();
-#line 28 "tests/golden/run/crlf-literal.hero"
-    t21 = ((void)((t16.ptr == NULL || t20 < 0 || t20 >= t16.len) ? ((void)hero_str_byte(t16, t20), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t16.ptr[t20]);
-#line 28 "tests/golden/run/crlf-literal.hero"
-    hero_print_int(t21);
-#line 28 "tests/golden/run/crlf-literal.hero"
-    hero_print_end();
-    t22 = h1_r;
-#line 29 "tests/golden/run/crlf-literal.hero"
-    t23 = h1_r;
-#line 29 "tests/golden/run/crlf-literal.hero"
-    t24 = hero_str_len(t23);
-#line 29 "tests/golden/run/crlf-literal.hero"
-    t25 = INT64_C(3);
-#line 29 "tests/golden/run/crlf-literal.hero"
-    if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow();
-#line 29 "tests/golden/run/crlf-literal.hero"
-    t27 = ((void)((t22.ptr == NULL || t26 < 0 || t26 >= t22.len) ? ((void)hero_str_byte(t22, t26), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t22.ptr[t26]);
-#line 29 "tests/golden/run/crlf-literal.hero"
-    hero_print_int(t27);
-#line 29 "tests/golden/run/crlf-literal.hero"
-    hero_print_end();
-    t28 = h1_r;
-#line 30 "tests/golden/run/crlf-literal.hero"
-    t29 = h1_r;
-#line 30 "tests/golden/run/crlf-literal.hero"
-    t30 = hero_str_len(t29);
-#line 30 "tests/golden/run/crlf-literal.hero"
-    t31 = INT64_C(2);
-#line 30 "tests/golden/run/crlf-literal.hero"
-    if (__builtin_sub_overflow(t30, t31, &t32)) hero_panic_overflow();
-#line 30 "tests/golden/run/crlf-literal.hero"
-    t33 = ((void)((t28.ptr == NULL || t32 < 0 || t32 >= t28.len) ? ((void)hero_str_byte(t28, t32), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t28.ptr[t32]);
-#line 30 "tests/golden/run/crlf-literal.hero"
-    hero_print_int(t33);
-#line 30 "tests/golden/run/crlf-literal.hero"
-    hero_print_end();
-    t34 = h1_r;
-#line 31 "tests/golden/run/crlf-literal.hero"
-    t35 = h1_r;
-#line 31 "tests/golden/run/crlf-literal.hero"
-    t36 = hero_str_len(t35);
-#line 31 "tests/golden/run/crlf-literal.hero"
-    t37 = INT64_C(1);
-#line 31 "tests/golden/run/crlf-literal.hero"
-    if (__builtin_sub_overflow(t36, t37, &t38)) hero_panic_overflow();
-#line 31 "tests/golden/run/crlf-literal.hero"
-    t39 = ((void)((t34.ptr == NULL || t38 < 0 || t38 >= t34.len) ? ((void)hero_str_byte(t34, t38), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t34.ptr[t38]);
-#line 31 "tests/golden/run/crlf-literal.hero"
-    hero_print_int(t39);
-#line 31 "tests/golden/run/crlf-literal.hero"
-    hero_print_end();
-#line 379 "crlfliteral.c"
+void h_crlfliteral_main(void) { HeroStr h0_e = {0}; HeroStr h1_r = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t1, t2, t4, t7, t11, t12, t13, t14, t16, t17, t22, t23, t28, t29, t34, t35, t40, t41, t42, t43; HERO_NODEBUG int64_t t3, t5, t8, t10, t15, t18, t19, t20, t24, t25, t26, t30, t31, t32, t36, t37, t38; HERO_NODEBUG uint8_t t6, t9, t21, t27, t33, t39; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 17
+    t1 = h_crlfliteral_crlf(); t40 = h2_own2; h2_own2 = t1; hero_str_decref(t40); t41 = h0_e; hero_str_incref(t1); h0_e = t1; hero_str_decref(t41);
+    t2 = h0_e; t3 = hero_str_len(t2); hero_print_int(t3); hero_print_end();
+    t4 = h0_e; t5 = INT64_C(0); t6 = ((void)((t4.ptr == NULL || t5 < 0 || t5 >= t4.len) ? ((void)hero_str_byte(t4, t5), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t4.ptr[t5]); hero_print_int(t6); hero_print_end();
+    t7 = h0_e; t8 = INT64_C(1); t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? ((void)hero_str_byte(t7, t8), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]); hero_print_int(t9); hero_print_end();
+#line 23
+    t10 = INT64_C(13); hero_print_int(t10); hero_print_end();
+#line 26
+    t11 = HERO_STR_LIT(hero_str_71c6be1f); t12 = HERO_STR_LIT(hero_str_2f); t13 = h_crlfliteral_request(t11, t12); t42 = h3_own3; h3_own3 = t13; hero_str_decref(t42); t43 = h1_r; hero_str_incref(t13); h1_r = t13; hero_str_decref(t43);
+    t14 = h1_r; t15 = hero_str_len(t14); hero_print_int(t15); hero_print_end();
+    t16 = h1_r; t17 = h1_r; t18 = hero_str_len(t17); t19 = INT64_C(4); if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow(); t21 = ((void)((t16.ptr == NULL || t20 < 0 || t20 >= t16.len) ? ((void)hero_str_byte(t16, t20), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t16.ptr[t20]); hero_print_int(t21); hero_print_end();
+    t22 = h1_r; t23 = h1_r; t24 = hero_str_len(t23); t25 = INT64_C(3); if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow(); t27 = ((void)((t22.ptr == NULL || t26 < 0 || t26 >= t22.len) ? ((void)hero_str_byte(t22, t26), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t22.ptr[t26]); hero_print_int(t27); hero_print_end();
+    t28 = h1_r; t29 = h1_r; t30 = hero_str_len(t29); t31 = INT64_C(2); if (__builtin_sub_overflow(t30, t31, &t32)) hero_panic_overflow(); t33 = ((void)((t28.ptr == NULL || t32 < 0 || t32 >= t28.len) ? ((void)hero_str_byte(t28, t32), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t28.ptr[t32]); hero_print_int(t33); hero_print_end();
+    t34 = h1_r; t35 = h1_r; t36 = hero_str_len(t35); t37 = INT64_C(1); if (__builtin_sub_overflow(t36, t37, &t38)) hero_panic_overflow(); t39 = ((void)((t34.ptr == NULL || t38 < 0 || t38 >= t34.len) ? ((void)hero_str_byte(t34, t38), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t34.ptr[t38]); hero_print_int(t39); hero_print_end();
+#line 151 "crlfliteral.c"
     hero_str_release_at(&h0_e);
     hero_str_release_at(&h1_r);
     hero_str_release_at(&h2_own2);

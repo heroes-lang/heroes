@@ -135,11 +135,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_deadaddresscopymadebeforeth
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 145 "deadaddresscopymadebeforetheendreachesc.c"
 #pragma clang diagnostic pop
@@ -158,44 +158,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_deadaddresscopymadebeforetheendreachesc_main(void);
 
 #line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-void h_deadaddresscopymadebeforetheendreachesc_main(void) {
-#line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    node * h0_a; node * h1_keep; HERO_NODEBUG node *t1, *t2, *t3, *t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-bb0:
-    t1 = node_new();
-#line 22 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    hero_handle_acquired(t1, "node_free");
-#line 22 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    h0_a = t1;
-    t2 = h0_a;
-#line 23 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    h1_keep = t2;
-    t3 = h0_a;
-#line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    {
-#line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    hero_handle_alive(t3, "the argument `n` of `node_free`");
-#line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL);
-#line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    (void)node_free(t3);
-#line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
-#line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    }
-    t4 = h1_keep;
-#line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    hero_handle_alive(t4, "the argument `n` of `node_value`");
-#line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    t5 = node_value(t4);
-#line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    hero_print_int(t5);
-#line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    hero_print_end();
-#line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    return;
-#line 199 "deadaddresscopymadebeforetheendreachesc.c"
+void h_deadaddresscopymadebeforetheendreachesc_main(void) { node * h0_a; node * h1_keep; HERO_NODEBUG node *t1, *t2, *t3, *t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = node_new(); hero_handle_acquired(t1, "node_free"); h0_a = t1;
+    t2 = h0_a; h1_keep = t2;
+    t3 = h0_a; { hero_handle_alive(t3, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL); (void)node_free(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); }
+    t4 = h1_keep; hero_handle_alive(t4, "the argument `n` of `node_value`"); t5 = node_value(t4); hero_print_int(t5); hero_print_end(); return;
+#line 167 "deadaddresscopymadebeforetheendreachesc.c"
 }
 HERO_TU_LOCAL bool h_deadaddresscopymadebeforetheendreachesc_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

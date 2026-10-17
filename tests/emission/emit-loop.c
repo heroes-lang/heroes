@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "loop.c"
 #pragma clang diagnostic pop
@@ -95,91 +95,21 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_loop_main(void);
 
 #line 5 "tests/golden/emit/loop.hero"
-void h_loop_main(void) {
-#line 5 "tests/golden/emit/loop.hero"
-    int64_t h0_n; int64_t h1_total; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t18, t19; HERO_NODEBUG bool t5, t17; HERO_ENTRY_STOP; goto bb0;
-#line 5 "tests/golden/emit/loop.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 6 "tests/golden/emit/loop.hero"
-    h0_n = t1;
-    t2 = INT64_C(0);
-#line 7 "tests/golden/emit/loop.hero"
-    h1_total = t2;
-#line 7 "tests/golden/emit/loop.hero"
-    goto bb1;
-#line 7 "tests/golden/emit/loop.hero"
-bb1:
-#line 9 "tests/golden/emit/loop.hero"
-    t3 = h0_n;
-#line 9 "tests/golden/emit/loop.hero"
-    t4 = INT64_C(5);
-#line 9 "tests/golden/emit/loop.hero"
-    t5 = t3 < t4;
-#line 9 "tests/golden/emit/loop.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 9 "tests/golden/emit/loop.hero"
-bb2:
-    t6 = h1_total;
-#line 10 "tests/golden/emit/loop.hero"
-    t7 = h0_n;
-#line 10 "tests/golden/emit/loop.hero"
-    t8 = h0_n;
-#line 10 "tests/golden/emit/loop.hero"
-    if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 10 "tests/golden/emit/loop.hero"
-    if (__builtin_add_overflow(t6, t9, &t10)) hero_panic_overflow();
-#line 10 "tests/golden/emit/loop.hero"
-    h1_total = t10;
-    t11 = h0_n;
-#line 11 "tests/golden/emit/loop.hero"
-    t12 = INT64_C(1);
-#line 11 "tests/golden/emit/loop.hero"
-    if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 11 "tests/golden/emit/loop.hero"
-    h0_n = t13;
-#line 11 "tests/golden/emit/loop.hero"
-    goto bb1;
-#line 11 "tests/golden/emit/loop.hero"
-bb3:
-#line 13 "tests/golden/emit/loop.hero"
-    t14 = h1_total;
-#line 13 "tests/golden/emit/loop.hero"
-    hero_print_int(t14);
-#line 13 "tests/golden/emit/loop.hero"
-    hero_print_end();
-#line 15 "tests/golden/emit/loop.hero"
-    t15 = h1_total;
-#line 15 "tests/golden/emit/loop.hero"
-    t16 = INT64_C(10);
-#line 15 "tests/golden/emit/loop.hero"
-    t17 = t15 > t16;
-#line 15 "tests/golden/emit/loop.hero"
-    if (t17) goto bb5; else goto bb6;
-#line 15 "tests/golden/emit/loop.hero"
-bb4:
-#line 15 "tests/golden/emit/loop.hero"
-    return;
-#line 15 "tests/golden/emit/loop.hero"
-bb5:
-    t18 = INT64_C(1);
-#line 16 "tests/golden/emit/loop.hero"
-    hero_print_int(t18);
-#line 16 "tests/golden/emit/loop.hero"
-    hero_print_end();
-#line 16 "tests/golden/emit/loop.hero"
-    goto bb4;
-#line 16 "tests/golden/emit/loop.hero"
-bb6:
-#line 18 "tests/golden/emit/loop.hero"
-    t19 = INT64_C(0);
-#line 18 "tests/golden/emit/loop.hero"
-    hero_print_int(t19);
-#line 18 "tests/golden/emit/loop.hero"
-    hero_print_end();
-#line 18 "tests/golden/emit/loop.hero"
-    goto bb4;
-#line 183 "loop.c"
+void h_loop_main(void) { int64_t h0_n; int64_t h1_total; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t18, t19; HERO_NODEBUG bool t5, t17; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_n = t1;
+    t2 = INT64_C(0); h1_total = t2; goto bb1; bb1:
+#line 9
+    t3 = h0_n; t4 = INT64_C(5); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h1_total; t7 = h0_n; t8 = h0_n; if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow(); if (__builtin_add_overflow(t6, t9, &t10)) hero_panic_overflow(); h1_total = t10;
+    t11 = h0_n; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow(); h0_n = t13; goto bb1; bb3:
+#line 13
+    t14 = h1_total; hero_print_int(t14); hero_print_end();
+#line 15
+    t15 = h1_total; t16 = INT64_C(10); t17 = t15 > t16; if (t17) goto bb5; else goto bb6; bb4: return; bb5:
+    t18 = INT64_C(1); hero_print_int(t18); hero_print_end(); goto bb4; bb6:
+#line 18
+    t19 = INT64_C(0); hero_print_int(t19); hero_print_end(); goto bb4;
+#line 113 "loop.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

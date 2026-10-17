@@ -724,6 +724,25 @@ Part 2 rules out as a justification.
   47,091,837 bytes and from 1,535,984 to 1,207,560 lines. The exit and the cleanup stay the
   generated file's (defect 335), and since defect 540 a retain or a release inside a line is that
   line's, the exit's retain and sweep excepted.
+
+  **AMENDED 2026-10-17 by panel 219's R1** (issue 2086;
+  `docs/panel/219-the-seed-is-the-compilers-emission-with-a-re-anchoring-line-joined-to-its-anchor-and-a-file-name-written-where-it-changes-for-every-program.md`, sat 2026-10-17),
+  for every program and with no profile: **a restore that would re-anchor the very line the
+  previous C line sits on is not written, and its C line is joined onto that one**, one space
+  between (`selfhost/emit/line_join.hero`), never onto a directive, a preprocessor line, a blank
+  line, a line holding a newline or a `//`, and never such a line onto another; and **a `#line`
+  names its file only where the file clang presumes changes**, `#line N` alone elsewhere (C11
+  §6.10.4; `selfhost/emit/line_name.hero`), the presumption reset after a line the emitter
+  writes that carries a `#line` of its own. The compiler's own C, emitted from one tree by each
+  writer, fell from 52,044,067 to 25,897,631 bytes, from 1,405,494 to 260,108 lines and from
+  628,232 directives to 55,539; the rule applied to the first file gives the second byte for
+  byte, the two objects without `-g` are one, and under `-gline-tables-only` the line table names
+  the same file and line at every address, 0 of 1,348,372 differing (measured 2026-10-17, lane
+  s4). **What an author sees move**: on the exit-2 path, clang's C column, a C column before and
+  after, and its quoted excerpt, which is now the whole Heroes line's C, and none at all past
+  4,096 bytes, where no reader of clang's words rests on it since defect 2117; and C-line
+  coverage by hand, which `llvm-cov` reports on the C file under either writer (the sitting's
+  critic).
 - **The `@` parameter is a pointer parameter, and the body works through it** (panel 196's R1,
   ratified 2026-10-06). The callee is handed a `T *p_l`, and its every read and write of `l` is
   `(*p_l)`, the caller's place itself: no local copy, no copy-in, and `Op::CopyOut` writes no C,

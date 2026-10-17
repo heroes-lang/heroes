@@ -133,11 +133,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs582aheadersfloatco
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "fixedbugs582aheadersfloatcontrolpoppastitsowntakestheclosespush.c"
 #pragma clang diagnostic pop
@@ -154,71 +154,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs582aheadersfloatcontrolpoppastitsowntakestheclosespush_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-void h_fixedbugs582aheadersfloatcontrolpoppastitsowntakestheclosespush_main(void) {
-#line 13 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    double h0_one; double h1_ten; double h2_big; double h3_tenth; HERO_NODEBUG int64_t t1, t2, t4, t5, t7, t8; HERO_NODEBUG double t3, t6, t9, t10, t11, t12, t13, t14, t15, t16, t17, t19, t20, t21, t22, t23; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-bb0:
-    t1 = INT64_C(-1);
-#line 14 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t2 = llabs(t1);
-#line 14 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t3 = hero_int_to_f64(t2);
-#line 14 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    h0_one = t3;
-    t4 = INT64_C(-10);
-#line 15 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t5 = llabs(t4);
-#line 15 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t6 = hero_int_to_f64(t5);
-#line 15 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    h1_ten = t6;
-    t7 = INT64_C(-10000000000000000);
-#line 16 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t8 = llabs(t7);
-#line 16 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t9 = hero_int_to_f64(t8);
-#line 16 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    h2_big = t9;
-    t10 = h0_one;
-#line 17 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t11 = h1_ten;
-#line 17 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t12 = t10 / t11;
-#line 17 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    h3_tenth = t12;
-    t13 = h3_tenth;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t14 = h1_ten;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t15 = t13 * t14;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t16 = h0_one;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t17 = t15 - t16;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t18 = HERO_STR_LIT(hero_str_20);
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t19 = h2_big;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t20 = h0_one;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t21 = t19 + t20;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t22 = h2_big;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    t23 = t21 - t22;
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    hero_print_f64(t17);
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    hero_print_str(t18);
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    hero_print_f64(t23);
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.hero"
-    return;
-#line 222 "fixedbugs582aheadersfloatcontrolpoppastitsowntakestheclosespush.c"
+void h_fixedbugs582aheadersfloatcontrolpoppastitsowntakestheclosespush_main(void) { double h0_one; double h1_ten; double h2_big; double h3_tenth; HERO_NODEBUG int64_t t1, t2, t4, t5, t7, t8; HERO_NODEBUG double t3, t6, t9, t10, t11, t12, t13, t14, t15, t16, t17, t19, t20, t21, t22, t23; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(-1); t2 = llabs(t1); t3 = hero_int_to_f64(t2); h0_one = t3;
+    t4 = INT64_C(-10); t5 = llabs(t4); t6 = hero_int_to_f64(t5); h1_ten = t6;
+    t7 = INT64_C(-10000000000000000); t8 = llabs(t7); t9 = hero_int_to_f64(t8); h2_big = t9;
+    t10 = h0_one; t11 = h1_ten; t12 = t10 / t11; h3_tenth = t12;
+    t13 = h3_tenth; t14 = h1_ten; t15 = t13 * t14; t16 = h0_one; t17 = t15 - t16; t18 = HERO_STR_LIT(hero_str_20); t19 = h2_big; t20 = h0_one; t21 = t19 + t20; t22 = h2_big; t23 = t21 - t22; hero_print_f64(t17); hero_print_str(t18); hero_print_f64(t23); hero_print_end(); return;
+#line 164 "fixedbugs582aheadersfloatcontrolpoppastitsowntakestheclosespush.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -128,11 +128,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 138 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
 #pragma clang diagnostic pop
@@ -181,40 +181,16 @@ int64_t h_fixedbugs577agroupsconstantinastepabortswhereitisread_INT64_MAX(void) 
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 11 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-int64_t h_fixedbugs577agroupsconstantinastepabortswhereitisread_N(void) {
-#line 11 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-bb0:
-    t1 = h_fixedbugs577agroupsconstantinastepabortswhereitisread_INT64_MAX();
-#line 12 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    t2 = INT64_C(1);
-#line 12 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 12 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    return t3;
-#line 197 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
+int64_t h_fixedbugs577agroupsconstantinastepabortswhereitisread_N(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs577agroupsconstantinastepabortswhereitisread_INT64_MAX(); t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
+#line 187 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
 }
 
 #line 14 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-void h_fixedbugs577agroupsconstantinastepabortswhereitisread_main(void) {
-#line 14 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 15 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    hero_print_int(t1);
-#line 15 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    hero_print_end();
-    t2 = h_fixedbugs577agroupsconstantinastepabortswhereitisread_N();
-#line 16 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    hero_print_int(t2);
-#line 16 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    hero_print_end();
-#line 16 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    return;
-#line 218 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
+void h_fixedbugs577agroupsconstantinastepabortswhereitisread_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); hero_print_int(t1); hero_print_end();
+    t2 = h_fixedbugs577agroupsconstantinastepabortswhereitisread_N(); hero_print_int(t2); hero_print_end(); return;
+#line 194 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

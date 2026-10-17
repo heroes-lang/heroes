@@ -133,11 +133,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_abortleaseneverended_strlen
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "abortleaseneverended.c"
 #pragma clang diagnostic pop
@@ -154,26 +154,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_abortleaseneverended_main(void);
 
 #line 11 "tests/golden/run/abort-lease-never-ended.hero"
-void h_abortleaseneverended_main(void) {
-#line 11 "tests/golden/run/abort-lease-never-ended.hero"
-    const char * h0_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2, *t3; HERO_NODEBUG uint64_t t4; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/abort-lease-never-ended.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_642cda73);
-#line 12 "tests/golden/run/abort-lease-never-ended.hero"
-    t2 = hero_str_held(t1);
-#line 12 "tests/golden/run/abort-lease-never-ended.hero"
-    h0_c = t2;
-    t3 = h0_c;
-#line 13 "tests/golden/run/abort-lease-never-ended.hero"
-    t4 = strlen(hero_cstr_nonnull(t3));
-#line 13 "tests/golden/run/abort-lease-never-ended.hero"
-    hero_print_uint(t4);
-#line 13 "tests/golden/run/abort-lease-never-ended.hero"
-    hero_print_end();
-#line 13 "tests/golden/run/abort-lease-never-ended.hero"
-    return;
-#line 177 "abortleaseneverended.c"
+void h_abortleaseneverended_main(void) { const char * h0_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2, *t3; HERO_NODEBUG uint64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_642cda73); t2 = hero_str_held(t1); h0_c = t2;
+    t3 = h0_c; t4 = strlen(hero_cstr_nonnull(t3)); hero_print_uint(t4); hero_print_end(); return;
+#line 161 "abortleaseneverended.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

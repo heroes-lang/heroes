@@ -82,11 +82,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs382twospawnedthrea
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 92 "fixedbugs382twospawnedthreadsreadonestaticconstant.c"
 #pragma clang diagnostic pop
@@ -113,157 +113,15 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #if HERO_STATIC_CONSTANTS
 #line 11 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382twospawnedthreadsreadonestaticconstant_K_33, int64_t, &hero_desc_int, 32, INT64_C(3), INT64_C(1), INT64_C(4), INT64_C(1), INT64_C(5), INT64_C(9), INT64_C(2), INT64_C(6), INT64_C(5), INT64_C(3), INT64_C(5), INT64_C(8), INT64_C(9), INT64_C(7), INT64_C(9), INT64_C(3), INT64_C(2), INT64_C(3), INT64_C(8), INT64_C(4), INT64_C(6), INT64_C(2), INT64_C(6), INT64_C(4), INT64_C(3), INT64_C(3), INT64_C(8), INT64_C(3), INT64_C(2), INT64_C(7), INT64_C(9), INT64_C(5));
-#line 11 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-HeroArrayHeader * h_fixedbugs382twospawnedthreadsreadonestaticconstant_K(void) {
-#line 11 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382twospawnedthreadsreadonestaticconstant_K_33);
-#line 122 "fixedbugs382twospawnedthreadsreadonestaticconstant.c"
+HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382twospawnedthreadsreadonestaticconstant_K_33, int64_t, &hero_desc_int, 32, INT64_C(3), INT64_C(1), INT64_C(4), INT64_C(1), INT64_C(5), INT64_C(9), INT64_C(2), INT64_C(6), INT64_C(5), INT64_C(3), INT64_C(5), INT64_C(8), INT64_C(9), INT64_C(7), INT64_C(9), INT64_C(3), INT64_C(2), INT64_C(3), INT64_C(8), INT64_C(4), INT64_C(6), INT64_C(2), INT64_C(6), INT64_C(4), INT64_C(3), INT64_C(3), INT64_C(8), INT64_C(3), INT64_C(2), INT64_C(7), INT64_C(9), INT64_C(5)); HeroArrayHeader * h_fixedbugs382twospawnedthreadsreadonestaticconstant_K(void) { return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382twospawnedthreadsreadonestaticconstant_K_33);
+#line 118 "fixedbugs382twospawnedthreadsreadonestaticconstant.c"
 }
 #else
 
 #line 11 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-HeroArrayHeader * h_fixedbugs382twospawnedthreadsreadonestaticconstant_K(void) {
-#line 11 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t33, *t34; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t2 = INT64_C(1);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t3 = INT64_C(4);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t4 = INT64_C(1);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t5 = INT64_C(5);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t6 = INT64_C(9);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t7 = INT64_C(2);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t8 = INT64_C(6);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t9 = INT64_C(5);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t10 = INT64_C(3);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t11 = INT64_C(5);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t12 = INT64_C(8);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t13 = INT64_C(9);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t14 = INT64_C(7);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t15 = INT64_C(9);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t16 = INT64_C(3);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t17 = INT64_C(2);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t18 = INT64_C(3);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t19 = INT64_C(8);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t20 = INT64_C(4);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t21 = INT64_C(6);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t22 = INT64_C(2);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t23 = INT64_C(6);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t24 = INT64_C(4);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t25 = INT64_C(3);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t26 = INT64_C(3);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t27 = INT64_C(8);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t28 = INT64_C(3);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t29 = INT64_C(2);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t30 = INT64_C(7);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t31 = INT64_C(9);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t32 = INT64_C(5);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t33 = hero_array_new(&hero_desc_int, 32);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t1);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t2);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t3);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t4);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t5);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t6);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t7);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t8);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t9);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t10);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t11);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t12);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t13);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t14);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t15);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t16);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t17);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t18);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t19);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t20);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t21);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t22);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t23);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t24);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t25);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t26);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t27);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t28);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t29);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t30);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t31);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_push_owned(&t33, &t32);
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t34 = h0_own0;
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    h0_own0 = t33;
-#line 12 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_decref(t34);
-#line 267 "fixedbugs382twospawnedthreadsreadonestaticconstant.c"
+HeroArrayHeader * h_fixedbugs382twospawnedthreadsreadonestaticconstant_K(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t33, *t34; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); t2 = INT64_C(1); t3 = INT64_C(4); t4 = INT64_C(1); t5 = INT64_C(5); t6 = INT64_C(9); t7 = INT64_C(2); t8 = INT64_C(6); t9 = INT64_C(5); t10 = INT64_C(3); t11 = INT64_C(5); t12 = INT64_C(8); t13 = INT64_C(9); t14 = INT64_C(7); t15 = INT64_C(9); t16 = INT64_C(3); t17 = INT64_C(2); t18 = INT64_C(3); t19 = INT64_C(8); t20 = INT64_C(4); t21 = INT64_C(6); t22 = INT64_C(2); t23 = INT64_C(6); t24 = INT64_C(4); t25 = INT64_C(3); t26 = INT64_C(3); t27 = INT64_C(8); t28 = INT64_C(3); t29 = INT64_C(2); t30 = INT64_C(7); t31 = INT64_C(9); t32 = INT64_C(5); t33 = hero_array_new(&hero_desc_int, 32); hero_array_push_owned(&t33, &t1); hero_array_push_owned(&t33, &t2); hero_array_push_owned(&t33, &t3); hero_array_push_owned(&t33, &t4); hero_array_push_owned(&t33, &t5); hero_array_push_owned(&t33, &t6); hero_array_push_owned(&t33, &t7); hero_array_push_owned(&t33, &t8); hero_array_push_owned(&t33, &t9); hero_array_push_owned(&t33, &t10); hero_array_push_owned(&t33, &t11); hero_array_push_owned(&t33, &t12); hero_array_push_owned(&t33, &t13); hero_array_push_owned(&t33, &t14); hero_array_push_owned(&t33, &t15); hero_array_push_owned(&t33, &t16); hero_array_push_owned(&t33, &t17); hero_array_push_owned(&t33, &t18); hero_array_push_owned(&t33, &t19); hero_array_push_owned(&t33, &t20); hero_array_push_owned(&t33, &t21); hero_array_push_owned(&t33, &t22); hero_array_push_owned(&t33, &t23); hero_array_push_owned(&t33, &t24); hero_array_push_owned(&t33, &t25); hero_array_push_owned(&t33, &t26); hero_array_push_owned(&t33, &t27); hero_array_push_owned(&t33, &t28); hero_array_push_owned(&t33, &t29); hero_array_push_owned(&t33, &t30); hero_array_push_owned(&t33, &t31); hero_array_push_owned(&t33, &t32); t34 = h0_own0; h0_own0 = t33; hero_array_decref(t34);
+#line 125 "fixedbugs382twospawnedthreadsreadonestaticconstant.c"
     hero_array_incref(t33);
     hero_array_release_at(&h0_own0);
     return t33;
@@ -271,70 +129,16 @@ bb0:
 #endif
 
 #line 14 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-int64_t h_fixedbugs382twospawnedthreadsreadonestaticconstant_worker(int64_t h0_n) {
-#line 14 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_thread_guard("fixedbugs382twospawnedthreadsreadonestaticconstant.worker"); int64_t h1_sum; int64_t h2_at; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t7, *t17; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 15 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    h1_sum = t1;
-    t2 = INT64_C(0);
-#line 16 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    h2_at = t2;
-#line 16 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    goto bb1;
-#line 16 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-bb1:
-#line 18 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t3 = h2_at;
-#line 18 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t4 = h0_n;
-#line 18 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t5 = t3 < t4;
-#line 18 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 18 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-bb2:
-    t6 = h1_sum;
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t7 = h_fixedbugs382twospawnedthreadsreadonestaticconstant_K();
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t17 = h3_own3;
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    h3_own3 = t7;
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_array_decref(t17);
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t8 = h2_at;
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t9 = INT64_C(32);
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    if (t9 == 0) hero_panic("division by zero");
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    if (t8 == INT64_MIN && t9 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t10 = t8 % t9;
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t10]);
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    if (__builtin_add_overflow(t6, t11, &t12)) hero_panic_overflow();
-#line 19 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    h1_sum = t12;
-    t13 = h2_at;
-#line 20 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t14 = INT64_C(1);
-#line 20 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 20 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    h2_at = t15;
-#line 20 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    goto bb1;
-#line 20 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-bb3:
-#line 22 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
+int64_t h_fixedbugs382twospawnedthreadsreadonestaticconstant_worker(int64_t h0_n) { hero_thread_guard("fixedbugs382twospawnedthreadsreadonestaticconstant.worker"); int64_t h1_sum; int64_t h2_at; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t7, *t17; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_sum = t1;
+    t2 = INT64_C(0); h2_at = t2; goto bb1; bb1:
+#line 18
+    t3 = h2_at; t4 = h0_n; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h1_sum; t7 = h_fixedbugs382twospawnedthreadsreadonestaticconstant_K(); t17 = h3_own3; h3_own3 = t7; hero_array_decref(t17); t8 = h2_at; t9 = INT64_C(32); if (t9 == 0) hero_panic("division by zero"); if (t8 == INT64_MIN && t9 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t10 = t8 % t9; t11 = ((void)((t7 == NULL || t10 < 0 || t10 >= t7->len) ? ((void)hero_array_at(t7, t10), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t10]); if (__builtin_add_overflow(t6, t11, &t12)) hero_panic_overflow(); h1_sum = t12;
+    t13 = h2_at; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); h2_at = t15; goto bb1; bb3:
+#line 22
     t16 = h1_sum;
-#line 338 "fixedbugs382twospawnedthreadsreadonestaticconstant.c"
+#line 142 "fixedbugs382twospawnedthreadsreadonestaticconstant.c"
     hero_array_release_at(&h3_own3);
     return t16;
 }
@@ -345,58 +149,12 @@ int64_t h_0cb_fixedbugs382twospawnedthreadsreadonestaticconstant_worker(int64_t 
 }
 
 #line 24 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-void h_fixedbugs382twospawnedthreadsreadonestaticconstant_main(void) {
-#line 24 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    int64_t h0_a; int64_t h1_b; int64_t h2_here; HERO_NODEBUG h_0fn_48ac9712 t1, t4; HERO_NODEBUG int64_t t2, t3, t5, t6, t7, t8, t9, t10, t12, t13, t15; HERO_NODEBUG HeroStr t11, t14; HERO_ENTRY_STOP; goto bb0;
-#line 24 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-bb0:
-    t1 = h_fixedbugs382twospawnedthreadsreadonestaticconstant_worker;
-#line 25 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t2 = INT64_C(20000);
-#line 25 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2);
-#line 25 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    h0_a = t3;
-    t4 = h_fixedbugs382twospawnedthreadsreadonestaticconstant_worker;
-#line 26 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t5 = INT64_C(20000);
-#line 26 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5);
-#line 26 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    h1_b = t6;
-    t7 = INT64_C(20000);
-#line 27 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t8 = h_fixedbugs382twospawnedthreadsreadonestaticconstant_worker(t7);
-#line 27 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    h2_here = t8;
-    t9 = h0_a;
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t10 = hero_thread_join(t9);
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t11 = HERO_STR_LIT(hero_str_20);
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t12 = h1_b;
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t13 = hero_thread_join(t12);
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t14 = HERO_STR_LIT(hero_str_20);
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    t15 = h2_here;
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_print_int(t10);
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_print_str(t11);
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_print_int(t13);
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_print_str(t14);
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_print_int(t15);
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    hero_print_end();
-#line 28 "tests/golden/run/fixedbugs-382-two-spawned-threads-read-one-static-constant.hero"
-    return;
-#line 400 "fixedbugs382twospawnedthreadsreadonestaticconstant.c"
+void h_fixedbugs382twospawnedthreadsreadonestaticconstant_main(void) { int64_t h0_a; int64_t h1_b; int64_t h2_here; HERO_NODEBUG h_0fn_48ac9712 t1, t4; HERO_NODEBUG int64_t t2, t3, t5, t6, t7, t8, t9, t10, t12, t13, t15; HERO_NODEBUG HeroStr t11, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs382twospawnedthreadsreadonestaticconstant_worker; t2 = INT64_C(20000); t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); h0_a = t3;
+    t4 = h_fixedbugs382twospawnedthreadsreadonestaticconstant_worker; t5 = INT64_C(20000); t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5); h1_b = t6;
+    t7 = INT64_C(20000); t8 = h_fixedbugs382twospawnedthreadsreadonestaticconstant_worker(t7); h2_here = t8;
+    t9 = h0_a; t10 = hero_thread_join(t9); t11 = HERO_STR_LIT(hero_str_20); t12 = h1_b; t13 = hero_thread_join(t12); t14 = HERO_STR_LIT(hero_str_20); t15 = h2_here; hero_print_int(t10); hero_print_str(t11); hero_print_int(t13); hero_print_str(t14); hero_print_int(t15); hero_print_end(); return;
+#line 158 "fixedbugs382twospawnedthreadsreadonestaticconstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "sugarif.c"
 #pragma clang diagnostic pop
@@ -95,66 +95,24 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_sugarif_sign_of(int64_t h0_n);
 
 #line 4 "tests/golden/ir/sugar-if.hero"
-int64_t h_sugarif_sign_of(int64_t h0_n) {
-#line 4 "tests/golden/ir/sugar-if.hero"
-    HERO_NODEBUG int64_t h1_r0, t1, t2, t4, t5, t6, t7, t8, t10, t11, t12, t13; int64_t h2_kind; HERO_NODEBUG bool t3, t9; HERO_ENTRY_STOP; goto bb0;
-#line 4 "tests/golden/ir/sugar-if.hero"
-bb0:
-    t1 = h0_n;
-#line 5 "tests/golden/ir/sugar-if.hero"
-    t2 = INT64_C(0);
-#line 5 "tests/golden/ir/sugar-if.hero"
-    t3 = t1 < t2;
-#line 5 "tests/golden/ir/sugar-if.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 5 "tests/golden/ir/sugar-if.hero"
-bb1:
-#line 5 "tests/golden/ir/sugar-if.hero"
-    t12 = h1_r0;
-#line 5 "tests/golden/ir/sugar-if.hero"
-    h2_kind = t12;
-#line 11 "tests/golden/ir/sugar-if.hero"
-    t13 = h2_kind;
-#line 11 "tests/golden/ir/sugar-if.hero"
-    return t13;
-#line 11 "tests/golden/ir/sugar-if.hero"
-bb2:
-#line 6 "tests/golden/ir/sugar-if.hero"
-    t4 = INT64_C(0);
-#line 6 "tests/golden/ir/sugar-if.hero"
-    t5 = INT64_C(1);
-#line 6 "tests/golden/ir/sugar-if.hero"
-    if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 5 "tests/golden/ir/sugar-if.hero"
-    h1_r0 = t6;
-#line 5 "tests/golden/ir/sugar-if.hero"
-    goto bb1;
-#line 5 "tests/golden/ir/sugar-if.hero"
-bb3:
-#line 7 "tests/golden/ir/sugar-if.hero"
-    t7 = h0_n;
-#line 7 "tests/golden/ir/sugar-if.hero"
-    t8 = INT64_C(0);
-#line 7 "tests/golden/ir/sugar-if.hero"
-    t9 = t7 > t8;
-#line 7 "tests/golden/ir/sugar-if.hero"
-    if (t9) goto bb4; else goto bb5;
-#line 7 "tests/golden/ir/sugar-if.hero"
-bb4:
+int64_t h_sugarif_sign_of(int64_t h0_n) { HERO_NODEBUG int64_t h1_r0, t1, t2, t4, t5, t6, t7, t8, t10, t11, t12, t13; int64_t h2_kind; HERO_NODEBUG bool t3, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(0); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1: t12 = h1_r0; h2_kind = t12;
+#line 11
+    t13 = h2_kind; return t13; bb2:
+#line 6
+    t4 = INT64_C(0); t5 = INT64_C(1); if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow();
+#line 5
+    h1_r0 = t6; goto bb1; bb3:
+#line 7
+    t7 = h0_n; t8 = INT64_C(0); t9 = t7 > t8; if (t9) goto bb4; else goto bb5; bb4:
     t10 = INT64_C(1);
-#line 5 "tests/golden/ir/sugar-if.hero"
-    h1_r0 = t10;
-#line 5 "tests/golden/ir/sugar-if.hero"
-    goto bb1;
-#line 5 "tests/golden/ir/sugar-if.hero"
-bb5:
-#line 10 "tests/golden/ir/sugar-if.hero"
+#line 5
+    h1_r0 = t10; goto bb1; bb5:
+#line 10
     t11 = INT64_C(0);
-#line 5 "tests/golden/ir/sugar-if.hero"
-    h1_r0 = t11;
-#line 5 "tests/golden/ir/sugar-if.hero"
-    goto bb1;
-#line 158 "sugarif.c"
+#line 5
+    h1_r0 = t11; goto bb1;
+#line 116 "sugarif.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

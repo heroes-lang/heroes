@@ -76,11 +76,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 86 "fixedbugs491anegativestringindexabortsintheruntimeswords.c"
 #pragma clang diagnostic pop
@@ -97,46 +97,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs491anegativestringindexabortsintheruntimeswords_main(void);
 
 #line 5 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-void h_fixedbugs491anegativestringindexabortsintheruntimeswords_main(void) {
-#line 5 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    HeroStr h0_text = {0}; int64_t h1_at; HERO_NODEBUG HeroStr t1, t5, t8, t11; HERO_NODEBUG int64_t t2, t3, t4, t6, t9; HERO_NODEBUG uint8_t t7, t10; HERO_ENTRY_STOP; goto bb0;
-#line 5 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_1998f2);
-#line 6 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    t11 = h0_text;
-#line 6 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    hero_str_incref(t1);
-#line 6 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    h0_text = t1;
-#line 6 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    hero_str_decref(t11);
-    t2 = INT64_C(0);
-#line 7 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    t3 = INT64_C(1);
-#line 7 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow();
-#line 7 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    h1_at = t4;
-    t5 = h0_text;
-#line 8 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    t6 = INT64_C(2);
-#line 8 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? ((void)hero_str_byte(t5, t6), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]);
-#line 8 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    hero_print_int(t7);
-#line 8 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    hero_print_end();
-    t8 = h0_text;
-#line 9 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    t9 = h1_at;
-#line 9 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
-#line 9 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    hero_print_int(t10);
-#line 9 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
-    hero_print_end();
-#line 140 "fixedbugs491anegativestringindexabortsintheruntimeswords.c"
+void h_fixedbugs491anegativestringindexabortsintheruntimeswords_main(void) { HeroStr h0_text = {0}; int64_t h1_at; HERO_NODEBUG HeroStr t1, t5, t8, t11; HERO_NODEBUG int64_t t2, t3, t4, t6, t9; HERO_NODEBUG uint8_t t7, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_1998f2); t11 = h0_text; hero_str_incref(t1); h0_text = t1; hero_str_decref(t11);
+    t2 = INT64_C(0); t3 = INT64_C(1); if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow(); h1_at = t4;
+    t5 = h0_text; t6 = INT64_C(2); t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? ((void)hero_str_byte(t5, t6), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); hero_print_int(t7); hero_print_end();
+    t8 = h0_text; t9 = h1_at; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); hero_print_int(t10); hero_print_end();
+#line 106 "fixedbugs491anegativestringindexabortsintheruntimeswords.c"
     hero_str_release_at(&h0_text);
     return;
 }

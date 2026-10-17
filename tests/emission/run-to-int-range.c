@@ -82,11 +82,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 92 "tointrange.c"
 #pragma clang diagnostic pop
@@ -107,298 +107,38 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_tointrange_main(void);
 
 #line 19 "tests/golden/run/to-int-range.hero"
-void h_tointrange_main(void) {
-#line 19 "tests/golden/run/to-int-range.hero"
-    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = {0}, h2_f2 = {0}, h3_f3 = {0}, h4_f4 = {0}, h5_f5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t2, t3, t7, t9, t13, t14, t18, t20, t23, t24, t28, t30, t33, t34, t40, t41, t45, t47, t52, t53, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68; HERO_NODEBUG double t1, t11, t12, t22, t32, t38, t39, t49, t50, t51; HERO_NODEBUG int64_t t4, t5, t10, t15, t16, t21, t25, t26, t31, t35, t36, t42, t43, t48, t54, t55; HERO_NODEBUG bool t6, t17, t27, t37, t44, t56; HERO_NODEBUG HeroFailure t8, t19, t29, t46; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/to-int-range.hero"
-bb0:
-    t1 = 0x1.8p+0;
-#line 20 "tests/golden/run/to-int-range.hero"
-    if (hero_f64_fits_int(t1)) {
-#line 20 "tests/golden/run/to-int-range.hero"
-        t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t1)};
-#line 20 "tests/golden/run/to-int-range.hero"
-    } else {
-#line 20 "tests/golden/run/to-int-range.hero"
-        t2 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 20 "tests/golden/run/to-int-range.hero"
-    }
-#line 20 "tests/golden/run/to-int-range.hero"
-    t57 = h6_own6;
-#line 20 "tests/golden/run/to-int-range.hero"
-    h6_own6 = t2;
-#line 20 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t57);
-#line 20 "tests/golden/run/to-int-range.hero"
-    t58 = h0_f0;
-#line 20 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_retain(&t2);
-#line 20 "tests/golden/run/to-int-range.hero"
-    h0_f0 = t2;
-#line 20 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t58);
-#line 20 "tests/golden/run/to-int-range.hero"
-    t3 = h0_f0;
-#line 20 "tests/golden/run/to-int-range.hero"
-    t4 = t3.tag;
-#line 20 "tests/golden/run/to-int-range.hero"
-    t5 = INT64_C(0);
-#line 20 "tests/golden/run/to-int-range.hero"
-    t6 = t4 == t5;
-#line 20 "tests/golden/run/to-int-range.hero"
-    if (t6) goto bb1; else goto bb2;
-#line 20 "tests/golden/run/to-int-range.hero"
-bb1:
-#line 20 "tests/golden/run/to-int-range.hero"
-    t9 = h0_f0;
-#line 20 "tests/golden/run/to-int-range.hero"
-    t10 = t9.as.ok;
-#line 20 "tests/golden/run/to-int-range.hero"
-    hero_print_int(t10);
-#line 20 "tests/golden/run/to-int-range.hero"
-    hero_print_end();
-    t11 = 0x1.8p+0;
-#line 21 "tests/golden/run/to-int-range.hero"
-    t12 = -t11;
-#line 21 "tests/golden/run/to-int-range.hero"
-    if (hero_f64_fits_int(t12)) {
-#line 21 "tests/golden/run/to-int-range.hero"
-        t13 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t12)};
-#line 21 "tests/golden/run/to-int-range.hero"
-    } else {
-#line 21 "tests/golden/run/to-int-range.hero"
-        t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 21 "tests/golden/run/to-int-range.hero"
-    }
-#line 21 "tests/golden/run/to-int-range.hero"
-    t59 = h7_own7;
-#line 21 "tests/golden/run/to-int-range.hero"
-    h7_own7 = t13;
-#line 21 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t59);
-#line 21 "tests/golden/run/to-int-range.hero"
-    t60 = h1_f1;
-#line 21 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_retain(&t13);
-#line 21 "tests/golden/run/to-int-range.hero"
-    h1_f1 = t13;
-#line 21 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t60);
-#line 21 "tests/golden/run/to-int-range.hero"
-    t14 = h1_f1;
-#line 21 "tests/golden/run/to-int-range.hero"
-    t15 = t14.tag;
-#line 21 "tests/golden/run/to-int-range.hero"
-    t16 = INT64_C(0);
-#line 21 "tests/golden/run/to-int-range.hero"
-    t17 = t15 == t16;
-#line 21 "tests/golden/run/to-int-range.hero"
-    if (t17) goto bb3; else goto bb4;
-#line 21 "tests/golden/run/to-int-range.hero"
-bb2:
-#line 20 "tests/golden/run/to-int-range.hero"
-    t7 = h0_f0;
-#line 20 "tests/golden/run/to-int-range.hero"
-    t8 = t7.as.err;
-#line 204 "tointrange.c"
+void h_tointrange_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = {0}, h2_f2 = {0}, h3_f3 = {0}, h4_f4 = {0}, h5_f5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t2, t3, t7, t9, t13, t14, t18, t20, t23, t24, t28, t30, t33, t34, t40, t41, t45, t47, t52, t53, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68; HERO_NODEBUG double t1, t11, t12, t22, t32, t38, t39, t49, t50, t51; HERO_NODEBUG int64_t t4, t5, t10, t15, t16, t21, t25, t26, t31, t35, t36, t42, t43, t48, t54, t55; HERO_NODEBUG bool t6, t17, t27, t37, t44, t56; HERO_NODEBUG HeroFailure t8, t19, t29, t46; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1.8p+0; if (hero_f64_fits_int(t1)) { t2 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t1)}; } else { t2 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t57 = h6_own6; h6_own6 = t2; h_0opt_e201354_release(&t57); t58 = h0_f0; h_0opt_e201354_retain(&t2); h0_f0 = t2; h_0opt_e201354_release(&t58); t3 = h0_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h0_f0; t10 = t9.as.ok; hero_print_int(t10); hero_print_end();
+    t11 = 0x1.8p+0; t12 = -t11; if (hero_f64_fits_int(t12)) { t13 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t12)}; } else { t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t59 = h7_own7; h7_own7 = t13; h_0opt_e201354_release(&t59); t60 = h1_f1; h_0opt_e201354_retain(&t13); h1_f1 = t13; h_0opt_e201354_release(&t60); t14 = h1_f1; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb3; else goto bb4; bb2:
+#line 20
+    t7 = h0_f0; t8 = t7.as.err;
+#line 116 "tointrange.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
 #line 21 "tests/golden/run/to-int-range.hero"
-    t20 = h1_f1;
-#line 21 "tests/golden/run/to-int-range.hero"
-    t21 = t20.as.ok;
-#line 21 "tests/golden/run/to-int-range.hero"
-    hero_print_int(t21);
-#line 21 "tests/golden/run/to-int-range.hero"
-    hero_print_end();
-    t22 = 0x1.fffffffffffffp+62;
-#line 22 "tests/golden/run/to-int-range.hero"
-    if (hero_f64_fits_int(t22)) {
-#line 22 "tests/golden/run/to-int-range.hero"
-        t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t22)};
-#line 22 "tests/golden/run/to-int-range.hero"
-    } else {
-#line 22 "tests/golden/run/to-int-range.hero"
-        t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 22 "tests/golden/run/to-int-range.hero"
-    }
-#line 22 "tests/golden/run/to-int-range.hero"
-    t61 = h8_own8;
-#line 22 "tests/golden/run/to-int-range.hero"
-    h8_own8 = t23;
-#line 22 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t61);
-#line 22 "tests/golden/run/to-int-range.hero"
-    t62 = h2_f2;
-#line 22 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_retain(&t23);
-#line 22 "tests/golden/run/to-int-range.hero"
-    h2_f2 = t23;
-#line 22 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t62);
-#line 22 "tests/golden/run/to-int-range.hero"
-    t24 = h2_f2;
-#line 22 "tests/golden/run/to-int-range.hero"
-    t25 = t24.tag;
-#line 22 "tests/golden/run/to-int-range.hero"
-    t26 = INT64_C(0);
-#line 22 "tests/golden/run/to-int-range.hero"
-    t27 = t25 == t26;
-#line 22 "tests/golden/run/to-int-range.hero"
-    if (t27) goto bb5; else goto bb6;
-#line 22 "tests/golden/run/to-int-range.hero"
-bb4:
-#line 21 "tests/golden/run/to-int-range.hero"
-    t18 = h1_f1;
-#line 21 "tests/golden/run/to-int-range.hero"
-    t19 = t18.as.err;
-#line 257 "tointrange.c"
+    t20 = h1_f1; t21 = t20.as.ok; hero_print_int(t21); hero_print_end();
+    t22 = 0x1.fffffffffffffp+62; if (hero_f64_fits_int(t22)) { t23 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t22)}; } else { t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t61 = h8_own8; h8_own8 = t23; h_0opt_e201354_release(&t61); t62 = h2_f2; h_0opt_e201354_retain(&t23); h2_f2 = t23; h_0opt_e201354_release(&t62); t24 = h2_f2; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb5; else goto bb6; bb4:
+#line 21
+    t18 = h1_f1; t19 = t18.as.err;
+#line 125 "tointrange.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb5:
 #line 22 "tests/golden/run/to-int-range.hero"
-    t30 = h2_f2;
-#line 22 "tests/golden/run/to-int-range.hero"
-    t31 = t30.as.ok;
-#line 22 "tests/golden/run/to-int-range.hero"
-    hero_print_int(t31);
-#line 22 "tests/golden/run/to-int-range.hero"
-    hero_print_end();
-    t32 = 0x1p+63;
-#line 23 "tests/golden/run/to-int-range.hero"
-    if (hero_f64_fits_int(t32)) {
-#line 23 "tests/golden/run/to-int-range.hero"
-        t33 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t32)};
-#line 23 "tests/golden/run/to-int-range.hero"
-    } else {
-#line 23 "tests/golden/run/to-int-range.hero"
-        t33 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 23 "tests/golden/run/to-int-range.hero"
-    }
-#line 23 "tests/golden/run/to-int-range.hero"
-    t63 = h9_own9;
-#line 23 "tests/golden/run/to-int-range.hero"
-    h9_own9 = t33;
-#line 23 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t63);
-#line 23 "tests/golden/run/to-int-range.hero"
-    t64 = h3_f3;
-#line 23 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_retain(&t33);
-#line 23 "tests/golden/run/to-int-range.hero"
-    h3_f3 = t33;
-#line 23 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t64);
-#line 23 "tests/golden/run/to-int-range.hero"
-    t34 = h3_f3;
-#line 23 "tests/golden/run/to-int-range.hero"
-    t35 = t34.tag;
-#line 23 "tests/golden/run/to-int-range.hero"
-    t36 = INT64_C(1);
-#line 23 "tests/golden/run/to-int-range.hero"
-    t37 = t35 == t36;
-#line 23 "tests/golden/run/to-int-range.hero"
-    hero_print_bool(t37);
-#line 23 "tests/golden/run/to-int-range.hero"
-    hero_print_end();
-    t38 = 0x1p+63;
-#line 24 "tests/golden/run/to-int-range.hero"
-    t39 = -t38;
-#line 24 "tests/golden/run/to-int-range.hero"
-    if (hero_f64_fits_int(t39)) {
-#line 24 "tests/golden/run/to-int-range.hero"
-        t40 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t39)};
-#line 24 "tests/golden/run/to-int-range.hero"
-    } else {
-#line 24 "tests/golden/run/to-int-range.hero"
-        t40 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 24 "tests/golden/run/to-int-range.hero"
-    }
-#line 24 "tests/golden/run/to-int-range.hero"
-    t65 = h10_own10;
-#line 24 "tests/golden/run/to-int-range.hero"
-    h10_own10 = t40;
-#line 24 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t65);
-#line 24 "tests/golden/run/to-int-range.hero"
-    t66 = h4_f4;
-#line 24 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_retain(&t40);
-#line 24 "tests/golden/run/to-int-range.hero"
-    h4_f4 = t40;
-#line 24 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t66);
-#line 24 "tests/golden/run/to-int-range.hero"
-    t41 = h4_f4;
-#line 24 "tests/golden/run/to-int-range.hero"
-    t42 = t41.tag;
-#line 24 "tests/golden/run/to-int-range.hero"
-    t43 = INT64_C(0);
-#line 24 "tests/golden/run/to-int-range.hero"
-    t44 = t42 == t43;
-#line 24 "tests/golden/run/to-int-range.hero"
-    if (t44) goto bb7; else goto bb8;
-#line 24 "tests/golden/run/to-int-range.hero"
-bb6:
-#line 22 "tests/golden/run/to-int-range.hero"
-    t28 = h2_f2;
-#line 22 "tests/golden/run/to-int-range.hero"
-    t29 = t28.as.err;
-#line 349 "tointrange.c"
+    t30 = h2_f2; t31 = t30.as.ok; hero_print_int(t31); hero_print_end();
+    t32 = 0x1p+63; if (hero_f64_fits_int(t32)) { t33 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t32)}; } else { t33 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t63 = h9_own9; h9_own9 = t33; h_0opt_e201354_release(&t63); t64 = h3_f3; h_0opt_e201354_retain(&t33); h3_f3 = t33; h_0opt_e201354_release(&t64); t34 = h3_f3; t35 = t34.tag; t36 = INT64_C(1); t37 = t35 == t36; hero_print_bool(t37); hero_print_end();
+    t38 = 0x1p+63; t39 = -t38; if (hero_f64_fits_int(t39)) { t40 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t39)}; } else { t40 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t65 = h10_own10; h10_own10 = t40; h_0opt_e201354_release(&t65); t66 = h4_f4; h_0opt_e201354_retain(&t40); h4_f4 = t40; h_0opt_e201354_release(&t66); t41 = h4_f4; t42 = t41.tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto bb7; else goto bb8; bb6:
+#line 22
+    t28 = h2_f2; t29 = t28.as.err;
+#line 135 "tointrange.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb7:
 #line 24 "tests/golden/run/to-int-range.hero"
-    t47 = h4_f4;
-#line 24 "tests/golden/run/to-int-range.hero"
-    t48 = t47.as.ok;
-#line 24 "tests/golden/run/to-int-range.hero"
-    hero_print_int(t48);
-#line 24 "tests/golden/run/to-int-range.hero"
-    hero_print_end();
-    t49 = 0x0p+0;
-#line 25 "tests/golden/run/to-int-range.hero"
-    t50 = 0x0p+0;
-#line 25 "tests/golden/run/to-int-range.hero"
-    t51 = t49 / t50;
-#line 25 "tests/golden/run/to-int-range.hero"
-    if (hero_f64_fits_int(t51)) {
-#line 25 "tests/golden/run/to-int-range.hero"
-        t52 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t51)};
-#line 25 "tests/golden/run/to-int-range.hero"
-    } else {
-#line 25 "tests/golden/run/to-int-range.hero"
-        t52 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 25 "tests/golden/run/to-int-range.hero"
-    }
-#line 25 "tests/golden/run/to-int-range.hero"
-    t67 = h11_own11;
-#line 25 "tests/golden/run/to-int-range.hero"
-    h11_own11 = t52;
-#line 25 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t67);
-#line 25 "tests/golden/run/to-int-range.hero"
-    t68 = h5_f5;
-#line 25 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_retain(&t52);
-#line 25 "tests/golden/run/to-int-range.hero"
-    h5_f5 = t52;
-#line 25 "tests/golden/run/to-int-range.hero"
-    h_0opt_e201354_release(&t68);
-#line 25 "tests/golden/run/to-int-range.hero"
-    t53 = h5_f5;
-#line 25 "tests/golden/run/to-int-range.hero"
-    t54 = t53.tag;
-#line 25 "tests/golden/run/to-int-range.hero"
-    t55 = INT64_C(1);
-#line 25 "tests/golden/run/to-int-range.hero"
-    t56 = t54 == t55;
-#line 25 "tests/golden/run/to-int-range.hero"
-    hero_print_bool(t56);
-#line 25 "tests/golden/run/to-int-range.hero"
-    hero_print_end();
-#line 402 "tointrange.c"
+    t47 = h4_f4; t48 = t47.as.ok; hero_print_int(t48); hero_print_end();
+    t49 = 0x0p+0; t50 = 0x0p+0; t51 = t49 / t50; if (hero_f64_fits_int(t51)) { t52 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t51)}; } else { t52 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t67 = h11_own11; h11_own11 = t52; h_0opt_e201354_release(&t67); t68 = h5_f5; h_0opt_e201354_retain(&t52); h5_f5 = t52; h_0opt_e201354_release(&t68); t53 = h5_f5; t54 = t53.tag; t55 = INT64_C(1); t56 = t54 == t55; hero_print_bool(t56); hero_print_end();
+#line 142 "tointrange.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h1_f1));
     h_0opt_e201354_release(hero_slot_escape(&h2_f2));
@@ -414,10 +154,8 @@ bb7:
     return;
 bb8:
 #line 24 "tests/golden/run/to-int-range.hero"
-    t45 = h4_f4;
-#line 24 "tests/golden/run/to-int-range.hero"
-    t46 = t45.as.err;
-#line 421 "tointrange.c"
+    t45 = h4_f4; t46 = t45.as.err;
+#line 159 "tointrange.c"
     hero_panic_must(t46);
     hero_unreachable();
 }

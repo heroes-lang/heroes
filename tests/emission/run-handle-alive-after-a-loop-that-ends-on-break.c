@@ -139,11 +139,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handlealiveafteraloopthaten
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 149 "handlealiveafteraloopthatendsonbreak.c"
 #pragma clang diagnostic pop
@@ -162,142 +162,24 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_handlealiveafteraloopthatendsonbreak_main(void);
 
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-void h_handlealiveafteraloopthatendsonbreak_main(void) {
-#line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    node * h0_n; bool h1_ended; int64_t h2_k; HERO_NODEBUG int64_t t1, t4, t5, t6, t9, t10, t14, t15, t16, t20, t23; HERO_NODEBUG node *t2, *t8, *t12, *t22, *t24; HERO_NODEBUG bool t3, t7, t11, t13, t17, t18; HERO_NODEBUG HeroStr t19, t21; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 14 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t2 = node_new(t1);
-#line 14 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_handle_acquired(t2, "node_free");
-#line 14 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    h0_n = t2;
-    t3 = false;
-#line 15 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    h1_ended = t3;
-    t4 = INT64_C(0);
-#line 16 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    h2_k = t4;
-#line 16 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    goto bb1;
-#line 16 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb1:
-#line 18 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t5 = h2_k;
-#line 18 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t6 = INT64_C(3);
-#line 18 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t7 = t5 < t6;
-#line 18 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    if (t7) goto bb2; else goto bb3;
-#line 18 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb2:
-    t8 = h0_n;
-#line 19 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_handle_alive(t8, "the argument `n` of `node_peek`");
-#line 19 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t9 = node_peek(t8);
-#line 19 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t10 = h2_k;
-#line 19 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t11 = t9 == t10;
-#line 19 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    if (t11) goto bb5; else goto bb6;
-#line 19 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb3:
-#line 25 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t17 = h1_ended;
-#line 25 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t18 = !t17;
-#line 25 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    if (t18) goto bb8; else goto bb9;
-#line 25 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb4:
-#line 23 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t14 = h2_k;
-#line 23 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t15 = INT64_C(1);
-#line 23 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 23 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    h2_k = t16;
-#line 23 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    goto bb1;
-#line 23 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb5:
-#line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t12 = h0_n;
-#line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    {
-#line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_handle_alive(t12, "the argument `n` of `node_free`");
-#line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "node_free", NULL);
-#line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    (void)node_free(t12);
-#line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    if (hero_handle_ended(t12, hero_life_0_0) && h0_n == t12) h0_n = hero_handle_dead();
-#line 20 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    }
-    t13 = true;
-#line 21 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    h1_ended = t13;
-#line 21 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    goto bb3;
-#line 21 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb6:
-#line 21 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    goto bb4;
-#line 21 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb7:
-#line 21 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    return;
-#line 21 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb8:
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t19 = HERO_STR_LIT(hero_str_36f6e615);
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t20 = h2_k;
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t21 = HERO_STR_LIT(hero_str_21ae9a8f);
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t22 = h0_n;
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_handle_alive(t22, "the argument `n` of `node_peek`");
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    t23 = node_peek(t22);
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_print_str(t19);
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_print_int(t20);
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_print_str(t21);
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_print_int(t23);
-#line 26 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_print_end();
-    t24 = h0_n;
-#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    {
-#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    hero_handle_alive(t24, "the argument `n` of `node_free`");
-#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t24, "node_free", NULL);
-#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    (void)node_free(t24);
-#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    if (hero_handle_ended(t24, hero_life_0_0) && h0_n == t24) h0_n = hero_handle_dead();
-#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    }
-#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    goto bb7;
-#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-bb9:
-#line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    goto bb7;
-#line 301 "handlealiveafteraloopthatendsonbreak.c"
+void h_handlealiveafteraloopthatendsonbreak_main(void) { node * h0_n; bool h1_ended; int64_t h2_k; HERO_NODEBUG int64_t t1, t4, t5, t6, t9, t10, t14, t15, t16, t20, t23; HERO_NODEBUG node *t2, *t8, *t12, *t22, *t24; HERO_NODEBUG bool t3, t7, t11, t13, t17, t18; HERO_NODEBUG HeroStr t19, t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); t2 = node_new(t1); hero_handle_acquired(t2, "node_free"); h0_n = t2;
+    t3 = false; h1_ended = t3;
+    t4 = INT64_C(0); h2_k = t4; goto bb1; bb1:
+#line 18
+    t5 = h2_k; t6 = INT64_C(3); t7 = t5 < t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = h0_n; hero_handle_alive(t8, "the argument `n` of `node_peek`"); t9 = node_peek(t8); t10 = h2_k; t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb3:
+#line 25
+    t17 = h1_ended; t18 = !t17; if (t18) goto bb8; else goto bb9; bb4:
+#line 23
+    t14 = h2_k; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h2_k = t16; goto bb1; bb5:
+#line 20
+    t12 = h0_n; { hero_handle_alive(t12, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "node_free", NULL); (void)node_free(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_n == t12) h0_n = hero_handle_dead(); }
+    t13 = true; h1_ended = t13; goto bb3; bb6: goto bb4; bb7: return; bb8:
+#line 26
+    t19 = HERO_STR_LIT(hero_str_36f6e615); t20 = h2_k; t21 = HERO_STR_LIT(hero_str_21ae9a8f); t22 = h0_n; hero_handle_alive(t22, "the argument `n` of `node_peek`"); t23 = node_peek(t22); hero_print_str(t19); hero_print_int(t20); hero_print_str(t21); hero_print_int(t23); hero_print_end();
+    t24 = h0_n; { hero_handle_alive(t24, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t24, "node_free", NULL); (void)node_free(t24); if (hero_handle_ended(t24, hero_life_0_0) && h0_n == t24) h0_n = hero_handle_dead(); } goto bb7; bb9: goto bb7;
+#line 183 "handlealiveafteraloopthatendsonbreak.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

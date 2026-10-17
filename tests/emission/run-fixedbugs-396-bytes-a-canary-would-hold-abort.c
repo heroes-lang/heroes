@@ -134,11 +134,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396bytesacanarywou
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 144 "fixedbugs396bytesacanarywouldholdabort.c"
 #pragma clang diagnostic pop
@@ -155,58 +155,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs396bytesacanarywouldholdabort_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-void h_fixedbugs396bytesacanarywouldholdabort_main(void) {
-#line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    HeroArrayHeader * h0_s = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t5, *t7, *t8; HERO_NODEBUG HeroStr t2, t4; HERO_NODEBUG int32_t t3; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_i8, 1);
-#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    t7 = h1_own1;
-#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    h1_own1 = t1;
-#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    hero_array_decref(t7);
-#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    t8 = h0_s;
-#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    hero_array_incref(t1);
-#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    h0_s = t1;
-#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    hero_array_decref(t8);
-    t2 = HERO_STR_LIT(hero_str_43560e4d);
-#line 12 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    hero_print_str(t2);
-#line 12 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    hero_print_end();
-    t3 = INT64_C(48);
-#line 13 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    {
-#line 13 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), char) && (char)-1 < 0), "heroes-ffi-buffer fill_a5 s 509 510 i8 char *");
-#line 13 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    HERO_NODEBUG int64_t hero_lend_e1_0 = INT64_C(16);
-#line 13 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    HERO_NODEBUG void *hero_lend_b1_0 = hero_lend_take(h0_s, hero_lend_e1_0, "fill_a5", "s");
-#line 13 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    (void)fill_a5((void *)hero_lend_b1_0, t3);
-#line 13 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    h0_s = hero_lend_give(h0_s, hero_lend_b1_0, hero_lend_e1_0);
-#line 13 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    }
-    t4 = HERO_STR_LIT(hero_str_5687795c);
-#line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    t5 = h0_s;
-#line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    hero_print_str(t4);
-#line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    hero_print_int(t6);
-#line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    hero_print_end();
-#line 210 "fixedbugs396bytesacanarywouldholdabort.c"
+void h_fixedbugs396bytesacanarywouldholdabort_main(void) { HeroArrayHeader * h0_s = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t5, *t7, *t8; HERO_NODEBUG HeroStr t2, t4; HERO_NODEBUG int32_t t3; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_i8, 1); t7 = h1_own1; h1_own1 = t1; hero_array_decref(t7); t8 = h0_s; hero_array_incref(t1); h0_s = t1; hero_array_decref(t8);
+    t2 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t2); hero_print_end();
+    t3 = INT64_C(48); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), char) && (char)-1 < 0), "heroes-ffi-buffer fill_a5 s 509 510 i8 char *"); HERO_NODEBUG int64_t hero_lend_e1_0 = INT64_C(16); HERO_NODEBUG void *hero_lend_b1_0 = hero_lend_take(h0_s, hero_lend_e1_0, "fill_a5", "s"); (void)fill_a5((void *)hero_lend_b1_0, t3); h0_s = hero_lend_give(h0_s, hero_lend_b1_0, hero_lend_e1_0); }
+    t4 = HERO_STR_LIT(hero_str_5687795c); t5 = h0_s; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); hero_print_str(t4); hero_print_int(t6); hero_print_end();
+#line 164 "fixedbugs396bytesacanarywouldholdabort.c"
     hero_array_release_at(&h0_s);
     hero_array_release_at(&h1_own1);
     return;

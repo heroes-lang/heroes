@@ -98,11 +98,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 108 "main.c"
 #pragma clang diagnostic pop
@@ -136,214 +136,44 @@ void h_main_main(void);
 HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers);
 
 #line 73 "examples/fannkuch/main.hero"
-int64_t h_main_flips(HeroArrayHeader * h0_order) {
-#line 73 "examples/fannkuch/main.hero"
-    HeroArrayHeader * h1_work = {0}; int64_t h2_done; int64_t h3_low; int64_t h4_high; int64_t h5_held; HERO_NODEBUG HeroArrayHeader *t1, *t3, *t9, *t15, *t19, *t34; HERO_NODEBUG int64_t t2, t4, t5, t6, t8, t10, t11, t12, t13, t16, t17, t18, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33; HERO_NODEBUG bool t7, t14; HERO_ENTRY_STOP; goto bb0;
-#line 73 "examples/fannkuch/main.hero"
-bb0:
-    t1 = h0_order;
-#line 74 "examples/fannkuch/main.hero"
-    t34 = h1_work;
-#line 74 "examples/fannkuch/main.hero"
-    hero_array_incref(t1);
-#line 74 "examples/fannkuch/main.hero"
-    h1_work = t1;
-#line 74 "examples/fannkuch/main.hero"
-    hero_array_decref(t34);
-    t2 = INT64_C(0);
-#line 75 "examples/fannkuch/main.hero"
-    h2_done = t2;
-#line 75 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 75 "examples/fannkuch/main.hero"
-bb1:
-#line 77 "examples/fannkuch/main.hero"
-    t3 = h1_work;
-#line 77 "examples/fannkuch/main.hero"
-    t4 = INT64_C(0);
-#line 77 "examples/fannkuch/main.hero"
-    t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? ((void)hero_array_at(t3, t4), hero_unreachable()) : (void)0), (void)(t3->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t3 + 1))[t4]);
-#line 77 "examples/fannkuch/main.hero"
-    t6 = INT64_C(0);
-#line 77 "examples/fannkuch/main.hero"
-    t7 = t5 != t6;
-#line 77 "examples/fannkuch/main.hero"
-    if (t7) goto bb2; else goto bb3;
-#line 77 "examples/fannkuch/main.hero"
-bb2:
-    t8 = INT64_C(0);
-#line 78 "examples/fannkuch/main.hero"
-    h3_low = t8;
-    t9 = h1_work;
-#line 79 "examples/fannkuch/main.hero"
-    t10 = INT64_C(0);
-#line 79 "examples/fannkuch/main.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]);
-#line 79 "examples/fannkuch/main.hero"
-    h4_high = t11;
-#line 79 "examples/fannkuch/main.hero"
-    goto bb4;
-#line 79 "examples/fannkuch/main.hero"
-bb3:
-#line 90 "examples/fannkuch/main.hero"
+int64_t h_main_flips(HeroArrayHeader * h0_order) { HeroArrayHeader * h1_work = {0}; int64_t h2_done; int64_t h3_low; int64_t h4_high; int64_t h5_held; HERO_NODEBUG HeroArrayHeader *t1, *t3, *t9, *t15, *t19, *t34; HERO_NODEBUG int64_t t2, t4, t5, t6, t8, t10, t11, t12, t13, t16, t17, t18, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33; HERO_NODEBUG bool t7, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_order; t34 = h1_work; hero_array_incref(t1); h1_work = t1; hero_array_decref(t34);
+    t2 = INT64_C(0); h2_done = t2; goto bb1; bb1:
+#line 77
+    t3 = h1_work; t4 = INT64_C(0); t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? ((void)hero_array_at(t3, t4), hero_unreachable()) : (void)0), (void)(t3->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t3 + 1))[t4]); t6 = INT64_C(0); t7 = t5 != t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = INT64_C(0); h3_low = t8;
+    t9 = h1_work; t10 = INT64_C(0); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]); h4_high = t11; goto bb4; bb3:
+#line 90
     t33 = h2_done;
-#line 191 "main.c"
+#line 149 "main.c"
     hero_array_release_at(&h1_work);
     return t33;
 bb4:
 #line 81 "examples/fannkuch/main.hero"
-    t12 = h3_low;
-#line 81 "examples/fannkuch/main.hero"
-    t13 = h4_high;
-#line 81 "examples/fannkuch/main.hero"
-    t14 = t12 < t13;
-#line 81 "examples/fannkuch/main.hero"
-    if (t14) goto bb5; else goto bb6;
-#line 81 "examples/fannkuch/main.hero"
-bb5:
-    t15 = h1_work;
-#line 82 "examples/fannkuch/main.hero"
-    t16 = h3_low;
-#line 82 "examples/fannkuch/main.hero"
-    t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t16]);
-#line 82 "examples/fannkuch/main.hero"
-    h5_held = t17;
-    t18 = h3_low;
-#line 83 "examples/fannkuch/main.hero"
-    t19 = h1_work;
-#line 83 "examples/fannkuch/main.hero"
-    t20 = h4_high;
-#line 83 "examples/fannkuch/main.hero"
-    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
-#line 83 "examples/fannkuch/main.hero"
-    hero_array_set(&(h1_work), t18, &t21);
-    t22 = h4_high;
-#line 84 "examples/fannkuch/main.hero"
-    t23 = h5_held;
-#line 84 "examples/fannkuch/main.hero"
-    hero_array_set(&(h1_work), t22, &t23);
-    t24 = h3_low;
-#line 85 "examples/fannkuch/main.hero"
-    t25 = INT64_C(1);
-#line 85 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow();
-#line 85 "examples/fannkuch/main.hero"
-    h3_low = t26;
-    t27 = h4_high;
-#line 86 "examples/fannkuch/main.hero"
-    t28 = INT64_C(1);
-#line 86 "examples/fannkuch/main.hero"
-    if (__builtin_sub_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 86 "examples/fannkuch/main.hero"
-    h4_high = t29;
-#line 86 "examples/fannkuch/main.hero"
-    goto bb4;
-#line 86 "examples/fannkuch/main.hero"
-bb6:
-#line 88 "examples/fannkuch/main.hero"
-    t30 = h2_done;
-#line 88 "examples/fannkuch/main.hero"
-    t31 = INT64_C(1);
-#line 88 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow();
-#line 88 "examples/fannkuch/main.hero"
-    h2_done = t32;
-#line 88 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 254 "main.c"
+    t12 = h3_low; t13 = h4_high; t14 = t12 < t13; if (t14) goto bb5; else goto bb6; bb5:
+    t15 = h1_work; t16 = h3_low; t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t16]); h5_held = t17;
+    t18 = h3_low; t19 = h1_work; t20 = h4_high; t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]); hero_array_set(&(h1_work), t18, &t21);
+    t22 = h4_high; t23 = h5_held; hero_array_set(&(h1_work), t22, &t23);
+    t24 = h3_low; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow(); h3_low = t26;
+    t27 = h4_high; t28 = INT64_C(1); if (__builtin_sub_overflow(t27, t28, &t29)) hero_panic_overflow(); h4_high = t29; goto bb4; bb6:
+#line 88
+    t30 = h2_done; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow(); h2_done = t32; goto bb1;
+#line 162 "main.c"
 }
 
 #line 94 "examples/fannkuch/main.hero"
-h_main_Walk h_main_start(int64_t h0_n) {
-#line 94 "examples/fannkuch/main.hero"
-    HeroArrayHeader * h1_order = {0}; HeroArrayHeader * h2_left = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h5_own5 = {0}, *t1, *t2, *t16, *t17, *t21, *t22, *t23, *t24; HERO_NODEBUG h_main_Walk h6_own6 = {0}, t20, t25; HERO_NODEBUG int64_t t3, t4, t5, t8, t11, t13, t14, t15, t18; HERO_NODEBUG bool t6, t19; HERO_ENTRY_STOP; goto bb0;
-#line 94 "examples/fannkuch/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 95 "examples/fannkuch/main.hero"
-    t21 = h4_own4;
-#line 95 "examples/fannkuch/main.hero"
-    h4_own4 = t1;
-#line 95 "examples/fannkuch/main.hero"
-    hero_array_decref(t21);
-#line 95 "examples/fannkuch/main.hero"
-    t22 = h1_order;
-#line 95 "examples/fannkuch/main.hero"
-    hero_array_incref(t1);
-#line 95 "examples/fannkuch/main.hero"
-    h1_order = t1;
-#line 95 "examples/fannkuch/main.hero"
-    hero_array_decref(t22);
-    t2 = hero_array_new(&hero_desc_int, 1);
-#line 96 "examples/fannkuch/main.hero"
-    t23 = h5_own5;
-#line 96 "examples/fannkuch/main.hero"
-    h5_own5 = t2;
-#line 96 "examples/fannkuch/main.hero"
-    hero_array_decref(t23);
-#line 96 "examples/fannkuch/main.hero"
-    t24 = h2_left;
-#line 96 "examples/fannkuch/main.hero"
-    hero_array_incref(t2);
-#line 96 "examples/fannkuch/main.hero"
-    h2_left = t2;
-#line 96 "examples/fannkuch/main.hero"
-    hero_array_decref(t24);
-    t3 = INT64_C(0);
-#line 97 "examples/fannkuch/main.hero"
-    h3_i = t3;
-#line 97 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 97 "examples/fannkuch/main.hero"
-bb1:
-#line 99 "examples/fannkuch/main.hero"
-    t4 = h3_i;
-#line 99 "examples/fannkuch/main.hero"
-    t5 = h0_n;
-#line 99 "examples/fannkuch/main.hero"
-    t6 = t4 < t5;
-#line 99 "examples/fannkuch/main.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 99 "examples/fannkuch/main.hero"
-bb2:
-    t8 = h3_i;
-#line 100 "examples/fannkuch/main.hero"
-    hero_array_push_owned(&h1_order, &t8);
-    t11 = INT64_C(0);
-#line 101 "examples/fannkuch/main.hero"
-    hero_array_push_owned(&h2_left, &t11);
-    t13 = h3_i;
-#line 102 "examples/fannkuch/main.hero"
-    t14 = INT64_C(1);
-#line 102 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 102 "examples/fannkuch/main.hero"
-    h3_i = t15;
-#line 102 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 102 "examples/fannkuch/main.hero"
-bb3:
-#line 104 "examples/fannkuch/main.hero"
-    t16 = h1_order;
-#line 104 "examples/fannkuch/main.hero"
-    t17 = h2_left;
-#line 104 "examples/fannkuch/main.hero"
-    t18 = h0_n;
-#line 104 "examples/fannkuch/main.hero"
-    t19 = false;
-#line 104 "examples/fannkuch/main.hero"
-    hero_array_incref(t16);
-#line 104 "examples/fannkuch/main.hero"
-    hero_array_incref(t17);
-#line 104 "examples/fannkuch/main.hero"
-    t20 = (h_main_Walk){.f_order = t16, .f_left = t17, .f_at = t18, .f_ended = t19};
-#line 104 "examples/fannkuch/main.hero"
-    t25 = h6_own6;
-#line 104 "examples/fannkuch/main.hero"
-    h6_own6 = t20;
-#line 104 "examples/fannkuch/main.hero"
-    h_main_Walk_release(&t25);
-#line 347 "main.c"
+h_main_Walk h_main_start(int64_t h0_n) { HeroArrayHeader * h1_order = {0}; HeroArrayHeader * h2_left = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h5_own5 = {0}, *t1, *t2, *t16, *t17, *t21, *t22, *t23, *t24; HERO_NODEBUG h_main_Walk h6_own6 = {0}, t20, t25; HERO_NODEBUG int64_t t3, t4, t5, t8, t11, t13, t14, t15, t18; HERO_NODEBUG bool t6, t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t21 = h4_own4; h4_own4 = t1; hero_array_decref(t21); t22 = h1_order; hero_array_incref(t1); h1_order = t1; hero_array_decref(t22);
+    t2 = hero_array_new(&hero_desc_int, 1); t23 = h5_own5; h5_own5 = t2; hero_array_decref(t23); t24 = h2_left; hero_array_incref(t2); h2_left = t2; hero_array_decref(t24);
+    t3 = INT64_C(0); h3_i = t3; goto bb1; bb1:
+#line 99
+    t4 = h3_i; t5 = h0_n; t6 = t4 < t5; if (t6) goto bb2; else goto bb3; bb2:
+    t8 = h3_i; hero_array_push_owned(&h1_order, &t8);
+    t11 = INT64_C(0); hero_array_push_owned(&h2_left, &t11);
+    t13 = h3_i; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); h3_i = t15; goto bb1; bb3:
+#line 104
+    t16 = h1_order; t17 = h2_left; t18 = h0_n; t19 = false; hero_array_incref(t16); hero_array_incref(t17); t20 = (h_main_Walk){.f_order = t16, .f_left = t17, .f_at = t18, .f_ended = t19}; t25 = h6_own6; h6_own6 = t20; h_main_Walk_release(&t25);
+#line 177 "main.c"
     h_main_Walk_retain(&t20);
     hero_array_release_at(&h1_order);
     hero_array_release_at(&h2_left);
@@ -354,520 +184,102 @@ bb3:
 }
 
 #line 109 "examples/fannkuch/main.hero"
-void h_main_reset(h_main_Walk *ph0_w) {
-#line 109 "examples/fannkuch/main.hero"
-    HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
-#line 109 "examples/fannkuch/main.hero"
-bb0:
-#line 109 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 109 "examples/fannkuch/main.hero"
-bb1:
-    t1 = (*ph0_w).f_at;
-#line 110 "examples/fannkuch/main.hero"
-    t2 = INT64_C(1);
-#line 110 "examples/fannkuch/main.hero"
-    t3 = t1 != t2;
-#line 110 "examples/fannkuch/main.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 110 "examples/fannkuch/main.hero"
-bb2:
-    t4 = (*ph0_w).f_at;
-#line 111 "examples/fannkuch/main.hero"
-    t5 = INT64_C(1);
-#line 111 "examples/fannkuch/main.hero"
-    if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 111 "examples/fannkuch/main.hero"
-    t7 = (*ph0_w).f_at;
-#line 111 "examples/fannkuch/main.hero"
-    hero_array_set(&((*ph0_w).f_left), t6, &t7);
-    t8 = (*ph0_w).f_at;
-#line 112 "examples/fannkuch/main.hero"
-    t9 = INT64_C(1);
-#line 112 "examples/fannkuch/main.hero"
-    if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow();
-#line 112 "examples/fannkuch/main.hero"
-    (*ph0_w).f_at = t10;
-#line 112 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 112 "examples/fannkuch/main.hero"
-bb3:
-#line 112 "examples/fannkuch/main.hero"
-    return;
-#line 398 "main.c"
+void h_main_reset(h_main_Walk *ph0_w) { HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
+    t1 = (*ph0_w).f_at; t2 = INT64_C(1); t3 = t1 != t2; if (t3) goto bb2; else goto bb3; bb2:
+    t4 = (*ph0_w).f_at; t5 = INT64_C(1); if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow(); t7 = (*ph0_w).f_at; hero_array_set(&((*ph0_w).f_left), t6, &t7);
+    t8 = (*ph0_w).f_at; t9 = INT64_C(1); if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow(); (*ph0_w).f_at = t10; goto bb1; bb3: return;
+#line 192 "main.c"
 }
 
 #line 118 "examples/fannkuch/main.hero"
-void h_main_advance(h_main_Walk *ph0_w) {
-#line 118 "examples/fannkuch/main.hero"
-    int64_t h1_head; int64_t h2_i; HERO_NODEBUG bool t1, t5, t6, t13, t35; HERO_NODEBUG int64_t t2, t4, t8, t9, t10, t11, t12, t14, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t27, t28, t29, t30, t32, t33, t34, t36, t37, t38; HERO_NODEBUG HeroArrayHeader *t3, *t7, *t15, *t26, *t31; HERO_ENTRY_STOP; goto bb0;
-#line 118 "examples/fannkuch/main.hero"
-bb0:
-#line 118 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 118 "examples/fannkuch/main.hero"
-bb1:
-    t1 = true;
-#line 119 "examples/fannkuch/main.hero"
-    if (t1) goto bb2; else goto bb3;
-#line 119 "examples/fannkuch/main.hero"
-bb2:
-    t2 = (*ph0_w).f_at;
-#line 120 "examples/fannkuch/main.hero"
-    t3 = (*ph0_w).f_order;
-#line 120 "examples/fannkuch/main.hero"
-    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 120 "examples/fannkuch/main.hero"
-    t5 = t2 == t4;
-#line 120 "examples/fannkuch/main.hero"
-    if (t5) goto bb5; else goto bb6;
-#line 120 "examples/fannkuch/main.hero"
-bb3:
-#line 120 "examples/fannkuch/main.hero"
-    goto bb13;
-#line 120 "examples/fannkuch/main.hero"
-bb4:
-#line 123 "examples/fannkuch/main.hero"
-    t7 = (*ph0_w).f_order;
-#line 123 "examples/fannkuch/main.hero"
-    t8 = INT64_C(0);
-#line 123 "examples/fannkuch/main.hero"
-    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]);
-#line 123 "examples/fannkuch/main.hero"
-    h1_head = t9;
-    t10 = INT64_C(0);
-#line 124 "examples/fannkuch/main.hero"
-    h2_i = t10;
-#line 124 "examples/fannkuch/main.hero"
-    goto bb7;
-#line 124 "examples/fannkuch/main.hero"
-bb5:
-#line 121 "examples/fannkuch/main.hero"
-    t6 = true;
-#line 121 "examples/fannkuch/main.hero"
-    (*ph0_w).f_ended = t6;
-#line 121 "examples/fannkuch/main.hero"
-    goto bb13;
-#line 121 "examples/fannkuch/main.hero"
-bb6:
-#line 121 "examples/fannkuch/main.hero"
-    goto bb4;
-#line 121 "examples/fannkuch/main.hero"
-bb7:
-#line 126 "examples/fannkuch/main.hero"
-    t11 = h2_i;
-#line 126 "examples/fannkuch/main.hero"
-    t12 = (*ph0_w).f_at;
-#line 126 "examples/fannkuch/main.hero"
-    t13 = t11 < t12;
-#line 126 "examples/fannkuch/main.hero"
-    if (t13) goto bb8; else goto bb9;
-#line 126 "examples/fannkuch/main.hero"
-bb8:
-    t14 = h2_i;
-#line 127 "examples/fannkuch/main.hero"
-    t15 = (*ph0_w).f_order;
-#line 127 "examples/fannkuch/main.hero"
-    t16 = h2_i;
-#line 127 "examples/fannkuch/main.hero"
-    t17 = INT64_C(1);
-#line 127 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
-#line 127 "examples/fannkuch/main.hero"
-    t19 = ((void)((t15 == NULL || t18 < 0 || t18 >= t15->len) ? ((void)hero_array_at(t15, t18), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t18]);
-#line 127 "examples/fannkuch/main.hero"
-    hero_array_set(&((*ph0_w).f_order), t14, &t19);
-    t20 = h2_i;
-#line 128 "examples/fannkuch/main.hero"
-    t21 = INT64_C(1);
-#line 128 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow();
-#line 128 "examples/fannkuch/main.hero"
-    h2_i = t22;
-#line 128 "examples/fannkuch/main.hero"
-    goto bb7;
-#line 128 "examples/fannkuch/main.hero"
-bb9:
-#line 130 "examples/fannkuch/main.hero"
-    t23 = (*ph0_w).f_at;
-#line 130 "examples/fannkuch/main.hero"
-    t24 = h1_head;
-#line 130 "examples/fannkuch/main.hero"
-    hero_array_set(&((*ph0_w).f_order), t23, &t24);
-    t25 = (*ph0_w).f_at;
-#line 131 "examples/fannkuch/main.hero"
-    t26 = (*ph0_w).f_left;
-#line 131 "examples/fannkuch/main.hero"
-    t27 = (*ph0_w).f_at;
-#line 131 "examples/fannkuch/main.hero"
-    t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t26 + 1))[t27]);
-#line 131 "examples/fannkuch/main.hero"
-    t29 = INT64_C(1);
-#line 131 "examples/fannkuch/main.hero"
-    if (__builtin_sub_overflow(t28, t29, &t30)) hero_panic_overflow();
-#line 131 "examples/fannkuch/main.hero"
-    hero_array_set(&((*ph0_w).f_left), t25, &t30);
-#line 133 "examples/fannkuch/main.hero"
-    t31 = (*ph0_w).f_left;
-#line 133 "examples/fannkuch/main.hero"
-    t32 = (*ph0_w).f_at;
-#line 133 "examples/fannkuch/main.hero"
-    t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t31 + 1))[t32]);
-#line 133 "examples/fannkuch/main.hero"
-    t34 = INT64_C(0);
-#line 133 "examples/fannkuch/main.hero"
-    t35 = t33 > t34;
-#line 133 "examples/fannkuch/main.hero"
-    if (t35) goto bb11; else goto bb12;
-#line 133 "examples/fannkuch/main.hero"
-bb10:
-#line 135 "examples/fannkuch/main.hero"
-    t36 = (*ph0_w).f_at;
-#line 135 "examples/fannkuch/main.hero"
-    t37 = INT64_C(1);
-#line 135 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow();
-#line 135 "examples/fannkuch/main.hero"
-    (*ph0_w).f_at = t38;
-#line 135 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 135 "examples/fannkuch/main.hero"
-bb11:
-#line 135 "examples/fannkuch/main.hero"
-    goto bb13;
-#line 135 "examples/fannkuch/main.hero"
-bb12:
-#line 135 "examples/fannkuch/main.hero"
-    goto bb10;
-#line 135 "examples/fannkuch/main.hero"
-bb13:
-#line 135 "examples/fannkuch/main.hero"
-    return;
-#line 547 "main.c"
+void h_main_advance(h_main_Walk *ph0_w) { int64_t h1_head; int64_t h2_i; HERO_NODEBUG bool t1, t5, t6, t13, t35; HERO_NODEBUG int64_t t2, t4, t8, t9, t10, t11, t12, t14, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t27, t28, t29, t30, t32, t33, t34, t36, t37, t38; HERO_NODEBUG HeroArrayHeader *t3, *t7, *t15, *t26, *t31; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
+    t1 = true; if (t1) goto bb2; else goto bb3; bb2:
+    t2 = (*ph0_w).f_at; t3 = (*ph0_w).f_order; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = t2 == t4; if (t5) goto bb5; else goto bb6; bb3: goto bb13; bb4:
+#line 123
+    t7 = (*ph0_w).f_order; t8 = INT64_C(0); t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t7 + 1))[t8]); h1_head = t9;
+    t10 = INT64_C(0); h2_i = t10; goto bb7; bb5:
+#line 121
+    t6 = true; (*ph0_w).f_ended = t6; goto bb13; bb6: goto bb4; bb7:
+#line 126
+    t11 = h2_i; t12 = (*ph0_w).f_at; t13 = t11 < t12; if (t13) goto bb8; else goto bb9; bb8:
+    t14 = h2_i; t15 = (*ph0_w).f_order; t16 = h2_i; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); t19 = ((void)((t15 == NULL || t18 < 0 || t18 >= t15->len) ? ((void)hero_array_at(t15, t18), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t15 + 1))[t18]); hero_array_set(&((*ph0_w).f_order), t14, &t19);
+    t20 = h2_i; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow(); h2_i = t22; goto bb7; bb9:
+#line 130
+    t23 = (*ph0_w).f_at; t24 = h1_head; hero_array_set(&((*ph0_w).f_order), t23, &t24);
+    t25 = (*ph0_w).f_at; t26 = (*ph0_w).f_left; t27 = (*ph0_w).f_at; t28 = ((void)((t26 == NULL || t27 < 0 || t27 >= t26->len) ? ((void)hero_array_at(t26, t27), hero_unreachable()) : (void)0), (void)(t26->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t26 + 1))[t27]); t29 = INT64_C(1); if (__builtin_sub_overflow(t28, t29, &t30)) hero_panic_overflow(); hero_array_set(&((*ph0_w).f_left), t25, &t30);
+#line 133
+    t31 = (*ph0_w).f_left; t32 = (*ph0_w).f_at; t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? ((void)hero_array_at(t31, t32), hero_unreachable()) : (void)0), (void)(t31->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t31 + 1))[t32]); t34 = INT64_C(0); t35 = t33 > t34; if (t35) goto bb11; else goto bb12; bb10:
+#line 135
+    t36 = (*ph0_w).f_at; t37 = INT64_C(1); if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow(); (*ph0_w).f_at = t38; goto bb1; bb11: goto bb13; bb12: goto bb10; bb13: return;
+#line 215 "main.c"
 }
 
 #line 140 "examples/fannkuch/main.hero"
-h_main_Fannkuch h_main_fannkuch(int64_t h0_n) {
-#line 140 "examples/fannkuch/main.hero"
-    h_main_Walk h1_w = {0}; int64_t h2_checksum; int64_t h3_max_flips; int64_t h4_visited; int64_t h5_count; HERO_NODEBUG h_main_Walk h6_own6 = {0}, t2, t32, t33; HERO_NODEBUG int64_t t1, t3, t4, t5, t9, t10, t11, t13, t14, t15, t16, t17, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30; HERO_NODEBUG bool t6, t7, t12, t18; HERO_NODEBUG HeroArrayHeader *t8; HERO_NODEBUG h_main_Fannkuch t31; HERO_ENTRY_STOP; goto bb0;
-#line 140 "examples/fannkuch/main.hero"
-bb0:
-    t1 = h0_n;
-#line 141 "examples/fannkuch/main.hero"
-    t2 = h_main_start(t1);
-#line 141 "examples/fannkuch/main.hero"
-    t32 = h6_own6;
-#line 141 "examples/fannkuch/main.hero"
-    h6_own6 = t2;
-#line 141 "examples/fannkuch/main.hero"
-    h_main_Walk_release(&t32);
-#line 141 "examples/fannkuch/main.hero"
-    t33 = h1_w;
-#line 141 "examples/fannkuch/main.hero"
-    h_main_Walk_retain(&t2);
-#line 141 "examples/fannkuch/main.hero"
-    h1_w = t2;
-#line 141 "examples/fannkuch/main.hero"
-    h_main_Walk_release(&t33);
-    t3 = INT64_C(0);
-#line 142 "examples/fannkuch/main.hero"
-    h2_checksum = t3;
-    t4 = INT64_C(0);
-#line 143 "examples/fannkuch/main.hero"
-    h3_max_flips = t4;
-    t5 = INT64_C(0);
-#line 144 "examples/fannkuch/main.hero"
-    h4_visited = t5;
-#line 144 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 144 "examples/fannkuch/main.hero"
-bb1:
-#line 146 "examples/fannkuch/main.hero"
-    t6 = h1_w.f_ended;
-#line 146 "examples/fannkuch/main.hero"
-    t7 = !t6;
-#line 146 "examples/fannkuch/main.hero"
-    if (t7) goto bb2; else goto bb3;
-#line 146 "examples/fannkuch/main.hero"
-bb2:
+h_main_Fannkuch h_main_fannkuch(int64_t h0_n) { h_main_Walk h1_w = {0}; int64_t h2_checksum; int64_t h3_max_flips; int64_t h4_visited; int64_t h5_count; HERO_NODEBUG h_main_Walk h6_own6 = {0}, t2, t32, t33; HERO_NODEBUG int64_t t1, t3, t4, t5, t9, t10, t11, t13, t14, t15, t16, t17, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30; HERO_NODEBUG bool t6, t7, t12, t18; HERO_NODEBUG HeroArrayHeader *t8; HERO_NODEBUG h_main_Fannkuch t31; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = h_main_start(t1); t32 = h6_own6; h6_own6 = t2; h_main_Walk_release(&t32); t33 = h1_w; h_main_Walk_retain(&t2); h1_w = t2; h_main_Walk_release(&t33);
+    t3 = INT64_C(0); h2_checksum = t3;
+    t4 = INT64_C(0); h3_max_flips = t4;
+    t5 = INT64_C(0); h4_visited = t5; goto bb1; bb1:
+#line 146
+    t6 = h1_w.f_ended; t7 = !t6; if (t7) goto bb2; else goto bb3; bb2:
     h_main_reset(&h1_w);
-    t8 = h1_w.f_order;
-#line 148 "examples/fannkuch/main.hero"
-    t9 = h_main_flips(t8);
-#line 148 "examples/fannkuch/main.hero"
-    h5_count = t9;
-#line 150 "examples/fannkuch/main.hero"
-    t10 = h5_count;
-#line 150 "examples/fannkuch/main.hero"
-    t11 = h3_max_flips;
-#line 150 "examples/fannkuch/main.hero"
-    t12 = t10 > t11;
-#line 150 "examples/fannkuch/main.hero"
-    if (t12) goto bb5; else goto bb6;
-#line 150 "examples/fannkuch/main.hero"
-bb3:
-#line 160 "examples/fannkuch/main.hero"
-    t28 = h2_checksum;
-#line 160 "examples/fannkuch/main.hero"
-    t29 = h3_max_flips;
-#line 160 "examples/fannkuch/main.hero"
-    t30 = h4_visited;
-#line 160 "examples/fannkuch/main.hero"
-    t31 = (h_main_Fannkuch){.f_checksum = t28, .f_max_flips = t29, .f_visited = t30};
-#line 618 "main.c"
+    t8 = h1_w.f_order; t9 = h_main_flips(t8); h5_count = t9;
+#line 150
+    t10 = h5_count; t11 = h3_max_flips; t12 = t10 > t11; if (t12) goto bb5; else goto bb6; bb3:
+#line 160
+    t28 = h2_checksum; t29 = h3_max_flips; t30 = h4_visited; t31 = (h_main_Fannkuch){.f_checksum = t28, .f_max_flips = t29, .f_visited = t30};
+#line 232 "main.c"
     h_main_Walk_release(hero_slot_escape(&h1_w));
     h_main_Walk_release(hero_slot_escape(&h6_own6));
     return t31;
 bb4:
 #line 153 "examples/fannkuch/main.hero"
-    t14 = h4_visited;
-#line 153 "examples/fannkuch/main.hero"
-    t15 = INT64_C(2);
-#line 153 "examples/fannkuch/main.hero"
-    if (t15 == 0) hero_panic("division by zero");
-#line 153 "examples/fannkuch/main.hero"
-    if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 153 "examples/fannkuch/main.hero"
-    t16 = t14 % t15;
-#line 153 "examples/fannkuch/main.hero"
-    t17 = INT64_C(0);
-#line 153 "examples/fannkuch/main.hero"
-    t18 = t16 == t17;
-#line 153 "examples/fannkuch/main.hero"
-    if (t18) goto bb8; else goto bb9;
-#line 153 "examples/fannkuch/main.hero"
-bb5:
-#line 151 "examples/fannkuch/main.hero"
-    t13 = h5_count;
-#line 151 "examples/fannkuch/main.hero"
-    h3_max_flips = t13;
-#line 151 "examples/fannkuch/main.hero"
-    goto bb4;
-#line 151 "examples/fannkuch/main.hero"
-bb6:
-#line 151 "examples/fannkuch/main.hero"
-    goto bb4;
-#line 151 "examples/fannkuch/main.hero"
-bb7:
-#line 157 "examples/fannkuch/main.hero"
-    t25 = h4_visited;
-#line 157 "examples/fannkuch/main.hero"
-    t26 = INT64_C(1);
-#line 157 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow();
-#line 157 "examples/fannkuch/main.hero"
-    h4_visited = t27;
-    h_main_advance(&h1_w);
-#line 158 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 158 "examples/fannkuch/main.hero"
-bb8:
-#line 154 "examples/fannkuch/main.hero"
-    t19 = h2_checksum;
-#line 154 "examples/fannkuch/main.hero"
-    t20 = h5_count;
-#line 154 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow();
-#line 154 "examples/fannkuch/main.hero"
-    h2_checksum = t21;
-#line 154 "examples/fannkuch/main.hero"
-    goto bb7;
-#line 154 "examples/fannkuch/main.hero"
-bb9:
-#line 156 "examples/fannkuch/main.hero"
-    t22 = h2_checksum;
-#line 156 "examples/fannkuch/main.hero"
-    t23 = h5_count;
-#line 156 "examples/fannkuch/main.hero"
-    if (__builtin_sub_overflow(t22, t23, &t24)) hero_panic_overflow();
-#line 156 "examples/fannkuch/main.hero"
-    h2_checksum = t24;
-#line 156 "examples/fannkuch/main.hero"
-    goto bb7;
-#line 688 "main.c"
+    t14 = h4_visited; t15 = INT64_C(2); if (t15 == 0) hero_panic("division by zero"); if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t16 = t14 % t15; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb8; else goto bb9; bb5:
+#line 151
+    t13 = h5_count; h3_max_flips = t13; goto bb4; bb6: goto bb4; bb7:
+#line 157
+    t25 = h4_visited; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow(); h4_visited = t27;
+    h_main_advance(&h1_w); goto bb1; bb8:
+#line 154
+    t19 = h2_checksum; t20 = h5_count; if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow(); h2_checksum = t21; goto bb7; bb9:
+#line 156
+    t22 = h2_checksum; t23 = h5_count; if (__builtin_sub_overflow(t22, t23, &t24)) hero_panic_overflow(); h2_checksum = t24; goto bb7;
+#line 248 "main.c"
 }
 
 #line 163 "examples/fannkuch/main.hero"
-int64_t h_main_factorial(int64_t h0_n) {
-#line 163 "examples/fannkuch/main.hero"
-    int64_t h1_out; int64_t h2_i; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 163 "examples/fannkuch/main.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 164 "examples/fannkuch/main.hero"
-    h1_out = t1;
-    t2 = INT64_C(2);
-#line 165 "examples/fannkuch/main.hero"
-    h2_i = t2;
-#line 165 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 165 "examples/fannkuch/main.hero"
-bb1:
-#line 167 "examples/fannkuch/main.hero"
-    t3 = h2_i;
-#line 167 "examples/fannkuch/main.hero"
-    t4 = h0_n;
-#line 167 "examples/fannkuch/main.hero"
-    t5 = t3 <= t4;
-#line 167 "examples/fannkuch/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 167 "examples/fannkuch/main.hero"
-bb2:
-    t6 = h1_out;
-#line 168 "examples/fannkuch/main.hero"
-    t7 = h2_i;
-#line 168 "examples/fannkuch/main.hero"
-    if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow();
-#line 168 "examples/fannkuch/main.hero"
-    h1_out = t8;
-    t9 = h2_i;
-#line 169 "examples/fannkuch/main.hero"
-    t10 = INT64_C(1);
-#line 169 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 169 "examples/fannkuch/main.hero"
-    h2_i = t11;
-#line 169 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 169 "examples/fannkuch/main.hero"
-bb3:
-#line 171 "examples/fannkuch/main.hero"
-    t12 = h1_out;
-#line 171 "examples/fannkuch/main.hero"
-    return t12;
-#line 739 "main.c"
+int64_t h_main_factorial(int64_t h0_n) { int64_t h1_out; int64_t h2_i; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); h1_out = t1;
+    t2 = INT64_C(2); h2_i = t2; goto bb1; bb1:
+#line 167
+    t3 = h2_i; t4 = h0_n; t5 = t3 <= t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h1_out; t7 = h2_i; if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow(); h1_out = t8;
+    t9 = h2_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h2_i = t11; goto bb1; bb3:
+#line 171
+    t12 = h1_out; return t12;
+#line 261 "main.c"
 }
 
 #line 175 "examples/fannkuch/main.hero"
-void h_main_main(void) {
-#line 175 "examples/fannkuch/main.hero"
-    int64_t h0_n; h_main_Fannkuch h1_said; HERO_NODEBUG int64_t t1, t2, t4, t6, t8; HERO_NODEBUG h_main_Fannkuch t3; HERO_NODEBUG HeroStr t5, t7; HERO_ENTRY_STOP; goto bb0;
-#line 175 "examples/fannkuch/main.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 176 "examples/fannkuch/main.hero"
-    h0_n = t1;
-    t2 = h0_n;
-#line 177 "examples/fannkuch/main.hero"
-    t3 = h_main_fannkuch(t2);
-#line 177 "examples/fannkuch/main.hero"
-    h1_said = t3;
-    t4 = h1_said.f_checksum;
-#line 178 "examples/fannkuch/main.hero"
-    hero_print_int(t4);
-#line 178 "examples/fannkuch/main.hero"
-    hero_print_end();
-    t5 = HERO_STR_LIT(hero_str_515417d6);
-#line 179 "examples/fannkuch/main.hero"
-    t6 = h0_n;
-#line 179 "examples/fannkuch/main.hero"
-    t7 = HERO_STR_LIT(hero_str_586ee4a);
-#line 179 "examples/fannkuch/main.hero"
-    t8 = h1_said.f_max_flips;
-#line 179 "examples/fannkuch/main.hero"
-    hero_print_str(t5);
-#line 179 "examples/fannkuch/main.hero"
-    hero_print_int(t6);
-#line 179 "examples/fannkuch/main.hero"
-    hero_print_str(t7);
-#line 179 "examples/fannkuch/main.hero"
-    hero_print_int(t8);
-#line 179 "examples/fannkuch/main.hero"
-    hero_print_end();
-#line 179 "examples/fannkuch/main.hero"
-    return;
-#line 780 "main.c"
+void h_main_main(void) { int64_t h0_n; h_main_Fannkuch h1_said; HERO_NODEBUG int64_t t1, t2, t4, t6, t8; HERO_NODEBUG h_main_Fannkuch t3; HERO_NODEBUG HeroStr t5, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); h0_n = t1;
+    t2 = h0_n; t3 = h_main_fannkuch(t2); h1_said = t3;
+    t4 = h1_said.f_checksum; hero_print_int(t4); hero_print_end();
+    t5 = HERO_STR_LIT(hero_str_515417d6); t6 = h0_n; t7 = HERO_STR_LIT(hero_str_586ee4a); t8 = h1_said.f_max_flips; hero_print_str(t5); hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_end(); return;
+#line 270 "main.c"
 }
 
 #line 267 "examples/fannkuch/main.hero"
-HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers) {
-#line 267 "examples/fannkuch/main.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t19, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t10, t12, t15, t16, t17; int64_t h4_one; HERO_NODEBUG HeroStr h6_own6 = {0}, t13, t22; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
-#line 267 "examples/fannkuch/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 268 "examples/fannkuch/main.hero"
-    t19 = h5_own5;
-#line 268 "examples/fannkuch/main.hero"
-    h5_own5 = t1;
-#line 268 "examples/fannkuch/main.hero"
-    hero_array_decref(t19);
-#line 268 "examples/fannkuch/main.hero"
-    t20 = h1_out;
-#line 268 "examples/fannkuch/main.hero"
-    hero_array_incref(t1);
-#line 268 "examples/fannkuch/main.hero"
-    h1_out = t1;
-#line 268 "examples/fannkuch/main.hero"
-    hero_array_decref(t20);
-#line 270 "examples/fannkuch/main.hero"
-    t2 = h0_numbers;
-#line 270 "examples/fannkuch/main.hero"
-    t21 = h2_xs0;
-#line 270 "examples/fannkuch/main.hero"
-    hero_array_incref(t2);
-#line 270 "examples/fannkuch/main.hero"
-    h2_xs0 = t2;
-#line 270 "examples/fannkuch/main.hero"
-    hero_array_decref(t21);
-#line 270 "examples/fannkuch/main.hero"
-    t3 = INT64_C(0);
-#line 270 "examples/fannkuch/main.hero"
-    h3_i0 = t3;
-#line 270 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 270 "examples/fannkuch/main.hero"
-bb1:
-#line 270 "examples/fannkuch/main.hero"
-    t4 = h3_i0;
-#line 270 "examples/fannkuch/main.hero"
-    t5 = h2_xs0;
-#line 270 "examples/fannkuch/main.hero"
-    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 270 "examples/fannkuch/main.hero"
-    t7 = t4 < t6;
-#line 270 "examples/fannkuch/main.hero"
-    if (t7) goto bb2; else goto bb4;
-#line 270 "examples/fannkuch/main.hero"
-bb2:
-#line 270 "examples/fannkuch/main.hero"
-    t8 = h2_xs0;
-#line 270 "examples/fannkuch/main.hero"
-    t9 = h3_i0;
-#line 270 "examples/fannkuch/main.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
-#line 270 "examples/fannkuch/main.hero"
-    h4_one = t10;
-    t12 = h4_one;
-#line 271 "examples/fannkuch/main.hero"
-    t13 = hero_int_to_str(t12);
-#line 271 "examples/fannkuch/main.hero"
-    t22 = h6_own6;
-#line 271 "examples/fannkuch/main.hero"
-    h6_own6 = t13;
-#line 271 "examples/fannkuch/main.hero"
-    hero_str_decref(t22);
-#line 271 "examples/fannkuch/main.hero"
-    hero_array_push_owned(&h1_out, &t13);
-#line 271 "examples/fannkuch/main.hero"
-    goto bb3;
-#line 271 "examples/fannkuch/main.hero"
-bb3:
-#line 270 "examples/fannkuch/main.hero"
-    t15 = h3_i0;
-#line 270 "examples/fannkuch/main.hero"
-    t16 = INT64_C(1);
-#line 270 "examples/fannkuch/main.hero"
-    if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 270 "examples/fannkuch/main.hero"
-    h3_i0 = t17;
-#line 270 "examples/fannkuch/main.hero"
-    goto bb1;
-#line 270 "examples/fannkuch/main.hero"
-bb4:
-#line 273 "examples/fannkuch/main.hero"
+HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t19, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t10, t12, t15, t16, t17; int64_t h4_one; HERO_NODEBUG HeroStr h6_own6 = {0}, t13, t22; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t19 = h5_own5; h5_own5 = t1; hero_array_decref(t19); t20 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t20);
+#line 270
+    t2 = h0_numbers; t21 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t21); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_one = t10;
+    t12 = h4_one; t13 = hero_int_to_str(t12); t22 = h6_own6; h6_own6 = t13; hero_str_decref(t22); hero_array_push_owned(&h1_out, &t13); goto bb3; bb3:
+#line 270
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h3_i0 = t17; goto bb1; bb4:
+#line 273
     t18 = h1_out;
-#line 871 "main.c"
+#line 283 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);

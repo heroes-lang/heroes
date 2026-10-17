@@ -132,11 +132,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs451abuffercwritesa
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 142 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
 #pragma clang diagnostic pop
@@ -154,67 +154,21 @@ int64_t h_fixedbugs451abuffercwritesafteritscallreturnsisnamed_fill(void);
 void h_fixedbugs451abuffercwritesafteritscallreturnsisnamed_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-int64_t h_fixedbugs451abuffercwritesafteritscallreturnsisnamed_fill(void) {
-#line 16 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    HeroArrayHeader * h0_md = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t3, *t5, *t6; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_u8, 1);
-#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    t5 = h1_own1;
-#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    h1_own1 = t1;
-#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    hero_array_decref(t5);
-#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    t6 = h0_md;
-#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    hero_array_incref(t1);
-#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    h0_md = t1;
-#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    hero_array_decref(t6);
-    {
-#line 18 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer bytes_keep32 md 769 771 u8 unsigned char *");
-#line 18 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(32);
-#line 18 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take(h0_md, hero_lend_e0_0, "bytes_keep32", "md");
-#line 18 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    (void)bytes_keep32((void *)hero_lend_b0_0);
-#line 18 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    h0_md = hero_lend_give(h0_md, hero_lend_b0_0, hero_lend_e0_0);
-#line 18 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    }
-    t3 = h0_md;
-#line 19 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 194 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
+int64_t h_fixedbugs451abuffercwritesafteritscallreturnsisnamed_fill(void) { HeroArrayHeader * h0_md = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t3, *t5, *t6; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_u8, 1); t5 = h1_own1; h1_own1 = t1; hero_array_decref(t5); t6 = h0_md; hero_array_incref(t1); h0_md = t1; hero_array_decref(t6);
+    { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer bytes_keep32 md 769 771 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(32); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take(h0_md, hero_lend_e0_0, "bytes_keep32", "md"); (void)bytes_keep32((void *)hero_lend_b0_0); h0_md = hero_lend_give(h0_md, hero_lend_b0_0, hero_lend_e0_0); }
+    t3 = h0_md; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
+#line 162 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_own1);
     return t4;
 }
 
 #line 21 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-void h_fixedbugs451abuffercwritesafteritscallreturnsisnamed_main(void) {
-#line 21 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-bb0:
-    t1 = h_fixedbugs451abuffercwritesafteritscallreturnsisnamed_fill();
-#line 22 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    hero_print_int(t1);
-#line 22 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    hero_print_end();
-    t2 = bytes_write_later();
-#line 23 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    hero_print_int(t2);
-#line 23 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
-    return;
-#line 218 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
+void h_fixedbugs451abuffercwritesafteritscallreturnsisnamed_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs451abuffercwritesafteritscallreturnsisnamed_fill(); hero_print_int(t1); hero_print_end();
+    t2 = bytes_write_later(); hero_print_int(t2); hero_print_end(); return;
+#line 172 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

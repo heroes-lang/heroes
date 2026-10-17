@@ -29,6 +29,15 @@ behaviour.
 synthetic code, and the restore carries the printer's own output line count.
 Emitter debugging is the test helper's job: `--no-line` is refused by the
 stopping rule in `.claude/rules/cli-surface.md` (panels 016, 020).
+**A re-anchoring line joins its anchor, and a name is written where it changes**
+(panel 219's R1, ratified 2026-10-17; design.md §3.1): a restore that would
+re-anchor the very line the previous C line sits on is not written, its C line
+joined onto that one (`emit/line_join.hero`), never onto a directive, a
+preprocessor line, a blank line, a line holding a newline or a `//`; and a
+`#line` names its file only where the file clang presumes changes, `#line N`
+alone elsewhere (`emit/line_name.hero`). The line table is the same at every
+address. What an author sees move: clang's C column and its quoted excerpt on
+the exit-2 path, the whole Heroes line's C, and C-line coverage by hand.
 
 One `goto` and label per basic block, explicit entry `goto bb0`, a label **only
 where an edge targets it**, all locals hoisted to the prologue, and a

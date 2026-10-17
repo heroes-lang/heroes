@@ -131,11 +131,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs361aheadersmacrosn
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 141 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
 #pragma clang diagnostic pop
@@ -183,31 +183,11 @@ int64_t h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_LIMIT(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 18 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-void h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_main(void) {
-#line 18 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-bb0:
-    t1 = INT64_C(21);
-#line 19 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-    t2 = twice(t1);
-#line 19 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-    hero_print_int(t2);
-#line 19 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-    hero_print_end();
-    t3 = INT64_C(1000000000000);
-#line 20 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-    hero_print_int(t3);
-#line 20 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-    hero_print_end();
-    t4 = h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_LIMIT();
-#line 21 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-    hero_print_int(t4);
-#line 21 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-    hero_print_end();
-#line 21 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
-    return;
-#line 211 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+void h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_main(void) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(21); t2 = twice(t1); hero_print_int(t2); hero_print_end();
+    t3 = INT64_C(1000000000000); hero_print_int(t3); hero_print_end();
+    t4 = h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_LIMIT(); hero_print_int(t4); hero_print_end(); return;
+#line 191 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

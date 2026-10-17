@@ -157,11 +157,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_main_curl_easy_cleanup(CURL
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 167 "main.c"
 #pragma clang diagnostic pop
@@ -279,429 +279,47 @@ int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 55 "examples/curl/main.hero"
-void h_main_main(void) {
-#line 55 "examples/curl/main.hero"
-    HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h7_f3 = {0}, h10_f5 = {0}, h12_own12 = {0}, h16_own16 = {0}, h17_own17 = {0}, t3, t4, t8, t44, t45, t49, t65, t66, t70, t75, t76, t85, t86, t89, t90; HERO_NODEBUG HeroStr h1_r0 = {0}, h8_r1 = {0}, h11_r2 = {0}, t1, t9, t10, t11, t13, t31, t32, t50, t51, t52, t53, t71, t72, t73, t77, t78, t87, t88, t91, t92; CURL * h2_handle; const char * h3_url; HERO_NODEBUG h_0opt_fbaec77 h4_f1 = {0}, h6_f2 = {0}, h9_f4 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t17, t18, t22, t24, t34, t35, t39, t41, t55, t56, t60, t62, t79, t80, t81, t82, t83, t84; int64_t h5_rc; HERO_NODEBUG const char *t2, *t14, *t26, *t43, *t64; HERO_NODEBUG int64_t t5, t6, t19, t20, t27, t28, t29, t33, t36, t37, t46, t47, t54, t57, t58, t67, t68; HERO_NODEBUG bool t7, t21, t30, t38, t48, t59, t69; HERO_NODEBUG CURL *t12, *t15, *t74; HERO_NODEBUG int32_t t16; HERO_NODEBUG HeroFailure t23, t40, t61; HERO_NODEBUG uint32_t t25, t42, t63; HERO_ENTRY_STOP; goto bb0;
-#line 55 "examples/curl/main.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_17a24f25);
-#line 56 "examples/curl/main.hero"
-    t2 = (const char *)curl_version();
-#line 56 "examples/curl/main.hero"
-    t3 = h_library_validated(t2);
-#line 56 "examples/curl/main.hero"
-    t75 = h12_own12;
-#line 56 "examples/curl/main.hero"
-    h12_own12 = t3;
-#line 56 "examples/curl/main.hero"
-    h_0opt_f87774a_release(&t75);
-#line 56 "examples/curl/main.hero"
-    t76 = h0_f0;
-#line 56 "examples/curl/main.hero"
-    h_0opt_f87774a_retain(&t3);
-#line 56 "examples/curl/main.hero"
-    h0_f0 = t3;
-#line 56 "examples/curl/main.hero"
-    h_0opt_f87774a_release(&t76);
-#line 56 "examples/curl/main.hero"
-    t4 = h0_f0;
-#line 56 "examples/curl/main.hero"
-    t5 = t4.tag;
-#line 56 "examples/curl/main.hero"
-    t6 = INT64_C(0);
-#line 56 "examples/curl/main.hero"
-    t7 = t5 == t6;
-#line 56 "examples/curl/main.hero"
-    if (t7) goto bb1; else goto bb2;
-#line 56 "examples/curl/main.hero"
-bb1:
-#line 56 "examples/curl/main.hero"
-    t8 = h0_f0;
-#line 56 "examples/curl/main.hero"
-    t9 = t8.as.ok;
-#line 56 "examples/curl/main.hero"
-    t77 = h1_r0;
-#line 56 "examples/curl/main.hero"
-    hero_str_incref(t9);
-#line 56 "examples/curl/main.hero"
-    h1_r0 = t9;
-#line 56 "examples/curl/main.hero"
-    hero_str_decref(t77);
-#line 56 "examples/curl/main.hero"
-    goto bb3;
-#line 56 "examples/curl/main.hero"
-bb2:
-#line 56 "examples/curl/main.hero"
-    t10 = HERO_STR_LIT(hero_str_7125eeac);
-#line 56 "examples/curl/main.hero"
-    t78 = h1_r0;
-#line 56 "examples/curl/main.hero"
-    hero_str_incref(t10);
-#line 56 "examples/curl/main.hero"
-    h1_r0 = t10;
-#line 56 "examples/curl/main.hero"
-    hero_str_decref(t78);
-#line 56 "examples/curl/main.hero"
-    goto bb3;
-#line 56 "examples/curl/main.hero"
-bb3:
-#line 56 "examples/curl/main.hero"
-    t11 = h1_r0;
-#line 56 "examples/curl/main.hero"
-    hero_print_str(t1);
-#line 56 "examples/curl/main.hero"
-    hero_print_str(t11);
-#line 56 "examples/curl/main.hero"
-    hero_print_end();
-    t12 = curl_easy_init();
-#line 57 "examples/curl/main.hero"
-    hero_handle_acquired(t12, "curl_easy_cleanup");
-#line 57 "examples/curl/main.hero"
-    h2_handle = t12;
-#line 77 "examples/curl/main.hero"
-    t13 = HERO_STR_LIT(hero_str_594067c8);
-#line 77 "examples/curl/main.hero"
-    t14 = hero_str_held(t13);
-#line 77 "examples/curl/main.hero"
-    h3_url = t14;
-    t15 = h2_handle;
-#line 78 "examples/curl/main.hero"
-    t16 = h_main_CURLOPT_URL();
-#line 78 "examples/curl/main.hero"
-    if (t16 >= 0LL) {
-#line 78 "examples/curl/main.hero"
-        t17 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t16};
-#line 78 "examples/curl/main.hero"
-    } else {
-#line 78 "examples/curl/main.hero"
-        t17 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 78 "examples/curl/main.hero"
-    }
-#line 78 "examples/curl/main.hero"
-    t79 = h13_own13;
-#line 78 "examples/curl/main.hero"
-    h13_own13 = t17;
-#line 78 "examples/curl/main.hero"
-    h_0opt_fbaec77_release(&t79);
-#line 78 "examples/curl/main.hero"
-    t80 = h4_f1;
-#line 78 "examples/curl/main.hero"
-    h_0opt_fbaec77_retain(&t17);
-#line 78 "examples/curl/main.hero"
-    h4_f1 = t17;
-#line 78 "examples/curl/main.hero"
-    h_0opt_fbaec77_release(&t80);
-#line 78 "examples/curl/main.hero"
-    t18 = h4_f1;
-#line 78 "examples/curl/main.hero"
-    t19 = t18.tag;
-#line 78 "examples/curl/main.hero"
-    t20 = INT64_C(0);
-#line 78 "examples/curl/main.hero"
-    t21 = t19 == t20;
-#line 78 "examples/curl/main.hero"
-    if (t21) goto bb4; else goto bb5;
-#line 78 "examples/curl/main.hero"
-bb4:
-#line 78 "examples/curl/main.hero"
-    t24 = h4_f1;
-#line 78 "examples/curl/main.hero"
-    t25 = t24.as.ok;
-#line 78 "examples/curl/main.hero"
-    t26 = h3_url;
-#line 78 "examples/curl/main.hero"
-    hero_handle_alive(t15, "the argument `handle` of `curl_easy_setopt`");
-#line 78 "examples/curl/main.hero"
-    t27 = curl_easy_setopt(t15, t25, hero_cstr_nonnull(t26));
-#line 78 "examples/curl/main.hero"
-    h5_rc = t27;
+void h_main_main(void) { HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h7_f3 = {0}, h10_f5 = {0}, h12_own12 = {0}, h16_own16 = {0}, h17_own17 = {0}, t3, t4, t8, t44, t45, t49, t65, t66, t70, t75, t76, t85, t86, t89, t90; HERO_NODEBUG HeroStr h1_r0 = {0}, h8_r1 = {0}, h11_r2 = {0}, t1, t9, t10, t11, t13, t31, t32, t50, t51, t52, t53, t71, t72, t73, t77, t78, t87, t88, t91, t92; CURL * h2_handle; const char * h3_url; HERO_NODEBUG h_0opt_fbaec77 h4_f1 = {0}, h6_f2 = {0}, h9_f4 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t17, t18, t22, t24, t34, t35, t39, t41, t55, t56, t60, t62, t79, t80, t81, t82, t83, t84; int64_t h5_rc; HERO_NODEBUG const char *t2, *t14, *t26, *t43, *t64; HERO_NODEBUG int64_t t5, t6, t19, t20, t27, t28, t29, t33, t36, t37, t46, t47, t54, t57, t58, t67, t68; HERO_NODEBUG bool t7, t21, t30, t38, t48, t59, t69; HERO_NODEBUG CURL *t12, *t15, *t74; HERO_NODEBUG int32_t t16; HERO_NODEBUG HeroFailure t23, t40, t61; HERO_NODEBUG uint32_t t25, t42, t63; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_17a24f25); t2 = (const char *)curl_version(); t3 = h_library_validated(t2); t75 = h12_own12; h12_own12 = t3; h_0opt_f87774a_release(&t75); t76 = h0_f0; h_0opt_f87774a_retain(&t3); h0_f0 = t3; h_0opt_f87774a_release(&t76); t4 = h0_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t8 = h0_f0; t9 = t8.as.ok; t77 = h1_r0; hero_str_incref(t9); h1_r0 = t9; hero_str_decref(t77); goto bb3; bb2: t10 = HERO_STR_LIT(hero_str_7125eeac); t78 = h1_r0; hero_str_incref(t10); h1_r0 = t10; hero_str_decref(t78); goto bb3; bb3: t11 = h1_r0; hero_print_str(t1); hero_print_str(t11); hero_print_end();
+    t12 = curl_easy_init(); hero_handle_acquired(t12, "curl_easy_cleanup"); h2_handle = t12;
+#line 77
+    t13 = HERO_STR_LIT(hero_str_594067c8); t14 = hero_str_held(t13); h3_url = t14;
+    t15 = h2_handle; t16 = h_main_CURLOPT_URL(); if (t16 >= 0LL) { t17 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t16}; } else { t17 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t79 = h13_own13; h13_own13 = t17; h_0opt_fbaec77_release(&t79); t80 = h4_f1; h_0opt_fbaec77_retain(&t17); h4_f1 = t17; h_0opt_fbaec77_release(&t80); t18 = h4_f1; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb4; else goto bb5; bb4: t24 = h4_f1; t25 = t24.as.ok; t26 = h3_url; hero_handle_alive(t15, "the argument `handle` of `curl_easy_setopt`"); t27 = curl_easy_setopt(t15, t25, hero_cstr_nonnull(t26)); h5_rc = t27;
     hero_held_release(&h3_url);
-#line 81 "examples/curl/main.hero"
-    t28 = h5_rc;
-#line 81 "examples/curl/main.hero"
-    t29 = h_main_CURLE_OK();
-#line 81 "examples/curl/main.hero"
-    t30 = t28 == t29;
-#line 81 "examples/curl/main.hero"
-    if (t30) goto bb7; else goto bb8;
-#line 81 "examples/curl/main.hero"
-bb5:
-#line 78 "examples/curl/main.hero"
-    t22 = h4_f1;
-#line 78 "examples/curl/main.hero"
-    t23 = t22.as.err;
-#line 434 "main.c"
+#line 81
+    t28 = h5_rc; t29 = h_main_CURLE_OK(); t30 = t28 == t29; if (t30) goto bb7; else goto bb8; bb5:
+#line 78
+    t22 = h4_f1; t23 = t22.as.err;
+#line 294 "main.c"
     hero_panic_must(t23);
     hero_unreachable();
 bb6:
 #line 89 "examples/curl/main.hero"
     t53 = HERO_STR_LIT(hero_str_3b34fb4b);
-    t54 = h_main_CURLE_UNSUPPORTED_PROTOCOL();
-#line 90 "examples/curl/main.hero"
-    if (t54 >= 0LL && t54 <= 4294967295LL) {
-#line 90 "examples/curl/main.hero"
-        t55 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t54};
-#line 90 "examples/curl/main.hero"
-    } else {
-#line 90 "examples/curl/main.hero"
-        t55 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 90 "examples/curl/main.hero"
-    }
-#line 90 "examples/curl/main.hero"
-    t81 = h14_own14;
-#line 90 "examples/curl/main.hero"
-    h14_own14 = t55;
-#line 90 "examples/curl/main.hero"
-    h_0opt_fbaec77_release(&t81);
-#line 90 "examples/curl/main.hero"
-    t82 = h9_f4;
-#line 90 "examples/curl/main.hero"
-    h_0opt_fbaec77_retain(&t55);
-#line 90 "examples/curl/main.hero"
-    h9_f4 = t55;
-#line 90 "examples/curl/main.hero"
-    h_0opt_fbaec77_release(&t82);
-#line 90 "examples/curl/main.hero"
-    t56 = h9_f4;
-#line 90 "examples/curl/main.hero"
-    t57 = t56.tag;
-#line 90 "examples/curl/main.hero"
-    t58 = INT64_C(0);
-#line 90 "examples/curl/main.hero"
-    t59 = t57 == t58;
-#line 90 "examples/curl/main.hero"
-    if (t59) goto bb14; else goto bb15;
-#line 90 "examples/curl/main.hero"
-bb7:
-#line 82 "examples/curl/main.hero"
-    t31 = HERO_STR_LIT(hero_str_58166374);
-#line 82 "examples/curl/main.hero"
-    hero_print_str(t31);
-#line 82 "examples/curl/main.hero"
-    hero_print_end();
-#line 82 "examples/curl/main.hero"
-    goto bb6;
-#line 82 "examples/curl/main.hero"
-bb8:
-#line 84 "examples/curl/main.hero"
-    t32 = HERO_STR_LIT(hero_str_52331108);
-#line 84 "examples/curl/main.hero"
-    t33 = h5_rc;
-#line 84 "examples/curl/main.hero"
-    if (t33 >= 0LL && t33 <= 4294967295LL) {
-#line 84 "examples/curl/main.hero"
-        t34 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t33};
-#line 84 "examples/curl/main.hero"
-    } else {
-#line 84 "examples/curl/main.hero"
-        t34 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 84 "examples/curl/main.hero"
-    }
-#line 84 "examples/curl/main.hero"
-    t83 = h15_own15;
-#line 84 "examples/curl/main.hero"
-    h15_own15 = t34;
-#line 84 "examples/curl/main.hero"
-    h_0opt_fbaec77_release(&t83);
-#line 84 "examples/curl/main.hero"
-    t84 = h6_f2;
-#line 84 "examples/curl/main.hero"
-    h_0opt_fbaec77_retain(&t34);
-#line 84 "examples/curl/main.hero"
-    h6_f2 = t34;
-#line 84 "examples/curl/main.hero"
-    h_0opt_fbaec77_release(&t84);
-#line 84 "examples/curl/main.hero"
-    t35 = h6_f2;
-#line 84 "examples/curl/main.hero"
-    t36 = t35.tag;
-#line 84 "examples/curl/main.hero"
-    t37 = INT64_C(0);
-#line 84 "examples/curl/main.hero"
-    t38 = t36 == t37;
-#line 84 "examples/curl/main.hero"
-    if (t38) goto bb9; else goto bb10;
-#line 84 "examples/curl/main.hero"
-bb9:
-#line 84 "examples/curl/main.hero"
-    t41 = h6_f2;
-#line 84 "examples/curl/main.hero"
-    t42 = t41.as.ok;
-#line 84 "examples/curl/main.hero"
-    t43 = (const char *)curl_easy_strerror(t42);
-#line 84 "examples/curl/main.hero"
-    t44 = h_library_validated(t43);
-#line 84 "examples/curl/main.hero"
-    t85 = h16_own16;
-#line 84 "examples/curl/main.hero"
-    h16_own16 = t44;
-#line 84 "examples/curl/main.hero"
-    h_0opt_f87774a_release(&t85);
-#line 84 "examples/curl/main.hero"
-    t86 = h7_f3;
-#line 84 "examples/curl/main.hero"
-    h_0opt_f87774a_retain(&t44);
-#line 84 "examples/curl/main.hero"
-    h7_f3 = t44;
-#line 84 "examples/curl/main.hero"
-    h_0opt_f87774a_release(&t86);
-#line 84 "examples/curl/main.hero"
-    t45 = h7_f3;
-#line 84 "examples/curl/main.hero"
-    t46 = t45.tag;
-#line 84 "examples/curl/main.hero"
-    t47 = INT64_C(0);
-#line 84 "examples/curl/main.hero"
-    t48 = t46 == t47;
-#line 84 "examples/curl/main.hero"
-    if (t48) goto bb11; else goto bb12;
-#line 84 "examples/curl/main.hero"
-bb10:
-#line 84 "examples/curl/main.hero"
-    t39 = h6_f2;
-#line 84 "examples/curl/main.hero"
-    t40 = t39.as.err;
-#line 565 "main.c"
+    t54 = h_main_CURLE_UNSUPPORTED_PROTOCOL(); if (t54 >= 0LL && t54 <= 4294967295LL) { t55 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t54}; } else { t55 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t81 = h14_own14; h14_own14 = t55; h_0opt_fbaec77_release(&t81); t82 = h9_f4; h_0opt_fbaec77_retain(&t55); h9_f4 = t55; h_0opt_fbaec77_release(&t82); t56 = h9_f4; t57 = t56.tag; t58 = INT64_C(0); t59 = t57 == t58; if (t59) goto bb14; else goto bb15; bb7:
+#line 82
+    t31 = HERO_STR_LIT(hero_str_58166374); hero_print_str(t31); hero_print_end(); goto bb6; bb8:
+#line 84
+    t32 = HERO_STR_LIT(hero_str_52331108); t33 = h5_rc; if (t33 >= 0LL && t33 <= 4294967295LL) { t34 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t33}; } else { t34 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t83 = h15_own15; h15_own15 = t34; h_0opt_fbaec77_release(&t83); t84 = h6_f2; h_0opt_fbaec77_retain(&t34); h6_f2 = t34; h_0opt_fbaec77_release(&t84); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb9: t41 = h6_f2; t42 = t41.as.ok; t43 = (const char *)curl_easy_strerror(t42); t44 = h_library_validated(t43); t85 = h16_own16; h16_own16 = t44; h_0opt_f87774a_release(&t85); t86 = h7_f3; h_0opt_f87774a_retain(&t44); h7_f3 = t44; h_0opt_f87774a_release(&t86); t45 = h7_f3; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb11; else goto bb12; bb10: t39 = h6_f2; t40 = t39.as.err;
+#line 305 "main.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb11:
 #line 84 "examples/curl/main.hero"
-    t49 = h7_f3;
-#line 84 "examples/curl/main.hero"
-    t50 = t49.as.ok;
-#line 84 "examples/curl/main.hero"
-    t87 = h8_r1;
-#line 84 "examples/curl/main.hero"
-    hero_str_incref(t50);
-#line 84 "examples/curl/main.hero"
-    h8_r1 = t50;
-#line 84 "examples/curl/main.hero"
-    hero_str_decref(t87);
-#line 84 "examples/curl/main.hero"
-    goto bb13;
-#line 84 "examples/curl/main.hero"
-bb12:
-#line 84 "examples/curl/main.hero"
-    t51 = HERO_STR_LIT(hero_str_7125eeac);
-#line 84 "examples/curl/main.hero"
-    t88 = h8_r1;
-#line 84 "examples/curl/main.hero"
-    hero_str_incref(t51);
-#line 84 "examples/curl/main.hero"
-    h8_r1 = t51;
-#line 84 "examples/curl/main.hero"
-    hero_str_decref(t88);
-#line 84 "examples/curl/main.hero"
-    goto bb13;
-#line 84 "examples/curl/main.hero"
-bb13:
-#line 84 "examples/curl/main.hero"
-    t52 = h8_r1;
-#line 84 "examples/curl/main.hero"
-    hero_print_str(t32);
-#line 84 "examples/curl/main.hero"
-    hero_print_str(t52);
-#line 84 "examples/curl/main.hero"
-    hero_print_end();
-#line 84 "examples/curl/main.hero"
-    goto bb6;
-#line 84 "examples/curl/main.hero"
-bb14:
-#line 90 "examples/curl/main.hero"
-    t62 = h9_f4;
-#line 90 "examples/curl/main.hero"
-    t63 = t62.as.ok;
-#line 90 "examples/curl/main.hero"
-    t64 = (const char *)curl_easy_strerror(t63);
-#line 90 "examples/curl/main.hero"
-    t65 = h_library_validated(t64);
-#line 90 "examples/curl/main.hero"
-    t89 = h17_own17;
-#line 90 "examples/curl/main.hero"
-    h17_own17 = t65;
-#line 90 "examples/curl/main.hero"
-    h_0opt_f87774a_release(&t89);
-#line 90 "examples/curl/main.hero"
-    t90 = h10_f5;
-#line 90 "examples/curl/main.hero"
-    h_0opt_f87774a_retain(&t65);
-#line 90 "examples/curl/main.hero"
-    h10_f5 = t65;
-#line 90 "examples/curl/main.hero"
-    h_0opt_f87774a_release(&t90);
-#line 90 "examples/curl/main.hero"
-    t66 = h10_f5;
-#line 90 "examples/curl/main.hero"
-    t67 = t66.tag;
-#line 90 "examples/curl/main.hero"
-    t68 = INT64_C(0);
-#line 90 "examples/curl/main.hero"
-    t69 = t67 == t68;
-#line 90 "examples/curl/main.hero"
-    if (t69) goto bb16; else goto bb17;
-#line 90 "examples/curl/main.hero"
-bb15:
-#line 90 "examples/curl/main.hero"
-    t60 = h9_f4;
-#line 90 "examples/curl/main.hero"
-    t61 = t60.as.err;
-#line 649 "main.c"
+    t49 = h7_f3; t50 = t49.as.ok; t87 = h8_r1; hero_str_incref(t50); h8_r1 = t50; hero_str_decref(t87); goto bb13; bb12: t51 = HERO_STR_LIT(hero_str_7125eeac); t88 = h8_r1; hero_str_incref(t51); h8_r1 = t51; hero_str_decref(t88); goto bb13; bb13: t52 = h8_r1; hero_print_str(t32); hero_print_str(t52); hero_print_end(); goto bb6; bb14:
+#line 90
+    t62 = h9_f4; t63 = t62.as.ok; t64 = (const char *)curl_easy_strerror(t63); t65 = h_library_validated(t64); t89 = h17_own17; h17_own17 = t65; h_0opt_f87774a_release(&t89); t90 = h10_f5; h_0opt_f87774a_retain(&t65); h10_f5 = t65; h_0opt_f87774a_release(&t90); t66 = h10_f5; t67 = t66.tag; t68 = INT64_C(0); t69 = t67 == t68; if (t69) goto bb16; else goto bb17; bb15: t60 = h9_f4; t61 = t60.as.err;
+#line 313 "main.c"
     hero_panic_must(t61);
     hero_unreachable();
 bb16:
 #line 90 "examples/curl/main.hero"
-    t70 = h10_f5;
-#line 90 "examples/curl/main.hero"
-    t71 = t70.as.ok;
-#line 90 "examples/curl/main.hero"
-    t91 = h11_r2;
-#line 90 "examples/curl/main.hero"
-    hero_str_incref(t71);
-#line 90 "examples/curl/main.hero"
-    h11_r2 = t71;
-#line 90 "examples/curl/main.hero"
-    hero_str_decref(t91);
-#line 90 "examples/curl/main.hero"
-    goto bb18;
-#line 90 "examples/curl/main.hero"
-bb17:
-#line 90 "examples/curl/main.hero"
-    t72 = HERO_STR_LIT(hero_str_7125eeac);
-#line 90 "examples/curl/main.hero"
-    t92 = h11_r2;
-#line 90 "examples/curl/main.hero"
-    hero_str_incref(t72);
-#line 90 "examples/curl/main.hero"
-    h11_r2 = t72;
-#line 90 "examples/curl/main.hero"
-    hero_str_decref(t92);
-#line 90 "examples/curl/main.hero"
-    goto bb18;
-#line 90 "examples/curl/main.hero"
-bb18:
-#line 90 "examples/curl/main.hero"
-    t73 = h11_r2;
-#line 88 "examples/curl/main.hero"
-    hero_print_str(t53);
-#line 88 "examples/curl/main.hero"
-    hero_print_str(t73);
-#line 88 "examples/curl/main.hero"
-    hero_print_end();
-#line 92 "examples/curl/main.hero"
-    t74 = h2_handle;
-#line 92 "examples/curl/main.hero"
-    {
-#line 92 "examples/curl/main.hero"
-    hero_handle_alive(t74, "the argument `handle` of `curl_easy_cleanup`");
-#line 92 "examples/curl/main.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t74, "curl_easy_cleanup", NULL);
-#line 92 "examples/curl/main.hero"
-    (void)curl_easy_cleanup(t74);
-#line 92 "examples/curl/main.hero"
-    if (hero_handle_ended(t74, hero_life_0_0) && h2_handle == t74) h2_handle = hero_handle_dead();
-#line 92 "examples/curl/main.hero"
-    }
-#line 705 "main.c"
+    t70 = h10_f5; t71 = t70.as.ok; t91 = h11_r2; hero_str_incref(t71); h11_r2 = t71; hero_str_decref(t91); goto bb18; bb17: t72 = HERO_STR_LIT(hero_str_7125eeac); t92 = h11_r2; hero_str_incref(t72); h11_r2 = t72; hero_str_decref(t92); goto bb18; bb18: t73 = h11_r2;
+#line 88
+    hero_print_str(t53); hero_print_str(t73); hero_print_end();
+#line 92
+    t74 = h2_handle; { hero_handle_alive(t74, "the argument `handle` of `curl_easy_cleanup`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t74, "curl_easy_cleanup", NULL); (void)curl_easy_cleanup(t74); if (hero_handle_ended(t74, hero_life_0_0) && h2_handle == t74) h2_handle = hero_handle_dead(); }
+#line 323 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_r0);
     h_0opt_fbaec77_release(hero_slot_escape(&h4_f1));
@@ -721,132 +339,28 @@ bb18:
 }
 
 #line 123 "<heroes library>"
-int64_t h_library_HERO_STR_OK(void) {
-#line 123 "<heroes library>"
-    return HERO_STR_OK;
-#line 728 "main.c"
+int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
+#line 344 "main.c"
 }
 
 #line 153 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 153 "<heroes library>"
+#line 153
 #define h1_status (*hero_lend_h1_status)
-#line 153 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0;
-#line 153 "<heroes library>"
-bb0:
-    t1 = h0_c;
-#line 154 "<heroes library>"
-    t2 = ((void *)0);
-#line 154 "<heroes library>"
-    t3 = t1 == t2;
-#line 154 "<heroes library>"
-    if (t3) goto bb2; else goto bb3;
-#line 154 "<heroes library>"
-bb1:
-#line 156 "<heroes library>"
-    t7 = INT64_C(0);
-#line 156 "<heroes library>"
-    h1_status = t7;
-    t8 = h0_c;
-#line 157 "<heroes library>"
-    hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status");
-#line 157 "<heroes library>"
-    t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status);
-#line 157 "<heroes library>"
-    t19 = h4_own4;
-#line 157 "<heroes library>"
-    h4_own4 = t9;
-#line 157 "<heroes library>"
-    hero_str_decref(t19);
-#line 157 "<heroes library>"
-    t20 = h2_text;
-#line 157 "<heroes library>"
-    hero_str_incref(t9);
-#line 157 "<heroes library>"
-    h2_text = t9;
-#line 157 "<heroes library>"
-    hero_str_decref(t20);
-    t10 = h1_status;
-#line 158 "<heroes library>"
-    t11 = h_library_HERO_STR_OK();
-#line 158 "<heroes library>"
-    t12 = t10 == t11;
-#line 158 "<heroes library>"
-    if (t12) goto bb5; else goto bb6;
-#line 158 "<heroes library>"
-bb2:
-#line 155 "<heroes library>"
-    t4 = HERO_STR_LIT(hero_str_4a05a740);
-#line 155 "<heroes library>"
-    t5 = HERO_STR_LIT(hero_str_5263489);
-#line 155 "<heroes library>"
-    hero_str_incref(t4);
-#line 155 "<heroes library>"
-    hero_str_incref(t5);
-#line 155 "<heroes library>"
-    t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
-#line 155 "<heroes library>"
-    t21 = h5_own5;
-#line 155 "<heroes library>"
-    h5_own5 = t6;
-#line 155 "<heroes library>"
-    h_0opt_f87774a_release(&t21);
-#line 155 "<heroes library>"
-    h3_ret0 = t6;
-#line 155 "<heroes library>"
-    goto bb7;
-#line 155 "<heroes library>"
-bb3:
-#line 155 "<heroes library>"
-    goto bb1;
-#line 155 "<heroes library>"
-bb4:
-#line 160 "<heroes library>"
-    t15 = HERO_STR_LIT(hero_str_34624695);
-#line 160 "<heroes library>"
-    t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 160 "<heroes library>"
-    hero_str_incref(t15);
-#line 160 "<heroes library>"
-    hero_str_incref(t16);
-#line 160 "<heroes library>"
-    t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
-#line 160 "<heroes library>"
-    t22 = h6_own6;
-#line 160 "<heroes library>"
-    h6_own6 = t17;
-#line 160 "<heroes library>"
-    h_0opt_f87774a_release(&t22);
-#line 160 "<heroes library>"
-    h3_ret0 = t17;
-#line 160 "<heroes library>"
-    goto bb7;
-#line 160 "<heroes library>"
-bb5:
-#line 159 "<heroes library>"
-    t13 = h2_text;
-#line 159 "<heroes library>"
-    hero_str_incref(t13);
-#line 159 "<heroes library>"
-    t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
-#line 159 "<heroes library>"
-    t23 = h7_own7;
-#line 159 "<heroes library>"
-    h7_own7 = t14;
-#line 159 "<heroes library>"
-    h_0opt_f87774a_release(&t23);
-#line 159 "<heroes library>"
-    h3_ret0 = t14;
-#line 159 "<heroes library>"
-    goto bb7;
-#line 159 "<heroes library>"
-bb6:
-#line 159 "<heroes library>"
-    goto bb4;
-#line 159 "<heroes library>"
-bb7:
-#line 850 "main.c"
+#line 153
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 156
+    t7 = INT64_C(0); h1_status = t7;
+    t8 = h0_c; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status); t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+#line 155
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+#line 160
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+#line 159
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
+#line 364 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

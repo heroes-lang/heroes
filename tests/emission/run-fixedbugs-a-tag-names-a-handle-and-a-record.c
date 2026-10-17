@@ -145,11 +145,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagnamesahandlean
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 155 "fixedbugsatagnamesahandleandarecord.c"
 #pragma clang diagnostic pop
@@ -202,68 +202,18 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 void h_fixedbugsatagnamesahandleandarecord_main(void) {
-#line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+#line 35
 #define h0_h (*hero_lend_h0_h)
-#line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+#line 35
 #define h1_r (*hero_lend_h1_r)
-#line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h"); struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r"); int32_t h2_rc; HERO_NODEBUG int32_t t1, t2, t8, t9; HERO_NODEBUG struct addrinfo t3, *t4, *t10; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char *t6; HERO_NODEBUG void *t7; HERO_ENTRY_STOP; goto bb0;
-#line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 36 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    t2 = INT64_C(1);
-#line 36 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    t3 = (struct addrinfo){.ai_family = t1, .ai_socktype = t2};
-#line 36 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    h0_h = t3;
-#line 36 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1);
-    t4 = ((void *)0);
-#line 37 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    h1_r = t4;
-    t5 = HERO_STR_LIT(hero_str_69fd5e8e);
-#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    t6 = hero_str_lend(t5);
-#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    t7 = ((void *)0);
-#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_lend_local_name(hero_lend_h0_h, "getaddrinfo", "hints");
-#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_lend_local_name(hero_lend_h1_r, "getaddrinfo", "res");
-#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1);
-#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    t8 = getaddrinfo(hero_cstr_nonnull(t6), t7, &h0_h, &h1_r);
-#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_handle_acquired(h1_r, "freeaddrinfo");
-#line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    h2_rc = t8;
-    t9 = h2_rc;
-#line 39 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_print_int(t9);
-#line 39 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_print_end();
-    t10 = h1_r;
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    {
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_handle_alive(t10, "the argument `ai` of `freeaddrinfo`");
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "freeaddrinfo", NULL);
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    (void)freeaddrinfo(t10);
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    if (hero_handle_ended(t10, hero_life_0_0) && h1_r == t10) h1_r = hero_handle_dead();
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    }
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_lend_local_give(hero_lend_h1_r);
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    hero_lend_local_give(hero_lend_h0_h);
-#line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    return;
-#line 267 "fixedbugsatagnamesahandleandarecord.c"
+#line 35
+    struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h"); struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r"); int32_t h2_rc; HERO_NODEBUG int32_t t1, t2, t8, t9; HERO_NODEBUG struct addrinfo t3, *t4, *t10; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char *t6; HERO_NODEBUG void *t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = INT64_C(1); t3 = (struct addrinfo){.ai_family = t1, .ai_socktype = t2}; h0_h = t3; hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1);
+    t4 = ((void *)0); h1_r = t4;
+    t5 = HERO_STR_LIT(hero_str_69fd5e8e); t6 = hero_str_lend(t5); t7 = ((void *)0); hero_lend_local_name(hero_lend_h0_h, "getaddrinfo", "hints"); hero_lend_local_name(hero_lend_h1_r, "getaddrinfo", "res"); hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1); t8 = getaddrinfo(hero_cstr_nonnull(t6), t7, &h0_h, &h1_r); hero_handle_acquired(h1_r, "freeaddrinfo"); h2_rc = t8;
+    t9 = h2_rc; hero_print_int(t9); hero_print_end();
+    t10 = h1_r; { hero_handle_alive(t10, "the argument `ai` of `freeaddrinfo`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "freeaddrinfo", NULL); (void)freeaddrinfo(t10); if (hero_handle_ended(t10, hero_life_0_0) && h1_r == t10) h1_r = hero_handle_dead(); } hero_lend_local_give(hero_lend_h1_r); hero_lend_local_give(hero_lend_h0_h); return;
+#line 217 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r

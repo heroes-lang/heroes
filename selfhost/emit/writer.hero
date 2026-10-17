@@ -25,6 +25,14 @@
 # of C belong to one Heroes line) — so a restore is emitted only
 # against a .hero claim.
 #
+# **And a restore that would re-anchor the very line the last C line sits
+# on is not written** (panel 219's R1, ratified 2026-10-17): the C line is
+# written on that line instead (`emit/line_join.hero`), and a `#line` names
+# its file only where the file clang presumes changes
+# (`emit/line_name.hero`). The compiler's own C fell from 52,044,067 bytes
+# to 25,897,631, its line table the same at every address (measured
+# 2026-10-17; design.md §3.1 carries the numbers).
+#
 # The generated name is derived from the SOURCE stem, never from -o:
 # the emitted C must not mention the output path, or the double-emit
 # determinism diff would be a property of the invocation instead of
@@ -46,7 +54,8 @@
 # spelling), so a line costs its own push and no other.
 
 use source
-use emit/c_text
+use emit/line_join
+use emit/line_name
 
 # What clang believes the next output line is: which file, and which
 # line in it. `none` — nothing claimed yet, the file is its own truth.
@@ -94,24 +103,18 @@ record Writer
     # generated file's next line, which is known only when it is written.
     pending: Pending
     generated: str
-    # Each file's name as a `#line` spells it, made once (defect 262):
-    # the generated file's with the writer, and the last source file's
-    # kept beside its name, since a unit's lines come from one file at a
-    # time. The compiler's own fused emission writes 586,947 `#line`s
-    # naming 403 files, its lines turning from one source file to another
-    # 408 times, and a name was spelled at every directive, 1,174,304 times
-    # with the per-module units (measured 2026-10-04).
-    generated_name: str
-    named_file: str
-    named: str
+    # What a `#line` says, each file's name spelled once (`emit/line_name`).
+    names: line_name.Names
     # Whether this unit defines `HERO_COPY` and copies its own structs as
     # bytes (`emit/byte_copy.hero`, defect 522): set where the types are
     # written, before any body, and only past `typeorder`'s depth.
     copies_bytes: bool
+    # The line written last, held out of the chunk until the next one says
+    # whether it joins (`emit/line_join`).
+    held: line_join.Held
 
 function new_writer(module: str) -> Writer
     generated = module + ".c"
-    generated_name = c_text.line_name(generated)
 
     return Writer(
         chunk: [],
@@ -121,10 +124,9 @@ function new_writer(module: str) -> Writer
         intent: .no_claim,
         pending: .none_pending,
         generated: generated,
-        generated_name: generated_name,
-        named_file: generated,
-        named: generated_name,
-        copies_bytes: false
+        names: line_name.new_names(generated),
+        copies_bytes: false,
+        held: line_join.nothing_held()
     )
 
 # One line of C. Everything goes through here, which is what keeps the
@@ -146,18 +148,37 @@ function line(@w: Writer, text: str)
         .no_claim => needs_restore @ needs_restore
 
     if needs_restore
+        if line_join.joins(w.held, text: text) && sits_on(w, file: restore_file, at: restore_line)
+            line_join.write_beside(@w.held, text: text)
+            return
         restore(@w, file: restore_file, at: restore_line)
     push_line(@w, text: text)
+
+    # A directive inside the text moves the file clang presumes, after the
+    # writer's own: the next one is named. A plain text holds none.
+    if !w.held.plain
+        line_name.forget(@w.names, text: text)
+
+# Whether clang believes the held line is line `at` of `file`: then a C line
+# whose restore would re-anchor that line is written on it instead.
+function sits_on(w: Writer, file: str, at: i64) -> bool
+    match w.claim
+        .at believed => return w.held.held && believed.file == file && believed.line == at + 1
+        .no_claim    => return false
+
+    return false
 
 # The unconditional half of line, and the one directive uses: writing
 # the #line itself must not ask whether a #line is needed. (push is a
 # builtin, hence the longer name.)
 function push_line(@w: Writer, text: str)
-    add_line(@w.chunk, text: text + "\n")
+    if w.held.held
+        add_line(@w.chunk, text: w.held.text + "\n")
 
-    if len(w.chunk) == CHUNK_LINES
-        add_line(@w.chunks, text: join(w.chunk, ""))
-        w.chunk @ []
+        if len(w.chunk) == CHUNK_LINES
+            add_line(@w.chunks, text: join(w.chunk, ""))
+            w.chunk @ []
+    line_join.hold(@w.held, text: text)
     w.pushed @ w.pushed + 1
 
     match w.claim
@@ -174,22 +195,8 @@ function add_line(@lines: [str], text: str)
 # being honoured.
 function restore(@w: Writer, file: str, at: i64)
     w.claim @ .no_claim
-    name = spelled(@w, file)
-    push_line(@w, text: c_text.line_at(at: at, name: name))
+    push_line(@w, text: line_name.directive(@w.names, file: file, at: at))
     w.claim @ .at(file: file, line: at)
-
-# A file's name as its `#line` spells it, escaped once rather than at every
-# directive (defect 262): the generated file's was spelled with the writer,
-# and a source file's is spelled when the lines turn to it and kept while
-# they stay there.
-function spelled(@w: Writer, file: str) -> str
-    if file == w.generated
-        return w.generated_name
-
-    if file != w.named_file
-        w.named_file @ file
-        w.named @ c_text.line_name(file)
-    return w.named
 
 function blank(@w: Writer)
     line(@w, text: "")
@@ -261,6 +268,12 @@ function flush(@w: Writer)
             if holds
                 w.intent @ w.claim
                 return
+
+            # The line the held line already sits on: `line` joins it there
+            # or restores it, which writes what `directive` would.
+            if asked.file != w.generated && sits_on(w, file: asked.file, at: asked.line)
+                w.intent @ .at(file: asked.file, line: asked.line)
+                return
             directive(@w, file: asked.file, at: asked.line)
         .generated_line =>
             w.pending @ .none_pending
@@ -284,8 +297,7 @@ function directive(@w: Writer, file: str, at: i64)
     # directive is about to replace. push, not line: writing a #line
     # must not ask whether one is needed.
     w.claim @ .no_claim
-    name = spelled(@w, file)
-    push_line(@w, text: c_text.line_at(at: at, name: name))
+    push_line(@w, text: line_name.directive(@w.names, file: file, at: at))
     w.claim @ .at(file: file, line: at)
     w.intent @ w.claim
 
@@ -293,7 +305,7 @@ function directive(@w: Writer, file: str, at: i64)
 # onto a copy of `chunks` (finish takes w by value, so w is untouched
 # and finishing twice gives the same str), then everything joins once.
 function finish(w: Writer) -> str
-    return join(w.chunks.push(join(w.chunk, "")), "")
+    return join(w.chunks.push(join(w.chunk, "") + line_join.tail(w.held)), "")
 
 # Point the next line at whichever source a span actually came from.
 # Every caller that has a span and a Source goes through here rather
@@ -307,12 +319,38 @@ function at_span(@w: Writer, s: source.Source, offset: i64)
 
 ## Tests
 
-test "a second line under a source claim gets its restore, the first does not"
+test "a second line under a source claim is written on the first's line, which needs no restore (panel 219)"
     w: Writer @= new_writer("m")
     at_file(@w, file: "a.hero", at: 3)
     line(@w, text: "x;")
     line(@w, text: "y;")
-    assert finish(w) == "#line 3 \"a.hero\"\nx;\n#line 3 \"a.hero\"\ny;\n"
+    assert finish(w) == "#line 3 \"a.hero\"\nx; y;\n"
+
+    # A line that may not stand beside another gets its restore, which names
+    # no file, clang presuming the one it names (C11 6.10.4).
+    alone: Writer @= new_writer("m")
+    at_file(@alone, file: "a.hero", at: 3)
+    line(@alone, text: "x; // a")
+    line(@alone, text: "y;")
+    line(@alone, text: "#if A")
+    line(@alone, text: "z;")
+    assert finish(alone) == "#line 3 \"a.hero\"\nx; // a\n#line 3\ny;\n#line 3\n#if A\n#line 3\nz;\n"
+
+# Panel 219's R1 at a request: one for the line the held line sits on joins
+# it, one for the next line rides C's count, and one for another line of
+# the same file names no file.
+test "a request for the held line's own line joins it, and the next line rides C's count (panel 219)"
+    w: Writer @= new_writer("m")
+    at_file(@w, file: "a.hero", at: 3)
+    line(@w, text: "x;")
+    at_generated(@w)
+    at_file(@w, file: "a.hero", at: 3)
+    line(@w, text: "y;")
+    at_file(@w, file: "a.hero", at: 4)
+    line(@w, text: "z;")
+    at_file(@w, file: "a.hero", at: 9)
+    line(@w, text: "q;")
+    assert finish(w) == "#line 3 \"a.hero\"\nx; y;\nz;\n#line 9\nq;\n"
 
 test "a claim on the generated file rides auto-increment for free"
     w: Writer @= new_writer("m")
@@ -341,7 +379,7 @@ test "asking for what is already intended emits nothing"
 test "a file's #line spelling is kept across a restore, the generated file and a turn to another file (defect 262)"
     w: Writer @= new_writer("m")
     at_file(@w, file: "dé/a\"b.hero", at: 3)
-    line(@w, text: "x;")
+    line(@w, text: "x; // a")
     line(@w, text: "y;")
     at_generated(@w)
     line(@w, text: "z;")
@@ -352,9 +390,10 @@ test "a file's #line spelling is kept across a restore, the generated file and a
     at_file(@w, file: "dé/a\"b.hero", at: 5)
     line(@w, text: "w;")
 
-    # The second `#line 3` is the restore; `m.c` names the line after its
-    # own; the name spelled first is spelled again after another file's.
-    assert finish(w) == "#line 3 \"dé/a\\\"b.hero\"\nx;\n#line 3 \"dé/a\\\"b.hero\"\ny;\n#line 6 \"m.c\"\nz;\n#line 4 \"dé/a\\\"b.hero\"\nu;\n#line 1 \"t?\\?).hero\"\nv;\n#line 5 \"dé/a\\\"b.hero\"\nw;\n"
+    # The second `#line 3` is the restore, which a `//` on the line before
+    # owes and which names no file (panel 219); `m.c` names the line after
+    # its own; the name spelled first is spelled again after another file's.
+    assert finish(w) == "#line 3 \"dé/a\\\"b.hero\"\nx; // a\n#line 3\ny;\n#line 6 \"m.c\"\nz;\n#line 4 \"dé/a\\\"b.hero\"\nu;\n#line 1 \"t?\\?).hero\"\nv;\n#line 5 \"dé/a\\\"b.hero\"\nw;\n"
 
 test "the chunk flush loses no line and adds none"
     w: Writer @= new_writer("m")

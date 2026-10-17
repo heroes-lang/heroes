@@ -136,11 +136,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_aborthandlenevergivenback_s
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 146 "aborthandlenevergivenback.c"
 #pragma clang diagnostic pop
@@ -159,58 +159,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_aborthandlenevergivenback_main(void);
 
 #line 20 "tests/golden/run/abort-handle-never-given-back.hero"
-void h_aborthandlenevergivenback_main(void) {
-#line 20 "tests/golden/run/abort-handle-never-given-back.hero"
-    Slot * h0_a; Slot * h1_b; HERO_NODEBUG int64_t t1, t3, t6, t8, t9; HERO_NODEBUG Slot *t2, *t4, *t5, *t7, *t10; HERO_ENTRY_STOP; goto bb0;
-#line 20 "tests/golden/run/abort-handle-never-given-back.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 21 "tests/golden/run/abort-handle-never-given-back.hero"
-    t2 = slot_open(t1);
-#line 21 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_acquired(t2, "slot_close");
-#line 21 "tests/golden/run/abort-handle-never-given-back.hero"
-    h0_a = t2;
-    t3 = INT64_C(9);
-#line 22 "tests/golden/run/abort-handle-never-given-back.hero"
-    t4 = slot_open(t3);
-#line 22 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_acquired(t4, "slot_close");
-#line 22 "tests/golden/run/abort-handle-never-given-back.hero"
-    h1_b = t4;
-    t5 = h0_a;
-#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_alive(t5, "the argument `s` of `slot_value`");
-#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
-    t6 = slot_value(t5);
-#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
-    t7 = h1_b;
-#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_alive(t7, "the argument `s` of `slot_value`");
-#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
-    t8 = slot_value(t7);
-#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
-    if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow();
-#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_print_int(t9);
-#line 23 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_print_end();
-    t10 = h0_a;
-#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    {
-#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    hero_handle_alive(t10, "the argument `s` of `slot_close`");
-#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "slot_close", NULL);
-#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    (void)slot_close(t10);
-#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead();
-#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    }
-#line 24 "tests/golden/run/abort-handle-never-given-back.hero"
-    return;
-#line 214 "aborthandlenevergivenback.c"
+void h_aborthandlenevergivenback_main(void) { Slot * h0_a; Slot * h1_b; HERO_NODEBUG int64_t t1, t3, t6, t8, t9; HERO_NODEBUG Slot *t2, *t4, *t5, *t7, *t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); t2 = slot_open(t1); hero_handle_acquired(t2, "slot_close"); h0_a = t2;
+    t3 = INT64_C(9); t4 = slot_open(t3); hero_handle_acquired(t4, "slot_close"); h1_b = t4;
+    t5 = h0_a; hero_handle_alive(t5, "the argument `s` of `slot_value`"); t6 = slot_value(t5); t7 = h1_b; hero_handle_alive(t7, "the argument `s` of `slot_value`"); t8 = slot_value(t7); if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow(); hero_print_int(t9); hero_print_end();
+    t10 = h0_a; { hero_handle_alive(t10, "the argument `s` of `slot_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "slot_close", NULL); (void)slot_close(t10); if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead(); } return;
+#line 168 "aborthandlenevergivenback.c"
 }
 HERO_TU_LOCAL bool h_aborthandlenevergivenback_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

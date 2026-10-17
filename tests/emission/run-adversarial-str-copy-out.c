@@ -78,11 +78,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 88 "adversarialstrcopyout.c"
 #pragma clang diagnostic pop
@@ -100,140 +100,30 @@ void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times);
 void h_adversarialstrcopyout_main(void);
 
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
-void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times) {
-#line 13 "tests/golden/run/adversarial-str-copy-out.hero"
-    int64_t h2_i; HERO_NODEBUG HeroStr h3_own3 = {0}, t5, t6, t7, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t8, t9, t10, t11, t12; HERO_NODEBUG bool t4, t13; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/adversarial-str-copy-out.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 14 "tests/golden/run/adversarial-str-copy-out.hero"
-    h2_i = t1;
-#line 14 "tests/golden/run/adversarial-str-copy-out.hero"
-    goto bb1;
-#line 14 "tests/golden/run/adversarial-str-copy-out.hero"
-bb1:
-#line 16 "tests/golden/run/adversarial-str-copy-out.hero"
-    t2 = h2_i;
-#line 16 "tests/golden/run/adversarial-str-copy-out.hero"
-    t3 = h1_times;
-#line 16 "tests/golden/run/adversarial-str-copy-out.hero"
-    t4 = t2 < t3;
-#line 16 "tests/golden/run/adversarial-str-copy-out.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 16 "tests/golden/run/adversarial-str-copy-out.hero"
-bb2:
-    t5 = (*ph0_s);
-#line 17 "tests/golden/run/adversarial-str-copy-out.hero"
-    t6 = HERO_STR_LIT(hero_str_21);
-#line 17 "tests/golden/run/adversarial-str-copy-out.hero"
-    t7 = hero_str_concat(t5, t6);
-#line 17 "tests/golden/run/adversarial-str-copy-out.hero"
-    t14 = h3_own3;
-#line 17 "tests/golden/run/adversarial-str-copy-out.hero"
-    h3_own3 = t7;
-#line 17 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_str_decref(t14);
-#line 17 "tests/golden/run/adversarial-str-copy-out.hero"
-    t15 = (*ph0_s);
-#line 17 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_str_incref(t7);
-#line 17 "tests/golden/run/adversarial-str-copy-out.hero"
-    (*ph0_s) = t7;
-#line 17 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_str_decref(t15);
-    t8 = h2_i;
-#line 18 "tests/golden/run/adversarial-str-copy-out.hero"
-    t9 = INT64_C(1);
-#line 18 "tests/golden/run/adversarial-str-copy-out.hero"
-    if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow();
-#line 18 "tests/golden/run/adversarial-str-copy-out.hero"
-    h2_i = t10;
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-    t11 = h2_i;
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-    t12 = INT64_C(2);
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-    t13 = t11 == t12;
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-    if (t13) goto bb5; else goto bb6;
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-bb3:
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-    goto bb7;
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-bb4:
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-    goto bb1;
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-bb5:
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-    goto bb7;
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-bb6:
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-    goto bb4;
-#line 20 "tests/golden/run/adversarial-str-copy-out.hero"
-bb7:
-#line 178 "adversarialstrcopyout.c"
+void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times) { int64_t h2_i; HERO_NODEBUG HeroStr h3_own3 = {0}, t5, t6, t7, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t8, t9, t10, t11, t12; HERO_NODEBUG bool t4, t13; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h2_i = t1; goto bb1; bb1:
+#line 16
+    t2 = h2_i; t3 = h1_times; t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb2:
+    t5 = (*ph0_s); t6 = HERO_STR_LIT(hero_str_21); t7 = hero_str_concat(t5, t6); t14 = h3_own3; h3_own3 = t7; hero_str_decref(t14); t15 = (*ph0_s); hero_str_incref(t7); (*ph0_s) = t7; hero_str_decref(t15);
+    t8 = h2_i; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow(); h2_i = t10;
+#line 20
+    t11 = h2_i; t12 = INT64_C(2); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3: goto bb7; bb4: goto bb1; bb5: goto bb7; bb6: goto bb4; bb7:
+#line 112 "adversarialstrcopyout.c"
     hero_str_release_at(&h3_own3);
     return;
 }
 
 #line 23 "tests/golden/run/adversarial-str-copy-out.hero"
-void h_adversarialstrcopyout_main(void) {
-#line 23 "tests/golden/run/adversarial-str-copy-out.hero"
-    HeroStr h0_a = {0}; HeroStr h1_b = {0}; HERO_NODEBUG HeroStr t1, t3, t4, t6, t8, t9, t11, t12; HERO_NODEBUG int64_t t2, t5, t7, t10; HERO_ENTRY_STOP; goto bb0;
-#line 23 "tests/golden/run/adversarial-str-copy-out.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_1b6fd0);
-#line 24 "tests/golden/run/adversarial-str-copy-out.hero"
-    t11 = h0_a;
-#line 24 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_str_incref(t1);
-#line 24 "tests/golden/run/adversarial-str-copy-out.hero"
-    h0_a = t1;
-#line 24 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_str_decref(t11);
-    t2 = INT64_C(5);
-#line 25 "tests/golden/run/adversarial-str-copy-out.hero"
-    h_adversarialstrcopyout_extend(&h0_a, t2);
-    t3 = h0_a;
-#line 26 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_print_str(t3);
-#line 26 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_print_end();
-    t4 = h0_a;
-#line 27 "tests/golden/run/adversarial-str-copy-out.hero"
-    t5 = hero_str_len(t4);
-#line 27 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_print_int(t5);
-#line 27 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_print_end();
-    t6 = HERO_STR_LIT(hero_str_78);
-#line 28 "tests/golden/run/adversarial-str-copy-out.hero"
-    t12 = h1_b;
-#line 28 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_str_incref(t6);
-#line 28 "tests/golden/run/adversarial-str-copy-out.hero"
-    h1_b = t6;
-#line 28 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_str_decref(t12);
-    t7 = INT64_C(0);
-#line 29 "tests/golden/run/adversarial-str-copy-out.hero"
-    h_adversarialstrcopyout_extend(&h1_b, t7);
-    t8 = h1_b;
-#line 30 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_print_str(t8);
-#line 30 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_print_end();
-    t9 = h1_b;
-#line 31 "tests/golden/run/adversarial-str-copy-out.hero"
-    t10 = hero_str_len(t9);
-#line 31 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_print_int(t10);
-#line 31 "tests/golden/run/adversarial-str-copy-out.hero"
-    hero_print_end();
-#line 237 "adversarialstrcopyout.c"
+void h_adversarialstrcopyout_main(void) { HeroStr h0_a = {0}; HeroStr h1_b = {0}; HERO_NODEBUG HeroStr t1, t3, t4, t6, t8, t9, t11, t12; HERO_NODEBUG int64_t t2, t5, t7, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_1b6fd0); t11 = h0_a; hero_str_incref(t1); h0_a = t1; hero_str_decref(t11);
+    t2 = INT64_C(5); h_adversarialstrcopyout_extend(&h0_a, t2);
+    t3 = h0_a; hero_print_str(t3); hero_print_end();
+    t4 = h0_a; t5 = hero_str_len(t4); hero_print_int(t5); hero_print_end();
+    t6 = HERO_STR_LIT(hero_str_78); t12 = h1_b; hero_str_incref(t6); h1_b = t6; hero_str_decref(t12);
+    t7 = INT64_C(0); h_adversarialstrcopyout_extend(&h1_b, t7);
+    t8 = h1_b; hero_print_str(t8); hero_print_end();
+    t9 = h1_b; t10 = hero_str_len(t9); hero_print_int(t10); hero_print_end();
+#line 127 "adversarialstrcopyout.c"
     hero_str_release_at(&h0_a);
     hero_str_release_at(&h1_b);
     return;

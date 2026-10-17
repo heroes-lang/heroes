@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "adversarialshortcircuit.c"
 #pragma clang diagnostic pop
@@ -95,127 +95,23 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_adversarialshortcircuit_main(void);
 
 #line 9 "tests/golden/run/adversarial-short-circuit.hero"
-void h_adversarialshortcircuit_main(void) {
-#line 9 "tests/golden/run/adversarial-short-circuit.hero"
-    HERO_NODEBUG bool h0_b0, h2_b1, t1, t6, t7, t13, t18, t19; int64_t h1_n; HERO_NODEBUG int64_t t2, t3, t4, t5, t8, t9, t10, t11, t12, t14, t15, t16, t17, t20, t21; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/run/adversarial-short-circuit.hero"
-bb0:
-    t1 = false;
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    h0_b0 = t1;
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    if (t1) goto bb2; else goto bb3;
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-bb1:
-#line 14 "tests/golden/run/adversarial-short-circuit.hero"
-    t10 = INT64_C(0);
-#line 14 "tests/golden/run/adversarial-short-circuit.hero"
-    h1_n = t10;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    t11 = h1_n;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    t12 = INT64_C(0);
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    t13 = t11 != t12;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    h2_b1 = t13;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    if (t13) goto bb7; else goto bb8;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-bb2:
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    t2 = INT64_C(1);
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    t3 = INT64_C(0);
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    if (t3 == 0) hero_panic("division by zero");
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    if (t2 == INT64_MIN && t3 == INT64_C(-1)) hero_panic_overflow();
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    t4 = t2 / t3;
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    t5 = INT64_C(0);
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    t6 = t4 == t5;
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    h0_b0 = t6;
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    goto bb3;
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-bb3:
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    t7 = h0_b0;
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-    if (t7) goto bb4; else goto bb5;
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
-bb4:
-    t8 = INT64_C(9);
-#line 11 "tests/golden/run/adversarial-short-circuit.hero"
-    hero_print_int(t8);
-#line 11 "tests/golden/run/adversarial-short-circuit.hero"
-    hero_print_end();
-#line 11 "tests/golden/run/adversarial-short-circuit.hero"
-    goto bb1;
-#line 11 "tests/golden/run/adversarial-short-circuit.hero"
-bb5:
-#line 13 "tests/golden/run/adversarial-short-circuit.hero"
-    t9 = INT64_C(0);
-#line 13 "tests/golden/run/adversarial-short-circuit.hero"
-    hero_print_int(t9);
-#line 13 "tests/golden/run/adversarial-short-circuit.hero"
-    hero_print_end();
-#line 13 "tests/golden/run/adversarial-short-circuit.hero"
-    goto bb1;
-#line 13 "tests/golden/run/adversarial-short-circuit.hero"
-bb6:
-#line 13 "tests/golden/run/adversarial-short-circuit.hero"
-    return;
-#line 13 "tests/golden/run/adversarial-short-circuit.hero"
-bb7:
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    t14 = INT64_C(10);
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    t15 = h1_n;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    if (t15 == 0) hero_panic("division by zero");
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic_overflow();
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    t16 = t14 / t15;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    t17 = INT64_C(1);
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    t18 = t16 > t17;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    h2_b1 = t18;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    goto bb8;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-bb8:
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    t19 = h2_b1;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-    if (t19) goto bb9; else goto bb10;
-#line 16 "tests/golden/run/adversarial-short-circuit.hero"
-bb9:
-    t20 = INT64_C(9);
-#line 17 "tests/golden/run/adversarial-short-circuit.hero"
-    hero_print_int(t20);
-#line 17 "tests/golden/run/adversarial-short-circuit.hero"
-    hero_print_end();
-#line 17 "tests/golden/run/adversarial-short-circuit.hero"
-    goto bb6;
-#line 17 "tests/golden/run/adversarial-short-circuit.hero"
-bb10:
-#line 19 "tests/golden/run/adversarial-short-circuit.hero"
-    t21 = INT64_C(1);
-#line 19 "tests/golden/run/adversarial-short-circuit.hero"
-    hero_print_int(t21);
-#line 19 "tests/golden/run/adversarial-short-circuit.hero"
-    hero_print_end();
-#line 19 "tests/golden/run/adversarial-short-circuit.hero"
-    goto bb6;
-#line 219 "adversarialshortcircuit.c"
+void h_adversarialshortcircuit_main(void) { HERO_NODEBUG bool h0_b0, h2_b1, t1, t6, t7, t13, t18, t19; int64_t h1_n; HERO_NODEBUG int64_t t2, t3, t4, t5, t8, t9, t10, t11, t12, t14, t15, t16, t17, t20, t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = false; h0_b0 = t1; if (t1) goto bb2; else goto bb3; bb1:
+#line 14
+    t10 = INT64_C(0); h1_n = t10;
+#line 16
+    t11 = h1_n; t12 = INT64_C(0); t13 = t11 != t12; h2_b1 = t13; if (t13) goto bb7; else goto bb8; bb2:
+#line 10
+    t2 = INT64_C(1); t3 = INT64_C(0); if (t3 == 0) hero_panic("division by zero"); if (t2 == INT64_MIN && t3 == INT64_C(-1)) hero_panic_overflow(); t4 = t2 / t3; t5 = INT64_C(0); t6 = t4 == t5; h0_b0 = t6; goto bb3; bb3: t7 = h0_b0; if (t7) goto bb4; else goto bb5; bb4:
+    t8 = INT64_C(9); hero_print_int(t8); hero_print_end(); goto bb1; bb5:
+#line 13
+    t9 = INT64_C(0); hero_print_int(t9); hero_print_end(); goto bb1; bb6: return; bb7:
+#line 16
+    t14 = INT64_C(10); t15 = h1_n; if (t15 == 0) hero_panic("division by zero"); if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic_overflow(); t16 = t14 / t15; t17 = INT64_C(1); t18 = t16 > t17; h2_b1 = t18; goto bb8; bb8: t19 = h2_b1; if (t19) goto bb9; else goto bb10; bb9:
+    t20 = INT64_C(9); hero_print_int(t20); hero_print_end(); goto bb6; bb10:
+#line 19
+    t21 = INT64_C(1); hero_print_int(t21); hero_print_end(); goto bb6;
+#line 115 "adversarialshortcircuit.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

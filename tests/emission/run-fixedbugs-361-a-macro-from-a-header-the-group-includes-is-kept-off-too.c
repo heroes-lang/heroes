@@ -133,11 +133,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs361amacrofromahead
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
 #pragma clang diagnostic pop
@@ -154,40 +154,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void) {
-#line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    bool h0_flag; HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_NODEBUG bool t6, t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-bb0:
-    t1 = INT64_C(14);
-#line 16 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    t2 = thrice(t1);
-#line 16 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    hero_print_int(t2);
-#line 16 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    hero_print_end();
-    t3 = INT64_C(1);
-#line 17 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    t4 = thrice(t3);
-#line 17 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    t5 = INT64_C(2);
-#line 17 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    t6 = t4 > t5;
-#line 17 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    h0_flag = t6;
-    t7 = h0_flag;
-#line 18 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    hero_print_bool(t7);
-#line 18 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    hero_print_end();
-    t8 = HERO_STR_LIT(hero_str_fa5daa5);
-#line 19 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    hero_print_str(t8);
-#line 19 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    hero_print_end();
-#line 19 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    return;
-#line 191 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
+void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void) { bool h0_flag; HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_NODEBUG bool t6, t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(14); t2 = thrice(t1); hero_print_int(t2); hero_print_end();
+    t3 = INT64_C(1); t4 = thrice(t3); t5 = INT64_C(2); t6 = t4 > t5; h0_flag = t6;
+    t7 = h0_flag; hero_print_bool(t7); hero_print_end();
+    t8 = HERO_STR_LIT(hero_str_fa5daa5); hero_print_str(t8); hero_print_end(); return;
+#line 163 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

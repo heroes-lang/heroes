@@ -78,11 +78,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 88 "abortrepeatoverflows.c"
 #pragma clang diagnostic pop
@@ -99,43 +99,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_abortrepeatoverflows_main(void);
 
 #line 21 "tests/golden/run/abort-repeat-overflows.hero"
-void h_abortrepeatoverflows_main(void) {
-#line 21 "tests/golden/run/abort-repeat-overflows.hero"
-    uint64_t h0_n; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t3, t5, t7, t8; HERO_NODEBUG uint64_t t2, t4; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/abort-repeat-overflows.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_43560e4d);
-#line 22 "tests/golden/run/abort-repeat-overflows.hero"
-    hero_print_str(t1);
-#line 22 "tests/golden/run/abort-repeat-overflows.hero"
-    hero_print_end();
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
-    t2 = UINT64_C(4611686018427387906);
-#line 25 "tests/golden/run/abort-repeat-overflows.hero"
-    h0_n = t2;
-    t3 = HERO_STR_LIT(hero_str_d19443a);
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
-    t4 = h0_n;
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
-    t5 = hero_str_repeat(t3, t4);
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
-    t8 = h1_own1;
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
-    h1_own1 = t5;
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
-    hero_str_decref(t8);
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
-    t6 = hero_str_len(t5);
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
-    hero_print_int(t6);
-#line 26 "tests/golden/run/abort-repeat-overflows.hero"
-    hero_print_end();
-    t7 = HERO_STR_LIT(hero_str_187ae0ee);
-#line 27 "tests/golden/run/abort-repeat-overflows.hero"
-    hero_print_str(t7);
-#line 27 "tests/golden/run/abort-repeat-overflows.hero"
-    hero_print_end();
-#line 139 "abortrepeatoverflows.c"
+void h_abortrepeatoverflows_main(void) { uint64_t h0_n; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t3, t5, t7, t8; HERO_NODEBUG uint64_t t2, t4; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
+#line 25
+    t2 = UINT64_C(4611686018427387906); h0_n = t2;
+    t3 = HERO_STR_LIT(hero_str_d19443a); t4 = h0_n; t5 = hero_str_repeat(t3, t4); t8 = h1_own1; h1_own1 = t5; hero_str_decref(t8); t6 = hero_str_len(t5); hero_print_int(t6); hero_print_end();
+    t7 = HERO_STR_LIT(hero_str_187ae0ee); hero_print_str(t7); hero_print_end();
+#line 109 "abortrepeatoverflows.c"
     hero_str_release_at(&h1_own1);
     return;
 }

@@ -141,11 +141,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_deadaddresscopyreachingacal
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "deadaddresscopyreachingacallbackcalledbyname.c"
 #pragma clang diagnostic pop
@@ -189,19 +189,9 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 
 #line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-int64_t h_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
-#line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_thread_guard("deadaddresscopyreachingacallbackcalledbyname.seen"); HERO_NODEBUG node *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-bb0:
-    t1 = h0_n;
-#line 19 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_handle_alive(t1, "the argument `n` of `node_value`");
-#line 19 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t2 = node_value(t1);
-#line 19 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    return t2;
-#line 205 "deadaddresscopyreachingacallbackcalledbyname.c"
+int64_t h_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) { hero_thread_guard("deadaddresscopyreachingacallbackcalledbyname.seen"); HERO_NODEBUG node *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; hero_handle_alive(t1, "the argument `n` of `node_value`"); t2 = node_value(t1); return t2;
+#line 195 "deadaddresscopyreachingacallbackcalledbyname.c"
 }
 
 int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
@@ -211,75 +201,13 @@ int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
 }
 
 #line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-void h_deadaddresscopyreachingacallbackcalledbyname_main(void) {
-#line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    node * h0_mine; HeroArrayHeader * h1_keep = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t6, *t13, *t14; HERO_NODEBUG node *t1, *t2, *t4, *t8; HERO_NODEBUG HeroStr t5, t10; HERO_NODEBUG int64_t t7, t9, t12; HERO_NODEBUG h_0fn_b062dd1 t11; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-bb0:
-    t1 = node_new();
-#line 22 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_handle_acquired(t1, "node_free");
-#line 22 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    h0_mine = t1;
-    t2 = h0_mine;
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t3 = hero_array_new(&h_deadaddresscopyreachingacallbackcalledbyname_Node_desc, 1);
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_array_push_owned(&t3, &t2);
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t13 = h2_own2;
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    h2_own2 = t3;
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_array_decref(t13);
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t14 = h1_keep;
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_array_incref(t3);
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    h1_keep = t3;
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_array_decref(t14);
-    t4 = h0_mine;
-#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    {
-#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_handle_alive(t4, "the argument `n` of `node_free`");
-#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t4, "node_free", NULL);
-#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    (void)node_free(t4);
-#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    if (hero_handle_ended(t4, hero_life_0_0) && h0_mine == t4) h0_mine = hero_handle_dead();
-#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    }
-    t5 = HERO_STR_LIT(hero_str_5bfed3fb);
-#line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t6 = h1_keep;
-#line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t7 = INT64_C(0);
-#line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(node *) ? hero_unreachable() : (void)0), ((node * const *)(const void *)(t6 + 1))[t7]);
-#line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t9 = h_deadaddresscopyreachingacallbackcalledbyname_seen(t8);
-#line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_print_str(t5);
-#line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_print_int(t9);
-#line 25 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_print_end();
-    t10 = HERO_STR_LIT(hero_str_678ad40c);
-#line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t11 = h_deadaddresscopyreachingacallbackcalledbyname_seen;
-#line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    t12 = visit((h_0fn_b062dd1)hero_callback_of((void (*)(void))t11));
-#line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_print_str(t10);
-#line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_print_int(t12);
-#line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_print_end();
-#line 283 "deadaddresscopyreachingacallbackcalledbyname.c"
+void h_deadaddresscopyreachingacallbackcalledbyname_main(void) { node * h0_mine; HeroArrayHeader * h1_keep = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t6, *t13, *t14; HERO_NODEBUG node *t1, *t2, *t4, *t8; HERO_NODEBUG HeroStr t5, t10; HERO_NODEBUG int64_t t7, t9, t12; HERO_NODEBUG h_0fn_b062dd1 t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = node_new(); hero_handle_acquired(t1, "node_free"); h0_mine = t1;
+    t2 = h0_mine; t3 = hero_array_new(&h_deadaddresscopyreachingacallbackcalledbyname_Node_desc, 1); hero_array_push_owned(&t3, &t2); t13 = h2_own2; h2_own2 = t3; hero_array_decref(t13); t14 = h1_keep; hero_array_incref(t3); h1_keep = t3; hero_array_decref(t14);
+    t4 = h0_mine; { hero_handle_alive(t4, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t4, "node_free", NULL); (void)node_free(t4); if (hero_handle_ended(t4, hero_life_0_0) && h0_mine == t4) h0_mine = hero_handle_dead(); }
+    t5 = HERO_STR_LIT(hero_str_5bfed3fb); t6 = h1_keep; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(node *) ? hero_unreachable() : (void)0), ((node * const *)(const void *)(t6 + 1))[t7]); t9 = h_deadaddresscopyreachingacallbackcalledbyname_seen(t8); hero_print_str(t5); hero_print_int(t9); hero_print_end();
+    t10 = HERO_STR_LIT(hero_str_678ad40c); t11 = h_deadaddresscopyreachingacallbackcalledbyname_seen; t12 = visit((h_0fn_b062dd1)hero_callback_of((void (*)(void))t11)); hero_print_str(t10); hero_print_int(t12); hero_print_end();
+#line 211 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_release_at(&h1_keep);
     hero_array_release_at(&h2_own2);
     return;

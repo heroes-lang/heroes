@@ -78,11 +78,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 88 "fixedbugsastepoffthelaststatementleftthefile.c"
 #pragma clang diagnostic pop
@@ -101,51 +101,17 @@ HeroStr h_fixedbugsastepoffthelaststatementleftthefile_shout(HeroStr h0_s);
 void h_fixedbugsastepoffthelaststatementleftthefile_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-int64_t h_fixedbugsastepoffthelaststatementleftthefile_twice(int64_t h0_n) {
-#line 25 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    int64_t h1_doubled; HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-bb0:
-    t1 = h0_n;
-#line 26 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t2 = INT64_C(2);
-#line 26 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 26 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    h1_doubled = t3;
-    t4 = h1_doubled;
-#line 27 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    return t4;
-#line 120 "fixedbugsastepoffthelaststatementleftthefile.c"
+int64_t h_fixedbugsastepoffthelaststatementleftthefile_twice(int64_t h0_n) { int64_t h1_doubled; HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); h1_doubled = t3;
+    t4 = h1_doubled; return t4;
+#line 108 "fixedbugsastepoffthelaststatementleftthefile.c"
 }
 
 #line 29 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-HeroStr h_fixedbugsastepoffthelaststatementleftthefile_shout(HeroStr h0_s) {
-#line 29 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    HeroStr h1_loud = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 29 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-bb0:
-    t1 = h0_s;
-#line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t2 = HERO_STR_LIT(hero_str_21);
-#line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t5 = h2_own2;
-#line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    h2_own2 = t3;
-#line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_str_decref(t5);
-#line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t6 = h1_loud;
-#line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_str_incref(t3);
-#line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    h1_loud = t3;
-#line 30 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_str_decref(t6);
+HeroStr h_fixedbugsastepoffthelaststatementleftthefile_shout(HeroStr h0_s) { HeroStr h1_loud = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t5 = h2_own2; h2_own2 = t3; hero_str_decref(t5); t6 = h1_loud; hero_str_incref(t3); h1_loud = t3; hero_str_decref(t6);
     t4 = h1_loud;
-#line 149 "fixedbugsastepoffthelaststatementleftthefile.c"
+#line 115 "fixedbugsastepoffthelaststatementleftthefile.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_loud);
     hero_str_release_at(&h2_own2);
@@ -153,81 +119,13 @@ bb0:
 }
 
 #line 33 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-void h_fixedbugsastepoffthelaststatementleftthefile_main(void) {
-#line 33 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t10, *t13, *t17, *t22, *t23; HERO_NODEBUG HeroStr h2_own2 = {0}, t12, t16, t20, t21, t24; HERO_NODEBUG int64_t t3, t4, t7, t8, t11, t14, t15, t18, t19; HERO_ENTRY_STOP; goto bb0;
-#line 33 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 34 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t22 = h1_own1;
-#line 34 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    h1_own1 = t1;
-#line 34 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_array_decref(t22);
-#line 34 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t23 = h0_xs;
-#line 34 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_array_incref(t1);
-#line 34 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    h0_xs = t1;
-#line 34 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_array_decref(t23);
-    t3 = INT64_C(3);
-#line 35 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t4 = h_fixedbugsastepoffthelaststatementleftthefile_twice(t3);
-#line 35 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_array_push_owned(&h0_xs, &t4);
-    t7 = INT64_C(4);
-#line 36 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t8 = h_fixedbugsastepoffthelaststatementleftthefile_twice(t7);
-#line 36 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_array_push_owned(&h0_xs, &t8);
-    t10 = h0_xs;
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t12 = HERO_STR_LIT(hero_str_20);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t13 = h0_xs;
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t14 = INT64_C(0);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t16 = HERO_STR_LIT(hero_str_20);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t17 = h0_xs;
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t18 = INT64_C(1);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_print_int(t11);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_print_str(t12);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_print_int(t15);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_print_str(t16);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_print_int(t19);
-#line 37 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_print_end();
-    t20 = HERO_STR_LIT(hero_str_351cd275);
-#line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t21 = h_fixedbugsastepoffthelaststatementleftthefile_shout(t20);
-#line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    t24 = h2_own2;
-#line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    h2_own2 = t21;
-#line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_str_decref(t24);
-#line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_print_str(t21);
-#line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    hero_print_end();
-#line 231 "fixedbugsastepoffthelaststatementleftthefile.c"
+void h_fixedbugsastepoffthelaststatementleftthefile_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t10, *t13, *t17, *t22, *t23; HERO_NODEBUG HeroStr h2_own2 = {0}, t12, t16, t20, t21, t24; HERO_NODEBUG int64_t t3, t4, t7, t8, t11, t14, t15, t18, t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t22 = h1_own1; h1_own1 = t1; hero_array_decref(t22); t23 = h0_xs; hero_array_incref(t1); h0_xs = t1; hero_array_decref(t23);
+    t3 = INT64_C(3); t4 = h_fixedbugsastepoffthelaststatementleftthefile_twice(t3); hero_array_push_owned(&h0_xs, &t4);
+    t7 = INT64_C(4); t8 = h_fixedbugsastepoffthelaststatementleftthefile_twice(t7); hero_array_push_owned(&h0_xs, &t8);
+    t10 = h0_xs; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = HERO_STR_LIT(hero_str_20); t13 = h0_xs; t14 = INT64_C(0); t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]); t16 = HERO_STR_LIT(hero_str_20); t17 = h0_xs; t18 = INT64_C(1); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t17 + 1))[t18]); hero_print_int(t11); hero_print_str(t12); hero_print_int(t15); hero_print_str(t16); hero_print_int(t19); hero_print_end();
+    t20 = HERO_STR_LIT(hero_str_351cd275); t21 = h_fixedbugsastepoffthelaststatementleftthefile_shout(t20); t24 = h2_own2; h2_own2 = t21; hero_str_decref(t24); hero_print_str(t21); hero_print_end();
+#line 129 "fixedbugsastepoffthelaststatementleftthefile.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

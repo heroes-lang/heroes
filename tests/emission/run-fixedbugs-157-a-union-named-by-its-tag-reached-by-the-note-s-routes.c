@@ -141,11 +141,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs157aunionnamedbyit
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 #pragma clang diagnostic pop
@@ -164,28 +164,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void) {
-#line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-    HERO_NODEBUG UI t1; HERO_NODEBUG int32_t t2, t4; HERO_NODEBUG void *t3; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-bb0:
-    t1 = make_u();
-#line 15 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-    t2 = t1.i;
-#line 15 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-    hero_print_int(t2);
-#line 15 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-    hero_print_end();
-    t3 = (void *)one_u();
-#line 16 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-    t4 = read_u(t3);
-#line 16 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-    hero_print_int(t4);
-#line 16 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-    hero_print_end();
-#line 16 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-    return;
-#line 189 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void) { HERO_NODEBUG UI t1; HERO_NODEBUG int32_t t2, t4; HERO_NODEBUG void *t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = make_u(); t2 = t1.i; hero_print_int(t2); hero_print_end();
+    t3 = (void *)one_u(); t4 = read_u(t3); hero_print_int(t4); hero_print_end(); return;
+#line 171 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_UI_eq(const UI *a, const UI *b) {
     if (!(a->i == b->i)) return false;

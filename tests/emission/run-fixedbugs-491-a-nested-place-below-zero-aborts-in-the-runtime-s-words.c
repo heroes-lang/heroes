@@ -78,11 +78,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 88 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
 #pragma clang diagnostic pop
@@ -121,128 +121,14 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs491anestedplacebelowzeroabortsint
 void h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_main(void);
 
 #line 7 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-void h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_main(void) {
-#line 7 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    HeroArrayHeader * h0_rows = {0}; int64_t h1_at; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h4_own4 = {0}, *h6_own6 = {0}, *t3, *t7, *t9, *t16, *t19, *t26, *t28, *t30, *t31; HERO_NODEBUG h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row h3_own3 = {0}, h5_own5 = {0}, t4, t8, t18, t27, t29; HERO_NODEBUG int64_t t1, t2, t5, t6, t10, t11, t12, t13, t14, t15, t17, t20, t21, t22, t23, t24, t25; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t2 = INT64_C(2);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t3 = hero_array_new(&hero_desc_int, 2);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_push_owned(&t3, &t1);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_push_owned(&t3, &t2);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t26 = h2_own2;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    h2_own2 = t3;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_decref(t26);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_incref(t3);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t4 = (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row){.f_cells = t3};
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t27 = h3_own3;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    h3_own3 = t4;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_release(&t27);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t5 = INT64_C(3);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t6 = INT64_C(4);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t7 = hero_array_new(&hero_desc_int, 2);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_push_owned(&t7, &t5);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_push_owned(&t7, &t6);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t28 = h4_own4;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    h4_own4 = t7;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_decref(t28);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_incref(t7);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t8 = (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row){.f_cells = t7};
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t29 = h5_own5;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    h5_own5 = t8;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_release(&t29);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t9 = hero_array_new(&h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_desc, 2);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_push_owned(&t9, &t4);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_push_owned(&t9, &t8);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t30 = h6_own6;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    h6_own6 = t9;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_decref(t30);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t31 = h0_rows;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_incref(t9);
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    h0_rows = t9;
-#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_decref(t31);
-    t10 = INT64_C(0);
-#line 9 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t11 = INT64_C(1);
-#line 9 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 9 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    h1_at = t12;
-    t13 = INT64_C(0);
-#line 10 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t14 = INT64_C(1);
-#line 10 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t15 = INT64_C(20);
-#line 10 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_unshare(&(h0_rows));
-#line 10 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_set(&((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t13), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row) ? hero_unreachable() : (void)0), (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row *)(void *)(h0_rows + 1) + t13)).f_cells), t14, &t15);
-    t16 = h0_rows;
-#line 11 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t17 = INT64_C(0);
-#line 11 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row const *)(const void *)(t16 + 1))[t17]);
-#line 11 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t19 = t18.f_cells;
-#line 11 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t20 = INT64_C(1);
-#line 11 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]);
-#line 11 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_print_int(t21);
-#line 11 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_print_end();
-    t22 = h1_at;
-#line 12 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t23 = INT64_C(0);
-#line 12 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    t24 = INT64_C(1);
-#line 12 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_unshare(&(h0_rows));
-#line 12 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_array_set(&((*((void)((h0_rows == NULL || t22 < 0 || t22 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t22), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row) ? hero_unreachable() : (void)0), (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row *)(void *)(h0_rows + 1) + t22)).f_cells), t23, &t24);
-    t25 = INT64_C(0);
-#line 13 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_print_int(t25);
-#line 13 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    hero_print_end();
-#line 246 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+void h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_main(void) { HeroArrayHeader * h0_rows = {0}; int64_t h1_at; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h4_own4 = {0}, *h6_own6 = {0}, *t3, *t7, *t9, *t16, *t19, *t26, *t28, *t30, *t31; HERO_NODEBUG h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row h3_own3 = {0}, h5_own5 = {0}, t4, t8, t18, t27, t29; HERO_NODEBUG int64_t t1, t2, t5, t6, t10, t11, t12, t13, t14, t15, t17, t20, t21, t22, t23, t24, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t26 = h2_own2; h2_own2 = t3; hero_array_decref(t26); hero_array_incref(t3); t4 = (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row){.f_cells = t3}; t27 = h3_own3; h3_own3 = t4; h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_release(&t27); t5 = INT64_C(3); t6 = INT64_C(4); t7 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t7, &t5); hero_array_push_owned(&t7, &t6); t28 = h4_own4; h4_own4 = t7; hero_array_decref(t28); hero_array_incref(t7); t8 = (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row){.f_cells = t7}; t29 = h5_own5; h5_own5 = t8; h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_release(&t29); t9 = hero_array_new(&h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_desc, 2); hero_array_push_owned(&t9, &t4); hero_array_push_owned(&t9, &t8); t30 = h6_own6; h6_own6 = t9; hero_array_decref(t30); t31 = h0_rows; hero_array_incref(t9); h0_rows = t9; hero_array_decref(t31);
+    t10 = INT64_C(0); t11 = INT64_C(1); if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow(); h1_at = t12;
+    t13 = INT64_C(0); t14 = INT64_C(1); t15 = INT64_C(20); hero_array_unshare(&(h0_rows)); hero_array_set(&((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t13), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row) ? hero_unreachable() : (void)0), (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row *)(void *)(h0_rows + 1) + t13)).f_cells), t14, &t15);
+    t16 = h0_rows; t17 = INT64_C(0); t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row) ? hero_unreachable() : (void)0), ((h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row const *)(const void *)(t16 + 1))[t17]); t19 = t18.f_cells; t20 = INT64_C(1); t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t19 + 1))[t20]); hero_print_int(t21); hero_print_end();
+    t22 = h1_at; t23 = INT64_C(0); t24 = INT64_C(1); hero_array_unshare(&(h0_rows)); hero_array_set(&((*((void)((h0_rows == NULL || t22 < 0 || t22 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t22), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row) ? hero_unreachable() : (void)0), (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row *)(void *)(h0_rows + 1) + t22)).f_cells), t23, &t24);
+    t25 = INT64_C(0); hero_print_int(t25); hero_print_end();
+#line 132 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
     hero_array_release_at(&h0_rows);
     hero_array_release_at(&h2_own2);
     h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_release(hero_slot_escape(&h3_own3));

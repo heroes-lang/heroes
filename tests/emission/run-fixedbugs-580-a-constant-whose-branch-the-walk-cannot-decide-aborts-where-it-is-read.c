@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread.c"
 #pragma clang diagnostic pop
@@ -96,66 +96,22 @@ uint8_t h_fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread
 void h_fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread_main(void);
 
 #line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-uint8_t h_fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread_V(void) {
-#line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    uint8_t h0_v; HERO_NODEBUG uint8_t t1, t5, t6, t7, t8; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-bb0:
-    t1 = UINT64_C(0);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    h0_v = t1;
-#line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    t2 = INT64_C(1);
-#line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    t3 = INT64_C(2);
-#line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    t4 = t2 < t3;
-#line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-bb1:
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    t6 = h0_v;
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    t7 = UINT64_C(100);
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow();
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    return t8;
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-bb2:
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    t5 = UINT64_C(200);
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    h0_v = t5;
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    goto bb1;
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-bb3:
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    goto bb1;
-#line 138 "fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread.c"
+uint8_t h_fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread_V(void) { uint8_t h0_v; HERO_NODEBUG uint8_t t1, t5, t6, t7, t8; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(0); h0_v = t1;
+#line 10
+    t2 = INT64_C(1); t3 = INT64_C(2); t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 13
+    t6 = h0_v; t7 = UINT64_C(100); if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow(); return t8; bb2:
+#line 11
+    t5 = UINT64_C(200); h0_v = t5; goto bb1; bb3: goto bb1;
+#line 108 "fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread.c"
 }
 
 #line 15 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-void h_fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread_main(void) {
-#line 15 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 16 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    hero_print_int(t1);
-#line 16 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    hero_print_end();
-    t2 = h_fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread_V();
-#line 17 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    hero_print_int(t2);
-#line 17 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    hero_print_end();
-#line 17 "tests/golden/run/fixedbugs-580-a-constant-whose-branch-the-walk-cannot-decide-aborts-where-it-is-read.hero"
-    return;
-#line 159 "fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread.c"
+void h_fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread_main(void) { HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); hero_print_int(t1); hero_print_end();
+    t2 = h_fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread_V(); hero_print_int(t2); hero_print_end(); return;
+#line 115 "fixedbugs580aconstantwhosebranchthewalkcannotdecideabortswhereitisread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

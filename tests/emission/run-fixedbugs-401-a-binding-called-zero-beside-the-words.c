@@ -150,11 +150,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 160 "fixedbugs401abindingcalledzerobesidethewords.c"
 #pragma clang diagnostic pop
@@ -191,120 +191,26 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 16 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-struct pair h_fixedbugs401abindingcalledzerobesidethewords_beside(void) {
-#line 16 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    int32_t h0_zero; HERO_NODEBUG int32_t t1, t2, t3; HERO_NODEBUG struct pair t4; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 17 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    h0_zero = t1;
-    t2 = h0_zero;
-#line 18 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_int(t2);
-#line 18 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_end();
-    t3 = INT64_C(1);
-#line 19 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t4 = (struct pair){0};
-#line 19 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    __builtin_memset(&t4, 0, sizeof t4);
-#line 19 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t4.a = t3;
-#line 19 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    return t4;
-#line 217 "fixedbugs401abindingcalledzerobesidethewords.c"
+struct pair h_fixedbugs401abindingcalledzerobesidethewords_beside(void) { int32_t h0_zero; HERO_NODEBUG int32_t t1, t2, t3; HERO_NODEBUG struct pair t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); h0_zero = t1;
+    t2 = h0_zero; hero_print_int(t2); hero_print_end();
+    t3 = INT64_C(1); t4 = (struct pair){0}; __builtin_memset(&t4, 0, sizeof t4); t4.a = t3; return t4;
+#line 199 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-struct pair h_fixedbugs401abindingcalledzerobesidethewords_named(int32_t h0_zero) {
-#line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG struct pair t3; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 23 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t2 = h0_zero;
-#line 23 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t3 = (struct pair){0};
-#line 23 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    __builtin_memset(&t3, 0, sizeof t3);
-#line 23 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t3.a = t1;
-#line 23 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t3.zero = t2;
-#line 23 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    return t3;
-#line 239 "fixedbugs401abindingcalledzerobesidethewords.c"
+struct pair h_fixedbugs401abindingcalledzerobesidethewords_named(int32_t h0_zero) { HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG struct pair t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = h0_zero; t3 = (struct pair){0}; __builtin_memset(&t3, 0, sizeof t3); t3.a = t1; t3.zero = t2; return t3;
+#line 205 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-void h_fixedbugs401abindingcalledzerobesidethewords_main(void) {
-#line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    struct pair h0_p; struct pair h1_q; HERO_NODEBUG struct pair t1, t3; HERO_NODEBUG int32_t t2, t4, t6, t8, t10, t12, t14; HERO_NODEBUG HeroStr t5, t7, t9, t11, t13; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-bb0:
+void h_fixedbugs401abindingcalledzerobesidethewords_main(void) { struct pair h0_p; struct pair h1_q; HERO_NODEBUG struct pair t1, t3; HERO_NODEBUG int32_t t2, t4, t6, t8, t10, t12, t14; HERO_NODEBUG HeroStr t5, t7, t9, t11, t13; HERO_ENTRY_STOP; goto bb0; bb0:
     (void)dirty();
-    t1 = h_fixedbugs401abindingcalledzerobesidethewords_beside();
-#line 27 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    h0_p = t1;
-#line 27 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_pad_fill(&h0_p, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = INT64_C(7);
-#line 28 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t3 = h_fixedbugs401abindingcalledzerobesidethewords_named(t2);
-#line 28 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    h1_q = t3;
-#line 28 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_pad_fill(&h1_q, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
-    t4 = h0_p.a;
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t5 = HERO_STR_LIT(hero_str_20);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t6 = h0_p.b;
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t7 = HERO_STR_LIT(hero_str_20);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t8 = h0_p.zero;
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t9 = HERO_STR_LIT(hero_str_20);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t10 = h1_q.a;
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t11 = HERO_STR_LIT(hero_str_20);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t12 = h1_q.b;
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t13 = HERO_STR_LIT(hero_str_20);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    t14 = h1_q.zero;
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_int(t4);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_str(t5);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_int(t6);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_str(t7);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_int(t8);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_str(t9);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_int(t10);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_str(t11);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_int(t12);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_str(t13);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_int(t14);
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    hero_print_end();
-#line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    return;
-#line 308 "fixedbugs401abindingcalledzerobesidethewords.c"
+    t1 = h_fixedbugs401abindingcalledzerobesidethewords_beside(); h0_p = t1; hero_pad_fill(&h0_p, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
+    t2 = INT64_C(7); t3 = h_fixedbugs401abindingcalledzerobesidethewords_named(t2); h1_q = t3; hero_pad_fill(&h1_q, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
+    t4 = h0_p.a; t5 = HERO_STR_LIT(hero_str_20); t6 = h0_p.b; t7 = HERO_STR_LIT(hero_str_20); t8 = h0_p.zero; t9 = HERO_STR_LIT(hero_str_20); t10 = h1_q.a; t11 = HERO_STR_LIT(hero_str_20); t12 = h1_q.b; t13 = HERO_STR_LIT(hero_str_20); t14 = h1_q.zero; hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_str(t9); hero_print_int(t10); hero_print_str(t11); hero_print_int(t12); hero_print_str(t13); hero_print_int(t14); hero_print_end(); return;
+#line 214 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_Pair_eq(const struct pair *a, const struct pair *b) {
     if (!(a->a == b->a)) return false;

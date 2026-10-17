@@ -135,11 +135,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs361aboundnamethegu
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 145 "fixedbugs361aboundnametheguardholdskeepsitsheadersmacro.c"
 #pragma clang diagnostic pop
@@ -156,21 +156,9 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs361aboundnametheguardholdskeepsitsheadersmacro_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
-void h_fixedbugs361aboundnametheguardholdskeepsitsheadersmacro_main(void) {
-#line 16 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
-    HERO_NODEBUG double t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
-bb0:
-    t1 = 0x1p+2;
-#line 17 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
-    t2 = sqrt(t1);
-#line 17 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
-    hero_print_f64(t2);
-#line 17 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
-    hero_print_end();
-#line 17 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
-    return;
-#line 174 "fixedbugs361aboundnametheguardholdskeepsitsheadersmacro.c"
+void h_fixedbugs361aboundnametheguardholdskeepsitsheadersmacro_main(void) { HERO_NODEBUG double t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1p+2; t2 = sqrt(t1); hero_print_f64(t2); hero_print_end(); return;
+#line 162 "fixedbugs361aboundnametheguardholdskeepsitsheadersmacro.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

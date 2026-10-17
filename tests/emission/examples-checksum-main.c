@@ -166,11 +166,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 176 "main.c"
 #pragma clang diagnostic pop
@@ -244,22 +244,14 @@ int64_t h_crc_reversed_bits(int64_t h0_value, int64_t h1_width);
 
 #if HERO_STATIC_CONSTANTS
 #line 32 "examples/checksum/main.hero"
-HERO_ARRAY_STATIC(hero_constant_h_main_VECTORS_8, HeroStr, &hero_desc_str, 7, HERO_STR_LIT(hero_str_0), HERO_STR_LIT(hero_str_66), HERO_STR_LIT(hero_str_34a1), HERO_STR_LIT(hero_str_1aeed2), HERO_STR_LIT(hero_str_dc835d8), HERO_STR_LIT(hero_str_d738df7), HERO_STR_LIT(hero_str_6221a5e4));
-#line 32 "examples/checksum/main.hero"
-HeroArrayHeader * h_main_VECTORS(void) {
-#line 32 "examples/checksum/main.hero"
-    return HERO_ARRAY_LIT(hero_constant_h_main_VECTORS_8);
-#line 253 "main.c"
+HERO_ARRAY_STATIC(hero_constant_h_main_VECTORS_8, HeroStr, &hero_desc_str, 7, HERO_STR_LIT(hero_str_0), HERO_STR_LIT(hero_str_66), HERO_STR_LIT(hero_str_34a1), HERO_STR_LIT(hero_str_1aeed2), HERO_STR_LIT(hero_str_dc835d8), HERO_STR_LIT(hero_str_d738df7), HERO_STR_LIT(hero_str_6221a5e4)); HeroArrayHeader * h_main_VECTORS(void) { return HERO_ARRAY_LIT(hero_constant_h_main_VECTORS_8);
+#line 249 "main.c"
 }
 #else
 
 #line 32 "examples/checksum/main.hero"
-HeroArrayHeader * h_main_VECTORS(void) {
-#line 32 "examples/checksum/main.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t8, *t9; HERO_NODEBUG HeroStr t1, t2, t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 32 "examples/checksum/main.hero"
-bb0:
-#line 34 "examples/checksum/main.hero"
+HeroArrayHeader * h_main_VECTORS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t8, *t9; HERO_NODEBUG HeroStr t1, t2, t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 34
     t1 = HERO_STR_LIT(hero_str_0);
     t2 = HERO_STR_LIT(hero_str_66);
     t3 = HERO_STR_LIT(hero_str_34a1);
@@ -267,29 +259,9 @@ bb0:
     t5 = HERO_STR_LIT(hero_str_dc835d8);
     t6 = HERO_STR_LIT(hero_str_d738df7);
     t7 = HERO_STR_LIT(hero_str_6221a5e4);
-#line 33 "examples/checksum/main.hero"
-    t8 = hero_array_new(&hero_desc_str, 7);
-#line 33 "examples/checksum/main.hero"
-    hero_array_push_owned(&t8, &t1);
-#line 33 "examples/checksum/main.hero"
-    hero_array_push_owned(&t8, &t2);
-#line 33 "examples/checksum/main.hero"
-    hero_array_push_owned(&t8, &t3);
-#line 33 "examples/checksum/main.hero"
-    hero_array_push_owned(&t8, &t4);
-#line 33 "examples/checksum/main.hero"
-    hero_array_push_owned(&t8, &t5);
-#line 33 "examples/checksum/main.hero"
-    hero_array_push_owned(&t8, &t6);
-#line 33 "examples/checksum/main.hero"
-    hero_array_push_owned(&t8, &t7);
-#line 33 "examples/checksum/main.hero"
-    t9 = h0_own0;
-#line 33 "examples/checksum/main.hero"
-    h0_own0 = t8;
-#line 33 "examples/checksum/main.hero"
-    hero_array_decref(t9);
-#line 293 "main.c"
+#line 33
+    t8 = hero_array_new(&hero_desc_str, 7); hero_array_push_owned(&t8, &t1); hero_array_push_owned(&t8, &t2); hero_array_push_owned(&t8, &t3); hero_array_push_owned(&t8, &t4); hero_array_push_owned(&t8, &t5); hero_array_push_owned(&t8, &t6); hero_array_push_owned(&t8, &t7); t9 = h0_own0; h0_own0 = t8; hero_array_decref(t9);
+#line 265 "main.c"
     hero_array_incref(t8);
     hero_array_release_at(&h0_own0);
     return t8;
@@ -297,242 +269,52 @@ bb0:
 #endif
 
 #line 43 "examples/checksum/main.hero"
-HeroStr h_main_DIGITS(void) {
-#line 43 "examples/checksum/main.hero"
-    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 43 "examples/checksum/main.hero"
-bb0:
+HeroStr h_main_DIGITS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
-#line 307 "main.c"
+#line 275 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 54 "examples/checksum/main.hero"
-h_main_Digest h_main_digest_of(HeroStr h0_text) {
-#line 54 "examples/checksum/main.hero"
-    HERO_NODEBUG h_0opt_fbbb698 h1_f0 = {0}, h2_own2 = {0}, t7, t8, t12, t14, t17, t18; HERO_NODEBUG HeroStr t1, t3, t5; HERO_NODEBUG uint32_t t2, t4; HERO_NODEBUG int64_t t6, t9, t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG uint64_t t15; HERO_NODEBUG h_main_Digest t16; HERO_ENTRY_STOP; goto bb0;
-#line 54 "examples/checksum/main.hero"
-bb0:
-#line 56 "examples/checksum/main.hero"
-    t1 = h0_text;
-#line 56 "examples/checksum/main.hero"
-    t2 = h_crc_crc32(t1);
-    t3 = h0_text;
-#line 57 "examples/checksum/main.hero"
-    t4 = h_adler_adler32(t3);
-    t5 = h0_text;
-#line 58 "examples/checksum/main.hero"
-    t6 = hero_str_len(t5);
-#line 58 "examples/checksum/main.hero"
-    if (t6 >= 0LL) {
-#line 58 "examples/checksum/main.hero"
-        t7 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t6};
-#line 58 "examples/checksum/main.hero"
-    } else {
-#line 58 "examples/checksum/main.hero"
-        t7 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 58 "examples/checksum/main.hero"
-    }
-#line 58 "examples/checksum/main.hero"
-    t17 = h2_own2;
-#line 58 "examples/checksum/main.hero"
-    h2_own2 = t7;
-#line 58 "examples/checksum/main.hero"
-    h_0opt_fbbb698_release(&t17);
-#line 58 "examples/checksum/main.hero"
-    t18 = h1_f0;
-#line 58 "examples/checksum/main.hero"
-    h_0opt_fbbb698_retain(&t7);
-#line 58 "examples/checksum/main.hero"
-    h1_f0 = t7;
-#line 58 "examples/checksum/main.hero"
-    h_0opt_fbbb698_release(&t18);
-#line 58 "examples/checksum/main.hero"
-    t8 = h1_f0;
-#line 58 "examples/checksum/main.hero"
-    t9 = t8.tag;
-#line 58 "examples/checksum/main.hero"
-    t10 = INT64_C(0);
-#line 58 "examples/checksum/main.hero"
-    t11 = t9 == t10;
-#line 58 "examples/checksum/main.hero"
-    if (t11) goto bb1; else goto bb2;
-#line 58 "examples/checksum/main.hero"
-bb1:
-#line 58 "examples/checksum/main.hero"
-    t14 = h1_f0;
-#line 58 "examples/checksum/main.hero"
-    t15 = t14.as.ok;
-#line 55 "examples/checksum/main.hero"
+h_main_Digest h_main_digest_of(HeroStr h0_text) { HERO_NODEBUG h_0opt_fbbb698 h1_f0 = {0}, h2_own2 = {0}, t7, t8, t12, t14, t17, t18; HERO_NODEBUG HeroStr t1, t3, t5; HERO_NODEBUG uint32_t t2, t4; HERO_NODEBUG int64_t t6, t9, t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG uint64_t t15; HERO_NODEBUG h_main_Digest t16; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 56
+    t1 = h0_text; t2 = h_crc_crc32(t1);
+    t3 = h0_text; t4 = h_adler_adler32(t3);
+    t5 = h0_text; t6 = hero_str_len(t5); if (t6 >= 0LL) { t7 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t6}; } else { t7 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t17 = h2_own2; h2_own2 = t7; h_0opt_fbbb698_release(&t17); t18 = h1_f0; h_0opt_fbbb698_retain(&t7); h1_f0 = t7; h_0opt_fbbb698_release(&t18); t8 = h1_f0; t9 = t8.tag; t10 = INT64_C(0); t11 = t9 == t10; if (t11) goto bb1; else goto bb2; bb1: t14 = h1_f0; t15 = t14.as.ok;
+#line 55
     t16 = (h_main_Digest){.f_checksum = t2, .f_rolling = t4, .f_length = t15};
-#line 370 "main.c"
+#line 288 "main.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h1_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h2_own2));
     return t16;
 bb2:
 #line 58 "examples/checksum/main.hero"
-    t12 = h1_f0;
-#line 58 "examples/checksum/main.hero"
-    t13 = t12.as.err;
-#line 379 "main.c"
+    t12 = h1_f0; t13 = t12.as.err;
+#line 295 "main.c"
     hero_panic_must(t13);
     hero_unreachable();
 }
 
 #line 64 "examples/checksum/main.hero"
-HeroStr h_main_hex(uint32_t h0_value) {
-#line 64 "examples/checksum/main.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_own7 = {0}, t3, t4, t8, t10, t39, t40; int64_t h3_v; int64_t h4_shift; int64_t h5_nibble; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t33, *t37, *t38; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t22, t27, t32, t34, t35, t36, t41, t42, t43, t44; HERO_NODEBUG uint32_t t2; HERO_NODEBUG int64_t t5, t6, t11, t12, t13, t14, t16, t17, t18, t19, t20, t23, t24, t25, t26, t29, t30, t31; HERO_NODEBUG bool t7, t15; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0;
-#line 64 "examples/checksum/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 65 "examples/checksum/main.hero"
-    t37 = h6_own6;
-#line 65 "examples/checksum/main.hero"
-    h6_own6 = t1;
-#line 65 "examples/checksum/main.hero"
-    hero_array_decref(t37);
-#line 65 "examples/checksum/main.hero"
-    t38 = h1_out;
-#line 65 "examples/checksum/main.hero"
-    hero_array_incref(t1);
-#line 65 "examples/checksum/main.hero"
-    h1_out = t1;
-#line 65 "examples/checksum/main.hero"
-    hero_array_decref(t38);
-    t2 = h0_value;
-#line 66 "examples/checksum/main.hero"
-    t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t2};
-#line 66 "examples/checksum/main.hero"
-    t39 = h7_own7;
-#line 66 "examples/checksum/main.hero"
-    h7_own7 = t3;
-#line 66 "examples/checksum/main.hero"
-    h_0opt_e201354_release(&t39);
-#line 66 "examples/checksum/main.hero"
-    t40 = h2_f0;
-#line 66 "examples/checksum/main.hero"
-    h_0opt_e201354_retain(&t3);
-#line 66 "examples/checksum/main.hero"
-    h2_f0 = t3;
-#line 66 "examples/checksum/main.hero"
-    h_0opt_e201354_release(&t40);
-#line 66 "examples/checksum/main.hero"
-    t4 = h2_f0;
-#line 66 "examples/checksum/main.hero"
-    t5 = t4.tag;
-#line 66 "examples/checksum/main.hero"
-    t6 = INT64_C(0);
-#line 66 "examples/checksum/main.hero"
-    t7 = t5 == t6;
-#line 66 "examples/checksum/main.hero"
-    if (t7) goto bb1; else goto bb2;
-#line 66 "examples/checksum/main.hero"
-bb1:
-#line 66 "examples/checksum/main.hero"
-    t10 = h2_f0;
-#line 66 "examples/checksum/main.hero"
-    t11 = t10.as.ok;
-#line 66 "examples/checksum/main.hero"
-    h3_v = t11;
-    t12 = INT64_C(28);
-#line 67 "examples/checksum/main.hero"
-    h4_shift = t12;
-#line 67 "examples/checksum/main.hero"
-    goto bb3;
-#line 67 "examples/checksum/main.hero"
-bb2:
-#line 66 "examples/checksum/main.hero"
-    t8 = h2_f0;
-#line 66 "examples/checksum/main.hero"
-    t9 = t8.as.err;
-#line 451 "main.c"
+HeroStr h_main_hex(uint32_t h0_value) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_own7 = {0}, t3, t4, t8, t10, t39, t40; int64_t h3_v; int64_t h4_shift; int64_t h5_nibble; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t33, *t37, *t38; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t22, t27, t32, t34, t35, t36, t41, t42, t43, t44; HERO_NODEBUG uint32_t t2; HERO_NODEBUG int64_t t5, t6, t11, t12, t13, t14, t16, t17, t18, t19, t20, t23, t24, t25, t26, t29, t30, t31; HERO_NODEBUG bool t7, t15; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t37 = h6_own6; h6_own6 = t1; hero_array_decref(t37); t38 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t38);
+    t2 = h0_value; t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t2}; t39 = h7_own7; h7_own7 = t3; h_0opt_e201354_release(&t39); t40 = h2_f0; h_0opt_e201354_retain(&t3); h2_f0 = t3; h_0opt_e201354_release(&t40); t4 = h2_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t10 = h2_f0; t11 = t10.as.ok; h3_v = t11;
+    t12 = INT64_C(28); h4_shift = t12; goto bb3; bb2:
+#line 66
+    t8 = h2_f0; t9 = t8.as.err;
+#line 307 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
 #line 69 "examples/checksum/main.hero"
-    t13 = h4_shift;
-#line 69 "examples/checksum/main.hero"
-    t14 = INT64_C(0);
-#line 69 "examples/checksum/main.hero"
-    t15 = t13 >= t14;
-#line 69 "examples/checksum/main.hero"
-    if (t15) goto bb4; else goto bb5;
-#line 69 "examples/checksum/main.hero"
-bb4:
-    t16 = h3_v;
-#line 70 "examples/checksum/main.hero"
-    t17 = h4_shift;
-#line 70 "examples/checksum/main.hero"
-    if (t17 < 0 || t17 > 63) hero_panic("shift count outside 0..63");
-#line 70 "examples/checksum/main.hero"
-    t18 = (t16 < 0) ? ~(int64_t)((~(uint64_t)t16) >> (uint64_t)t17) : (int64_t)((uint64_t)t16 >> (uint64_t)t17);
-#line 70 "examples/checksum/main.hero"
-    t19 = INT64_C(15);
-#line 70 "examples/checksum/main.hero"
-    t20 = t18 & t19;
-#line 70 "examples/checksum/main.hero"
-    h5_nibble = t20;
-    t22 = h_main_DIGITS();
-#line 71 "examples/checksum/main.hero"
-    t41 = h8_own8;
-#line 71 "examples/checksum/main.hero"
-    h8_own8 = t22;
-#line 71 "examples/checksum/main.hero"
-    hero_str_decref(t41);
-#line 71 "examples/checksum/main.hero"
-    t23 = h5_nibble;
-#line 71 "examples/checksum/main.hero"
-    t24 = h5_nibble;
-#line 71 "examples/checksum/main.hero"
-    t25 = INT64_C(1);
-#line 71 "examples/checksum/main.hero"
-    if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow();
-#line 71 "examples/checksum/main.hero"
-    t27 = hero_str_slice(t22, t23, t26);
-#line 71 "examples/checksum/main.hero"
-    t42 = h9_own9;
-#line 71 "examples/checksum/main.hero"
-    h9_own9 = t27;
-#line 71 "examples/checksum/main.hero"
-    hero_str_decref(t42);
-#line 71 "examples/checksum/main.hero"
-    hero_array_push_owned(&h1_out, &t27);
-    t29 = h4_shift;
-#line 72 "examples/checksum/main.hero"
-    t30 = INT64_C(4);
-#line 72 "examples/checksum/main.hero"
-    if (__builtin_sub_overflow(t29, t30, &t31)) hero_panic_overflow();
-#line 72 "examples/checksum/main.hero"
-    h4_shift = t31;
-#line 72 "examples/checksum/main.hero"
-    goto bb3;
-#line 72 "examples/checksum/main.hero"
-bb5:
-#line 74 "examples/checksum/main.hero"
-    t32 = HERO_STR_LIT(hero_str_1908);
-#line 74 "examples/checksum/main.hero"
-    t33 = h1_out;
-#line 74 "examples/checksum/main.hero"
-    t34 = HERO_STR_LIT(hero_str_0);
-#line 74 "examples/checksum/main.hero"
-    t35 = hero_str_join(t33, t34);
-#line 74 "examples/checksum/main.hero"
-    t43 = h10_own10;
-#line 74 "examples/checksum/main.hero"
-    h10_own10 = t35;
-#line 74 "examples/checksum/main.hero"
-    hero_str_decref(t43);
-#line 74 "examples/checksum/main.hero"
-    t36 = hero_str_concat(t32, t35);
-#line 74 "examples/checksum/main.hero"
-    t44 = h11_own11;
-#line 74 "examples/checksum/main.hero"
-    h11_own11 = t36;
-#line 74 "examples/checksum/main.hero"
-    hero_str_decref(t44);
-#line 536 "main.c"
+    t13 = h4_shift; t14 = INT64_C(0); t15 = t13 >= t14; if (t15) goto bb4; else goto bb5; bb4:
+    t16 = h3_v; t17 = h4_shift; if (t17 < 0 || t17 > 63) hero_panic("shift count outside 0..63"); t18 = (t16 < 0) ? ~(int64_t)((~(uint64_t)t16) >> (uint64_t)t17) : (int64_t)((uint64_t)t16 >> (uint64_t)t17); t19 = INT64_C(15); t20 = t18 & t19; h5_nibble = t20;
+    t22 = h_main_DIGITS(); t41 = h8_own8; h8_own8 = t22; hero_str_decref(t41); t23 = h5_nibble; t24 = h5_nibble; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow(); t27 = hero_str_slice(t22, t23, t26); t42 = h9_own9; h9_own9 = t27; hero_str_decref(t42); hero_array_push_owned(&h1_out, &t27);
+    t29 = h4_shift; t30 = INT64_C(4); if (__builtin_sub_overflow(t29, t30, &t31)) hero_panic_overflow(); h4_shift = t31; goto bb3; bb5:
+#line 74
+    t32 = HERO_STR_LIT(hero_str_1908); t33 = h1_out; t34 = HERO_STR_LIT(hero_str_0); t35 = hero_str_join(t33, t34); t43 = h10_own10; h10_own10 = t35; hero_str_decref(t43); t36 = hero_str_concat(t32, t35); t44 = h11_own11; h11_own11 = t36; hero_str_decref(t44);
+#line 318 "main.c"
     hero_str_incref(t36);
     hero_array_release_at(&h1_out);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -546,94 +328,16 @@ bb5:
 }
 
 #line 79 "examples/checksum/main.hero"
-HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_data) {
-#line 79 "examples/checksum/main.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t19, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t17; uint8_t h4_one; HERO_NODEBUG HeroStr h6_own6 = {0}, t13, t22; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t10, t12; HERO_ENTRY_STOP; goto bb0;
-#line 79 "examples/checksum/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 80 "examples/checksum/main.hero"
-    t19 = h5_own5;
-#line 80 "examples/checksum/main.hero"
-    h5_own5 = t1;
-#line 80 "examples/checksum/main.hero"
-    hero_array_decref(t19);
-#line 80 "examples/checksum/main.hero"
-    t20 = h1_out;
-#line 80 "examples/checksum/main.hero"
-    hero_array_incref(t1);
-#line 80 "examples/checksum/main.hero"
-    h1_out = t1;
-#line 80 "examples/checksum/main.hero"
-    hero_array_decref(t20);
-#line 82 "examples/checksum/main.hero"
-    t2 = h0_data;
-#line 82 "examples/checksum/main.hero"
-    t21 = h2_xs0;
-#line 82 "examples/checksum/main.hero"
-    hero_array_incref(t2);
-#line 82 "examples/checksum/main.hero"
-    h2_xs0 = t2;
-#line 82 "examples/checksum/main.hero"
-    hero_array_decref(t21);
-#line 82 "examples/checksum/main.hero"
-    t3 = INT64_C(0);
-#line 82 "examples/checksum/main.hero"
-    h3_i0 = t3;
-#line 82 "examples/checksum/main.hero"
-    goto bb1;
-#line 82 "examples/checksum/main.hero"
-bb1:
-#line 82 "examples/checksum/main.hero"
-    t4 = h3_i0;
-#line 82 "examples/checksum/main.hero"
-    t5 = h2_xs0;
-#line 82 "examples/checksum/main.hero"
-    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 82 "examples/checksum/main.hero"
-    t7 = t4 < t6;
-#line 82 "examples/checksum/main.hero"
-    if (t7) goto bb2; else goto bb4;
-#line 82 "examples/checksum/main.hero"
-bb2:
-#line 82 "examples/checksum/main.hero"
-    t8 = h2_xs0;
-#line 82 "examples/checksum/main.hero"
-    t9 = h3_i0;
-#line 82 "examples/checksum/main.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]);
-#line 82 "examples/checksum/main.hero"
-    h4_one = t10;
-    t12 = h4_one;
-#line 83 "examples/checksum/main.hero"
-    t13 = hero_int_to_str(t12);
-#line 83 "examples/checksum/main.hero"
-    t22 = h6_own6;
-#line 83 "examples/checksum/main.hero"
-    h6_own6 = t13;
-#line 83 "examples/checksum/main.hero"
-    hero_str_decref(t22);
-#line 83 "examples/checksum/main.hero"
-    hero_array_push_owned(&h1_out, &t13);
-#line 83 "examples/checksum/main.hero"
-    goto bb3;
-#line 83 "examples/checksum/main.hero"
-bb3:
-#line 82 "examples/checksum/main.hero"
-    t15 = h3_i0;
-#line 82 "examples/checksum/main.hero"
-    t16 = INT64_C(1);
-#line 82 "examples/checksum/main.hero"
-    if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 82 "examples/checksum/main.hero"
-    h3_i0 = t17;
-#line 82 "examples/checksum/main.hero"
-    goto bb1;
-#line 82 "examples/checksum/main.hero"
-bb4:
-#line 85 "examples/checksum/main.hero"
+HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_data) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t19, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t17; uint8_t h4_one; HERO_NODEBUG HeroStr h6_own6 = {0}, t13, t22; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t10, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t19 = h5_own5; h5_own5 = t1; hero_array_decref(t19); t20 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t20);
+#line 82
+    t2 = h0_data; t21 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t21); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]); h4_one = t10;
+    t12 = h4_one; t13 = hero_int_to_str(t12); t22 = h6_own6; h6_own6 = t13; hero_str_decref(t22); hero_array_push_owned(&h1_out, &t13); goto bb3; bb3:
+#line 82
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h3_i0 = t17; goto bb1; bb4:
+#line 85
     t18 = h1_out;
-#line 637 "main.c"
+#line 341 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -643,233 +347,21 @@ bb4:
 }
 
 #line 87 "examples/checksum/main.hero"
-void h_main_main(void) {
-#line 87 "examples/checksum/main.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_xs0 = {0}, *h6_own6 = {0}, *h12_own12 = {0}, *t1, *t4, *t7, *t39, *t41, *t42, *t45, *t46, *t54, *t55; HERO_NODEBUG int64_t h1_i0, t2, t3, t5, t8, t16, t17, t18, t33, t34; HeroStr h2_text = {0}; h_main_Digest h3_nine; HERO_NODEBUG h_0opt_4d1c207c h4_f0 = {0}, h11_own11 = {0}, t31, t32, t36, t38, t52, t53; HeroArrayHeader * h5_back = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h13_own13 = {0}, t9, t10, t11, t12, t13, t14, t15, t19, t21, t23, t24, t26, t27, t29, t30, t40, t43, t44, t47, t48, t49, t50, t51, t56; HERO_NODEBUG bool t6, t35; HERO_NODEBUG h_main_Digest t20; HERO_NODEBUG uint32_t t22, t25; HERO_NODEBUG uint64_t t28; HERO_NODEBUG HeroFailure t37; HERO_ENTRY_STOP; goto bb0;
-#line 87 "examples/checksum/main.hero"
-bb0:
-#line 89 "examples/checksum/main.hero"
-    t1 = h_main_VECTORS();
-#line 89 "examples/checksum/main.hero"
-    t45 = h6_own6;
-#line 89 "examples/checksum/main.hero"
-    h6_own6 = t1;
-#line 89 "examples/checksum/main.hero"
-    hero_array_decref(t45);
-#line 89 "examples/checksum/main.hero"
-    t46 = h0_xs0;
-#line 89 "examples/checksum/main.hero"
-    hero_array_incref(t1);
-#line 89 "examples/checksum/main.hero"
-    h0_xs0 = t1;
-#line 89 "examples/checksum/main.hero"
-    hero_array_decref(t46);
-#line 89 "examples/checksum/main.hero"
-    t2 = INT64_C(0);
-#line 89 "examples/checksum/main.hero"
-    h1_i0 = t2;
-#line 89 "examples/checksum/main.hero"
-    goto bb1;
-#line 89 "examples/checksum/main.hero"
-bb1:
-#line 89 "examples/checksum/main.hero"
-    t3 = h1_i0;
-#line 89 "examples/checksum/main.hero"
-    t4 = h0_xs0;
-#line 89 "examples/checksum/main.hero"
-    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 89 "examples/checksum/main.hero"
-    t6 = t3 < t5;
-#line 89 "examples/checksum/main.hero"
-    if (t6) goto bb2; else goto bb4;
-#line 89 "examples/checksum/main.hero"
-bb2:
-#line 89 "examples/checksum/main.hero"
-    t7 = h0_xs0;
-#line 89 "examples/checksum/main.hero"
-    t8 = h1_i0;
-#line 89 "examples/checksum/main.hero"
-    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
-#line 89 "examples/checksum/main.hero"
-    t47 = h2_text;
-#line 89 "examples/checksum/main.hero"
-    hero_str_incref(t9);
-#line 89 "examples/checksum/main.hero"
-    h2_text = t9;
-#line 89 "examples/checksum/main.hero"
-    hero_str_decref(t47);
-    t10 = HERO_STR_LIT(hero_str_792e9662);
-#line 90 "examples/checksum/main.hero"
-    t11 = h2_text;
-#line 90 "examples/checksum/main.hero"
-    t12 = HERO_STR_LIT(hero_str_3b9df7ae);
-#line 90 "examples/checksum/main.hero"
-    t13 = h2_text;
-#line 90 "examples/checksum/main.hero"
-    t14 = h_base64_encoded(t13);
-#line 90 "examples/checksum/main.hero"
-    t48 = h7_own7;
-#line 90 "examples/checksum/main.hero"
-    h7_own7 = t14;
-#line 90 "examples/checksum/main.hero"
-    hero_str_decref(t48);
-#line 90 "examples/checksum/main.hero"
-    t15 = HERO_STR_LIT(hero_str_22);
-#line 90 "examples/checksum/main.hero"
-    hero_print_str(t10);
-#line 90 "examples/checksum/main.hero"
-    hero_print_str(t11);
-#line 90 "examples/checksum/main.hero"
-    hero_print_str(t12);
-#line 90 "examples/checksum/main.hero"
-    hero_print_str(t14);
-#line 90 "examples/checksum/main.hero"
-    hero_print_str(t15);
-#line 90 "examples/checksum/main.hero"
-    hero_print_end();
-#line 90 "examples/checksum/main.hero"
-    goto bb3;
-#line 90 "examples/checksum/main.hero"
-bb3:
-#line 89 "examples/checksum/main.hero"
-    t16 = h1_i0;
-#line 89 "examples/checksum/main.hero"
-    t17 = INT64_C(1);
-#line 89 "examples/checksum/main.hero"
-    if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
-#line 89 "examples/checksum/main.hero"
-    h1_i0 = t18;
-#line 89 "examples/checksum/main.hero"
-    goto bb1;
-#line 89 "examples/checksum/main.hero"
-bb4:
-#line 94 "examples/checksum/main.hero"
-    t19 = HERO_STR_LIT(hero_str_55256655);
-#line 94 "examples/checksum/main.hero"
-    t20 = h_main_digest_of(t19);
-#line 94 "examples/checksum/main.hero"
-    h3_nine = t20;
-    t21 = HERO_STR_LIT(hero_str_2430b6cc);
-#line 95 "examples/checksum/main.hero"
-    t22 = h3_nine.f_checksum;
-#line 95 "examples/checksum/main.hero"
-    t23 = h_main_hex(t22);
-#line 95 "examples/checksum/main.hero"
-    t49 = h8_own8;
-#line 95 "examples/checksum/main.hero"
-    h8_own8 = t23;
-#line 95 "examples/checksum/main.hero"
-    hero_str_decref(t49);
-#line 95 "examples/checksum/main.hero"
-    hero_print_str(t21);
-#line 95 "examples/checksum/main.hero"
-    hero_print_str(t23);
-#line 95 "examples/checksum/main.hero"
-    hero_print_end();
-    t24 = HERO_STR_LIT(hero_str_2b208381);
-#line 96 "examples/checksum/main.hero"
-    t25 = h3_nine.f_rolling;
-#line 96 "examples/checksum/main.hero"
-    t26 = h_main_hex(t25);
-#line 96 "examples/checksum/main.hero"
-    t50 = h9_own9;
-#line 96 "examples/checksum/main.hero"
-    h9_own9 = t26;
-#line 96 "examples/checksum/main.hero"
-    hero_str_decref(t50);
-#line 96 "examples/checksum/main.hero"
-    hero_print_str(t24);
-#line 96 "examples/checksum/main.hero"
-    hero_print_str(t26);
-#line 96 "examples/checksum/main.hero"
-    hero_print_end();
-    t27 = HERO_STR_LIT(hero_str_137d0d68);
-#line 97 "examples/checksum/main.hero"
-    t28 = h3_nine.f_length;
-#line 97 "examples/checksum/main.hero"
-    t29 = hero_uint_to_str(t28);
-#line 97 "examples/checksum/main.hero"
-    t51 = h10_own10;
-#line 97 "examples/checksum/main.hero"
-    h10_own10 = t29;
-#line 97 "examples/checksum/main.hero"
-    hero_str_decref(t51);
-#line 97 "examples/checksum/main.hero"
-    hero_print_str(t27);
-#line 97 "examples/checksum/main.hero"
-    hero_print_str(t29);
-#line 97 "examples/checksum/main.hero"
-    hero_print_end();
-#line 101 "examples/checksum/main.hero"
-    t30 = HERO_STR_LIT(hero_str_f4dae36);
-#line 101 "examples/checksum/main.hero"
-    t31 = h_base64_decoded(t30);
-#line 101 "examples/checksum/main.hero"
-    t52 = h11_own11;
-#line 101 "examples/checksum/main.hero"
-    h11_own11 = t31;
-#line 101 "examples/checksum/main.hero"
-    h_0opt_4d1c207c_release(&t52);
-#line 101 "examples/checksum/main.hero"
-    t53 = h4_f0;
-#line 101 "examples/checksum/main.hero"
-    h_0opt_4d1c207c_retain(&t31);
-#line 101 "examples/checksum/main.hero"
-    h4_f0 = t31;
-#line 101 "examples/checksum/main.hero"
-    h_0opt_4d1c207c_release(&t53);
-#line 101 "examples/checksum/main.hero"
-    t32 = h4_f0;
-#line 101 "examples/checksum/main.hero"
-    t33 = t32.tag;
-#line 101 "examples/checksum/main.hero"
-    t34 = INT64_C(0);
-#line 101 "examples/checksum/main.hero"
-    t35 = t33 == t34;
-#line 101 "examples/checksum/main.hero"
-    if (t35) goto bb5; else goto bb6;
-#line 101 "examples/checksum/main.hero"
-bb5:
-#line 101 "examples/checksum/main.hero"
-    t38 = h4_f0;
-#line 101 "examples/checksum/main.hero"
-    t39 = t38.as.ok;
-#line 101 "examples/checksum/main.hero"
-    t54 = h5_back;
-#line 101 "examples/checksum/main.hero"
-    hero_array_incref(t39);
-#line 101 "examples/checksum/main.hero"
-    h5_back = t39;
-#line 101 "examples/checksum/main.hero"
-    hero_array_decref(t54);
-    t40 = HERO_STR_LIT(hero_str_1907f49f);
-#line 102 "examples/checksum/main.hero"
-    t41 = h5_back;
-#line 102 "examples/checksum/main.hero"
-    t42 = h_main_shown(t41);
-#line 102 "examples/checksum/main.hero"
-    t55 = h12_own12;
-#line 102 "examples/checksum/main.hero"
-    h12_own12 = t42;
-#line 102 "examples/checksum/main.hero"
-    hero_array_decref(t55);
-#line 102 "examples/checksum/main.hero"
-    t43 = HERO_STR_LIT(hero_str_20);
-#line 102 "examples/checksum/main.hero"
-    t44 = hero_str_join(t42, t43);
-#line 102 "examples/checksum/main.hero"
-    t56 = h13_own13;
-#line 102 "examples/checksum/main.hero"
-    h13_own13 = t44;
-#line 102 "examples/checksum/main.hero"
-    hero_str_decref(t56);
-#line 102 "examples/checksum/main.hero"
-    hero_print_str(t40);
-#line 102 "examples/checksum/main.hero"
-    hero_print_str(t44);
-#line 102 "examples/checksum/main.hero"
-    hero_print_end();
-#line 873 "main.c"
+void h_main_main(void) { HERO_NODEBUG HeroArrayHeader *h0_xs0 = {0}, *h6_own6 = {0}, *h12_own12 = {0}, *t1, *t4, *t7, *t39, *t41, *t42, *t45, *t46, *t54, *t55; HERO_NODEBUG int64_t h1_i0, t2, t3, t5, t8, t16, t17, t18, t33, t34; HeroStr h2_text = {0}; h_main_Digest h3_nine; HERO_NODEBUG h_0opt_4d1c207c h4_f0 = {0}, h11_own11 = {0}, t31, t32, t36, t38, t52, t53; HeroArrayHeader * h5_back = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h13_own13 = {0}, t9, t10, t11, t12, t13, t14, t15, t19, t21, t23, t24, t26, t27, t29, t30, t40, t43, t44, t47, t48, t49, t50, t51, t56; HERO_NODEBUG bool t6, t35; HERO_NODEBUG h_main_Digest t20; HERO_NODEBUG uint32_t t22, t25; HERO_NODEBUG uint64_t t28; HERO_NODEBUG HeroFailure t37; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 89
+    t1 = h_main_VECTORS(); t45 = h6_own6; h6_own6 = t1; hero_array_decref(t45); t46 = h0_xs0; hero_array_incref(t1); h0_xs0 = t1; hero_array_decref(t46); t2 = INT64_C(0); h1_i0 = t2; goto bb1; bb1: t3 = h1_i0; t4 = h0_xs0; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = t3 < t5; if (t6) goto bb2; else goto bb4; bb2: t7 = h0_xs0; t8 = h1_i0; t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]); t47 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t47);
+    t10 = HERO_STR_LIT(hero_str_792e9662); t11 = h2_text; t12 = HERO_STR_LIT(hero_str_3b9df7ae); t13 = h2_text; t14 = h_base64_encoded(t13); t48 = h7_own7; h7_own7 = t14; hero_str_decref(t48); t15 = HERO_STR_LIT(hero_str_22); hero_print_str(t10); hero_print_str(t11); hero_print_str(t12); hero_print_str(t14); hero_print_str(t15); hero_print_end(); goto bb3; bb3:
+#line 89
+    t16 = h1_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); h1_i0 = t18; goto bb1; bb4:
+#line 94
+    t19 = HERO_STR_LIT(hero_str_55256655); t20 = h_main_digest_of(t19); h3_nine = t20;
+    t21 = HERO_STR_LIT(hero_str_2430b6cc); t22 = h3_nine.f_checksum; t23 = h_main_hex(t22); t49 = h8_own8; h8_own8 = t23; hero_str_decref(t49); hero_print_str(t21); hero_print_str(t23); hero_print_end();
+    t24 = HERO_STR_LIT(hero_str_2b208381); t25 = h3_nine.f_rolling; t26 = h_main_hex(t25); t50 = h9_own9; h9_own9 = t26; hero_str_decref(t50); hero_print_str(t24); hero_print_str(t26); hero_print_end();
+    t27 = HERO_STR_LIT(hero_str_137d0d68); t28 = h3_nine.f_length; t29 = hero_uint_to_str(t28); t51 = h10_own10; h10_own10 = t29; hero_str_decref(t51); hero_print_str(t27); hero_print_str(t29); hero_print_end();
+#line 101
+    t30 = HERO_STR_LIT(hero_str_f4dae36); t31 = h_base64_decoded(t30); t52 = h11_own11; h11_own11 = t31; h_0opt_4d1c207c_release(&t52); t53 = h4_f0; h_0opt_4d1c207c_retain(&t31); h4_f0 = t31; h_0opt_4d1c207c_release(&t53); t32 = h4_f0; t33 = t32.tag; t34 = INT64_C(0); t35 = t33 == t34; if (t35) goto bb5; else goto bb6; bb5: t38 = h4_f0; t39 = t38.as.ok; t54 = h5_back; hero_array_incref(t39); h5_back = t39; hero_array_decref(t54);
+    t40 = HERO_STR_LIT(hero_str_1907f49f); t41 = h5_back; t42 = h_main_shown(t41); t55 = h12_own12; h12_own12 = t42; hero_array_decref(t55); t43 = HERO_STR_LIT(hero_str_20); t44 = hero_str_join(t42, t43); t56 = h13_own13; h13_own13 = t44; hero_str_decref(t56); hero_print_str(t40); hero_print_str(t44); hero_print_end();
+#line 365 "main.c"
     hero_array_release_at(&h0_xs0);
     hero_str_release_at(&h2_text);
     h_0opt_4d1c207c_release(hero_slot_escape(&h4_f0));
@@ -885,240 +377,48 @@ bb5:
     return;
 bb6:
 #line 101 "examples/checksum/main.hero"
-    t36 = h4_f0;
-#line 101 "examples/checksum/main.hero"
-    t37 = t36.as.err;
-#line 892 "main.c"
+    t36 = h4_f0; t37 = t36.as.err;
+#line 382 "main.c"
     hero_panic_must(t37);
     hero_unreachable();
 }
 
 #line 33 "examples/checksum/adler.hero"
-int64_t h_adler_BASE(void) {
-#line 33 "examples/checksum/adler.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 33 "examples/checksum/adler.hero"
-bb0:
-    t1 = INT64_C(65521);
-#line 34 "examples/checksum/adler.hero"
-    return t1;
-#line 906 "main.c"
+int64_t h_adler_BASE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(65521); return t1;
+#line 390 "main.c"
 }
 
 #line 45 "examples/checksum/adler.hero"
-h_adler_Halves h_adler_halves(HeroStr h0_text) {
-#line 45 "examples/checksum/adler.hero"
-    int64_t h1_s1; int64_t h2_s2; int64_t h3_i; uint8_t h4_byte; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h8_own8 = {0}, t13, t14, t18, t20, t54, t55; HERO_NODEBUG h_0opt_fba6871 h6_f1 = {0}, h7_f2 = {0}, h9_own9 = {0}, h10_own10 = {0}, t34, t35, t39, t41, t44, t45, t49, t51, t56, t57, t58, t59; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t9, t11, t15, t16, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t36, t37, t43, t46, t47; HERO_NODEBUG HeroStr t5, t8; HERO_NODEBUG bool t7, t17, t38, t48; HERO_NODEBUG uint8_t t10, t12; HERO_NODEBUG HeroFailure t19, t40, t50; HERO_NODEBUG uint16_t t42, t52; HERO_NODEBUG h_adler_Halves t53; HERO_ENTRY_STOP; goto bb0;
-#line 45 "examples/checksum/adler.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 46 "examples/checksum/adler.hero"
-    h1_s1 = t1;
-    t2 = INT64_C(0);
-#line 47 "examples/checksum/adler.hero"
-    h2_s2 = t2;
-    t3 = INT64_C(0);
-#line 48 "examples/checksum/adler.hero"
-    h3_i = t3;
-#line 48 "examples/checksum/adler.hero"
-    goto bb1;
-#line 48 "examples/checksum/adler.hero"
-bb1:
-#line 50 "examples/checksum/adler.hero"
-    t4 = h3_i;
-#line 50 "examples/checksum/adler.hero"
-    t5 = h0_text;
-#line 50 "examples/checksum/adler.hero"
-    t6 = hero_str_len(t5);
-#line 50 "examples/checksum/adler.hero"
-    t7 = t4 < t6;
-#line 50 "examples/checksum/adler.hero"
-    if (t7) goto bb2; else goto bb3;
-#line 50 "examples/checksum/adler.hero"
-bb2:
-    t8 = h0_text;
-#line 51 "examples/checksum/adler.hero"
-    t9 = h3_i;
-#line 51 "examples/checksum/adler.hero"
-    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
-#line 51 "examples/checksum/adler.hero"
-    h4_byte = t10;
-    t11 = h1_s1;
-#line 52 "examples/checksum/adler.hero"
-    t12 = h4_byte;
-#line 52 "examples/checksum/adler.hero"
-    t13 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t12};
-#line 52 "examples/checksum/adler.hero"
-    t54 = h8_own8;
-#line 52 "examples/checksum/adler.hero"
-    h8_own8 = t13;
-#line 52 "examples/checksum/adler.hero"
-    h_0opt_e201354_release(&t54);
-#line 52 "examples/checksum/adler.hero"
-    t55 = h5_f0;
-#line 52 "examples/checksum/adler.hero"
-    h_0opt_e201354_retain(&t13);
-#line 52 "examples/checksum/adler.hero"
-    h5_f0 = t13;
-#line 52 "examples/checksum/adler.hero"
-    h_0opt_e201354_release(&t55);
-#line 52 "examples/checksum/adler.hero"
-    t14 = h5_f0;
-#line 52 "examples/checksum/adler.hero"
-    t15 = t14.tag;
-#line 52 "examples/checksum/adler.hero"
-    t16 = INT64_C(0);
-#line 52 "examples/checksum/adler.hero"
-    t17 = t15 == t16;
-#line 52 "examples/checksum/adler.hero"
-    if (t17) goto bb4; else goto bb5;
-#line 52 "examples/checksum/adler.hero"
-bb3:
-#line 56 "examples/checksum/adler.hero"
-    t33 = h1_s1;
-#line 56 "examples/checksum/adler.hero"
-    if (t33 >= 0LL && t33 <= 65535LL) {
-#line 56 "examples/checksum/adler.hero"
-        t34 = (h_0opt_fba6871){.tag = INT64_C(0), .as.ok = (uint16_t)t33};
-#line 56 "examples/checksum/adler.hero"
-    } else {
-#line 56 "examples/checksum/adler.hero"
-        t34 = (h_0opt_fba6871){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 56 "examples/checksum/adler.hero"
-    }
-#line 56 "examples/checksum/adler.hero"
-    t56 = h9_own9;
-#line 56 "examples/checksum/adler.hero"
-    h9_own9 = t34;
-#line 56 "examples/checksum/adler.hero"
-    h_0opt_fba6871_release(&t56);
-#line 56 "examples/checksum/adler.hero"
-    t57 = h6_f1;
-#line 56 "examples/checksum/adler.hero"
-    h_0opt_fba6871_retain(&t34);
-#line 56 "examples/checksum/adler.hero"
-    h6_f1 = t34;
-#line 56 "examples/checksum/adler.hero"
-    h_0opt_fba6871_release(&t57);
-#line 56 "examples/checksum/adler.hero"
-    t35 = h6_f1;
-#line 56 "examples/checksum/adler.hero"
-    t36 = t35.tag;
-#line 56 "examples/checksum/adler.hero"
-    t37 = INT64_C(0);
-#line 56 "examples/checksum/adler.hero"
-    t38 = t36 == t37;
-#line 56 "examples/checksum/adler.hero"
-    if (t38) goto bb6; else goto bb7;
-#line 56 "examples/checksum/adler.hero"
-bb4:
-#line 52 "examples/checksum/adler.hero"
-    t20 = h5_f0;
-#line 52 "examples/checksum/adler.hero"
-    t21 = t20.as.ok;
-#line 52 "examples/checksum/adler.hero"
-    if (__builtin_add_overflow(t11, t21, &t22)) hero_panic_overflow();
-#line 52 "examples/checksum/adler.hero"
-    t23 = h_adler_BASE();
-#line 52 "examples/checksum/adler.hero"
-    if (t23 == 0) hero_panic("division by zero");
-#line 52 "examples/checksum/adler.hero"
-    if (t22 == INT64_MIN && t23 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 52 "examples/checksum/adler.hero"
-    t24 = t22 % t23;
-#line 52 "examples/checksum/adler.hero"
-    h1_s1 = t24;
-    t25 = h2_s2;
-#line 53 "examples/checksum/adler.hero"
-    t26 = h1_s1;
-#line 53 "examples/checksum/adler.hero"
-    if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow();
-#line 53 "examples/checksum/adler.hero"
-    t28 = h_adler_BASE();
-#line 53 "examples/checksum/adler.hero"
-    if (t28 == 0) hero_panic("division by zero");
-#line 53 "examples/checksum/adler.hero"
-    if (t27 == INT64_MIN && t28 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 53 "examples/checksum/adler.hero"
-    t29 = t27 % t28;
-#line 53 "examples/checksum/adler.hero"
-    h2_s2 = t29;
-    t30 = h3_i;
-#line 54 "examples/checksum/adler.hero"
-    t31 = INT64_C(1);
-#line 54 "examples/checksum/adler.hero"
-    if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow();
-#line 54 "examples/checksum/adler.hero"
-    h3_i = t32;
-#line 54 "examples/checksum/adler.hero"
-    goto bb1;
-#line 54 "examples/checksum/adler.hero"
-bb5:
-#line 52 "examples/checksum/adler.hero"
-    t18 = h5_f0;
-#line 52 "examples/checksum/adler.hero"
-    t19 = t18.as.err;
-#line 1062 "main.c"
+h_adler_Halves h_adler_halves(HeroStr h0_text) { int64_t h1_s1; int64_t h2_s2; int64_t h3_i; uint8_t h4_byte; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h8_own8 = {0}, t13, t14, t18, t20, t54, t55; HERO_NODEBUG h_0opt_fba6871 h6_f1 = {0}, h7_f2 = {0}, h9_own9 = {0}, h10_own10 = {0}, t34, t35, t39, t41, t44, t45, t49, t51, t56, t57, t58, t59; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t9, t11, t15, t16, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t36, t37, t43, t46, t47; HERO_NODEBUG HeroStr t5, t8; HERO_NODEBUG bool t7, t17, t38, t48; HERO_NODEBUG uint8_t t10, t12; HERO_NODEBUG HeroFailure t19, t40, t50; HERO_NODEBUG uint16_t t42, t52; HERO_NODEBUG h_adler_Halves t53; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); h1_s1 = t1;
+    t2 = INT64_C(0); h2_s2 = t2;
+    t3 = INT64_C(0); h3_i = t3; goto bb1; bb1:
+#line 50
+    t4 = h3_i; t5 = h0_text; t6 = hero_str_len(t5); t7 = t4 < t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = h0_text; t9 = h3_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); h4_byte = t10;
+    t11 = h1_s1; t12 = h4_byte; t13 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t12}; t54 = h8_own8; h8_own8 = t13; h_0opt_e201354_release(&t54); t55 = h5_f0; h_0opt_e201354_retain(&t13); h5_f0 = t13; h_0opt_e201354_release(&t55); t14 = h5_f0; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb4; else goto bb5; bb3:
+#line 56
+    t33 = h1_s1; if (t33 >= 0LL && t33 <= 65535LL) { t34 = (h_0opt_fba6871){.tag = INT64_C(0), .as.ok = (uint16_t)t33}; } else { t34 = (h_0opt_fba6871){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t56 = h9_own9; h9_own9 = t34; h_0opt_fba6871_release(&t56); t57 = h6_f1; h_0opt_fba6871_retain(&t34); h6_f1 = t34; h_0opt_fba6871_release(&t57); t35 = h6_f1; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb6; else goto bb7; bb4:
+#line 52
+    t20 = h5_f0; t21 = t20.as.ok; if (__builtin_add_overflow(t11, t21, &t22)) hero_panic_overflow(); t23 = h_adler_BASE(); if (t23 == 0) hero_panic("division by zero"); if (t22 == INT64_MIN && t23 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t24 = t22 % t23; h1_s1 = t24;
+    t25 = h2_s2; t26 = h1_s1; if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow(); t28 = h_adler_BASE(); if (t28 == 0) hero_panic("division by zero"); if (t27 == INT64_MIN && t28 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t29 = t27 % t28; h2_s2 = t29;
+    t30 = h3_i; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow(); h3_i = t32; goto bb1; bb5:
+#line 52
+    t18 = h5_f0; t19 = t18.as.err;
+#line 410 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
 #line 56 "examples/checksum/adler.hero"
-    t41 = h6_f1;
-#line 56 "examples/checksum/adler.hero"
-    t42 = t41.as.ok;
-#line 56 "examples/checksum/adler.hero"
-    t43 = h2_s2;
-#line 56 "examples/checksum/adler.hero"
-    if (t43 >= 0LL && t43 <= 65535LL) {
-#line 56 "examples/checksum/adler.hero"
-        t44 = (h_0opt_fba6871){.tag = INT64_C(0), .as.ok = (uint16_t)t43};
-#line 56 "examples/checksum/adler.hero"
-    } else {
-#line 56 "examples/checksum/adler.hero"
-        t44 = (h_0opt_fba6871){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 56 "examples/checksum/adler.hero"
-    }
-#line 56 "examples/checksum/adler.hero"
-    t58 = h10_own10;
-#line 56 "examples/checksum/adler.hero"
-    h10_own10 = t44;
-#line 56 "examples/checksum/adler.hero"
-    h_0opt_fba6871_release(&t58);
-#line 56 "examples/checksum/adler.hero"
-    t59 = h7_f2;
-#line 56 "examples/checksum/adler.hero"
-    h_0opt_fba6871_retain(&t44);
-#line 56 "examples/checksum/adler.hero"
-    h7_f2 = t44;
-#line 56 "examples/checksum/adler.hero"
-    h_0opt_fba6871_release(&t59);
-#line 56 "examples/checksum/adler.hero"
-    t45 = h7_f2;
-#line 56 "examples/checksum/adler.hero"
-    t46 = t45.tag;
-#line 56 "examples/checksum/adler.hero"
-    t47 = INT64_C(0);
-#line 56 "examples/checksum/adler.hero"
-    t48 = t46 == t47;
-#line 56 "examples/checksum/adler.hero"
-    if (t48) goto bb8; else goto bb9;
-#line 56 "examples/checksum/adler.hero"
-bb7:
-#line 56 "examples/checksum/adler.hero"
-    t39 = h6_f1;
-#line 56 "examples/checksum/adler.hero"
-    t40 = t39.as.err;
-#line 1112 "main.c"
+    t41 = h6_f1; t42 = t41.as.ok; t43 = h2_s2; if (t43 >= 0LL && t43 <= 65535LL) { t44 = (h_0opt_fba6871){.tag = INT64_C(0), .as.ok = (uint16_t)t43}; } else { t44 = (h_0opt_fba6871){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t58 = h10_own10; h10_own10 = t44; h_0opt_fba6871_release(&t58); t59 = h7_f2; h_0opt_fba6871_retain(&t44); h7_f2 = t44; h_0opt_fba6871_release(&t59); t45 = h7_f2; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb8; else goto bb9; bb7: t39 = h6_f1; t40 = t39.as.err;
+#line 416 "main.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb8:
 #line 56 "examples/checksum/adler.hero"
-    t51 = h7_f2;
-#line 56 "examples/checksum/adler.hero"
-    t52 = t51.as.ok;
-#line 56 "examples/checksum/adler.hero"
-    t53 = (h_adler_Halves){.f_s1 = t42, .f_s2 = t52};
-#line 1122 "main.c"
+    t51 = h7_f2; t52 = t51.as.ok; t53 = (h_adler_Halves){.f_s1 = t42, .f_s2 = t52};
+#line 422 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     h_0opt_fba6871_release(hero_slot_escape(&h6_f1));
     h_0opt_fba6871_release(hero_slot_escape(&h7_f2));
@@ -1128,155 +428,29 @@ bb8:
     return t53;
 bb9:
 #line 56 "examples/checksum/adler.hero"
-    t49 = h7_f2;
-#line 56 "examples/checksum/adler.hero"
-    t50 = t49.as.err;
-#line 1135 "main.c"
+    t49 = h7_f2; t50 = t49.as.err;
+#line 433 "main.c"
     hero_panic_must(t50);
     hero_unreachable();
 }
 
 #line 59 "examples/checksum/adler.hero"
-uint32_t h_adler_adler32(HeroStr h0_text) {
-#line 59 "examples/checksum/adler.hero"
-    h_adler_Halves h1_two; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_f1 = {0}, h5_own5 = {0}, h6_own6 = {0}, t4, t5, t9, t11, t16, t17, t21, t23, t35, t36, t37, t38; HERO_NODEBUG h_0opt_fbaec77 h4_f2 = {0}, h7_own7 = {0}, t26, t27, t31, t33, t39, t40; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_adler_Halves t2; HERO_NODEBUG uint16_t t3, t15; HERO_NODEBUG int64_t t6, t7, t12, t13, t14, t18, t19, t24, t25, t28, t29; HERO_NODEBUG bool t8, t20, t30; HERO_NODEBUG HeroFailure t10, t22, t32; HERO_NODEBUG uint32_t t34; HERO_ENTRY_STOP; goto bb0;
-#line 59 "examples/checksum/adler.hero"
-bb0:
-    t1 = h0_text;
-#line 60 "examples/checksum/adler.hero"
-    t2 = h_adler_halves(t1);
-#line 60 "examples/checksum/adler.hero"
-    h1_two = t2;
-    t3 = h1_two.f_s2;
-#line 61 "examples/checksum/adler.hero"
-    t4 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t3};
-#line 61 "examples/checksum/adler.hero"
-    t35 = h5_own5;
-#line 61 "examples/checksum/adler.hero"
-    h5_own5 = t4;
-#line 61 "examples/checksum/adler.hero"
-    h_0opt_e201354_release(&t35);
-#line 61 "examples/checksum/adler.hero"
-    t36 = h2_f0;
-#line 61 "examples/checksum/adler.hero"
-    h_0opt_e201354_retain(&t4);
-#line 61 "examples/checksum/adler.hero"
-    h2_f0 = t4;
-#line 61 "examples/checksum/adler.hero"
-    h_0opt_e201354_release(&t36);
-#line 61 "examples/checksum/adler.hero"
-    t5 = h2_f0;
-#line 61 "examples/checksum/adler.hero"
-    t6 = t5.tag;
-#line 61 "examples/checksum/adler.hero"
-    t7 = INT64_C(0);
-#line 61 "examples/checksum/adler.hero"
-    t8 = t6 == t7;
-#line 61 "examples/checksum/adler.hero"
-    if (t8) goto bb1; else goto bb2;
-#line 61 "examples/checksum/adler.hero"
-bb1:
-#line 61 "examples/checksum/adler.hero"
-    t11 = h2_f0;
-#line 61 "examples/checksum/adler.hero"
-    t12 = t11.as.ok;
-#line 61 "examples/checksum/adler.hero"
-    t13 = INT64_C(65536);
-#line 61 "examples/checksum/adler.hero"
-    if (__builtin_mul_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 61 "examples/checksum/adler.hero"
-    t15 = h1_two.f_s1;
-#line 61 "examples/checksum/adler.hero"
-    t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t15};
-#line 61 "examples/checksum/adler.hero"
-    t37 = h6_own6;
-#line 61 "examples/checksum/adler.hero"
-    h6_own6 = t16;
-#line 61 "examples/checksum/adler.hero"
-    h_0opt_e201354_release(&t37);
-#line 61 "examples/checksum/adler.hero"
-    t38 = h3_f1;
-#line 61 "examples/checksum/adler.hero"
-    h_0opt_e201354_retain(&t16);
-#line 61 "examples/checksum/adler.hero"
-    h3_f1 = t16;
-#line 61 "examples/checksum/adler.hero"
-    h_0opt_e201354_release(&t38);
-#line 61 "examples/checksum/adler.hero"
-    t17 = h3_f1;
-#line 61 "examples/checksum/adler.hero"
-    t18 = t17.tag;
-#line 61 "examples/checksum/adler.hero"
-    t19 = INT64_C(0);
-#line 61 "examples/checksum/adler.hero"
-    t20 = t18 == t19;
-#line 61 "examples/checksum/adler.hero"
-    if (t20) goto bb3; else goto bb4;
-#line 61 "examples/checksum/adler.hero"
-bb2:
-#line 61 "examples/checksum/adler.hero"
-    t9 = h2_f0;
-#line 61 "examples/checksum/adler.hero"
-    t10 = t9.as.err;
-#line 1222 "main.c"
+uint32_t h_adler_adler32(HeroStr h0_text) { h_adler_Halves h1_two; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_f1 = {0}, h5_own5 = {0}, h6_own6 = {0}, t4, t5, t9, t11, t16, t17, t21, t23, t35, t36, t37, t38; HERO_NODEBUG h_0opt_fbaec77 h4_f2 = {0}, h7_own7 = {0}, t26, t27, t31, t33, t39, t40; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_adler_Halves t2; HERO_NODEBUG uint16_t t3, t15; HERO_NODEBUG int64_t t6, t7, t12, t13, t14, t18, t19, t24, t25, t28, t29; HERO_NODEBUG bool t8, t20, t30; HERO_NODEBUG HeroFailure t10, t22, t32; HERO_NODEBUG uint32_t t34; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = h_adler_halves(t1); h1_two = t2;
+    t3 = h1_two.f_s2; t4 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t3}; t35 = h5_own5; h5_own5 = t4; h_0opt_e201354_release(&t35); t36 = h2_f0; h_0opt_e201354_retain(&t4); h2_f0 = t4; h_0opt_e201354_release(&t36); t5 = h2_f0; t6 = t5.tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; t13 = INT64_C(65536); if (__builtin_mul_overflow(t12, t13, &t14)) hero_panic_overflow(); t15 = h1_two.f_s1; t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t15}; t37 = h6_own6; h6_own6 = t16; h_0opt_e201354_release(&t37); t38 = h3_f1; h_0opt_e201354_retain(&t16); h3_f1 = t16; h_0opt_e201354_release(&t38); t17 = h3_f1; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb3; else goto bb4; bb2: t9 = h2_f0; t10 = t9.as.err;
+#line 442 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb3:
 #line 61 "examples/checksum/adler.hero"
-    t23 = h3_f1;
-#line 61 "examples/checksum/adler.hero"
-    t24 = t23.as.ok;
-#line 61 "examples/checksum/adler.hero"
-    if (__builtin_add_overflow(t14, t24, &t25)) hero_panic_overflow();
-#line 61 "examples/checksum/adler.hero"
-    if (t25 >= 0LL && t25 <= 4294967295LL) {
-#line 61 "examples/checksum/adler.hero"
-        t26 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t25};
-#line 61 "examples/checksum/adler.hero"
-    } else {
-#line 61 "examples/checksum/adler.hero"
-        t26 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 61 "examples/checksum/adler.hero"
-    }
-#line 61 "examples/checksum/adler.hero"
-    t39 = h7_own7;
-#line 61 "examples/checksum/adler.hero"
-    h7_own7 = t26;
-#line 61 "examples/checksum/adler.hero"
-    h_0opt_fbaec77_release(&t39);
-#line 61 "examples/checksum/adler.hero"
-    t40 = h4_f2;
-#line 61 "examples/checksum/adler.hero"
-    h_0opt_fbaec77_retain(&t26);
-#line 61 "examples/checksum/adler.hero"
-    h4_f2 = t26;
-#line 61 "examples/checksum/adler.hero"
-    h_0opt_fbaec77_release(&t40);
-#line 61 "examples/checksum/adler.hero"
-    t27 = h4_f2;
-#line 61 "examples/checksum/adler.hero"
-    t28 = t27.tag;
-#line 61 "examples/checksum/adler.hero"
-    t29 = INT64_C(0);
-#line 61 "examples/checksum/adler.hero"
-    t30 = t28 == t29;
-#line 61 "examples/checksum/adler.hero"
-    if (t30) goto bb5; else goto bb6;
-#line 61 "examples/checksum/adler.hero"
-bb4:
-#line 61 "examples/checksum/adler.hero"
-    t21 = h3_f1;
-#line 61 "examples/checksum/adler.hero"
-    t22 = t21.as.err;
-#line 1272 "main.c"
+    t23 = h3_f1; t24 = t23.as.ok; if (__builtin_add_overflow(t14, t24, &t25)) hero_panic_overflow(); if (t25 >= 0LL && t25 <= 4294967295LL) { t26 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t25}; } else { t26 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t39 = h7_own7; h7_own7 = t26; h_0opt_fbaec77_release(&t39); t40 = h4_f2; h_0opt_fbaec77_retain(&t26); h4_f2 = t26; h_0opt_fbaec77_release(&t40); t27 = h4_f2; t28 = t27.tag; t29 = INT64_C(0); t30 = t28 == t29; if (t30) goto bb5; else goto bb6; bb4: t21 = h3_f1; t22 = t21.as.err;
+#line 448 "main.c"
     hero_panic_must(t22);
     hero_unreachable();
 bb5:
 #line 61 "examples/checksum/adler.hero"
-    t33 = h4_f2;
-#line 61 "examples/checksum/adler.hero"
-    t34 = t33.as.ok;
-#line 1280 "main.c"
+    t33 = h4_f2; t34 = t33.as.ok;
+#line 454 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_f1));
     h_0opt_fbaec77_release(hero_slot_escape(&h4_f2));
@@ -1286,238 +460,84 @@ bb5:
     return t34;
 bb6:
 #line 61 "examples/checksum/adler.hero"
-    t31 = h4_f2;
-#line 61 "examples/checksum/adler.hero"
-    t32 = t31.as.err;
-#line 1293 "main.c"
+    t31 = h4_f2; t32 = t31.as.err;
+#line 465 "main.c"
     hero_panic_must(t32);
     hero_unreachable();
 }
 
 #line 65 "examples/checksum/adler.hero"
-bool h_adler_is_prime(int64_t h0_n) {
-#line 65 "examples/checksum/adler.hero"
-    int64_t h1_d; HERO_NODEBUG bool h2_ret0, t3, t4, t10, t15, t16, t20, t21; HERO_NODEBUG int64_t t1, t2, t5, t6, t7, t8, t9, t11, t12, t13, t14, t17, t18, t19; HERO_ENTRY_STOP; goto bb0;
-#line 65 "examples/checksum/adler.hero"
-bb0:
-    t1 = h0_n;
-#line 66 "examples/checksum/adler.hero"
-    t2 = INT64_C(2);
-#line 66 "examples/checksum/adler.hero"
-    t3 = t1 < t2;
-#line 66 "examples/checksum/adler.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 66 "examples/checksum/adler.hero"
-bb1:
-#line 68 "examples/checksum/adler.hero"
-    t5 = INT64_C(2);
-#line 68 "examples/checksum/adler.hero"
-    h1_d = t5;
-#line 68 "examples/checksum/adler.hero"
-    goto bb4;
-#line 68 "examples/checksum/adler.hero"
-bb2:
-#line 67 "examples/checksum/adler.hero"
-    t4 = false;
-#line 67 "examples/checksum/adler.hero"
-    h2_ret0 = t4;
-#line 67 "examples/checksum/adler.hero"
-    goto bb10;
-#line 67 "examples/checksum/adler.hero"
-bb3:
-#line 67 "examples/checksum/adler.hero"
-    goto bb1;
-#line 67 "examples/checksum/adler.hero"
-bb4:
-#line 70 "examples/checksum/adler.hero"
-    t6 = h1_d;
-#line 70 "examples/checksum/adler.hero"
-    t7 = h1_d;
-#line 70 "examples/checksum/adler.hero"
-    if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow();
-#line 70 "examples/checksum/adler.hero"
-    t9 = h0_n;
-#line 70 "examples/checksum/adler.hero"
-    t10 = t8 <= t9;
-#line 70 "examples/checksum/adler.hero"
-    if (t10) goto bb5; else goto bb6;
-#line 70 "examples/checksum/adler.hero"
-bb5:
-    t11 = h0_n;
-#line 71 "examples/checksum/adler.hero"
-    t12 = h1_d;
-#line 71 "examples/checksum/adler.hero"
-    if (t12 == 0) hero_panic("division by zero");
-#line 71 "examples/checksum/adler.hero"
-    if (t11 == INT64_MIN && t12 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 71 "examples/checksum/adler.hero"
-    t13 = t11 % t12;
-#line 71 "examples/checksum/adler.hero"
-    t14 = INT64_C(0);
-#line 71 "examples/checksum/adler.hero"
-    t15 = t13 == t14;
-#line 71 "examples/checksum/adler.hero"
-    if (t15) goto bb8; else goto bb9;
-#line 71 "examples/checksum/adler.hero"
-bb6:
-#line 75 "examples/checksum/adler.hero"
-    t20 = true;
-#line 75 "examples/checksum/adler.hero"
-    h2_ret0 = t20;
-#line 75 "examples/checksum/adler.hero"
-    goto bb10;
-#line 75 "examples/checksum/adler.hero"
-bb7:
-#line 73 "examples/checksum/adler.hero"
-    t17 = h1_d;
-#line 73 "examples/checksum/adler.hero"
-    t18 = INT64_C(1);
-#line 73 "examples/checksum/adler.hero"
-    if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 73 "examples/checksum/adler.hero"
-    h1_d = t19;
-#line 73 "examples/checksum/adler.hero"
-    goto bb4;
-#line 73 "examples/checksum/adler.hero"
-bb8:
-#line 72 "examples/checksum/adler.hero"
-    t16 = false;
-#line 72 "examples/checksum/adler.hero"
-    h2_ret0 = t16;
-#line 72 "examples/checksum/adler.hero"
-    goto bb10;
-#line 72 "examples/checksum/adler.hero"
-bb9:
-#line 72 "examples/checksum/adler.hero"
-    goto bb7;
-#line 72 "examples/checksum/adler.hero"
-bb10:
-#line 1396 "main.c"
+bool h_adler_is_prime(int64_t h0_n) { int64_t h1_d; HERO_NODEBUG bool h2_ret0, t3, t4, t10, t15, t16, t20, t21; HERO_NODEBUG int64_t t1, t2, t5, t6, t7, t8, t9, t11, t12, t13, t14, t17, t18, t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(2); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 68
+    t5 = INT64_C(2); h1_d = t5; goto bb4; bb2:
+#line 67
+    t4 = false; h2_ret0 = t4; goto bb10; bb3: goto bb1; bb4:
+#line 70
+    t6 = h1_d; t7 = h1_d; if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow(); t9 = h0_n; t10 = t8 <= t9; if (t10) goto bb5; else goto bb6; bb5:
+    t11 = h0_n; t12 = h1_d; if (t12 == 0) hero_panic("division by zero"); if (t11 == INT64_MIN && t12 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t13 = t11 % t12; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb8; else goto bb9; bb6:
+#line 75
+    t20 = true; h2_ret0 = t20; goto bb10; bb7:
+#line 73
+    t17 = h1_d; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow(); h1_d = t19; goto bb4; bb8:
+#line 72
+    t16 = false; h2_ret0 = t16; goto bb10; bb9: goto bb7; bb10:
+#line 486 "main.c"
     t21 = h2_ret0;
     return t21;
 }
 
 #line 38 "examples/checksum/base64.hero"
-HeroStr h_base64_ALPHABET(void) {
-#line 38 "examples/checksum/base64.hero"
-    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 38 "examples/checksum/base64.hero"
-bb0:
+HeroStr h_base64_ALPHABET(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_45fa86fe);
-#line 1408 "main.c"
+#line 494 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 41 "examples/checksum/base64.hero"
-HeroStr h_base64_PAD(void) {
-#line 41 "examples/checksum/base64.hero"
-    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 41 "examples/checksum/base64.hero"
-bb0:
+HeroStr h_base64_PAD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_3d);
-#line 1420 "main.c"
+#line 502 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 44 "examples/checksum/base64.hero"
-HeroStr h_base64_ERR_LENGTH(void) {
-#line 44 "examples/checksum/base64.hero"
-    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 44 "examples/checksum/base64.hero"
-bb0:
+HeroStr h_base64_ERR_LENGTH(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_220131e1);
-#line 1432 "main.c"
+#line 510 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 47 "examples/checksum/base64.hero"
-HeroStr h_base64_ERR_CHARACTER(void) {
-#line 47 "examples/checksum/base64.hero"
-    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 47 "examples/checksum/base64.hero"
-bb0:
+HeroStr h_base64_ERR_CHARACTER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_552a00f0);
-#line 1444 "main.c"
+#line 518 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 50 "examples/checksum/base64.hero"
-HeroStr h_base64_ERR_PADDING(void) {
-#line 50 "examples/checksum/base64.hero"
-    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 50 "examples/checksum/base64.hero"
-bb0:
+HeroStr h_base64_ERR_PADDING(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_1b630675);
-#line 1456 "main.c"
+#line 526 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 56 "examples/checksum/base64.hero"
-HeroArrayHeader * h_base64_bytes_of(HeroStr h0_text) {
-#line 56 "examples/checksum/base64.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t15, *t16, *t17; HERO_NODEBUG int64_t t2, t3, t5, t9, t12, t13, t14; HERO_NODEBUG HeroStr t4, t8; HERO_NODEBUG bool t6; HERO_NODEBUG uint8_t t10; HERO_ENTRY_STOP; goto bb0;
-#line 56 "examples/checksum/base64.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_u8, 1);
-#line 57 "examples/checksum/base64.hero"
-    t16 = h3_own3;
-#line 57 "examples/checksum/base64.hero"
-    h3_own3 = t1;
-#line 57 "examples/checksum/base64.hero"
-    hero_array_decref(t16);
-#line 57 "examples/checksum/base64.hero"
-    t17 = h1_out;
-#line 57 "examples/checksum/base64.hero"
-    hero_array_incref(t1);
-#line 57 "examples/checksum/base64.hero"
-    h1_out = t1;
-#line 57 "examples/checksum/base64.hero"
-    hero_array_decref(t17);
-    t2 = INT64_C(0);
-#line 58 "examples/checksum/base64.hero"
-    h2_i = t2;
-#line 58 "examples/checksum/base64.hero"
-    goto bb1;
-#line 58 "examples/checksum/base64.hero"
-bb1:
-#line 60 "examples/checksum/base64.hero"
-    t3 = h2_i;
-#line 60 "examples/checksum/base64.hero"
-    t4 = h0_text;
-#line 60 "examples/checksum/base64.hero"
-    t5 = hero_str_len(t4);
-#line 60 "examples/checksum/base64.hero"
-    t6 = t3 < t5;
-#line 60 "examples/checksum/base64.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 60 "examples/checksum/base64.hero"
-bb2:
-    t8 = h0_text;
-#line 61 "examples/checksum/base64.hero"
-    t9 = h2_i;
-#line 61 "examples/checksum/base64.hero"
-    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
-#line 61 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t10);
-    t12 = h2_i;
-#line 62 "examples/checksum/base64.hero"
-    t13 = INT64_C(1);
-#line 62 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 62 "examples/checksum/base64.hero"
-    h2_i = t14;
-#line 62 "examples/checksum/base64.hero"
-    goto bb1;
-#line 62 "examples/checksum/base64.hero"
-bb3:
-#line 64 "examples/checksum/base64.hero"
+HeroArrayHeader * h_base64_bytes_of(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t15, *t16, *t17; HERO_NODEBUG int64_t t2, t3, t5, t9, t12, t13, t14; HERO_NODEBUG HeroStr t4, t8; HERO_NODEBUG bool t6; HERO_NODEBUG uint8_t t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_u8, 1); t16 = h3_own3; h3_own3 = t1; hero_array_decref(t16); t17 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t17);
+    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+#line 60
+    t3 = h2_i; t4 = h0_text; t5 = hero_str_len(t4); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb2:
+    t8 = h0_text; t9 = h2_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); hero_array_push_owned(&h1_out, &t10);
+    t12 = h2_i; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow(); h2_i = t14; goto bb1; bb3:
+#line 64
     t15 = h1_out;
-#line 1521 "main.c"
+#line 541 "main.c"
     hero_array_incref(t15);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_own3);
@@ -1525,35 +545,9 @@ bb3:
 }
 
 #line 67 "examples/checksum/base64.hero"
-HeroStr h_base64_letter(int64_t h0_value) {
-#line 67 "examples/checksum/base64.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t6, t7, t8; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 67 "examples/checksum/base64.hero"
-bb0:
-    t1 = h_base64_ALPHABET();
-#line 68 "examples/checksum/base64.hero"
-    t7 = h1_own1;
-#line 68 "examples/checksum/base64.hero"
-    h1_own1 = t1;
-#line 68 "examples/checksum/base64.hero"
-    hero_str_decref(t7);
-#line 68 "examples/checksum/base64.hero"
-    t2 = h0_value;
-#line 68 "examples/checksum/base64.hero"
-    t3 = h0_value;
-#line 68 "examples/checksum/base64.hero"
-    t4 = INT64_C(1);
-#line 68 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
-#line 68 "examples/checksum/base64.hero"
-    t6 = hero_str_slice(t1, t2, t5);
-#line 68 "examples/checksum/base64.hero"
-    t8 = h2_own2;
-#line 68 "examples/checksum/base64.hero"
-    h2_own2 = t6;
-#line 68 "examples/checksum/base64.hero"
-    hero_str_decref(t8);
-#line 1557 "main.c"
+HeroStr h_base64_letter(int64_t h0_value) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t6, t7, t8; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_base64_ALPHABET(); t7 = h1_own1; h1_own1 = t1; hero_str_decref(t7); t2 = h0_value; t3 = h0_value; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow(); t6 = hero_str_slice(t1, t2, t5); t8 = h2_own2; h2_own2 = t6; hero_str_decref(t8);
+#line 551 "main.c"
     hero_str_incref(t6);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -1561,140 +555,18 @@ bb0:
 }
 
 #line 71 "examples/checksum/base64.hero"
-h_0opt_e201354 h_base64_value_of(HeroStr h0_written) {
-#line 71 "examples/checksum/base64.hero"
-    int64_t h1_i; HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, t14, t24, t25, t31, t32; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t5, t10, t11, t18, t19, t20, t21, t22, t23, t26, t27, t28, t29, t30; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t8, t9, t13, t15, t16, t17; HERO_NODEBUG bool t4, t12; HERO_ENTRY_STOP; goto bb0;
-#line 71 "examples/checksum/base64.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 72 "examples/checksum/base64.hero"
-    h1_i = t1;
-#line 72 "examples/checksum/base64.hero"
-    goto bb1;
-#line 72 "examples/checksum/base64.hero"
-bb1:
-#line 74 "examples/checksum/base64.hero"
-    t2 = h1_i;
-#line 74 "examples/checksum/base64.hero"
-    t3 = INT64_C(64);
-#line 74 "examples/checksum/base64.hero"
-    t4 = t2 < t3;
-#line 74 "examples/checksum/base64.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 74 "examples/checksum/base64.hero"
-bb2:
-    t5 = h_base64_ALPHABET();
-#line 75 "examples/checksum/base64.hero"
-    t26 = h3_own3;
-#line 75 "examples/checksum/base64.hero"
-    h3_own3 = t5;
-#line 75 "examples/checksum/base64.hero"
-    hero_str_decref(t26);
-#line 75 "examples/checksum/base64.hero"
-    t6 = h1_i;
-#line 75 "examples/checksum/base64.hero"
-    t7 = h1_i;
-#line 75 "examples/checksum/base64.hero"
-    t8 = INT64_C(1);
-#line 75 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 75 "examples/checksum/base64.hero"
-    t10 = hero_str_slice(t5, t6, t9);
-#line 75 "examples/checksum/base64.hero"
-    t27 = h4_own4;
-#line 75 "examples/checksum/base64.hero"
-    h4_own4 = t10;
-#line 75 "examples/checksum/base64.hero"
-    hero_str_decref(t27);
-#line 75 "examples/checksum/base64.hero"
-    t11 = h0_written;
-#line 75 "examples/checksum/base64.hero"
-    t12 = hero_str_eq(t10, t11);
-#line 75 "examples/checksum/base64.hero"
-    if (t12) goto bb5; else goto bb6;
-#line 75 "examples/checksum/base64.hero"
-bb3:
-#line 79 "examples/checksum/base64.hero"
-    t18 = h_base64_ERR_CHARACTER();
-#line 79 "examples/checksum/base64.hero"
-    t28 = h5_own5;
-#line 79 "examples/checksum/base64.hero"
-    h5_own5 = t18;
-#line 79 "examples/checksum/base64.hero"
-    hero_str_decref(t28);
-#line 79 "examples/checksum/base64.hero"
-    t19 = HERO_STR_LIT(hero_str_60);
-#line 79 "examples/checksum/base64.hero"
-    t20 = h0_written;
-#line 79 "examples/checksum/base64.hero"
-    t21 = hero_str_concat(t19, t20);
-#line 79 "examples/checksum/base64.hero"
-    t29 = h6_own6;
-#line 79 "examples/checksum/base64.hero"
-    h6_own6 = t21;
-#line 79 "examples/checksum/base64.hero"
-    hero_str_decref(t29);
-#line 79 "examples/checksum/base64.hero"
-    t22 = HERO_STR_LIT(hero_str_3b7a254e);
-#line 79 "examples/checksum/base64.hero"
-    t23 = hero_str_concat(t21, t22);
-#line 79 "examples/checksum/base64.hero"
-    t30 = h7_own7;
-#line 79 "examples/checksum/base64.hero"
-    h7_own7 = t23;
-#line 79 "examples/checksum/base64.hero"
-    hero_str_decref(t30);
-#line 79 "examples/checksum/base64.hero"
-    hero_str_incref(t18);
-#line 79 "examples/checksum/base64.hero"
-    hero_str_incref(t23);
-#line 79 "examples/checksum/base64.hero"
-    t24 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t23}};
-#line 79 "examples/checksum/base64.hero"
-    t31 = h8_own8;
-#line 79 "examples/checksum/base64.hero"
-    h8_own8 = t24;
-#line 79 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t31);
-#line 79 "examples/checksum/base64.hero"
-    h2_ret0 = t24;
-#line 79 "examples/checksum/base64.hero"
-    goto bb7;
-#line 79 "examples/checksum/base64.hero"
-bb4:
-#line 77 "examples/checksum/base64.hero"
-    t15 = h1_i;
-#line 77 "examples/checksum/base64.hero"
-    t16 = INT64_C(1);
-#line 77 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 77 "examples/checksum/base64.hero"
-    h1_i = t17;
-#line 77 "examples/checksum/base64.hero"
-    goto bb1;
-#line 77 "examples/checksum/base64.hero"
-bb5:
-#line 76 "examples/checksum/base64.hero"
-    t13 = h1_i;
-#line 76 "examples/checksum/base64.hero"
-    t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t13};
-#line 76 "examples/checksum/base64.hero"
-    t32 = h9_own9;
-#line 76 "examples/checksum/base64.hero"
-    h9_own9 = t14;
-#line 76 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t32);
-#line 76 "examples/checksum/base64.hero"
-    h2_ret0 = t14;
-#line 76 "examples/checksum/base64.hero"
-    goto bb7;
-#line 76 "examples/checksum/base64.hero"
-bb6:
-#line 76 "examples/checksum/base64.hero"
-    goto bb4;
-#line 76 "examples/checksum/base64.hero"
-bb7:
-#line 1698 "main.c"
+h_0opt_e201354 h_base64_value_of(HeroStr h0_written) { int64_t h1_i; HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, t14, t24, t25, t31, t32; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t5, t10, t11, t18, t19, t20, t21, t22, t23, t26, t27, t28, t29, t30; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t8, t9, t13, t15, t16, t17; HERO_NODEBUG bool t4, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_i = t1; goto bb1; bb1:
+#line 74
+    t2 = h1_i; t3 = INT64_C(64); t4 = t2 < t3; if (t4) goto bb2; else goto bb3; bb2:
+    t5 = h_base64_ALPHABET(); t26 = h3_own3; h3_own3 = t5; hero_str_decref(t26); t6 = h1_i; t7 = h1_i; t8 = INT64_C(1); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = hero_str_slice(t5, t6, t9); t27 = h4_own4; h4_own4 = t10; hero_str_decref(t27); t11 = h0_written; t12 = hero_str_eq(t10, t11); if (t12) goto bb5; else goto bb6; bb3:
+#line 79
+    t18 = h_base64_ERR_CHARACTER(); t28 = h5_own5; h5_own5 = t18; hero_str_decref(t28); t19 = HERO_STR_LIT(hero_str_60); t20 = h0_written; t21 = hero_str_concat(t19, t20); t29 = h6_own6; h6_own6 = t21; hero_str_decref(t29); t22 = HERO_STR_LIT(hero_str_3b7a254e); t23 = hero_str_concat(t21, t22); t30 = h7_own7; h7_own7 = t23; hero_str_decref(t30); hero_str_incref(t18); hero_str_incref(t23); t24 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t23}}; t31 = h8_own8; h8_own8 = t24; h_0opt_e201354_release(&t31); h2_ret0 = t24; goto bb7; bb4:
+#line 77
+    t15 = h1_i; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h1_i = t17; goto bb1; bb5:
+#line 76
+    t13 = h1_i; t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t13}; t32 = h9_own9; h9_own9 = t14; h_0opt_e201354_release(&t32); h2_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
+#line 570 "main.c"
     t25 = h2_ret0;
     h_0opt_e201354_retain(&t25);
     hero_str_release_at(&h3_own3);
@@ -1708,29 +580,9 @@ bb7:
 }
 
 #line 83 "examples/checksum/base64.hero"
-HeroStr h_base64_encoded(HeroStr h0_text) {
-#line 83 "examples/checksum/base64.hero"
-    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t5; HERO_ENTRY_STOP; goto bb0;
-#line 83 "examples/checksum/base64.hero"
-bb0:
-    t1 = h0_text;
-#line 84 "examples/checksum/base64.hero"
-    t2 = h_base64_bytes_of(t1);
-#line 84 "examples/checksum/base64.hero"
-    t4 = h1_own1;
-#line 84 "examples/checksum/base64.hero"
-    h1_own1 = t2;
-#line 84 "examples/checksum/base64.hero"
-    hero_array_decref(t4);
-#line 84 "examples/checksum/base64.hero"
-    t3 = h_base64_encoded_bytes(t2);
-#line 84 "examples/checksum/base64.hero"
-    t5 = h2_own2;
-#line 84 "examples/checksum/base64.hero"
-    h2_own2 = t3;
-#line 84 "examples/checksum/base64.hero"
-    hero_str_decref(t5);
-#line 1734 "main.c"
+HeroStr h_base64_encoded(HeroStr h0_text) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = h_base64_bytes_of(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = h_base64_encoded_bytes(t2); t5 = h2_own2; h2_own2 = t3; hero_str_decref(t5);
+#line 586 "main.c"
     hero_str_incref(t3);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -1738,94 +590,16 @@ bb0:
 }
 
 #line 89 "examples/checksum/base64.hero"
-HeroStr h_base64_encoded_bytes(HeroArrayHeader * h0_data) {
-#line 89 "examples/checksum/base64.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; int64_t h3_n; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h9_f1 = {0}, h10_f2 = {0}, h13_own13 = {0}, h15_own15 = {0}, h18_own18 = {0}, t11, t12, t16, t18, t33, t34, t38, t40, t53, t54, t58, t60, t122, t123, t125, t126, t129, t130; int64_t h5_b0; int64_t h6_b1; int64_t h7_b2; int64_t h8_held; int64_t h11_block; HERO_NODEBUG HeroArrayHeader *h12_own12 = {0}, *t1, *t3, *t8, *t28, *t48, *t117, *t120, *t121; HERO_NODEBUG HeroStr h14_own14 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t78, t86, t97, t100, t109, t112, t118, t119, t124, t127, t128, t131, t132, t133, t134; HERO_NODEBUG int64_t t2, t4, t5, t6, t9, t13, t14, t19, t20, t21, t22, t23, t24, t25, t26, t29, t30, t31, t35, t36, t41, t42, t43, t44, t45, t46, t49, t50, t51, t55, t56, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t73, t74, t75, t76, t77, t81, t82, t83, t84, t85, t88, t89, t92, t93, t94, t95, t96, t102, t103, t106, t107, t108, t114, t115, t116; HERO_NODEBUG bool t7, t15, t27, t37, t47, t57, t90, t104; HERO_NODEBUG uint8_t t10, t32, t52; HERO_NODEBUG HeroFailure t17, t39, t59; HERO_ENTRY_STOP; goto bb0;
-#line 89 "examples/checksum/base64.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 90 "examples/checksum/base64.hero"
-    t120 = h12_own12;
-#line 90 "examples/checksum/base64.hero"
-    h12_own12 = t1;
-#line 90 "examples/checksum/base64.hero"
-    hero_array_decref(t120);
-#line 90 "examples/checksum/base64.hero"
-    t121 = h1_out;
-#line 90 "examples/checksum/base64.hero"
-    hero_array_incref(t1);
-#line 90 "examples/checksum/base64.hero"
-    h1_out = t1;
-#line 90 "examples/checksum/base64.hero"
-    hero_array_decref(t121);
-    t2 = INT64_C(0);
-#line 91 "examples/checksum/base64.hero"
-    h2_i = t2;
-    t3 = h0_data;
-#line 92 "examples/checksum/base64.hero"
-    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 92 "examples/checksum/base64.hero"
-    h3_n = t4;
-#line 92 "examples/checksum/base64.hero"
-    goto bb1;
-#line 92 "examples/checksum/base64.hero"
-bb1:
-#line 94 "examples/checksum/base64.hero"
-    t5 = h2_i;
-#line 94 "examples/checksum/base64.hero"
-    t6 = h3_n;
-#line 94 "examples/checksum/base64.hero"
-    t7 = t5 < t6;
-#line 94 "examples/checksum/base64.hero"
-    if (t7) goto bb2; else goto bb3;
-#line 94 "examples/checksum/base64.hero"
-bb2:
-    t8 = h0_data;
-#line 95 "examples/checksum/base64.hero"
-    t9 = h2_i;
-#line 95 "examples/checksum/base64.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]);
-#line 95 "examples/checksum/base64.hero"
-    t11 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t10};
-#line 95 "examples/checksum/base64.hero"
-    t122 = h13_own13;
-#line 95 "examples/checksum/base64.hero"
-    h13_own13 = t11;
-#line 95 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t122);
-#line 95 "examples/checksum/base64.hero"
-    t123 = h4_f0;
-#line 95 "examples/checksum/base64.hero"
-    h_0opt_e201354_retain(&t11);
-#line 95 "examples/checksum/base64.hero"
-    h4_f0 = t11;
-#line 95 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t123);
-#line 95 "examples/checksum/base64.hero"
-    t12 = h4_f0;
-#line 95 "examples/checksum/base64.hero"
-    t13 = t12.tag;
-#line 95 "examples/checksum/base64.hero"
-    t14 = INT64_C(0);
-#line 95 "examples/checksum/base64.hero"
-    t15 = t13 == t14;
-#line 95 "examples/checksum/base64.hero"
-    if (t15) goto bb4; else goto bb5;
-#line 95 "examples/checksum/base64.hero"
-bb3:
-#line 127 "examples/checksum/base64.hero"
-    t117 = h1_out;
-#line 127 "examples/checksum/base64.hero"
-    t118 = HERO_STR_LIT(hero_str_0);
-#line 127 "examples/checksum/base64.hero"
-    t119 = hero_str_join(t117, t118);
-#line 127 "examples/checksum/base64.hero"
-    t124 = h14_own14;
-#line 127 "examples/checksum/base64.hero"
-    h14_own14 = t119;
-#line 127 "examples/checksum/base64.hero"
-    hero_str_decref(t124);
-#line 1829 "main.c"
+HeroStr h_base64_encoded_bytes(HeroArrayHeader * h0_data) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; int64_t h3_n; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h9_f1 = {0}, h10_f2 = {0}, h13_own13 = {0}, h15_own15 = {0}, h18_own18 = {0}, t11, t12, t16, t18, t33, t34, t38, t40, t53, t54, t58, t60, t122, t123, t125, t126, t129, t130; int64_t h5_b0; int64_t h6_b1; int64_t h7_b2; int64_t h8_held; int64_t h11_block; HERO_NODEBUG HeroArrayHeader *h12_own12 = {0}, *t1, *t3, *t8, *t28, *t48, *t117, *t120, *t121; HERO_NODEBUG HeroStr h14_own14 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t78, t86, t97, t100, t109, t112, t118, t119, t124, t127, t128, t131, t132, t133, t134; HERO_NODEBUG int64_t t2, t4, t5, t6, t9, t13, t14, t19, t20, t21, t22, t23, t24, t25, t26, t29, t30, t31, t35, t36, t41, t42, t43, t44, t45, t46, t49, t50, t51, t55, t56, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t73, t74, t75, t76, t77, t81, t82, t83, t84, t85, t88, t89, t92, t93, t94, t95, t96, t102, t103, t106, t107, t108, t114, t115, t116; HERO_NODEBUG bool t7, t15, t27, t37, t47, t57, t90, t104; HERO_NODEBUG uint8_t t10, t32, t52; HERO_NODEBUG HeroFailure t17, t39, t59; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t120 = h12_own12; h12_own12 = t1; hero_array_decref(t120); t121 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t121);
+    t2 = INT64_C(0); h2_i = t2;
+    t3 = h0_data; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); h3_n = t4; goto bb1; bb1:
+#line 94
+    t5 = h2_i; t6 = h3_n; t7 = t5 < t6; if (t7) goto bb2; else goto bb3; bb2:
+    t8 = h0_data; t9 = h2_i; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t8 + 1))[t9]); t11 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t10}; t122 = h13_own13; h13_own13 = t11; h_0opt_e201354_release(&t122); t123 = h4_f0; h_0opt_e201354_retain(&t11); h4_f0 = t11; h_0opt_e201354_release(&t123); t12 = h4_f0; t13 = t12.tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb4; else goto bb5; bb3:
+#line 127
+    t117 = h1_out; t118 = HERO_STR_LIT(hero_str_0); t119 = hero_str_join(t117, t118); t124 = h14_own14; h14_own14 = t119; hero_str_decref(t124);
+#line 603 "main.c"
     hero_str_incref(t119);
     hero_array_release_at(&h1_out);
     h_0opt_e201354_release(hero_slot_escape(&h4_f0));
@@ -1845,702 +619,92 @@ bb3:
     return t119;
 bb4:
 #line 95 "examples/checksum/base64.hero"
-    t18 = h4_f0;
-#line 95 "examples/checksum/base64.hero"
-    t19 = t18.as.ok;
-#line 95 "examples/checksum/base64.hero"
-    h5_b0 = t19;
-    t20 = INT64_C(0);
-#line 96 "examples/checksum/base64.hero"
-    h6_b1 = t20;
-    t21 = INT64_C(0);
-#line 97 "examples/checksum/base64.hero"
-    h7_b2 = t21;
-    t22 = INT64_C(1);
-#line 98 "examples/checksum/base64.hero"
-    h8_held = t22;
-#line 100 "examples/checksum/base64.hero"
-    t23 = h2_i;
-#line 100 "examples/checksum/base64.hero"
-    t24 = INT64_C(1);
-#line 100 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow();
-#line 100 "examples/checksum/base64.hero"
-    t26 = h3_n;
-#line 100 "examples/checksum/base64.hero"
-    t27 = t25 < t26;
-#line 100 "examples/checksum/base64.hero"
-    if (t27) goto bb7; else goto bb8;
-#line 100 "examples/checksum/base64.hero"
-bb5:
-#line 95 "examples/checksum/base64.hero"
-    t16 = h4_f0;
-#line 95 "examples/checksum/base64.hero"
-    t17 = t16.as.err;
-#line 1881 "main.c"
+    t18 = h4_f0; t19 = t18.as.ok; h5_b0 = t19;
+    t20 = INT64_C(0); h6_b1 = t20;
+    t21 = INT64_C(0); h7_b2 = t21;
+    t22 = INT64_C(1); h8_held = t22;
+#line 100
+    t23 = h2_i; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow(); t26 = h3_n; t27 = t25 < t26; if (t27) goto bb7; else goto bb8; bb5:
+#line 95
+    t16 = h4_f0; t17 = t16.as.err;
+#line 631 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 bb6:
 #line 104 "examples/checksum/base64.hero"
-    t43 = h2_i;
-#line 104 "examples/checksum/base64.hero"
-    t44 = INT64_C(2);
-#line 104 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow();
-#line 104 "examples/checksum/base64.hero"
-    t46 = h3_n;
-#line 104 "examples/checksum/base64.hero"
-    t47 = t45 < t46;
-#line 104 "examples/checksum/base64.hero"
-    if (t47) goto bb12; else goto bb13;
-#line 104 "examples/checksum/base64.hero"
-bb7:
-#line 101 "examples/checksum/base64.hero"
-    t28 = h0_data;
-#line 101 "examples/checksum/base64.hero"
-    t29 = h2_i;
-#line 101 "examples/checksum/base64.hero"
-    t30 = INT64_C(1);
-#line 101 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow();
-#line 101 "examples/checksum/base64.hero"
-    t32 = ((void)((t28 == NULL || t31 < 0 || t31 >= t28->len) ? ((void)hero_array_at(t28, t31), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t28 + 1))[t31]);
-#line 101 "examples/checksum/base64.hero"
-    t33 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t32};
-#line 101 "examples/checksum/base64.hero"
-    t125 = h15_own15;
-#line 101 "examples/checksum/base64.hero"
-    h15_own15 = t33;
-#line 101 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t125);
-#line 101 "examples/checksum/base64.hero"
-    t126 = h9_f1;
-#line 101 "examples/checksum/base64.hero"
-    h_0opt_e201354_retain(&t33);
-#line 101 "examples/checksum/base64.hero"
-    h9_f1 = t33;
-#line 101 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t126);
-#line 101 "examples/checksum/base64.hero"
-    t34 = h9_f1;
-#line 101 "examples/checksum/base64.hero"
-    t35 = t34.tag;
-#line 101 "examples/checksum/base64.hero"
-    t36 = INT64_C(0);
-#line 101 "examples/checksum/base64.hero"
-    t37 = t35 == t36;
-#line 101 "examples/checksum/base64.hero"
-    if (t37) goto bb9; else goto bb10;
-#line 101 "examples/checksum/base64.hero"
-bb8:
-#line 101 "examples/checksum/base64.hero"
-    goto bb6;
-#line 101 "examples/checksum/base64.hero"
-bb9:
-#line 101 "examples/checksum/base64.hero"
-    t40 = h9_f1;
-#line 101 "examples/checksum/base64.hero"
-    t41 = t40.as.ok;
-#line 101 "examples/checksum/base64.hero"
-    h6_b1 = t41;
-    t42 = INT64_C(2);
-#line 102 "examples/checksum/base64.hero"
-    h8_held = t42;
-#line 102 "examples/checksum/base64.hero"
-    goto bb6;
-#line 102 "examples/checksum/base64.hero"
-bb10:
-#line 101 "examples/checksum/base64.hero"
-    t38 = h9_f1;
-#line 101 "examples/checksum/base64.hero"
-    t39 = t38.as.err;
-#line 1958 "main.c"
+    t43 = h2_i; t44 = INT64_C(2); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow(); t46 = h3_n; t47 = t45 < t46; if (t47) goto bb12; else goto bb13; bb7:
+#line 101
+    t28 = h0_data; t29 = h2_i; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow(); t32 = ((void)((t28 == NULL || t31 < 0 || t31 >= t28->len) ? ((void)hero_array_at(t28, t31), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t28 + 1))[t31]); t33 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t32}; t125 = h15_own15; h15_own15 = t33; h_0opt_e201354_release(&t125); t126 = h9_f1; h_0opt_e201354_retain(&t33); h9_f1 = t33; h_0opt_e201354_release(&t126); t34 = h9_f1; t35 = t34.tag; t36 = INT64_C(0); t37 = t35 == t36; if (t37) goto bb9; else goto bb10; bb8: goto bb6; bb9: t40 = h9_f1; t41 = t40.as.ok; h6_b1 = t41;
+    t42 = INT64_C(2); h8_held = t42; goto bb6; bb10:
+#line 101
+    t38 = h9_f1; t39 = t38.as.err;
+#line 642 "main.c"
     hero_panic_must(t39);
     hero_unreachable();
 bb11:
 #line 112 "examples/checksum/base64.hero"
-    t63 = h5_b0;
-#line 112 "examples/checksum/base64.hero"
-    t64 = INT64_C(16);
-#line 112 "examples/checksum/base64.hero"
-    if (t64 < 0 || t64 > 63) hero_panic("shift count outside 0..63");
-#line 112 "examples/checksum/base64.hero"
-    t65 = (int64_t)((uint64_t)t63 << (uint64_t)t64);
-#line 112 "examples/checksum/base64.hero"
-    t66 = h6_b1;
-#line 112 "examples/checksum/base64.hero"
-    t67 = INT64_C(8);
-#line 112 "examples/checksum/base64.hero"
-    if (t67 < 0 || t67 > 63) hero_panic("shift count outside 0..63");
-#line 112 "examples/checksum/base64.hero"
-    t68 = (int64_t)((uint64_t)t66 << (uint64_t)t67);
-#line 112 "examples/checksum/base64.hero"
-    t69 = t65 | t68;
-#line 112 "examples/checksum/base64.hero"
-    t70 = h7_b2;
-#line 112 "examples/checksum/base64.hero"
-    t71 = t69 | t70;
-#line 112 "examples/checksum/base64.hero"
-    h11_block = t71;
-    t73 = h11_block;
-#line 113 "examples/checksum/base64.hero"
-    t74 = INT64_C(18);
-#line 113 "examples/checksum/base64.hero"
-    if (t74 < 0 || t74 > 63) hero_panic("shift count outside 0..63");
-#line 113 "examples/checksum/base64.hero"
-    t75 = (t73 < 0) ? ~(int64_t)((~(uint64_t)t73) >> (uint64_t)t74) : (int64_t)((uint64_t)t73 >> (uint64_t)t74);
-#line 113 "examples/checksum/base64.hero"
-    t76 = INT64_C(63);
-#line 113 "examples/checksum/base64.hero"
-    t77 = t75 & t76;
-#line 113 "examples/checksum/base64.hero"
-    t78 = h_base64_letter(t77);
-#line 113 "examples/checksum/base64.hero"
-    t127 = h16_own16;
-#line 113 "examples/checksum/base64.hero"
-    h16_own16 = t78;
-#line 113 "examples/checksum/base64.hero"
-    hero_str_decref(t127);
-#line 113 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t78);
-    t81 = h11_block;
-#line 114 "examples/checksum/base64.hero"
-    t82 = INT64_C(12);
-#line 114 "examples/checksum/base64.hero"
-    if (t82 < 0 || t82 > 63) hero_panic("shift count outside 0..63");
-#line 114 "examples/checksum/base64.hero"
-    t83 = (t81 < 0) ? ~(int64_t)((~(uint64_t)t81) >> (uint64_t)t82) : (int64_t)((uint64_t)t81 >> (uint64_t)t82);
-#line 114 "examples/checksum/base64.hero"
-    t84 = INT64_C(63);
-#line 114 "examples/checksum/base64.hero"
-    t85 = t83 & t84;
-#line 114 "examples/checksum/base64.hero"
-    t86 = h_base64_letter(t85);
-#line 114 "examples/checksum/base64.hero"
-    t128 = h17_own17;
-#line 114 "examples/checksum/base64.hero"
-    h17_own17 = t86;
-#line 114 "examples/checksum/base64.hero"
-    hero_str_decref(t128);
-#line 114 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t86);
-#line 116 "examples/checksum/base64.hero"
-    t88 = h8_held;
-#line 116 "examples/checksum/base64.hero"
-    t89 = INT64_C(2);
-#line 116 "examples/checksum/base64.hero"
-    t90 = t88 >= t89;
-#line 116 "examples/checksum/base64.hero"
-    if (t90) goto bb17; else goto bb18;
-#line 116 "examples/checksum/base64.hero"
-bb12:
-#line 105 "examples/checksum/base64.hero"
-    t48 = h0_data;
-#line 105 "examples/checksum/base64.hero"
-    t49 = h2_i;
-#line 105 "examples/checksum/base64.hero"
-    t50 = INT64_C(2);
-#line 105 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow();
-#line 105 "examples/checksum/base64.hero"
-    t52 = ((void)((t48 == NULL || t51 < 0 || t51 >= t48->len) ? ((void)hero_array_at(t48, t51), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t48 + 1))[t51]);
-#line 105 "examples/checksum/base64.hero"
-    t53 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t52};
-#line 105 "examples/checksum/base64.hero"
-    t129 = h18_own18;
-#line 105 "examples/checksum/base64.hero"
-    h18_own18 = t53;
-#line 105 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t129);
-#line 105 "examples/checksum/base64.hero"
-    t130 = h10_f2;
-#line 105 "examples/checksum/base64.hero"
-    h_0opt_e201354_retain(&t53);
-#line 105 "examples/checksum/base64.hero"
-    h10_f2 = t53;
-#line 105 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t130);
-#line 105 "examples/checksum/base64.hero"
-    t54 = h10_f2;
-#line 105 "examples/checksum/base64.hero"
-    t55 = t54.tag;
-#line 105 "examples/checksum/base64.hero"
-    t56 = INT64_C(0);
-#line 105 "examples/checksum/base64.hero"
-    t57 = t55 == t56;
-#line 105 "examples/checksum/base64.hero"
-    if (t57) goto bb14; else goto bb15;
-#line 105 "examples/checksum/base64.hero"
-bb13:
-#line 105 "examples/checksum/base64.hero"
-    goto bb11;
-#line 105 "examples/checksum/base64.hero"
-bb14:
-#line 105 "examples/checksum/base64.hero"
-    t60 = h10_f2;
-#line 105 "examples/checksum/base64.hero"
-    t61 = t60.as.ok;
-#line 105 "examples/checksum/base64.hero"
-    h7_b2 = t61;
-    t62 = INT64_C(3);
-#line 106 "examples/checksum/base64.hero"
-    h8_held = t62;
-#line 106 "examples/checksum/base64.hero"
-    goto bb11;
-#line 106 "examples/checksum/base64.hero"
-bb15:
-#line 105 "examples/checksum/base64.hero"
-    t58 = h10_f2;
-#line 105 "examples/checksum/base64.hero"
-    t59 = t58.as.err;
-#line 2097 "main.c"
+    t63 = h5_b0; t64 = INT64_C(16); if (t64 < 0 || t64 > 63) hero_panic("shift count outside 0..63"); t65 = (int64_t)((uint64_t)t63 << (uint64_t)t64); t66 = h6_b1; t67 = INT64_C(8); if (t67 < 0 || t67 > 63) hero_panic("shift count outside 0..63"); t68 = (int64_t)((uint64_t)t66 << (uint64_t)t67); t69 = t65 | t68; t70 = h7_b2; t71 = t69 | t70; h11_block = t71;
+    t73 = h11_block; t74 = INT64_C(18); if (t74 < 0 || t74 > 63) hero_panic("shift count outside 0..63"); t75 = (t73 < 0) ? ~(int64_t)((~(uint64_t)t73) >> (uint64_t)t74) : (int64_t)((uint64_t)t73 >> (uint64_t)t74); t76 = INT64_C(63); t77 = t75 & t76; t78 = h_base64_letter(t77); t127 = h16_own16; h16_own16 = t78; hero_str_decref(t127); hero_array_push_owned(&h1_out, &t78);
+    t81 = h11_block; t82 = INT64_C(12); if (t82 < 0 || t82 > 63) hero_panic("shift count outside 0..63"); t83 = (t81 < 0) ? ~(int64_t)((~(uint64_t)t81) >> (uint64_t)t82) : (int64_t)((uint64_t)t81 >> (uint64_t)t82); t84 = INT64_C(63); t85 = t83 & t84; t86 = h_base64_letter(t85); t128 = h17_own17; h17_own17 = t86; hero_str_decref(t128); hero_array_push_owned(&h1_out, &t86);
+#line 116
+    t88 = h8_held; t89 = INT64_C(2); t90 = t88 >= t89; if (t90) goto bb17; else goto bb18; bb12:
+#line 105
+    t48 = h0_data; t49 = h2_i; t50 = INT64_C(2); if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow(); t52 = ((void)((t48 == NULL || t51 < 0 || t51 >= t48->len) ? ((void)hero_array_at(t48, t51), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t48 + 1))[t51]); t53 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t52}; t129 = h18_own18; h18_own18 = t53; h_0opt_e201354_release(&t129); t130 = h10_f2; h_0opt_e201354_retain(&t53); h10_f2 = t53; h_0opt_e201354_release(&t130); t54 = h10_f2; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb14; else goto bb15; bb13: goto bb11; bb14: t60 = h10_f2; t61 = t60.as.ok; h7_b2 = t61;
+    t62 = INT64_C(3); h8_held = t62; goto bb11; bb15:
+#line 105
+    t58 = h10_f2; t59 = t58.as.err;
+#line 657 "main.c"
     hero_panic_must(t59);
     hero_unreachable();
 bb16:
 #line 121 "examples/checksum/base64.hero"
-    t102 = h8_held;
-#line 121 "examples/checksum/base64.hero"
-    t103 = INT64_C(3);
-#line 121 "examples/checksum/base64.hero"
-    t104 = t102 == t103;
-#line 121 "examples/checksum/base64.hero"
-    if (t104) goto bb20; else goto bb21;
-#line 121 "examples/checksum/base64.hero"
-bb17:
-#line 117 "examples/checksum/base64.hero"
-    t92 = h11_block;
-#line 117 "examples/checksum/base64.hero"
-    t93 = INT64_C(6);
-#line 117 "examples/checksum/base64.hero"
-    if (t93 < 0 || t93 > 63) hero_panic("shift count outside 0..63");
-#line 117 "examples/checksum/base64.hero"
-    t94 = (t92 < 0) ? ~(int64_t)((~(uint64_t)t92) >> (uint64_t)t93) : (int64_t)((uint64_t)t92 >> (uint64_t)t93);
-#line 117 "examples/checksum/base64.hero"
-    t95 = INT64_C(63);
-#line 117 "examples/checksum/base64.hero"
-    t96 = t94 & t95;
-#line 117 "examples/checksum/base64.hero"
-    t97 = h_base64_letter(t96);
-#line 117 "examples/checksum/base64.hero"
-    t131 = h19_own19;
-#line 117 "examples/checksum/base64.hero"
-    h19_own19 = t97;
-#line 117 "examples/checksum/base64.hero"
-    hero_str_decref(t131);
-#line 117 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t97);
-#line 117 "examples/checksum/base64.hero"
-    goto bb16;
-#line 117 "examples/checksum/base64.hero"
-bb18:
-#line 119 "examples/checksum/base64.hero"
-    t100 = h_base64_PAD();
-#line 119 "examples/checksum/base64.hero"
-    t132 = h20_own20;
-#line 119 "examples/checksum/base64.hero"
-    h20_own20 = t100;
-#line 119 "examples/checksum/base64.hero"
-    hero_str_decref(t132);
-#line 119 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t100);
-#line 119 "examples/checksum/base64.hero"
-    goto bb16;
-#line 119 "examples/checksum/base64.hero"
-bb19:
-#line 125 "examples/checksum/base64.hero"
-    t114 = h2_i;
-#line 125 "examples/checksum/base64.hero"
-    t115 = INT64_C(3);
-#line 125 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t114, t115, &t116)) hero_panic_overflow();
-#line 125 "examples/checksum/base64.hero"
-    h2_i = t116;
-#line 125 "examples/checksum/base64.hero"
-    goto bb1;
-#line 125 "examples/checksum/base64.hero"
-bb20:
-#line 122 "examples/checksum/base64.hero"
-    t106 = h11_block;
-#line 122 "examples/checksum/base64.hero"
-    t107 = INT64_C(63);
-#line 122 "examples/checksum/base64.hero"
-    t108 = t106 & t107;
-#line 122 "examples/checksum/base64.hero"
-    t109 = h_base64_letter(t108);
-#line 122 "examples/checksum/base64.hero"
-    t133 = h21_own21;
-#line 122 "examples/checksum/base64.hero"
-    h21_own21 = t109;
-#line 122 "examples/checksum/base64.hero"
-    hero_str_decref(t133);
-#line 122 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t109);
-#line 122 "examples/checksum/base64.hero"
-    goto bb19;
-#line 122 "examples/checksum/base64.hero"
-bb21:
-#line 124 "examples/checksum/base64.hero"
-    t112 = h_base64_PAD();
-#line 124 "examples/checksum/base64.hero"
-    t134 = h22_own22;
-#line 124 "examples/checksum/base64.hero"
-    h22_own22 = t112;
-#line 124 "examples/checksum/base64.hero"
-    hero_str_decref(t134);
-#line 124 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t112);
-#line 124 "examples/checksum/base64.hero"
-    goto bb19;
-#line 2195 "main.c"
+    t102 = h8_held; t103 = INT64_C(3); t104 = t102 == t103; if (t104) goto bb20; else goto bb21; bb17:
+#line 117
+    t92 = h11_block; t93 = INT64_C(6); if (t93 < 0 || t93 > 63) hero_panic("shift count outside 0..63"); t94 = (t92 < 0) ? ~(int64_t)((~(uint64_t)t92) >> (uint64_t)t93) : (int64_t)((uint64_t)t92 >> (uint64_t)t93); t95 = INT64_C(63); t96 = t94 & t95; t97 = h_base64_letter(t96); t131 = h19_own19; h19_own19 = t97; hero_str_decref(t131); hero_array_push_owned(&h1_out, &t97); goto bb16; bb18:
+#line 119
+    t100 = h_base64_PAD(); t132 = h20_own20; h20_own20 = t100; hero_str_decref(t132); hero_array_push_owned(&h1_out, &t100); goto bb16; bb19:
+#line 125
+    t114 = h2_i; t115 = INT64_C(3); if (__builtin_add_overflow(t114, t115, &t116)) hero_panic_overflow(); h2_i = t116; goto bb1; bb20:
+#line 122
+    t106 = h11_block; t107 = INT64_C(63); t108 = t106 & t107; t109 = h_base64_letter(t108); t133 = h21_own21; h21_own21 = t109; hero_str_decref(t133); hero_array_push_owned(&h1_out, &t109); goto bb19; bb21:
+#line 124
+    t112 = h_base64_PAD(); t134 = h22_own22; h22_own22 = t112; hero_str_decref(t134); hero_array_push_owned(&h1_out, &t112); goto bb19;
+#line 673 "main.c"
 }
 
 #line 131 "examples/checksum/base64.hero"
-h_0opt_e201354 h_base64_padding_of(HeroStr h0_group) {
-#line 131 "examples/checksum/base64.hero"
-    HeroStr h1_third = {0}; HeroStr h2_fourth = {0}; HERO_NODEBUG bool h3_b0, h4_b1, t14, t20, t21, t31, t34, t35, t45, t50; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}, h16_own16 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, t28, t42, t47, t52, t54, t55, t68, t74, t76, t77, t78; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h23_own23 = {0}, t1, t4, t5, t8, t9, t12, t13, t15, t18, t19, t22, t23, t24, t25, t26, t27, t29, t30, t32, t33, t36, t37, t38, t39, t40, t41, t43, t44, t48, t49, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t69, t70, t71, t72, t73, t75; HERO_NODEBUG int64_t t2, t3, t6, t7, t10, t11, t16, t17, t46, t51, t53; HERO_ENTRY_STOP; goto bb0;
-#line 131 "examples/checksum/base64.hero"
-bb0:
-    t1 = h0_group;
-#line 132 "examples/checksum/base64.hero"
-    t2 = INT64_C(2);
-#line 132 "examples/checksum/base64.hero"
-    t3 = INT64_C(3);
-#line 132 "examples/checksum/base64.hero"
-    t4 = hero_str_slice(t1, t2, t3);
-#line 132 "examples/checksum/base64.hero"
-    t56 = h6_own6;
-#line 132 "examples/checksum/base64.hero"
-    h6_own6 = t4;
-#line 132 "examples/checksum/base64.hero"
-    hero_str_decref(t56);
-#line 132 "examples/checksum/base64.hero"
-    t57 = h1_third;
-#line 132 "examples/checksum/base64.hero"
-    hero_str_incref(t4);
-#line 132 "examples/checksum/base64.hero"
-    h1_third = t4;
-#line 132 "examples/checksum/base64.hero"
-    hero_str_decref(t57);
-    t5 = h0_group;
-#line 133 "examples/checksum/base64.hero"
-    t6 = INT64_C(3);
-#line 133 "examples/checksum/base64.hero"
-    t7 = INT64_C(4);
-#line 133 "examples/checksum/base64.hero"
-    t8 = hero_str_slice(t5, t6, t7);
-#line 133 "examples/checksum/base64.hero"
-    t58 = h7_own7;
-#line 133 "examples/checksum/base64.hero"
-    h7_own7 = t8;
-#line 133 "examples/checksum/base64.hero"
-    hero_str_decref(t58);
-#line 133 "examples/checksum/base64.hero"
-    t59 = h2_fourth;
-#line 133 "examples/checksum/base64.hero"
-    hero_str_incref(t8);
-#line 133 "examples/checksum/base64.hero"
-    h2_fourth = t8;
-#line 133 "examples/checksum/base64.hero"
-    hero_str_decref(t59);
-#line 135 "examples/checksum/base64.hero"
-    t9 = h0_group;
-#line 135 "examples/checksum/base64.hero"
-    t10 = INT64_C(0);
-#line 135 "examples/checksum/base64.hero"
-    t11 = INT64_C(1);
-#line 135 "examples/checksum/base64.hero"
-    t12 = hero_str_slice(t9, t10, t11);
-#line 135 "examples/checksum/base64.hero"
-    t60 = h8_own8;
-#line 135 "examples/checksum/base64.hero"
-    h8_own8 = t12;
-#line 135 "examples/checksum/base64.hero"
-    hero_str_decref(t60);
-#line 135 "examples/checksum/base64.hero"
-    t13 = h_base64_PAD();
-#line 135 "examples/checksum/base64.hero"
-    t61 = h9_own9;
-#line 135 "examples/checksum/base64.hero"
-    h9_own9 = t13;
-#line 135 "examples/checksum/base64.hero"
-    hero_str_decref(t61);
-#line 135 "examples/checksum/base64.hero"
-    t14 = hero_str_eq(t12, t13);
-#line 135 "examples/checksum/base64.hero"
-    h3_b0 = t14;
-#line 135 "examples/checksum/base64.hero"
-    if (t14) goto bb3; else goto bb2;
-#line 135 "examples/checksum/base64.hero"
-bb1:
-#line 141 "examples/checksum/base64.hero"
-    t29 = h1_third;
-#line 141 "examples/checksum/base64.hero"
-    t30 = h_base64_PAD();
-#line 141 "examples/checksum/base64.hero"
-    t62 = h10_own10;
-#line 141 "examples/checksum/base64.hero"
-    h10_own10 = t30;
-#line 141 "examples/checksum/base64.hero"
-    hero_str_decref(t62);
-#line 141 "examples/checksum/base64.hero"
-    t31 = hero_str_eq(t29, t30);
-#line 141 "examples/checksum/base64.hero"
-    h4_b1 = t31;
-#line 141 "examples/checksum/base64.hero"
-    if (t31) goto bb7; else goto bb8;
-#line 141 "examples/checksum/base64.hero"
-bb2:
-#line 135 "examples/checksum/base64.hero"
-    t15 = h0_group;
-#line 135 "examples/checksum/base64.hero"
-    t16 = INT64_C(1);
-#line 135 "examples/checksum/base64.hero"
-    t17 = INT64_C(2);
-#line 135 "examples/checksum/base64.hero"
-    t18 = hero_str_slice(t15, t16, t17);
-#line 135 "examples/checksum/base64.hero"
-    t63 = h11_own11;
-#line 135 "examples/checksum/base64.hero"
-    h11_own11 = t18;
-#line 135 "examples/checksum/base64.hero"
-    hero_str_decref(t63);
-#line 135 "examples/checksum/base64.hero"
-    t19 = h_base64_PAD();
-#line 135 "examples/checksum/base64.hero"
-    t64 = h12_own12;
-#line 135 "examples/checksum/base64.hero"
-    h12_own12 = t19;
-#line 135 "examples/checksum/base64.hero"
-    hero_str_decref(t64);
-#line 135 "examples/checksum/base64.hero"
-    t20 = hero_str_eq(t18, t19);
-#line 135 "examples/checksum/base64.hero"
-    h3_b0 = t20;
-#line 135 "examples/checksum/base64.hero"
-    goto bb3;
-#line 135 "examples/checksum/base64.hero"
-bb3:
-#line 135 "examples/checksum/base64.hero"
-    t21 = h3_b0;
-#line 135 "examples/checksum/base64.hero"
-    if (t21) goto bb4; else goto bb5;
-#line 135 "examples/checksum/base64.hero"
-bb4:
-#line 137 "examples/checksum/base64.hero"
-    t22 = h_base64_ERR_PADDING();
-#line 137 "examples/checksum/base64.hero"
-    t65 = h13_own13;
-#line 137 "examples/checksum/base64.hero"
-    h13_own13 = t22;
-#line 137 "examples/checksum/base64.hero"
-    hero_str_decref(t65);
-    t23 = HERO_STR_LIT(hero_str_4245b2d);
-#line 138 "examples/checksum/base64.hero"
-    t24 = h0_group;
-#line 138 "examples/checksum/base64.hero"
-    t25 = hero_str_concat(t23, t24);
-#line 138 "examples/checksum/base64.hero"
-    t66 = h14_own14;
-#line 138 "examples/checksum/base64.hero"
-    h14_own14 = t25;
-#line 138 "examples/checksum/base64.hero"
-    hero_str_decref(t66);
-#line 138 "examples/checksum/base64.hero"
-    t26 = HERO_STR_LIT(hero_str_19bc6a6d);
-#line 138 "examples/checksum/base64.hero"
-    t27 = hero_str_concat(t25, t26);
-#line 138 "examples/checksum/base64.hero"
-    t67 = h15_own15;
-#line 138 "examples/checksum/base64.hero"
-    h15_own15 = t27;
-#line 138 "examples/checksum/base64.hero"
-    hero_str_decref(t67);
-#line 136 "examples/checksum/base64.hero"
-    hero_str_incref(t22);
-#line 136 "examples/checksum/base64.hero"
-    hero_str_incref(t27);
-#line 136 "examples/checksum/base64.hero"
-    t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t22, .msg = t27}};
-#line 136 "examples/checksum/base64.hero"
-    t68 = h16_own16;
-#line 136 "examples/checksum/base64.hero"
-    h16_own16 = t28;
-#line 136 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t68);
-#line 136 "examples/checksum/base64.hero"
-    h5_ret0 = t28;
-#line 136 "examples/checksum/base64.hero"
-    goto bb17;
-#line 136 "examples/checksum/base64.hero"
-bb5:
-#line 136 "examples/checksum/base64.hero"
-    goto bb1;
-#line 136 "examples/checksum/base64.hero"
-bb6:
-#line 147 "examples/checksum/base64.hero"
-    t43 = h1_third;
-#line 147 "examples/checksum/base64.hero"
-    t44 = h_base64_PAD();
-#line 147 "examples/checksum/base64.hero"
-    t69 = h17_own17;
-#line 147 "examples/checksum/base64.hero"
-    h17_own17 = t44;
-#line 147 "examples/checksum/base64.hero"
-    hero_str_decref(t69);
-#line 147 "examples/checksum/base64.hero"
-    t45 = hero_str_eq(t43, t44);
-#line 147 "examples/checksum/base64.hero"
-    if (t45) goto bb12; else goto bb13;
-#line 147 "examples/checksum/base64.hero"
-bb7:
-#line 141 "examples/checksum/base64.hero"
-    t32 = h2_fourth;
-#line 141 "examples/checksum/base64.hero"
-    t33 = h_base64_PAD();
-#line 141 "examples/checksum/base64.hero"
-    t70 = h18_own18;
-#line 141 "examples/checksum/base64.hero"
-    h18_own18 = t33;
-#line 141 "examples/checksum/base64.hero"
-    hero_str_decref(t70);
-#line 141 "examples/checksum/base64.hero"
-    t34 = !hero_str_eq(t32, t33);
-#line 141 "examples/checksum/base64.hero"
-    h4_b1 = t34;
-#line 141 "examples/checksum/base64.hero"
-    goto bb8;
-#line 141 "examples/checksum/base64.hero"
-bb8:
-#line 141 "examples/checksum/base64.hero"
-    t35 = h4_b1;
-#line 141 "examples/checksum/base64.hero"
-    if (t35) goto bb9; else goto bb10;
-#line 141 "examples/checksum/base64.hero"
-bb9:
-#line 143 "examples/checksum/base64.hero"
-    t36 = h_base64_ERR_PADDING();
-#line 143 "examples/checksum/base64.hero"
-    t71 = h19_own19;
-#line 143 "examples/checksum/base64.hero"
-    h19_own19 = t36;
-#line 143 "examples/checksum/base64.hero"
-    hero_str_decref(t71);
-    t37 = HERO_STR_LIT(hero_str_60);
-#line 144 "examples/checksum/base64.hero"
-    t38 = h0_group;
-#line 144 "examples/checksum/base64.hero"
-    t39 = hero_str_concat(t37, t38);
-#line 144 "examples/checksum/base64.hero"
-    t72 = h20_own20;
-#line 144 "examples/checksum/base64.hero"
-    h20_own20 = t39;
-#line 144 "examples/checksum/base64.hero"
-    hero_str_decref(t72);
-#line 144 "examples/checksum/base64.hero"
-    t40 = HERO_STR_LIT(hero_str_b59aa2d);
-#line 144 "examples/checksum/base64.hero"
-    t41 = hero_str_concat(t39, t40);
-#line 144 "examples/checksum/base64.hero"
-    t73 = h21_own21;
-#line 144 "examples/checksum/base64.hero"
-    h21_own21 = t41;
-#line 144 "examples/checksum/base64.hero"
-    hero_str_decref(t73);
-#line 142 "examples/checksum/base64.hero"
-    hero_str_incref(t36);
-#line 142 "examples/checksum/base64.hero"
-    hero_str_incref(t41);
-#line 142 "examples/checksum/base64.hero"
-    t42 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t36, .msg = t41}};
-#line 142 "examples/checksum/base64.hero"
-    t74 = h22_own22;
-#line 142 "examples/checksum/base64.hero"
-    h22_own22 = t42;
-#line 142 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t74);
-#line 142 "examples/checksum/base64.hero"
-    h5_ret0 = t42;
-#line 142 "examples/checksum/base64.hero"
-    goto bb17;
-#line 142 "examples/checksum/base64.hero"
-bb10:
-#line 142 "examples/checksum/base64.hero"
-    goto bb6;
-#line 142 "examples/checksum/base64.hero"
-bb11:
-#line 150 "examples/checksum/base64.hero"
-    t48 = h2_fourth;
-#line 150 "examples/checksum/base64.hero"
-    t49 = h_base64_PAD();
-#line 150 "examples/checksum/base64.hero"
-    t75 = h23_own23;
-#line 150 "examples/checksum/base64.hero"
-    h23_own23 = t49;
-#line 150 "examples/checksum/base64.hero"
-    hero_str_decref(t75);
-#line 150 "examples/checksum/base64.hero"
-    t50 = hero_str_eq(t48, t49);
-#line 150 "examples/checksum/base64.hero"
-    if (t50) goto bb15; else goto bb16;
-#line 150 "examples/checksum/base64.hero"
-bb12:
-#line 148 "examples/checksum/base64.hero"
-    t46 = INT64_C(2);
-#line 148 "examples/checksum/base64.hero"
-    t47 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t46};
-#line 148 "examples/checksum/base64.hero"
-    t76 = h24_own24;
-#line 148 "examples/checksum/base64.hero"
-    h24_own24 = t47;
-#line 148 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t76);
-#line 148 "examples/checksum/base64.hero"
-    h5_ret0 = t47;
-#line 148 "examples/checksum/base64.hero"
-    goto bb17;
-#line 148 "examples/checksum/base64.hero"
-bb13:
-#line 148 "examples/checksum/base64.hero"
-    goto bb11;
-#line 148 "examples/checksum/base64.hero"
-bb14:
-#line 153 "examples/checksum/base64.hero"
-    t53 = INT64_C(0);
-#line 153 "examples/checksum/base64.hero"
-    t54 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t53};
-#line 153 "examples/checksum/base64.hero"
-    t77 = h25_own25;
-#line 153 "examples/checksum/base64.hero"
-    h25_own25 = t54;
-#line 153 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t77);
-#line 153 "examples/checksum/base64.hero"
-    h5_ret0 = t54;
-#line 153 "examples/checksum/base64.hero"
-    goto bb17;
-#line 153 "examples/checksum/base64.hero"
-bb15:
-#line 151 "examples/checksum/base64.hero"
-    t51 = INT64_C(1);
-#line 151 "examples/checksum/base64.hero"
-    t52 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t51};
-#line 151 "examples/checksum/base64.hero"
-    t78 = h26_own26;
-#line 151 "examples/checksum/base64.hero"
-    h26_own26 = t52;
-#line 151 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t78);
-#line 151 "examples/checksum/base64.hero"
-    h5_ret0 = t52;
-#line 151 "examples/checksum/base64.hero"
-    goto bb17;
-#line 151 "examples/checksum/base64.hero"
-bb16:
-#line 151 "examples/checksum/base64.hero"
-    goto bb14;
-#line 151 "examples/checksum/base64.hero"
-bb17:
-#line 2544 "main.c"
+h_0opt_e201354 h_base64_padding_of(HeroStr h0_group) { HeroStr h1_third = {0}; HeroStr h2_fourth = {0}; HERO_NODEBUG bool h3_b0, h4_b1, t14, t20, t21, t31, t34, t35, t45, t50; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}, h16_own16 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, t28, t42, t47, t52, t54, t55, t68, t74, t76, t77, t78; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h23_own23 = {0}, t1, t4, t5, t8, t9, t12, t13, t15, t18, t19, t22, t23, t24, t25, t26, t27, t29, t30, t32, t33, t36, t37, t38, t39, t40, t41, t43, t44, t48, t49, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t69, t70, t71, t72, t73, t75; HERO_NODEBUG int64_t t2, t3, t6, t7, t10, t11, t16, t17, t46, t51, t53; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_group; t2 = INT64_C(2); t3 = INT64_C(3); t4 = hero_str_slice(t1, t2, t3); t56 = h6_own6; h6_own6 = t4; hero_str_decref(t56); t57 = h1_third; hero_str_incref(t4); h1_third = t4; hero_str_decref(t57);
+    t5 = h0_group; t6 = INT64_C(3); t7 = INT64_C(4); t8 = hero_str_slice(t5, t6, t7); t58 = h7_own7; h7_own7 = t8; hero_str_decref(t58); t59 = h2_fourth; hero_str_incref(t8); h2_fourth = t8; hero_str_decref(t59);
+#line 135
+    t9 = h0_group; t10 = INT64_C(0); t11 = INT64_C(1); t12 = hero_str_slice(t9, t10, t11); t60 = h8_own8; h8_own8 = t12; hero_str_decref(t60); t13 = h_base64_PAD(); t61 = h9_own9; h9_own9 = t13; hero_str_decref(t61); t14 = hero_str_eq(t12, t13); h3_b0 = t14; if (t14) goto bb3; else goto bb2; bb1:
+#line 141
+    t29 = h1_third; t30 = h_base64_PAD(); t62 = h10_own10; h10_own10 = t30; hero_str_decref(t62); t31 = hero_str_eq(t29, t30); h4_b1 = t31; if (t31) goto bb7; else goto bb8; bb2:
+#line 135
+    t15 = h0_group; t16 = INT64_C(1); t17 = INT64_C(2); t18 = hero_str_slice(t15, t16, t17); t63 = h11_own11; h11_own11 = t18; hero_str_decref(t63); t19 = h_base64_PAD(); t64 = h12_own12; h12_own12 = t19; hero_str_decref(t64); t20 = hero_str_eq(t18, t19); h3_b0 = t20; goto bb3; bb3: t21 = h3_b0; if (t21) goto bb4; else goto bb5; bb4:
+#line 137
+    t22 = h_base64_ERR_PADDING(); t65 = h13_own13; h13_own13 = t22; hero_str_decref(t65);
+    t23 = HERO_STR_LIT(hero_str_4245b2d); t24 = h0_group; t25 = hero_str_concat(t23, t24); t66 = h14_own14; h14_own14 = t25; hero_str_decref(t66); t26 = HERO_STR_LIT(hero_str_19bc6a6d); t27 = hero_str_concat(t25, t26); t67 = h15_own15; h15_own15 = t27; hero_str_decref(t67);
+#line 136
+    hero_str_incref(t22); hero_str_incref(t27); t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t22, .msg = t27}}; t68 = h16_own16; h16_own16 = t28; h_0opt_e201354_release(&t68); h5_ret0 = t28; goto bb17; bb5: goto bb1; bb6:
+#line 147
+    t43 = h1_third; t44 = h_base64_PAD(); t69 = h17_own17; h17_own17 = t44; hero_str_decref(t69); t45 = hero_str_eq(t43, t44); if (t45) goto bb12; else goto bb13; bb7:
+#line 141
+    t32 = h2_fourth; t33 = h_base64_PAD(); t70 = h18_own18; h18_own18 = t33; hero_str_decref(t70); t34 = !hero_str_eq(t32, t33); h4_b1 = t34; goto bb8; bb8: t35 = h4_b1; if (t35) goto bb9; else goto bb10; bb9:
+#line 143
+    t36 = h_base64_ERR_PADDING(); t71 = h19_own19; h19_own19 = t36; hero_str_decref(t71);
+    t37 = HERO_STR_LIT(hero_str_60); t38 = h0_group; t39 = hero_str_concat(t37, t38); t72 = h20_own20; h20_own20 = t39; hero_str_decref(t72); t40 = HERO_STR_LIT(hero_str_b59aa2d); t41 = hero_str_concat(t39, t40); t73 = h21_own21; h21_own21 = t41; hero_str_decref(t73);
+#line 142
+    hero_str_incref(t36); hero_str_incref(t41); t42 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t36, .msg = t41}}; t74 = h22_own22; h22_own22 = t42; h_0opt_e201354_release(&t74); h5_ret0 = t42; goto bb17; bb10: goto bb6; bb11:
+#line 150
+    t48 = h2_fourth; t49 = h_base64_PAD(); t75 = h23_own23; h23_own23 = t49; hero_str_decref(t75); t50 = hero_str_eq(t48, t49); if (t50) goto bb15; else goto bb16; bb12:
+#line 148
+    t46 = INT64_C(2); t47 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t46}; t76 = h24_own24; h24_own24 = t47; h_0opt_e201354_release(&t76); h5_ret0 = t47; goto bb17; bb13: goto bb11; bb14:
+#line 153
+    t53 = INT64_C(0); t54 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t53}; t77 = h25_own25; h25_own25 = t54; h_0opt_e201354_release(&t77); h5_ret0 = t54; goto bb17; bb15:
+#line 151
+    t51 = INT64_C(1); t52 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t51}; t78 = h26_own26; h26_own26 = t52; h_0opt_e201354_release(&t78); h5_ret0 = t52; goto bb17; bb16: goto bb14; bb17:
+#line 708 "main.c"
     t55 = h5_ret0;
     h_0opt_e201354_retain(&t55);
     hero_str_release_at(&h1_third);
@@ -2570,870 +734,76 @@ bb17:
 }
 
 #line 157 "examples/checksum/base64.hero"
-h_0opt_4d1c207c h_base64_decoded(HeroStr h0_text) {
-#line 157 "examples/checksum/base64.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HeroStr h3_group = {0}; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h7_f1 = {0}, h9_f2 = {0}, h13_f3 = {0}, h14_f4 = {0}, h26_own26 = {0}, h30_own30 = {0}, h36_own36 = {0}, h40_own40 = {0}, h44_own44 = {0}, t27, t28, t32, t35, t58, t59, t63, t66, t72, t73, t77, t80, t91, t92, t96, t99, t108, t109, t113, t116, t197, t198, t202, t203, t209, t210, t214, t215, t220, t221; int64_t h5_pad; HERO_NODEBUG bool h6_b0, t6, t19, t31, t39, t45, t46, t62, t76, t86, t95, t103, t112, t141, t149, t160, t168, t177; int64_t h8_v0; int64_t h10_v1; int64_t h11_v2; int64_t h12_v3; int64_t h15_block; HERO_NODEBUG h_0opt_1ec004 h16_f5 = {0}, h17_f6 = {0}, h18_f7 = {0}, h42_own42 = {0}, h46_own46 = {0}, h47_own47 = {0}, t137, t138, t142, t144, t156, t157, t161, t163, t173, t174, t178, t180, t217, t218, t223, t224, t225, t226; HERO_NODEBUG h_0opt_4d1c207c h19_ret0 = {0}, h24_own24 = {0}, h27_own27 = {0}, h28_own28 = {0}, h34_own34 = {0}, h37_own37 = {0}, h38_own38 = {0}, h41_own41 = {0}, h45_own45 = {0}, t13, t34, t53, t65, t79, t98, t115, t187, t188, t194, t199, t200, t207, t211, t212, t216, t222; HERO_NODEBUG HeroArrayHeader *h20_own20 = {0}, *t14, *t186, *t189, *t190; HERO_NODEBUG HeroStr h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h25_own25 = {0}, h29_own29 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h35_own35 = {0}, h39_own39 = {0}, h43_own43 = {0}, t1, t7, t8, t9, t11, t12, t17, t20, t25, t26, t43, t47, t48, t49, t50, t51, t52, t54, t57, t68, t71, t87, t90, t104, t107, t191, t192, t193, t195, t196, t201, t204, t205, t206, t208, t213, t219; HERO_NODEBUG int64_t t2, t3, t4, t5, t10, t15, t16, t18, t21, t22, t23, t24, t29, t30, t36, t37, t38, t40, t41, t42, t44, t55, t56, t60, t61, t67, t69, t70, t74, t75, t81, t82, t83, t84, t85, t88, t89, t93, t94, t100, t101, t102, t105, t106, t110, t111, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t132, t133, t134, t135, t136, t139, t140, t147, t148, t151, t152, t153, t154, t155, t158, t159, t166, t167, t170, t171, t172, t175, t176, t183, t184, t185; HERO_NODEBUG HeroFailure t33, t64, t78, t97, t114, t143, t162, t179; HERO_NODEBUG uint8_t t145, t164, t181; HERO_ENTRY_STOP; goto bb0;
-#line 157 "examples/checksum/base64.hero"
-bb0:
-    t1 = h0_text;
-#line 158 "examples/checksum/base64.hero"
-    t2 = hero_str_len(t1);
-#line 158 "examples/checksum/base64.hero"
-    t3 = INT64_C(4);
-#line 158 "examples/checksum/base64.hero"
-    if (t3 == 0) hero_panic("division by zero");
-#line 158 "examples/checksum/base64.hero"
-    if (t2 == INT64_MIN && t3 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 158 "examples/checksum/base64.hero"
-    t4 = t2 % t3;
-#line 158 "examples/checksum/base64.hero"
-    t5 = INT64_C(0);
-#line 158 "examples/checksum/base64.hero"
-    t6 = t4 != t5;
-#line 158 "examples/checksum/base64.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 158 "examples/checksum/base64.hero"
-bb1:
-#line 163 "examples/checksum/base64.hero"
-    t14 = hero_array_new(&hero_desc_u8, 1);
-#line 163 "examples/checksum/base64.hero"
-    t189 = h20_own20;
-#line 163 "examples/checksum/base64.hero"
-    h20_own20 = t14;
-#line 163 "examples/checksum/base64.hero"
-    hero_array_decref(t189);
-#line 163 "examples/checksum/base64.hero"
-    t190 = h1_out;
-#line 163 "examples/checksum/base64.hero"
-    hero_array_incref(t14);
-#line 163 "examples/checksum/base64.hero"
-    h1_out = t14;
-#line 163 "examples/checksum/base64.hero"
-    hero_array_decref(t190);
-    t15 = INT64_C(0);
-#line 164 "examples/checksum/base64.hero"
-    h2_i = t15;
-#line 164 "examples/checksum/base64.hero"
-    goto bb4;
-#line 164 "examples/checksum/base64.hero"
-bb2:
-#line 160 "examples/checksum/base64.hero"
-    t7 = h_base64_ERR_LENGTH();
-#line 160 "examples/checksum/base64.hero"
-    t191 = h21_own21;
-#line 160 "examples/checksum/base64.hero"
-    h21_own21 = t7;
-#line 160 "examples/checksum/base64.hero"
-    hero_str_decref(t191);
-    t8 = HERO_STR_LIT(hero_str_7eed3f00);
-#line 161 "examples/checksum/base64.hero"
-    t9 = h0_text;
-#line 161 "examples/checksum/base64.hero"
-    t10 = hero_str_len(t9);
-#line 161 "examples/checksum/base64.hero"
-    t11 = hero_int_to_str(t10);
-#line 161 "examples/checksum/base64.hero"
-    t192 = h22_own22;
-#line 161 "examples/checksum/base64.hero"
-    h22_own22 = t11;
-#line 161 "examples/checksum/base64.hero"
-    hero_str_decref(t192);
-#line 161 "examples/checksum/base64.hero"
-    t12 = hero_str_concat(t8, t11);
-#line 161 "examples/checksum/base64.hero"
-    t193 = h23_own23;
-#line 161 "examples/checksum/base64.hero"
-    h23_own23 = t12;
-#line 161 "examples/checksum/base64.hero"
-    hero_str_decref(t193);
-#line 159 "examples/checksum/base64.hero"
-    hero_str_incref(t7);
-#line 159 "examples/checksum/base64.hero"
-    hero_str_incref(t12);
-#line 159 "examples/checksum/base64.hero"
-    t13 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t12}};
-#line 159 "examples/checksum/base64.hero"
-    t194 = h24_own24;
-#line 159 "examples/checksum/base64.hero"
-    h24_own24 = t13;
-#line 159 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_release(&t194);
-#line 159 "examples/checksum/base64.hero"
-    h19_ret0 = t13;
-#line 159 "examples/checksum/base64.hero"
-    goto bb40;
-#line 159 "examples/checksum/base64.hero"
-bb3:
-#line 159 "examples/checksum/base64.hero"
-    goto bb1;
-#line 159 "examples/checksum/base64.hero"
-bb4:
-#line 166 "examples/checksum/base64.hero"
-    t16 = h2_i;
-#line 166 "examples/checksum/base64.hero"
-    t17 = h0_text;
-#line 166 "examples/checksum/base64.hero"
-    t18 = hero_str_len(t17);
-#line 166 "examples/checksum/base64.hero"
-    t19 = t16 < t18;
-#line 166 "examples/checksum/base64.hero"
-    if (t19) goto bb5; else goto bb6;
-#line 166 "examples/checksum/base64.hero"
-bb5:
-    t20 = h0_text;
-#line 167 "examples/checksum/base64.hero"
-    t21 = h2_i;
-#line 167 "examples/checksum/base64.hero"
-    t22 = h2_i;
-#line 167 "examples/checksum/base64.hero"
-    t23 = INT64_C(4);
-#line 167 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow();
-#line 167 "examples/checksum/base64.hero"
-    t25 = hero_str_slice(t20, t21, t24);
-#line 167 "examples/checksum/base64.hero"
-    t195 = h25_own25;
-#line 167 "examples/checksum/base64.hero"
-    h25_own25 = t25;
-#line 167 "examples/checksum/base64.hero"
-    hero_str_decref(t195);
-#line 167 "examples/checksum/base64.hero"
-    t196 = h3_group;
-#line 167 "examples/checksum/base64.hero"
-    hero_str_incref(t25);
-#line 167 "examples/checksum/base64.hero"
-    h3_group = t25;
-#line 167 "examples/checksum/base64.hero"
-    hero_str_decref(t196);
-    t26 = h3_group;
-#line 168 "examples/checksum/base64.hero"
-    t27 = h_base64_padding_of(t26);
-#line 168 "examples/checksum/base64.hero"
-    t197 = h26_own26;
-#line 168 "examples/checksum/base64.hero"
-    h26_own26 = t27;
-#line 168 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t197);
-#line 168 "examples/checksum/base64.hero"
-    t198 = h4_f0;
-#line 168 "examples/checksum/base64.hero"
-    h_0opt_e201354_retain(&t27);
-#line 168 "examples/checksum/base64.hero"
-    h4_f0 = t27;
-#line 168 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t198);
-#line 168 "examples/checksum/base64.hero"
-    t28 = h4_f0;
-#line 168 "examples/checksum/base64.hero"
-    t29 = t28.tag;
-#line 168 "examples/checksum/base64.hero"
-    t30 = INT64_C(0);
-#line 168 "examples/checksum/base64.hero"
-    t31 = t29 == t30;
-#line 168 "examples/checksum/base64.hero"
-    if (t31) goto bb7; else goto bb8;
-#line 168 "examples/checksum/base64.hero"
-bb6:
-#line 192 "examples/checksum/base64.hero"
-    t186 = h1_out;
-#line 192 "examples/checksum/base64.hero"
-    hero_array_incref(t186);
-#line 192 "examples/checksum/base64.hero"
-    t187 = (h_0opt_4d1c207c){.tag = INT64_C(0), .as.ok = t186};
-#line 192 "examples/checksum/base64.hero"
-    t199 = h27_own27;
-#line 192 "examples/checksum/base64.hero"
-    h27_own27 = t187;
-#line 192 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_release(&t199);
-#line 192 "examples/checksum/base64.hero"
-    h19_ret0 = t187;
-#line 192 "examples/checksum/base64.hero"
-    goto bb40;
-#line 192 "examples/checksum/base64.hero"
-bb7:
-#line 168 "examples/checksum/base64.hero"
-    t35 = h4_f0;
-#line 168 "examples/checksum/base64.hero"
-    t36 = t35.as.ok;
-#line 168 "examples/checksum/base64.hero"
-    h5_pad = t36;
-#line 170 "examples/checksum/base64.hero"
-    t37 = h5_pad;
-#line 170 "examples/checksum/base64.hero"
-    t38 = INT64_C(0);
-#line 170 "examples/checksum/base64.hero"
-    t39 = t37 > t38;
-#line 170 "examples/checksum/base64.hero"
-    h6_b0 = t39;
-#line 170 "examples/checksum/base64.hero"
-    if (t39) goto bb10; else goto bb11;
-#line 170 "examples/checksum/base64.hero"
-bb8:
-#line 168 "examples/checksum/base64.hero"
-    t32 = h4_f0;
-#line 168 "examples/checksum/base64.hero"
-    t33 = t32.as.err;
-#line 168 "examples/checksum/base64.hero"
-    hero_failure_retain(&t33);
-#line 168 "examples/checksum/base64.hero"
-    t34 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t33};
-#line 168 "examples/checksum/base64.hero"
-    t200 = h28_own28;
-#line 168 "examples/checksum/base64.hero"
-    h28_own28 = t34;
-#line 168 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_release(&t200);
-#line 168 "examples/checksum/base64.hero"
-    h19_ret0 = t34;
-#line 168 "examples/checksum/base64.hero"
-    goto bb40;
-#line 168 "examples/checksum/base64.hero"
-bb9:
-#line 172 "examples/checksum/base64.hero"
-    t54 = h3_group;
-#line 172 "examples/checksum/base64.hero"
-    t55 = INT64_C(0);
-#line 172 "examples/checksum/base64.hero"
-    t56 = INT64_C(1);
-#line 172 "examples/checksum/base64.hero"
-    t57 = hero_str_slice(t54, t55, t56);
-#line 172 "examples/checksum/base64.hero"
-    t201 = h29_own29;
-#line 172 "examples/checksum/base64.hero"
-    h29_own29 = t57;
-#line 172 "examples/checksum/base64.hero"
-    hero_str_decref(t201);
-#line 172 "examples/checksum/base64.hero"
-    t58 = h_base64_value_of(t57);
-#line 172 "examples/checksum/base64.hero"
-    t202 = h30_own30;
-#line 172 "examples/checksum/base64.hero"
-    h30_own30 = t58;
-#line 172 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t202);
-#line 172 "examples/checksum/base64.hero"
-    t203 = h7_f1;
-#line 172 "examples/checksum/base64.hero"
-    h_0opt_e201354_retain(&t58);
-#line 172 "examples/checksum/base64.hero"
-    h7_f1 = t58;
-#line 172 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t203);
-#line 172 "examples/checksum/base64.hero"
-    t59 = h7_f1;
-#line 172 "examples/checksum/base64.hero"
-    t60 = t59.tag;
-#line 172 "examples/checksum/base64.hero"
-    t61 = INT64_C(0);
-#line 172 "examples/checksum/base64.hero"
-    t62 = t60 == t61;
-#line 172 "examples/checksum/base64.hero"
-    if (t62) goto bb14; else goto bb15;
-#line 172 "examples/checksum/base64.hero"
-bb10:
-#line 170 "examples/checksum/base64.hero"
-    t40 = h2_i;
-#line 170 "examples/checksum/base64.hero"
-    t41 = INT64_C(4);
-#line 170 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow();
-#line 170 "examples/checksum/base64.hero"
-    t43 = h0_text;
-#line 170 "examples/checksum/base64.hero"
-    t44 = hero_str_len(t43);
-#line 170 "examples/checksum/base64.hero"
-    t45 = t42 < t44;
-#line 170 "examples/checksum/base64.hero"
-    h6_b0 = t45;
-#line 170 "examples/checksum/base64.hero"
-    goto bb11;
-#line 170 "examples/checksum/base64.hero"
-bb11:
-#line 170 "examples/checksum/base64.hero"
-    t46 = h6_b0;
-#line 170 "examples/checksum/base64.hero"
-    if (t46) goto bb12; else goto bb13;
-#line 170 "examples/checksum/base64.hero"
-bb12:
-    t47 = h_base64_ERR_PADDING();
-#line 171 "examples/checksum/base64.hero"
-    t204 = h31_own31;
-#line 171 "examples/checksum/base64.hero"
-    h31_own31 = t47;
-#line 171 "examples/checksum/base64.hero"
-    hero_str_decref(t204);
-#line 171 "examples/checksum/base64.hero"
-    t48 = HERO_STR_LIT(hero_str_60);
-#line 171 "examples/checksum/base64.hero"
-    t49 = h3_group;
-#line 171 "examples/checksum/base64.hero"
-    t50 = hero_str_concat(t48, t49);
-#line 171 "examples/checksum/base64.hero"
-    t205 = h32_own32;
-#line 171 "examples/checksum/base64.hero"
-    h32_own32 = t50;
-#line 171 "examples/checksum/base64.hero"
-    hero_str_decref(t205);
-#line 171 "examples/checksum/base64.hero"
-    t51 = HERO_STR_LIT(hero_str_42df8527);
-#line 171 "examples/checksum/base64.hero"
-    t52 = hero_str_concat(t50, t51);
-#line 171 "examples/checksum/base64.hero"
-    t206 = h33_own33;
-#line 171 "examples/checksum/base64.hero"
-    h33_own33 = t52;
-#line 171 "examples/checksum/base64.hero"
-    hero_str_decref(t206);
-#line 171 "examples/checksum/base64.hero"
-    hero_str_incref(t47);
-#line 171 "examples/checksum/base64.hero"
-    hero_str_incref(t52);
-#line 171 "examples/checksum/base64.hero"
-    t53 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = {.code = t47, .msg = t52}};
-#line 171 "examples/checksum/base64.hero"
-    t207 = h34_own34;
-#line 171 "examples/checksum/base64.hero"
-    h34_own34 = t53;
-#line 171 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_release(&t207);
-#line 171 "examples/checksum/base64.hero"
-    h19_ret0 = t53;
-#line 171 "examples/checksum/base64.hero"
-    goto bb40;
-#line 171 "examples/checksum/base64.hero"
-bb13:
-#line 171 "examples/checksum/base64.hero"
-    goto bb9;
-#line 171 "examples/checksum/base64.hero"
-bb14:
-    t66 = h7_f1;
-#line 172 "examples/checksum/base64.hero"
-    t67 = t66.as.ok;
-#line 172 "examples/checksum/base64.hero"
-    h8_v0 = t67;
-    t68 = h3_group;
-#line 173 "examples/checksum/base64.hero"
-    t69 = INT64_C(1);
-#line 173 "examples/checksum/base64.hero"
-    t70 = INT64_C(2);
-#line 173 "examples/checksum/base64.hero"
-    t71 = hero_str_slice(t68, t69, t70);
-#line 173 "examples/checksum/base64.hero"
-    t208 = h35_own35;
-#line 173 "examples/checksum/base64.hero"
-    h35_own35 = t71;
-#line 173 "examples/checksum/base64.hero"
-    hero_str_decref(t208);
-#line 173 "examples/checksum/base64.hero"
-    t72 = h_base64_value_of(t71);
-#line 173 "examples/checksum/base64.hero"
-    t209 = h36_own36;
-#line 173 "examples/checksum/base64.hero"
-    h36_own36 = t72;
-#line 173 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t209);
-#line 173 "examples/checksum/base64.hero"
-    t210 = h9_f2;
-#line 173 "examples/checksum/base64.hero"
-    h_0opt_e201354_retain(&t72);
-#line 173 "examples/checksum/base64.hero"
-    h9_f2 = t72;
-#line 173 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t210);
-#line 173 "examples/checksum/base64.hero"
-    t73 = h9_f2;
-#line 173 "examples/checksum/base64.hero"
-    t74 = t73.tag;
-#line 173 "examples/checksum/base64.hero"
-    t75 = INT64_C(0);
-#line 173 "examples/checksum/base64.hero"
-    t76 = t74 == t75;
-#line 173 "examples/checksum/base64.hero"
-    if (t76) goto bb16; else goto bb17;
-#line 173 "examples/checksum/base64.hero"
-bb15:
-#line 172 "examples/checksum/base64.hero"
-    t63 = h7_f1;
-#line 172 "examples/checksum/base64.hero"
-    t64 = t63.as.err;
-#line 172 "examples/checksum/base64.hero"
-    hero_failure_retain(&t64);
-#line 172 "examples/checksum/base64.hero"
-    t65 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t64};
-#line 172 "examples/checksum/base64.hero"
-    t211 = h37_own37;
-#line 172 "examples/checksum/base64.hero"
-    h37_own37 = t65;
-#line 172 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_release(&t211);
-#line 172 "examples/checksum/base64.hero"
-    h19_ret0 = t65;
-#line 172 "examples/checksum/base64.hero"
-    goto bb40;
-#line 172 "examples/checksum/base64.hero"
-bb16:
-    t80 = h9_f2;
-#line 173 "examples/checksum/base64.hero"
-    t81 = t80.as.ok;
-#line 173 "examples/checksum/base64.hero"
-    h10_v1 = t81;
-    t82 = INT64_C(0);
-#line 174 "examples/checksum/base64.hero"
-    h11_v2 = t82;
-    t83 = INT64_C(0);
-#line 175 "examples/checksum/base64.hero"
-    h12_v3 = t83;
-#line 177 "examples/checksum/base64.hero"
-    t84 = h5_pad;
-#line 177 "examples/checksum/base64.hero"
-    t85 = INT64_C(2);
-#line 177 "examples/checksum/base64.hero"
-    t86 = t84 < t85;
-#line 177 "examples/checksum/base64.hero"
-    if (t86) goto bb19; else goto bb20;
-#line 177 "examples/checksum/base64.hero"
-bb17:
-#line 173 "examples/checksum/base64.hero"
-    t77 = h9_f2;
-#line 173 "examples/checksum/base64.hero"
-    t78 = t77.as.err;
-#line 173 "examples/checksum/base64.hero"
-    hero_failure_retain(&t78);
-#line 173 "examples/checksum/base64.hero"
-    t79 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t78};
-#line 173 "examples/checksum/base64.hero"
-    t212 = h38_own38;
-#line 173 "examples/checksum/base64.hero"
-    h38_own38 = t79;
-#line 173 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_release(&t212);
-#line 173 "examples/checksum/base64.hero"
-    h19_ret0 = t79;
-#line 173 "examples/checksum/base64.hero"
-    goto bb40;
-#line 173 "examples/checksum/base64.hero"
-bb18:
-#line 180 "examples/checksum/base64.hero"
-    t101 = h5_pad;
-#line 180 "examples/checksum/base64.hero"
-    t102 = INT64_C(1);
-#line 180 "examples/checksum/base64.hero"
-    t103 = t101 < t102;
-#line 180 "examples/checksum/base64.hero"
-    if (t103) goto bb24; else goto bb25;
-#line 180 "examples/checksum/base64.hero"
-bb19:
-#line 178 "examples/checksum/base64.hero"
-    t87 = h3_group;
-#line 178 "examples/checksum/base64.hero"
-    t88 = INT64_C(2);
-#line 178 "examples/checksum/base64.hero"
-    t89 = INT64_C(3);
-#line 178 "examples/checksum/base64.hero"
-    t90 = hero_str_slice(t87, t88, t89);
-#line 178 "examples/checksum/base64.hero"
-    t213 = h39_own39;
-#line 178 "examples/checksum/base64.hero"
-    h39_own39 = t90;
-#line 178 "examples/checksum/base64.hero"
-    hero_str_decref(t213);
-#line 178 "examples/checksum/base64.hero"
-    t91 = h_base64_value_of(t90);
-#line 178 "examples/checksum/base64.hero"
-    t214 = h40_own40;
-#line 178 "examples/checksum/base64.hero"
-    h40_own40 = t91;
-#line 178 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t214);
-#line 178 "examples/checksum/base64.hero"
-    t215 = h13_f3;
-#line 178 "examples/checksum/base64.hero"
-    h_0opt_e201354_retain(&t91);
-#line 178 "examples/checksum/base64.hero"
-    h13_f3 = t91;
-#line 178 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t215);
-#line 178 "examples/checksum/base64.hero"
-    t92 = h13_f3;
-#line 178 "examples/checksum/base64.hero"
-    t93 = t92.tag;
-#line 178 "examples/checksum/base64.hero"
-    t94 = INT64_C(0);
-#line 178 "examples/checksum/base64.hero"
-    t95 = t93 == t94;
-#line 178 "examples/checksum/base64.hero"
-    if (t95) goto bb21; else goto bb22;
-#line 178 "examples/checksum/base64.hero"
-bb20:
-#line 178 "examples/checksum/base64.hero"
-    goto bb18;
-#line 178 "examples/checksum/base64.hero"
-bb21:
-#line 178 "examples/checksum/base64.hero"
-    t99 = h13_f3;
-#line 178 "examples/checksum/base64.hero"
-    t100 = t99.as.ok;
-#line 178 "examples/checksum/base64.hero"
-    h11_v2 = t100;
-#line 178 "examples/checksum/base64.hero"
-    goto bb18;
-#line 178 "examples/checksum/base64.hero"
-bb22:
-#line 178 "examples/checksum/base64.hero"
-    t96 = h13_f3;
-#line 178 "examples/checksum/base64.hero"
-    t97 = t96.as.err;
-#line 178 "examples/checksum/base64.hero"
-    hero_failure_retain(&t97);
-#line 178 "examples/checksum/base64.hero"
-    t98 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t97};
-#line 178 "examples/checksum/base64.hero"
-    t216 = h41_own41;
-#line 178 "examples/checksum/base64.hero"
-    h41_own41 = t98;
-#line 178 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_release(&t216);
-#line 178 "examples/checksum/base64.hero"
-    h19_ret0 = t98;
-#line 178 "examples/checksum/base64.hero"
-    goto bb40;
-#line 178 "examples/checksum/base64.hero"
-bb23:
-#line 182 "examples/checksum/base64.hero"
-    t118 = h8_v0;
-#line 182 "examples/checksum/base64.hero"
-    t119 = INT64_C(18);
-#line 182 "examples/checksum/base64.hero"
-    if (t119 < 0 || t119 > 63) hero_panic("shift count outside 0..63");
-#line 182 "examples/checksum/base64.hero"
-    t120 = (int64_t)((uint64_t)t118 << (uint64_t)t119);
-#line 182 "examples/checksum/base64.hero"
-    t121 = h10_v1;
-#line 182 "examples/checksum/base64.hero"
-    t122 = INT64_C(12);
-#line 182 "examples/checksum/base64.hero"
-    if (t122 < 0 || t122 > 63) hero_panic("shift count outside 0..63");
-#line 182 "examples/checksum/base64.hero"
-    t123 = (int64_t)((uint64_t)t121 << (uint64_t)t122);
-#line 182 "examples/checksum/base64.hero"
-    t124 = t120 | t123;
-#line 182 "examples/checksum/base64.hero"
-    t125 = h11_v2;
-#line 182 "examples/checksum/base64.hero"
-    t126 = INT64_C(6);
-#line 182 "examples/checksum/base64.hero"
-    if (t126 < 0 || t126 > 63) hero_panic("shift count outside 0..63");
-#line 182 "examples/checksum/base64.hero"
-    t127 = (int64_t)((uint64_t)t125 << (uint64_t)t126);
-#line 182 "examples/checksum/base64.hero"
-    t128 = t124 | t127;
-#line 182 "examples/checksum/base64.hero"
-    t129 = h12_v3;
-#line 182 "examples/checksum/base64.hero"
-    t130 = t128 | t129;
-#line 182 "examples/checksum/base64.hero"
-    h15_block = t130;
-    t132 = h15_block;
-#line 183 "examples/checksum/base64.hero"
-    t133 = INT64_C(16);
-#line 183 "examples/checksum/base64.hero"
-    if (t133 < 0 || t133 > 63) hero_panic("shift count outside 0..63");
-#line 183 "examples/checksum/base64.hero"
-    t134 = (t132 < 0) ? ~(int64_t)((~(uint64_t)t132) >> (uint64_t)t133) : (int64_t)((uint64_t)t132 >> (uint64_t)t133);
-#line 183 "examples/checksum/base64.hero"
-    t135 = INT64_C(255);
-#line 183 "examples/checksum/base64.hero"
-    t136 = t134 & t135;
-#line 183 "examples/checksum/base64.hero"
-    if (t136 >= 0LL && t136 <= 255LL) {
-#line 183 "examples/checksum/base64.hero"
-        t137 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t136};
-#line 183 "examples/checksum/base64.hero"
-    } else {
-#line 183 "examples/checksum/base64.hero"
-        t137 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 183 "examples/checksum/base64.hero"
-    }
-#line 183 "examples/checksum/base64.hero"
-    t217 = h42_own42;
-#line 183 "examples/checksum/base64.hero"
-    h42_own42 = t137;
-#line 183 "examples/checksum/base64.hero"
-    h_0opt_1ec004_release(&t217);
-#line 183 "examples/checksum/base64.hero"
-    t218 = h16_f5;
-#line 183 "examples/checksum/base64.hero"
-    h_0opt_1ec004_retain(&t137);
-#line 183 "examples/checksum/base64.hero"
-    h16_f5 = t137;
-#line 183 "examples/checksum/base64.hero"
-    h_0opt_1ec004_release(&t218);
-#line 183 "examples/checksum/base64.hero"
-    t138 = h16_f5;
-#line 183 "examples/checksum/base64.hero"
-    t139 = t138.tag;
-#line 183 "examples/checksum/base64.hero"
-    t140 = INT64_C(0);
-#line 183 "examples/checksum/base64.hero"
-    t141 = t139 == t140;
-#line 183 "examples/checksum/base64.hero"
-    if (t141) goto bb28; else goto bb29;
-#line 183 "examples/checksum/base64.hero"
-bb24:
-#line 181 "examples/checksum/base64.hero"
-    t104 = h3_group;
-#line 181 "examples/checksum/base64.hero"
-    t105 = INT64_C(3);
-#line 181 "examples/checksum/base64.hero"
-    t106 = INT64_C(4);
-#line 181 "examples/checksum/base64.hero"
-    t107 = hero_str_slice(t104, t105, t106);
-#line 181 "examples/checksum/base64.hero"
-    t219 = h43_own43;
-#line 181 "examples/checksum/base64.hero"
-    h43_own43 = t107;
-#line 181 "examples/checksum/base64.hero"
-    hero_str_decref(t219);
-#line 181 "examples/checksum/base64.hero"
-    t108 = h_base64_value_of(t107);
-#line 181 "examples/checksum/base64.hero"
-    t220 = h44_own44;
-#line 181 "examples/checksum/base64.hero"
-    h44_own44 = t108;
-#line 181 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t220);
-#line 181 "examples/checksum/base64.hero"
-    t221 = h14_f4;
-#line 181 "examples/checksum/base64.hero"
-    h_0opt_e201354_retain(&t108);
-#line 181 "examples/checksum/base64.hero"
-    h14_f4 = t108;
-#line 181 "examples/checksum/base64.hero"
-    h_0opt_e201354_release(&t221);
-#line 181 "examples/checksum/base64.hero"
-    t109 = h14_f4;
-#line 181 "examples/checksum/base64.hero"
-    t110 = t109.tag;
-#line 181 "examples/checksum/base64.hero"
-    t111 = INT64_C(0);
-#line 181 "examples/checksum/base64.hero"
-    t112 = t110 == t111;
-#line 181 "examples/checksum/base64.hero"
-    if (t112) goto bb26; else goto bb27;
-#line 181 "examples/checksum/base64.hero"
-bb25:
-#line 181 "examples/checksum/base64.hero"
-    goto bb23;
-#line 181 "examples/checksum/base64.hero"
-bb26:
-#line 181 "examples/checksum/base64.hero"
-    t116 = h14_f4;
-#line 181 "examples/checksum/base64.hero"
-    t117 = t116.as.ok;
-#line 181 "examples/checksum/base64.hero"
-    h12_v3 = t117;
-#line 181 "examples/checksum/base64.hero"
-    goto bb23;
-#line 181 "examples/checksum/base64.hero"
-bb27:
-#line 181 "examples/checksum/base64.hero"
-    t113 = h14_f4;
-#line 181 "examples/checksum/base64.hero"
-    t114 = t113.as.err;
-#line 181 "examples/checksum/base64.hero"
-    hero_failure_retain(&t114);
-#line 181 "examples/checksum/base64.hero"
-    t115 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t114};
-#line 181 "examples/checksum/base64.hero"
-    t222 = h45_own45;
-#line 181 "examples/checksum/base64.hero"
-    h45_own45 = t115;
-#line 181 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_release(&t222);
-#line 181 "examples/checksum/base64.hero"
-    h19_ret0 = t115;
-#line 181 "examples/checksum/base64.hero"
-    goto bb40;
-#line 181 "examples/checksum/base64.hero"
-bb28:
-#line 183 "examples/checksum/base64.hero"
-    t144 = h16_f5;
-#line 183 "examples/checksum/base64.hero"
-    t145 = t144.as.ok;
-#line 183 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t145);
-#line 185 "examples/checksum/base64.hero"
-    t147 = h5_pad;
-#line 185 "examples/checksum/base64.hero"
-    t148 = INT64_C(2);
-#line 185 "examples/checksum/base64.hero"
-    t149 = t147 < t148;
-#line 185 "examples/checksum/base64.hero"
-    if (t149) goto bb31; else goto bb32;
-#line 185 "examples/checksum/base64.hero"
-bb29:
-#line 183 "examples/checksum/base64.hero"
-    t142 = h16_f5;
-#line 183 "examples/checksum/base64.hero"
-    t143 = t142.as.err;
-#line 3281 "main.c"
+h_0opt_4d1c207c h_base64_decoded(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; HeroStr h3_group = {0}; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h7_f1 = {0}, h9_f2 = {0}, h13_f3 = {0}, h14_f4 = {0}, h26_own26 = {0}, h30_own30 = {0}, h36_own36 = {0}, h40_own40 = {0}, h44_own44 = {0}, t27, t28, t32, t35, t58, t59, t63, t66, t72, t73, t77, t80, t91, t92, t96, t99, t108, t109, t113, t116, t197, t198, t202, t203, t209, t210, t214, t215, t220, t221; int64_t h5_pad; HERO_NODEBUG bool h6_b0, t6, t19, t31, t39, t45, t46, t62, t76, t86, t95, t103, t112, t141, t149, t160, t168, t177; int64_t h8_v0; int64_t h10_v1; int64_t h11_v2; int64_t h12_v3; int64_t h15_block; HERO_NODEBUG h_0opt_1ec004 h16_f5 = {0}, h17_f6 = {0}, h18_f7 = {0}, h42_own42 = {0}, h46_own46 = {0}, h47_own47 = {0}, t137, t138, t142, t144, t156, t157, t161, t163, t173, t174, t178, t180, t217, t218, t223, t224, t225, t226; HERO_NODEBUG h_0opt_4d1c207c h19_ret0 = {0}, h24_own24 = {0}, h27_own27 = {0}, h28_own28 = {0}, h34_own34 = {0}, h37_own37 = {0}, h38_own38 = {0}, h41_own41 = {0}, h45_own45 = {0}, t13, t34, t53, t65, t79, t98, t115, t187, t188, t194, t199, t200, t207, t211, t212, t216, t222; HERO_NODEBUG HeroArrayHeader *h20_own20 = {0}, *t14, *t186, *t189, *t190; HERO_NODEBUG HeroStr h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h25_own25 = {0}, h29_own29 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h35_own35 = {0}, h39_own39 = {0}, h43_own43 = {0}, t1, t7, t8, t9, t11, t12, t17, t20, t25, t26, t43, t47, t48, t49, t50, t51, t52, t54, t57, t68, t71, t87, t90, t104, t107, t191, t192, t193, t195, t196, t201, t204, t205, t206, t208, t213, t219; HERO_NODEBUG int64_t t2, t3, t4, t5, t10, t15, t16, t18, t21, t22, t23, t24, t29, t30, t36, t37, t38, t40, t41, t42, t44, t55, t56, t60, t61, t67, t69, t70, t74, t75, t81, t82, t83, t84, t85, t88, t89, t93, t94, t100, t101, t102, t105, t106, t110, t111, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t132, t133, t134, t135, t136, t139, t140, t147, t148, t151, t152, t153, t154, t155, t158, t159, t166, t167, t170, t171, t172, t175, t176, t183, t184, t185; HERO_NODEBUG HeroFailure t33, t64, t78, t97, t114, t143, t162, t179; HERO_NODEBUG uint8_t t145, t164, t181; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = hero_str_len(t1); t3 = INT64_C(4); if (t3 == 0) hero_panic("division by zero"); if (t2 == INT64_MIN && t3 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t4 = t2 % t3; t5 = INT64_C(0); t6 = t4 != t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 163
+    t14 = hero_array_new(&hero_desc_u8, 1); t189 = h20_own20; h20_own20 = t14; hero_array_decref(t189); t190 = h1_out; hero_array_incref(t14); h1_out = t14; hero_array_decref(t190);
+    t15 = INT64_C(0); h2_i = t15; goto bb4; bb2:
+#line 160
+    t7 = h_base64_ERR_LENGTH(); t191 = h21_own21; h21_own21 = t7; hero_str_decref(t191);
+    t8 = HERO_STR_LIT(hero_str_7eed3f00); t9 = h0_text; t10 = hero_str_len(t9); t11 = hero_int_to_str(t10); t192 = h22_own22; h22_own22 = t11; hero_str_decref(t192); t12 = hero_str_concat(t8, t11); t193 = h23_own23; h23_own23 = t12; hero_str_decref(t193);
+#line 159
+    hero_str_incref(t7); hero_str_incref(t12); t13 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t12}}; t194 = h24_own24; h24_own24 = t13; h_0opt_4d1c207c_release(&t194); h19_ret0 = t13; goto bb40; bb3: goto bb1; bb4:
+#line 166
+    t16 = h2_i; t17 = h0_text; t18 = hero_str_len(t17); t19 = t16 < t18; if (t19) goto bb5; else goto bb6; bb5:
+    t20 = h0_text; t21 = h2_i; t22 = h2_i; t23 = INT64_C(4); if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow(); t25 = hero_str_slice(t20, t21, t24); t195 = h25_own25; h25_own25 = t25; hero_str_decref(t195); t196 = h3_group; hero_str_incref(t25); h3_group = t25; hero_str_decref(t196);
+    t26 = h3_group; t27 = h_base64_padding_of(t26); t197 = h26_own26; h26_own26 = t27; h_0opt_e201354_release(&t197); t198 = h4_f0; h_0opt_e201354_retain(&t27); h4_f0 = t27; h_0opt_e201354_release(&t198); t28 = h4_f0; t29 = t28.tag; t30 = INT64_C(0); t31 = t29 == t30; if (t31) goto bb7; else goto bb8; bb6:
+#line 192
+    t186 = h1_out; hero_array_incref(t186); t187 = (h_0opt_4d1c207c){.tag = INT64_C(0), .as.ok = t186}; t199 = h27_own27; h27_own27 = t187; h_0opt_4d1c207c_release(&t199); h19_ret0 = t187; goto bb40; bb7:
+#line 168
+    t35 = h4_f0; t36 = t35.as.ok; h5_pad = t36;
+#line 170
+    t37 = h5_pad; t38 = INT64_C(0); t39 = t37 > t38; h6_b0 = t39; if (t39) goto bb10; else goto bb11; bb8:
+#line 168
+    t32 = h4_f0; t33 = t32.as.err; hero_failure_retain(&t33); t34 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t33}; t200 = h28_own28; h28_own28 = t34; h_0opt_4d1c207c_release(&t200); h19_ret0 = t34; goto bb40; bb9:
+#line 172
+    t54 = h3_group; t55 = INT64_C(0); t56 = INT64_C(1); t57 = hero_str_slice(t54, t55, t56); t201 = h29_own29; h29_own29 = t57; hero_str_decref(t201); t58 = h_base64_value_of(t57); t202 = h30_own30; h30_own30 = t58; h_0opt_e201354_release(&t202); t203 = h7_f1; h_0opt_e201354_retain(&t58); h7_f1 = t58; h_0opt_e201354_release(&t203); t59 = h7_f1; t60 = t59.tag; t61 = INT64_C(0); t62 = t60 == t61; if (t62) goto bb14; else goto bb15; bb10:
+#line 170
+    t40 = h2_i; t41 = INT64_C(4); if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow(); t43 = h0_text; t44 = hero_str_len(t43); t45 = t42 < t44; h6_b0 = t45; goto bb11; bb11: t46 = h6_b0; if (t46) goto bb12; else goto bb13; bb12:
+    t47 = h_base64_ERR_PADDING(); t204 = h31_own31; h31_own31 = t47; hero_str_decref(t204); t48 = HERO_STR_LIT(hero_str_60); t49 = h3_group; t50 = hero_str_concat(t48, t49); t205 = h32_own32; h32_own32 = t50; hero_str_decref(t205); t51 = HERO_STR_LIT(hero_str_42df8527); t52 = hero_str_concat(t50, t51); t206 = h33_own33; h33_own33 = t52; hero_str_decref(t206); hero_str_incref(t47); hero_str_incref(t52); t53 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = {.code = t47, .msg = t52}}; t207 = h34_own34; h34_own34 = t53; h_0opt_4d1c207c_release(&t207); h19_ret0 = t53; goto bb40; bb13: goto bb9; bb14:
+    t66 = h7_f1; t67 = t66.as.ok; h8_v0 = t67;
+    t68 = h3_group; t69 = INT64_C(1); t70 = INT64_C(2); t71 = hero_str_slice(t68, t69, t70); t208 = h35_own35; h35_own35 = t71; hero_str_decref(t208); t72 = h_base64_value_of(t71); t209 = h36_own36; h36_own36 = t72; h_0opt_e201354_release(&t209); t210 = h9_f2; h_0opt_e201354_retain(&t72); h9_f2 = t72; h_0opt_e201354_release(&t210); t73 = h9_f2; t74 = t73.tag; t75 = INT64_C(0); t76 = t74 == t75; if (t76) goto bb16; else goto bb17; bb15:
+#line 172
+    t63 = h7_f1; t64 = t63.as.err; hero_failure_retain(&t64); t65 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t64}; t211 = h37_own37; h37_own37 = t65; h_0opt_4d1c207c_release(&t211); h19_ret0 = t65; goto bb40; bb16:
+    t80 = h9_f2; t81 = t80.as.ok; h10_v1 = t81;
+    t82 = INT64_C(0); h11_v2 = t82;
+    t83 = INT64_C(0); h12_v3 = t83;
+#line 177
+    t84 = h5_pad; t85 = INT64_C(2); t86 = t84 < t85; if (t86) goto bb19; else goto bb20; bb17:
+#line 173
+    t77 = h9_f2; t78 = t77.as.err; hero_failure_retain(&t78); t79 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t78}; t212 = h38_own38; h38_own38 = t79; h_0opt_4d1c207c_release(&t212); h19_ret0 = t79; goto bb40; bb18:
+#line 180
+    t101 = h5_pad; t102 = INT64_C(1); t103 = t101 < t102; if (t103) goto bb24; else goto bb25; bb19:
+#line 178
+    t87 = h3_group; t88 = INT64_C(2); t89 = INT64_C(3); t90 = hero_str_slice(t87, t88, t89); t213 = h39_own39; h39_own39 = t90; hero_str_decref(t213); t91 = h_base64_value_of(t90); t214 = h40_own40; h40_own40 = t91; h_0opt_e201354_release(&t214); t215 = h13_f3; h_0opt_e201354_retain(&t91); h13_f3 = t91; h_0opt_e201354_release(&t215); t92 = h13_f3; t93 = t92.tag; t94 = INT64_C(0); t95 = t93 == t94; if (t95) goto bb21; else goto bb22; bb20: goto bb18; bb21: t99 = h13_f3; t100 = t99.as.ok; h11_v2 = t100; goto bb18; bb22: t96 = h13_f3; t97 = t96.as.err; hero_failure_retain(&t97); t98 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t97}; t216 = h41_own41; h41_own41 = t98; h_0opt_4d1c207c_release(&t216); h19_ret0 = t98; goto bb40; bb23:
+#line 182
+    t118 = h8_v0; t119 = INT64_C(18); if (t119 < 0 || t119 > 63) hero_panic("shift count outside 0..63"); t120 = (int64_t)((uint64_t)t118 << (uint64_t)t119); t121 = h10_v1; t122 = INT64_C(12); if (t122 < 0 || t122 > 63) hero_panic("shift count outside 0..63"); t123 = (int64_t)((uint64_t)t121 << (uint64_t)t122); t124 = t120 | t123; t125 = h11_v2; t126 = INT64_C(6); if (t126 < 0 || t126 > 63) hero_panic("shift count outside 0..63"); t127 = (int64_t)((uint64_t)t125 << (uint64_t)t126); t128 = t124 | t127; t129 = h12_v3; t130 = t128 | t129; h15_block = t130;
+    t132 = h15_block; t133 = INT64_C(16); if (t133 < 0 || t133 > 63) hero_panic("shift count outside 0..63"); t134 = (t132 < 0) ? ~(int64_t)((~(uint64_t)t132) >> (uint64_t)t133) : (int64_t)((uint64_t)t132 >> (uint64_t)t133); t135 = INT64_C(255); t136 = t134 & t135; if (t136 >= 0LL && t136 <= 255LL) { t137 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t136}; } else { t137 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t217 = h42_own42; h42_own42 = t137; h_0opt_1ec004_release(&t217); t218 = h16_f5; h_0opt_1ec004_retain(&t137); h16_f5 = t137; h_0opt_1ec004_release(&t218); t138 = h16_f5; t139 = t138.tag; t140 = INT64_C(0); t141 = t139 == t140; if (t141) goto bb28; else goto bb29; bb24:
+#line 181
+    t104 = h3_group; t105 = INT64_C(3); t106 = INT64_C(4); t107 = hero_str_slice(t104, t105, t106); t219 = h43_own43; h43_own43 = t107; hero_str_decref(t219); t108 = h_base64_value_of(t107); t220 = h44_own44; h44_own44 = t108; h_0opt_e201354_release(&t220); t221 = h14_f4; h_0opt_e201354_retain(&t108); h14_f4 = t108; h_0opt_e201354_release(&t221); t109 = h14_f4; t110 = t109.tag; t111 = INT64_C(0); t112 = t110 == t111; if (t112) goto bb26; else goto bb27; bb25: goto bb23; bb26: t116 = h14_f4; t117 = t116.as.ok; h12_v3 = t117; goto bb23; bb27: t113 = h14_f4; t114 = t113.as.err; hero_failure_retain(&t114); t115 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = t114}; t222 = h45_own45; h45_own45 = t115; h_0opt_4d1c207c_release(&t222); h19_ret0 = t115; goto bb40; bb28:
+#line 183
+    t144 = h16_f5; t145 = t144.as.ok; hero_array_push_owned(&h1_out, &t145);
+#line 185
+    t147 = h5_pad; t148 = INT64_C(2); t149 = t147 < t148; if (t149) goto bb31; else goto bb32; bb29:
+#line 183
+    t142 = h16_f5; t143 = t142.as.err;
+#line 791 "main.c"
     hero_panic_must(t143);
     hero_unreachable();
 bb30:
 #line 188 "examples/checksum/base64.hero"
-    t166 = h5_pad;
-#line 188 "examples/checksum/base64.hero"
-    t167 = INT64_C(1);
-#line 188 "examples/checksum/base64.hero"
-    t168 = t166 < t167;
-#line 188 "examples/checksum/base64.hero"
-    if (t168) goto bb36; else goto bb37;
-#line 188 "examples/checksum/base64.hero"
-bb31:
-#line 186 "examples/checksum/base64.hero"
-    t151 = h15_block;
-#line 186 "examples/checksum/base64.hero"
-    t152 = INT64_C(8);
-#line 186 "examples/checksum/base64.hero"
-    if (t152 < 0 || t152 > 63) hero_panic("shift count outside 0..63");
-#line 186 "examples/checksum/base64.hero"
-    t153 = (t151 < 0) ? ~(int64_t)((~(uint64_t)t151) >> (uint64_t)t152) : (int64_t)((uint64_t)t151 >> (uint64_t)t152);
-#line 186 "examples/checksum/base64.hero"
-    t154 = INT64_C(255);
-#line 186 "examples/checksum/base64.hero"
-    t155 = t153 & t154;
-#line 186 "examples/checksum/base64.hero"
-    if (t155 >= 0LL && t155 <= 255LL) {
-#line 186 "examples/checksum/base64.hero"
-        t156 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t155};
-#line 186 "examples/checksum/base64.hero"
-    } else {
-#line 186 "examples/checksum/base64.hero"
-        t156 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 186 "examples/checksum/base64.hero"
-    }
-#line 186 "examples/checksum/base64.hero"
-    t223 = h46_own46;
-#line 186 "examples/checksum/base64.hero"
-    h46_own46 = t156;
-#line 186 "examples/checksum/base64.hero"
-    h_0opt_1ec004_release(&t223);
-#line 186 "examples/checksum/base64.hero"
-    t224 = h17_f6;
-#line 186 "examples/checksum/base64.hero"
-    h_0opt_1ec004_retain(&t156);
-#line 186 "examples/checksum/base64.hero"
-    h17_f6 = t156;
-#line 186 "examples/checksum/base64.hero"
-    h_0opt_1ec004_release(&t224);
-#line 186 "examples/checksum/base64.hero"
-    t157 = h17_f6;
-#line 186 "examples/checksum/base64.hero"
-    t158 = t157.tag;
-#line 186 "examples/checksum/base64.hero"
-    t159 = INT64_C(0);
-#line 186 "examples/checksum/base64.hero"
-    t160 = t158 == t159;
-#line 186 "examples/checksum/base64.hero"
-    if (t160) goto bb33; else goto bb34;
-#line 186 "examples/checksum/base64.hero"
-bb32:
-#line 186 "examples/checksum/base64.hero"
-    goto bb30;
-#line 186 "examples/checksum/base64.hero"
-bb33:
-#line 186 "examples/checksum/base64.hero"
-    t163 = h17_f6;
-#line 186 "examples/checksum/base64.hero"
-    t164 = t163.as.ok;
-#line 186 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t164);
-#line 186 "examples/checksum/base64.hero"
-    goto bb30;
-#line 186 "examples/checksum/base64.hero"
-bb34:
-#line 186 "examples/checksum/base64.hero"
-    t161 = h17_f6;
-#line 186 "examples/checksum/base64.hero"
-    t162 = t161.as.err;
-#line 3361 "main.c"
+    t166 = h5_pad; t167 = INT64_C(1); t168 = t166 < t167; if (t168) goto bb36; else goto bb37; bb31:
+#line 186
+    t151 = h15_block; t152 = INT64_C(8); if (t152 < 0 || t152 > 63) hero_panic("shift count outside 0..63"); t153 = (t151 < 0) ? ~(int64_t)((~(uint64_t)t151) >> (uint64_t)t152) : (int64_t)((uint64_t)t151 >> (uint64_t)t152); t154 = INT64_C(255); t155 = t153 & t154; if (t155 >= 0LL && t155 <= 255LL) { t156 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t155}; } else { t156 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t223 = h46_own46; h46_own46 = t156; h_0opt_1ec004_release(&t223); t224 = h17_f6; h_0opt_1ec004_retain(&t156); h17_f6 = t156; h_0opt_1ec004_release(&t224); t157 = h17_f6; t158 = t157.tag; t159 = INT64_C(0); t160 = t158 == t159; if (t160) goto bb33; else goto bb34; bb32: goto bb30; bb33: t163 = h17_f6; t164 = t163.as.ok; hero_array_push_owned(&h1_out, &t164); goto bb30; bb34: t161 = h17_f6; t162 = t161.as.err;
+#line 799 "main.c"
     hero_panic_must(t162);
     hero_unreachable();
 bb35:
 #line 190 "examples/checksum/base64.hero"
-    t183 = h2_i;
-#line 190 "examples/checksum/base64.hero"
-    t184 = INT64_C(4);
-#line 190 "examples/checksum/base64.hero"
-    if (__builtin_add_overflow(t183, t184, &t185)) hero_panic_overflow();
-#line 190 "examples/checksum/base64.hero"
-    h2_i = t185;
-#line 190 "examples/checksum/base64.hero"
-    goto bb4;
-#line 190 "examples/checksum/base64.hero"
-bb36:
-#line 189 "examples/checksum/base64.hero"
-    t170 = h15_block;
-#line 189 "examples/checksum/base64.hero"
-    t171 = INT64_C(255);
-#line 189 "examples/checksum/base64.hero"
-    t172 = t170 & t171;
-#line 189 "examples/checksum/base64.hero"
-    if (t172 >= 0LL && t172 <= 255LL) {
-#line 189 "examples/checksum/base64.hero"
-        t173 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t172};
-#line 189 "examples/checksum/base64.hero"
-    } else {
-#line 189 "examples/checksum/base64.hero"
-        t173 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 189 "examples/checksum/base64.hero"
-    }
-#line 189 "examples/checksum/base64.hero"
-    t225 = h47_own47;
-#line 189 "examples/checksum/base64.hero"
-    h47_own47 = t173;
-#line 189 "examples/checksum/base64.hero"
-    h_0opt_1ec004_release(&t225);
-#line 189 "examples/checksum/base64.hero"
-    t226 = h18_f7;
-#line 189 "examples/checksum/base64.hero"
-    h_0opt_1ec004_retain(&t173);
-#line 189 "examples/checksum/base64.hero"
-    h18_f7 = t173;
-#line 189 "examples/checksum/base64.hero"
-    h_0opt_1ec004_release(&t226);
-#line 189 "examples/checksum/base64.hero"
-    t174 = h18_f7;
-#line 189 "examples/checksum/base64.hero"
-    t175 = t174.tag;
-#line 189 "examples/checksum/base64.hero"
-    t176 = INT64_C(0);
-#line 189 "examples/checksum/base64.hero"
-    t177 = t175 == t176;
-#line 189 "examples/checksum/base64.hero"
-    if (t177) goto bb38; else goto bb39;
-#line 189 "examples/checksum/base64.hero"
-bb37:
-#line 189 "examples/checksum/base64.hero"
-    goto bb35;
-#line 189 "examples/checksum/base64.hero"
-bb38:
-#line 189 "examples/checksum/base64.hero"
-    t180 = h18_f7;
-#line 189 "examples/checksum/base64.hero"
-    t181 = t180.as.ok;
-#line 189 "examples/checksum/base64.hero"
-    hero_array_push_owned(&h1_out, &t181);
-#line 189 "examples/checksum/base64.hero"
-    goto bb35;
-#line 189 "examples/checksum/base64.hero"
-bb39:
-#line 189 "examples/checksum/base64.hero"
-    t178 = h18_f7;
-#line 189 "examples/checksum/base64.hero"
-    t179 = t178.as.err;
-#line 3437 "main.c"
+    t183 = h2_i; t184 = INT64_C(4); if (__builtin_add_overflow(t183, t184, &t185)) hero_panic_overflow(); h2_i = t185; goto bb4; bb36:
+#line 189
+    t170 = h15_block; t171 = INT64_C(255); t172 = t170 & t171; if (t172 >= 0LL && t172 <= 255LL) { t173 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t172}; } else { t173 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t225 = h47_own47; h47_own47 = t173; h_0opt_1ec004_release(&t225); t226 = h18_f7; h_0opt_1ec004_retain(&t173); h18_f7 = t173; h_0opt_1ec004_release(&t226); t174 = h18_f7; t175 = t174.tag; t176 = INT64_C(0); t177 = t175 == t176; if (t177) goto bb38; else goto bb39; bb37: goto bb35; bb38: t180 = h18_f7; t181 = t180.as.ok; hero_array_push_owned(&h1_out, &t181); goto bb35; bb39: t178 = h18_f7; t179 = t178.as.err;
+#line 807 "main.c"
     hero_panic_must(t179);
     hero_unreachable();
 bb40:
@@ -3481,39 +851,9 @@ bb40:
 }
 
 #line 196 "examples/checksum/base64.hero"
-HeroStr h_base64_refusal_of(h_0opt_4d1c207c h0_said) {
-#line 196 "examples/checksum/base64.hero"
-    HERO_NODEBUG h_0opt_4d1c207c h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0;
-#line 196 "examples/checksum/base64.hero"
-bb0:
-    t1 = h0_said;
-#line 197 "examples/checksum/base64.hero"
-    t9 = h1_s0;
-#line 197 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_retain(&t1);
-#line 197 "examples/checksum/base64.hero"
-    h1_s0 = t1;
-#line 197 "examples/checksum/base64.hero"
-    h_0opt_4d1c207c_release(&t9);
-#line 197 "examples/checksum/base64.hero"
-    t2 = h1_s0;
-#line 197 "examples/checksum/base64.hero"
-    t3 = t2.tag;
-#line 197 "examples/checksum/base64.hero"
-    switch (t3) {
-#line 197 "examples/checksum/base64.hero"
-        case 0: goto bb2;
-#line 197 "examples/checksum/base64.hero"
-        case 1: goto bb3;
-#line 197 "examples/checksum/base64.hero"
-        default: hero_unreachable();
-#line 197 "examples/checksum/base64.hero"
-    }
-#line 197 "examples/checksum/base64.hero"
-bb1:
-#line 197 "examples/checksum/base64.hero"
-    t8 = h2_r0;
-#line 3517 "main.c"
+HeroStr h_base64_refusal_of(h_0opt_4d1c207c h0_said) { HERO_NODEBUG h_0opt_4d1c207c h1_s0 = {0}, t1, t2, t5, t9; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t7, t8, t10, t12; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_said; t9 = h1_s0; h_0opt_4d1c207c_retain(&t1); h1_s0 = t1; h_0opt_4d1c207c_release(&t9); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t8 = h2_r0;
+#line 857 "main.c"
     hero_str_incref(t8);
     h_0opt_4d1c207c_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -3522,309 +862,73 @@ bb1:
 bb2:
 #line 198 "examples/checksum/base64.hero"
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
-#line 197 "examples/checksum/base64.hero"
-    t10 = h2_r0;
-#line 197 "examples/checksum/base64.hero"
-    hero_str_incref(t4);
-#line 197 "examples/checksum/base64.hero"
-    h2_r0 = t4;
-#line 197 "examples/checksum/base64.hero"
-    hero_str_decref(t10);
-#line 197 "examples/checksum/base64.hero"
-    goto bb1;
-#line 197 "examples/checksum/base64.hero"
-bb3:
-#line 199 "examples/checksum/base64.hero"
-    t5 = h1_s0;
-#line 199 "examples/checksum/base64.hero"
-    t6 = t5.as.err;
-#line 199 "examples/checksum/base64.hero"
-    t11 = h3_e;
-#line 199 "examples/checksum/base64.hero"
-    hero_failure_retain(&t6);
-#line 199 "examples/checksum/base64.hero"
-    h3_e = t6;
-#line 199 "examples/checksum/base64.hero"
-    hero_failure_release(&t11);
-#line 199 "examples/checksum/base64.hero"
-    t7 = h3_e.code;
-#line 197 "examples/checksum/base64.hero"
-    t12 = h2_r0;
-#line 197 "examples/checksum/base64.hero"
-    hero_str_incref(t7);
-#line 197 "examples/checksum/base64.hero"
-    h2_r0 = t7;
-#line 197 "examples/checksum/base64.hero"
-    hero_str_decref(t12);
-#line 197 "examples/checksum/base64.hero"
-    goto bb1;
-#line 3562 "main.c"
+#line 197
+    t10 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t10); goto bb1; bb3:
+#line 199
+    t5 = h1_s0; t6 = t5.as.err; t11 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t11); t7 = h3_e.code;
+#line 197
+    t12 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t12); goto bb1;
+#line 872 "main.c"
 }
 
 #line 40 "examples/checksum/crc.hero"
-int64_t h_crc_POLY(void) {
-#line 40 "examples/checksum/crc.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 40 "examples/checksum/crc.hero"
-bb0:
-    t1 = INT64_C(79764919);
-#line 41 "examples/checksum/crc.hero"
-    return t1;
-#line 3574 "main.c"
+int64_t h_crc_POLY(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(79764919); return t1;
+#line 878 "main.c"
 }
 
 #line 44 "examples/checksum/crc.hero"
-int64_t h_crc_POLY_REFLECTED(void) {
-#line 44 "examples/checksum/crc.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 44 "examples/checksum/crc.hero"
-bb0:
-    t1 = INT64_C(3988292384);
-#line 45 "examples/checksum/crc.hero"
-    return t1;
-#line 3586 "main.c"
+int64_t h_crc_POLY_REFLECTED(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3988292384); return t1;
+#line 884 "main.c"
 }
 
 #line 49 "examples/checksum/crc.hero"
-int64_t h_crc_INIT(void) {
-#line 49 "examples/checksum/crc.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 49 "examples/checksum/crc.hero"
-bb0:
-    t1 = INT64_C(4294967295);
-#line 50 "examples/checksum/crc.hero"
-    return t1;
-#line 3598 "main.c"
+int64_t h_crc_INIT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(4294967295); return t1;
+#line 890 "main.c"
 }
 
 #line 52 "examples/checksum/crc.hero"
-int64_t h_crc_XOROUT(void) {
-#line 52 "examples/checksum/crc.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 52 "examples/checksum/crc.hero"
-bb0:
-    t1 = INT64_C(4294967295);
-#line 53 "examples/checksum/crc.hero"
-    return t1;
-#line 3610 "main.c"
+int64_t h_crc_XOROUT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(4294967295); return t1;
+#line 896 "main.c"
 }
 
 #line 61 "examples/checksum/crc.hero"
-uint32_t h_crc_crc32(HeroStr h0_text) {
-#line 61 "examples/checksum/crc.hero"
-    int64_t h1_reg; int64_t h2_i; uint8_t h3_byte; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h7_own7 = {0}, t12, t13, t17, t19, t57, t58; int64_t h5_bit; HERO_NODEBUG h_0opt_fbaec77 h6_f1 = {0}, h8_own8 = {0}, t48, t49, t53, t55, t59, t60; HERO_NODEBUG int64_t t1, t2, t3, t5, t8, t10, t14, t15, t20, t21, t22, t23, t24, t26, t27, t28, t29, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t50, t51; HERO_NODEBUG HeroStr t4, t7; HERO_NODEBUG bool t6, t16, t25, t30, t52; HERO_NODEBUG uint8_t t9, t11; HERO_NODEBUG HeroFailure t18, t54; HERO_NODEBUG uint32_t t56; HERO_ENTRY_STOP; goto bb0;
-#line 61 "examples/checksum/crc.hero"
-bb0:
-    t1 = h_crc_INIT();
-#line 62 "examples/checksum/crc.hero"
-    h1_reg = t1;
-    t2 = INT64_C(0);
-#line 63 "examples/checksum/crc.hero"
-    h2_i = t2;
-#line 63 "examples/checksum/crc.hero"
-    goto bb1;
-#line 63 "examples/checksum/crc.hero"
-bb1:
-#line 65 "examples/checksum/crc.hero"
-    t3 = h2_i;
-#line 65 "examples/checksum/crc.hero"
-    t4 = h0_text;
-#line 65 "examples/checksum/crc.hero"
-    t5 = hero_str_len(t4);
-#line 65 "examples/checksum/crc.hero"
-    t6 = t3 < t5;
-#line 65 "examples/checksum/crc.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 65 "examples/checksum/crc.hero"
-bb2:
-    t7 = h0_text;
-#line 66 "examples/checksum/crc.hero"
-    t8 = h2_i;
-#line 66 "examples/checksum/crc.hero"
-    t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? ((void)hero_str_byte(t7, t8), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]);
-#line 66 "examples/checksum/crc.hero"
-    h3_byte = t9;
-    t10 = h1_reg;
-#line 67 "examples/checksum/crc.hero"
-    t11 = h3_byte;
-#line 67 "examples/checksum/crc.hero"
-    t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t11};
-#line 67 "examples/checksum/crc.hero"
-    t57 = h7_own7;
-#line 67 "examples/checksum/crc.hero"
-    h7_own7 = t12;
-#line 67 "examples/checksum/crc.hero"
-    h_0opt_e201354_release(&t57);
-#line 67 "examples/checksum/crc.hero"
-    t58 = h4_f0;
-#line 67 "examples/checksum/crc.hero"
-    h_0opt_e201354_retain(&t12);
-#line 67 "examples/checksum/crc.hero"
-    h4_f0 = t12;
-#line 67 "examples/checksum/crc.hero"
-    h_0opt_e201354_release(&t58);
-#line 67 "examples/checksum/crc.hero"
-    t13 = h4_f0;
-#line 67 "examples/checksum/crc.hero"
-    t14 = t13.tag;
-#line 67 "examples/checksum/crc.hero"
-    t15 = INT64_C(0);
-#line 67 "examples/checksum/crc.hero"
-    t16 = t14 == t15;
-#line 67 "examples/checksum/crc.hero"
-    if (t16) goto bb4; else goto bb5;
-#line 67 "examples/checksum/crc.hero"
-bb3:
-#line 83 "examples/checksum/crc.hero"
-    t45 = h1_reg;
-#line 83 "examples/checksum/crc.hero"
-    t46 = h_crc_XOROUT();
-#line 83 "examples/checksum/crc.hero"
-    t47 = t45 ^ t46;
-#line 83 "examples/checksum/crc.hero"
-    if (t47 >= 0LL && t47 <= 4294967295LL) {
-#line 83 "examples/checksum/crc.hero"
-        t48 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t47};
-#line 83 "examples/checksum/crc.hero"
-    } else {
-#line 83 "examples/checksum/crc.hero"
-        t48 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 83 "examples/checksum/crc.hero"
-    }
-#line 83 "examples/checksum/crc.hero"
-    t59 = h8_own8;
-#line 83 "examples/checksum/crc.hero"
-    h8_own8 = t48;
-#line 83 "examples/checksum/crc.hero"
-    h_0opt_fbaec77_release(&t59);
-#line 83 "examples/checksum/crc.hero"
-    t60 = h6_f1;
-#line 83 "examples/checksum/crc.hero"
-    h_0opt_fbaec77_retain(&t48);
-#line 83 "examples/checksum/crc.hero"
-    h6_f1 = t48;
-#line 83 "examples/checksum/crc.hero"
-    h_0opt_fbaec77_release(&t60);
-#line 83 "examples/checksum/crc.hero"
-    t49 = h6_f1;
-#line 83 "examples/checksum/crc.hero"
-    t50 = t49.tag;
-#line 83 "examples/checksum/crc.hero"
-    t51 = INT64_C(0);
-#line 83 "examples/checksum/crc.hero"
-    t52 = t50 == t51;
-#line 83 "examples/checksum/crc.hero"
-    if (t52) goto bb12; else goto bb13;
-#line 83 "examples/checksum/crc.hero"
-bb4:
-#line 67 "examples/checksum/crc.hero"
-    t19 = h4_f0;
-#line 67 "examples/checksum/crc.hero"
-    t20 = t19.as.ok;
-#line 67 "examples/checksum/crc.hero"
-    t21 = t10 ^ t20;
-#line 67 "examples/checksum/crc.hero"
-    h1_reg = t21;
-    t22 = INT64_C(0);
-#line 68 "examples/checksum/crc.hero"
-    h5_bit = t22;
-#line 68 "examples/checksum/crc.hero"
-    goto bb6;
-#line 68 "examples/checksum/crc.hero"
-bb5:
-#line 67 "examples/checksum/crc.hero"
-    t17 = h4_f0;
-#line 67 "examples/checksum/crc.hero"
-    t18 = t17.as.err;
-#line 3740 "main.c"
+uint32_t h_crc_crc32(HeroStr h0_text) { int64_t h1_reg; int64_t h2_i; uint8_t h3_byte; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h7_own7 = {0}, t12, t13, t17, t19, t57, t58; int64_t h5_bit; HERO_NODEBUG h_0opt_fbaec77 h6_f1 = {0}, h8_own8 = {0}, t48, t49, t53, t55, t59, t60; HERO_NODEBUG int64_t t1, t2, t3, t5, t8, t10, t14, t15, t20, t21, t22, t23, t24, t26, t27, t28, t29, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t50, t51; HERO_NODEBUG HeroStr t4, t7; HERO_NODEBUG bool t6, t16, t25, t30, t52; HERO_NODEBUG uint8_t t9, t11; HERO_NODEBUG HeroFailure t18, t54; HERO_NODEBUG uint32_t t56; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_crc_INIT(); h1_reg = t1;
+    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+#line 65
+    t3 = h2_i; t4 = h0_text; t5 = hero_str_len(t4); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb2:
+    t7 = h0_text; t8 = h2_i; t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? ((void)hero_str_byte(t7, t8), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]); h3_byte = t9;
+    t10 = h1_reg; t11 = h3_byte; t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t11}; t57 = h7_own7; h7_own7 = t12; h_0opt_e201354_release(&t57); t58 = h4_f0; h_0opt_e201354_retain(&t12); h4_f0 = t12; h_0opt_e201354_release(&t58); t13 = h4_f0; t14 = t13.tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto bb4; else goto bb5; bb3:
+#line 83
+    t45 = h1_reg; t46 = h_crc_XOROUT(); t47 = t45 ^ t46; if (t47 >= 0LL && t47 <= 4294967295LL) { t48 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t47}; } else { t48 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t59 = h8_own8; h8_own8 = t48; h_0opt_fbaec77_release(&t59); t60 = h6_f1; h_0opt_fbaec77_retain(&t48); h6_f1 = t48; h_0opt_fbaec77_release(&t60); t49 = h6_f1; t50 = t49.tag; t51 = INT64_C(0); t52 = t50 == t51; if (t52) goto bb12; else goto bb13; bb4:
+#line 67
+    t19 = h4_f0; t20 = t19.as.ok; t21 = t10 ^ t20; h1_reg = t21;
+    t22 = INT64_C(0); h5_bit = t22; goto bb6; bb5:
+#line 67
+    t17 = h4_f0; t18 = t17.as.err;
+#line 914 "main.c"
     hero_panic_must(t18);
     hero_unreachable();
 bb6:
 #line 70 "examples/checksum/crc.hero"
-    t23 = h5_bit;
-#line 70 "examples/checksum/crc.hero"
-    t24 = INT64_C(8);
-#line 70 "examples/checksum/crc.hero"
-    t25 = t23 < t24;
-#line 70 "examples/checksum/crc.hero"
-    if (t25) goto bb7; else goto bb8;
-#line 70 "examples/checksum/crc.hero"
-bb7:
-#line 75 "examples/checksum/crc.hero"
-    t26 = h1_reg;
-#line 75 "examples/checksum/crc.hero"
-    t27 = INT64_C(1);
-#line 75 "examples/checksum/crc.hero"
-    t28 = t26 & t27;
-#line 75 "examples/checksum/crc.hero"
-    t29 = INT64_C(1);
-#line 75 "examples/checksum/crc.hero"
-    t30 = t28 == t29;
-#line 75 "examples/checksum/crc.hero"
-    if (t30) goto bb10; else goto bb11;
-#line 75 "examples/checksum/crc.hero"
-bb8:
-#line 81 "examples/checksum/crc.hero"
-    t42 = h2_i;
-#line 81 "examples/checksum/crc.hero"
-    t43 = INT64_C(1);
-#line 81 "examples/checksum/crc.hero"
-    if (__builtin_add_overflow(t42, t43, &t44)) hero_panic_overflow();
-#line 81 "examples/checksum/crc.hero"
-    h2_i = t44;
-#line 81 "examples/checksum/crc.hero"
-    goto bb1;
-#line 81 "examples/checksum/crc.hero"
-bb9:
-#line 79 "examples/checksum/crc.hero"
-    t39 = h5_bit;
-#line 79 "examples/checksum/crc.hero"
-    t40 = INT64_C(1);
-#line 79 "examples/checksum/crc.hero"
-    if (__builtin_add_overflow(t39, t40, &t41)) hero_panic_overflow();
-#line 79 "examples/checksum/crc.hero"
-    h5_bit = t41;
-#line 79 "examples/checksum/crc.hero"
-    goto bb6;
-#line 79 "examples/checksum/crc.hero"
-bb10:
-#line 76 "examples/checksum/crc.hero"
-    t31 = h1_reg;
-#line 76 "examples/checksum/crc.hero"
-    t32 = INT64_C(1);
-#line 76 "examples/checksum/crc.hero"
-    if (t32 < 0 || t32 > 63) hero_panic("shift count outside 0..63");
-#line 76 "examples/checksum/crc.hero"
-    t33 = (t31 < 0) ? ~(int64_t)((~(uint64_t)t31) >> (uint64_t)t32) : (int64_t)((uint64_t)t31 >> (uint64_t)t32);
-#line 76 "examples/checksum/crc.hero"
-    t34 = h_crc_POLY_REFLECTED();
-#line 76 "examples/checksum/crc.hero"
-    t35 = t33 ^ t34;
-#line 76 "examples/checksum/crc.hero"
-    h1_reg = t35;
-#line 76 "examples/checksum/crc.hero"
-    goto bb9;
-#line 76 "examples/checksum/crc.hero"
-bb11:
-#line 78 "examples/checksum/crc.hero"
-    t36 = h1_reg;
-#line 78 "examples/checksum/crc.hero"
-    t37 = INT64_C(1);
-#line 78 "examples/checksum/crc.hero"
-    if (t37 < 0 || t37 > 63) hero_panic("shift count outside 0..63");
-#line 78 "examples/checksum/crc.hero"
-    t38 = (t36 < 0) ? ~(int64_t)((~(uint64_t)t36) >> (uint64_t)t37) : (int64_t)((uint64_t)t36 >> (uint64_t)t37);
-#line 78 "examples/checksum/crc.hero"
-    h1_reg = t38;
-#line 78 "examples/checksum/crc.hero"
-    goto bb9;
-#line 78 "examples/checksum/crc.hero"
-bb12:
-#line 83 "examples/checksum/crc.hero"
-    t55 = h6_f1;
-#line 83 "examples/checksum/crc.hero"
-    t56 = t55.as.ok;
-#line 3828 "main.c"
+    t23 = h5_bit; t24 = INT64_C(8); t25 = t23 < t24; if (t25) goto bb7; else goto bb8; bb7:
+#line 75
+    t26 = h1_reg; t27 = INT64_C(1); t28 = t26 & t27; t29 = INT64_C(1); t30 = t28 == t29; if (t30) goto bb10; else goto bb11; bb8:
+#line 81
+    t42 = h2_i; t43 = INT64_C(1); if (__builtin_add_overflow(t42, t43, &t44)) hero_panic_overflow(); h2_i = t44; goto bb1; bb9:
+#line 79
+    t39 = h5_bit; t40 = INT64_C(1); if (__builtin_add_overflow(t39, t40, &t41)) hero_panic_overflow(); h5_bit = t41; goto bb6; bb10:
+#line 76
+    t31 = h1_reg; t32 = INT64_C(1); if (t32 < 0 || t32 > 63) hero_panic("shift count outside 0..63"); t33 = (t31 < 0) ? ~(int64_t)((~(uint64_t)t31) >> (uint64_t)t32) : (int64_t)((uint64_t)t31 >> (uint64_t)t32); t34 = h_crc_POLY_REFLECTED(); t35 = t33 ^ t34; h1_reg = t35; goto bb9; bb11:
+#line 78
+    t36 = h1_reg; t37 = INT64_C(1); if (t37 < 0 || t37 > 63) hero_panic("shift count outside 0..63"); t38 = (t36 < 0) ? ~(int64_t)((~(uint64_t)t36) >> (uint64_t)t37) : (int64_t)((uint64_t)t36 >> (uint64_t)t37); h1_reg = t38; goto bb9; bb12:
+#line 83
+    t55 = h6_f1; t56 = t55.as.ok;
+#line 932 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h4_f0));
     h_0opt_fbaec77_release(hero_slot_escape(&h6_f1));
     h_0opt_e201354_release(hero_slot_escape(&h7_own7));
@@ -3832,79 +936,23 @@ bb12:
     return t56;
 bb13:
 #line 83 "examples/checksum/crc.hero"
-    t53 = h6_f1;
-#line 83 "examples/checksum/crc.hero"
-    t54 = t53.as.err;
-#line 3839 "main.c"
+    t53 = h6_f1; t54 = t53.as.err;
+#line 941 "main.c"
     hero_panic_must(t54);
     hero_unreachable();
 }
 
 #line 87 "examples/checksum/crc.hero"
-int64_t h_crc_reversed_bits(int64_t h0_value, int64_t h1_width) {
-#line 87 "examples/checksum/crc.hero"
-    int64_t h2_out; int64_t h3_i; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 87 "examples/checksum/crc.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 88 "examples/checksum/crc.hero"
-    h2_out = t1;
-    t2 = INT64_C(0);
-#line 89 "examples/checksum/crc.hero"
-    h3_i = t2;
-#line 89 "examples/checksum/crc.hero"
-    goto bb1;
-#line 89 "examples/checksum/crc.hero"
-bb1:
-#line 91 "examples/checksum/crc.hero"
-    t3 = h3_i;
-#line 91 "examples/checksum/crc.hero"
-    t4 = h1_width;
-#line 91 "examples/checksum/crc.hero"
-    t5 = t3 < t4;
-#line 91 "examples/checksum/crc.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 91 "examples/checksum/crc.hero"
-bb2:
-    t6 = h2_out;
-#line 92 "examples/checksum/crc.hero"
-    t7 = INT64_C(1);
-#line 92 "examples/checksum/crc.hero"
-    if (t7 < 0 || t7 > 63) hero_panic("shift count outside 0..63");
-#line 92 "examples/checksum/crc.hero"
-    t8 = (int64_t)((uint64_t)t6 << (uint64_t)t7);
-#line 92 "examples/checksum/crc.hero"
-    t9 = h0_value;
-#line 92 "examples/checksum/crc.hero"
-    t10 = h3_i;
-#line 92 "examples/checksum/crc.hero"
-    if (t10 < 0 || t10 > 63) hero_panic("shift count outside 0..63");
-#line 92 "examples/checksum/crc.hero"
-    t11 = (t9 < 0) ? ~(int64_t)((~(uint64_t)t9) >> (uint64_t)t10) : (int64_t)((uint64_t)t9 >> (uint64_t)t10);
-#line 92 "examples/checksum/crc.hero"
-    t12 = INT64_C(1);
-#line 92 "examples/checksum/crc.hero"
-    t13 = t11 & t12;
-#line 92 "examples/checksum/crc.hero"
-    t14 = t8 | t13;
-#line 92 "examples/checksum/crc.hero"
-    h2_out = t14;
-    t15 = h3_i;
-#line 93 "examples/checksum/crc.hero"
-    t16 = INT64_C(1);
-#line 93 "examples/checksum/crc.hero"
-    if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 93 "examples/checksum/crc.hero"
-    h3_i = t17;
-#line 93 "examples/checksum/crc.hero"
-    goto bb1;
-#line 93 "examples/checksum/crc.hero"
-bb3:
-#line 95 "examples/checksum/crc.hero"
-    t18 = h2_out;
-#line 95 "examples/checksum/crc.hero"
-    return t18;
-#line 3908 "main.c"
+int64_t h_crc_reversed_bits(int64_t h0_value, int64_t h1_width) { int64_t h2_out; int64_t h3_i; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h2_out = t1;
+    t2 = INT64_C(0); h3_i = t2; goto bb1; bb1:
+#line 91
+    t3 = h3_i; t4 = h1_width; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h2_out; t7 = INT64_C(1); if (t7 < 0 || t7 > 63) hero_panic("shift count outside 0..63"); t8 = (int64_t)((uint64_t)t6 << (uint64_t)t7); t9 = h0_value; t10 = h3_i; if (t10 < 0 || t10 > 63) hero_panic("shift count outside 0..63"); t11 = (t9 < 0) ? ~(int64_t)((~(uint64_t)t9) >> (uint64_t)t10) : (int64_t)((uint64_t)t9 >> (uint64_t)t10); t12 = INT64_C(1); t13 = t11 & t12; t14 = t8 | t13; h2_out = t14;
+    t15 = h3_i; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h3_i = t17; goto bb1; bb3:
+#line 95
+    t18 = h2_out; return t18;
+#line 956 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Digest_eq(const h_main_Digest *a, const h_main_Digest *b) {
     if (!(a->f_checksum == b->f_checksum)) return false;

@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "adversarialdivisionedges.c"
 #pragma clang diagnostic pop
@@ -95,48 +95,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_adversarialdivisionedges_main(void);
 
 #line 13 "tests/golden/run/adversarial-division-edges.hero"
-void h_adversarialdivisionedges_main(void) {
-#line 13 "tests/golden/run/adversarial-division-edges.hero"
-    int64_t h0_low; int64_t h1_minus; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/adversarial-division-edges.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 14 "tests/golden/run/adversarial-division-edges.hero"
-    t2 = INT64_C(9223372036854775807);
-#line 14 "tests/golden/run/adversarial-division-edges.hero"
-    if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 14 "tests/golden/run/adversarial-division-edges.hero"
-    h0_low = t3;
-    t4 = h0_low;
-#line 15 "tests/golden/run/adversarial-division-edges.hero"
-    t5 = INT64_C(1);
-#line 15 "tests/golden/run/adversarial-division-edges.hero"
-    if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 15 "tests/golden/run/adversarial-division-edges.hero"
-    h0_low = t6;
-    t7 = INT64_C(0);
-#line 16 "tests/golden/run/adversarial-division-edges.hero"
-    t8 = INT64_C(1);
-#line 16 "tests/golden/run/adversarial-division-edges.hero"
-    if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 16 "tests/golden/run/adversarial-division-edges.hero"
-    h1_minus = t9;
-    t10 = h0_low;
-#line 17 "tests/golden/run/adversarial-division-edges.hero"
-    t11 = h1_minus;
-#line 17 "tests/golden/run/adversarial-division-edges.hero"
-    if (t11 == 0) hero_panic("division by zero");
-#line 17 "tests/golden/run/adversarial-division-edges.hero"
-    if (t10 == INT64_MIN && t11 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 17 "tests/golden/run/adversarial-division-edges.hero"
-    t12 = t10 % t11;
-#line 17 "tests/golden/run/adversarial-division-edges.hero"
-    hero_print_int(t12);
-#line 17 "tests/golden/run/adversarial-division-edges.hero"
-    hero_print_end();
-#line 17 "tests/golden/run/adversarial-division-edges.hero"
-    return;
-#line 140 "adversarialdivisionedges.c"
+void h_adversarialdivisionedges_main(void) { int64_t h0_low; int64_t h1_minus; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = INT64_C(9223372036854775807); if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow(); h0_low = t3;
+    t4 = h0_low; t5 = INT64_C(1); if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow(); h0_low = t6;
+    t7 = INT64_C(0); t8 = INT64_C(1); if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow(); h1_minus = t9;
+    t10 = h0_low; t11 = h1_minus; if (t11 == 0) hero_panic("division by zero"); if (t10 == INT64_MIN && t11 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t12 = t10 % t11; hero_print_int(t12); hero_print_end(); return;
+#line 104 "adversarialdivisionedges.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

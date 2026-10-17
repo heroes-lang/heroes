@@ -165,11 +165,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_deadhandleinacallbackresult
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 175 "deadhandleinacallbackresultrecordnamesitsfield.c"
 #pragma clang diagnostic pop
@@ -209,102 +209,26 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-struct pair h_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
-#line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_thread_guard("deadhandleinacallbackresultrecordnamesitsfield.give"); struct pair h1_p; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t6, t7, t11, t13, t18, t19; HERO_NODEBUG node *t1, *t2, *t16; HERO_NODEBUG struct pair t3, t17; HERO_NODEBUG int64_t t4, t8, t9, t14; HERO_NODEBUG int32_t t5; HERO_NODEBUG bool t10, t15; HERO_NODEBUG HeroFailure t12; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-bb0:
-    t1 = node_new();
-#line 20 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_handle_acquired(t1, "node_free");
-#line 20 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t2 = node_new();
-#line 20 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_handle_acquired(t2, "node_free");
-#line 20 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t3 = (struct pair){.a = t1, .b = t2};
-#line 20 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    h1_p = t3;
-#line 20 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_pad_fill(&h1_p, sizeof(struct pair), 1, hero_pad_g_1, hero_pad_n_1);
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t4 = one();
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t5 = h0_k;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t6 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t5};
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t18 = h3_own3;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    h3_own3 = t6;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    h_0opt_e201354_release(&t18);
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t19 = h2_f0;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    h_0opt_e201354_retain(&t6);
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    h2_f0 = t6;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    h_0opt_e201354_release(&t19);
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t7 = h2_f0;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t8 = t7.tag;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t9 = INT64_C(0);
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t10 = t8 == t9;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    if (t10) goto bb2; else goto bb3;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-bb1:
-#line 24 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
+struct pair h_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) { hero_thread_guard("deadhandleinacallbackresultrecordnamesitsfield.give"); struct pair h1_p; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t6, t7, t11, t13, t18, t19; HERO_NODEBUG node *t1, *t2, *t16; HERO_NODEBUG struct pair t3, t17; HERO_NODEBUG int64_t t4, t8, t9, t14; HERO_NODEBUG int32_t t5; HERO_NODEBUG bool t10, t15; HERO_NODEBUG HeroFailure t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = node_new(); hero_handle_acquired(t1, "node_free"); t2 = node_new(); hero_handle_acquired(t2, "node_free"); t3 = (struct pair){.a = t1, .b = t2}; h1_p = t3; hero_pad_fill(&h1_p, sizeof(struct pair), 1, hero_pad_g_1, hero_pad_n_1);
+#line 22
+    t4 = one(); t5 = h0_k; t6 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t5}; t18 = h3_own3; h3_own3 = t6; h_0opt_e201354_release(&t18); t19 = h2_f0; h_0opt_e201354_retain(&t6); h2_f0 = t6; h_0opt_e201354_release(&t19); t7 = h2_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb2; else goto bb3; bb1:
+#line 24
     t17 = h1_p;
-#line 265 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 219 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t17;
 bb2:
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t13 = h2_f0;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t14 = t13.as.ok;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t15 = t4 == t14;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    if (t15) goto bb4; else goto bb5;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-bb3:
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t11 = h2_f0;
-#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t12 = t11.as.err;
-#line 284 "deadhandleinacallbackresultrecordnamesitsfield.c"
+    t13 = h2_f0; t14 = t13.as.ok; t15 = t4 == t14; if (t15) goto bb4; else goto bb5; bb3: t11 = h2_f0; t12 = t11.as.err;
+#line 226 "deadhandleinacallbackresultrecordnamesitsfield.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb4:
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t16 = h1_p.b;
-#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    {
-#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_handle_alive(t16, "the argument `n` of `node_free`");
-#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t16, "node_free", NULL);
-#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    (void)node_free(t16);
-#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    if (hero_handle_ended(t16, hero_life_0_0) && h1_p.b == t16) h1_p.b = hero_handle_dead();
-#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    }
-#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    goto bb1;
-#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-bb5:
-#line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    goto bb1;
-#line 308 "deadhandleinacallbackresultrecordnamesitsfield.c"
+    t16 = h1_p.b; { hero_handle_alive(t16, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t16, "node_free", NULL); (void)node_free(t16); if (hero_handle_ended(t16, hero_life_0_0) && h1_p.b == t16) h1_p.b = hero_handle_dead(); } goto bb1; bb5: goto bb1;
+#line 232 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 
 struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
@@ -315,25 +239,9 @@ struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0
 }
 
 #line 26 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-void h_deadhandleinacallbackresultrecordnamesitsfield_main(void) {
-#line 26 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_22e3cba1 t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
-#line 26 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_21c9984d);
-#line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t2 = h_deadhandleinacallbackresultrecordnamesitsfield_give;
-#line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    t3 = ask_pair((h_0fn_22e3cba1)hero_callback_of((void (*)(void))t2));
-#line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_print_str(t1);
-#line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_print_int(t3);
-#line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_print_end();
-#line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    return;
-#line 337 "deadhandleinacallbackresultrecordnamesitsfield.c"
+void h_deadhandleinacallbackresultrecordnamesitsfield_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_22e3cba1 t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_21c9984d); t2 = h_deadhandleinacallbackresultrecordnamesitsfield_give; t3 = ask_pair((h_0fn_22e3cba1)hero_callback_of((void (*)(void))t2)); hero_print_str(t1); hero_print_int(t3); hero_print_end(); return;
+#line 245 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

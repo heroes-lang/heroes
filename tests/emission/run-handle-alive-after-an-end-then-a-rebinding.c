@@ -138,11 +138,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handlealiveafteranendthenar
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 148 "handlealiveafteranendthenarebinding.c"
 #pragma clang diagnostic pop
@@ -161,67 +161,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_handlealiveafteranendthenarebinding_main(void);
 
 #line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-void h_handlealiveafteranendthenarebinding_main(void) {
-#line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    node * h0_n; HERO_NODEBUG int64_t t1, t4, t8; HERO_NODEBUG node *t2, *t3, *t5, *t7, *t9; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 12 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    t2 = node_new(t1);
-#line 12 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_handle_acquired(t2, "node_free");
-#line 12 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    h0_n = t2;
-    t3 = h0_n;
-#line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    {
-#line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_handle_alive(t3, "the argument `n` of `node_free`");
-#line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL);
-#line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    (void)node_free(t3);
-#line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_n == t3) h0_n = hero_handle_dead();
-#line 13 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    }
-    t4 = INT64_C(2);
-#line 14 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    t5 = node_new(t4);
-#line 14 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_handle_acquired(t5, "node_free");
-#line 14 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    h0_n = t5;
-    t6 = HERO_STR_LIT(hero_str_6f955e8a);
-#line 15 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    t7 = h0_n;
-#line 15 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_handle_alive(t7, "the argument `n` of `node_peek`");
-#line 15 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    t8 = node_peek(t7);
-#line 15 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_print_str(t6);
-#line 15 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_print_int(t8);
-#line 15 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_print_end();
-    t9 = h0_n;
-#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    {
-#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    hero_handle_alive(t9, "the argument `n` of `node_free`");
-#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t9, "node_free", NULL);
-#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    (void)node_free(t9);
-#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    if (hero_handle_ended(t9, hero_life_0_0) && h0_n == t9) h0_n = hero_handle_dead();
-#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    }
-#line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    return;
-#line 225 "handlealiveafteranendthenarebinding.c"
+void h_handlealiveafteranendthenarebinding_main(void) { node * h0_n; HERO_NODEBUG int64_t t1, t4, t8; HERO_NODEBUG node *t2, *t3, *t5, *t7, *t9; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = node_new(t1); hero_handle_acquired(t2, "node_free"); h0_n = t2;
+    t3 = h0_n; { hero_handle_alive(t3, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL); (void)node_free(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_n == t3) h0_n = hero_handle_dead(); }
+    t4 = INT64_C(2); t5 = node_new(t4); hero_handle_acquired(t5, "node_free"); h0_n = t5;
+    t6 = HERO_STR_LIT(hero_str_6f955e8a); t7 = h0_n; hero_handle_alive(t7, "the argument `n` of `node_peek`"); t8 = node_peek(t7); hero_print_str(t6); hero_print_int(t8); hero_print_end();
+    t9 = h0_n; { hero_handle_alive(t9, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t9, "node_free", NULL); (void)node_free(t9); if (hero_handle_ended(t9, hero_life_0_0) && h0_n == t9) h0_n = hero_handle_dead(); } return;
+#line 171 "handlealiveafteranendthenarebinding.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

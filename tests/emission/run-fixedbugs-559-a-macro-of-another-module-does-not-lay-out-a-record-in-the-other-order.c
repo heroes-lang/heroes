@@ -153,11 +153,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs559wide_twice(int6
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 163 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 #pragma clang diagnostic pop
@@ -184,51 +184,17 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_main(void) {
-#line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    S h0_s; HERO_NODEBUG int32_t t1, t2, t7; HERO_NODEBUG S t3, t6; HERO_NODEBUG int64_t t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    t2 = INT64_C(2);
-#line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    t3 = (S){.a = t1, .b = t2};
-#line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    h0_s = t3;
-#line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    hero_pad_fill(&h0_s, sizeof(S), 1, hero_pad_g_0, hero_pad_n_0);
-    t4 = INT64_C(3);
-#line 19 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    t5 = h_fixedbugs559wide_doubled(t4);
-#line 19 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    hero_print_int(t5);
-#line 19 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    hero_print_end();
-    t6 = h0_s;
-#line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    t7 = sget(t6);
-#line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    hero_print_int(t7);
-#line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    hero_print_end();
-#line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    return;
-#line 218 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_main(void) { S h0_s; HERO_NODEBUG int32_t t1, t2, t7; HERO_NODEBUG S t3, t6; HERO_NODEBUG int64_t t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = (S){.a = t1, .b = t2}; h0_s = t3; hero_pad_fill(&h0_s, sizeof(S), 1, hero_pad_g_0, hero_pad_n_0);
+    t4 = INT64_C(3); t5 = h_fixedbugs559wide_doubled(t4); hero_print_int(t5); hero_print_end();
+    t6 = h0_s; t7 = sget(t6); hero_print_int(t7); hero_print_end(); return;
+#line 192 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
-int64_t h_fixedbugs559wide_doubled(int64_t h0_x) {
-#line 7 "tests/golden/run/fixedbugs559/wide.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/run/fixedbugs559/wide.hero"
-bb0:
-    t1 = h0_x;
-#line 8 "tests/golden/run/fixedbugs559/wide.hero"
-    t2 = twice(t1);
-#line 8 "tests/golden/run/fixedbugs559/wide.hero"
-    return t2;
-#line 232 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+int64_t h_fixedbugs559wide_doubled(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; t2 = twice(t1); return t2;
+#line 198 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;

@@ -142,11 +142,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatagthatneedsstruc
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 152 "fixedbugsatagthatneedsstruct.c"
 #pragma clang diagnostic pop
@@ -167,71 +167,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsatagthatneedsstruct_main(void);
 
 #line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-void h_fixedbugsatagthatneedsstruct_main(void) {
-#line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    struct probe * h0_p; struct gauge * h1_g; HERO_NODEBUG int64_t t1, t3, t6, t8, t9; HERO_NODEBUG struct probe *t2, *t5, *t10; HERO_NODEBUG struct gauge *t4, *t7, *t11; HERO_ENTRY_STOP; goto bb0;
-#line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 39 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    t2 = probe_open(t1);
-#line 39 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_acquired(t2, "probe_close");
-#line 39 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    h0_p = t2;
-    t3 = INT64_C(35);
-#line 40 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    t4 = gauge_open(t3);
-#line 40 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_acquired(t4, "gauge_close");
-#line 40 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    h1_g = t4;
-    t5 = h0_p;
-#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_alive(t5, "the argument `p` of `probe_value`");
-#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    t6 = probe_value(t5);
-#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    t7 = h1_g;
-#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_alive(t7, "the argument `g` of `gauge_read`");
-#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    t8 = gauge_read(t7);
-#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow();
-#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_print_int(t9);
-#line 41 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_print_end();
-    t10 = h0_p;
-#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    {
-#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_alive(t10, "the argument `p` of `probe_close`");
-#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "probe_close", NULL);
-#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    (void)probe_close(t10);
-#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    if (hero_handle_ended(t10, hero_life_0_0) && h0_p == t10) h0_p = hero_handle_dead();
-#line 42 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    }
-    t11 = h1_g;
-#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    {
-#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    hero_handle_alive(t11, "the argument `g` of `gauge_close`");
-#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t11, "gauge_close", NULL);
-#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    (void)gauge_close(t11);
-#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    if (hero_handle_ended(t11, hero_life_0_0) && h1_g == t11) h1_g = hero_handle_dead();
-#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    }
-#line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    return;
-#line 235 "fixedbugsatagthatneedsstruct.c"
+void h_fixedbugsatagthatneedsstruct_main(void) { struct probe * h0_p; struct gauge * h1_g; HERO_NODEBUG int64_t t1, t3, t6, t8, t9; HERO_NODEBUG struct probe *t2, *t5, *t10; HERO_NODEBUG struct gauge *t4, *t7, *t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); t2 = probe_open(t1); hero_handle_acquired(t2, "probe_close"); h0_p = t2;
+    t3 = INT64_C(35); t4 = gauge_open(t3); hero_handle_acquired(t4, "gauge_close"); h1_g = t4;
+    t5 = h0_p; hero_handle_alive(t5, "the argument `p` of `probe_value`"); t6 = probe_value(t5); t7 = h1_g; hero_handle_alive(t7, "the argument `g` of `gauge_read`"); t8 = gauge_read(t7); if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow(); hero_print_int(t9); hero_print_end();
+    t10 = h0_p; { hero_handle_alive(t10, "the argument `p` of `probe_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "probe_close", NULL); (void)probe_close(t10); if (hero_handle_ended(t10, hero_life_0_0) && h0_p == t10) h0_p = hero_handle_dead(); }
+    t11 = h1_g; { hero_handle_alive(t11, "the argument `g` of `gauge_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t11, "gauge_close", NULL); (void)gauge_close(t11); if (hero_handle_ended(t11, hero_life_0_0) && h1_g == t11) h1_g = hero_handle_dead(); } return;
+#line 177 "fixedbugsatagthatneedsstruct.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b) {
     return hero_handle_eq(*a, *b);

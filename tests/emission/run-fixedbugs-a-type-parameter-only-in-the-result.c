@@ -130,11 +130,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 140 "fixedbugsatypeparameteronlyintheresult.c"
 #pragma clang diagnostic pop
@@ -181,39 +181,9 @@ HERO_TU_LOCAL h_0opt_473cb9ae h_fixedbugsatypeparameteronlyintheresult_wanted_d3
 HERO_TU_LOCAL h_0opt_db92a83 h_fixedbugsatypeparameteronlyintheresult_wanted_1ad16c(HeroStr h0_what);
 
 #line 18 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-h_0opt_e201354 h_fixedbugsatypeparameteronlyintheresult_number_of(h_fixedbugsatypeparameteronlyintheresult_Value h0_v) {
-#line 18 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h1_s0 = {0}, t1, t2, t4, t11; HERO_NODEBUG h_0opt_e201354 h2_r0 = {0}, h4_own4 = {0}, h5_own5 = {0}, t7, t9, t10, t12, t13, t14, t15; h_fixedbugsatypeparameteronlyintheresult_Value_c_number h3_n; HERO_NODEBUG int64_t t3, t6; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_number t5; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb0:
-    t1 = h0_v;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t11 = h1_s0;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_retain(&t1);
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h1_s0 = t1;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&t11);
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t2 = h1_s0;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t3 = t2.tag;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    switch (t3) {
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-        case 0: goto bb2;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-        case 1: goto bb3;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-        default: hero_unreachable();
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    }
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb1:
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t10 = h2_r0;
-#line 217 "fixedbugsatypeparameteronlyintheresult.c"
+h_0opt_e201354 h_fixedbugsatypeparameteronlyintheresult_number_of(h_fixedbugsatypeparameteronlyintheresult_Value h0_v) { HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h1_s0 = {0}, t1, t2, t4, t11; HERO_NODEBUG h_0opt_e201354 h2_r0 = {0}, h4_own4 = {0}, h5_own5 = {0}, t7, t9, t10, t12, t13, t14, t15; h_fixedbugsatypeparameteronlyintheresult_Value_c_number h3_n; HERO_NODEBUG int64_t t3, t6; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_number t5; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_v; t11 = h1_s0; h_fixedbugsatypeparameteronlyintheresult_Value_retain(&t1); h1_s0 = t1; h_fixedbugsatypeparameteronlyintheresult_Value_release(&t11); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t10 = h2_r0;
+#line 187 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_retain(&t10);
     h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h1_s0));
     h_0opt_e201354_release(hero_slot_escape(&h2_r0));
@@ -222,90 +192,20 @@ bb1:
     return t10;
 bb2:
 #line 20 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t4 = h1_s0;
-#line 20 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t5 = t4.as.c_number;
-#line 20 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h3_n = t5;
-#line 20 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t6 = h3_n.f_v;
-#line 20 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t7 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t6};
-#line 20 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t12 = h4_own4;
-#line 20 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h4_own4 = t7;
-#line 20 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t12);
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t13 = h2_r0;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_retain(&t7);
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h2_r0 = t7;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t13);
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    goto bb1;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb3:
-#line 21 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t8 = HERO_STR_LIT(hero_str_7cfc63e3);
-#line 21 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t9 = h_fixedbugsatypeparameteronlyintheresult_wanted_1b9a87(t8);
-#line 21 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t14 = h5_own5;
-#line 21 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h5_own5 = t9;
-#line 21 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t14);
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t15 = h2_r0;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_retain(&t9);
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h2_r0 = t9;
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t15);
-#line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    goto bb1;
-#line 273 "fixedbugsatypeparameteronlyintheresult.c"
+    t4 = h1_s0; t5 = t4.as.c_number; h3_n = t5; t6 = h3_n.f_v; t7 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t6}; t12 = h4_own4; h4_own4 = t7; h_0opt_e201354_release(&t12);
+#line 19
+    t13 = h2_r0; h_0opt_e201354_retain(&t7); h2_r0 = t7; h_0opt_e201354_release(&t13); goto bb1; bb3:
+#line 21
+    t8 = HERO_STR_LIT(hero_str_7cfc63e3); t9 = h_fixedbugsatypeparameteronlyintheresult_wanted_1b9a87(t8); t14 = h5_own5; h5_own5 = t9; h_0opt_e201354_release(&t14);
+#line 19
+    t15 = h2_r0; h_0opt_e201354_retain(&t9); h2_r0 = t9; h_0opt_e201354_release(&t15); goto bb1;
+#line 203 "fixedbugsatypeparameteronlyintheresult.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-h_0opt_f87774a h_fixedbugsatypeparameteronlyintheresult_text_of(h_fixedbugsatypeparameteronlyintheresult_Value h0_v) {
-#line 23 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h1_s0 = {0}, t1, t2, t4, t11; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}, h4_own4 = {0}, h5_own5 = {0}, t7, t9, t10, t13, t14, t15, t16; h_fixedbugsatypeparameteronlyintheresult_Value_c_text h3_t = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_text t5, t12; HERO_NODEBUG HeroStr t6, t8; HERO_ENTRY_STOP; goto bb0;
-#line 23 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb0:
-    t1 = h0_v;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t11 = h1_s0;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_retain(&t1);
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h1_s0 = t1;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&t11);
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t2 = h1_s0;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t3 = t2.tag;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    switch (t3) {
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-        case 0: goto bb3;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-        case 1: goto bb2;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-        default: hero_unreachable();
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    }
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb1:
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t10 = h2_r0;
-#line 309 "fixedbugsatypeparameteronlyintheresult.c"
+h_0opt_f87774a h_fixedbugsatypeparameteronlyintheresult_text_of(h_fixedbugsatypeparameteronlyintheresult_Value h0_v) { HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h1_s0 = {0}, t1, t2, t4, t11; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}, h4_own4 = {0}, h5_own5 = {0}, t7, t9, t10, t13, t14, t15, t16; h_fixedbugsatypeparameteronlyintheresult_Value_c_text h3_t = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_text t5, t12; HERO_NODEBUG HeroStr t6, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_v; t11 = h1_s0; h_fixedbugsatypeparameteronlyintheresult_Value_retain(&t1); h1_s0 = t1; h_fixedbugsatypeparameteronlyintheresult_Value_release(&t11); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb1: t10 = h2_r0;
+#line 209 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_f87774a_retain(&t10);
     h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h1_s0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
@@ -315,112 +215,24 @@ bb1:
     return t10;
 bb2:
 #line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t4 = h1_s0;
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t5 = t4.as.c_text;
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t12 = h3_t;
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_c_text_retain(&t5);
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h3_t = t5;
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_c_text_release(&t12);
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t6 = h3_t.f_s;
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t6);
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t7 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t6};
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t13 = h4_own4;
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h4_own4 = t7;
-#line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_release(&t13);
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t14 = h2_r0;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_retain(&t7);
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h2_r0 = t7;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_release(&t14);
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    goto bb1;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb3:
-#line 26 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t8 = HERO_STR_LIT(hero_str_55b18501);
-#line 26 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t9 = h_fixedbugsatypeparameteronlyintheresult_wanted_1e58d9(t8);
-#line 26 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t15 = h5_own5;
-#line 26 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h5_own5 = t9;
-#line 26 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_release(&t15);
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t16 = h2_r0;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_retain(&t9);
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h2_r0 = t9;
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_release(&t16);
-#line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    goto bb1;
-#line 374 "fixedbugsatypeparameteronlyintheresult.c"
+    t4 = h1_s0; t5 = t4.as.c_text; t12 = h3_t; h_fixedbugsatypeparameteronlyintheresult_Value_c_text_retain(&t5); h3_t = t5; h_fixedbugsatypeparameteronlyintheresult_Value_c_text_release(&t12); t6 = h3_t.f_s; hero_str_incref(t6); t7 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t6}; t13 = h4_own4; h4_own4 = t7; h_0opt_f87774a_release(&t13);
+#line 24
+    t14 = h2_r0; h_0opt_f87774a_retain(&t7); h2_r0 = t7; h_0opt_f87774a_release(&t14); goto bb1; bb3:
+#line 26
+    t8 = HERO_STR_LIT(hero_str_55b18501); t9 = h_fixedbugsatypeparameteronlyintheresult_wanted_1e58d9(t8); t15 = h5_own5; h5_own5 = t9; h_0opt_f87774a_release(&t15);
+#line 24
+    t16 = h2_r0; h_0opt_f87774a_retain(&t9); h2_r0 = t9; h_0opt_f87774a_release(&t16); goto bb1;
+#line 226 "fixedbugsatypeparameteronlyintheresult.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-h_0opt_e201354 h_fixedbugsatypeparameteronlyintheresult_as_return(bool h0_flag) {
-#line 28 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t3, t5, t6, t7, t8; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
-#line 28 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb0:
-    t1 = h0_flag;
-#line 29 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    if (t1) goto bb2; else goto bb3;
-#line 29 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb1:
-#line 32 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t4 = HERO_STR_LIT(hero_str_c9ecd1e);
-#line 32 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t5 = h_fixedbugsatypeparameteronlyintheresult_wanted_1b9a87(t4);
-#line 32 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t7 = h2_own2;
-#line 32 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h2_own2 = t5;
-#line 32 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t7);
-#line 32 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h1_ret0 = t5;
-#line 32 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    goto bb4;
-#line 32 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb2:
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t2 = INT64_C(1);
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t2};
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t8 = h3_own3;
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h3_own3 = t3;
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t8);
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h1_ret0 = t3;
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    goto bb4;
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb3:
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    goto bb1;
-#line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb4:
-#line 424 "fixedbugsatypeparameteronlyintheresult.c"
+h_0opt_e201354 h_fixedbugsatypeparameteronlyintheresult_as_return(bool h0_flag) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t3, t5, t6, t7, t8; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_flag; if (t1) goto bb2; else goto bb3; bb1:
+#line 32
+    t4 = HERO_STR_LIT(hero_str_c9ecd1e); t5 = h_fixedbugsatypeparameteronlyintheresult_wanted_1b9a87(t4); t7 = h2_own2; h2_own2 = t5; h_0opt_e201354_release(&t7); h1_ret0 = t5; goto bb4; bb2:
+#line 30
+    t2 = INT64_C(1); t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t2}; t8 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t8); h1_ret0 = t3; goto bb4; bb3: goto bb1; bb4:
+#line 236 "fixedbugsatypeparameteronlyintheresult.c"
     t6 = h1_ret0;
     h_0opt_e201354_retain(&t6);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -429,348 +241,38 @@ bb4:
 }
 
 #line 34 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-h_0opt_473cb9ae h_fixedbugsatypeparameteronlyintheresult_via_ufcs(void) {
-#line 34 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_473cb9ae h0_own0 = {0}, t2, t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 34 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_6bd6043b);
-#line 35 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t2 = h_fixedbugsatypeparameteronlyintheresult_wanted_d3eff76(t1);
-#line 35 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t3 = h0_own0;
-#line 35 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h0_own0 = t2;
-#line 35 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_473cb9ae_release(&t3);
-#line 447 "fixedbugsatypeparameteronlyintheresult.c"
+h_0opt_473cb9ae h_fixedbugsatypeparameteronlyintheresult_via_ufcs(void) { HERO_NODEBUG h_0opt_473cb9ae h0_own0 = {0}, t2, t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_6bd6043b); t2 = h_fixedbugsatypeparameteronlyintheresult_wanted_d3eff76(t1); t3 = h0_own0; h0_own0 = t2; h_0opt_473cb9ae_release(&t3);
+#line 247 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_473cb9ae_retain(&t2);
     h_0opt_473cb9ae_release(hero_slot_escape(&h0_own0));
     return t2;
 }
 
 #line 37 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-void h_fixedbugsatypeparameteronlyintheresult_main(void) {
-#line 37 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_s0 = {0}, h5_f3 = {0}, h10_own10 = {0}, h12_own12 = {0}, h17_own17 = {0}, t3, t4, t8, t10, t14, t15, t18, t42, t43, t60, t61, t63, t64, t72, t73; HeroFailure h2_e = {0}; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}, h4_f2 = {0}, h14_own14 = {0}, h16_own16 = {0}, t25, t26, t30, t32, t36, t37, t66, t67, t70, t71; h_0opt_db92a83 h6_annotated = {0}; HERO_NODEBUG h_0opt_db92a83 h7_f4 = {0}, h18_own18 = {0}, t48, t49, t50, t74, t75, t76; HERO_NODEBUG h_0opt_473cb9ae h8_f5 = {0}, h19_own19 = {0}, t54, t55, t77, t78; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h15_own15 = {0}, t2, t13, t24, t35, t59, t62, t65, t69; HERO_NODEBUG int64_t t1, t5, t6, t11, t16, t27, t28, t34, t38, t39, t44, t45, t51, t52, t56, t57; HERO_NODEBUG bool t7, t29, t40, t41, t46, t53, t58; HERO_NODEBUG HeroFailure t9, t19, t31, t68; HERO_NODEBUG HeroStr t12, t17, t20, t21, t22, t23, t33, t47; HERO_ENTRY_STOP; goto bb0;
-#line 37 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t2 = (h_fixedbugsatypeparameteronlyintheresult_Value){.tag = h_fixedbugsatypeparameteronlyintheresult_Value_tag_number, .as.c_number = {.f_v = t1}};
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t59 = h9_own9;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h9_own9 = t2;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&t59);
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t3 = h_fixedbugsatypeparameteronlyintheresult_number_of(t2);
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t60 = h10_own10;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h10_own10 = t3;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t60);
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t61 = h0_f0;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_retain(&t3);
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h0_f0 = t3;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t61);
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t4 = h0_f0;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t5 = t4.tag;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t6 = INT64_C(0);
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t7 = t5 == t6;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    if (t7) goto bb1; else goto bb2;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb1:
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t10 = h0_f0;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t11 = t10.as.ok;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_int(t11);
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_end();
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t12 = HERO_STR_LIT(hero_str_78);
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t12);
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t13 = (h_fixedbugsatypeparameteronlyintheresult_Value){.tag = h_fixedbugsatypeparameteronlyintheresult_Value_tag_text, .as.c_text = {.f_s = t12}};
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t62 = h11_own11;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h11_own11 = t13;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&t62);
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t14 = h_fixedbugsatypeparameteronlyintheresult_number_of(t13);
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t63 = h12_own12;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h12_own12 = t14;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t63);
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t64 = h1_s0;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_retain(&t14);
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h1_s0 = t14;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t64);
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t15 = h1_s0;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t16 = t15.tag;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    switch (t16) {
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-        case 0: goto bb4;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-        case 1: goto bb5;
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-        default: hero_unreachable();
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    }
-#line 40 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb2:
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t8 = h0_f0;
-#line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t9 = t8.as.err;
-#line 552 "fixedbugsatypeparameteronlyintheresult.c"
+void h_fixedbugsatypeparameteronlyintheresult_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_s0 = {0}, h5_f3 = {0}, h10_own10 = {0}, h12_own12 = {0}, h17_own17 = {0}, t3, t4, t8, t10, t14, t15, t18, t42, t43, t60, t61, t63, t64, t72, t73; HeroFailure h2_e = {0}; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}, h4_f2 = {0}, h14_own14 = {0}, h16_own16 = {0}, t25, t26, t30, t32, t36, t37, t66, t67, t70, t71; h_0opt_db92a83 h6_annotated = {0}; HERO_NODEBUG h_0opt_db92a83 h7_f4 = {0}, h18_own18 = {0}, t48, t49, t50, t74, t75, t76; HERO_NODEBUG h_0opt_473cb9ae h8_f5 = {0}, h19_own19 = {0}, t54, t55, t77, t78; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h15_own15 = {0}, t2, t13, t24, t35, t59, t62, t65, t69; HERO_NODEBUG int64_t t1, t5, t6, t11, t16, t27, t28, t34, t38, t39, t44, t45, t51, t52, t56, t57; HERO_NODEBUG bool t7, t29, t40, t41, t46, t53, t58; HERO_NODEBUG HeroFailure t9, t19, t31, t68; HERO_NODEBUG HeroStr t12, t17, t20, t21, t22, t23, t33, t47; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); t2 = (h_fixedbugsatypeparameteronlyintheresult_Value){.tag = h_fixedbugsatypeparameteronlyintheresult_Value_tag_number, .as.c_number = {.f_v = t1}}; t59 = h9_own9; h9_own9 = t2; h_fixedbugsatypeparameteronlyintheresult_Value_release(&t59); t3 = h_fixedbugsatypeparameteronlyintheresult_number_of(t2); t60 = h10_own10; h10_own10 = t3; h_0opt_e201354_release(&t60); t61 = h0_f0; h_0opt_e201354_retain(&t3); h0_f0 = t3; h_0opt_e201354_release(&t61); t4 = h0_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t10 = h0_f0; t11 = t10.as.ok; hero_print_int(t11); hero_print_end();
+#line 40
+    t12 = HERO_STR_LIT(hero_str_78); hero_str_incref(t12); t13 = (h_fixedbugsatypeparameteronlyintheresult_Value){.tag = h_fixedbugsatypeparameteronlyintheresult_Value_tag_text, .as.c_text = {.f_s = t12}}; t62 = h11_own11; h11_own11 = t13; h_fixedbugsatypeparameteronlyintheresult_Value_release(&t62); t14 = h_fixedbugsatypeparameteronlyintheresult_number_of(t13); t63 = h12_own12; h12_own12 = t14; h_0opt_e201354_release(&t63); t64 = h1_s0; h_0opt_e201354_retain(&t14); h1_s0 = t14; h_0opt_e201354_release(&t64); t15 = h1_s0; t16 = t15.tag; switch (t16) { case 0: goto bb4; case 1: goto bb5; default: hero_unreachable(); } bb2:
+#line 38
+    t8 = h0_f0; t9 = t8.as.err;
+#line 260 "fixedbugsatypeparameteronlyintheresult.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
 #line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t23 = HERO_STR_LIT(hero_str_70509edc);
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t23);
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t24 = (h_fixedbugsatypeparameteronlyintheresult_Value){.tag = h_fixedbugsatypeparameteronlyintheresult_Value_tag_text, .as.c_text = {.f_s = t23}};
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t65 = h13_own13;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h13_own13 = t24;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&t65);
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t25 = h_fixedbugsatypeparameteronlyintheresult_text_of(t24);
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t66 = h14_own14;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h14_own14 = t25;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_release(&t66);
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t67 = h3_f1;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_retain(&t25);
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h3_f1 = t25;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_release(&t67);
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t26 = h3_f1;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t27 = t26.tag;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t28 = INT64_C(0);
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t29 = t27 == t28;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    if (t29) goto bb6; else goto bb7;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb4:
-#line 41 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t17 = HERO_STR_LIT(hero_str_3f);
-#line 41 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_str(t17);
-#line 41 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_end();
-#line 41 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    goto bb3;
-#line 41 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb5:
-    t18 = h1_s0;
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t19 = t18.as.err;
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t68 = h2_e;
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_failure_retain(&t19);
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h2_e = t19;
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_failure_release(&t68);
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t20 = h2_e.code;
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t21 = HERO_STR_LIT(hero_str_1dce);
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t22 = h2_e.msg;
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_str(t20);
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_str(t21);
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_str(t22);
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_end();
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    goto bb3;
-#line 42 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb6:
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t32 = h3_f1;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t33 = t32.as.ok;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_str(t33);
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_end();
-    t34 = INT64_C(1);
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t35 = (h_fixedbugsatypeparameteronlyintheresult_Value){.tag = h_fixedbugsatypeparameteronlyintheresult_Value_tag_number, .as.c_number = {.f_v = t34}};
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t69 = h15_own15;
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h15_own15 = t35;
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&t69);
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t36 = h_fixedbugsatypeparameteronlyintheresult_text_of(t35);
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t70 = h16_own16;
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h16_own16 = t36;
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_release(&t70);
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t71 = h4_f2;
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_retain(&t36);
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h4_f2 = t36;
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_release(&t71);
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t37 = h4_f2;
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t38 = t37.tag;
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t39 = INT64_C(1);
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t40 = t38 == t39;
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_bool(t40);
-#line 45 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_end();
-    t41 = false;
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t42 = h_fixedbugsatypeparameteronlyintheresult_as_return(t41);
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t72 = h17_own17;
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h17_own17 = t42;
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t72);
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t73 = h5_f3;
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_retain(&t42);
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h5_f3 = t42;
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t73);
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t43 = h5_f3;
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t44 = t43.tag;
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t45 = INT64_C(1);
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t46 = t44 == t45;
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_bool(t46);
-#line 46 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_end();
-    t47 = HERO_STR_LIT(hero_str_75469e46);
-#line 47 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t48 = h_fixedbugsatypeparameteronlyintheresult_wanted_1ad16c(t47);
-#line 47 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t74 = h18_own18;
-#line 47 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h18_own18 = t48;
-#line 47 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_db92a83_release(&t74);
-#line 47 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t75 = h6_annotated;
-#line 47 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_db92a83_retain(&t48);
-#line 47 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h6_annotated = t48;
-#line 47 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_db92a83_release(&t75);
-    t49 = h6_annotated;
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t76 = h7_f4;
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_db92a83_retain(&t49);
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h7_f4 = t49;
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_db92a83_release(&t76);
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t50 = h7_f4;
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t51 = t50.tag;
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t52 = INT64_C(1);
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t53 = t51 == t52;
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_bool(t53);
-#line 48 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_end();
-    t54 = h_fixedbugsatypeparameteronlyintheresult_via_ufcs();
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t77 = h19_own19;
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h19_own19 = t54;
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_473cb9ae_release(&t77);
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t78 = h8_f5;
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_473cb9ae_retain(&t54);
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h8_f5 = t54;
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_473cb9ae_release(&t78);
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t55 = h8_f5;
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t56 = t55.tag;
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t57 = INT64_C(1);
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t58 = t56 == t57;
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_bool(t58);
-#line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_print_end();
-#line 774 "fixedbugsatypeparameteronlyintheresult.c"
+    t23 = HERO_STR_LIT(hero_str_70509edc); hero_str_incref(t23); t24 = (h_fixedbugsatypeparameteronlyintheresult_Value){.tag = h_fixedbugsatypeparameteronlyintheresult_Value_tag_text, .as.c_text = {.f_s = t23}}; t65 = h13_own13; h13_own13 = t24; h_fixedbugsatypeparameteronlyintheresult_Value_release(&t65); t25 = h_fixedbugsatypeparameteronlyintheresult_text_of(t24); t66 = h14_own14; h14_own14 = t25; h_0opt_f87774a_release(&t66); t67 = h3_f1; h_0opt_f87774a_retain(&t25); h3_f1 = t25; h_0opt_f87774a_release(&t67); t26 = h3_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb6; else goto bb7; bb4:
+#line 41
+    t17 = HERO_STR_LIT(hero_str_3f); hero_print_str(t17); hero_print_end(); goto bb3; bb5:
+    t18 = h1_s0; t19 = t18.as.err; t68 = h2_e; hero_failure_retain(&t19); h2_e = t19; hero_failure_release(&t68); t20 = h2_e.code; t21 = HERO_STR_LIT(hero_str_1dce); t22 = h2_e.msg; hero_print_str(t20); hero_print_str(t21); hero_print_str(t22); hero_print_end(); goto bb3; bb6:
+#line 44
+    t32 = h3_f1; t33 = t32.as.ok; hero_print_str(t33); hero_print_end();
+    t34 = INT64_C(1); t35 = (h_fixedbugsatypeparameteronlyintheresult_Value){.tag = h_fixedbugsatypeparameteronlyintheresult_Value_tag_number, .as.c_number = {.f_v = t34}}; t69 = h15_own15; h15_own15 = t35; h_fixedbugsatypeparameteronlyintheresult_Value_release(&t69); t36 = h_fixedbugsatypeparameteronlyintheresult_text_of(t35); t70 = h16_own16; h16_own16 = t36; h_0opt_f87774a_release(&t70); t71 = h4_f2; h_0opt_f87774a_retain(&t36); h4_f2 = t36; h_0opt_f87774a_release(&t71); t37 = h4_f2; t38 = t37.tag; t39 = INT64_C(1); t40 = t38 == t39; hero_print_bool(t40); hero_print_end();
+    t41 = false; t42 = h_fixedbugsatypeparameteronlyintheresult_as_return(t41); t72 = h17_own17; h17_own17 = t42; h_0opt_e201354_release(&t72); t73 = h5_f3; h_0opt_e201354_retain(&t42); h5_f3 = t42; h_0opt_e201354_release(&t73); t43 = h5_f3; t44 = t43.tag; t45 = INT64_C(1); t46 = t44 == t45; hero_print_bool(t46); hero_print_end();
+    t47 = HERO_STR_LIT(hero_str_75469e46); t48 = h_fixedbugsatypeparameteronlyintheresult_wanted_1ad16c(t47); t74 = h18_own18; h18_own18 = t48; h_0opt_db92a83_release(&t74); t75 = h6_annotated; h_0opt_db92a83_retain(&t48); h6_annotated = t48; h_0opt_db92a83_release(&t75);
+    t49 = h6_annotated; t76 = h7_f4; h_0opt_db92a83_retain(&t49); h7_f4 = t49; h_0opt_db92a83_release(&t76); t50 = h7_f4; t51 = t50.tag; t52 = INT64_C(1); t53 = t51 == t52; hero_print_bool(t53); hero_print_end();
+    t54 = h_fixedbugsatypeparameteronlyintheresult_via_ufcs(); t77 = h19_own19; h19_own19 = t54; h_0opt_473cb9ae_release(&t77); t78 = h8_f5; h_0opt_473cb9ae_retain(&t54); h8_f5 = t54; h_0opt_473cb9ae_release(&t78); t55 = h8_f5; t56 = t55.tag; t57 = INT64_C(1); t58 = t56 == t57; hero_print_bool(t58); hero_print_end();
+#line 276 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
@@ -794,125 +296,43 @@ bb6:
     return;
 bb7:
 #line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t30 = h3_f1;
-#line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t31 = t30.as.err;
-#line 801 "fixedbugsatypeparameteronlyintheresult.c"
+    t30 = h3_f1; t31 = t30.as.err;
+#line 301 "fixedbugsatypeparameteronlyintheresult.c"
     hero_panic_must(t31);
     hero_unreachable();
 }
 
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-/* wanted<i64> */
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsatypeparameteronlyintheresult_wanted_1b9a87(HeroStr h0_what) {
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t2 = h0_what;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t1);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t2);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}};
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t4 = h1_own1;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h1_own1 = t3;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_e201354_release(&t4);
-#line 829 "fixedbugsatypeparameteronlyintheresult.c"
+/* wanted<i64> */ HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsatypeparameteronlyintheresult_wanted_1b9a87(HeroStr h0_what) { HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_fab1332); t2 = h0_what; hero_str_incref(t1); hero_str_incref(t2); t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}; t4 = h1_own1; h1_own1 = t3; h_0opt_e201354_release(&t4);
+#line 309 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_retain(&t3);
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-/* wanted<str> */
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsatypeparameteronlyintheresult_wanted_1e58d9(HeroStr h0_what) {
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_f87774a h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t2 = h0_what;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t1);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t2);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t3 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}};
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t4 = h1_own1;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h1_own1 = t3;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_f87774a_release(&t4);
-#line 858 "fixedbugsatypeparameteronlyintheresult.c"
+/* wanted<str> */ HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsatypeparameteronlyintheresult_wanted_1e58d9(HeroStr h0_what) { HERO_NODEBUG h_0opt_f87774a h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_fab1332); t2 = h0_what; hero_str_incref(t1); hero_str_incref(t2); t3 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}; t4 = h1_own1; h1_own1 = t3; h_0opt_f87774a_release(&t4);
+#line 318 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_f87774a_retain(&t3);
     h_0opt_f87774a_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-/* wanted<bool> */
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-HERO_TU_LOCAL h_0opt_473cb9ae h_fixedbugsatypeparameteronlyintheresult_wanted_d3eff76(HeroStr h0_what) {
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_473cb9ae h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t2 = h0_what;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t1);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t2);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t3 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}};
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t4 = h1_own1;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h1_own1 = t3;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_473cb9ae_release(&t4);
-#line 887 "fixedbugsatypeparameteronlyintheresult.c"
+/* wanted<bool> */ HERO_TU_LOCAL h_0opt_473cb9ae h_fixedbugsatypeparameteronlyintheresult_wanted_d3eff76(HeroStr h0_what) { HERO_NODEBUG h_0opt_473cb9ae h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_fab1332); t2 = h0_what; hero_str_incref(t1); hero_str_incref(t2); t3 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}; t4 = h1_own1; h1_own1 = t3; h_0opt_473cb9ae_release(&t4);
+#line 327 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_473cb9ae_retain(&t3);
     h_0opt_473cb9ae_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-/* wanted<f64> */
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-HERO_TU_LOCAL h_0opt_db92a83 h_fixedbugsatypeparameteronlyintheresult_wanted_1ad16c(HeroStr h0_what) {
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_db92a83 h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t2 = h0_what;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t1);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    hero_str_incref(t2);
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t3 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}};
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    t4 = h1_own1;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h1_own1 = t3;
-#line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    h_0opt_db92a83_release(&t4);
-#line 916 "fixedbugsatypeparameteronlyintheresult.c"
+/* wanted<f64> */ HERO_TU_LOCAL h_0opt_db92a83 h_fixedbugsatypeparameteronlyintheresult_wanted_1ad16c(HeroStr h0_what) { HERO_NODEBUG h_0opt_db92a83 h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_fab1332); t2 = h0_what; hero_str_incref(t1); hero_str_incref(t2); t3 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}; t4 = h1_own1; h1_own1 = t3; h_0opt_db92a83_release(&t4);
+#line 336 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_db92a83_retain(&t3);
     h_0opt_db92a83_release(hero_slot_escape(&h1_own1));
     return t3;

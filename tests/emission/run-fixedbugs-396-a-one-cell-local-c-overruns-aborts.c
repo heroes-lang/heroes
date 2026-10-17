@@ -134,11 +134,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396aonecelllocalco
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 144 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 #pragma clang diagnostic pop
@@ -156,41 +156,15 @@ void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
 void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void) {
-#line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
+#line 9
 #define h0_m (*hero_lend_h0_m)
-#line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m"); HERO_NODEBUG uint8_t t1, t5; HERO_NODEBUG HeroStr t2, t4; HERO_NODEBUG int32_t t3; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-bb0:
-    t1 = UINT64_C(0);
-#line 10 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    h0_m = t1;
-    t2 = HERO_STR_LIT(hero_str_43560e4d);
-#line 11 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    hero_print_str(t2);
-#line 11 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    hero_print_end();
-    hero_lend_local_name(hero_lend_h0_m, "digest32", "md");
-#line 12 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    t3 = digest32((void *)&h0_m);
-#line 12 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    hero_print_int(t3);
-#line 12 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    hero_print_end();
-    t4 = HERO_STR_LIT(hero_str_5687795c);
-#line 13 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    t5 = h0_m;
-#line 13 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    hero_print_str(t4);
-#line 13 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    hero_print_int(t5);
-#line 13 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    hero_print_end();
-#line 13 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    hero_lend_local_give(hero_lend_h0_m);
-#line 13 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    return;
-#line 194 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 9
+    uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m"); HERO_NODEBUG uint8_t t1, t5; HERO_NODEBUG HeroStr t2, t4; HERO_NODEBUG int32_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(0); h0_m = t1;
+    t2 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t2); hero_print_end();
+    hero_lend_local_name(hero_lend_h0_m, "digest32", "md"); t3 = digest32((void *)&h0_m); hero_print_int(t3); hero_print_end();
+    t4 = HERO_STR_LIT(hero_str_5687795c); t5 = h0_m; hero_print_str(t4); hero_print_int(t5); hero_print_end(); hero_lend_local_give(hero_lend_h0_m); return;
+#line 168 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 }
 #undef h0_m
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

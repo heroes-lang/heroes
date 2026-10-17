@@ -138,11 +138,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsareleasethemarkdid
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 148 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
 #pragma clang diagnostic pop
@@ -161,42 +161,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void) {
-#line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hh * h0_a; HERO_NODEBUG hh *t1, *t3; HERO_NODEBUG HeroStr t2, t4; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-bb0:
-    t1 = p_open();
-#line 17 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hero_handle_acquired(t1, "p_close");
-#line 17 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    h0_a = t1;
-    t2 = HERO_STR_LIT(hero_str_4a02223e);
-#line 18 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hero_print_str(t2);
-#line 18 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hero_print_end();
-    t3 = h0_a;
-#line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    {
-#line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hero_handle_alive(t3, "the argument `x` of `h_close`");
-#line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "h_close", NULL);
-#line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    (void)h_close(t3);
-#line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead();
-#line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    }
-    t4 = HERO_STR_LIT(hero_str_4414937d);
-#line 20 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hero_print_str(t4);
-#line 20 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hero_print_end();
-#line 20 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    return;
-#line 200 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
+void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void) { hh * h0_a; HERO_NODEBUG hh *t1, *t3; HERO_NODEBUG HeroStr t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = p_open(); hero_handle_acquired(t1, "p_close"); h0_a = t1;
+    t2 = HERO_STR_LIT(hero_str_4a02223e); hero_print_str(t2); hero_print_end();
+    t3 = h0_a; { hero_handle_alive(t3, "the argument `x` of `h_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "h_close", NULL); (void)h_close(t3); if (hero_handle_ended(t3, hero_life_0_0) && h0_a == t3) h0_a = hero_handle_dead(); }
+    t4 = HERO_STR_LIT(hero_str_4414937d); hero_print_str(t4); hero_print_end(); return;
+#line 170 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

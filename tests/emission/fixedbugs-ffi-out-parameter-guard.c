@@ -137,11 +137,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffioutparameterguard_sqlite
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 147 "ffioutparameterguard.c"
 #pragma clang diagnostic pop
@@ -190,93 +190,25 @@ int64_t h_ffioutparameterguard_SQLITE_OK(void) {
 
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 void h_ffioutparameterguard_main(void) {
-#line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 38
 #define h0_db (*hero_lend_h0_db)
-#line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 38
 #define h1_stmt (*hero_lend_h1_stmt)
-#line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
+#line 38
 #define h2_tail (*hero_lend_h2_tail)
-#line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    void * *const hero_lend_h0_db = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "db"); void * *const hero_lend_h1_stmt = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "stmt"); const char * *const hero_lend_h2_tail = (const char * *)hero_lend_local(sizeof(const char *), "ffioutparameterguard.main", "tail"); int64_t h3_rc; HERO_NODEBUG void *t1, *t8, *t10; HERO_NODEBUG HeroStr t2, t7, t11; HERO_NODEBUG const char *t3, *t9, *t12; HERO_NODEBUG int64_t t4, t5, t14, t15, t16; HERO_NODEBUG bool t6, t17; HERO_NODEBUG int32_t t13; HERO_ENTRY_STOP; goto bb0;
-#line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-bb0:
-    t1 = ((void *)0);
-#line 39 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    h0_db = t1;
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t2 = HERO_STR_LIT(hero_str_41b4cad0);
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t3 = hero_str_lend(t2);
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_lend_local_name(hero_lend_h0_db, "sqlite3_open", "db");
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t4 = sqlite3_open(hero_cstr_nonnull(t3), (void *)&h0_db);
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t5 = h_ffioutparameterguard_SQLITE_OK();
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t6 = t4 != t5;
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 41 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-bb1:
-#line 44 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t8 = ((void *)0);
-#line 44 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    h1_stmt = t8;
-    t9 = ((void *)0);
-#line 45 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    h2_tail = t9;
-    t10 = h0_db;
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t11 = HERO_STR_LIT(hero_str_5689c81);
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t12 = hero_str_lend(t11);
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t13 = INT64_C(-1);
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_lend_local_name(hero_lend_h1_stmt, "sqlite3_prepare_v2", "stmt");
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_lend_local_name(hero_lend_h2_tail, "sqlite3_prepare_v2", "tail");
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t14 = sqlite3_prepare_v2(t10, hero_cstr_nonnull(t12), t13, (void *)&h1_stmt, &h2_tail);
-#line 46 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    h3_rc = t14;
-    t15 = h3_rc;
-#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t16 = h_ffioutparameterguard_SQLITE_OK();
-#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t17 = t15 == t16;
-#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_print_bool(t17);
-#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_print_end();
-#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    goto bb4;
-#line 47 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-bb2:
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    t7 = HERO_STR_LIT(hero_str_353a8d65);
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_print_str(t7);
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_print_end();
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    goto bb4;
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-bb3:
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    goto bb1;
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-bb4:
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_lend_local_give(hero_lend_h2_tail);
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_lend_local_give(hero_lend_h1_stmt);
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    hero_lend_local_give(hero_lend_h0_db);
-#line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    return;
-#line 280 "ffioutparameterguard.c"
+#line 38
+    void * *const hero_lend_h0_db = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "db"); void * *const hero_lend_h1_stmt = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "stmt"); const char * *const hero_lend_h2_tail = (const char * *)hero_lend_local(sizeof(const char *), "ffioutparameterguard.main", "tail"); int64_t h3_rc; HERO_NODEBUG void *t1, *t8, *t10; HERO_NODEBUG HeroStr t2, t7, t11; HERO_NODEBUG const char *t3, *t9, *t12; HERO_NODEBUG int64_t t4, t5, t14, t15, t16; HERO_NODEBUG bool t6, t17; HERO_NODEBUG int32_t t13; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = ((void *)0); h0_db = t1;
+#line 41
+    t2 = HERO_STR_LIT(hero_str_41b4cad0); t3 = hero_str_lend(t2); hero_lend_local_name(hero_lend_h0_db, "sqlite3_open", "db"); t4 = sqlite3_open(hero_cstr_nonnull(t3), (void *)&h0_db); t5 = h_ffioutparameterguard_SQLITE_OK(); t6 = t4 != t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 44
+    t8 = ((void *)0); h1_stmt = t8;
+    t9 = ((void *)0); h2_tail = t9;
+    t10 = h0_db; t11 = HERO_STR_LIT(hero_str_5689c81); t12 = hero_str_lend(t11); t13 = INT64_C(-1); hero_lend_local_name(hero_lend_h1_stmt, "sqlite3_prepare_v2", "stmt"); hero_lend_local_name(hero_lend_h2_tail, "sqlite3_prepare_v2", "tail"); t14 = sqlite3_prepare_v2(t10, hero_cstr_nonnull(t12), t13, (void *)&h1_stmt, &h2_tail); h3_rc = t14;
+    t15 = h3_rc; t16 = h_ffioutparameterguard_SQLITE_OK(); t17 = t15 == t16; hero_print_bool(t17); hero_print_end(); goto bb4; bb2:
+#line 42
+    t7 = HERO_STR_LIT(hero_str_353a8d65); hero_print_str(t7); hero_print_end(); goto bb4; bb3: goto bb1; bb4: hero_lend_local_give(hero_lend_h2_tail); hero_lend_local_give(hero_lend_h1_stmt); hero_lend_local_give(hero_lend_h0_db); return;
+#line 212 "ffioutparameterguard.c"
 }
 #undef h0_db
 #undef h1_stmt

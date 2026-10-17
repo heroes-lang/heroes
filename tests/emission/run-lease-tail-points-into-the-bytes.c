@@ -132,16 +132,16 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 13 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_leasetailpointsintothebytes_strlen(const char * a0) { (void)(strlen)(a0); }
-#line 16 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
+#line 16
 __attribute__((unused)) static void hero_ffi_probe_h_leasetailpointsintothebytes_after_dash(const char * a0, const char * * a1) { (void)(after_dash)(a0, a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 147 "leasetailpointsintothebytes.c"
 #pragma clang diagnostic pop
@@ -159,53 +159,23 @@ void h_leasetailpointsintothebytes_tail_of(const char * h0_s, const char * *ph1_
 void h_leasetailpointsintothebytes_main(void);
 
 #line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-void h_leasetailpointsintothebytes_tail_of(const char * h0_s, const char * *ph1_out) {
-#line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    HERO_NODEBUG const char *t1; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-bb0:
-    t1 = h0_s;
-#line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    hero_lend_local_name(ph1_out, "after_dash", "tail");
-#line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    (void)after_dash(hero_cstr_nonnull(t1), &(*ph1_out));
-#line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    return;
-#line 175 "leasetailpointsintothebytes.c"
+void h_leasetailpointsintothebytes_tail_of(const char * h0_s, const char * *ph1_out) { HERO_NODEBUG const char *t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; hero_lend_local_name(ph1_out, "after_dash", "tail"); (void)after_dash(hero_cstr_nonnull(t1), &(*ph1_out)); return;
+#line 165 "leasetailpointsintothebytes.c"
 }
 
 #line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_main(void) {
-#line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
+#line 21
 #define h1_tail (*hero_lend_h1_tail)
-#line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    const char * h0_label; const char * *const hero_lend_h1_tail = (const char * *)hero_lend_local(sizeof(const char *), "leasetailpointsintothebytes.main", "tail"); HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2, *t3, *t4, *t5; HERO_NODEBUG uint64_t t6; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_c4fd56d);
-#line 22 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    t2 = hero_str_held(t1);
-#line 22 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    h0_label = t2;
-    t3 = ((void *)0);
-#line 23 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    h1_tail = t3;
-    t4 = h0_label;
-#line 24 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    h_leasetailpointsintothebytes_tail_of(t4, &h1_tail);
-    t5 = h1_tail;
-#line 25 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    t6 = strlen(hero_cstr_nonnull(t5));
-#line 25 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    hero_print_uint(t6);
-#line 25 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    hero_print_end();
-    hero_held_release(&h0_label);
-#line 26 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    hero_lend_local_give(hero_lend_h1_tail);
-#line 26 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
-    return;
-#line 209 "leasetailpointsintothebytes.c"
+#line 21
+    const char * h0_label; const char * *const hero_lend_h1_tail = (const char * *)hero_lend_local(sizeof(const char *), "leasetailpointsintothebytes.main", "tail"); HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2, *t3, *t4, *t5; HERO_NODEBUG uint64_t t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_c4fd56d); t2 = hero_str_held(t1); h0_label = t2;
+    t3 = ((void *)0); h1_tail = t3;
+    t4 = h0_label; h_leasetailpointsintothebytes_tail_of(t4, &h1_tail);
+    t5 = h1_tail; t6 = strlen(hero_cstr_nonnull(t5)); hero_print_uint(t6); hero_print_end();
+    hero_held_release(&h0_label); hero_lend_local_give(hero_lend_h1_tail); return;
+#line 179 "leasetailpointsintothebytes.c"
 }
 #undef h1_tail
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "printcontract.c"
 #pragma clang diagnostic pop
@@ -95,42 +95,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_printcontract_main(void);
 
 #line 6 "tests/golden/run/print-contract.hero"
-void h_printcontract_main(void) {
-#line 6 "tests/golden/run/print-contract.hero"
-    HERO_NODEBUG int64_t t1, t2, t3, t6; HERO_NODEBUG bool t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 6 "tests/golden/run/print-contract.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 7 "tests/golden/run/print-contract.hero"
-    t2 = INT64_C(2);
-#line 7 "tests/golden/run/print-contract.hero"
-    t3 = INT64_C(3);
-#line 7 "tests/golden/run/print-contract.hero"
-    hero_print_int(t1);
-#line 7 "tests/golden/run/print-contract.hero"
-    hero_print_int(t2);
-#line 7 "tests/golden/run/print-contract.hero"
-    hero_print_int(t3);
-#line 7 "tests/golden/run/print-contract.hero"
+void h_printcontract_main(void) { HERO_NODEBUG int64_t t1, t2, t3, t6; HERO_NODEBUG bool t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); hero_print_int(t1); hero_print_int(t2); hero_print_int(t3); hero_print_end();
+    t4 = true; t5 = false; hero_print_bool(t4); hero_print_bool(t5); hero_print_end();
     hero_print_end();
-    t4 = true;
-#line 8 "tests/golden/run/print-contract.hero"
-    t5 = false;
-#line 8 "tests/golden/run/print-contract.hero"
-    hero_print_bool(t4);
-#line 8 "tests/golden/run/print-contract.hero"
-    hero_print_bool(t5);
-#line 8 "tests/golden/run/print-contract.hero"
-    hero_print_end();
-    hero_print_end();
-    t6 = INT64_C(0);
-#line 10 "tests/golden/run/print-contract.hero"
-    hero_print_int(t6);
-#line 10 "tests/golden/run/print-contract.hero"
-    hero_print_end();
-#line 10 "tests/golden/run/print-contract.hero"
-    return;
-#line 134 "printcontract.c"
+    t6 = INT64_C(0); hero_print_int(t6); hero_print_end(); return;
+#line 104 "printcontract.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

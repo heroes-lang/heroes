@@ -77,11 +77,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 87 "exitstatus.c"
 #pragma clang diagnostic pop
@@ -99,43 +99,17 @@ void h_exitstatus_main(void);
 void h_library_exit(int64_t h0_code);
 
 #line 18 "tests/golden/run/exit-status.hero"
-void h_exitstatus_main(void) {
-#line 18 "tests/golden/run/exit-status.hero"
-    HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/exit-status.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_43560e4d);
-#line 19 "tests/golden/run/exit-status.hero"
-    hero_print_str(t1);
-#line 19 "tests/golden/run/exit-status.hero"
-    hero_print_end();
-    t2 = INT64_C(3);
-#line 20 "tests/golden/run/exit-status.hero"
-    h_library_exit(t2);
-#line 20 "tests/golden/run/exit-status.hero"
-    hero_unreachable();
-    t3 = HERO_STR_LIT(hero_str_347b94b5);
-#line 21 "tests/golden/run/exit-status.hero"
-    hero_print_str(t3);
-#line 21 "tests/golden/run/exit-status.hero"
-    hero_print_end();
-#line 21 "tests/golden/run/exit-status.hero"
-    return;
-#line 125 "exitstatus.c"
+void h_exitstatus_main(void) { HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
+    t2 = INT64_C(3); h_library_exit(t2); hero_unreachable();
+    t3 = HERO_STR_LIT(hero_str_347b94b5); hero_print_str(t3); hero_print_end(); return;
+#line 107 "exitstatus.c"
 }
 
 #line 227 "<heroes library>"
-void h_library_exit(int64_t h0_code) {
-#line 227 "<heroes library>"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 227 "<heroes library>"
-bb0:
-    t1 = h0_code;
-#line 228 "<heroes library>"
-    (void)hero_exit(t1);
-#line 228 "<heroes library>"
-    return;
-#line 139 "exitstatus.c"
+void h_library_exit(int64_t h0_code) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_code; (void)hero_exit(t1); return;
+#line 113 "exitstatus.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

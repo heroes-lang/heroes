@@ -79,11 +79,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 89 "sugarnamedargs.c"
 #pragma clang diagnostic pop
@@ -104,59 +104,21 @@ int64_t h_sugarnamedargs_copy_between(int64_t h0_from, int64_t h1_to);
 void h_sugarnamedargs_main(void);
 
 #line 9 "tests/golden/ir/sugar-named-args.hero"
-h_sugarnamedargs_Point h_sugarnamedargs_moved(h_sugarnamedargs_Point h0_p, int64_t h1_by) {
-#line 9 "tests/golden/ir/sugar-named-args.hero"
-    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG h_sugarnamedargs_Point t5; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/ir/sugar-named-args.hero"
-bb0:
-    t1 = h0_p.f_x;
-#line 10 "tests/golden/ir/sugar-named-args.hero"
-    t2 = h1_by;
-#line 10 "tests/golden/ir/sugar-named-args.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 10 "tests/golden/ir/sugar-named-args.hero"
-    t4 = h0_p.f_y;
-#line 10 "tests/golden/ir/sugar-named-args.hero"
-    t5 = (h_sugarnamedargs_Point){.f_x = t3, .f_y = t4};
-#line 10 "tests/golden/ir/sugar-named-args.hero"
-    return t5;
-#line 124 "sugarnamedargs.c"
+h_sugarnamedargs_Point h_sugarnamedargs_moved(h_sugarnamedargs_Point h0_p, int64_t h1_by) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG h_sugarnamedargs_Point t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_p.f_x; t2 = h1_by; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); t4 = h0_p.f_y; t5 = (h_sugarnamedargs_Point){.f_x = t3, .f_y = t4}; return t5;
+#line 110 "sugarnamedargs.c"
 }
 
 #line 12 "tests/golden/ir/sugar-named-args.hero"
-int64_t h_sugarnamedargs_copy_between(int64_t h0_from, int64_t h1_to) {
-#line 12 "tests/golden/ir/sugar-named-args.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/ir/sugar-named-args.hero"
-bb0:
-    t1 = h1_to;
-#line 13 "tests/golden/ir/sugar-named-args.hero"
-    t2 = h0_from;
-#line 13 "tests/golden/ir/sugar-named-args.hero"
-    if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 13 "tests/golden/ir/sugar-named-args.hero"
-    return t3;
-#line 140 "sugarnamedargs.c"
+int64_t h_sugarnamedargs_copy_between(int64_t h0_from, int64_t h1_to) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_to; t2 = h0_from; if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
+#line 116 "sugarnamedargs.c"
 }
 
 #line 15 "tests/golden/ir/sugar-named-args.hero"
-void h_sugarnamedargs_main(void) {
-#line 15 "tests/golden/ir/sugar-named-args.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/ir/sugar-named-args.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 16 "tests/golden/ir/sugar-named-args.hero"
-    t2 = INT64_C(4);
-#line 16 "tests/golden/ir/sugar-named-args.hero"
-    t3 = h_sugarnamedargs_copy_between(t1, t2);
-#line 16 "tests/golden/ir/sugar-named-args.hero"
-    hero_print_int(t3);
-#line 16 "tests/golden/ir/sugar-named-args.hero"
-    hero_print_end();
-#line 16 "tests/golden/ir/sugar-named-args.hero"
-    return;
-#line 160 "sugarnamedargs.c"
+void h_sugarnamedargs_main(void) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(4); t3 = h_sugarnamedargs_copy_between(t1, t2); hero_print_int(t3); hero_print_end(); return;
+#line 122 "sugarnamedargs.c"
 }
 HERO_TU_LOCAL bool h_sugarnamedargs_Point_eq(const h_sugarnamedargs_Point *a, const h_sugarnamedargs_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

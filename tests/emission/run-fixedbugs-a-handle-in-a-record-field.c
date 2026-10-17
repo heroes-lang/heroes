@@ -143,11 +143,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsahandleinarecordfi
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 153 "fixedbugsahandleinarecordfield.c"
 #pragma clang diagnostic pop
@@ -175,45 +175,13 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-void h_fixedbugsahandleinarecordfield_main(void) {
-#line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    Slot h0_s; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG Slot t2, t3; HERO_NODEBUG Thing *t5, *t6; HERO_NODEBUG bool t7; HERO_NODEBUG double t8; HERO_ENTRY_STOP; goto bb0;
-#line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 51 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    t2 = slot_make(t1);
-#line 51 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    h0_s = t2;
-#line 51 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    hero_pad_fill(&h0_s, sizeof(Slot), 1, hero_pad_g_1, hero_pad_n_1);
-    t3 = h0_s;
-#line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    hero_handle_alive(t3.handle, "the argument `s` of `slot_count`, at `.handle`");
-#line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    t4 = slot_count(t3);
-#line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    hero_print_int(t4);
-#line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    hero_print_end();
-#line 56 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    t5 = h0_s.handle;
-#line 56 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    t6 = ((void *)0);
-#line 56 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    t7 = h_fixedbugsahandleinarecordfield_Thing_eq(&t5, &t6);
-#line 56 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    hero_print_bool(t7);
-#line 56 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    hero_print_end();
-    t8 = h0_s.ratio;
-#line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    hero_print_f64(t8);
-#line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    hero_print_end();
-#line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    return;
-#line 217 "fixedbugsahandleinarecordfield.c"
+void h_fixedbugsahandleinarecordfield_main(void) { Slot h0_s; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG Slot t2, t3; HERO_NODEBUG Thing *t5, *t6; HERO_NODEBUG bool t7; HERO_NODEBUG double t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); t2 = slot_make(t1); h0_s = t2; hero_pad_fill(&h0_s, sizeof(Slot), 1, hero_pad_g_1, hero_pad_n_1);
+    t3 = h0_s; hero_handle_alive(t3.handle, "the argument `s` of `slot_count`, at `.handle`"); t4 = slot_count(t3); hero_print_int(t4); hero_print_end();
+#line 56
+    t5 = h0_s.handle; t6 = ((void *)0); t7 = h_fixedbugsahandleinarecordfield_Thing_eq(&t5, &t6); hero_print_bool(t7); hero_print_end();
+    t8 = h0_s.ratio; hero_print_f64(t8); hero_print_end(); return;
+#line 185 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {
     return hero_handle_eq(*a, *b);

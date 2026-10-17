@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs567au64divisionattwotothe63byitsmaximumprints.c"
 #pragma clang diagnostic pop
@@ -95,42 +95,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs567au64divisionattwotothe63byitsmaximumprints_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-void h_fixedbugs567au64divisionattwotothe63byitsmaximumprints_main(void) {
-#line 14 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    uint64_t h0_k; uint64_t h1_m; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-bb0:
-    t1 = UINT64_C(9223372036854775808);
-#line 15 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    h0_k = t1;
-    t2 = UINT64_C(18446744073709551615);
-#line 16 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    h1_m = t2;
-    t3 = h0_k;
-#line 17 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    t4 = h1_m;
-#line 17 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    if (t4 == 0) hero_panic("division by zero");
-#line 17 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    t5 = t3 / t4;
-#line 17 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    hero_print_uint(t5);
-#line 17 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    hero_print_end();
-    t6 = h0_k;
-#line 18 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    t7 = h1_m;
-#line 18 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    if (t7 == 0) hero_panic("division by zero");
-#line 18 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    t8 = t6 % t7;
-#line 18 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    hero_print_uint(t8);
-#line 18 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    return;
-#line 134 "fixedbugs567au64divisionattwotothe63byitsmaximumprints.c"
+void h_fixedbugs567au64divisionattwotothe63byitsmaximumprints_main(void) { uint64_t h0_k; uint64_t h1_m; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(9223372036854775808); h0_k = t1;
+    t2 = UINT64_C(18446744073709551615); h1_m = t2;
+    t3 = h0_k; t4 = h1_m; if (t4 == 0) hero_panic("division by zero"); t5 = t3 / t4; hero_print_uint(t5); hero_print_end();
+    t6 = h0_k; t7 = h1_m; if (t7 == 0) hero_panic("division by zero"); t8 = t6 % t7; hero_print_uint(t8); hero_print_end(); return;
+#line 104 "fixedbugs567au64divisionattwotothe63byitsmaximumprints.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

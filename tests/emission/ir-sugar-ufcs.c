@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "sugarufcs.c"
 #pragma clang diagnostic pop
@@ -96,51 +96,15 @@ int64_t h_sugarufcs_double(int64_t h0_n);
 void h_sugarufcs_main(void);
 
 #line 4 "tests/golden/ir/sugar-ufcs.hero"
-int64_t h_sugarufcs_double(int64_t h0_n) {
-#line 4 "tests/golden/ir/sugar-ufcs.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 4 "tests/golden/ir/sugar-ufcs.hero"
-bb0:
-    t1 = h0_n;
-#line 5 "tests/golden/ir/sugar-ufcs.hero"
-    t2 = INT64_C(2);
-#line 5 "tests/golden/ir/sugar-ufcs.hero"
-    if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 5 "tests/golden/ir/sugar-ufcs.hero"
-    return t3;
-#line 112 "sugarufcs.c"
+int64_t h_sugarufcs_double(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
+#line 102 "sugarufcs.c"
 }
 
 #line 7 "tests/golden/ir/sugar-ufcs.hero"
-void h_sugarufcs_main(void) {
-#line 7 "tests/golden/ir/sugar-ufcs.hero"
-    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t6; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/ir/sugar-ufcs.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    t2 = INT64_C(2);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    t3 = hero_array_new(&hero_desc_int, 2);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    hero_array_push_owned(&t3, &t1);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    hero_array_push_owned(&t3, &t2);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    t6 = h0_own0;
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    h0_own0 = t3;
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    hero_array_decref(t6);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    t5 = h_sugarufcs_double(t4);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    hero_print_int(t5);
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
-    hero_print_end();
-#line 144 "sugarufcs.c"
+void h_sugarufcs_main(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t6; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t6 = h0_own0; h0_own0 = t3; hero_array_decref(t6); t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = h_sugarufcs_double(t4); hero_print_int(t5); hero_print_end();
+#line 108 "sugarufcs.c"
     hero_array_release_at(&h0_own0);
     return;
 }

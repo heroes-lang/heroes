@@ -136,11 +136,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fficonstant_sqrt(double a0)
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 146 "fficonstant.c"
 #pragma clang diagnostic pop
@@ -242,46 +242,14 @@ int64_t h_fficonstant_SEEK_END(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 52 "tests/golden/run/ffi-constant.hero"
-void h_fficonstant_main(void) {
-#line 52 "tests/golden/run/ffi-constant.hero"
-    HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_NODEBUG int64_t t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
-#line 52 "tests/golden/run/ffi-constant.hero"
-bb0:
-#line 54 "tests/golden/run/ffi-constant.hero"
-    t1 = h_fficonstant_M_PI();
-#line 54 "tests/golden/run/ffi-constant.hero"
-    hero_print_f64(t1);
-#line 54 "tests/golden/run/ffi-constant.hero"
-    hero_print_end();
-    t2 = h_fficonstant_M_PI();
-#line 55 "tests/golden/run/ffi-constant.hero"
-    t3 = h_fficonstant_M_PI();
-#line 55 "tests/golden/run/ffi-constant.hero"
-    t4 = t2 * t3;
-#line 55 "tests/golden/run/ffi-constant.hero"
-    t5 = sqrt(t4);
-#line 55 "tests/golden/run/ffi-constant.hero"
-    hero_print_f64(t5);
-#line 55 "tests/golden/run/ffi-constant.hero"
-    hero_print_end();
-#line 58 "tests/golden/run/ffi-constant.hero"
-    t6 = h_fficonstant_SEEK_SET();
-#line 58 "tests/golden/run/ffi-constant.hero"
-    hero_print_int(t6);
-#line 58 "tests/golden/run/ffi-constant.hero"
-    hero_print_end();
-    t7 = h_fficonstant_SEEK_END();
-#line 59 "tests/golden/run/ffi-constant.hero"
-    t8 = h_fficonstant_SEEK_SET();
-#line 59 "tests/golden/run/ffi-constant.hero"
-    if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 59 "tests/golden/run/ffi-constant.hero"
-    hero_print_int(t9);
-#line 59 "tests/golden/run/ffi-constant.hero"
-    hero_print_end();
-#line 59 "tests/golden/run/ffi-constant.hero"
-    return;
-#line 285 "fficonstant.c"
+void h_fficonstant_main(void) { HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_NODEBUG int64_t t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 54
+    t1 = h_fficonstant_M_PI(); hero_print_f64(t1); hero_print_end();
+    t2 = h_fficonstant_M_PI(); t3 = h_fficonstant_M_PI(); t4 = t2 * t3; t5 = sqrt(t4); hero_print_f64(t5); hero_print_end();
+#line 58
+    t6 = h_fficonstant_SEEK_SET(); hero_print_int(t6); hero_print_end();
+    t7 = h_fficonstant_SEEK_END(); t8 = h_fficonstant_SEEK_SET(); if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow(); hero_print_int(t9); hero_print_end(); return;
+#line 253 "fficonstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -76,11 +76,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 86 "libraryrange.c"
 #pragma clang diagnostic pop
@@ -99,263 +99,25 @@ HeroArrayHeader * h_libraryrange_map_str(HeroArrayHeader * h0_xs);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 18 "tests/golden/run/library-range.hero"
-void h_libraryrange_main(void) {
-#line 18 "tests/golden/run/library-range.hero"
-    HeroArrayHeader * h0_xs = {0}; int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t3, *t4, *t6, *t9, *t15, *t18, *t21, *t33, *t37, *t43, *t44, *t49, *t50, *t55, *t58, *t60, *t61, *t62, *t63, *t64, *t65, *t66, *t67, *t69, *t70, *t71, *t72; HERO_NODEBUG int64_t h3_i0, t1, t2, t5, t7, t8, t10, t11, t12, t13, t14, t16, t17, t19, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t34, t35, t36, t38, t39, t40, t41, t42, t47, t48, t51, t52, t53, t54, t56, t57, t59; int64_t h4_i; HERO_NODEBUG HeroStr h11_own11 = {0}, t45, t46, t68; HERO_NODEBUG bool t20; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/library-range.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 19 "tests/golden/run/library-range.hero"
-    t2 = INT64_C(4);
-#line 19 "tests/golden/run/library-range.hero"
-    t3 = h_library_range(t1, t2);
-#line 19 "tests/golden/run/library-range.hero"
-    t60 = h5_own5;
-#line 19 "tests/golden/run/library-range.hero"
-    h5_own5 = t3;
-#line 19 "tests/golden/run/library-range.hero"
-    hero_array_decref(t60);
-#line 19 "tests/golden/run/library-range.hero"
-    t61 = h0_xs;
-#line 19 "tests/golden/run/library-range.hero"
-    hero_array_incref(t3);
-#line 19 "tests/golden/run/library-range.hero"
-    h0_xs = t3;
-#line 19 "tests/golden/run/library-range.hero"
-    hero_array_decref(t61);
-    t4 = h0_xs;
-#line 20 "tests/golden/run/library-range.hero"
-    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 20 "tests/golden/run/library-range.hero"
-    t6 = h0_xs;
-#line 20 "tests/golden/run/library-range.hero"
-    t7 = INT64_C(0);
-#line 20 "tests/golden/run/library-range.hero"
-    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]);
-#line 20 "tests/golden/run/library-range.hero"
-    t9 = h0_xs;
-#line 20 "tests/golden/run/library-range.hero"
-    t10 = INT64_C(3);
-#line 20 "tests/golden/run/library-range.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]);
-#line 20 "tests/golden/run/library-range.hero"
-    hero_print_int(t5);
-#line 20 "tests/golden/run/library-range.hero"
-    hero_print_int(t8);
-#line 20 "tests/golden/run/library-range.hero"
-    hero_print_int(t11);
-#line 20 "tests/golden/run/library-range.hero"
-    hero_print_end();
-#line 22 "tests/golden/run/library-range.hero"
-    t12 = INT64_C(0);
-#line 22 "tests/golden/run/library-range.hero"
-    h1_total = t12;
-#line 24 "tests/golden/run/library-range.hero"
-    t13 = INT64_C(1);
-#line 24 "tests/golden/run/library-range.hero"
-    t14 = INT64_C(6);
-#line 24 "tests/golden/run/library-range.hero"
-    t15 = h_library_range(t13, t14);
-#line 24 "tests/golden/run/library-range.hero"
-    t62 = h6_own6;
-#line 24 "tests/golden/run/library-range.hero"
-    h6_own6 = t15;
-#line 24 "tests/golden/run/library-range.hero"
-    hero_array_decref(t62);
-#line 24 "tests/golden/run/library-range.hero"
-    t63 = h2_xs0;
-#line 24 "tests/golden/run/library-range.hero"
-    hero_array_incref(t15);
-#line 24 "tests/golden/run/library-range.hero"
-    h2_xs0 = t15;
-#line 24 "tests/golden/run/library-range.hero"
-    hero_array_decref(t63);
-#line 24 "tests/golden/run/library-range.hero"
-    t16 = INT64_C(0);
-#line 24 "tests/golden/run/library-range.hero"
-    h3_i0 = t16;
-#line 24 "tests/golden/run/library-range.hero"
-    goto bb1;
-#line 24 "tests/golden/run/library-range.hero"
-bb1:
-#line 24 "tests/golden/run/library-range.hero"
-    t17 = h3_i0;
-#line 24 "tests/golden/run/library-range.hero"
-    t18 = h2_xs0;
-#line 24 "tests/golden/run/library-range.hero"
-    t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
-#line 24 "tests/golden/run/library-range.hero"
-    t20 = t17 < t19;
-#line 24 "tests/golden/run/library-range.hero"
-    if (t20) goto bb2; else goto bb4;
-#line 24 "tests/golden/run/library-range.hero"
-bb2:
-#line 24 "tests/golden/run/library-range.hero"
-    t21 = h2_xs0;
-#line 24 "tests/golden/run/library-range.hero"
-    t22 = h3_i0;
-#line 24 "tests/golden/run/library-range.hero"
-    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]);
-#line 24 "tests/golden/run/library-range.hero"
-    h4_i = t23;
-    t24 = h1_total;
-#line 25 "tests/golden/run/library-range.hero"
-    t25 = h4_i;
-#line 25 "tests/golden/run/library-range.hero"
-    if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow();
-#line 25 "tests/golden/run/library-range.hero"
-    h1_total = t26;
-#line 25 "tests/golden/run/library-range.hero"
-    goto bb3;
-#line 25 "tests/golden/run/library-range.hero"
-bb3:
-#line 24 "tests/golden/run/library-range.hero"
-    t27 = h3_i0;
-#line 24 "tests/golden/run/library-range.hero"
-    t28 = INT64_C(1);
-#line 24 "tests/golden/run/library-range.hero"
-    if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 24 "tests/golden/run/library-range.hero"
-    h3_i0 = t29;
-#line 24 "tests/golden/run/library-range.hero"
-    goto bb1;
-#line 24 "tests/golden/run/library-range.hero"
-bb4:
-#line 27 "tests/golden/run/library-range.hero"
-    t30 = h1_total;
-#line 27 "tests/golden/run/library-range.hero"
-    hero_print_int(t30);
-#line 27 "tests/golden/run/library-range.hero"
-    hero_print_end();
-#line 30 "tests/golden/run/library-range.hero"
-    t31 = INT64_C(3);
-#line 30 "tests/golden/run/library-range.hero"
-    t32 = INT64_C(3);
-#line 30 "tests/golden/run/library-range.hero"
-    t33 = h_library_range(t31, t32);
-#line 30 "tests/golden/run/library-range.hero"
-    t64 = h7_own7;
-#line 30 "tests/golden/run/library-range.hero"
-    h7_own7 = t33;
-#line 30 "tests/golden/run/library-range.hero"
-    hero_array_decref(t64);
-#line 30 "tests/golden/run/library-range.hero"
-    t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len);
-#line 30 "tests/golden/run/library-range.hero"
-    t35 = INT64_C(5);
-#line 30 "tests/golden/run/library-range.hero"
-    t36 = INT64_C(2);
-#line 30 "tests/golden/run/library-range.hero"
-    t37 = h_library_range(t35, t36);
-#line 30 "tests/golden/run/library-range.hero"
-    t65 = h8_own8;
-#line 30 "tests/golden/run/library-range.hero"
-    h8_own8 = t37;
-#line 30 "tests/golden/run/library-range.hero"
-    hero_array_decref(t65);
-#line 30 "tests/golden/run/library-range.hero"
-    t38 = ((void)(t37 == NULL ? ((void)hero_array_len(t37), hero_unreachable()) : (void)0), t37->len);
-#line 30 "tests/golden/run/library-range.hero"
-    hero_print_int(t34);
-#line 30 "tests/golden/run/library-range.hero"
-    hero_print_int(t38);
-#line 30 "tests/golden/run/library-range.hero"
-    hero_print_end();
-#line 33 "tests/golden/run/library-range.hero"
-    t39 = INT64_C(0);
-#line 33 "tests/golden/run/library-range.hero"
-    t40 = INT64_C(2);
-#line 33 "tests/golden/run/library-range.hero"
-    if (__builtin_sub_overflow(t39, t40, &t41)) hero_panic_overflow();
-#line 33 "tests/golden/run/library-range.hero"
-    t42 = INT64_C(2);
-#line 33 "tests/golden/run/library-range.hero"
-    t43 = h_library_range(t41, t42);
-#line 33 "tests/golden/run/library-range.hero"
-    t66 = h9_own9;
-#line 33 "tests/golden/run/library-range.hero"
-    h9_own9 = t43;
-#line 33 "tests/golden/run/library-range.hero"
-    hero_array_decref(t66);
-#line 33 "tests/golden/run/library-range.hero"
-    t44 = h_libraryrange_map_str(t43);
-#line 33 "tests/golden/run/library-range.hero"
-    t67 = h10_own10;
-#line 33 "tests/golden/run/library-range.hero"
-    h10_own10 = t44;
-#line 33 "tests/golden/run/library-range.hero"
-    hero_array_decref(t67);
-#line 33 "tests/golden/run/library-range.hero"
-    t45 = HERO_STR_LIT(hero_str_2c);
-#line 33 "tests/golden/run/library-range.hero"
-    t46 = hero_str_join(t44, t45);
-#line 33 "tests/golden/run/library-range.hero"
-    t68 = h11_own11;
-#line 33 "tests/golden/run/library-range.hero"
-    h11_own11 = t46;
-#line 33 "tests/golden/run/library-range.hero"
-    hero_str_decref(t68);
-#line 33 "tests/golden/run/library-range.hero"
-    hero_print_str(t46);
-#line 33 "tests/golden/run/library-range.hero"
-    hero_print_end();
-#line 36 "tests/golden/run/library-range.hero"
-    t47 = INT64_C(0);
-#line 36 "tests/golden/run/library-range.hero"
-    t48 = INT64_C(3);
-#line 36 "tests/golden/run/library-range.hero"
-    t49 = h_library_range(t47, t48);
-#line 36 "tests/golden/run/library-range.hero"
-    t69 = h12_own12;
-#line 36 "tests/golden/run/library-range.hero"
-    h12_own12 = t49;
-#line 36 "tests/golden/run/library-range.hero"
-    hero_array_decref(t69);
-#line 36 "tests/golden/run/library-range.hero"
-    t50 = hero_array_sort(t49);
-#line 36 "tests/golden/run/library-range.hero"
-    t70 = h13_own13;
-#line 36 "tests/golden/run/library-range.hero"
-    h13_own13 = t50;
-#line 36 "tests/golden/run/library-range.hero"
-    hero_array_decref(t70);
-#line 36 "tests/golden/run/library-range.hero"
-    t51 = INT64_C(2);
-#line 36 "tests/golden/run/library-range.hero"
-    t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? ((void)hero_array_at(t50, t51), hero_unreachable()) : (void)0), (void)(t50->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t50 + 1))[t51]);
-#line 36 "tests/golden/run/library-range.hero"
-    t53 = INT64_C(0);
-#line 36 "tests/golden/run/library-range.hero"
-    t54 = INT64_C(5);
-#line 36 "tests/golden/run/library-range.hero"
-    t55 = h_library_range(t53, t54);
-#line 36 "tests/golden/run/library-range.hero"
-    t71 = h14_own14;
-#line 36 "tests/golden/run/library-range.hero"
-    h14_own14 = t55;
-#line 36 "tests/golden/run/library-range.hero"
-    hero_array_decref(t71);
-#line 36 "tests/golden/run/library-range.hero"
-    t56 = INT64_C(1);
-#line 36 "tests/golden/run/library-range.hero"
-    t57 = INT64_C(3);
-#line 36 "tests/golden/run/library-range.hero"
-    t58 = hero_array_slice(t55, t56, t57);
-#line 36 "tests/golden/run/library-range.hero"
-    t72 = h15_own15;
-#line 36 "tests/golden/run/library-range.hero"
-    h15_own15 = t58;
-#line 36 "tests/golden/run/library-range.hero"
-    hero_array_decref(t72);
-#line 36 "tests/golden/run/library-range.hero"
-    t59 = ((void)(t58 == NULL ? ((void)hero_array_len(t58), hero_unreachable()) : (void)0), t58->len);
-#line 36 "tests/golden/run/library-range.hero"
-    hero_print_int(t52);
-#line 36 "tests/golden/run/library-range.hero"
-    hero_print_int(t59);
-#line 36 "tests/golden/run/library-range.hero"
-    hero_print_end();
-#line 359 "libraryrange.c"
+void h_libraryrange_main(void) { HeroArrayHeader * h0_xs = {0}; int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t3, *t4, *t6, *t9, *t15, *t18, *t21, *t33, *t37, *t43, *t44, *t49, *t50, *t55, *t58, *t60, *t61, *t62, *t63, *t64, *t65, *t66, *t67, *t69, *t70, *t71, *t72; HERO_NODEBUG int64_t h3_i0, t1, t2, t5, t7, t8, t10, t11, t12, t13, t14, t16, t17, t19, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t34, t35, t36, t38, t39, t40, t41, t42, t47, t48, t51, t52, t53, t54, t56, t57, t59; int64_t h4_i; HERO_NODEBUG HeroStr h11_own11 = {0}, t45, t46, t68; HERO_NODEBUG bool t20; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = INT64_C(4); t3 = h_library_range(t1, t2); t60 = h5_own5; h5_own5 = t3; hero_array_decref(t60); t61 = h0_xs; hero_array_incref(t3); h0_xs = t3; hero_array_decref(t61);
+    t4 = h0_xs; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = h0_xs; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t7]); t9 = h0_xs; t10 = INT64_C(3); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]); hero_print_int(t5); hero_print_int(t8); hero_print_int(t11); hero_print_end();
+#line 22
+    t12 = INT64_C(0); h1_total = t12;
+#line 24
+    t13 = INT64_C(1); t14 = INT64_C(6); t15 = h_library_range(t13, t14); t62 = h6_own6; h6_own6 = t15; hero_array_decref(t62); t63 = h2_xs0; hero_array_incref(t15); h2_xs0 = t15; hero_array_decref(t63); t16 = INT64_C(0); h3_i0 = t16; goto bb1; bb1: t17 = h3_i0; t18 = h2_xs0; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); t20 = t17 < t19; if (t20) goto bb2; else goto bb4; bb2: t21 = h2_xs0; t22 = h3_i0; t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t21 + 1))[t22]); h4_i = t23;
+    t24 = h1_total; t25 = h4_i; if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow(); h1_total = t26; goto bb3; bb3:
+#line 24
+    t27 = h3_i0; t28 = INT64_C(1); if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow(); h3_i0 = t29; goto bb1; bb4:
+#line 27
+    t30 = h1_total; hero_print_int(t30); hero_print_end();
+#line 30
+    t31 = INT64_C(3); t32 = INT64_C(3); t33 = h_library_range(t31, t32); t64 = h7_own7; h7_own7 = t33; hero_array_decref(t64); t34 = ((void)(t33 == NULL ? ((void)hero_array_len(t33), hero_unreachable()) : (void)0), t33->len); t35 = INT64_C(5); t36 = INT64_C(2); t37 = h_library_range(t35, t36); t65 = h8_own8; h8_own8 = t37; hero_array_decref(t65); t38 = ((void)(t37 == NULL ? ((void)hero_array_len(t37), hero_unreachable()) : (void)0), t37->len); hero_print_int(t34); hero_print_int(t38); hero_print_end();
+#line 33
+    t39 = INT64_C(0); t40 = INT64_C(2); if (__builtin_sub_overflow(t39, t40, &t41)) hero_panic_overflow(); t42 = INT64_C(2); t43 = h_library_range(t41, t42); t66 = h9_own9; h9_own9 = t43; hero_array_decref(t66); t44 = h_libraryrange_map_str(t43); t67 = h10_own10; h10_own10 = t44; hero_array_decref(t67); t45 = HERO_STR_LIT(hero_str_2c); t46 = hero_str_join(t44, t45); t68 = h11_own11; h11_own11 = t46; hero_str_decref(t68); hero_print_str(t46); hero_print_end();
+#line 36
+    t47 = INT64_C(0); t48 = INT64_C(3); t49 = h_library_range(t47, t48); t69 = h12_own12; h12_own12 = t49; hero_array_decref(t69); t50 = hero_array_sort(t49); t70 = h13_own13; h13_own13 = t50; hero_array_decref(t70); t51 = INT64_C(2); t52 = ((void)((t50 == NULL || t51 < 0 || t51 >= t50->len) ? ((void)hero_array_at(t50, t51), hero_unreachable()) : (void)0), (void)(t50->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t50 + 1))[t51]); t53 = INT64_C(0); t54 = INT64_C(5); t55 = h_library_range(t53, t54); t71 = h14_own14; h14_own14 = t55; hero_array_decref(t71); t56 = INT64_C(1); t57 = INT64_C(3); t58 = hero_array_slice(t55, t56, t57); t72 = h15_own15; h15_own15 = t58; hero_array_decref(t72); t59 = ((void)(t58 == NULL ? ((void)hero_array_len(t58), hero_unreachable()) : (void)0), t58->len); hero_print_int(t52); hero_print_int(t59); hero_print_end();
+#line 121 "libraryrange.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
@@ -373,94 +135,16 @@ bb4:
 }
 
 #line 38 "tests/golden/run/library-range.hero"
-HeroArrayHeader * h_libraryrange_map_str(HeroArrayHeader * h0_xs) {
-#line 38 "tests/golden/run/library-range.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t19, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t10, t12, t15, t16, t17; int64_t h4_x; HERO_NODEBUG HeroStr h6_own6 = {0}, t13, t22; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
-#line 38 "tests/golden/run/library-range.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 39 "tests/golden/run/library-range.hero"
-    t19 = h5_own5;
-#line 39 "tests/golden/run/library-range.hero"
-    h5_own5 = t1;
-#line 39 "tests/golden/run/library-range.hero"
-    hero_array_decref(t19);
-#line 39 "tests/golden/run/library-range.hero"
-    t20 = h1_out;
-#line 39 "tests/golden/run/library-range.hero"
-    hero_array_incref(t1);
-#line 39 "tests/golden/run/library-range.hero"
-    h1_out = t1;
-#line 39 "tests/golden/run/library-range.hero"
-    hero_array_decref(t20);
-#line 41 "tests/golden/run/library-range.hero"
-    t2 = h0_xs;
-#line 41 "tests/golden/run/library-range.hero"
-    t21 = h2_xs0;
-#line 41 "tests/golden/run/library-range.hero"
-    hero_array_incref(t2);
-#line 41 "tests/golden/run/library-range.hero"
-    h2_xs0 = t2;
-#line 41 "tests/golden/run/library-range.hero"
-    hero_array_decref(t21);
-#line 41 "tests/golden/run/library-range.hero"
-    t3 = INT64_C(0);
-#line 41 "tests/golden/run/library-range.hero"
-    h3_i0 = t3;
-#line 41 "tests/golden/run/library-range.hero"
-    goto bb1;
-#line 41 "tests/golden/run/library-range.hero"
-bb1:
-#line 41 "tests/golden/run/library-range.hero"
-    t4 = h3_i0;
-#line 41 "tests/golden/run/library-range.hero"
-    t5 = h2_xs0;
-#line 41 "tests/golden/run/library-range.hero"
-    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 41 "tests/golden/run/library-range.hero"
-    t7 = t4 < t6;
-#line 41 "tests/golden/run/library-range.hero"
-    if (t7) goto bb2; else goto bb4;
-#line 41 "tests/golden/run/library-range.hero"
-bb2:
-#line 41 "tests/golden/run/library-range.hero"
-    t8 = h2_xs0;
-#line 41 "tests/golden/run/library-range.hero"
-    t9 = h3_i0;
-#line 41 "tests/golden/run/library-range.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
-#line 41 "tests/golden/run/library-range.hero"
-    h4_x = t10;
-    t12 = h4_x;
-#line 42 "tests/golden/run/library-range.hero"
-    t13 = hero_int_to_str(t12);
-#line 42 "tests/golden/run/library-range.hero"
-    t22 = h6_own6;
-#line 42 "tests/golden/run/library-range.hero"
-    h6_own6 = t13;
-#line 42 "tests/golden/run/library-range.hero"
-    hero_str_decref(t22);
-#line 42 "tests/golden/run/library-range.hero"
-    hero_array_push_owned(&h1_out, &t13);
-#line 42 "tests/golden/run/library-range.hero"
-    goto bb3;
-#line 42 "tests/golden/run/library-range.hero"
-bb3:
-#line 41 "tests/golden/run/library-range.hero"
-    t15 = h3_i0;
-#line 41 "tests/golden/run/library-range.hero"
-    t16 = INT64_C(1);
-#line 41 "tests/golden/run/library-range.hero"
-    if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 41 "tests/golden/run/library-range.hero"
-    h3_i0 = t17;
-#line 41 "tests/golden/run/library-range.hero"
-    goto bb1;
-#line 41 "tests/golden/run/library-range.hero"
-bb4:
-#line 44 "tests/golden/run/library-range.hero"
+HeroArrayHeader * h_libraryrange_map_str(HeroArrayHeader * h0_xs) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t19, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t10, t12, t15, t16, t17; int64_t h4_x; HERO_NODEBUG HeroStr h6_own6 = {0}, t13, t22; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t19 = h5_own5; h5_own5 = t1; hero_array_decref(t19); t20 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t20);
+#line 41
+    t2 = h0_xs; t21 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t21); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
+    t12 = h4_x; t13 = hero_int_to_str(t12); t22 = h6_own6; h6_own6 = t13; hero_str_decref(t22); hero_array_push_owned(&h1_out, &t13); goto bb3; bb3:
+#line 41
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow(); h3_i0 = t17; goto bb1; bb4:
+#line 44
     t18 = h1_out;
-#line 464 "libraryrange.c"
+#line 148 "libraryrange.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -470,58 +154,14 @@ bb4:
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 26 "<heroes library>"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 27 "<heroes library>"
-    t13 = h4_own4;
-#line 27 "<heroes library>"
-    h4_own4 = t1;
-#line 27 "<heroes library>"
-    hero_array_decref(t13);
-#line 27 "<heroes library>"
-    t14 = h2_out;
-#line 27 "<heroes library>"
-    hero_array_incref(t1);
-#line 27 "<heroes library>"
-    h2_out = t1;
-#line 27 "<heroes library>"
-    hero_array_decref(t14);
-    t2 = h0_from;
-#line 28 "<heroes library>"
-    h3_i = t2;
-#line 28 "<heroes library>"
-    goto bb1;
-#line 28 "<heroes library>"
-bb1:
-    t3 = h3_i;
-#line 29 "<heroes library>"
-    t4 = h1_to;
-#line 29 "<heroes library>"
-    t5 = t3 < t4;
-#line 29 "<heroes library>"
-    if (t5) goto bb2; else goto bb3;
-#line 29 "<heroes library>"
-bb2:
-    t7 = h3_i;
-#line 30 "<heroes library>"
-    hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i;
-#line 31 "<heroes library>"
-    t10 = INT64_C(1);
-#line 31 "<heroes library>"
-    if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 31 "<heroes library>"
-    h3_i = t11;
-#line 31 "<heroes library>"
-    goto bb1;
-#line 31 "<heroes library>"
-bb3:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
+    t2 = h0_from; h3_i = t2; goto bb1; bb1:
+    t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 525 "libraryrange.c"
+#line 165 "libraryrange.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

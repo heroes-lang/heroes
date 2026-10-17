@@ -160,16 +160,16 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbu
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_read(int32_t a0, uint8_t * a1, uint64_t a2) { (void)(read)(a0, (void *)a1, a2); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_close(int32_t a0) { (void)(close)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_gethostname(int8_t * a0, uint64_t a1) { (void)(gethostname)((void *)a0, a1); }
-#line 27 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
+#line 27
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396posixfillsitsbuffers_poll(struct pollfd * a0, uint32_t a1, int32_t a2) { (void)(poll)((void *)a0, a1, a2); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 175 "fixedbugs396posixfillsitsbuffers.c"
 #pragma clang diagnostic pop
@@ -278,554 +278,56 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-void h_fixedbugs396posixfillsitsbuffers_main(void) {
-#line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HeroArrayHeader * h0_fds = {0}; HERO_NODEBUG h_0opt_e1ec52d h1_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, h5_f3 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, t25, t26, t30, t32, t40, t41, t45, t47, t64, t65, t69, t71, t80, t81, t85, t87, t134, t135, t136, t137, t140, t141, t142, t143; HeroArrayHeader * h3_watched = {0}; HeroArrayHeader * h6_buf = {0}; HeroArrayHeader * h7_name = {0}; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h11_own11 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t1, *t4, *t7, *t10, *t14, *t21, *t36, *t51, *t56, *t59, *t75, *t90, *t91, *t97, *t100, *t104, *t108, *t111, *t116, *t120, *t124, *t127, *t132, *t133, *t138, *t139, *t144, *t145, *t146, *t147; HERO_NODEBUG int32_t t2, t9, t12, t16, t23, t24, t38, t39, t53, t54, t63, t79, t93, t113, t114, t118, t119, t122; HERO_NODEBUG HeroStr t3, t6, t17, t55, t58, t74, t96, t99, t103, t107, t115, t123, t126; HERO_NODEBUG int64_t t5, t8, t11, t15, t20, t22, t27, t28, t37, t42, t43, t57, t60, t66, t67, t76, t82, t83, t92, t95, t98, t101, t105, t109, t112, t117, t125, t128; HERO_NODEBUG bool t13, t29, t44, t68, t73, t84, t89, t131; HERO_NODEBUG const char *t18; HERO_NODEBUG uint64_t t19, t94, t121; HERO_NODEBUG HeroFailure t31, t46, t70, t86; HERO_NODEBUG int16_t t33, t34, t48, t49, t62, t72, t78, t88; HERO_NODEBUG struct pollfd t35, t50, t61, t77; HERO_NODEBUG uint32_t t52; HERO_NODEBUG uint8_t t102, t106, t110; HERO_NODEBUG int8_t t129, t130; HERO_ENTRY_STOP; goto bb0;
-#line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_i32, 1);
-#line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t132 = h8_own8;
-#line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h8_own8 = t1;
-#line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_decref(t132);
-#line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t133 = h0_fds;
-#line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_incref(t1);
-#line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h0_fds = t1;
-#line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_decref(t133);
-    {
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    _Static_assert((__builtin_types_compatible_p(__typeof__(*(int *)0), signed char) && sizeof(signed char) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), short) && sizeof(short) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), int) && sizeof(int) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), long) && sizeof(long) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), long long) && sizeof(long long) == sizeof(int32_t)), "heroes-ffi-buffer pipe fds 863 866 i32 int *");
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(2);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take(h0_fds, hero_lend_e0_0, "pipe", "fds");
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t2 = pipe((void *)hero_lend_b0_0);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h0_fds = hero_lend_give(h0_fds, hero_lend_b0_0, hero_lend_e0_0);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    }
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t3 = HERO_STR_LIT(hero_str_20);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t4 = h0_fds;
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t6 = HERO_STR_LIT(hero_str_20);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t7 = h0_fds;
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t8 = INT64_C(0);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t7 + 1))[t8]);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t10 = h0_fds;
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t11 = INT64_C(1);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t10 + 1))[t11]);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t13 = t9 != t12;
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t2);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t3);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t5);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t6);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_bool(t13);
-#line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_end();
-    t14 = h0_fds;
-#line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t15 = INT64_C(1);
-#line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t14 + 1))[t15]);
-#line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t17 = HERO_STR_LIT(hero_str_2f372e9c);
-#line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t18 = hero_str_lend(t17);
-#line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t19 = UINT64_C(5);
-#line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t20 = write(t16, hero_cstr_nonnull(t18), t19);
-#line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t20);
-#line 32 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_end();
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t21 = h0_fds;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t22 = INT64_C(0);
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t21 + 1))[t22]);
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t24 = h_fixedbugs396posixfillsitsbuffers_POLLIN();
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    if (t24 >= -32768LL && t24 <= 32767LL) {
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-        t25 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t24};
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    } else {
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-        t25 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    }
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t134 = h9_own9;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h9_own9 = t25;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_release(&t134);
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t135 = h1_f0;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_retain(&t25);
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h1_f0 = t25;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_release(&t135);
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t26 = h1_f0;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t27 = t26.tag;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t28 = INT64_C(0);
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t29 = t27 == t28;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    if (t29) goto bb1; else goto bb2;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-bb1:
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t32 = h1_f0;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t33 = t32.as.ok;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t34 = INT64_C(0);
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t35 = (struct pollfd){.fd = t23, .events = t33, .revents = t34};
-    t36 = h0_fds;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t37 = INT64_C(1);
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t36 + 1))[t37]);
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t39 = h_fixedbugs396posixfillsitsbuffers_POLLOUT();
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    if (t39 >= -32768LL && t39 <= 32767LL) {
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-        t40 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t39};
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    } else {
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-        t40 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    }
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t136 = h10_own10;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h10_own10 = t40;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_release(&t136);
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t137 = h2_f1;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_retain(&t40);
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h2_f1 = t40;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_release(&t137);
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t41 = h2_f1;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t42 = t41.tag;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t43 = INT64_C(0);
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t44 = t42 == t43;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    if (t44) goto bb3; else goto bb4;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-bb2:
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t30 = h1_f0;
-#line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t31 = t30.as.err;
-#line 465 "fixedbugs396posixfillsitsbuffers.c"
+void h_fixedbugs396posixfillsitsbuffers_main(void) { HeroArrayHeader * h0_fds = {0}; HERO_NODEBUG h_0opt_e1ec52d h1_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, h5_f3 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, t25, t26, t30, t32, t40, t41, t45, t47, t64, t65, t69, t71, t80, t81, t85, t87, t134, t135, t136, t137, t140, t141, t142, t143; HeroArrayHeader * h3_watched = {0}; HeroArrayHeader * h6_buf = {0}; HeroArrayHeader * h7_name = {0}; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h11_own11 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t1, *t4, *t7, *t10, *t14, *t21, *t36, *t51, *t56, *t59, *t75, *t90, *t91, *t97, *t100, *t104, *t108, *t111, *t116, *t120, *t124, *t127, *t132, *t133, *t138, *t139, *t144, *t145, *t146, *t147; HERO_NODEBUG int32_t t2, t9, t12, t16, t23, t24, t38, t39, t53, t54, t63, t79, t93, t113, t114, t118, t119, t122; HERO_NODEBUG HeroStr t3, t6, t17, t55, t58, t74, t96, t99, t103, t107, t115, t123, t126; HERO_NODEBUG int64_t t5, t8, t11, t15, t20, t22, t27, t28, t37, t42, t43, t57, t60, t66, t67, t76, t82, t83, t92, t95, t98, t101, t105, t109, t112, t117, t125, t128; HERO_NODEBUG bool t13, t29, t44, t68, t73, t84, t89, t131; HERO_NODEBUG const char *t18; HERO_NODEBUG uint64_t t19, t94, t121; HERO_NODEBUG HeroFailure t31, t46, t70, t86; HERO_NODEBUG int16_t t33, t34, t48, t49, t62, t72, t78, t88; HERO_NODEBUG struct pollfd t35, t50, t61, t77; HERO_NODEBUG uint32_t t52; HERO_NODEBUG uint8_t t102, t106, t110; HERO_NODEBUG int8_t t129, t130; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_i32, 1); t132 = h8_own8; h8_own8 = t1; hero_array_decref(t132); t133 = h0_fds; hero_array_incref(t1); h0_fds = t1; hero_array_decref(t133);
+    { _Static_assert((__builtin_types_compatible_p(__typeof__(*(int *)0), signed char) && sizeof(signed char) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), short) && sizeof(short) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), int) && sizeof(int) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), long) && sizeof(long) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), long long) && sizeof(long long) == sizeof(int32_t)), "heroes-ffi-buffer pipe fds 863 866 i32 int *"); HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(2); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take(h0_fds, hero_lend_e0_0, "pipe", "fds"); t2 = pipe((void *)hero_lend_b0_0); h0_fds = hero_lend_give(h0_fds, hero_lend_b0_0, hero_lend_e0_0); } t3 = HERO_STR_LIT(hero_str_20); t4 = h0_fds; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = HERO_STR_LIT(hero_str_20); t7 = h0_fds; t8 = INT64_C(0); t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t7 + 1))[t8]); t10 = h0_fds; t11 = INT64_C(1); t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t10 + 1))[t11]); t13 = t9 != t12; hero_print_int(t2); hero_print_str(t3); hero_print_int(t5); hero_print_str(t6); hero_print_bool(t13); hero_print_end();
+    t14 = h0_fds; t15 = INT64_C(1); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t14 + 1))[t15]); t17 = HERO_STR_LIT(hero_str_2f372e9c); t18 = hero_str_lend(t17); t19 = UINT64_C(5); t20 = write(t16, hero_cstr_nonnull(t18), t19); hero_print_int(t20); hero_print_end();
+#line 34
+    t21 = h0_fds; t22 = INT64_C(0); t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? ((void)hero_array_at(t21, t22), hero_unreachable()) : (void)0), (void)(t21->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t21 + 1))[t22]); t24 = h_fixedbugs396posixfillsitsbuffers_POLLIN(); if (t24 >= -32768LL && t24 <= 32767LL) { t25 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t24}; } else { t25 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t134 = h9_own9; h9_own9 = t25; h_0opt_e1ec52d_release(&t134); t135 = h1_f0; h_0opt_e1ec52d_retain(&t25); h1_f0 = t25; h_0opt_e1ec52d_release(&t135); t26 = h1_f0; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb1; else goto bb2; bb1: t32 = h1_f0; t33 = t32.as.ok; t34 = INT64_C(0); t35 = (struct pollfd){.fd = t23, .events = t33, .revents = t34};
+    t36 = h0_fds; t37 = INT64_C(1); t38 = ((void)((t36 == NULL || t37 < 0 || t37 >= t36->len) ? ((void)hero_array_at(t36, t37), hero_unreachable()) : (void)0), (void)(t36->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t36 + 1))[t37]); t39 = h_fixedbugs396posixfillsitsbuffers_POLLOUT(); if (t39 >= -32768LL && t39 <= 32767LL) { t40 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t39}; } else { t40 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t136 = h10_own10; h10_own10 = t40; h_0opt_e1ec52d_release(&t136); t137 = h2_f1; h_0opt_e1ec52d_retain(&t40); h2_f1 = t40; h_0opt_e1ec52d_release(&t137); t41 = h2_f1; t42 = t41.tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto bb3; else goto bb4; bb2:
+#line 34
+    t30 = h1_f0; t31 = t30.as.err;
+#line 291 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t31);
     hero_unreachable();
 bb3:
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t47 = h2_f1;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t48 = t47.as.ok;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t49 = INT64_C(0);
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t50 = (struct pollfd){.fd = t38, .events = t48, .revents = t49};
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t51 = hero_array_new(&h_fixedbugs396posixfillsitsbuffers_PollFd_desc, 2);
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_push_owned(&t51, &t35);
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_push_owned(&t51, &t50);
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t138 = h11_own11;
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h11_own11 = t51;
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_decref(t138);
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t139 = h3_watched;
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_incref(t51);
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h3_watched = t51;
-#line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_decref(t139);
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t52 = UINT64_C(2);
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t53 = INT64_C(0);
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    {
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    _Static_assert((__builtin_types_compatible_p(__typeof__(*(struct pollfd *)0), struct pollfd) && sizeof(struct pollfd) == sizeof(struct pollfd)), "heroes-ffi-buffer poll fds 1324 1327 PollFd struct pollfd *");
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HERO_NODEBUG int64_t hero_lend_e23_0 = INT64_C(2);
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HERO_NODEBUG void *hero_lend_b23_0 = hero_lend_take(h3_watched, hero_lend_e23_0, "poll", "fds");
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_pad_fill(hero_lend_b23_0, sizeof(struct pollfd), (size_t)hero_lend_e23_0, hero_pad_g_7, hero_pad_n_7);
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t54 = poll((void *)hero_lend_b23_0, t52, t53);
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h3_watched = hero_lend_give(h3_watched, hero_lend_b23_0, hero_lend_e23_0);
-#line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    }
+    t47 = h2_f1; t48 = t47.as.ok; t49 = INT64_C(0); t50 = (struct pollfd){.fd = t38, .events = t48, .revents = t49};
+#line 33
+    t51 = hero_array_new(&h_fixedbugs396posixfillsitsbuffers_PollFd_desc, 2); hero_array_push_owned(&t51, &t35); hero_array_push_owned(&t51, &t50); t138 = h11_own11; h11_own11 = t51; hero_array_decref(t138); t139 = h3_watched; hero_array_incref(t51); h3_watched = t51; hero_array_decref(t139);
+#line 38
+    t52 = UINT64_C(2); t53 = INT64_C(0); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(struct pollfd *)0), struct pollfd) && sizeof(struct pollfd) == sizeof(struct pollfd)), "heroes-ffi-buffer poll fds 1324 1327 PollFd struct pollfd *"); HERO_NODEBUG int64_t hero_lend_e23_0 = INT64_C(2); HERO_NODEBUG void *hero_lend_b23_0 = hero_lend_take(h3_watched, hero_lend_e23_0, "poll", "fds"); hero_pad_fill(hero_lend_b23_0, sizeof(struct pollfd), (size_t)hero_lend_e23_0, hero_pad_g_7, hero_pad_n_7); t54 = poll((void *)hero_lend_b23_0, t52, t53); h3_watched = hero_lend_give(h3_watched, hero_lend_b23_0, hero_lend_e23_0); }
     t55 = HERO_STR_LIT(hero_str_20);
-    t56 = h3_watched;
-#line 40 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t57 = ((void)(t56 == NULL ? ((void)hero_array_len(t56), hero_unreachable()) : (void)0), t56->len);
+    t56 = h3_watched; t57 = ((void)(t56 == NULL ? ((void)hero_array_len(t56), hero_unreachable()) : (void)0), t56->len);
     t58 = HERO_STR_LIT(hero_str_20);
-    t59 = h3_watched;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t60 = INT64_C(0);
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(struct pollfd) ? hero_unreachable() : (void)0), ((struct pollfd const *)(const void *)(t59 + 1))[t60]);
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t62 = t61.revents;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t63 = h_fixedbugs396posixfillsitsbuffers_POLLIN();
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    if (t63 >= -32768LL && t63 <= 32767LL) {
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-        t64 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t63};
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    } else {
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-        t64 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    }
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t140 = h12_own12;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h12_own12 = t64;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_release(&t140);
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t141 = h4_f2;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_retain(&t64);
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h4_f2 = t64;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_release(&t141);
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t65 = h4_f2;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t66 = t65.tag;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t67 = INT64_C(0);
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t68 = t66 == t67;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    if (t68) goto bb5; else goto bb6;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-bb4:
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t45 = h2_f1;
-#line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t46 = t45.as.err;
-#line 571 "fixedbugs396posixfillsitsbuffers.c"
+    t59 = h3_watched; t60 = INT64_C(0); t61 = ((void)((t59 == NULL || t60 < 0 || t60 >= t59->len) ? ((void)hero_array_at(t59, t60), hero_unreachable()) : (void)0), (void)(t59->elem->size != sizeof(struct pollfd) ? hero_unreachable() : (void)0), ((struct pollfd const *)(const void *)(t59 + 1))[t60]); t62 = t61.revents; t63 = h_fixedbugs396posixfillsitsbuffers_POLLIN(); if (t63 >= -32768LL && t63 <= 32767LL) { t64 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t63}; } else { t64 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t140 = h12_own12; h12_own12 = t64; h_0opt_e1ec52d_release(&t140); t141 = h4_f2; h_0opt_e1ec52d_retain(&t64); h4_f2 = t64; h_0opt_e1ec52d_release(&t141); t65 = h4_f2; t66 = t65.tag; t67 = INT64_C(0); t68 = t66 == t67; if (t68) goto bb5; else goto bb6; bb4:
+#line 35
+    t45 = h2_f1; t46 = t45.as.err;
+#line 307 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb5:
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t71 = h4_f2;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t72 = t71.as.ok;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t73 = t62 == t72;
+    t71 = h4_f2; t72 = t71.as.ok; t73 = t62 == t72;
     t74 = HERO_STR_LIT(hero_str_20);
-    t75 = h3_watched;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t76 = INT64_C(1);
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? ((void)hero_array_at(t75, t76), hero_unreachable()) : (void)0), (void)(t75->elem->size != sizeof(struct pollfd) ? hero_unreachable() : (void)0), ((struct pollfd const *)(const void *)(t75 + 1))[t76]);
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t78 = t77.revents;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t79 = h_fixedbugs396posixfillsitsbuffers_POLLOUT();
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    if (t79 >= -32768LL && t79 <= 32767LL) {
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-        t80 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t79};
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    } else {
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-        t80 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    }
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t142 = h13_own13;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h13_own13 = t80;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_release(&t142);
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t143 = h5_f3;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_retain(&t80);
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h5_f3 = t80;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h_0opt_e1ec52d_release(&t143);
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t81 = h5_f3;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t82 = t81.tag;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t83 = INT64_C(0);
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t84 = t82 == t83;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    if (t84) goto bb7; else goto bb8;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-bb6:
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t69 = h4_f2;
-#line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t70 = t69.as.err;
-#line 631 "fixedbugs396posixfillsitsbuffers.c"
+    t75 = h3_watched; t76 = INT64_C(1); t77 = ((void)((t75 == NULL || t76 < 0 || t76 >= t75->len) ? ((void)hero_array_at(t75, t76), hero_unreachable()) : (void)0), (void)(t75->elem->size != sizeof(struct pollfd) ? hero_unreachable() : (void)0), ((struct pollfd const *)(const void *)(t75 + 1))[t76]); t78 = t77.revents; t79 = h_fixedbugs396posixfillsitsbuffers_POLLOUT(); if (t79 >= -32768LL && t79 <= 32767LL) { t80 = (h_0opt_e1ec52d){.tag = INT64_C(0), .as.ok = (int16_t)t79}; } else { t80 = (h_0opt_e1ec52d){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t142 = h13_own13; h13_own13 = t80; h_0opt_e1ec52d_release(&t142); t143 = h5_f3; h_0opt_e1ec52d_retain(&t80); h5_f3 = t80; h_0opt_e1ec52d_release(&t143); t81 = h5_f3; t82 = t81.tag; t83 = INT64_C(0); t84 = t82 == t83; if (t84) goto bb7; else goto bb8; bb6:
+#line 42
+    t69 = h4_f2; t70 = t69.as.err;
+#line 317 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t70);
     hero_unreachable();
 bb7:
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t87 = h5_f3;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t88 = t87.as.ok;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t89 = t78 == t88;
-#line 37 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t54);
-#line 37 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t55);
-#line 37 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t57);
-#line 37 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t58);
-#line 37 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_bool(t73);
-#line 37 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t74);
-#line 37 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_bool(t89);
-#line 37 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_end();
-#line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t90 = hero_array_new(&hero_desc_u8, 1);
-#line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t144 = h14_own14;
-#line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h14_own14 = t90;
-#line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_decref(t144);
-#line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t145 = h6_buf;
-#line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_incref(t90);
-#line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h6_buf = t90;
-#line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_decref(t145);
-    t91 = h0_fds;
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t92 = INT64_C(0);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t93 = ((void)((t91 == NULL || t92 < 0 || t92 >= t91->len) ? ((void)hero_array_at(t91, t92), hero_unreachable()) : (void)0), (void)(t91->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t91 + 1))[t92]);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t94 = UINT64_C(64);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    {
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer read buf 988 991 u8 void *");
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HERO_NODEBUG int64_t hero_lend_e38_1 = INT64_C(64);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HERO_NODEBUG void *hero_lend_b38_1 = hero_lend_take(h6_buf, hero_lend_e38_1, "read", "buf");
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t95 = read(t93, (void *)hero_lend_b38_1, t94);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h6_buf = hero_lend_give(h6_buf, hero_lend_b38_1, hero_lend_e38_1);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    }
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t96 = HERO_STR_LIT(hero_str_20);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t97 = h6_buf;
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t98 = ((void)(t97 == NULL ? ((void)hero_array_len(t97), hero_unreachable()) : (void)0), t97->len);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t99 = HERO_STR_LIT(hero_str_20);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t100 = h6_buf;
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t101 = INT64_C(0);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t102 = ((void)((t100 == NULL || t101 < 0 || t101 >= t100->len) ? ((void)hero_array_at(t100, t101), hero_unreachable()) : (void)0), (void)(t100->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t100 + 1))[t101]);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t103 = HERO_STR_LIT(hero_str_20);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t104 = h6_buf;
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t105 = INT64_C(4);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t106 = ((void)((t104 == NULL || t105 < 0 || t105 >= t104->len) ? ((void)hero_array_at(t104, t105), hero_unreachable()) : (void)0), (void)(t104->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t104 + 1))[t105]);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t107 = HERO_STR_LIT(hero_str_20);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t108 = h6_buf;
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t109 = INT64_C(5);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t110 = ((void)((t108 == NULL || t109 < 0 || t109 >= t108->len) ? ((void)hero_array_at(t108, t109), hero_unreachable()) : (void)0), (void)(t108->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t108 + 1))[t109]);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t95);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t96);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t98);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t99);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t102);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t103);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t106);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t107);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t110);
-#line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_end();
-    t111 = h0_fds;
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t112 = INT64_C(0);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t113 = ((void)((t111 == NULL || t112 < 0 || t112 >= t111->len) ? ((void)hero_array_at(t111, t112), hero_unreachable()) : (void)0), (void)(t111->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t111 + 1))[t112]);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t114 = close(t113);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t115 = HERO_STR_LIT(hero_str_20);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t116 = h0_fds;
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t117 = INT64_C(1);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t118 = ((void)((t116 == NULL || t117 < 0 || t117 >= t116->len) ? ((void)hero_array_at(t116, t117), hero_unreachable()) : (void)0), (void)(t116->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t116 + 1))[t117]);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t119 = close(t118);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t114);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t115);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t119);
-#line 48 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_end();
-    t120 = hero_array_new(&hero_desc_i8, 1);
-#line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t146 = h15_own15;
-#line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h15_own15 = t120;
-#line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_decref(t146);
-#line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t147 = h7_name;
-#line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_incref(t120);
-#line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h7_name = t120;
-#line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_array_decref(t147);
-    t121 = UINT64_C(256);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    {
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), char) && (char)-1 < 0), "heroes-ffi-buffer gethostname name 1094 1098 i8 char *");
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HERO_NODEBUG int64_t hero_lend_e56_0 = hero_lend_count_u64((uint64_t)(t121), "gethostname", "name");
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HERO_NODEBUG void *hero_lend_b56_0 = hero_lend_take(h7_name, hero_lend_e56_0, "gethostname", "name");
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t122 = gethostname((void *)hero_lend_b56_0, t121);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    h7_name = hero_lend_give(h7_name, hero_lend_b56_0, hero_lend_e56_0);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    }
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t123 = HERO_STR_LIT(hero_str_20);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t124 = h7_name;
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t125 = ((void)(t124 == NULL ? ((void)hero_array_len(t124), hero_unreachable()) : (void)0), t124->len);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t126 = HERO_STR_LIT(hero_str_20);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t127 = h7_name;
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t128 = INT64_C(0);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t129 = ((void)((t127 == NULL || t128 < 0 || t128 >= t127->len) ? ((void)hero_array_at(t127, t128), hero_unreachable()) : (void)0), (void)(t127->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t127 + 1))[t128]);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t130 = INT64_C(0);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t131 = t129 != t130;
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t122);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t123);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_int(t125);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_str(t126);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_bool(t131);
-#line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    hero_print_end();
-#line 829 "fixedbugs396posixfillsitsbuffers.c"
+    t87 = h5_f3; t88 = t87.as.ok; t89 = t78 == t88;
+#line 37
+    hero_print_int(t54); hero_print_str(t55); hero_print_int(t57); hero_print_str(t58); hero_print_bool(t73); hero_print_str(t74); hero_print_bool(t89); hero_print_end();
+#line 46
+    t90 = hero_array_new(&hero_desc_u8, 1); t144 = h14_own14; h14_own14 = t90; hero_array_decref(t144); t145 = h6_buf; hero_array_incref(t90); h6_buf = t90; hero_array_decref(t145);
+    t91 = h0_fds; t92 = INT64_C(0); t93 = ((void)((t91 == NULL || t92 < 0 || t92 >= t91->len) ? ((void)hero_array_at(t91, t92), hero_unreachable()) : (void)0), (void)(t91->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t91 + 1))[t92]); t94 = UINT64_C(64); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer read buf 988 991 u8 void *"); HERO_NODEBUG int64_t hero_lend_e38_1 = INT64_C(64); HERO_NODEBUG void *hero_lend_b38_1 = hero_lend_take(h6_buf, hero_lend_e38_1, "read", "buf"); t95 = read(t93, (void *)hero_lend_b38_1, t94); h6_buf = hero_lend_give(h6_buf, hero_lend_b38_1, hero_lend_e38_1); } t96 = HERO_STR_LIT(hero_str_20); t97 = h6_buf; t98 = ((void)(t97 == NULL ? ((void)hero_array_len(t97), hero_unreachable()) : (void)0), t97->len); t99 = HERO_STR_LIT(hero_str_20); t100 = h6_buf; t101 = INT64_C(0); t102 = ((void)((t100 == NULL || t101 < 0 || t101 >= t100->len) ? ((void)hero_array_at(t100, t101), hero_unreachable()) : (void)0), (void)(t100->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t100 + 1))[t101]); t103 = HERO_STR_LIT(hero_str_20); t104 = h6_buf; t105 = INT64_C(4); t106 = ((void)((t104 == NULL || t105 < 0 || t105 >= t104->len) ? ((void)hero_array_at(t104, t105), hero_unreachable()) : (void)0), (void)(t104->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t104 + 1))[t105]); t107 = HERO_STR_LIT(hero_str_20); t108 = h6_buf; t109 = INT64_C(5); t110 = ((void)((t108 == NULL || t109 < 0 || t109 >= t108->len) ? ((void)hero_array_at(t108, t109), hero_unreachable()) : (void)0), (void)(t108->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t108 + 1))[t109]); hero_print_int(t95); hero_print_str(t96); hero_print_int(t98); hero_print_str(t99); hero_print_int(t102); hero_print_str(t103); hero_print_int(t106); hero_print_str(t107); hero_print_int(t110); hero_print_end();
+    t111 = h0_fds; t112 = INT64_C(0); t113 = ((void)((t111 == NULL || t112 < 0 || t112 >= t111->len) ? ((void)hero_array_at(t111, t112), hero_unreachable()) : (void)0), (void)(t111->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t111 + 1))[t112]); t114 = close(t113); t115 = HERO_STR_LIT(hero_str_20); t116 = h0_fds; t117 = INT64_C(1); t118 = ((void)((t116 == NULL || t117 < 0 || t117 >= t116->len) ? ((void)hero_array_at(t116, t117), hero_unreachable()) : (void)0), (void)(t116->elem->size != sizeof(int32_t) ? hero_unreachable() : (void)0), ((int32_t const *)(const void *)(t116 + 1))[t117]); t119 = close(t118); hero_print_int(t114); hero_print_str(t115); hero_print_int(t119); hero_print_end();
+    t120 = hero_array_new(&hero_desc_i8, 1); t146 = h15_own15; h15_own15 = t120; hero_array_decref(t146); t147 = h7_name; hero_array_incref(t120); h7_name = t120; hero_array_decref(t147);
+    t121 = UINT64_C(256); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), char) && (char)-1 < 0), "heroes-ffi-buffer gethostname name 1094 1098 i8 char *"); HERO_NODEBUG int64_t hero_lend_e56_0 = hero_lend_count_u64((uint64_t)(t121), "gethostname", "name"); HERO_NODEBUG void *hero_lend_b56_0 = hero_lend_take(h7_name, hero_lend_e56_0, "gethostname", "name"); t122 = gethostname((void *)hero_lend_b56_0, t121); h7_name = hero_lend_give(h7_name, hero_lend_b56_0, hero_lend_e56_0); } t123 = HERO_STR_LIT(hero_str_20); t124 = h7_name; t125 = ((void)(t124 == NULL ? ((void)hero_array_len(t124), hero_unreachable()) : (void)0), t124->len); t126 = HERO_STR_LIT(hero_str_20); t127 = h7_name; t128 = INT64_C(0); t129 = ((void)((t127 == NULL || t128 < 0 || t128 >= t127->len) ? ((void)hero_array_at(t127, t128), hero_unreachable()) : (void)0), (void)(t127->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t127 + 1))[t128]); t130 = INT64_C(0); t131 = t129 != t130; hero_print_int(t122); hero_print_str(t123); hero_print_int(t125); hero_print_str(t126); hero_print_bool(t131); hero_print_end();
+#line 331 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_release_at(&h0_fds);
     h_0opt_e1ec52d_release(hero_slot_escape(&h1_f0));
     h_0opt_e1ec52d_release(hero_slot_escape(&h2_f1));
@@ -845,10 +347,8 @@ bb7:
     return;
 bb8:
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t85 = h5_f3;
-#line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    t86 = t85.as.err;
-#line 852 "fixedbugs396posixfillsitsbuffers.c"
+    t85 = h5_f3; t86 = t85.as.err;
+#line 352 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t86);
     hero_unreachable();
 }

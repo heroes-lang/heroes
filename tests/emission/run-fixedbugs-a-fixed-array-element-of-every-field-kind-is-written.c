@@ -62,29 +62,17 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #endif
 
 #line 14 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, name) != 0, "heroes-ffi-flex Kinds name");
-#line 14 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-_Static_assert(_Generic(&((struct kinds *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Kinds name");
-_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, flags) != 0, "heroes-ffi-flex Kinds flags");
-#line 15 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-_Static_assert(_Generic(&((struct kinds *)0)->flags, bool (*)[2]: 1, default: 0) && sizeof(struct kinds) - __builtin_offsetof(struct kinds, flags) >= sizeof(bool[2]), "heroes-ffi-field Kinds flags");
-_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, xs) != 0, "heroes-ffi-flex Kinds xs");
-#line 16 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-_Static_assert(_Generic(&((struct kinds *)0)->xs, float (*)[2]: 1, default: 0) && sizeof(struct kinds) - __builtin_offsetof(struct kinds, xs) >= sizeof(float[2]), "heroes-ffi-field Kinds xs");
-_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, ps) != 0, "heroes-ffi-flex Kinds ps");
-#line 17 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-_Static_assert(_Generic(&((struct kinds *)0)->ps, void * (*)[2]: 1, default: 0) && sizeof(struct kinds) - __builtin_offsetof(struct kinds, ps) >= sizeof(void *[2]), "heroes-ffi-field Kinds ps");
-_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, labels) != 0, "heroes-ffi-flex Kinds labels");
-#line 18 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-_Static_assert(_Generic(&((struct kinds *)0)->labels, const char * (*)[2]: 1, default: 0) && sizeof(struct kinds) - __builtin_offsetof(struct kinds, labels) >= sizeof(const char *[2]), "heroes-ffi-field Kinds labels");
-_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, small) != 0, "heroes-ffi-flex Kinds small");
-#line 19 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-_Static_assert(_Generic(&((struct kinds *)0)->small, _Bool (*)[3]: (sizeof(_Bool) == sizeof(int16_t) && (((_Bool)-1 < 0) == ((int16_t)-1 < 0))), char (*)[3]: (sizeof(char) == sizeof(int16_t) && (((char)-1 < 0) == ((int16_t)-1 < 0))), signed char (*)[3]: (sizeof(signed char) == sizeof(int16_t) && (((signed char)-1 < 0) == ((int16_t)-1 < 0))), short (*)[3]: (sizeof(short) == sizeof(int16_t) && (((short)-1 < 0) == ((int16_t)-1 < 0))), int (*)[3]: (sizeof(int) == sizeof(int16_t) && (((int)-1 < 0) == ((int16_t)-1 < 0))), long (*)[3]: (sizeof(long) == sizeof(int16_t) && (((long)-1 < 0) == ((int16_t)-1 < 0))), long long (*)[3]: (sizeof(long long) == sizeof(int16_t) && (((long long)-1 < 0) == ((int16_t)-1 < 0))), unsigned char (*)[3]: (sizeof(unsigned char) == sizeof(int16_t) && (((unsigned char)-1 < 0) == ((int16_t)-1 < 0))), unsigned short (*)[3]: (sizeof(unsigned short) == sizeof(int16_t) && (((unsigned short)-1 < 0) == ((int16_t)-1 < 0))), unsigned int (*)[3]: (sizeof(unsigned int) == sizeof(int16_t) && (((unsigned int)-1 < 0) == ((int16_t)-1 < 0))), unsigned long (*)[3]: (sizeof(unsigned long) == sizeof(int16_t) && (((unsigned long)-1 < 0) == ((int16_t)-1 < 0))), unsigned long long (*)[3]: (sizeof(unsigned long long) == sizeof(int16_t) && (((unsigned long long)-1 < 0) == ((int16_t)-1 < 0))), default: 0), "heroes-ffi-field Kinds small");
-#line 84 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, name) != 0, "heroes-ffi-flex Kinds name"); _Static_assert(_Generic(&((struct kinds *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Kinds name");
+_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, flags) != 0, "heroes-ffi-flex Kinds flags"); _Static_assert(_Generic(&((struct kinds *)0)->flags, bool (*)[2]: 1, default: 0) && sizeof(struct kinds) - __builtin_offsetof(struct kinds, flags) >= sizeof(bool[2]), "heroes-ffi-field Kinds flags");
+_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, xs) != 0, "heroes-ffi-flex Kinds xs"); _Static_assert(_Generic(&((struct kinds *)0)->xs, float (*)[2]: 1, default: 0) && sizeof(struct kinds) - __builtin_offsetof(struct kinds, xs) >= sizeof(float[2]), "heroes-ffi-field Kinds xs");
+_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, ps) != 0, "heroes-ffi-flex Kinds ps"); _Static_assert(_Generic(&((struct kinds *)0)->ps, void * (*)[2]: 1, default: 0) && sizeof(struct kinds) - __builtin_offsetof(struct kinds, ps) >= sizeof(void *[2]), "heroes-ffi-field Kinds ps");
+_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, labels) != 0, "heroes-ffi-flex Kinds labels"); _Static_assert(_Generic(&((struct kinds *)0)->labels, const char * (*)[2]: 1, default: 0) && sizeof(struct kinds) - __builtin_offsetof(struct kinds, labels) >= sizeof(const char *[2]), "heroes-ffi-field Kinds labels");
+_Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, small) != 0, "heroes-ffi-flex Kinds small"); _Static_assert(_Generic(&((struct kinds *)0)->small, _Bool (*)[3]: (sizeof(_Bool) == sizeof(int16_t) && (((_Bool)-1 < 0) == ((int16_t)-1 < 0))), char (*)[3]: (sizeof(char) == sizeof(int16_t) && (((char)-1 < 0) == ((int16_t)-1 < 0))), signed char (*)[3]: (sizeof(signed char) == sizeof(int16_t) && (((signed char)-1 < 0) == ((int16_t)-1 < 0))), short (*)[3]: (sizeof(short) == sizeof(int16_t) && (((short)-1 < 0) == ((int16_t)-1 < 0))), int (*)[3]: (sizeof(int) == sizeof(int16_t) && (((int)-1 < 0) == ((int16_t)-1 < 0))), long (*)[3]: (sizeof(long) == sizeof(int16_t) && (((long)-1 < 0) == ((int16_t)-1 < 0))), long long (*)[3]: (sizeof(long long) == sizeof(int16_t) && (((long long)-1 < 0) == ((int16_t)-1 < 0))), unsigned char (*)[3]: (sizeof(unsigned char) == sizeof(int16_t) && (((unsigned char)-1 < 0) == ((int16_t)-1 < 0))), unsigned short (*)[3]: (sizeof(unsigned short) == sizeof(int16_t) && (((unsigned short)-1 < 0) == ((int16_t)-1 < 0))), unsigned int (*)[3]: (sizeof(unsigned int) == sizeof(int16_t) && (((unsigned int)-1 < 0) == ((int16_t)-1 < 0))), unsigned long (*)[3]: (sizeof(unsigned long) == sizeof(int16_t) && (((unsigned long)-1 < 0) == ((int16_t)-1 < 0))), unsigned long long (*)[3]: (sizeof(unsigned long long) == sizeof(int16_t) && (((unsigned long long)-1 < 0) == ((int16_t)-1 < 0))), default: 0), "heroes-ffi-field Kinds small");
+#line 72 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 
 #line 13 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
 _Static_assert(__builtin_classify_type(*(struct kinds *)0) != 13, "heroes-ffi-union Kinds name flags xs ps labels small");
-#line 88 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 76 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -163,13 +151,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsafixedarrayelement
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 173 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 161 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b);
@@ -193,91 +181,25 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void) {
-#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    struct kinds h0_k; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t28; HERO_NODEBUG bool t10, t11, t30; HERO_NODEBUG float t13, t14, t32; HERO_NODEBUG void *t16, *t17, *t34; HERO_NODEBUG const char *t19, *t20, *t36; HERO_NODEBUG int16_t t22, t23, t24, t38; HERO_NODEBUG struct kinds t26, t39; HERO_NODEBUG int64_t t27, t29, t31, t33, t35, t37, t40; HERO_ENTRY_STOP; goto bb0;
-#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-bb0:
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t1 = UINT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t2 = UINT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t3 = UINT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t4 = UINT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t5 = UINT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t6 = UINT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t7 = UINT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t8 = UINT64_C(0);
-    t10 = false;
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t11 = false;
-    t13 = 0x0p+0;
-#line 28 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t14 = 0x0p+0;
-    t16 = ((void *)0);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t17 = ((void *)0);
-    t19 = ((void *)0);
-#line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t20 = ((void *)0);
-    t22 = INT64_C(0);
-#line 31 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t23 = INT64_C(0);
-#line 31 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t24 = INT64_C(0);
-#line 25 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t26 = (struct kinds){.name = {t1, t2, t3, t4, t5, t6, t7, t8}, .flags = {t10, t11}, .xs = {t13, t14}, .ps = {t16, t17}, .labels = {t19, t20}, .small = {t22, t23, t24}};
-#line 25 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    h0_k = t26;
-#line 25 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    hero_pad_fill(&h0_k, sizeof(struct kinds), 1, hero_pad_g_0, hero_pad_n_0);
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t27 = INT64_C(0);
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t28 = UINT64_C(65);
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    h0_k.name[((uint64_t)(t27) >= UINT64_C(8) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t27))] = t28;
-    t29 = INT64_C(1);
-#line 34 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t30 = true;
-#line 34 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    h0_k.flags[((uint64_t)(t29) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t29))] = t30;
-    t31 = INT64_C(1);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t32 = 0x1.4p+1;
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    h0_k.xs[((uint64_t)(t31) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t31))] = t32;
-    t33 = INT64_C(0);
-#line 36 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t34 = (void *)kinds_pointer();
-#line 36 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    h0_k.ps[((uint64_t)(t33) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t33))] = t34;
-    t35 = INT64_C(1);
-#line 37 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t36 = (const char *)kinds_label();
-#line 37 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    h0_k.labels[((uint64_t)(t35) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t35))] = t36;
-    t37 = INT64_C(2);
-#line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t38 = INT64_C(-3);
-#line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    h0_k.small[((uint64_t)(t37) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t37))] = t38;
-    t39 = h0_k;
-#line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    t40 = kinds_check(t39);
-#line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    hero_print_int(t40);
-#line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    hero_print_end();
-#line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
-    return;
-#line 281 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void) { struct kinds h0_k; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t28; HERO_NODEBUG bool t10, t11, t30; HERO_NODEBUG float t13, t14, t32; HERO_NODEBUG void *t16, *t17, *t34; HERO_NODEBUG const char *t19, *t20, *t36; HERO_NODEBUG int16_t t22, t23, t24, t38; HERO_NODEBUG struct kinds t26, t39; HERO_NODEBUG int64_t t27, t29, t31, t33, t35, t37, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 26
+    t1 = UINT64_C(0); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = UINT64_C(0); t8 = UINT64_C(0);
+    t10 = false; t11 = false;
+    t13 = 0x0p+0; t14 = 0x0p+0;
+    t16 = ((void *)0); t17 = ((void *)0);
+    t19 = ((void *)0); t20 = ((void *)0);
+    t22 = INT64_C(0); t23 = INT64_C(0); t24 = INT64_C(0);
+#line 25
+    t26 = (struct kinds){.name = {t1, t2, t3, t4, t5, t6, t7, t8}, .flags = {t10, t11}, .xs = {t13, t14}, .ps = {t16, t17}, .labels = {t19, t20}, .small = {t22, t23, t24}}; h0_k = t26; hero_pad_fill(&h0_k, sizeof(struct kinds), 1, hero_pad_g_0, hero_pad_n_0);
+#line 33
+    t27 = INT64_C(0); t28 = UINT64_C(65); h0_k.name[((uint64_t)(t27) >= UINT64_C(8) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t27))] = t28;
+    t29 = INT64_C(1); t30 = true; h0_k.flags[((uint64_t)(t29) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t29))] = t30;
+    t31 = INT64_C(1); t32 = 0x1.4p+1; h0_k.xs[((uint64_t)(t31) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t31))] = t32;
+    t33 = INT64_C(0); t34 = (void *)kinds_pointer(); h0_k.ps[((uint64_t)(t33) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t33))] = t34;
+    t35 = INT64_C(1); t36 = (const char *)kinds_label(); h0_k.labels[((uint64_t)(t35) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t35))] = t36;
+    t37 = INT64_C(2); t38 = INT64_C(-3); h0_k.small[((uint64_t)(t37) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t37))] = t38;
+    t39 = h0_k; t40 = kinds_check(t39); hero_print_int(t40); hero_print_end(); return;
+#line 203 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;

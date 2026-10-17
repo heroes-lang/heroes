@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs567ani16divisionatitssmallestbyminusoneaborts.c"
 #pragma clang diagnostic pop
@@ -95,46 +95,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs567ani16divisionatitssmallestbyminusoneaborts_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-void h_fixedbugs567ani16divisionatitssmallestbyminusoneaborts_main(void) {
-#line 11 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    int16_t h0_x; int16_t h1_y; HERO_NODEBUG int16_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-bb0:
-    t1 = INT64_C(-32768);
-#line 12 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    h0_x = t1;
-    t2 = INT64_C(-1);
-#line 13 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    h1_y = t2;
-    t3 = h0_x;
-#line 14 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    t4 = INT64_C(7);
-#line 14 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    if (t4 == 0) hero_panic("division by zero");
-#line 14 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    if (t3 == INT16_MIN && t4 == INT16_C(-1)) hero_panic_overflow();
-#line 14 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    t5 = t3 / t4;
-#line 14 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    hero_print_int(t5);
-#line 14 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    hero_print_end();
-    t6 = h0_x;
-#line 15 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    t7 = h1_y;
-#line 15 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    if (t7 == 0) hero_panic("division by zero");
-#line 15 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    if (t6 == INT16_MIN && t7 == INT16_C(-1)) hero_panic_overflow();
-#line 15 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    t8 = t6 / t7;
-#line 15 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    hero_print_int(t8);
-#line 15 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    hero_print_end();
-#line 15 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    return;
-#line 138 "fixedbugs567ani16divisionatitssmallestbyminusoneaborts.c"
+void h_fixedbugs567ani16divisionatitssmallestbyminusoneaborts_main(void) { int16_t h0_x; int16_t h1_y; HERO_NODEBUG int16_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(-32768); h0_x = t1;
+    t2 = INT64_C(-1); h1_y = t2;
+    t3 = h0_x; t4 = INT64_C(7); if (t4 == 0) hero_panic("division by zero"); if (t3 == INT16_MIN && t4 == INT16_C(-1)) hero_panic_overflow(); t5 = t3 / t4; hero_print_int(t5); hero_print_end();
+    t6 = h0_x; t7 = h1_y; if (t7 == 0) hero_panic("division by zero"); if (t6 == INT16_MIN && t7 == INT16_C(-1)) hero_panic_overflow(); t8 = t6 / t7; hero_print_int(t8); hero_print_end(); return;
+#line 104 "fixedbugs567ani16divisionatitssmallestbyminusoneaborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

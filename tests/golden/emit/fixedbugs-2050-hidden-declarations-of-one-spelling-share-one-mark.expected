@@ -79,11 +79,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 89 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
 #pragma clang diagnostic pop
@@ -101,120 +101,18 @@ HeroArrayHeader * h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_kee
 void h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_main(void);
 
 #line 12 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-HeroArrayHeader * h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_keep(HeroArrayHeader * h0_words, int64_t h1_limit) {
-#line 12 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    HeroArrayHeader * h2_kept = {0}; HeroStr h3_longest = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *t1, *t3, *t6, *t9, *t28, *t29, *t31, *t33, *t34, *t35, *t37, *t39; HERO_NODEBUG int64_t h5_i0, t4, t5, t7, t10, t13, t14, t20, t22, t25, t26, t27; HeroStr h6_word = {0}; HERO_NODEBUG HeroStr t2, t11, t12, t17, t19, t21, t24, t32, t36, t38, t40; HERO_NODEBUG bool t8, t15, t23; HERO_NODEBUG __attribute__((unused)) bool t30; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 13 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t34 = h7_own7;
-#line 13 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h7_own7 = t1;
-#line 13 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_decref(t34);
-#line 13 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t35 = h2_kept;
-#line 13 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_incref(t1);
-#line 13 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h2_kept = t1;
-#line 13 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_decref(t35);
-    t2 = HERO_STR_LIT(hero_str_0);
-#line 14 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t36 = h3_longest;
-#line 14 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_str_incref(t2);
-#line 14 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h3_longest = t2;
-#line 14 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_str_decref(t36);
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t3 = h0_words;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t37 = h4_xs0;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_incref(t3);
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h4_xs0 = t3;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_decref(t37);
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t4 = INT64_C(0);
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h5_i0 = t4;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    goto bb1;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb1:
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t5 = h5_i0;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t6 = h4_xs0;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t8 = t5 < t7;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    if (t8) goto bb2; else goto bb4;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb2:
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t9 = h4_xs0;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t10 = h5_i0;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t38 = h6_word;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_str_incref(t11);
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h6_word = t11;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_str_decref(t38);
-    t12 = h6_word;
-#line 17 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t13 = hero_str_len(t12);
-#line 17 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t14 = h1_limit;
-#line 17 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t15 = t13 <= t14;
-#line 17 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    if (t15) goto bb6; else goto bb7;
-#line 17 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb3:
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t25 = h5_i0;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t26 = INT64_C(1);
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow();
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h5_i0 = t27;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    goto bb1;
-#line 16 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb4:
-#line 23 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t28 = h2_kept;
-#line 23 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t29 = h0_words;
-#line 23 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t30 = hero_array_eq(t28, t29);
-    t31 = h2_kept;
-#line 24 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t32 = h3_longest;
-#line 24 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t33 = hero_array_push(t31, &t32);
-#line 24 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t39 = h8_own8;
-#line 24 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h8_own8 = t33;
-#line 24 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_decref(t39);
-#line 218 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
+HeroArrayHeader * h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_keep(HeroArrayHeader * h0_words, int64_t h1_limit) { HeroArrayHeader * h2_kept = {0}; HeroStr h3_longest = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *t1, *t3, *t6, *t9, *t28, *t29, *t31, *t33, *t34, *t35, *t37, *t39; HERO_NODEBUG int64_t h5_i0, t4, t5, t7, t10, t13, t14, t20, t22, t25, t26, t27; HeroStr h6_word = {0}; HERO_NODEBUG HeroStr t2, t11, t12, t17, t19, t21, t24, t32, t36, t38, t40; HERO_NODEBUG bool t8, t15, t23; HERO_NODEBUG __attribute__((unused)) bool t30; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t34 = h7_own7; h7_own7 = t1; hero_array_decref(t34); t35 = h2_kept; hero_array_incref(t1); h2_kept = t1; hero_array_decref(t35);
+    t2 = HERO_STR_LIT(hero_str_0); t36 = h3_longest; hero_str_incref(t2); h3_longest = t2; hero_str_decref(t36);
+#line 16
+    t3 = h0_words; t37 = h4_xs0; hero_array_incref(t3); h4_xs0 = t3; hero_array_decref(t37); t4 = INT64_C(0); h5_i0 = t4; goto bb1; bb1: t5 = h5_i0; t6 = h4_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h4_xs0; t10 = h5_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t38 = h6_word; hero_str_incref(t11); h6_word = t11; hero_str_decref(t38);
+    t12 = h6_word; t13 = hero_str_len(t12); t14 = h1_limit; t15 = t13 <= t14; if (t15) goto bb6; else goto bb7; bb3:
+#line 16
+    t25 = h5_i0; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow(); h5_i0 = t27; goto bb1; bb4:
+#line 23
+    t28 = h2_kept; t29 = h0_words; t30 = hero_array_eq(t28, t29);
+    t31 = h2_kept; t32 = h3_longest; t33 = hero_array_push(t31, &t32); t39 = h8_own8; h8_own8 = t33; hero_array_decref(t39);
+#line 116 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
     hero_array_incref(t33);
     hero_array_release_at(&h2_kept);
     hero_str_release_at(&h3_longest);
@@ -225,105 +123,19 @@ bb4:
     return t33;
 bb5:
 #line 20 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t19 = h6_word;
-#line 20 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t20 = hero_str_len(t19);
-#line 20 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t21 = h3_longest;
-#line 20 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t22 = hero_str_len(t21);
-#line 20 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t23 = t20 > t22;
-#line 20 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    if (t23) goto bb9; else goto bb10;
-#line 20 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb6:
-#line 18 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t17 = h6_word;
-#line 18 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_push_owned(&h2_kept, &t17);
-#line 18 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    goto bb5;
-#line 18 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb7:
-#line 18 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    goto bb5;
-#line 18 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb8:
-#line 18 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    goto bb3;
-#line 18 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb9:
-#line 21 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t24 = h6_word;
-#line 21 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t40 = h3_longest;
-#line 21 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_str_incref(t24);
-#line 21 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h3_longest = t24;
-#line 21 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_str_decref(t40);
-#line 21 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    goto bb8;
-#line 21 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb10:
-#line 21 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    goto bb8;
-#line 274 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
+    t19 = h6_word; t20 = hero_str_len(t19); t21 = h3_longest; t22 = hero_str_len(t21); t23 = t20 > t22; if (t23) goto bb9; else goto bb10; bb6:
+#line 18
+    t17 = h6_word; hero_array_push_owned(&h2_kept, &t17); goto bb5; bb7: goto bb5; bb8: goto bb3; bb9:
+#line 21
+    t24 = h6_word; t40 = h3_longest; hero_str_incref(t24); h3_longest = t24; hero_str_decref(t40); goto bb8; bb10: goto bb8;
+#line 132 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
 }
 
 #line 26 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-void h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_main(void) {
-#line 26 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    HeroArrayHeader * h0_got = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t4, *t6, *t7, *t9, *t10, *t11; HERO_NODEBUG HeroStr t1, t2, t3; HERO_NODEBUG int64_t t5, t8; HERO_ENTRY_STOP; goto bb0;
-#line 26 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t2 = HERO_STR_LIT(hero_str_eb4ac31);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t3 = HERO_STR_LIT(hero_str_76c1f302);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t4 = hero_array_new(&hero_desc_str, 3);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_push_owned(&t4, &t1);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_push_owned(&t4, &t2);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_push_owned(&t4, &t3);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t9 = h1_own1;
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h1_own1 = t4;
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_decref(t9);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t5 = INT64_C(5);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t6 = h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_keep(t4, t5);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t10 = h2_own2;
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h2_own2 = t6;
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_decref(t10);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t11 = h0_got;
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_incref(t6);
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    h0_got = t6;
-#line 27 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_array_decref(t11);
-    t7 = h0_got;
-#line 28 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
-#line 28 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_print_int(t8);
-#line 28 "tests/golden/emit/fixedbugs-2050-hidden-declarations-of-one-spelling-share-one-mark.hero"
-    hero_print_end();
-#line 327 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
+void h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_main(void) { HeroArrayHeader * h0_got = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t4, *t6, *t7, *t9, *t10, *t11; HERO_NODEBUG HeroStr t1, t2, t3; HERO_NODEBUG int64_t t5, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_6bb5e50a); t2 = HERO_STR_LIT(hero_str_eb4ac31); t3 = HERO_STR_LIT(hero_str_76c1f302); t4 = hero_array_new(&hero_desc_str, 3); hero_array_push_owned(&t4, &t1); hero_array_push_owned(&t4, &t2); hero_array_push_owned(&t4, &t3); t9 = h1_own1; h1_own1 = t4; hero_array_decref(t9); t5 = INT64_C(5); t6 = h_fixedbugs2050hiddendeclarationsofonespellingshareonemark_keep(t4, t5); t10 = h2_own2; h2_own2 = t6; hero_array_decref(t10); t11 = h0_got; hero_array_incref(t6); h0_got = t6; hero_array_decref(t11);
+    t7 = h0_got; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); hero_print_int(t8); hero_print_end();
+#line 139 "fixedbugs2050hiddendeclarationsofonespellingshareonemark.c"
     hero_array_release_at(&h0_got);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);

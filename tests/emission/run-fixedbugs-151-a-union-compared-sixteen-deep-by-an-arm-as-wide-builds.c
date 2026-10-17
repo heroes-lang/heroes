@@ -211,11 +211,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs151aunioncompareds
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 221 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 #pragma clang diagnostic pop
@@ -267,134 +267,30 @@ h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 h_fixedbugs151aun
 void h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_main(void);
 
 #line 61 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(int32_t h0_i) {
-#line 61 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 h1_r0; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 h2_r1; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 h3_r2; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 h4_r3; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 h5_r4; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 h6_r5; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 h7_r6; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 h8_r7; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 h9_r8; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 h10_r9; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 h11_r10; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 h12_r11; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 h13_r12; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 h14_r13; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 h15_r14; HERO_NODEBUG int32_t t1; HERO_NODEBUG U t2; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 t3, t4; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 t5, t6; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 t7, t8; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 t9, t10; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 t11, t12; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 t13, t14; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 t15, t16; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 t17, t18; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 t19, t20; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 t21, t22; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 t23, t24; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 t25, t26; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 t27, t28; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 t29, t30; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 t31, t32; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 t33; HERO_ENTRY_STOP; goto bb0;
-#line 61 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-bb0:
-    t1 = h0_i;
-#line 62 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t2 = make_u(t1);
-#line 62 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t3 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0){.f_u = t2};
-#line 62 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h1_r0 = t3;
-    t4 = h1_r0;
-#line 63 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t5 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1){.f_inner = t4};
-#line 63 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h2_r1 = t5;
-    t6 = h2_r1;
-#line 64 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t7 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2){.f_inner = t6};
-#line 64 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h3_r2 = t7;
-    t8 = h3_r2;
-#line 65 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t9 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3){.f_inner = t8};
-#line 65 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h4_r3 = t9;
-    t10 = h4_r3;
-#line 66 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t11 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4){.f_inner = t10};
-#line 66 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h5_r4 = t11;
-    t12 = h5_r4;
-#line 67 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t13 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5){.f_inner = t12};
-#line 67 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h6_r5 = t13;
-    t14 = h6_r5;
-#line 68 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t15 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6){.f_inner = t14};
-#line 68 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h7_r6 = t15;
-    t16 = h7_r6;
-#line 69 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t17 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7){.f_inner = t16};
-#line 69 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h8_r7 = t17;
-    t18 = h8_r7;
-#line 70 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t19 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8){.f_inner = t18};
-#line 70 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h9_r8 = t19;
-    t20 = h9_r8;
-#line 71 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t21 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9){.f_inner = t20};
-#line 71 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h10_r9 = t21;
-    t22 = h10_r9;
-#line 72 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t23 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10){.f_inner = t22};
-#line 72 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h11_r10 = t23;
-    t24 = h11_r10;
-#line 73 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t25 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11){.f_inner = t24};
-#line 73 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h12_r11 = t25;
-    t26 = h12_r11;
-#line 74 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t27 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12){.f_inner = t26};
-#line 74 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h13_r12 = t27;
-    t28 = h13_r12;
-#line 75 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t29 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13){.f_inner = t28};
-#line 75 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h14_r13 = t29;
-    t30 = h14_r13;
-#line 76 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t31 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14){.f_inner = t30};
-#line 76 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    h15_r14 = t31;
-    t32 = h15_r14;
-#line 77 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t33 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15){.f_inner = t32};
-#line 77 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    return t33;
-#line 358 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(int32_t h0_i) { h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 h1_r0; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 h2_r1; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 h3_r2; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 h4_r3; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 h5_r4; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 h6_r5; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 h7_r6; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 h8_r7; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 h9_r8; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 h10_r9; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 h11_r10; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 h12_r11; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 h13_r12; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 h14_r13; h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 h15_r14; HERO_NODEBUG int32_t t1; HERO_NODEBUG U t2; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 t3, t4; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 t5, t6; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 t7, t8; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3 t9, t10; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4 t11, t12; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5 t13, t14; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6 t15, t16; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7 t17, t18; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8 t19, t20; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9 t21, t22; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10 t23, t24; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11 t25, t26; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12 t27, t28; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13 t29, t30; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14 t31, t32; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 t33; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_i; t2 = make_u(t1); t3 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0){.f_u = t2}; h1_r0 = t3;
+    t4 = h1_r0; t5 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1){.f_inner = t4}; h2_r1 = t5;
+    t6 = h2_r1; t7 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2){.f_inner = t6}; h3_r2 = t7;
+    t8 = h3_r2; t9 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R3){.f_inner = t8}; h4_r3 = t9;
+    t10 = h4_r3; t11 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R4){.f_inner = t10}; h5_r4 = t11;
+    t12 = h5_r4; t13 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R5){.f_inner = t12}; h6_r5 = t13;
+    t14 = h6_r5; t15 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R6){.f_inner = t14}; h7_r6 = t15;
+    t16 = h7_r6; t17 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R7){.f_inner = t16}; h8_r7 = t17;
+    t18 = h8_r7; t19 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R8){.f_inner = t18}; h9_r8 = t19;
+    t20 = h9_r8; t21 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R9){.f_inner = t20}; h10_r9 = t21;
+    t22 = h10_r9; t23 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R10){.f_inner = t22}; h11_r10 = t23;
+    t24 = h11_r10; t25 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R11){.f_inner = t24}; h12_r11 = t25;
+    t26 = h12_r11; t27 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R12){.f_inner = t26}; h13_r12 = t27;
+    t28 = h13_r12; t29 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R13){.f_inner = t28}; h14_r13 = t29;
+    t30 = h14_r13; t31 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R14){.f_inner = t30}; h15_r14 = t31;
+    t32 = h15_r14; t33 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15){.f_inner = t32}; return t33;
+#line 288 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 }
 
 #line 79 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-void h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_main(void) {
-#line 79 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    HERO_NODEBUG int32_t t1, t3, t7, t9; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 t2, t4, t8, t10; HERO_NODEBUG bool t5, t11; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
-#line 79 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t2 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t1);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t3 = INT64_C(3);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t4 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t3);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t5 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_eq(&t2, &t4);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t6 = HERO_STR_LIT(hero_str_20);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t7 = INT64_C(3);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t8 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t7);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t9 = INT64_C(4);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t10 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t9);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    t11 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_eq(&t8, &t10);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    hero_print_bool(t5);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    hero_print_str(t6);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    hero_print_bool(t11);
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    hero_print_end();
-#line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
-    return;
-#line 398 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+void h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_main(void) { HERO_NODEBUG int32_t t1, t3, t7, t9; HERO_NODEBUG h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 t2, t4, t8, t10; HERO_NODEBUG bool t5, t11; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); t2 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t1); t3 = INT64_C(3); t4 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t3); t5 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_eq(&t2, &t4); t6 = HERO_STR_LIT(hero_str_20); t7 = INT64_C(3); t8 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t7); t9 = INT64_C(4); t10 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(t9); t11 = h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15_eq(&t8, &t10); hero_print_bool(t5); hero_print_str(t6); hero_print_bool(t11); hero_print_end(); return;
+#line 294 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_U_eq(const U *a, const U *b) {
     if (!(a->i == b->i)) return false;

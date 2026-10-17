@@ -76,11 +76,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 86 "abortstrslice.c"
 #pragma clang diagnostic pop
@@ -97,55 +97,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_abortstrslice_main(void);
 
 #line 6 "tests/golden/run/abort-str-slice.hero"
-void h_abortstrslice_main(void) {
-#line 6 "tests/golden/run/abort-str-slice.hero"
-    HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t5, t6, t9, t10, t11, t12; HERO_NODEBUG int64_t t3, t4, t7, t8; HERO_ENTRY_STOP; goto bb0;
-#line 6 "tests/golden/run/abort-str-slice.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_33edea20);
-#line 7 "tests/golden/run/abort-str-slice.hero"
-    t10 = h0_s;
-#line 7 "tests/golden/run/abort-str-slice.hero"
-    hero_str_incref(t1);
-#line 7 "tests/golden/run/abort-str-slice.hero"
-    h0_s = t1;
-#line 7 "tests/golden/run/abort-str-slice.hero"
-    hero_str_decref(t10);
-    t2 = h0_s;
-#line 8 "tests/golden/run/abort-str-slice.hero"
-    t3 = INT64_C(1);
-#line 8 "tests/golden/run/abort-str-slice.hero"
-    t4 = INT64_C(3);
-#line 8 "tests/golden/run/abort-str-slice.hero"
-    t5 = hero_str_slice(t2, t3, t4);
-#line 8 "tests/golden/run/abort-str-slice.hero"
-    t11 = h1_own1;
-#line 8 "tests/golden/run/abort-str-slice.hero"
-    h1_own1 = t5;
-#line 8 "tests/golden/run/abort-str-slice.hero"
-    hero_str_decref(t11);
-#line 8 "tests/golden/run/abort-str-slice.hero"
-    hero_print_str(t5);
-#line 8 "tests/golden/run/abort-str-slice.hero"
-    hero_print_end();
-    t6 = h0_s;
-#line 9 "tests/golden/run/abort-str-slice.hero"
-    t7 = INT64_C(1);
-#line 9 "tests/golden/run/abort-str-slice.hero"
-    t8 = INT64_C(9);
-#line 9 "tests/golden/run/abort-str-slice.hero"
-    t9 = hero_str_slice(t6, t7, t8);
-#line 9 "tests/golden/run/abort-str-slice.hero"
-    t12 = h2_own2;
-#line 9 "tests/golden/run/abort-str-slice.hero"
-    h2_own2 = t9;
-#line 9 "tests/golden/run/abort-str-slice.hero"
-    hero_str_decref(t12);
-#line 9 "tests/golden/run/abort-str-slice.hero"
-    hero_print_str(t9);
-#line 9 "tests/golden/run/abort-str-slice.hero"
-    hero_print_end();
-#line 149 "abortstrslice.c"
+void h_abortstrslice_main(void) { HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t5, t6, t9, t10, t11, t12; HERO_NODEBUG int64_t t3, t4, t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_33edea20); t10 = h0_s; hero_str_incref(t1); h0_s = t1; hero_str_decref(t10);
+    t2 = h0_s; t3 = INT64_C(1); t4 = INT64_C(3); t5 = hero_str_slice(t2, t3, t4); t11 = h1_own1; h1_own1 = t5; hero_str_decref(t11); hero_print_str(t5); hero_print_end();
+    t6 = h0_s; t7 = INT64_C(1); t8 = INT64_C(9); t9 = hero_str_slice(t6, t7, t8); t12 = h2_own2; h2_own2 = t9; hero_str_decref(t12); hero_print_str(t9); hero_print_end();
+#line 105 "abortstrslice.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

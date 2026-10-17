@@ -133,11 +133,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_apanicwithaliveleasesaysone
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "apanicwithaliveleasesaysonething.c"
 #pragma clang diagnostic pop
@@ -154,74 +154,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_apanicwithaliveleasesaysonething_main(void);
 
 #line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-void h_apanicwithaliveleasesaysonething_main(void) {
-#line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    HeroStr h0_x = {0}; const char * h1_c; HeroArrayHeader * h2_a = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t8, *t9, *t14, *t15; HERO_NODEBUG HeroStr h4_own4 = {0}, t1, t2, t12, t13, t16; HERO_NODEBUG const char *t3, *t4; HERO_NODEBUG int64_t t5, t6, t7, t10, t11; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_35d9fe9b);
-#line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t13 = h0_x;
-#line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_str_incref(t1);
-#line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    h0_x = t1;
-#line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_str_decref(t13);
-    t2 = h0_x;
-#line 12 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t3 = hero_str_held(t2);
-#line 12 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    h1_c = t3;
-    t4 = h1_c;
-#line 13 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    (void)look(hero_cstr_nonnull(t4));
-    t5 = INT64_C(1);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t6 = INT64_C(2);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t7 = INT64_C(3);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t8 = hero_array_new(&hero_desc_int, 3);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_array_push_owned(&t8, &t5);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_array_push_owned(&t8, &t6);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_array_push_owned(&t8, &t7);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t14 = h3_own3;
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    h3_own3 = t8;
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_array_decref(t14);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t15 = h2_a;
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_array_incref(t8);
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    h2_a = t8;
-#line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_array_decref(t15);
-    t9 = h2_a;
-#line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t10 = INT64_C(9);
-#line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]);
-#line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t12 = hero_int_to_str(t11);
-#line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    t16 = h4_own4;
-#line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    h4_own4 = t12;
-#line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_str_decref(t16);
-#line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_print_str(t12);
-#line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    hero_print_end();
+void h_apanicwithaliveleasesaysonething_main(void) { HeroStr h0_x = {0}; const char * h1_c; HeroArrayHeader * h2_a = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t8, *t9, *t14, *t15; HERO_NODEBUG HeroStr h4_own4 = {0}, t1, t2, t12, t13, t16; HERO_NODEBUG const char *t3, *t4; HERO_NODEBUG int64_t t5, t6, t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_35d9fe9b); t13 = h0_x; hero_str_incref(t1); h0_x = t1; hero_str_decref(t13);
+    t2 = h0_x; t3 = hero_str_held(t2); h1_c = t3;
+    t4 = h1_c; (void)look(hero_cstr_nonnull(t4));
+    t5 = INT64_C(1); t6 = INT64_C(2); t7 = INT64_C(3); t8 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t8, &t5); hero_array_push_owned(&t8, &t6); hero_array_push_owned(&t8, &t7); t14 = h3_own3; h3_own3 = t8; hero_array_decref(t14); t15 = h2_a; hero_array_incref(t8); h2_a = t8; hero_array_decref(t15);
+    t9 = h2_a; t10 = INT64_C(9); t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]); t12 = hero_int_to_str(t11); t16 = h4_own4; h4_own4 = t12; hero_str_decref(t16); hero_print_str(t12); hero_print_end();
     hero_held_release(&h1_c);
-#line 225 "apanicwithaliveleasesaysonething.c"
+#line 165 "apanicwithaliveleasesaysonething.c"
     hero_str_release_at(&h0_x);
     hero_array_release_at(&h2_a);
     hero_array_release_at(&h3_own3);

@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "functions.c"
 #pragma clang diagnostic pop
@@ -98,181 +98,45 @@ void h_functions_main(void);
 int64_t h_functions_fib(int64_t h0_n);
 
 #line 6 "tests/golden/run/functions.hero"
-bool h_functions_is_even(int64_t h0_n) {
-#line 6 "tests/golden/run/functions.hero"
-    HERO_NODEBUG bool h1_ret0, t3, t4, t8, t9; HERO_NODEBUG int64_t t1, t2, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 6 "tests/golden/run/functions.hero"
-bb0:
-    t1 = h0_n;
-#line 7 "tests/golden/run/functions.hero"
-    t2 = INT64_C(0);
-#line 7 "tests/golden/run/functions.hero"
-    t3 = t1 == t2;
-#line 7 "tests/golden/run/functions.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 7 "tests/golden/run/functions.hero"
-bb1:
-#line 9 "tests/golden/run/functions.hero"
-    t5 = h0_n;
-#line 9 "tests/golden/run/functions.hero"
-    t6 = INT64_C(1);
-#line 9 "tests/golden/run/functions.hero"
-    if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 9 "tests/golden/run/functions.hero"
-    t8 = h_functions_is_odd(t7);
-#line 9 "tests/golden/run/functions.hero"
-    h1_ret0 = t8;
-#line 9 "tests/golden/run/functions.hero"
-    goto bb4;
-#line 9 "tests/golden/run/functions.hero"
-bb2:
-#line 8 "tests/golden/run/functions.hero"
-    t4 = true;
-#line 8 "tests/golden/run/functions.hero"
-    h1_ret0 = t4;
-#line 8 "tests/golden/run/functions.hero"
-    goto bb4;
-#line 8 "tests/golden/run/functions.hero"
-bb3:
-#line 8 "tests/golden/run/functions.hero"
-    goto bb1;
-#line 8 "tests/golden/run/functions.hero"
-bb4:
-#line 142 "functions.c"
+bool h_functions_is_even(int64_t h0_n) { HERO_NODEBUG bool h1_ret0, t3, t4, t8, t9; HERO_NODEBUG int64_t t1, t2, t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 9
+    t5 = h0_n; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow(); t8 = h_functions_is_odd(t7); h1_ret0 = t8; goto bb4; bb2:
+#line 8
+    t4 = true; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
+#line 108 "functions.c"
     t9 = h1_ret0;
     return t9;
 }
 
 #line 11 "tests/golden/run/functions.hero"
-bool h_functions_is_odd(int64_t h0_n) {
-#line 11 "tests/golden/run/functions.hero"
-    HERO_NODEBUG bool h1_ret0, t3, t4, t8, t9; HERO_NODEBUG int64_t t1, t2, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/functions.hero"
-bb0:
-    t1 = h0_n;
-#line 12 "tests/golden/run/functions.hero"
-    t2 = INT64_C(0);
-#line 12 "tests/golden/run/functions.hero"
-    t3 = t1 == t2;
-#line 12 "tests/golden/run/functions.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 12 "tests/golden/run/functions.hero"
-bb1:
-#line 14 "tests/golden/run/functions.hero"
-    t5 = h0_n;
-#line 14 "tests/golden/run/functions.hero"
-    t6 = INT64_C(1);
-#line 14 "tests/golden/run/functions.hero"
-    if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 14 "tests/golden/run/functions.hero"
-    t8 = h_functions_is_even(t7);
-#line 14 "tests/golden/run/functions.hero"
-    h1_ret0 = t8;
-#line 14 "tests/golden/run/functions.hero"
-    goto bb4;
-#line 14 "tests/golden/run/functions.hero"
-bb2:
-#line 13 "tests/golden/run/functions.hero"
-    t4 = false;
-#line 13 "tests/golden/run/functions.hero"
-    h1_ret0 = t4;
-#line 13 "tests/golden/run/functions.hero"
-    goto bb4;
-#line 13 "tests/golden/run/functions.hero"
-bb3:
-#line 13 "tests/golden/run/functions.hero"
-    goto bb1;
-#line 13 "tests/golden/run/functions.hero"
-bb4:
-#line 188 "functions.c"
+bool h_functions_is_odd(int64_t h0_n) { HERO_NODEBUG bool h1_ret0, t3, t4, t8, t9; HERO_NODEBUG int64_t t1, t2, t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 14
+    t5 = h0_n; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow(); t8 = h_functions_is_even(t7); h1_ret0 = t8; goto bb4; bb2:
+#line 13
+    t4 = false; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
+#line 120 "functions.c"
     t9 = h1_ret0;
     return t9;
 }
 
 #line 16 "tests/golden/run/functions.hero"
-void h_functions_main(void) {
-#line 16 "tests/golden/run/functions.hero"
-    HERO_NODEBUG int64_t t1, t3, t5, t6; HERO_NODEBUG bool t2, t4; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/functions.hero"
-bb0:
-    t1 = INT64_C(10);
-#line 17 "tests/golden/run/functions.hero"
-    t2 = h_functions_is_even(t1);
-#line 17 "tests/golden/run/functions.hero"
-    hero_print_bool(t2);
-#line 17 "tests/golden/run/functions.hero"
-    hero_print_end();
-    t3 = INT64_C(10);
-#line 18 "tests/golden/run/functions.hero"
-    t4 = h_functions_is_odd(t3);
-#line 18 "tests/golden/run/functions.hero"
-    hero_print_bool(t4);
-#line 18 "tests/golden/run/functions.hero"
-    hero_print_end();
-    t5 = INT64_C(10);
-#line 19 "tests/golden/run/functions.hero"
-    t6 = h_functions_fib(t5);
-#line 19 "tests/golden/run/functions.hero"
-    hero_print_int(t6);
-#line 19 "tests/golden/run/functions.hero"
-    hero_print_end();
-#line 19 "tests/golden/run/functions.hero"
-    return;
-#line 222 "functions.c"
+void h_functions_main(void) { HERO_NODEBUG int64_t t1, t3, t5, t6; HERO_NODEBUG bool t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(10); t2 = h_functions_is_even(t1); hero_print_bool(t2); hero_print_end();
+    t3 = INT64_C(10); t4 = h_functions_is_odd(t3); hero_print_bool(t4); hero_print_end();
+    t5 = INT64_C(10); t6 = h_functions_fib(t5); hero_print_int(t6); hero_print_end(); return;
+#line 130 "functions.c"
 }
 
 #line 21 "tests/golden/run/functions.hero"
-int64_t h_functions_fib(int64_t h0_n) {
-#line 21 "tests/golden/run/functions.hero"
-    HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/functions.hero"
-bb0:
-    t1 = h0_n;
-#line 22 "tests/golden/run/functions.hero"
-    t2 = INT64_C(2);
-#line 22 "tests/golden/run/functions.hero"
-    t3 = t1 < t2;
-#line 22 "tests/golden/run/functions.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 22 "tests/golden/run/functions.hero"
-bb1:
-#line 24 "tests/golden/run/functions.hero"
-    t5 = h0_n;
-#line 24 "tests/golden/run/functions.hero"
-    t6 = INT64_C(1);
-#line 24 "tests/golden/run/functions.hero"
-    if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 24 "tests/golden/run/functions.hero"
-    t8 = h_functions_fib(t7);
-#line 24 "tests/golden/run/functions.hero"
-    t9 = h0_n;
-#line 24 "tests/golden/run/functions.hero"
-    t10 = INT64_C(2);
-#line 24 "tests/golden/run/functions.hero"
-    if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 24 "tests/golden/run/functions.hero"
-    t12 = h_functions_fib(t11);
-#line 24 "tests/golden/run/functions.hero"
-    if (__builtin_add_overflow(t8, t12, &t13)) hero_panic_overflow();
-#line 24 "tests/golden/run/functions.hero"
-    h1_ret0 = t13;
-#line 24 "tests/golden/run/functions.hero"
-    goto bb4;
-#line 24 "tests/golden/run/functions.hero"
-bb2:
-#line 23 "tests/golden/run/functions.hero"
-    t4 = h0_n;
-#line 23 "tests/golden/run/functions.hero"
-    h1_ret0 = t4;
-#line 23 "tests/golden/run/functions.hero"
-    goto bb4;
-#line 23 "tests/golden/run/functions.hero"
-bb3:
-#line 23 "tests/golden/run/functions.hero"
-    goto bb1;
-#line 23 "tests/golden/run/functions.hero"
-bb4:
-#line 276 "functions.c"
+int64_t h_functions_fib(int64_t h0_n) { HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(2); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 24
+    t5 = h0_n; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow(); t8 = h_functions_fib(t7); t9 = h0_n; t10 = INT64_C(2); if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow(); t12 = h_functions_fib(t11); if (__builtin_add_overflow(t8, t12, &t13)) hero_panic_overflow(); h1_ret0 = t13; goto bb4; bb2:
+#line 23
+    t4 = h0_n; h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
+#line 140 "functions.c"
     t14 = h1_ret0;
     return t14;
 }

@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "scalars.c"
 #pragma clang diagnostic pop
@@ -95,62 +95,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_scalars_main(void);
 
 #line 5 "tests/golden/emit/scalars.hero"
-void h_scalars_main(void) {
-#line 5 "tests/golden/emit/scalars.hero"
-    HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14; HERO_ENTRY_STOP; goto bb0;
-#line 5 "tests/golden/emit/scalars.hero"
-bb0:
-    t1 = INT64_C(2);
-#line 6 "tests/golden/emit/scalars.hero"
-    t2 = INT64_C(3);
-#line 6 "tests/golden/emit/scalars.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 6 "tests/golden/emit/scalars.hero"
-    t4 = INT64_C(4);
-#line 6 "tests/golden/emit/scalars.hero"
-    if (__builtin_mul_overflow(t3, t4, &t5)) hero_panic_overflow();
-#line 6 "tests/golden/emit/scalars.hero"
-    hero_print_int(t5);
-#line 6 "tests/golden/emit/scalars.hero"
-    hero_print_end();
-    t6 = INT64_C(7);
-#line 7 "tests/golden/emit/scalars.hero"
-    t7 = INT64_C(2);
-#line 7 "tests/golden/emit/scalars.hero"
-    if (t7 == 0) hero_panic("division by zero");
-#line 7 "tests/golden/emit/scalars.hero"
-    if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow();
-#line 7 "tests/golden/emit/scalars.hero"
-    t8 = t6 / t7;
-#line 7 "tests/golden/emit/scalars.hero"
-    hero_print_int(t8);
-#line 7 "tests/golden/emit/scalars.hero"
-    hero_print_end();
-    t9 = INT64_C(7);
-#line 8 "tests/golden/emit/scalars.hero"
-    t10 = INT64_C(2);
-#line 8 "tests/golden/emit/scalars.hero"
-    if (t10 == 0) hero_panic("division by zero");
-#line 8 "tests/golden/emit/scalars.hero"
-    if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 8 "tests/golden/emit/scalars.hero"
-    t11 = t9 % t10;
-#line 8 "tests/golden/emit/scalars.hero"
-    hero_print_int(t11);
-#line 8 "tests/golden/emit/scalars.hero"
-    hero_print_end();
-    t12 = INT64_C(0);
-#line 9 "tests/golden/emit/scalars.hero"
-    t13 = INT64_C(5);
-#line 9 "tests/golden/emit/scalars.hero"
-    if (__builtin_sub_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 9 "tests/golden/emit/scalars.hero"
-    hero_print_int(t14);
-#line 9 "tests/golden/emit/scalars.hero"
-    hero_print_end();
-#line 9 "tests/golden/emit/scalars.hero"
-    return;
-#line 154 "scalars.c"
+void h_scalars_main(void) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(2); t2 = INT64_C(3); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); t4 = INT64_C(4); if (__builtin_mul_overflow(t3, t4, &t5)) hero_panic_overflow(); hero_print_int(t5); hero_print_end();
+    t6 = INT64_C(7); t7 = INT64_C(2); if (t7 == 0) hero_panic("division by zero"); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow(); t8 = t6 / t7; hero_print_int(t8); hero_print_end();
+    t9 = INT64_C(7); t10 = INT64_C(2); if (t10 == 0) hero_panic("division by zero"); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t11 = t9 % t10; hero_print_int(t11); hero_print_end();
+    t12 = INT64_C(0); t13 = INT64_C(5); if (__builtin_sub_overflow(t12, t13, &t14)) hero_panic_overflow(); hero_print_int(t14); hero_print_end(); return;
+#line 104 "scalars.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

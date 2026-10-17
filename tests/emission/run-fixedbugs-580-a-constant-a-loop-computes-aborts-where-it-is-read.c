@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugs580aconstantaloopcomputesabortswhereitisread.c"
 #pragma clang diagnostic pop
@@ -96,75 +96,23 @@ uint8_t h_fixedbugs580aconstantaloopcomputesabortswhereitisread_V(void);
 void h_fixedbugs580aconstantaloopcomputesabortswhereitisread_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-uint8_t h_fixedbugs580aconstantaloopcomputesabortswhereitisread_V(void) {
-#line 9 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    uint8_t h0_v; int64_t h1_i; HERO_NODEBUG uint8_t t1, t6, t7, t8, t12; HERO_NODEBUG int64_t t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-bb0:
-    t1 = UINT64_C(0);
-#line 10 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    h0_v = t1;
-    t2 = INT64_C(0);
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    h1_i = t2;
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    goto bb1;
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-bb1:
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    t3 = h1_i;
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    t4 = INT64_C(3);
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    t5 = t3 < t4;
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 13 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-bb2:
-    t6 = h0_v;
-#line 14 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    t7 = UINT64_C(100);
-#line 14 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow();
-#line 14 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    h0_v = t8;
-    t9 = h1_i;
-#line 15 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    t10 = INT64_C(1);
-#line 15 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 15 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    h1_i = t11;
-#line 15 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    goto bb1;
-#line 15 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-bb3:
-#line 17 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    t12 = h0_v;
-#line 17 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    return t12;
-#line 147 "fixedbugs580aconstantaloopcomputesabortswhereitisread.c"
+uint8_t h_fixedbugs580aconstantaloopcomputesabortswhereitisread_V(void) { uint8_t h0_v; int64_t h1_i; HERO_NODEBUG uint8_t t1, t6, t7, t8, t12; HERO_NODEBUG int64_t t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(0); h0_v = t1;
+    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
+#line 13
+    t3 = h1_i; t4 = INT64_C(3); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h0_v; t7 = UINT64_C(100); if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow(); h0_v = t8;
+    t9 = h1_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h1_i = t11; goto bb1; bb3:
+#line 17
+    t12 = h0_v; return t12;
+#line 109 "fixedbugs580aconstantaloopcomputesabortswhereitisread.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-void h_fixedbugs580aconstantaloopcomputesabortswhereitisread_main(void) {
-#line 19 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 20 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    hero_print_int(t1);
-#line 20 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    hero_print_end();
-    t2 = h_fixedbugs580aconstantaloopcomputesabortswhereitisread_V();
-#line 21 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    hero_print_int(t2);
-#line 21 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    hero_print_end();
-#line 21 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    return;
-#line 168 "fixedbugs580aconstantaloopcomputesabortswhereitisread.c"
+void h_fixedbugs580aconstantaloopcomputesabortswhereitisread_main(void) { HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); hero_print_int(t1); hero_print_end();
+    t2 = h_fixedbugs580aconstantaloopcomputesabortswhereitisread_V(); hero_print_int(t2); hero_print_end(); return;
+#line 116 "fixedbugs580aconstantaloopcomputesabortswhereitisread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

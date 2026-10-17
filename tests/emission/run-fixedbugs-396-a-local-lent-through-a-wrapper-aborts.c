@@ -140,11 +140,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs396alocallentthrou
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 150 "fixedbugs396alocallentthroughawrapperaborts.c"
 #pragma clang diagnostic pop
@@ -165,85 +165,29 @@ int32_t h_fixedbugs396alocallentthroughawrapperaborts_outer(uint8_t *ph0_y);
 void h_fixedbugs396alocallentthroughawrapperaborts_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-int32_t h_fixedbugs396alocallentthroughawrapperaborts_inner(uint8_t *ph0_x) {
-#line 16 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-bb0:
-    hero_lend_local_name(ph0_x, "digest32", "md");
-#line 17 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t1 = digest32((void *)&(*ph0_x));
-#line 17 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    return t1;
-#line 179 "fixedbugs396alocallentthroughawrapperaborts.c"
+int32_t h_fixedbugs396alocallentthroughawrapperaborts_inner(uint8_t *ph0_x) { HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    hero_lend_local_name(ph0_x, "digest32", "md"); t1 = digest32((void *)&(*ph0_x)); return t1;
+#line 171 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-int32_t h_fixedbugs396alocallentthroughawrapperaborts_outer(uint8_t *ph0_y) {
-#line 19 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 19 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-bb0:
-    t1 = h_fixedbugs396alocallentthroughawrapperaborts_inner(&(*ph0_y));
-#line 20 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    return t1;
-#line 191 "fixedbugs396alocallentthroughawrapperaborts.c"
+int32_t h_fixedbugs396alocallentthroughawrapperaborts_outer(uint8_t *ph0_y) { HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs396alocallentthroughawrapperaborts_inner(&(*ph0_y)); return t1;
+#line 177 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 void h_fixedbugs396alocallentthroughawrapperaborts_main(void) {
-#line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
+#line 22
 #define h1_m (*hero_lend_h1_m)
-#line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p; uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m"); HERO_NODEBUG uint8_t t1, t4, t9; HERO_NODEBUG int64_t t2, t6, t11; HERO_NODEBUG h_fixedbugs396alocallentthroughawrapperaborts_Pair t3; HERO_NODEBUG HeroStr t5, t8, t10; HERO_NODEBUG int32_t t7; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-bb0:
-    t1 = UINT64_C(0);
-#line 23 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t2 = INT64_C(7);
-#line 23 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t3 = (h_fixedbugs396alocallentthroughawrapperaborts_Pair){.f_a = t1, .f_b = t2};
-#line 23 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    h0_p = t3;
-    t4 = UINT64_C(0);
-#line 24 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    h1_m = t4;
-    t5 = HERO_STR_LIT(hero_str_750951cb);
-#line 25 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t6 = h0_p.f_b;
-#line 25 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_str(t5);
-#line 25 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_int(t6);
-#line 25 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_end();
-    t7 = h_fixedbugs396alocallentthroughawrapperaborts_outer(&h1_m);
-#line 26 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_int(t7);
-#line 26 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_end();
-    t8 = HERO_STR_LIT(hero_str_5687795c);
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t9 = h1_m;
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t10 = HERO_STR_LIT(hero_str_20);
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    t11 = h0_p.f_b;
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_str(t8);
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_int(t9);
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_str(t10);
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_int(t11);
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_print_end();
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    hero_lend_local_give(hero_lend_h1_m);
-#line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    return;
-#line 247 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 22
+    h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p; uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m"); HERO_NODEBUG uint8_t t1, t4, t9; HERO_NODEBUG int64_t t2, t6, t11; HERO_NODEBUG h_fixedbugs396alocallentthroughawrapperaborts_Pair t3; HERO_NODEBUG HeroStr t5, t8, t10; HERO_NODEBUG int32_t t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(0); t2 = INT64_C(7); t3 = (h_fixedbugs396alocallentthroughawrapperaborts_Pair){.f_a = t1, .f_b = t2}; h0_p = t3;
+    t4 = UINT64_C(0); h1_m = t4;
+    t5 = HERO_STR_LIT(hero_str_750951cb); t6 = h0_p.f_b; hero_print_str(t5); hero_print_int(t6); hero_print_end();
+    t7 = h_fixedbugs396alocallentthroughawrapperaborts_outer(&h1_m); hero_print_int(t7); hero_print_end();
+    t8 = HERO_STR_LIT(hero_str_5687795c); t9 = h1_m; t10 = HERO_STR_LIT(hero_str_20); t11 = h0_p.f_b; hero_print_str(t8); hero_print_int(t9); hero_print_str(t10); hero_print_int(t11); hero_print_end(); hero_lend_local_give(hero_lend_h1_m); return;
+#line 191 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 #undef h1_m
 HERO_TU_LOCAL bool h_fixedbugs396alocallentthroughawrapperaborts_Pair_eq(const h_fixedbugs396alocallentthroughawrapperaborts_Pair *a, const h_fixedbugs396alocallentthroughawrapperaborts_Pair *b) {

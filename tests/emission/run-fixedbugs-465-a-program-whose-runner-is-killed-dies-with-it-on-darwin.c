@@ -166,26 +166,26 @@ typedef struct h_0opt_f87774a {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 20 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_kill(int32_t a0, int32_t a1) { (void)(kill)(a0, a1); }
-#line 26 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
+#line 26
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_time(void * a0) { (void)(time)(a0); }
-#line 30 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
+#line 30
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_hero_run_arg(HeroStr a0) { (void)(hero_run_arg)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_hero_run_limit(int64_t a0) { (void)(hero_run_limit)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_hero_run_go(const char * a0, const char * a1, const char * a2, const char * a3, int64_t * a4) { (void)(hero_run_go)(a0, a1, a2, a3, (void *)a4); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_hero_exe_path_shown(int64_t * a0, int64_t * a1) { (void)(hero_exe_path_shown)((void *)a0, (void *)a1); }
-#line 35 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
+#line 35
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_hero_fs_mkdir_all(const char * a0) { (void)(hero_fs_mkdir_all)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_hero_dir_scan(const char * a0, int64_t a1, int64_t a2) { (void)(hero_dir_scan)(a0, a1, a2); }
-#line 38 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
+#line 38
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_hero_dir_remove_tree(const char * a0) { (void)(hero_dir_remove_tree)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 191 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 #pragma clang diagnostic pop
@@ -268,45 +268,23 @@ int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_HERO_DIR_FIL
 }
 
 #line 43 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_LIFE(void) {
-#line 43 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 43 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb0:
-    t1 = INT64_C(10);
-#line 44 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    return t1;
-#line 280 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_LIFE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(10); return t1;
+#line 274 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 46 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 HeroStr h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_itself(void) {
-#line 46 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
+#line 46
 #define h0_status (*hero_lend_h0_status)
-#line 46 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
+#line 46
 #define h1_marks (*hero_lend_h1_marks)
-#line 46 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 46 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 47 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h0_status = t1;
-    t2 = INT64_C(0);
-#line 48 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h1_marks = t2;
-    hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status");
-#line 49 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks");
-#line 49 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks);
-#line 49 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t4 = h2_own2;
-#line 49 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h2_own2 = t3;
-#line 49 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t4);
-#line 310 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 46
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_status = t1;
+    t2 = INT64_C(0); h1_marks = t2;
+    hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
+#line 288 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -318,125 +296,25 @@ bb0:
 
 #line 53 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_again(HeroArrayHeader * h0_words, int64_t h1_seconds) {
-#line 53 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
+#line 53
 #define h6_status (*hero_lend_h6_status)
-#line 53 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HeroStr h2_program = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t3, *t6, *t9, *t30; HERO_NODEBUG int64_t h4_i0, t4, t5, t7, t10, t13, t14, t15, t16, t17, t26, t27; HeroStr h5_word = {0}; int64_t *const hero_lend_h6_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.again", "status"); int64_t h7_code; HERO_NODEBUG HeroStr h8_own8 = {0}, t1, t2, t11, t12, t18, t20, t22, t24, t28, t29, t31; HERO_NODEBUG bool t8; HERO_NODEBUG const char *t19, *t21, *t23, *t25; HERO_ENTRY_STOP; goto bb0;
-#line 53 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb0:
-    t1 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_itself();
-#line 54 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t28 = h8_own8;
-#line 54 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h8_own8 = t1;
-#line 54 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t28);
-#line 54 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t29 = h2_program;
-#line 54 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_incref(t1);
-#line 54 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h2_program = t1;
-#line 54 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t29);
+#line 53
+    HeroStr h2_program = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t3, *t6, *t9, *t30; HERO_NODEBUG int64_t h4_i0, t4, t5, t7, t10, t13, t14, t15, t16, t17, t26, t27; HeroStr h5_word = {0}; int64_t *const hero_lend_h6_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.again", "status"); int64_t h7_code; HERO_NODEBUG HeroStr h8_own8 = {0}, t1, t2, t11, t12, t18, t20, t22, t24, t28, t29, t31; HERO_NODEBUG bool t8; HERO_NODEBUG const char *t19, *t21, *t23, *t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_itself(); t28 = h8_own8; h8_own8 = t1; hero_str_decref(t28); t29 = h2_program; hero_str_incref(t1); h2_program = t1; hero_str_decref(t29);
     (void)hero_run_reset();
-    t2 = h2_program;
-#line 56 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    (void)hero_run_arg(t2);
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t3 = h0_words;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t30 = h3_xs0;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_incref(t3);
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h3_xs0 = t3;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_decref(t30);
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t4 = INT64_C(0);
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h4_i0 = t4;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb1;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb1:
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t5 = h4_i0;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t6 = h3_xs0;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t8 = t5 < t7;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t8) goto bb2; else goto bb4;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb2:
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t9 = h3_xs0;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t10 = h4_i0;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t31 = h5_word;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_incref(t11);
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h5_word = t11;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t31);
-    t12 = h5_word;
-#line 59 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    (void)hero_run_arg(t12);
-#line 59 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb3;
-#line 59 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb3:
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t13 = h4_i0;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t14 = INT64_C(1);
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h4_i0 = t15;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb1;
-#line 58 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb4:
-#line 61 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t16 = h1_seconds;
-#line 61 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    (void)hero_run_limit(t16);
-    t17 = INT64_C(0);
-#line 62 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h6_status = t17;
-    t18 = h2_program;
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t19 = hero_str_lend(t18);
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t20 = HERO_STR_LIT(hero_str_0);
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t21 = hero_str_lend(t20);
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t22 = HERO_STR_LIT(hero_str_0);
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t23 = hero_str_lend(t22);
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t24 = HERO_STR_LIT(hero_str_0);
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t25 = hero_str_lend(t24);
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_lend_local_name(hero_lend_h6_status, "hero_run_go", "status");
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t26 = hero_run_go(hero_cstr_nonnull(t19), hero_cstr_nonnull(t21), hero_cstr_nonnull(t23), hero_cstr_nonnull(t25), (void *)&h6_status);
-#line 63 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h7_code = t26;
+    t2 = h2_program; (void)hero_run_arg(t2);
+#line 58
+    t3 = h0_words; t30 = h3_xs0; hero_array_incref(t3); h3_xs0 = t3; hero_array_decref(t30); t4 = INT64_C(0); h4_i0 = t4; goto bb1; bb1: t5 = h4_i0; t6 = h3_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h3_xs0; t10 = h4_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t31 = h5_word; hero_str_incref(t11); h5_word = t11; hero_str_decref(t31);
+    t12 = h5_word; (void)hero_run_arg(t12); goto bb3; bb3:
+#line 58
+    t13 = h4_i0; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); h4_i0 = t15; goto bb1; bb4:
+#line 61
+    t16 = h1_seconds; (void)hero_run_limit(t16);
+    t17 = INT64_C(0); h6_status = t17;
+    t18 = h2_program; t19 = hero_str_lend(t18); t20 = HERO_STR_LIT(hero_str_0); t21 = hero_str_lend(t20); t22 = HERO_STR_LIT(hero_str_0); t23 = hero_str_lend(t22); t24 = HERO_STR_LIT(hero_str_0); t25 = hero_str_lend(t24); hero_lend_local_name(hero_lend_h6_status, "hero_run_go", "status"); t26 = hero_run_go(hero_cstr_nonnull(t19), hero_cstr_nonnull(t21), hero_cstr_nonnull(t23), hero_cstr_nonnull(t25), (void *)&h6_status); h7_code = t26;
     (void)hero_run_reset();
     t27 = h7_code;
-#line 440 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 318 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_str_release_at(&h2_program);
     hero_array_release_at(&h3_xs0);
     hero_str_release_at(&h5_word);
@@ -447,275 +325,39 @@ bb4:
 #undef h6_status
 
 #line 68 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_beats(HeroStr h0_dir) {
-#line 68 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 68 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb0:
-    t1 = h0_dir;
-#line 69 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t2 = hero_str_lend(t1);
-#line 69 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t3 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_HERO_DIR_FILES();
-#line 69 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t4 = INT64_C(0);
-#line 69 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t5 = hero_dir_scan(hero_cstr_nonnull(t2), t3, t4);
-#line 69 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h1_count = t5;
+int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_beats(HeroStr h0_dir) { int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_dir; t2 = hero_str_lend(t1); t3 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_HERO_DIR_FILES(); t4 = INT64_C(0); t5 = hero_dir_scan(hero_cstr_nonnull(t2), t3, t4); h1_count = t5;
     (void)hero_dir_release();
-    t6 = h1_count;
-#line 71 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    return t6;
-#line 471 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+    t6 = h1_count; return t6;
+#line 333 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 74 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_second(HeroStr h0_dir) {
-#line 74 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t3, *t6; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
-#line 74 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_241dd27);
-#line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t2 = h0_dir;
-#line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t3 = hero_array_new(&hero_desc_str, 2);
-#line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_push_owned(&t3, &t1);
-#line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_push_owned(&t3, &t2);
-#line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t6 = h1_own1;
-#line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h1_own1 = t3;
-#line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_decref(t6);
-#line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t4 = INT64_C(0);
-#line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_again(t3, t4);
-#line 499 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_second(HeroStr h0_dir) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t3, *t6; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_241dd27); t2 = h0_dir; t3 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t6 = h1_own1; h1_own1 = t3; hero_array_decref(t6); t4 = INT64_C(0); h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_again(t3, t4);
+#line 339 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_array_release_at(&h1_own1);
     return;
 }
 
 #line 79 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_third(HeroStr h0_dir) {
-#line 79 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h5_f1 = {0}, h7_own7 = {0}, h11_own11 = {0}, t5, t6, t41, t42, t50, t51, t55, t56; int64_t h2_born; int64_t h3_n; int64_t h4_k; HERO_NODEBUG HeroStr h6_own6 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t1, t2, t3, t4, t34, t35, t36, t38, t39, t40, t49, t52, t53, t54; HERO_NODEBUG int64_t t7, t8, t14, t15, t16, t18, t19, t20, t21, t23, t24, t25, t26, t27, t28, t29, t31, t32, t33, t37, t43, t44, t46, t47, t48; HERO_NODEBUG bool t9, t22, t30, t45; HERO_NODEBUG int32_t t10, t11; HERO_NODEBUG void *t13, *t17; HERO_ENTRY_STOP; goto bb0;
-#line 79 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb0:
-    t1 = h0_dir;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t2 = HERO_STR_LIT(hero_str_a7bc91d);
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t49 = h6_own6;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h6_own6 = t3;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t49);
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t4 = HERO_STR_LIT(hero_str_0);
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t5 = h_library_write_file(t3, t4);
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t50 = h7_own7;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h7_own7 = t5;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_0opt_a8ea2_release(&t50);
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t51 = h1_f0;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_0opt_a8ea2_retain(&t5);
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h1_f0 = t5;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_0opt_a8ea2_release(&t51);
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t6 = h1_f0;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t7 = t6.tag;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t8 = INT64_C(1);
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t9 = t7 == t8;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t9) goto bb2; else goto bb3;
-#line 80 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb1:
-#line 82 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t10 = getppid();
-#line 82 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t11 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_SIGKILL();
-#line 82 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    (void)kill(t10, t11);
-    t13 = ((void *)0);
-#line 83 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t14 = time(t13);
-#line 83 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h2_born = t14;
-    t15 = INT64_C(0);
-#line 84 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h3_n = t15;
-    t16 = INT64_C(0);
-#line 85 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h4_k = t16;
-#line 85 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb4;
-#line 85 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb2:
-#line 85 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb13;
-#line 85 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb3:
-#line 85 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb1;
-#line 85 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb4:
-#line 87 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t17 = ((void *)0);
-#line 87 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t18 = time(t17);
-#line 87 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t19 = h2_born;
-#line 87 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow();
-#line 87 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t21 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_LIFE();
-#line 87 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t22 = t20 < t21;
-#line 87 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t22) goto bb5; else goto bb6;
-#line 87 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb5:
-    t23 = h3_n;
-#line 88 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t24 = INT64_C(1);
-#line 88 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow();
-#line 88 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h3_n = t25;
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t26 = h3_n;
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t27 = INT64_C(1048576);
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t27 == 0) hero_panic("division by zero");
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t26 == INT64_MIN && t27 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t28 = t26 % t27;
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t29 = INT64_C(0);
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t30 = t28 == t29;
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t30) goto bb8; else goto bb9;
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb6:
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb13;
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb7:
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb4;
-#line 90 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb8:
-    t31 = h4_k;
-#line 91 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t32 = INT64_C(1);
-#line 91 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow();
-#line 91 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h4_k = t33;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t34 = h0_dir;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t35 = HERO_STR_LIT(hero_str_6f7826a9);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t36 = hero_str_concat(t34, t35);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t52 = h8_own8;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h8_own8 = t36;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t52);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t37 = h4_k;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t38 = hero_int_to_str(t37);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t53 = h9_own9;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h9_own9 = t38;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t53);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t39 = hero_str_concat(t36, t38);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t54 = h10_own10;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h10_own10 = t39;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t54);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t40 = HERO_STR_LIT(hero_str_0);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t41 = h_library_write_file(t39, t40);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t55 = h11_own11;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h11_own11 = t41;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_0opt_a8ea2_release(&t55);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t56 = h5_f1;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_0opt_a8ea2_retain(&t41);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h5_f1 = t41;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_0opt_a8ea2_release(&t56);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t42 = h5_f1;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t43 = t42.tag;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t44 = INT64_C(1);
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t45 = t43 == t44;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t45) goto bb11; else goto bb12;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb9:
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb7;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb10:
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb7;
-#line 94 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb11:
-    t46 = h4_k;
-#line 95 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t47 = INT64_C(1);
-#line 95 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (__builtin_sub_overflow(t46, t47, &t48)) hero_panic_overflow();
-#line 95 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h4_k = t48;
-#line 95 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb10;
-#line 95 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb12:
-#line 95 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb10;
-#line 95 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb13:
-#line 719 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_third(HeroStr h0_dir) { HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h5_f1 = {0}, h7_own7 = {0}, h11_own11 = {0}, t5, t6, t41, t42, t50, t51, t55, t56; int64_t h2_born; int64_t h3_n; int64_t h4_k; HERO_NODEBUG HeroStr h6_own6 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t1, t2, t3, t4, t34, t35, t36, t38, t39, t40, t49, t52, t53, t54; HERO_NODEBUG int64_t t7, t8, t14, t15, t16, t18, t19, t20, t21, t23, t24, t25, t26, t27, t28, t29, t31, t32, t33, t37, t43, t44, t46, t47, t48; HERO_NODEBUG bool t9, t22, t30, t45; HERO_NODEBUG int32_t t10, t11; HERO_NODEBUG void *t13, *t17; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_dir; t2 = HERO_STR_LIT(hero_str_a7bc91d); t3 = hero_str_concat(t1, t2); t49 = h6_own6; h6_own6 = t3; hero_str_decref(t49); t4 = HERO_STR_LIT(hero_str_0); t5 = h_library_write_file(t3, t4); t50 = h7_own7; h7_own7 = t5; h_0opt_a8ea2_release(&t50); t51 = h1_f0; h_0opt_a8ea2_retain(&t5); h1_f0 = t5; h_0opt_a8ea2_release(&t51); t6 = h1_f0; t7 = t6.tag; t8 = INT64_C(1); t9 = t7 == t8; if (t9) goto bb2; else goto bb3; bb1:
+#line 82
+    t10 = getppid(); t11 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_SIGKILL(); (void)kill(t10, t11);
+    t13 = ((void *)0); t14 = time(t13); h2_born = t14;
+    t15 = INT64_C(0); h3_n = t15;
+    t16 = INT64_C(0); h4_k = t16; goto bb4; bb2: goto bb13; bb3: goto bb1; bb4:
+#line 87
+    t17 = ((void *)0); t18 = time(t17); t19 = h2_born; if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow(); t21 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_LIFE(); t22 = t20 < t21; if (t22) goto bb5; else goto bb6; bb5:
+    t23 = h3_n; t24 = INT64_C(1); if (__builtin_add_overflow(t23, t24, &t25)) hero_panic_overflow(); h3_n = t25;
+#line 90
+    t26 = h3_n; t27 = INT64_C(1048576); if (t27 == 0) hero_panic("division by zero"); if (t26 == INT64_MIN && t27 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t28 = t26 % t27; t29 = INT64_C(0); t30 = t28 == t29; if (t30) goto bb8; else goto bb9; bb6: goto bb13; bb7: goto bb4; bb8:
+    t31 = h4_k; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow(); h4_k = t33;
+#line 94
+    t34 = h0_dir; t35 = HERO_STR_LIT(hero_str_6f7826a9); t36 = hero_str_concat(t34, t35); t52 = h8_own8; h8_own8 = t36; hero_str_decref(t52); t37 = h4_k; t38 = hero_int_to_str(t37); t53 = h9_own9; h9_own9 = t38; hero_str_decref(t53); t39 = hero_str_concat(t36, t38); t54 = h10_own10; h10_own10 = t39; hero_str_decref(t54); t40 = HERO_STR_LIT(hero_str_0); t41 = h_library_write_file(t39, t40); t55 = h11_own11; h11_own11 = t41; h_0opt_a8ea2_release(&t55); t56 = h5_f1; h_0opt_a8ea2_retain(&t41); h5_f1 = t41; h_0opt_a8ea2_release(&t56); t42 = h5_f1; t43 = t42.tag; t44 = INT64_C(1); t45 = t43 == t44; if (t45) goto bb11; else goto bb12; bb9: goto bb7; bb10: goto bb7; bb11:
+    t46 = h4_k; t47 = INT64_C(1); if (__builtin_sub_overflow(t46, t47, &t48)) hero_panic_overflow(); h4_k = t48; goto bb10; bb12: goto bb10; bb13:
+#line 361 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
     h_0opt_a8ea2_release(hero_slot_escape(&h5_f1));
     hero_str_release_at(&h6_own6);
@@ -728,222 +370,38 @@ bb13:
 }
 
 #line 98 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_spin(void) {
-#line 98 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    int64_t h0_n; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t7, t9, t10; HERO_NODEBUG bool t2, t8; HERO_ENTRY_STOP; goto bb0;
-#line 98 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 99 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h0_n = t1;
-#line 99 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb1;
-#line 99 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb1:
-#line 101 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t2 = true;
-#line 101 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t2) goto bb2; else goto bb3;
-#line 101 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb2:
-    t3 = h0_n;
-#line 102 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t4 = INT64_C(1);
-#line 102 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
-#line 102 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h0_n = t5;
-#line 104 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t6 = h0_n;
-#line 104 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t7 = INT64_C(1000000000);
-#line 104 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t8 = t6 == t7;
-#line 104 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t8) goto bb5; else goto bb6;
-#line 104 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb3:
-#line 107 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t10 = h0_n;
-#line 107 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    return t10;
-#line 107 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb4:
-#line 107 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb1;
-#line 107 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb5:
-#line 105 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t9 = INT64_C(0);
-#line 105 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h0_n = t9;
-#line 105 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb4;
-#line 105 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb6:
-#line 105 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb4;
-#line 787 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_spin(void) { int64_t h0_n; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t7, t9, t10; HERO_NODEBUG bool t2, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_n = t1; goto bb1; bb1:
+#line 101
+    t2 = true; if (t2) goto bb2; else goto bb3; bb2:
+    t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow(); h0_n = t5;
+#line 104
+    t6 = h0_n; t7 = INT64_C(1000000000); t8 = t6 == t7; if (t8) goto bb5; else goto bb6; bb3:
+#line 107
+    t10 = h0_n; return t10; bb4: goto bb1; bb5:
+#line 105
+    t9 = INT64_C(0); h0_n = t9; goto bb4; bb6: goto bb4;
+#line 385 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 109 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_first(void) {
-#line 109 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HeroStr h0_dir = {0}; int64_t h1_code; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h8_own8 = {0}, t19, t20, t24, t26, t58, t59; int64_t h3_before; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h9_own9 = {0}, h11_own11 = {0}, t1, t3, t4, t5, t6, t7, t10, t11, t15, t30, t31, t32, t37, t38, t42, t43, t44, t48, t49, t50, t53, t54, t55, t56, t60, t62; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h10_own10 = {0}, *t12, *t39, *t57, *t61; HERO_NODEBUG int64_t t2, t13, t14, t16, t17, t21, t22, t27, t28, t33, t34, t35, t40, t45, t46; HERO_NODEBUG const char *t8, *t51; HERO_NODEBUG int32_t t18; HERO_NODEBUG bool t23, t29, t36, t47; HERO_NODEBUG HeroFailure t25; HERO_ENTRY_STOP; goto bb0;
-#line 109 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_72d850e8);
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t2 = hero_os_pid();
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t3 = hero_int_to_str(t2);
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t53 = h4_own4;
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h4_own4 = t3;
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t53);
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t4 = hero_str_concat(t1, t3);
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t54 = h5_own5;
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h5_own5 = t4;
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t54);
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t55 = h0_dir;
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_incref(t4);
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h0_dir = t4;
-#line 110 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t55);
-    t5 = h0_dir;
-#line 111 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t6 = HERO_STR_LIT(hero_str_732be8d7);
-#line 111 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t7 = hero_str_concat(t5, t6);
-#line 111 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t56 = h6_own6;
-#line 111 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h6_own6 = t7;
-#line 111 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t56);
-#line 111 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t8 = hero_str_lend(t7);
-#line 111 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    (void)hero_fs_mkdir_all(hero_cstr_nonnull(t8));
-    t10 = HERO_STR_LIT(hero_str_76b82743);
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t11 = h0_dir;
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t12 = hero_array_new(&hero_desc_str, 2);
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_push_owned(&t12, &t10);
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_push_owned(&t12, &t11);
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t57 = h7_own7;
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h7_own7 = t12;
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_decref(t57);
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t13 = INT64_C(30);
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t14 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_again(t12, t13);
-#line 112 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h1_code = t14;
-    t15 = HERO_STR_LIT(hero_str_748ba55c);
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t16 = h1_code;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t17 = INT64_C(128);
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t18 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_SIGKILL();
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t19 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t18};
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t58 = h8_own8;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h8_own8 = t19;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_0opt_e201354_release(&t58);
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t59 = h2_f0;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_0opt_e201354_retain(&t19);
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h2_f0 = t19;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_0opt_e201354_release(&t59);
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t20 = h2_f0;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t21 = t20.tag;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t22 = INT64_C(0);
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t23 = t21 == t22;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t23) goto bb1; else goto bb2;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb1:
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t26 = h2_f0;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t27 = t26.as.ok;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (__builtin_add_overflow(t17, t27, &t28)) hero_panic_overflow();
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t29 = t16 == t28;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_str(t15);
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_bool(t29);
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_end();
-    t30 = h0_dir;
-#line 114 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t31 = HERO_STR_LIT(hero_str_732be8d7);
-#line 114 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t32 = hero_str_concat(t30, t31);
-#line 114 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t60 = h9_own9;
-#line 114 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h9_own9 = t32;
-#line 114 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t60);
-#line 114 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t33 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_beats(t32);
-#line 114 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h3_before = t33;
-#line 116 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t34 = h3_before;
-#line 116 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t35 = INT64_C(1);
-#line 116 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t36 = t34 < t35;
-#line 116 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t36) goto bb4; else goto bb5;
-#line 116 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb2:
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t24 = h2_f0;
-#line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t25 = t24.as.err;
-#line 937 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_first(void) { HeroStr h0_dir = {0}; int64_t h1_code; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h8_own8 = {0}, t19, t20, t24, t26, t58, t59; int64_t h3_before; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h9_own9 = {0}, h11_own11 = {0}, t1, t3, t4, t5, t6, t7, t10, t11, t15, t30, t31, t32, t37, t38, t42, t43, t44, t48, t49, t50, t53, t54, t55, t56, t60, t62; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h10_own10 = {0}, *t12, *t39, *t57, *t61; HERO_NODEBUG int64_t t2, t13, t14, t16, t17, t21, t22, t27, t28, t33, t34, t35, t40, t45, t46; HERO_NODEBUG const char *t8, *t51; HERO_NODEBUG int32_t t18; HERO_NODEBUG bool t23, t29, t36, t47; HERO_NODEBUG HeroFailure t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_72d850e8); t2 = hero_os_pid(); t3 = hero_int_to_str(t2); t53 = h4_own4; h4_own4 = t3; hero_str_decref(t53); t4 = hero_str_concat(t1, t3); t54 = h5_own5; h5_own5 = t4; hero_str_decref(t54); t55 = h0_dir; hero_str_incref(t4); h0_dir = t4; hero_str_decref(t55);
+    t5 = h0_dir; t6 = HERO_STR_LIT(hero_str_732be8d7); t7 = hero_str_concat(t5, t6); t56 = h6_own6; h6_own6 = t7; hero_str_decref(t56); t8 = hero_str_lend(t7); (void)hero_fs_mkdir_all(hero_cstr_nonnull(t8));
+    t10 = HERO_STR_LIT(hero_str_76b82743); t11 = h0_dir; t12 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t12, &t10); hero_array_push_owned(&t12, &t11); t57 = h7_own7; h7_own7 = t12; hero_array_decref(t57); t13 = INT64_C(30); t14 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_again(t12, t13); h1_code = t14;
+    t15 = HERO_STR_LIT(hero_str_748ba55c); t16 = h1_code; t17 = INT64_C(128); t18 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_SIGKILL(); t19 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t18}; t58 = h8_own8; h8_own8 = t19; h_0opt_e201354_release(&t58); t59 = h2_f0; h_0opt_e201354_retain(&t19); h2_f0 = t19; h_0opt_e201354_release(&t59); t20 = h2_f0; t21 = t20.tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto bb1; else goto bb2; bb1: t26 = h2_f0; t27 = t26.as.ok; if (__builtin_add_overflow(t17, t27, &t28)) hero_panic_overflow(); t29 = t16 == t28; hero_print_str(t15); hero_print_bool(t29); hero_print_end();
+    t30 = h0_dir; t31 = HERO_STR_LIT(hero_str_732be8d7); t32 = hero_str_concat(t30, t31); t60 = h9_own9; h9_own9 = t32; hero_str_decref(t60); t33 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_beats(t32); h3_before = t33;
+#line 116
+    t34 = h3_before; t35 = INT64_C(1); t36 = t34 < t35; if (t36) goto bb4; else goto bb5; bb2:
+#line 113
+    t24 = h2_f0; t25 = t24.as.err;
+#line 399 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_panic_must(t25);
     hero_unreachable();
 bb3:
 #line 125 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t50 = h0_dir;
-#line 125 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t51 = hero_str_lend(t50);
-#line 125 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    (void)hero_dir_remove_tree(hero_cstr_nonnull(t51));
-#line 947 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+    t50 = h0_dir; t51 = hero_str_lend(t50); (void)hero_dir_remove_tree(hero_cstr_nonnull(t51));
+#line 405 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_str_release_at(&h0_dir);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     hero_str_release_at(&h4_own4);
@@ -957,303 +415,61 @@ bb3:
     return;
 bb4:
 #line 117 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t37 = HERO_STR_LIT(hero_str_35dcd79a);
-#line 117 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_str(t37);
-#line 117 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_end();
-#line 117 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb3;
-#line 117 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb5:
-#line 119 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t38 = HERO_STR_LIT(hero_str_1cfff1);
-#line 119 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t39 = hero_array_new(&hero_desc_str, 1);
-#line 119 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_push_owned(&t39, &t38);
-#line 119 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t61 = h10_own10;
-#line 119 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h10_own10 = t39;
-#line 119 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_decref(t61);
-#line 119 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t40 = INT64_C(1);
-#line 119 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_again(t39, t40);
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t42 = h0_dir;
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t43 = HERO_STR_LIT(hero_str_732be8d7);
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t44 = hero_str_concat(t42, t43);
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t62 = h11_own11;
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h11_own11 = t44;
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_str_decref(t62);
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t45 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_beats(t44);
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t46 = h3_before;
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t47 = t45 == t46;
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t47) goto bb7; else goto bb8;
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb6:
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb3;
-#line 121 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb7:
-    t48 = HERO_STR_LIT(hero_str_31b442c5);
-#line 122 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_str(t48);
-#line 122 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_end();
-#line 122 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb6;
-#line 122 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb8:
-#line 124 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t49 = HERO_STR_LIT(hero_str_6dbaa06f);
-#line 124 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_str(t49);
-#line 124 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_end();
-#line 124 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb6;
-#line 1029 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+    t37 = HERO_STR_LIT(hero_str_35dcd79a); hero_print_str(t37); hero_print_end(); goto bb3; bb5:
+#line 119
+    t38 = HERO_STR_LIT(hero_str_1cfff1); t39 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t39, &t38); t61 = h10_own10; h10_own10 = t39; hero_array_decref(t61); t40 = INT64_C(1); h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_again(t39, t40);
+#line 121
+    t42 = h0_dir; t43 = HERO_STR_LIT(hero_str_732be8d7); t44 = hero_str_concat(t42, t43); t62 = h11_own11; h11_own11 = t44; hero_str_decref(t62); t45 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_beats(t44); t46 = h3_before; t47 = t45 == t46; if (t47) goto bb7; else goto bb8; bb6: goto bb3; bb7:
+    t48 = HERO_STR_LIT(hero_str_31b442c5); hero_print_str(t48); hero_print_end(); goto bb6; bb8:
+#line 124
+    t49 = HERO_STR_LIT(hero_str_6dbaa06f); hero_print_str(t49); hero_print_end(); goto bb6;
+#line 427 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 127 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_main(void) {
-#line 127 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HeroArrayHeader * h0_words = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t6, *t11, *t14, *t19, *t23, *t24; HERO_NODEBUG int64_t t3, t4, t7, t12, t15, t20, t22; HERO_NODEBUG bool t5, t10, t18; HERO_NODEBUG HeroStr t8, t9, t13, t16, t17, t21; HERO_ENTRY_STOP; goto bb0;
-#line 127 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb0:
-    t1 = h_library_args();
-#line 128 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t23 = h1_own1;
-#line 128 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h1_own1 = t1;
-#line 128 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_decref(t23);
-#line 128 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t24 = h0_words;
-#line 128 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_incref(t1);
-#line 128 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h0_words = t1;
-#line 128 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_array_decref(t24);
-#line 130 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t2 = h0_words;
-#line 130 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
-#line 130 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t4 = INT64_C(0);
-#line 130 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t5 = t3 == t4;
-#line 130 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 130 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb1:
-#line 1065 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_main(void) { HeroArrayHeader * h0_words = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t6, *t11, *t14, *t19, *t23, *t24; HERO_NODEBUG int64_t t3, t4, t7, t12, t15, t20, t22; HERO_NODEBUG bool t5, t10, t18; HERO_NODEBUG HeroStr t8, t9, t13, t16, t17, t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_library_args(); t23 = h1_own1; h1_own1 = t1; hero_array_decref(t23); t24 = h0_words; hero_array_incref(t1); h0_words = t1; hero_array_decref(t24);
+#line 130
+    t2 = h0_words; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+#line 435 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_array_release_at(&h0_words);
     hero_array_release_at(&h1_own1);
     return;
 bb2:
 #line 131 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_first();
-#line 131 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb1;
-#line 131 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb3:
-    t6 = h0_words;
-#line 132 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t7 = INT64_C(0);
-#line 132 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t6 + 1))[t7]);
-#line 132 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t9 = HERO_STR_LIT(hero_str_76b82743);
-#line 132 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t10 = hero_str_eq(t8, t9);
-#line 132 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t10) goto bb4; else goto bb5;
-#line 132 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb4:
-    t11 = h0_words;
-#line 133 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t12 = INT64_C(1);
-#line 133 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t12]);
-#line 133 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_second(t13);
-#line 133 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb1;
-#line 133 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb5:
-    t14 = h0_words;
-#line 134 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t15 = INT64_C(0);
-#line 134 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]);
-#line 134 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t17 = HERO_STR_LIT(hero_str_241dd27);
-#line 134 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t18 = hero_str_eq(t16, t17);
-#line 134 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    if (t18) goto bb6; else goto bb7;
-#line 134 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb6:
-    t19 = h0_words;
-#line 135 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t20 = INT64_C(1);
-#line 135 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t19 + 1))[t20]);
-#line 135 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_third(t21);
-#line 135 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb1;
-#line 135 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-bb7:
-#line 137 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    t22 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_spin();
-#line 137 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_int(t22);
-#line 137 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    hero_print_end();
-#line 137 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    goto bb1;
-#line 1132 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+    h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_first(); goto bb1; bb3:
+    t6 = h0_words; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? ((void)hero_array_at(t6, t7), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t6 + 1))[t7]); t9 = HERO_STR_LIT(hero_str_76b82743); t10 = hero_str_eq(t8, t9); if (t10) goto bb4; else goto bb5; bb4:
+    t11 = h0_words; t12 = INT64_C(1); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t12]); h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_second(t13); goto bb1; bb5:
+    t14 = h0_words; t15 = INT64_C(0); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]); t17 = HERO_STR_LIT(hero_str_241dd27); t18 = hero_str_eq(t16, t17); if (t18) goto bb6; else goto bb7; bb6:
+    t19 = h0_words; t20 = INT64_C(1); t21 = ((void)((t19 == NULL || t20 < 0 || t20 >= t19->len) ? ((void)hero_array_at(t19, t20), hero_unreachable()) : (void)0), (void)(t19->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t19 + 1))[t20]); h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_third(t21); goto bb1; bb7:
+#line 137
+    t22 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_spin(); hero_print_int(t22); hero_print_end(); goto bb1;
+#line 448 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 109 "<heroes library>"
-int64_t h_library_HERO_OS_OK(void) {
-#line 109 "<heroes library>"
-    return HERO_OS_OK;
-#line 1139 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
+#line 453 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 112 "<heroes library>"
-int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 112 "<heroes library>"
-    return HERO_OS_BAD_NAME;
-#line 1146 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
+#line 458 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 186 "<heroes library>"
-h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-#line 186 "<heroes library>"
-    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0;
-#line 186 "<heroes library>"
-bb0:
-    t1 = h0_path;
-#line 187 "<heroes library>"
-    t2 = h1_text;
-#line 187 "<heroes library>"
-    t3 = hero_file_write_str(t1, t2);
-#line 187 "<heroes library>"
-    h2_wrote = t3;
-    t4 = h2_wrote;
-#line 188 "<heroes library>"
-    t5 = h_library_HERO_OS_OK();
-#line 188 "<heroes library>"
-    t6 = t4 == t5;
-#line 188 "<heroes library>"
-    if (t6) goto bb2; else goto bb3;
-#line 188 "<heroes library>"
-bb1:
-#line 190 "<heroes library>"
-    t8 = h2_wrote;
-#line 190 "<heroes library>"
-    t9 = h_library_HERO_OS_BAD_NAME();
-#line 190 "<heroes library>"
-    t10 = t8 == t9;
-#line 190 "<heroes library>"
-    if (t10) goto bb5; else goto bb6;
-#line 190 "<heroes library>"
-bb2:
-#line 189 "<heroes library>"
-    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)};
-#line 189 "<heroes library>"
-    t20 = h4_own4;
-#line 189 "<heroes library>"
-    h4_own4 = t7;
-#line 189 "<heroes library>"
-    h_0opt_a8ea2_release(&t20);
-#line 189 "<heroes library>"
-    h3_ret0 = t7;
-#line 189 "<heroes library>"
-    goto bb7;
-#line 189 "<heroes library>"
-bb3:
-#line 189 "<heroes library>"
-    goto bb1;
-#line 189 "<heroes library>"
-bb4:
-#line 192 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_7e662f9e);
-#line 192 "<heroes library>"
-    t15 = HERO_STR_LIT(hero_str_39d7c22a);
-#line 192 "<heroes library>"
-    t16 = h0_path;
-#line 192 "<heroes library>"
-    t17 = hero_str_concat(t15, t16);
-#line 192 "<heroes library>"
-    t21 = h5_own5;
-#line 192 "<heroes library>"
-    h5_own5 = t17;
-#line 192 "<heroes library>"
-    hero_str_decref(t21);
-#line 192 "<heroes library>"
-    hero_str_incref(t14);
-#line 192 "<heroes library>"
-    hero_str_incref(t17);
-#line 192 "<heroes library>"
-    t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}};
-#line 192 "<heroes library>"
-    t22 = h6_own6;
-#line 192 "<heroes library>"
-    h6_own6 = t18;
-#line 192 "<heroes library>"
-    h_0opt_a8ea2_release(&t22);
-#line 192 "<heroes library>"
-    h3_ret0 = t18;
-#line 192 "<heroes library>"
-    goto bb7;
-#line 192 "<heroes library>"
-bb5:
-#line 191 "<heroes library>"
-    t11 = HERO_STR_LIT(hero_str_7e662f9e);
-#line 191 "<heroes library>"
-    t12 = HERO_STR_LIT(hero_str_1755ec20);
-#line 191 "<heroes library>"
-    hero_str_incref(t11);
-#line 191 "<heroes library>"
-    hero_str_incref(t12);
-#line 191 "<heroes library>"
-    t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}};
-#line 191 "<heroes library>"
-    t23 = h7_own7;
-#line 191 "<heroes library>"
-    h7_own7 = t13;
-#line 191 "<heroes library>"
-    h_0opt_a8ea2_release(&t23);
-#line 191 "<heroes library>"
-    h3_ret0 = t13;
-#line 191 "<heroes library>"
-    goto bb7;
-#line 191 "<heroes library>"
-bb6:
-#line 191 "<heroes library>"
-    goto bb4;
-#line 191 "<heroes library>"
-bb7:
-#line 1257 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_path; t2 = h1_text; t3 = hero_file_write_str(t1, t2); h2_wrote = t3;
+    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 190
+    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+#line 189
+    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
+#line 192
+    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
+#line 191
+    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
+#line 473 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -1264,66 +480,14 @@ bb7:
 }
 
 #line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(void) {
-#line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 196 "<heroes library>"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 197 "<heroes library>"
-    t14 = h2_own2;
-#line 197 "<heroes library>"
-    h2_own2 = t1;
-#line 197 "<heroes library>"
-    hero_array_decref(t14);
-#line 197 "<heroes library>"
-    t15 = h0_out;
-#line 197 "<heroes library>"
-    hero_array_incref(t1);
-#line 197 "<heroes library>"
-    h0_out = t1;
-#line 197 "<heroes library>"
-    hero_array_decref(t15);
-    t2 = INT64_C(0);
-#line 198 "<heroes library>"
-    h1_i = t2;
-#line 198 "<heroes library>"
-    goto bb1;
-#line 198 "<heroes library>"
-bb1:
-    t3 = h1_i;
-#line 199 "<heroes library>"
-    t4 = hero_args_count();
-#line 199 "<heroes library>"
-    t5 = t3 < t4;
-#line 199 "<heroes library>"
-    if (t5) goto bb2; else goto bb3;
-#line 199 "<heroes library>"
-bb2:
-    t7 = h1_i;
-#line 200 "<heroes library>"
-    t8 = hero_args_at(t7);
-#line 200 "<heroes library>"
-    t16 = h3_own3;
-#line 200 "<heroes library>"
-    h3_own3 = t8;
-#line 200 "<heroes library>"
-    hero_str_decref(t16);
-#line 200 "<heroes library>"
-    hero_array_push_owned(&h0_out, &t8);
-    t10 = h1_i;
-#line 201 "<heroes library>"
-    t11 = INT64_C(1);
-#line 201 "<heroes library>"
-    if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 201 "<heroes library>"
-    h1_i = t12;
-#line 201 "<heroes library>"
-    goto bb1;
-#line 201 "<heroes library>"
-bb3:
+HeroArrayHeader * h_library_args(void) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t14 = h2_own2; h2_own2 = t1; hero_array_decref(t14); t15 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t15);
+    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
+    t3 = h1_i; t4 = hero_args_count(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h1_i; t8 = hero_args_at(t7); t16 = h3_own3; h3_own3 = t8; hero_str_decref(t16); hero_array_push_owned(&h0_out, &t8);
+    t10 = h1_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h1_i = t12; goto bb1; bb3:
     t13 = h0_out;
-#line 1327 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 491 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

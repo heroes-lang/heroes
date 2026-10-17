@@ -133,11 +133,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_lendinsidealoop_strlen(cons
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "lendinsidealoop.c"
 #pragma clang diagnostic pop
@@ -154,78 +154,16 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_lendinsidealoop_main(void);
 
 #line 12 "tests/golden/run/lend-inside-a-loop.hero"
-void h_lendinsidealoop_main(void) {
-#line 12 "tests/golden/run/lend-inside-a-loop.hero"
-    int64_t h0_at; uint64_t h1_total; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t7, t9, t10, t18, t19; HERO_NODEBUG int64_t t1, t3, t4, t8, t14, t15, t16; HERO_NODEBUG uint64_t t2, t6, t12, t13, t17; HERO_NODEBUG bool t5; HERO_NODEBUG const char *t11; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/run/lend-inside-a-loop.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 13 "tests/golden/run/lend-inside-a-loop.hero"
-    h0_at = t1;
-    t2 = UINT64_C(0);
-#line 14 "tests/golden/run/lend-inside-a-loop.hero"
-    h1_total = t2;
-#line 14 "tests/golden/run/lend-inside-a-loop.hero"
-    goto bb1;
-#line 14 "tests/golden/run/lend-inside-a-loop.hero"
-bb1:
-#line 16 "tests/golden/run/lend-inside-a-loop.hero"
-    t3 = h0_at;
-#line 16 "tests/golden/run/lend-inside-a-loop.hero"
-    t4 = INT64_C(5);
-#line 16 "tests/golden/run/lend-inside-a-loop.hero"
-    t5 = t3 < t4;
-#line 16 "tests/golden/run/lend-inside-a-loop.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 16 "tests/golden/run/lend-inside-a-loop.hero"
-bb2:
-    t6 = h1_total;
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    t7 = HERO_STR_LIT(hero_str_f63dcff);
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    t8 = h0_at;
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    t9 = hero_int_to_str(t8);
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    t18 = h2_own2;
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    h2_own2 = t9;
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    hero_str_decref(t18);
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    t10 = hero_str_concat(t7, t9);
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    t19 = h3_own3;
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    h3_own3 = t10;
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    hero_str_decref(t19);
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    t11 = hero_str_lend(t10);
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    t12 = strlen(hero_cstr_nonnull(t11));
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    if (__builtin_add_overflow(t6, t12, &t13)) hero_panic_overflow();
-#line 17 "tests/golden/run/lend-inside-a-loop.hero"
-    h1_total = t13;
-    t14 = h0_at;
-#line 18 "tests/golden/run/lend-inside-a-loop.hero"
-    t15 = INT64_C(1);
-#line 18 "tests/golden/run/lend-inside-a-loop.hero"
-    if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 18 "tests/golden/run/lend-inside-a-loop.hero"
-    h0_at = t16;
-#line 18 "tests/golden/run/lend-inside-a-loop.hero"
-    goto bb1;
-#line 18 "tests/golden/run/lend-inside-a-loop.hero"
-bb3:
-#line 20 "tests/golden/run/lend-inside-a-loop.hero"
-    t17 = h1_total;
-#line 20 "tests/golden/run/lend-inside-a-loop.hero"
-    hero_print_uint(t17);
-#line 20 "tests/golden/run/lend-inside-a-loop.hero"
-    hero_print_end();
-#line 229 "lendinsidealoop.c"
+void h_lendinsidealoop_main(void) { int64_t h0_at; uint64_t h1_total; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t7, t9, t10, t18, t19; HERO_NODEBUG int64_t t1, t3, t4, t8, t14, t15, t16; HERO_NODEBUG uint64_t t2, t6, t12, t13, t17; HERO_NODEBUG bool t5; HERO_NODEBUG const char *t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_at = t1;
+    t2 = UINT64_C(0); h1_total = t2; goto bb1; bb1:
+#line 16
+    t3 = h0_at; t4 = INT64_C(5); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h1_total; t7 = HERO_STR_LIT(hero_str_f63dcff); t8 = h0_at; t9 = hero_int_to_str(t8); t18 = h2_own2; h2_own2 = t9; hero_str_decref(t18); t10 = hero_str_concat(t7, t9); t19 = h3_own3; h3_own3 = t10; hero_str_decref(t19); t11 = hero_str_lend(t10); t12 = strlen(hero_cstr_nonnull(t11)); if (__builtin_add_overflow(t6, t12, &t13)) hero_panic_overflow(); h1_total = t13;
+    t14 = h0_at; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h0_at = t16; goto bb1; bb3:
+#line 20
+    t17 = h1_total; hero_print_uint(t17); hero_print_end();
+#line 167 "lendinsidealoop.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return;

@@ -59,7 +59,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 13 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
 _Static_assert(__builtin_classify_type(((lock_t *)0)->__align) == 1 && sizeof(((lock_t *)0)->__align) == sizeof(int64_t) && (_Generic(((lock_t *)0)->__align, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field lock_t __align");
-#line 15 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+#line 15
 _Static_assert(__builtin_classify_type(((pattern_t *)0)->re_nsub) == 1 && sizeof(((pattern_t *)0)->re_nsub) == sizeof(uint64_t) && (_Generic(((pattern_t *)0)->re_nsub, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field pattern_t re_nsub");
 #line 65 "ffiatypedefthenotenamesbindsbyitsownname.c"
 
@@ -144,11 +144,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffiatypedefthenotenamesbind
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 154 "ffiatypedefthenotenamesbindsbyitsownname.c"
 #pragma clang diagnostic pop
@@ -193,85 +193,17 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
 void h_ffiatypedefthenotenamesbindsbyitsownname_main(void) {
-#line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+#line 21
 #define h0_m (*hero_lend_h0_m)
-#line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+#line 21
 #define h1_p (*hero_lend_h1_p)
-#line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    lock_t *const hero_lend_h0_m = (lock_t *)hero_lend_local(sizeof(lock_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "m"); pattern_t *const hero_lend_h1_p = (pattern_t *)hero_lend_local(sizeof(pattern_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "p"); HERO_NODEBUG lock_t t1; HERO_NODEBUG int32_t t2, t6; HERO_NODEBUG HeroStr t3, t7, t9; HERO_NODEBUG int64_t t4, t8; HERO_NODEBUG pattern_t t5; HERO_NODEBUG uint64_t t10; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-bb0:
-    t1 = (lock_t){0};
-#line 22 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    __builtin_memset(&t1, 0, sizeof t1);
-#line 22 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    h0_m = t1;
-#line 22 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
-    hero_lend_local_name(hero_lend_h0_m, "lock_init", "m");
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    t2 = lock_init(&h0_m);
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    t3 = HERO_STR_LIT(hero_str_20);
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_lend_local_name(hero_lend_h0_m, "lock_marked", "m");
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    t4 = lock_marked(&h0_m);
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_int(t2);
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_str(t3);
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_int(t4);
-#line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_end();
-    t5 = (pattern_t){0};
-#line 24 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    __builtin_memset(&t5, 0, sizeof t5);
-#line 24 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    h1_p = t5;
-#line 24 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
-    hero_lend_local_name(hero_lend_h1_p, "pattern_init", "p");
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    t6 = pattern_init(&h1_p);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    t7 = HERO_STR_LIT(hero_str_20);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_lend_local_name(hero_lend_h1_p, "pattern_marked", "p");
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    t8 = pattern_marked(&h1_p);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    t9 = HERO_STR_LIT(hero_str_20);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    t10 = h1_p.re_nsub;
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_int(t6);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_str(t7);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_int(t8);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_str(t9);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_uint(t10);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_print_end();
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_lend_local_give(hero_lend_h1_p);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    hero_lend_local_give(hero_lend_h0_m);
-#line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    return;
-#line 275 "ffiatypedefthenotenamesbindsbyitsownname.c"
+#line 21
+    lock_t *const hero_lend_h0_m = (lock_t *)hero_lend_local(sizeof(lock_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "m"); pattern_t *const hero_lend_h1_p = (pattern_t *)hero_lend_local(sizeof(pattern_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "p"); HERO_NODEBUG lock_t t1; HERO_NODEBUG int32_t t2, t6; HERO_NODEBUG HeroStr t3, t7, t9; HERO_NODEBUG int64_t t4, t8; HERO_NODEBUG pattern_t t5; HERO_NODEBUG uint64_t t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (lock_t){0}; __builtin_memset(&t1, 0, sizeof t1); h0_m = t1; hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
+    hero_lend_local_name(hero_lend_h0_m, "lock_init", "m"); hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0); t2 = lock_init(&h0_m); t3 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h0_m, "lock_marked", "m"); hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0); t4 = lock_marked(&h0_m); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end();
+    t5 = (pattern_t){0}; __builtin_memset(&t5, 0, sizeof t5); h1_p = t5; hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
+    hero_lend_local_name(hero_lend_h1_p, "pattern_init", "p"); hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1); t6 = pattern_init(&h1_p); t7 = HERO_STR_LIT(hero_str_20); hero_lend_local_name(hero_lend_h1_p, "pattern_marked", "p"); hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1); t8 = pattern_marked(&h1_p); t9 = HERO_STR_LIT(hero_str_20); t10 = h1_p.re_nsub; hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_str(t9); hero_print_uint(t10); hero_print_end(); hero_lend_local_give(hero_lend_h1_p); hero_lend_local_give(hero_lend_h0_m); return;
+#line 207 "ffiatypedefthenotenamesbindsbyitsownname.c"
 }
 #undef h0_m
 #undef h1_p

@@ -97,11 +97,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 107 "fixedbugs335everywayoutkeepsitsreturnsline.c"
 #pragma clang diagnostic pop
@@ -130,94 +130,20 @@ HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_only(h_fixedbugs335everyway
 void h_fixedbugs335everywayoutkeepsitsreturnsline_main(void);
 
 #line 17 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_pick(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) {
-#line 17 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HeroStr h2_found = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t4, t5, t6, t7, t11, t15, t16, t17, t18, t19, t20; HERO_NODEBUG int64_t t1, t2, t3, t8, t9, t12, t13; HERO_NODEBUG bool t10, t14; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb0:
-    t1 = (*ph0_t).f_n;
-#line 18 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t2 = INT64_C(1);
-#line 18 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 18 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    (*ph0_t).f_n = t3;
-    t4 = h1_word;
-#line 19 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t5 = HERO_STR_LIT(hero_str_21);
-#line 19 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t6 = hero_str_concat(t4, t5);
-#line 19 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t19 = h4_own4;
-#line 19 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h4_own4 = t6;
-#line 19 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t19);
-#line 19 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t20 = h2_found;
-#line 19 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_incref(t6);
-#line 19 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h2_found = t6;
-#line 19 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t20);
-#line 21 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t7 = h1_word;
-#line 21 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t8 = hero_str_len(t7);
-#line 21 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t9 = INT64_C(1);
-#line 21 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t10 = t8 > t9;
-#line 21 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t10) goto bb2; else goto bb3;
-#line 21 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb1:
-#line 25 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t17 = HERO_STR_LIT(hero_str_2d);
-#line 25 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h3_ret0 = t17;
-#line 25 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb7;
-#line 25 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb2:
-#line 22 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t11 = h1_word;
-#line 22 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t12 = hero_str_len(t11);
-#line 22 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t13 = INT64_C(3);
-#line 22 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t14 = t12 > t13;
-#line 22 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t14) goto bb5; else goto bb6;
-#line 22 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb3:
-#line 22 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb1;
-#line 22 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb4:
-#line 24 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t16 = h1_word;
-#line 24 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h3_ret0 = t16;
-#line 24 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb7;
-#line 24 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb5:
-#line 23 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t15 = h2_found;
-#line 23 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h3_ret0 = t15;
-#line 23 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb7;
-#line 23 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb6:
-#line 23 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb4;
-#line 23 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb7:
-#line 221 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_pick(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HeroStr h2_found = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t4, t5, t6, t7, t11, t15, t16, t17, t18, t19, t20; HERO_NODEBUG int64_t t1, t2, t3, t8, t9, t12, t13; HERO_NODEBUG bool t10, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_t).f_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); (*ph0_t).f_n = t3;
+    t4 = h1_word; t5 = HERO_STR_LIT(hero_str_21); t6 = hero_str_concat(t4, t5); t19 = h4_own4; h4_own4 = t6; hero_str_decref(t19); t20 = h2_found; hero_str_incref(t6); h2_found = t6; hero_str_decref(t20);
+#line 21
+    t7 = h1_word; t8 = hero_str_len(t7); t9 = INT64_C(1); t10 = t8 > t9; if (t10) goto bb2; else goto bb3; bb1:
+#line 25
+    t17 = HERO_STR_LIT(hero_str_2d); h3_ret0 = t17; goto bb7; bb2:
+#line 22
+    t11 = h1_word; t12 = hero_str_len(t11); t13 = INT64_C(3); t14 = t12 > t13; if (t14) goto bb5; else goto bb6; bb3: goto bb1; bb4:
+#line 24
+    t16 = h1_word; h3_ret0 = t16; goto bb7; bb5:
+#line 23
+    t15 = h2_found; h3_ret0 = t15; goto bb7; bb6: goto bb4; bb7:
+#line 147 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t18 = h3_ret0;
     hero_str_incref(t18);
     hero_str_release_at(&h2_found);
@@ -226,79 +152,13 @@ bb7:
 }
 
 #line 27 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_half(int64_t h0_n) {
-#line 27 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t8, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 27 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb0:
-    t1 = h0_n;
-#line 28 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t2 = INT64_C(2);
-#line 28 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t2 == 0) hero_panic("division by zero");
-#line 28 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64");
-#line 28 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t3 = t1 % t2;
-#line 28 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t4 = INT64_C(1);
-#line 28 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t5 = t3 == t4;
-#line 28 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 28 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb1:
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t9 = h0_n;
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t10 = INT64_C(2);
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t10 == 0) hero_panic("division by zero");
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow();
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t11 = t9 / t10;
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11};
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t14 = h2_own2;
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h2_own2 = t12;
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t14);
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h1_ret0 = t12;
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb4;
-#line 30 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb2:
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t6 = HERO_STR_LIT(hero_str_1d4477);
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t7 = HERO_STR_LIT(hero_str_1d4477);
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_incref(t6);
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_incref(t7);
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}};
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t15 = h3_own3;
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h3_own3 = t8;
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t15);
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h1_ret0 = t8;
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb4;
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb3:
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb1;
-#line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb4:
-#line 302 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t8, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic("division by zero"); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64"); t3 = t1 % t2; t4 = INT64_C(1); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+#line 30
+    t9 = h0_n; t10 = INT64_C(2); if (t10 == 0) hero_panic("division by zero"); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow(); t11 = t9 / t10; t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
+#line 29
+    t6 = HERO_STR_LIT(hero_str_1d4477); t7 = HERO_STR_LIT(hero_str_1d4477); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}}; t15 = h3_own3; h3_own3 = t8; h_0opt_e201354_release(&t15); h1_ret0 = t8; goto bb4; bb3: goto bb1; bb4:
+#line 162 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -307,89 +167,13 @@ bb4:
 }
 
 #line 32 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_halves(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, int64_t h1_n) {
-#line 32 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t10, t16, t17, t18, t19, t20, t21; int64_t h3_h; HERO_NODEBUG int64_t t1, t4, t5, t11, t12, t13, t14, t15; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0;
-#line 32 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb0:
-    t1 = h1_n;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t2 = h_fixedbugs335everywayoutkeepsitsreturnsline_half(t1);
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t18 = h5_own5;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h5_own5 = t2;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t18);
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t19 = h2_f0;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_retain(&t2);
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h2_f0 = t2;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t19);
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t3 = h2_f0;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t4 = t3.tag;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t5 = INT64_C(0);
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t6 = t4 == t5;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t6) goto bb1; else goto bb2;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb1:
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t10 = h2_f0;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t11 = t10.as.ok;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h3_h = t11;
-    t12 = (*ph0_t).f_n;
-#line 34 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t13 = h3_h;
-#line 34 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 34 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    (*ph0_t).f_n = t14;
-    t15 = h3_h;
-#line 35 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t15};
-#line 35 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t20 = h6_own6;
-#line 35 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h6_own6 = t16;
-#line 35 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t20);
-#line 35 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h4_ret0 = t16;
-#line 35 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb3;
-#line 35 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb2:
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t7 = h2_f0;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t8 = t7.as.err;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_failure_retain(&t8);
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t21 = h7_own7;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h7_own7 = t9;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t21);
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h4_ret0 = t9;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb3;
-#line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb3:
-#line 393 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_halves(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, int64_t h1_n) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t10, t16, t17, t18, t19, t20, t21; int64_t h3_h; HERO_NODEBUG int64_t t1, t4, t5, t11, t12, t13, t14, t15; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_n; t2 = h_fixedbugs335everywayoutkeepsitsreturnsline_half(t1); t18 = h5_own5; h5_own5 = t2; h_0opt_e201354_release(&t18); t19 = h2_f0; h_0opt_e201354_retain(&t2); h2_f0 = t2; h_0opt_e201354_release(&t19); t3 = h2_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t10 = h2_f0; t11 = t10.as.ok; h3_h = t11;
+    t12 = (*ph0_t).f_n; t13 = h3_h; if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow(); (*ph0_t).f_n = t14;
+    t15 = h3_h; t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t15}; t20 = h6_own6; h6_own6 = t16; h_0opt_e201354_release(&t20); h4_ret0 = t16; goto bb3; bb2:
+#line 33
+    t7 = h2_f0; t8 = t7.as.err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8}; t21 = h7_own7; h7_own7 = t9; h_0opt_e201354_release(&t21); h4_ret0 = t9; goto bb3; bb3:
+#line 177 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t17 = h4_ret0;
     h_0opt_e201354_retain(&t17);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -400,318 +184,48 @@ bb3:
 }
 
 #line 37 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-void h_fixedbugs335everywayoutkeepsitsreturnsline_count(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) {
-#line 37 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t4, t5, t8, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7, t9, t10; HERO_ENTRY_STOP; goto bb0;
-#line 37 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb0:
-    t1 = h1_word;
-#line 38 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t2 = HERO_STR_LIT(hero_str_21);
-#line 38 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 38 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t11 = h3_own3;
-#line 38 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h3_own3 = t3;
-#line 38 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t11);
-#line 38 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t12 = h2_shout;
-#line 38 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_incref(t3);
-#line 38 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h2_shout = t3;
-#line 38 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t12);
-#line 40 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t4 = h1_word;
-#line 40 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t5 = HERO_STR_LIT(hero_str_0);
-#line 40 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t6 = hero_str_eq(t4, t5);
-#line 40 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 40 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb1:
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t7 = (*ph0_t).f_n;
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t8 = h2_shout;
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t9 = hero_str_len(t8);
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow();
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    (*ph0_t).f_n = t10;
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb4;
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb2:
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb4;
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb3:
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb1;
-#line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb4:
-#line 460 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+void h_fixedbugs335everywayoutkeepsitsreturnsline_count(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t4, t5, t8, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_word; t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t11 = h3_own3; h3_own3 = t3; hero_str_decref(t11); t12 = h2_shout; hero_str_incref(t3); h2_shout = t3; hero_str_decref(t12);
+#line 40
+    t4 = h1_word; t5 = HERO_STR_LIT(hero_str_0); t6 = hero_str_eq(t4, t5); if (t6) goto bb2; else goto bb3; bb1:
+#line 42
+    t7 = (*ph0_t).f_n; t8 = h2_shout; t9 = hero_str_len(t8); if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow(); (*ph0_t).f_n = t10; goto bb4; bb2: goto bb4; bb3: goto bb1; bb4:
+#line 194 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     hero_str_release_at(&h2_shout);
     hero_str_release_at(&h3_own3);
     return;
 }
 
 #line 44 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-void h_fixedbugs335everywayoutkeepsitsreturnsline_grow(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) {
-#line 44 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t5, t8, t9; HERO_NODEBUG int64_t t4, t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 44 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb0:
-    t1 = h1_word;
-#line 45 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t2 = HERO_STR_LIT(hero_str_21);
-#line 45 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 45 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t8 = h3_own3;
-#line 45 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h3_own3 = t3;
-#line 45 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t8);
-#line 45 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t9 = h2_shout;
-#line 45 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_incref(t3);
-#line 45 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h2_shout = t3;
-#line 45 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t9);
-    t4 = (*ph0_t).f_n;
-#line 46 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t5 = h2_shout;
-#line 46 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t6 = hero_str_len(t5);
-#line 46 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (__builtin_add_overflow(t4, t6, &t7)) hero_panic_overflow();
-#line 46 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    (*ph0_t).f_n = t7;
-#line 500 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+void h_fixedbugs335everywayoutkeepsitsreturnsline_grow(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t5, t8, t9; HERO_NODEBUG int64_t t4, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_word; t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t8 = h3_own3; h3_own3 = t3; hero_str_decref(t8); t9 = h2_shout; hero_str_incref(t3); h2_shout = t3; hero_str_decref(t9);
+    t4 = (*ph0_t).f_n; t5 = h2_shout; t6 = hero_str_len(t5); if (__builtin_add_overflow(t4, t6, &t7)) hero_panic_overflow(); (*ph0_t).f_n = t7;
+#line 204 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     hero_str_release_at(&h2_shout);
     hero_str_release_at(&h3_own3);
     return;
 }
 
 #line 48 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_only(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) {
-#line 48 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HERO_NODEBUG HeroStr h2_own2 = {0}, t4, t5, t6, t7; HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 48 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb0:
-    t1 = (*ph0_t).f_n;
-#line 49 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t2 = INT64_C(1);
-#line 49 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 49 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    (*ph0_t).f_n = t3;
-    t4 = h1_word;
-#line 50 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t5 = HERO_STR_LIT(hero_str_3f);
-#line 50 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t6 = hero_str_concat(t4, t5);
-#line 50 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t7 = h2_own2;
-#line 50 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h2_own2 = t6;
-#line 50 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t7);
-#line 530 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_only(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HERO_NODEBUG HeroStr h2_own2 = {0}, t4, t5, t6, t7; HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_t).f_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); (*ph0_t).f_n = t3;
+    t4 = h1_word; t5 = HERO_STR_LIT(hero_str_3f); t6 = hero_str_concat(t4, t5); t7 = h2_own2; h2_own2 = t6; hero_str_decref(t7);
+#line 214 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     hero_str_incref(t6);
     hero_str_release_at(&h2_own2);
     return t6;
 }
 
 #line 52 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-void h_fixedbugs335everywayoutkeepsitsreturnsline_main(void) {
-#line 52 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_fixedbugs335everywayoutkeepsitsreturnsline_Tally h0_t; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h8_own8 = {0}, h9_own9 = {0}, t10, t11, t15, t20, t21, t25, t38, t39, t40, t41; HERO_NODEBUG int64_t h2_r0, h4_r1, t1, t9, t12, t13, t16, t17, t18, t19, t22, t23, t26, t27, t28, t34; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h10_own10 = {0}, t3, t4, t5, t6, t7, t8, t29, t30, t31, t32, t33, t35, t36, t37, t42; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t2; HERO_NODEBUG bool t14, t24; HERO_ENTRY_STOP; goto bb0;
-#line 52 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 53 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t2 = (h_fixedbugs335everywayoutkeepsitsreturnsline_Tally){.f_n = t1};
-#line 53 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h0_t = t2;
-    t3 = HERO_STR_LIT(hero_str_37dd738d);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t4 = h_fixedbugs335everywayoutkeepsitsreturnsline_pick(&h0_t, t3);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t35 = h5_own5;
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h5_own5 = t4;
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t35);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t5 = HERO_STR_LIT(hero_str_3205);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t6 = h_fixedbugs335everywayoutkeepsitsreturnsline_pick(&h0_t, t5);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t36 = h6_own6;
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h6_own6 = t6;
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t36);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t7 = HERO_STR_LIT(hero_str_61);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t8 = h_fixedbugs335everywayoutkeepsitsreturnsline_pick(&h0_t, t7);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t37 = h7_own7;
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h7_own7 = t8;
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t37);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_str(t4);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_str(t6);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_str(t8);
-#line 54 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_end();
-    t9 = INT64_C(8);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t10 = h_fixedbugs335everywayoutkeepsitsreturnsline_halves(&h0_t, t9);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t38 = h8_own8;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h8_own8 = t10;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t38);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t39 = h1_f0;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_retain(&t10);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h1_f0 = t10;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t39);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t11 = h1_f0;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t12 = t11.tag;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t13 = INT64_C(0);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t14 = t12 == t13;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t14) goto bb1; else goto bb2;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb1:
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t15 = h1_f0;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t16 = t15.as.ok;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h2_r0 = t16;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb3;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb2:
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t17 = INT64_C(0);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h2_r0 = t17;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb3;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb3:
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t18 = h2_r0;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t19 = INT64_C(3);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t20 = h_fixedbugs335everywayoutkeepsitsreturnsline_halves(&h0_t, t19);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t40 = h9_own9;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h9_own9 = t20;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t40);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t41 = h3_f1;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_retain(&t20);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h3_f1 = t20;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354_release(&t41);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t21 = h3_f1;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t22 = t21.tag;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t23 = INT64_C(0);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t24 = t22 == t23;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    if (t24) goto bb4; else goto bb5;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb4:
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t25 = h3_f1;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t26 = t25.as.ok;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h4_r1 = t26;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb6;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb5:
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t27 = INT64_C(0);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h4_r1 = t27;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    goto bb6;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-bb6:
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t28 = h4_r1;
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_int(t18);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_int(t28);
-#line 55 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_end();
-    t29 = HERO_STR_LIT(hero_str_dc838fa);
-#line 56 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_fixedbugs335everywayoutkeepsitsreturnsline_count(&h0_t, t29);
-    t30 = HERO_STR_LIT(hero_str_0);
-#line 57 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_fixedbugs335everywayoutkeepsitsreturnsline_count(&h0_t, t30);
-    t31 = HERO_STR_LIT(hero_str_3205);
-#line 58 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_fixedbugs335everywayoutkeepsitsreturnsline_grow(&h0_t, t31);
-    t32 = HERO_STR_LIT(hero_str_78);
-#line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t33 = h_fixedbugs335everywayoutkeepsitsreturnsline_only(&h0_t, t32);
-#line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t42 = h10_own10;
-#line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h10_own10 = t33;
-#line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_str_decref(t42);
-#line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    t34 = h0_t.f_n;
-#line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_str(t33);
-#line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_int(t34);
-#line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    hero_print_end();
-#line 715 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+void h_fixedbugs335everywayoutkeepsitsreturnsline_main(void) { h_fixedbugs335everywayoutkeepsitsreturnsline_Tally h0_t; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h8_own8 = {0}, h9_own9 = {0}, t10, t11, t15, t20, t21, t25, t38, t39, t40, t41; HERO_NODEBUG int64_t h2_r0, h4_r1, t1, t9, t12, t13, t16, t17, t18, t19, t22, t23, t26, t27, t28, t34; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h10_own10 = {0}, t3, t4, t5, t6, t7, t8, t29, t30, t31, t32, t33, t35, t36, t37, t42; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t2; HERO_NODEBUG bool t14, t24; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); t2 = (h_fixedbugs335everywayoutkeepsitsreturnsline_Tally){.f_n = t1}; h0_t = t2;
+    t3 = HERO_STR_LIT(hero_str_37dd738d); t4 = h_fixedbugs335everywayoutkeepsitsreturnsline_pick(&h0_t, t3); t35 = h5_own5; h5_own5 = t4; hero_str_decref(t35); t5 = HERO_STR_LIT(hero_str_3205); t6 = h_fixedbugs335everywayoutkeepsitsreturnsline_pick(&h0_t, t5); t36 = h6_own6; h6_own6 = t6; hero_str_decref(t36); t7 = HERO_STR_LIT(hero_str_61); t8 = h_fixedbugs335everywayoutkeepsitsreturnsline_pick(&h0_t, t7); t37 = h7_own7; h7_own7 = t8; hero_str_decref(t37); hero_print_str(t4); hero_print_str(t6); hero_print_str(t8); hero_print_end();
+    t9 = INT64_C(8); t10 = h_fixedbugs335everywayoutkeepsitsreturnsline_halves(&h0_t, t9); t38 = h8_own8; h8_own8 = t10; h_0opt_e201354_release(&t38); t39 = h1_f0; h_0opt_e201354_retain(&t10); h1_f0 = t10; h_0opt_e201354_release(&t39); t11 = h1_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb1; else goto bb2; bb1: t15 = h1_f0; t16 = t15.as.ok; h2_r0 = t16; goto bb3; bb2: t17 = INT64_C(0); h2_r0 = t17; goto bb3; bb3: t18 = h2_r0; t19 = INT64_C(3); t20 = h_fixedbugs335everywayoutkeepsitsreturnsline_halves(&h0_t, t19); t40 = h9_own9; h9_own9 = t20; h_0opt_e201354_release(&t40); t41 = h3_f1; h_0opt_e201354_retain(&t20); h3_f1 = t20; h_0opt_e201354_release(&t41); t21 = h3_f1; t22 = t21.tag; t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto bb4; else goto bb5; bb4: t25 = h3_f1; t26 = t25.as.ok; h4_r1 = t26; goto bb6; bb5: t27 = INT64_C(0); h4_r1 = t27; goto bb6; bb6: t28 = h4_r1; hero_print_int(t18); hero_print_int(t28); hero_print_end();
+    t29 = HERO_STR_LIT(hero_str_dc838fa); h_fixedbugs335everywayoutkeepsitsreturnsline_count(&h0_t, t29);
+    t30 = HERO_STR_LIT(hero_str_0); h_fixedbugs335everywayoutkeepsitsreturnsline_count(&h0_t, t30);
+    t31 = HERO_STR_LIT(hero_str_3205); h_fixedbugs335everywayoutkeepsitsreturnsline_grow(&h0_t, t31);
+    t32 = HERO_STR_LIT(hero_str_78); t33 = h_fixedbugs335everywayoutkeepsitsreturnsline_only(&h0_t, t32); t42 = h10_own10; h10_own10 = t33; hero_str_decref(t42); t34 = h0_t.f_n; hero_print_str(t33); hero_print_int(t34); hero_print_end();
+#line 229 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_f1));
     hero_str_release_at(&h5_own5);

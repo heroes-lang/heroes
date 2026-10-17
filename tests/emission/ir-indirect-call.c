@@ -75,11 +75,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 85 "indirectcall.c"
 #pragma clang diagnostic pop
@@ -98,59 +98,21 @@ int64_t h_indirectcall_apply_twice(int64_t h0_n, h_0fn_48ac9712 h1_f);
 void h_indirectcall_main(void);
 
 #line 6 "tests/golden/ir/indirect-call.hero"
-int64_t h_indirectcall_double(int64_t h0_n) {
-#line 6 "tests/golden/ir/indirect-call.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 6 "tests/golden/ir/indirect-call.hero"
-bb0:
-    t1 = h0_n;
-#line 7 "tests/golden/ir/indirect-call.hero"
-    t2 = INT64_C(2);
-#line 7 "tests/golden/ir/indirect-call.hero"
-    if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 7 "tests/golden/ir/indirect-call.hero"
-    return t3;
-#line 114 "indirectcall.c"
+int64_t h_indirectcall_double(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;
+#line 104 "indirectcall.c"
 }
 
 #line 9 "tests/golden/ir/indirect-call.hero"
-int64_t h_indirectcall_apply_twice(int64_t h0_n, h_0fn_48ac9712 h1_f) {
-#line 9 "tests/golden/ir/indirect-call.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/ir/indirect-call.hero"
-bb0:
-    t1 = h1_f;
-#line 10 "tests/golden/ir/indirect-call.hero"
-    t2 = h1_f;
-#line 10 "tests/golden/ir/indirect-call.hero"
-    t3 = h0_n;
-#line 10 "tests/golden/ir/indirect-call.hero"
-    t4 = t2(t3);
-#line 10 "tests/golden/ir/indirect-call.hero"
-    t5 = t1(t4);
-#line 10 "tests/golden/ir/indirect-call.hero"
-    return t5;
-#line 134 "indirectcall.c"
+int64_t h_indirectcall_apply_twice(int64_t h0_n, h_0fn_48ac9712 h1_f) { HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_f; t2 = h1_f; t3 = h0_n; t4 = t2(t3); t5 = t1(t4); return t5;
+#line 110 "indirectcall.c"
 }
 
 #line 12 "tests/golden/ir/indirect-call.hero"
-void h_indirectcall_main(void) {
-#line 12 "tests/golden/ir/indirect-call.hero"
-    HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/ir/indirect-call.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 13 "tests/golden/ir/indirect-call.hero"
-    t2 = h_indirectcall_double;
-#line 13 "tests/golden/ir/indirect-call.hero"
-    t3 = h_indirectcall_apply_twice(t1, t2);
-#line 13 "tests/golden/ir/indirect-call.hero"
-    hero_print_int(t3);
-#line 13 "tests/golden/ir/indirect-call.hero"
-    hero_print_end();
-#line 13 "tests/golden/ir/indirect-call.hero"
-    return;
-#line 154 "indirectcall.c"
+void h_indirectcall_main(void) { HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); t2 = h_indirectcall_double; t3 = h_indirectcall_apply_twice(t1, t2); hero_print_int(t3); hero_print_end(); return;
+#line 116 "indirectcall.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -155,11 +155,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionnamesonearm
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 165 "ffiaconstructionnamesonearmofeachunion.c"
 #pragma clang diagnostic pop
@@ -197,108 +197,16 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-void h_ffiaconstructionnamesonearmofeachunion_main(void) {
-#line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    SA h0_s; SA h1_t; SA h2_a; SA h3_b; HERO_NODEBUG bool h4_b0, h5_b1, t15, t18, t19, t22, t23; HERO_NODEBUG SA t1, t6, t7, t9, t11, t12; HERO_NODEBUG int32_t t2, t3, t5, t10, t13, t14, t16, t17, t20, t21; HERO_NODEBUG float t4, t8; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-bb0:
-    t1 = make_sa();
-#line 23 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h0_s = t1;
-#line 23 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_pad_fill(&h0_s, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_s.i;
-#line 24 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_int(t2);
-#line 24 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_end();
-    t3 = INT64_C(2);
-#line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t4 = 0x1.8p+0;
-#line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t5 = INT64_C(4);
-#line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t6 = (SA){.kind = t3, .f = t4, .x = t5};
-#line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h1_t = t6;
-#line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_pad_fill(&h1_t, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-    t7 = h1_t;
-#line 26 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t8 = sa_f(t7);
-#line 26 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_f32(t8);
-#line 26 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_end();
-    t9 = h1_t;
-#line 27 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t10 = sa_x(t9);
-#line 27 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_int(t10);
-#line 27 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_end();
-    t11 = make_sa();
-#line 28 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h2_a = t11;
-#line 28 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_pad_fill(&h2_a, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-    t12 = make_sa();
-#line 29 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h3_b = t12;
-#line 29 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_pad_fill(&h3_b, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-    t13 = h2_a.kind;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t14 = h3_b.kind;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t15 = t13 == t14;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h5_b1 = t15;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    if (t15) goto bb1; else goto bb2;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-bb1:
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t16 = h2_a.i;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t17 = h3_b.i;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t18 = t16 == t17;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h5_b1 = t18;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    goto bb2;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-bb2:
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t19 = h5_b1;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h4_b0 = t19;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    if (t19) goto bb3; else goto bb4;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-bb3:
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t20 = h2_a.x;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t21 = h3_b.x;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t22 = t20 == t21;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    h4_b0 = t22;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    goto bb4;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-bb4:
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    t23 = h4_b0;
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_bool(t23);
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    hero_print_end();
-#line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    return;
-#line 302 "ffiaconstructionnamesonearmofeachunion.c"
+void h_ffiaconstructionnamesonearmofeachunion_main(void) { SA h0_s; SA h1_t; SA h2_a; SA h3_b; HERO_NODEBUG bool h4_b0, h5_b1, t15, t18, t19, t22, t23; HERO_NODEBUG SA t1, t6, t7, t9, t11, t12; HERO_NODEBUG int32_t t2, t3, t5, t10, t13, t14, t16, t17, t20, t21; HERO_NODEBUG float t4, t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = make_sa(); h0_s = t1; hero_pad_fill(&h0_s, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
+    t2 = h0_s.i; hero_print_int(t2); hero_print_end();
+    t3 = INT64_C(2); t4 = 0x1.8p+0; t5 = INT64_C(4); t6 = (SA){.kind = t3, .f = t4, .x = t5}; h1_t = t6; hero_pad_fill(&h1_t, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
+    t7 = h1_t; t8 = sa_f(t7); hero_print_f32(t8); hero_print_end();
+    t9 = h1_t; t10 = sa_x(t9); hero_print_int(t10); hero_print_end();
+    t11 = make_sa(); h2_a = t11; hero_pad_fill(&h2_a, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
+    t12 = make_sa(); h3_b = t12; hero_pad_fill(&h3_b, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
+    t13 = h2_a.kind; t14 = h3_b.kind; t15 = t13 == t14; h5_b1 = t15; if (t15) goto bb1; else goto bb2; bb1: t16 = h2_a.i; t17 = h3_b.i; t18 = t16 == t17; h5_b1 = t18; goto bb2; bb2: t19 = h5_b1; h4_b0 = t19; if (t19) goto bb3; else goto bb4; bb3: t20 = h2_a.x; t21 = h3_b.x; t22 = t20 == t21; h4_b0 = t22; goto bb4; bb4: t23 = h4_b0; hero_print_bool(t23); hero_print_end(); return;
+#line 210 "ffiaconstructionnamesonearmofeachunion.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonearmofeachunion_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

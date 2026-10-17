@@ -191,11 +191,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs582arecordboundfro
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 201 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 #pragma clang diagnostic pop
@@ -237,223 +237,41 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 18 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-void h_fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout_main(void) {
-#line 18 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    Packed582 h0_made; h_fixedbugs582pair_Pair h1_p; HERO_NODEBUG int64_t t1, t3, t7, t10, t12, t13, t15, t18; HERO_NODEBUG Packed582 t2, t11; HERO_NODEBUG HeroStr t4, t6, t8, t16; HERO_NODEBUG uint8_t t5, t9; HERO_NODEBUG h_fixedbugs582pair_Pair t14, t17; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-bb0:
-    t1 = INT64_C(123456789);
-#line 19 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t2 = packed_make(t1);
-#line 19 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    h0_made = t2;
-#line 19 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_pad_fill(&h0_made, sizeof(Packed582), 1, hero_pad_g_0, hero_pad_n_0);
-    t3 = packed_size();
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t4 = HERO_STR_LIT(hero_str_20);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t5 = h0_made.a;
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t6 = HERO_STR_LIT(hero_str_20);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t7 = h0_made.b;
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t8 = HERO_STR_LIT(hero_str_20);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t9 = UINT64_C(3);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t10 = INT64_C(987654321);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t11 = (Packed582){.a = t9, .b = t10};
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t12 = packed_b(t11);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_int(t3);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_str(t4);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_int(t5);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_str(t6);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_int(t7);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_str(t8);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_int(t12);
-#line 20 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_end();
-    t13 = h0_made.b;
-#line 21 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t14 = h_fixedbugs582pair_make(t13);
-#line 21 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    h1_p = t14;
-    t15 = h1_p.f_b;
-#line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t16 = HERO_STR_LIT(hero_str_20);
-#line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t17 = h1_p;
-#line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    t18 = h_fixedbugs582pair_second(t17);
-#line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_int(t15);
-#line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_str(t16);
-#line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_int(t18);
-#line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    hero_print_end();
-#line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    return;
-#line 310 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+void h_fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout_main(void) { Packed582 h0_made; h_fixedbugs582pair_Pair h1_p; HERO_NODEBUG int64_t t1, t3, t7, t10, t12, t13, t15, t18; HERO_NODEBUG Packed582 t2, t11; HERO_NODEBUG HeroStr t4, t6, t8, t16; HERO_NODEBUG uint8_t t5, t9; HERO_NODEBUG h_fixedbugs582pair_Pair t14, t17; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(123456789); t2 = packed_make(t1); h0_made = t2; hero_pad_fill(&h0_made, sizeof(Packed582), 1, hero_pad_g_0, hero_pad_n_0);
+    t3 = packed_size(); t4 = HERO_STR_LIT(hero_str_20); t5 = h0_made.a; t6 = HERO_STR_LIT(hero_str_20); t7 = h0_made.b; t8 = HERO_STR_LIT(hero_str_20); t9 = UINT64_C(3); t10 = INT64_C(987654321); t11 = (Packed582){.a = t9, .b = t10}; t12 = packed_b(t11); hero_print_int(t3); hero_print_str(t4); hero_print_int(t5); hero_print_str(t6); hero_print_int(t7); hero_print_str(t8); hero_print_int(t12); hero_print_end();
+    t13 = h0_made.b; t14 = h_fixedbugs582pair_make(t13); h1_p = t14;
+    t15 = h1_p.f_b; t16 = HERO_STR_LIT(hero_str_20); t17 = h1_p; t18 = h_fixedbugs582pair_second(t17); hero_print_int(t15); hero_print_str(t16); hero_print_int(t18); hero_print_end(); return;
+#line 246 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
-h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n) {
-#line 17 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/run/fixedbugs582/pair.hero"
-bb0:
-    t1 = UINT64_C(1);
-#line 18 "tests/golden/run/fixedbugs582/pair.hero"
-    t2 = h0_n;
-#line 18 "tests/golden/run/fixedbugs582/pair.hero"
-    t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2};
-#line 18 "tests/golden/run/fixedbugs582/pair.hero"
-    return t3;
-#line 326 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n) { HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(1); t2 = h0_n; t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2}; return t3;
+#line 252 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
-int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) {
-#line 20 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 20 "tests/golden/run/fixedbugs582/pair.hero"
-bb0:
-    t1 = h0_p.f_b;
-#line 21 "tests/golden/run/fixedbugs582/pair.hero"
-    return t1;
-#line 338 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_p.f_b; return t1;
+#line 258 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
-h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) {
-#line 23 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; HERO_ENTRY_STOP; goto bb0;
-#line 23 "tests/golden/run/fixedbugs582/pair.hero"
-bb0:
-    t1 = h0_n;
-#line 24 "tests/golden/run/fixedbugs582/pair.hero"
-    t2 = h0_n;
-#line 24 "tests/golden/run/fixedbugs582/pair.hero"
-    t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}};
-#line 24 "tests/golden/run/fixedbugs582/pair.hero"
-    return t3;
-#line 354 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = h0_n; t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}}; return t3;
+#line 264 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
-int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) {
-#line 26 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0, t1, t2, t5, t17; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t8, t9, t13, t15, t23, t24; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0, t3, t4, t10, t11, t16, t19, t20, t21, t22; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t12; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t18; HERO_ENTRY_STOP; goto bb0;
-#line 26 "tests/golden/run/fixedbugs582/pair.hero"
-bb0:
-    t1 = h0_s;
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-    h1_s0 = t1;
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-    t2 = h1_s0;
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-    t3 = t2.tag;
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-    switch (t3) {
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-        case 0: goto bb2;
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-        case 1: goto bb3;
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-        case 2: goto bb4;
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-        default: hero_unreachable();
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-    }
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
-bb2:
-    t4 = INT64_C(0);
-#line 28 "tests/golden/run/fixedbugs582/pair.hero"
-    h5_ret0 = t4;
-#line 28 "tests/golden/run/fixedbugs582/pair.hero"
-    goto bb7;
-#line 28 "tests/golden/run/fixedbugs582/pair.hero"
-bb3:
-    t5 = h1_s0;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t6 = t5.as.c_flag;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h2_f = t6;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t7 = h2_f.f_f;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t7};
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t23 = h6_own6;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h6_own6 = t8;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h_0opt_e201354_release(&t23);
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t24 = h3_f0;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h_0opt_e201354_retain(&t8);
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h3_f0 = t8;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h_0opt_e201354_release(&t24);
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t9 = h3_f0;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t10 = t9.tag;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t11 = INT64_C(0);
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t12 = t10 == t11;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    if (t12) goto bb5; else goto bb6;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-bb4:
-    t17 = h1_s0;
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    t18 = t17.as.c_rect;
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    h4_r = t18;
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    t19 = h4_r.f_w;
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    t20 = h4_r.f_h;
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    if (__builtin_mul_overflow(t19, t20, &t21)) hero_panic_overflow();
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    h5_ret0 = t21;
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-    goto bb7;
-#line 30 "tests/golden/run/fixedbugs582/pair.hero"
-bb5:
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t15 = h3_f0;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t16 = t15.as.ok;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    h5_ret0 = t16;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    goto bb7;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-bb6:
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t13 = h3_f0;
-#line 29 "tests/golden/run/fixedbugs582/pair.hero"
-    t14 = t13.as.err;
-#line 457 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) { HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0, t1, t2, t5, t17; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t8, t9, t13, t15, t23, t24; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0, t3, t4, t10, t11, t16, t19, t20, t21, t22; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t12; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; h1_s0 = t1; t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; default: hero_unreachable(); } bb2:
+    t4 = INT64_C(0); h5_ret0 = t4; goto bb7; bb3:
+    t5 = h1_s0; t6 = t5.as.c_flag; h2_f = t6; t7 = h2_f.f_f; t8 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t7}; t23 = h6_own6; h6_own6 = t8; h_0opt_e201354_release(&t23); t24 = h3_f0; h_0opt_e201354_retain(&t8); h3_f0 = t8; h_0opt_e201354_release(&t24); t9 = h3_f0; t10 = t9.tag; t11 = INT64_C(0); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb4:
+    t17 = h1_s0; t18 = t17.as.c_rect; h4_r = t18; t19 = h4_r.f_w; t20 = h4_r.f_h; if (__builtin_mul_overflow(t19, t20, &t21)) hero_panic_overflow(); h5_ret0 = t21; goto bb7; bb5:
+#line 29
+    t15 = h3_f0; t16 = t15.as.ok; h5_ret0 = t16; goto bb7; bb6: t13 = h3_f0; t14 = t13.as.err;
+#line 275 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
     hero_panic_must(t14);
     hero_unreachable();
 bb7:

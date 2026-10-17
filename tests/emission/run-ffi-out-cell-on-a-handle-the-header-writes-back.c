@@ -141,11 +141,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffioutcellonahandletheheade
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "ffioutcellonahandletheheaderwritesback.c"
 #pragma clang diagnostic pop
@@ -165,75 +165,19 @@ void h_ffioutcellonahandletheheaderwritesback_main(void);
 
 #line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 void h_ffioutcellonahandletheheaderwritesback_main(void) {
-#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+#line 13
 #define h0_a (*hero_lend_h0_a)
-#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+#line 13
 #define h1_b (*hero_lend_h1_b)
-#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a"); void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b"); HERO_NODEBUG void *t1, *t2, *t6, *t7; HERO_NODEBUG int32_t t3, t4, t5; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-bb0:
-    t1 = ((void *)0);
-#line 14 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    h0_a = t1;
-    t2 = ((void *)0);
-#line 15 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    h1_b = t2;
-    hero_lend_local_name(hero_lend_h0_a, "make_into", "out");
-#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    t3 = make_into(&h0_a);
-#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_handle_acquired(h0_a, "eat");
-#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_lend_local_name(hero_lend_h1_b, "make_typedef", "out");
-#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    t4 = make_typedef(&h1_b);
-#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_handle_acquired(h1_b, "eat");
-#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
-#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_print_int(t5);
-#line 16 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_print_end();
-    t6 = h0_a;
-#line 17 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    {
-#line 17 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_handle_alive(t6, "the argument `p` of `eat`");
-#line 17 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t6, "eat", NULL);
-#line 17 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    (void)eat(t6);
-#line 17 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead();
-#line 17 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    }
-    t7 = h1_b;
-#line 18 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    {
-#line 18 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_handle_alive(t7, "the argument `p` of `eat`");
-#line 18 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t7, "eat", NULL);
-#line 18 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    (void)eat(t7);
-#line 18 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    if (hero_handle_ended(t7, hero_life_0_0) && h1_b == t7) h1_b = hero_handle_dead();
-#line 18 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    }
-    t8 = HERO_STR_LIT(hero_str_455ecde8);
-#line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_print_str(t8);
-#line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_print_end();
-#line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_lend_local_give(hero_lend_h1_b);
-#line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    hero_lend_local_give(hero_lend_h0_a);
-#line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    return;
-#line 237 "ffioutcellonahandletheheaderwritesback.c"
+#line 13
+    void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a"); void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b"); HERO_NODEBUG void *t1, *t2, *t6, *t7; HERO_NODEBUG int32_t t3, t4, t5; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = ((void *)0); h0_a = t1;
+    t2 = ((void *)0); h1_b = t2;
+    hero_lend_local_name(hero_lend_h0_a, "make_into", "out"); t3 = make_into(&h0_a); hero_handle_acquired(h0_a, "eat"); hero_lend_local_name(hero_lend_h1_b, "make_typedef", "out"); t4 = make_typedef(&h1_b); hero_handle_acquired(h1_b, "eat"); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow(); hero_print_int(t5); hero_print_end();
+    t6 = h0_a; { hero_handle_alive(t6, "the argument `p` of `eat`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t6, "eat", NULL); (void)eat(t6); if (hero_handle_ended(t6, hero_life_0_0) && h0_a == t6) h0_a = hero_handle_dead(); }
+    t7 = h1_b; { hero_handle_alive(t7, "the argument `p` of `eat`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t7, "eat", NULL); (void)eat(t7); if (hero_handle_ended(t7, hero_life_0_0) && h1_b == t7) h1_b = hero_handle_dead(); }
+    t8 = HERO_STR_LIT(hero_str_455ecde8); hero_print_str(t8); hero_print_end(); hero_lend_local_give(hero_lend_h1_b); hero_lend_local_give(hero_lend_h0_a); return;
+#line 181 "ffioutcellonahandletheheaderwritesback.c"
 }
 #undef h0_a
 #undef h1_b

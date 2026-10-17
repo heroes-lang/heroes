@@ -139,11 +139,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handlealiveafteranendinonea
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 149 "handlealiveafteranendinonearm.c"
 #pragma clang diagnostic pop
@@ -162,89 +162,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_handlealiveafteranendinonearm_main(void);
 
 #line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-void h_handlealiveafteranendinonearm_main(void) {
-#line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    node * h0_n; HERO_NODEBUG int64_t t1, t4, t5, t11; HERO_NODEBUG node *t2, *t3, *t7, *t10, *t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t8, t9; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 16 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    t2 = node_new(t1);
-#line 16 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_handle_acquired(t2, "node_free");
-#line 16 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    h0_n = t2;
-#line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    t3 = h0_n;
-#line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_handle_alive(t3, "the argument `n` of `node_peek`");
-#line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    t4 = node_peek(t3);
-#line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    t5 = INT64_C(100);
-#line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    t6 = t4 > t5;
-#line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 18 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-bb1:
-#line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    t9 = HERO_STR_LIT(hero_str_457adaeb);
-#line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    t10 = h0_n;
-#line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_handle_alive(t10, "the argument `n` of `node_peek`");
-#line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    t11 = node_peek(t10);
-#line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_print_str(t9);
-#line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_print_int(t11);
-#line 21 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_print_end();
-    t12 = h0_n;
-#line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    {
-#line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_handle_alive(t12, "the argument `n` of `node_free`");
-#line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "node_free", NULL);
-#line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    (void)node_free(t12);
-#line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    if (hero_handle_ended(t12, hero_life_0_0) && h0_n == t12) h0_n = hero_handle_dead();
-#line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    }
-#line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    return;
-#line 22 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-bb2:
-#line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    t7 = h0_n;
-#line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    {
-#line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_handle_alive(t7, "the argument `n` of `node_free`");
-#line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t7, "node_free", NULL);
-#line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    (void)node_free(t7);
-#line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    if (hero_handle_ended(t7, hero_life_0_0) && h0_n == t7) h0_n = hero_handle_dead();
-#line 19 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    }
-    t8 = HERO_STR_LIT(hero_str_543259bb);
-#line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_print_str(t8);
-#line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    hero_print_end();
-#line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    goto bb1;
-#line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-bb3:
-#line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    goto bb1;
-#line 248 "handlealiveafteranendinonearm.c"
+void h_handlealiveafteranendinonearm_main(void) { node * h0_n; HERO_NODEBUG int64_t t1, t4, t5, t11; HERO_NODEBUG node *t2, *t3, *t7, *t10, *t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); t2 = node_new(t1); hero_handle_acquired(t2, "node_free"); h0_n = t2;
+#line 18
+    t3 = h0_n; hero_handle_alive(t3, "the argument `n` of `node_peek`"); t4 = node_peek(t3); t5 = INT64_C(100); t6 = t4 > t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 21
+    t9 = HERO_STR_LIT(hero_str_457adaeb); t10 = h0_n; hero_handle_alive(t10, "the argument `n` of `node_peek`"); t11 = node_peek(t10); hero_print_str(t9); hero_print_int(t11); hero_print_end();
+    t12 = h0_n; { hero_handle_alive(t12, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t12, "node_free", NULL); (void)node_free(t12); if (hero_handle_ended(t12, hero_life_0_0) && h0_n == t12) h0_n = hero_handle_dead(); } return; bb2:
+#line 19
+    t7 = h0_n; { hero_handle_alive(t7, "the argument `n` of `node_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t7, "node_free", NULL); (void)node_free(t7); if (hero_handle_ended(t7, hero_life_0_0) && h0_n == t7) h0_n = hero_handle_dead(); }
+    t8 = HERO_STR_LIT(hero_str_543259bb); hero_print_str(t8); hero_print_end(); goto bb1; bb3: goto bb1;
+#line 176 "handlealiveafteranendinonearm.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteranendinonearm_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

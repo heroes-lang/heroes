@@ -138,11 +138,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsatransferthatfaile
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 148 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
 #pragma clang diagnostic pop
@@ -161,76 +161,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void) {
-#line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    node * h0_parent; node * h1_child; HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG node *t2, *t4, *t6, *t7, *t10; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int32_t t8, t9; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-bb0:
-    t1 = INT64_C(10);
-#line 12 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    t2 = node_new(t1);
-#line 12 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_handle_acquired(t2, "node_put");
-#line 12 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    h0_parent = t2;
-    t3 = INT64_C(5);
-#line 13 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    t4 = node_new(t3);
-#line 13 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_handle_acquired(t4, "node_put");
-#line 13 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    h1_child = t4;
-    t5 = HERO_STR_LIT(hero_str_6023594d);
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    t6 = h0_parent;
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    t7 = h1_child;
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    t8 = INT64_C(1);
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    {
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_handle_alive(t6, "the argument `parent` of `node_add`");
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_handle_alive(t7, "the argument `child` of `node_add`");
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    HERO_NODEBUG uint64_t hero_life_1_0 = hero_handle_transferring(t7, "node_put");
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    t9 = node_add(t6, t7, t8);
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    if (t9 == 0LL) {
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    if (hero_handle_ended(t7, hero_life_1_0) && h1_child == t7) h1_child = hero_handle_dead();
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    } else {
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_handle_kept(t7, hero_life_1_0);
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    }
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    }
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_print_str(t5);
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_print_int(t9);
-#line 14 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_print_end();
-    t10 = h0_parent;
-#line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    {
-#line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    hero_handle_alive(t10, "the argument `n` of `node_put`");
-#line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "node_put", NULL);
-#line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    (void)node_put(t10);
-#line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    if (hero_handle_ended(t10, hero_life_0_0) && h0_parent == t10) h0_parent = hero_handle_dead();
-#line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    }
-#line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    return;
-#line 234 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
+void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void) { node * h0_parent; node * h1_child; HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG node *t2, *t4, *t6, *t7, *t10; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int32_t t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(10); t2 = node_new(t1); hero_handle_acquired(t2, "node_put"); h0_parent = t2;
+    t3 = INT64_C(5); t4 = node_new(t3); hero_handle_acquired(t4, "node_put"); h1_child = t4;
+    t5 = HERO_STR_LIT(hero_str_6023594d); t6 = h0_parent; t7 = h1_child; t8 = INT64_C(1); { hero_handle_alive(t6, "the argument `parent` of `node_add`"); hero_handle_alive(t7, "the argument `child` of `node_add`"); HERO_NODEBUG uint64_t hero_life_1_0 = hero_handle_transferring(t7, "node_put"); t9 = node_add(t6, t7, t8); if (t9 == 0LL) { if (hero_handle_ended(t7, hero_life_1_0) && h1_child == t7) h1_child = hero_handle_dead(); } else { hero_handle_kept(t7, hero_life_1_0); } } hero_print_str(t5); hero_print_int(t9); hero_print_end();
+    t10 = h0_parent; { hero_handle_alive(t10, "the argument `n` of `node_put`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "node_put", NULL); (void)node_put(t10); if (hero_handle_ended(t10, hero_life_0_0) && h0_parent == t10) h0_parent = hero_handle_dead(); } return;
+#line 170 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

@@ -76,11 +76,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 86 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
 #pragma clang diagnostic pop
@@ -98,51 +98,19 @@ int64_t h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_V(void);
 void h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_main(void);
 
 #line 6 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-int64_t h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_V(void) {
-#line 6 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t5; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
-#line 6 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_5e45c63d);
-#line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    t2 = INT64_C(1);
-#line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    t3 = INT64_C(2);
-#line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    t4 = t2 == t3;
-#line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    if (t4) goto bb1; else goto bb2;
-#line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-bb1:
-    t5 = INT64_C(5);
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    return t5;
-#line 8 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-bb2:
-#line 123 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
+int64_t h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_V(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t5; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_5e45c63d); t2 = INT64_C(1); t3 = INT64_C(2); t4 = t2 == t3; if (t4) goto bb1; else goto bb2; bb1:
+    t5 = INT64_C(5); return t5; bb2:
+#line 105 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
     hero_panic_assert_sides(t1, hero_int_to_str(t2), hero_int_to_str(t3));
     hero_unreachable();
 }
 
 #line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-void h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_main(void) {
-#line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    hero_print_int(t1);
-#line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    hero_print_end();
-    t2 = h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_V();
-#line 12 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    hero_print_int(t2);
-#line 12 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    hero_print_end();
-#line 12 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    return;
-#line 146 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
+void h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); hero_print_int(t1); hero_print_end();
+    t2 = h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_V(); hero_print_int(t2); hero_print_end(); return;
+#line 114 "fixedbugs580aconstantwhoseassertfailsabortswhereitisread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -71,7 +71,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 22 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
 _Static_assert(_Generic(&((Inner *)0)->s, Slot * *: 1, default: 0) && sizeof(((Inner *)0)->s) == sizeof(Slot *), "heroes-ffi-field Inner s");
-#line 24 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
+#line 24
 _Static_assert(_Generic(&((Pair *)0)->a, Inner *: 1, default: 0) && sizeof(((Pair *)0)->a) == sizeof(Inner), "heroes-ffi-field Pair a");
 _Static_assert(_Generic(&((Pair *)0)->b, Inner *: 1, default: 0) && sizeof(((Pair *)0)->b) == sizeof(Inner), "heroes-ffi-field Pair b");
 #line 78 "fixedbugstheunacquiredsiblingleaksloudly.c"
@@ -156,11 +156,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugstheunacquiredsibli
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 166 "fixedbugstheunacquiredsiblingleaksloudly.c"
 #pragma clang diagnostic pop
@@ -190,61 +190,13 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-void h_fixedbugstheunacquiredsiblingleaksloudly_main(void) {
-#line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    Pair h0_p; HERO_NODEBUG int64_t t1, t4, t6, t7; HERO_NODEBUG Pair t2; HERO_NODEBUG Slot *t3, *t5, *t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
-#line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    t2 = pair_open(t1);
-#line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_handle_acquired(t2.a.s, "slot_close");
-#line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_handle_acquired(t2.b.s, "slot_close");
-#line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    h0_p = t2;
-#line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_pad_fill(&h0_p, sizeof(Pair), 1, hero_pad_g_2, hero_pad_n_2);
-    t3 = h0_p.a.s;
-#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_handle_alive(t3, "the argument `s` of `slot_value`");
-#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    t4 = slot_value(t3);
-#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    t5 = h0_p.b.s;
-#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_handle_alive(t5, "the argument `s` of `slot_value`");
-#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    t6 = slot_value(t5);
-#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    if (__builtin_add_overflow(t4, t6, &t7)) hero_panic_overflow();
-#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_print_int(t7);
-#line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_print_end();
-#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    t8 = h0_p.a.s;
-#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    {
-#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_handle_alive(t8, "the argument `s` of `slot_close`");
-#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "slot_close", NULL);
-#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    (void)slot_close(t8);
-#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    if (hero_handle_ended(t8, hero_life_0_0) && h0_p.a.s == t8) h0_p.a.s = hero_handle_dead();
-#line 35 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    }
-    t9 = HERO_STR_LIT(hero_str_38da945e);
-#line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_print_str(t9);
-#line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    hero_print_end();
-#line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    return;
-#line 248 "fixedbugstheunacquiredsiblingleaksloudly.c"
+void h_fixedbugstheunacquiredsiblingleaksloudly_main(void) { Pair h0_p; HERO_NODEBUG int64_t t1, t4, t6, t7; HERO_NODEBUG Pair t2; HERO_NODEBUG Slot *t3, *t5, *t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); t2 = pair_open(t1); hero_handle_acquired(t2.a.s, "slot_close"); hero_handle_acquired(t2.b.s, "slot_close"); h0_p = t2; hero_pad_fill(&h0_p, sizeof(Pair), 1, hero_pad_g_2, hero_pad_n_2);
+    t3 = h0_p.a.s; hero_handle_alive(t3, "the argument `s` of `slot_value`"); t4 = slot_value(t3); t5 = h0_p.b.s; hero_handle_alive(t5, "the argument `s` of `slot_value`"); t6 = slot_value(t5); if (__builtin_add_overflow(t4, t6, &t7)) hero_panic_overflow(); hero_print_int(t7); hero_print_end();
+#line 35
+    t8 = h0_p.a.s; { hero_handle_alive(t8, "the argument `s` of `slot_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "slot_close", NULL); (void)slot_close(t8); if (hero_handle_ended(t8, hero_life_0_0) && h0_p.a.s == t8) h0_p.a.s = hero_handle_dead(); }
+    t9 = HERO_STR_LIT(hero_str_38da945e); hero_print_str(t9); hero_print_end(); return;
+#line 200 "fixedbugstheunacquiredsiblingleaksloudly.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstheunacquiredsiblingleaksloudly_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

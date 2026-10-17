@@ -137,11 +137,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_abortnullcstrintoc_strstr(c
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 147 "abortnullcstrintoc.c"
 #pragma clang diagnostic pop
@@ -158,60 +158,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_abortnullcstrintoc_main(void);
 
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
-void h_abortnullcstrintoc_main(void) {
-#line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
-    const char * h0_absent; HERO_NODEBUG HeroStr t1, t2, t4, t8, t13; HERO_NODEBUG const char *t3, *t5, *t6, *t7, *t9, *t10, *t11; HERO_NODEBUG bool t12; HERO_ENTRY_STOP; goto bb0;
-#line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_43560e4d);
-#line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
-    hero_print_str(t1);
-#line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
-    hero_print_end();
-#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t2 = HERO_STR_LIT(hero_str_1998f2);
-#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t3 = hero_str_lend(t2);
-#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t4 = HERO_STR_LIT(hero_str_203132);
-#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t5 = hero_str_lend(t4);
-#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t6 = (const char *)strstr(hero_cstr_nonnull(t3), hero_cstr_nonnull(t5));
-#line 27 "tests/golden/run/abort-null-cstr-into-c.hero"
-    h0_absent = t6;
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t7 = h0_absent;
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t8 = HERO_STR_LIT(hero_str_79);
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t9 = hero_str_lend(t8);
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t10 = (const char *)strstr(hero_cstr_nonnull(t7), hero_cstr_nonnull(t9));
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t11 = ((void *)0);
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-    t12 = t10 == t11;
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-    if (t12) goto bb2; else goto bb3;
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-bb1:
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-    return;
-#line 33 "tests/golden/run/abort-null-cstr-into-c.hero"
-bb2:
-    t13 = HERO_STR_LIT(hero_str_187ae0ee);
-#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
-    hero_print_str(t13);
-#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
-    hero_print_end();
-#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
-    goto bb1;
-#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
-bb3:
-#line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
-    goto bb1;
-#line 215 "abortnullcstrintoc.c"
+void h_abortnullcstrintoc_main(void) { const char * h0_absent; HERO_NODEBUG HeroStr t1, t2, t4, t8, t13; HERO_NODEBUG const char *t3, *t5, *t6, *t7, *t9, *t10, *t11; HERO_NODEBUG bool t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
+#line 27
+    t2 = HERO_STR_LIT(hero_str_1998f2); t3 = hero_str_lend(t2); t4 = HERO_STR_LIT(hero_str_203132); t5 = hero_str_lend(t4); t6 = (const char *)strstr(hero_cstr_nonnull(t3), hero_cstr_nonnull(t5)); h0_absent = t6;
+#line 33
+    t7 = h0_absent; t8 = HERO_STR_LIT(hero_str_79); t9 = hero_str_lend(t8); t10 = (const char *)strstr(hero_cstr_nonnull(t7), hero_cstr_nonnull(t9)); t11 = ((void *)0); t12 = t10 == t11; if (t12) goto bb2; else goto bb3; bb1: return; bb2:
+    t13 = HERO_STR_LIT(hero_str_187ae0ee); hero_print_str(t13); hero_print_end(); goto bb1; bb3: goto bb1;
+#line 169 "abortnullcstrintoc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

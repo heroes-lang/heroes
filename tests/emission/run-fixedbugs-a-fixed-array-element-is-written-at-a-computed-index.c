@@ -62,15 +62,13 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #endif
 
 #line 18 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-_Static_assert(sizeof(struct quad) - __builtin_offsetof(struct quad, a) != 0, "heroes-ffi-flex Quad a");
-#line 18 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-_Static_assert(_Generic(&((struct quad *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int32_t) && (((_Bool)-1 < 0) == ((int32_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int32_t) && (((char)-1 < 0) == ((int32_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int32_t) && (((signed char)-1 < 0) == ((int32_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int32_t) && (((short)-1 < 0) == ((int32_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int32_t) && (((int)-1 < 0) == ((int32_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int32_t) && (((long)-1 < 0) == ((int32_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int32_t) && (((long long)-1 < 0) == ((int32_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int32_t) && (((unsigned char)-1 < 0) == ((int32_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int32_t) && (((unsigned short)-1 < 0) == ((int32_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int32_t) && (((unsigned int)-1 < 0) == ((int32_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int32_t) && (((unsigned long)-1 < 0) == ((int32_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int32_t) && (((unsigned long long)-1 < 0) == ((int32_t)-1 < 0))), default: 0), "heroes-ffi-field Quad a");
+_Static_assert(sizeof(struct quad) - __builtin_offsetof(struct quad, a) != 0, "heroes-ffi-flex Quad a"); _Static_assert(_Generic(&((struct quad *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int32_t) && (((_Bool)-1 < 0) == ((int32_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int32_t) && (((char)-1 < 0) == ((int32_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int32_t) && (((signed char)-1 < 0) == ((int32_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int32_t) && (((short)-1 < 0) == ((int32_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int32_t) && (((int)-1 < 0) == ((int32_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int32_t) && (((long)-1 < 0) == ((int32_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int32_t) && (((long long)-1 < 0) == ((int32_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int32_t) && (((unsigned char)-1 < 0) == ((int32_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int32_t) && (((unsigned short)-1 < 0) == ((int32_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int32_t) && (((unsigned int)-1 < 0) == ((int32_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int32_t) && (((unsigned long)-1 < 0) == ((int32_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int32_t) && (((unsigned long long)-1 < 0) == ((int32_t)-1 < 0))), default: 0), "heroes-ffi-field Quad a");
 _Static_assert(__builtin_classify_type(((struct quad *)0)->after) == 1 && sizeof(((struct quad *)0)->after) == sizeof(int64_t) && (_Generic(((struct quad *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Quad after");
-#line 70 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 68 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
 
 #line 17 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
 _Static_assert(__builtin_classify_type(*(struct quad *)0) != 13, "heroes-ffi-union Quad a after");
-#line 74 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 72 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -151,13 +149,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsafixedarrayelement
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 159 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswrittenatacomputedindex_Quad_eq(const struct quad *a, const struct quad *b);
@@ -184,254 +182,26 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 22 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_bump(struct quad *ph0_q, int64_t h1_at) {
-#line 22 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    HERO_NODEBUG int64_t t1, t4, t8, t11; HERO_NODEBUG struct quad t2, t9; HERO_NODEBUG int32_t t5, t6, t7, t12, t13, t14; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-bb0:
-    t1 = h1_at;
-#line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t2 = (*ph0_q);
-#line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t4 = h1_at;
-#line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t5 = t2.a[((uint64_t)(t4) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t4))];
-#line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t6 = INT64_C(100);
-#line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    (*ph0_q).a[((uint64_t)(t1) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t1))] = t7;
-    t8 = INT64_C(0);
-#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t9 = (*ph0_q);
-#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t11 = INT64_C(0);
-#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t12 = t9.a[((uint64_t)(t11) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t11))];
-#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t13 = INT64_C(1);
-#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    (*ph0_q).a[((uint64_t)(t8) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t8))] = t14;
-#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    return;
-#line 221 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_bump(struct quad *ph0_q, int64_t h1_at) { HERO_NODEBUG int64_t t1, t4, t8, t11; HERO_NODEBUG struct quad t2, t9; HERO_NODEBUG int32_t t5, t6, t7, t12, t13, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_at; t2 = (*ph0_q); t4 = h1_at; t5 = t2.a[((uint64_t)(t4) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t4))]; t6 = INT64_C(100); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow(); (*ph0_q).a[((uint64_t)(t1) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t1))] = t7;
+    t8 = INT64_C(0); t9 = (*ph0_q); t11 = INT64_C(0); t12 = t9.a[((uint64_t)(t11) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t11))]; t13 = INT64_C(1); if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow(); (*ph0_q).a[((uint64_t)(t8) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t8))] = t14; return;
+#line 189 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_main(void) {
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    struct quad h0_q; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t10, *t13, *t16, *t51, *t70, *t71, *t72; HERO_NODEBUG int64_t h2_i0, t6, t8, t9, t11, t12, t14, t17, t18, t19, t22, t26, t27, t28, t31, t36, t41, t46, t50, t52, t53, t54, t55, t58, t63, t66, t69; int64_t h3_i; int64_t h4_last; HERO_NODEBUG int32_t t1, t2, t3, t4, t23, t24, t25, t32, t37, t42, t47, t59, t64; HERO_NODEBUG struct quad t7, t20, t29, t34, t39, t44, t49, t56, t61, t68; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t33, t38, t43, t48, t60, t65, t67; HERO_ENTRY_STOP; goto bb0;
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t2 = INT64_C(2);
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t3 = INT64_C(3);
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t4 = INT64_C(4);
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t6 = INT64_C(1000);
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t7 = (struct quad){.a = {t1, t2, t3, t4}, .after = t6};
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h0_q = t7;
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_pad_fill(&h0_q, sizeof(struct quad), 1, hero_pad_g_0, hero_pad_n_0);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t8 = INT64_C(0);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t9 = INT64_C(4);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t10 = h_library_range(t8, t9);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t70 = h5_own5;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h5_own5 = t10;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_array_decref(t70);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t71 = h1_xs0;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_array_incref(t10);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h1_xs0 = t10;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_array_decref(t71);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t11 = INT64_C(0);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h2_i0 = t11;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    goto bb1;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-bb1:
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t12 = h2_i0;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t13 = h1_xs0;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t15 = t12 < t14;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    if (t15) goto bb2; else goto bb4;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-bb2:
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t16 = h1_xs0;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t17 = h2_i0;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h3_i = t18;
-    t19 = h3_i;
-#line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t20 = h0_q;
-#line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t22 = h3_i;
-#line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t23 = t20.a[((uint64_t)(t22) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t22))];
-#line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t24 = INT64_C(10);
-#line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    if (__builtin_mul_overflow(t23, t24, &t25)) hero_panic_overflow();
-#line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h0_q.a[((uint64_t)(t19) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t19))] = t25;
-#line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    goto bb3;
-#line 30 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-bb3:
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t26 = h2_i0;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t27 = INT64_C(1);
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow();
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h2_i0 = t28;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    goto bb1;
-#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-bb4:
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t29 = h0_q;
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t31 = INT64_C(0);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t32 = t29.a[((uint64_t)(t31) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t31))];
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t33 = HERO_STR_LIT(hero_str_20);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t34 = h0_q;
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t36 = INT64_C(1);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t37 = t34.a[((uint64_t)(t36) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t36))];
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t38 = HERO_STR_LIT(hero_str_20);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t39 = h0_q;
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t41 = INT64_C(2);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t42 = t39.a[((uint64_t)(t41) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t41))];
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t43 = HERO_STR_LIT(hero_str_20);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t44 = h0_q;
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t46 = INT64_C(3);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t47 = t44.a[((uint64_t)(t46) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t46))];
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t48 = HERO_STR_LIT(hero_str_62fc778b);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t49 = h0_q;
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t50 = quad_sum(t49);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_int(t32);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_str(t33);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_int(t37);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_str(t38);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_int(t42);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_str(t43);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_int(t47);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_str(t48);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_int(t50);
-#line 32 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_end();
-    t51 = h_library_args();
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t72 = h6_own6;
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h6_own6 = t51;
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_array_decref(t72);
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len);
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t53 = INT64_C(3);
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    if (__builtin_add_overflow(t52, t53, &t54)) hero_panic_overflow();
-#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h4_last = t54;
-    t55 = h4_last;
-#line 34 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    h_fixedbugsafixedarrayelementiswrittenatacomputedindex_bump(&h0_q, t55);
-    t56 = h0_q;
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t58 = INT64_C(0);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t59 = t56.a[((uint64_t)(t58) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t58))];
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t60 = HERO_STR_LIT(hero_str_20);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t61 = h0_q;
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t63 = INT64_C(3);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t64 = t61.a[((uint64_t)(t63) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t63))];
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t65 = HERO_STR_LIT(hero_str_1d925d25);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t66 = h0_q.after;
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t67 = HERO_STR_LIT(hero_str_62fc778b);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t68 = h0_q;
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    t69 = quad_sum(t68);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_int(t59);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_str(t60);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_int(t64);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_str(t65);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_int(t66);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_str(t67);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_int(t69);
-#line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
-    hero_print_end();
-#line 435 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_main(void) { struct quad h0_q; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t10, *t13, *t16, *t51, *t70, *t71, *t72; HERO_NODEBUG int64_t h2_i0, t6, t8, t9, t11, t12, t14, t17, t18, t19, t22, t26, t27, t28, t31, t36, t41, t46, t50, t52, t53, t54, t55, t58, t63, t66, t69; int64_t h3_i; int64_t h4_last; HERO_NODEBUG int32_t t1, t2, t3, t4, t23, t24, t25, t32, t37, t42, t47, t59, t64; HERO_NODEBUG struct quad t7, t20, t29, t34, t39, t44, t49, t56, t61, t68; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t33, t38, t43, t48, t60, t65, t67; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = INT64_C(3); t4 = INT64_C(4); t6 = INT64_C(1000); t7 = (struct quad){.a = {t1, t2, t3, t4}, .after = t6}; h0_q = t7; hero_pad_fill(&h0_q, sizeof(struct quad), 1, hero_pad_g_0, hero_pad_n_0);
+#line 29
+    t8 = INT64_C(0); t9 = INT64_C(4); t10 = h_library_range(t8, t9); t70 = h5_own5; h5_own5 = t10; hero_array_decref(t70); t71 = h1_xs0; hero_array_incref(t10); h1_xs0 = t10; hero_array_decref(t71); t11 = INT64_C(0); h2_i0 = t11; goto bb1; bb1: t12 = h2_i0; t13 = h1_xs0; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = t12 < t14; if (t15) goto bb2; else goto bb4; bb2: t16 = h1_xs0; t17 = h2_i0; t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? ((void)hero_array_at(t16, t17), hero_unreachable()) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]); h3_i = t18;
+    t19 = h3_i; t20 = h0_q; t22 = h3_i; t23 = t20.a[((uint64_t)(t22) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t22))]; t24 = INT64_C(10); if (__builtin_mul_overflow(t23, t24, &t25)) hero_panic_overflow(); h0_q.a[((uint64_t)(t19) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t19))] = t25; goto bb3; bb3:
+#line 29
+    t26 = h2_i0; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow(); h2_i0 = t28; goto bb1; bb4:
+#line 32
+    t29 = h0_q; t31 = INT64_C(0); t32 = t29.a[((uint64_t)(t31) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t31))]; t33 = HERO_STR_LIT(hero_str_20); t34 = h0_q; t36 = INT64_C(1); t37 = t34.a[((uint64_t)(t36) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t36))]; t38 = HERO_STR_LIT(hero_str_20); t39 = h0_q; t41 = INT64_C(2); t42 = t39.a[((uint64_t)(t41) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t41))]; t43 = HERO_STR_LIT(hero_str_20); t44 = h0_q; t46 = INT64_C(3); t47 = t44.a[((uint64_t)(t46) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t46))]; t48 = HERO_STR_LIT(hero_str_62fc778b); t49 = h0_q; t50 = quad_sum(t49); hero_print_int(t32); hero_print_str(t33); hero_print_int(t37); hero_print_str(t38); hero_print_int(t42); hero_print_str(t43); hero_print_int(t47); hero_print_str(t48); hero_print_int(t50); hero_print_end();
+    t51 = h_library_args(); t72 = h6_own6; h6_own6 = t51; hero_array_decref(t72); t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len); t53 = INT64_C(3); if (__builtin_add_overflow(t52, t53, &t54)) hero_panic_overflow(); h4_last = t54;
+    t55 = h4_last; h_fixedbugsafixedarrayelementiswrittenatacomputedindex_bump(&h0_q, t55);
+    t56 = h0_q; t58 = INT64_C(0); t59 = t56.a[((uint64_t)(t58) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t58))]; t60 = HERO_STR_LIT(hero_str_20); t61 = h0_q; t63 = INT64_C(3); t64 = t61.a[((uint64_t)(t63) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t63))]; t65 = HERO_STR_LIT(hero_str_1d925d25); t66 = h0_q.after; t67 = HERO_STR_LIT(hero_str_62fc778b); t68 = h0_q; t69 = quad_sum(t68); hero_print_int(t59); hero_print_str(t60); hero_print_int(t64); hero_print_str(t65); hero_print_int(t66); hero_print_str(t67); hero_print_int(t69); hero_print_end();
+#line 205 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h5_own5);
     hero_array_release_at(&h6_own6);
@@ -439,58 +209,14 @@ bb4:
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 26 "<heroes library>"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 27 "<heroes library>"
-    t13 = h4_own4;
-#line 27 "<heroes library>"
-    h4_own4 = t1;
-#line 27 "<heroes library>"
-    hero_array_decref(t13);
-#line 27 "<heroes library>"
-    t14 = h2_out;
-#line 27 "<heroes library>"
-    hero_array_incref(t1);
-#line 27 "<heroes library>"
-    h2_out = t1;
-#line 27 "<heroes library>"
-    hero_array_decref(t14);
-    t2 = h0_from;
-#line 28 "<heroes library>"
-    h3_i = t2;
-#line 28 "<heroes library>"
-    goto bb1;
-#line 28 "<heroes library>"
-bb1:
-    t3 = h3_i;
-#line 29 "<heroes library>"
-    t4 = h1_to;
-#line 29 "<heroes library>"
-    t5 = t3 < t4;
-#line 29 "<heroes library>"
-    if (t5) goto bb2; else goto bb3;
-#line 29 "<heroes library>"
-bb2:
-    t7 = h3_i;
-#line 30 "<heroes library>"
-    hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i;
-#line 31 "<heroes library>"
-    t10 = INT64_C(1);
-#line 31 "<heroes library>"
-    if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow();
-#line 31 "<heroes library>"
-    h3_i = t11;
-#line 31 "<heroes library>"
-    goto bb1;
-#line 31 "<heroes library>"
-bb3:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
+    t2 = h0_from; h3_i = t2; goto bb1; bb1:
+    t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow(); h3_i = t11; goto bb1; bb3:
     t12 = h2_out;
-#line 494 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 220 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -498,66 +224,14 @@ bb3:
 }
 
 #line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(void) {
-#line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 196 "<heroes library>"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 197 "<heroes library>"
-    t14 = h2_own2;
-#line 197 "<heroes library>"
-    h2_own2 = t1;
-#line 197 "<heroes library>"
-    hero_array_decref(t14);
-#line 197 "<heroes library>"
-    t15 = h0_out;
-#line 197 "<heroes library>"
-    hero_array_incref(t1);
-#line 197 "<heroes library>"
-    h0_out = t1;
-#line 197 "<heroes library>"
-    hero_array_decref(t15);
-    t2 = INT64_C(0);
-#line 198 "<heroes library>"
-    h1_i = t2;
-#line 198 "<heroes library>"
-    goto bb1;
-#line 198 "<heroes library>"
-bb1:
-    t3 = h1_i;
-#line 199 "<heroes library>"
-    t4 = hero_args_count();
-#line 199 "<heroes library>"
-    t5 = t3 < t4;
-#line 199 "<heroes library>"
-    if (t5) goto bb2; else goto bb3;
-#line 199 "<heroes library>"
-bb2:
-    t7 = h1_i;
-#line 200 "<heroes library>"
-    t8 = hero_args_at(t7);
-#line 200 "<heroes library>"
-    t16 = h3_own3;
-#line 200 "<heroes library>"
-    h3_own3 = t8;
-#line 200 "<heroes library>"
-    hero_str_decref(t16);
-#line 200 "<heroes library>"
-    hero_array_push_owned(&h0_out, &t8);
-    t10 = h1_i;
-#line 201 "<heroes library>"
-    t11 = INT64_C(1);
-#line 201 "<heroes library>"
-    if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 201 "<heroes library>"
-    h1_i = t12;
-#line 201 "<heroes library>"
-    goto bb1;
-#line 201 "<heroes library>"
-bb3:
+HeroArrayHeader * h_library_args(void) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t14 = h2_own2; h2_own2 = t1; hero_array_decref(t14); t15 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t15);
+    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
+    t3 = h1_i; t4 = hero_args_count(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h1_i; t8 = hero_args_at(t7); t16 = h3_own3; h3_own3 = t8; hero_str_decref(t16); hero_array_push_owned(&h0_out, &t8);
+    t10 = h1_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h1_i = t12; goto bb1; bb3:
     t13 = h0_out;
-#line 561 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 235 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

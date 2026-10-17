@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "fixedbugsafloatwithadigitseparator.c"
 #pragma clang diagnostic pop
@@ -95,55 +95,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsafloatwithadigitseparator_main(void);
 
 #line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-void h_fixedbugsafloatwithadigitseparator_main(void) {
-#line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    double h0_left; double h1_right; double h2_both; double h3_plain; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
-#line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-bb0:
-    t1 = 0x1.5p+3;
-#line 30 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    h0_left = t1;
-    t2 = 0x1.8cccccccccccdp+0;
-#line 31 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    h1_right = t2;
-    t3 = 0x1.f4000346dc5d6p+9;
-#line 32 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    h2_both = t3;
-    t4 = 0x1.5p+3;
-#line 33 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    h3_plain = t4;
-    t5 = h0_left;
-#line 34 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_f64(t5);
-#line 34 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_end();
-    t6 = h1_right;
-#line 35 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_f64(t6);
-#line 35 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_end();
-    t7 = h2_both;
-#line 36 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_f64(t7);
-#line 36 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_end();
-    t8 = h3_plain;
-#line 37 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_f64(t8);
-#line 37 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_end();
-    t9 = h0_left;
-#line 38 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    t10 = h3_plain;
-#line 38 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    t11 = t9 == t10;
-#line 38 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_bool(t11);
-#line 38 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    hero_print_end();
-#line 38 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    return;
-#line 147 "fixedbugsafloatwithadigitseparator.c"
+void h_fixedbugsafloatwithadigitseparator_main(void) { double h0_left; double h1_right; double h2_both; double h3_plain; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1.5p+3; h0_left = t1;
+    t2 = 0x1.8cccccccccccdp+0; h1_right = t2;
+    t3 = 0x1.f4000346dc5d6p+9; h2_both = t3;
+    t4 = 0x1.5p+3; h3_plain = t4;
+    t5 = h0_left; hero_print_f64(t5); hero_print_end();
+    t6 = h1_right; hero_print_f64(t6); hero_print_end();
+    t7 = h2_both; hero_print_f64(t7); hero_print_end();
+    t8 = h3_plain; hero_print_f64(t8); hero_print_end();
+    t9 = h0_left; t10 = h3_plain; t11 = t9 == t10; hero_print_bool(t11); hero_print_end(); return;
+#line 109 "fixedbugsafloatwithadigitseparator.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

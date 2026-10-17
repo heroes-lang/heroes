@@ -140,7 +140,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 21 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs436achildthatstopsiswaitedonandnotkilled_kill(int32_t a0, int32_t a1) { (void)(kill)(a0, a1); }
-#line 28 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
+#line 28
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs436achildthatstopsiswaitedonandnotkilled_hero_run_arg(HeroStr a0) { (void)(hero_run_arg)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs436achildthatstopsiswaitedonandnotkilled_hero_run_limit(int64_t a0) { (void)(hero_run_limit)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs436achildthatstopsiswaitedonandnotkilled_hero_run_go(const char * a0, const char * a1, const char * a2, const char * a3, int64_t * a4) { (void)(hero_run_go)(a0, a1, a2, a3, (void *)a4); }
@@ -148,11 +148,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs436achildthatstops
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 158 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 #pragma clang diagnostic pop
@@ -203,32 +203,16 @@ int32_t h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP(void) {
 
 #line 33 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 HeroStr h_fixedbugs436achildthatstopsiswaitedonandnotkilled_itself(void) {
-#line 33 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
+#line 33
 #define h0_status (*hero_lend_h0_status)
-#line 33 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
+#line 33
 #define h1_marks (*hero_lend_h1_marks)
-#line 33 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs436achildthatstopsiswaitedonandnotkilled.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs436achildthatstopsiswaitedonandnotkilled.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
-#line 33 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 34 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    h0_status = t1;
-    t2 = INT64_C(0);
-#line 35 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    h1_marks = t2;
-    hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status");
-#line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks");
-#line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks);
-#line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t4 = h2_own2;
-#line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    h2_own2 = t3;
-#line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_str_decref(t4);
-#line 232 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 33
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs436achildthatstopsiswaitedonandnotkilled.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs436achildthatstopsiswaitedonandnotkilled.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_status = t1;
+    t2 = INT64_C(0); h1_marks = t2;
+    hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
+#line 216 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -240,113 +224,25 @@ bb0:
 
 #line 38 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 void h_fixedbugs436achildthatstopsiswaitedonandnotkilled_main(void) {
-#line 38 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
+#line 38
 #define h1_status (*hero_lend_h1_status)
-#line 38 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    HeroStr h0_program = {0}; int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs436achildthatstopsiswaitedonandnotkilled.main", "status"); int64_t h2_code; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t25; HERO_NODEBUG HeroStr h4_own4 = {0}, t8, t9, t10, t11, t14, t16, t18, t20, t23, t26, t27; HERO_NODEBUG int64_t t2, t3, t12, t13, t22, t24; HERO_NODEBUG bool t4; HERO_NODEBUG int32_t t5, t6; HERO_NODEBUG const char *t15, *t17, *t19, *t21; HERO_ENTRY_STOP; goto bb0;
-#line 38 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-bb0:
-    t1 = h_library_args();
-#line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t25 = h3_own3;
-#line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    h3_own3 = t1;
-#line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_array_decref(t25);
-#line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
-#line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t3 = INT64_C(0);
-#line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t4 = t2 > t3;
-#line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    if (t4) goto bb2; else goto bb3;
-#line 39 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-bb1:
-#line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t9 = h_fixedbugs436achildthatstopsiswaitedonandnotkilled_itself();
-#line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t26 = h4_own4;
-#line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    h4_own4 = t9;
-#line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_str_decref(t26);
-#line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t27 = h0_program;
-#line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_str_incref(t9);
-#line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    h0_program = t9;
-#line 44 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_str_decref(t27);
+#line 38
+    HeroStr h0_program = {0}; int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs436achildthatstopsiswaitedonandnotkilled.main", "status"); int64_t h2_code; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t25; HERO_NODEBUG HeroStr h4_own4 = {0}, t8, t9, t10, t11, t14, t16, t18, t20, t23, t26, t27; HERO_NODEBUG int64_t t2, t3, t12, t13, t22, t24; HERO_NODEBUG bool t4; HERO_NODEBUG int32_t t5, t6; HERO_NODEBUG const char *t15, *t17, *t19, *t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_library_args(); t25 = h3_own3; h3_own3 = t1; hero_array_decref(t25); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 > t3; if (t4) goto bb2; else goto bb3; bb1:
+#line 44
+    t9 = h_fixedbugs436achildthatstopsiswaitedonandnotkilled_itself(); t26 = h4_own4; h4_own4 = t9; hero_str_decref(t26); t27 = h0_program; hero_str_incref(t9); h0_program = t9; hero_str_decref(t27);
     (void)hero_run_reset();
-    t10 = h0_program;
-#line 46 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    (void)hero_run_arg(t10);
-    t11 = HERO_STR_LIT(hero_str_57d8beb1);
-#line 47 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    (void)hero_run_arg(t11);
-    t12 = INT64_C(2);
-#line 48 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    (void)hero_run_limit(t12);
-    t13 = INT64_C(0);
-#line 49 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    h1_status = t13;
-    t14 = h0_program;
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t15 = hero_str_lend(t14);
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t16 = HERO_STR_LIT(hero_str_0);
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t17 = hero_str_lend(t16);
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t18 = HERO_STR_LIT(hero_str_0);
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t19 = hero_str_lend(t18);
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t20 = HERO_STR_LIT(hero_str_0);
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t21 = hero_str_lend(t20);
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_lend_local_name(hero_lend_h1_status, "hero_run_go", "status");
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t22 = hero_run_go(hero_cstr_nonnull(t15), hero_cstr_nonnull(t17), hero_cstr_nonnull(t19), hero_cstr_nonnull(t21), (void *)&h1_status);
-#line 50 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    h2_code = t22;
+    t10 = h0_program; (void)hero_run_arg(t10);
+    t11 = HERO_STR_LIT(hero_str_57d8beb1); (void)hero_run_arg(t11);
+    t12 = INT64_C(2); (void)hero_run_limit(t12);
+    t13 = INT64_C(0); h1_status = t13;
+    t14 = h0_program; t15 = hero_str_lend(t14); t16 = HERO_STR_LIT(hero_str_0); t17 = hero_str_lend(t16); t18 = HERO_STR_LIT(hero_str_0); t19 = hero_str_lend(t18); t20 = HERO_STR_LIT(hero_str_0); t21 = hero_str_lend(t20); hero_lend_local_name(hero_lend_h1_status, "hero_run_go", "status"); t22 = hero_run_go(hero_cstr_nonnull(t15), hero_cstr_nonnull(t17), hero_cstr_nonnull(t19), hero_cstr_nonnull(t21), (void *)&h1_status); h2_code = t22;
     (void)hero_run_reset();
-    t23 = HERO_STR_LIT(hero_str_408405b7);
-#line 52 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t24 = h2_code;
-#line 52 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_print_str(t23);
-#line 52 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_print_int(t24);
-#line 52 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_print_end();
-#line 52 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    goto bb4;
-#line 52 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-bb2:
-#line 41 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t5 = getpid();
-#line 41 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    t6 = h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP();
-#line 41 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    (void)kill(t5, t6);
-    t8 = HERO_STR_LIT(hero_str_5f1d4b1c);
-#line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_print_str(t8);
-#line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    hero_print_end();
-#line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    goto bb4;
-#line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-bb3:
-#line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-    goto bb1;
-#line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
-bb4:
-#line 350 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+    t23 = HERO_STR_LIT(hero_str_408405b7); t24 = h2_code; hero_print_str(t23); hero_print_int(t24); hero_print_end(); goto bb4; bb2:
+#line 41
+    t5 = getpid(); t6 = h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP(); (void)kill(t5, t6);
+    t8 = HERO_STR_LIT(hero_str_5f1d4b1c); hero_print_str(t8); hero_print_end(); goto bb4; bb3: goto bb1; bb4:
+#line 246 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_release_at(&h0_program);
     hero_array_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -356,66 +252,14 @@ bb4:
 #undef h1_status
 
 #line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(void) {
-#line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 196 "<heroes library>"
-bb0:
-    t1 = hero_array_new(&hero_desc_str, 1);
-#line 197 "<heroes library>"
-    t14 = h2_own2;
-#line 197 "<heroes library>"
-    h2_own2 = t1;
-#line 197 "<heroes library>"
-    hero_array_decref(t14);
-#line 197 "<heroes library>"
-    t15 = h0_out;
-#line 197 "<heroes library>"
-    hero_array_incref(t1);
-#line 197 "<heroes library>"
-    h0_out = t1;
-#line 197 "<heroes library>"
-    hero_array_decref(t15);
-    t2 = INT64_C(0);
-#line 198 "<heroes library>"
-    h1_i = t2;
-#line 198 "<heroes library>"
-    goto bb1;
-#line 198 "<heroes library>"
-bb1:
-    t3 = h1_i;
-#line 199 "<heroes library>"
-    t4 = hero_args_count();
-#line 199 "<heroes library>"
-    t5 = t3 < t4;
-#line 199 "<heroes library>"
-    if (t5) goto bb2; else goto bb3;
-#line 199 "<heroes library>"
-bb2:
-    t7 = h1_i;
-#line 200 "<heroes library>"
-    t8 = hero_args_at(t7);
-#line 200 "<heroes library>"
-    t16 = h3_own3;
-#line 200 "<heroes library>"
-    h3_own3 = t8;
-#line 200 "<heroes library>"
-    hero_str_decref(t16);
-#line 200 "<heroes library>"
-    hero_array_push_owned(&h0_out, &t8);
-    t10 = h1_i;
-#line 201 "<heroes library>"
-    t11 = INT64_C(1);
-#line 201 "<heroes library>"
-    if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 201 "<heroes library>"
-    h1_i = t12;
-#line 201 "<heroes library>"
-    goto bb1;
-#line 201 "<heroes library>"
-bb3:
+HeroArrayHeader * h_library_args(void) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t14 = h2_own2; h2_own2 = t1; hero_array_decref(t14); t15 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t15);
+    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
+    t3 = h1_i; t4 = hero_args_count(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t7 = h1_i; t8 = hero_args_at(t7); t16 = h3_own3; h3_own3 = t8; hero_str_decref(t16); hero_array_push_owned(&h0_out, &t8);
+    t10 = h1_i; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h1_i = t12; goto bb1; bb3:
     t13 = h0_out;
-#line 419 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 263 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

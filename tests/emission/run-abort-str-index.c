@@ -76,11 +76,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 86 "abortstrindex.c"
 #pragma clang diagnostic pop
@@ -97,39 +97,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_abortstrindex_main(void);
 
 #line 7 "tests/golden/run/abort-str-index.hero"
-void h_abortstrindex_main(void) {
-#line 7 "tests/golden/run/abort-str-index.hero"
-    HeroStr h0_s = {0}; HERO_NODEBUG HeroStr t1, t2, t5, t8; HERO_NODEBUG int64_t t3, t6; HERO_NODEBUG uint8_t t4, t7; HERO_ENTRY_STOP; goto bb0;
-#line 7 "tests/golden/run/abort-str-index.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_1998f2);
-#line 8 "tests/golden/run/abort-str-index.hero"
-    t8 = h0_s;
-#line 8 "tests/golden/run/abort-str-index.hero"
-    hero_str_incref(t1);
-#line 8 "tests/golden/run/abort-str-index.hero"
-    h0_s = t1;
-#line 8 "tests/golden/run/abort-str-index.hero"
-    hero_str_decref(t8);
-    t2 = h0_s;
-#line 9 "tests/golden/run/abort-str-index.hero"
-    t3 = INT64_C(2);
-#line 9 "tests/golden/run/abort-str-index.hero"
-    t4 = ((void)((t2.ptr == NULL || t3 < 0 || t3 >= t2.len) ? ((void)hero_str_byte(t2, t3), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t3]);
-#line 9 "tests/golden/run/abort-str-index.hero"
-    hero_print_int(t4);
-#line 9 "tests/golden/run/abort-str-index.hero"
-    hero_print_end();
-    t5 = h0_s;
-#line 10 "tests/golden/run/abort-str-index.hero"
-    t6 = INT64_C(9);
-#line 10 "tests/golden/run/abort-str-index.hero"
-    t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? ((void)hero_str_byte(t5, t6), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]);
-#line 10 "tests/golden/run/abort-str-index.hero"
-    hero_print_int(t7);
-#line 10 "tests/golden/run/abort-str-index.hero"
-    hero_print_end();
-#line 133 "abortstrindex.c"
+void h_abortstrindex_main(void) { HeroStr h0_s = {0}; HERO_NODEBUG HeroStr t1, t2, t5, t8; HERO_NODEBUG int64_t t3, t6; HERO_NODEBUG uint8_t t4, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_1998f2); t8 = h0_s; hero_str_incref(t1); h0_s = t1; hero_str_decref(t8);
+    t2 = h0_s; t3 = INT64_C(2); t4 = ((void)((t2.ptr == NULL || t3 < 0 || t3 >= t2.len) ? ((void)hero_str_byte(t2, t3), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t3]); hero_print_int(t4); hero_print_end();
+    t5 = h0_s; t6 = INT64_C(9); t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? ((void)hero_str_byte(t5, t6), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); hero_print_int(t7); hero_print_end();
+#line 105 "abortstrindex.c"
     hero_str_release_at(&h0_s);
     return;
 }

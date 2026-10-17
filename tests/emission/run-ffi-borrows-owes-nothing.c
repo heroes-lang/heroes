@@ -134,17 +134,17 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 19 "tests/golden/run/ffi-borrows-owes-nothing.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiborrowsowesnothing_slot_open(int64_t a0) { (void)(slot_open)(a0); }
-#line 21 "tests/golden/run/ffi-borrows-owes-nothing.hero"
+#line 21
 __attribute__((unused)) static void hero_ffi_probe_h_ffiborrowsowesnothing_slot_close(Slot * a0) { (void)(slot_close)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_ffiborrowsowesnothing_slot_value(Slot * a0) { (void)(slot_value)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 150 "ffiborrowsowesnothing.c"
 #pragma clang diagnostic pop
@@ -163,61 +163,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_ffiborrowsowesnothing_main(void);
 
 #line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-void h_ffiborrowsowesnothing_main(void) {
-#line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    Slot * h0_mine; Slot * h1_theirs; HERO_NODEBUG int64_t t1, t5, t7, t8; HERO_NODEBUG Slot *t2, *t3, *t4, *t6, *t9; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
-#line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    t2 = slot_open(t1);
-#line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_acquired(t2, "slot_close");
-#line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    h0_mine = t2;
-    t3 = slot_peek();
-#line 26 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_lent(t3);
-#line 26 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    h1_theirs = t3;
-    t4 = h0_mine;
-#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_alive(t4, "the argument `s` of `slot_value`");
-#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    t5 = slot_value(t4);
-#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    t6 = h1_theirs;
-#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_alive(t6, "the argument `s` of `slot_value`");
-#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    t7 = slot_value(t6);
-#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    if (__builtin_add_overflow(t5, t7, &t8)) hero_panic_overflow();
-#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_print_int(t8);
-#line 27 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_print_end();
-    t9 = h0_mine;
-#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    {
-#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_handle_alive(t9, "the argument `s` of `slot_close`");
-#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t9, "slot_close", NULL);
-#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    (void)slot_close(t9);
-#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    if (hero_handle_ended(t9, hero_life_0_0) && h0_mine == t9) h0_mine = hero_handle_dead();
-#line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    }
-    t10 = HERO_STR_LIT(hero_str_2f69e1a4);
-#line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_print_str(t10);
-#line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    hero_print_end();
-#line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    return;
-#line 221 "ffiborrowsowesnothing.c"
+void h_ffiborrowsowesnothing_main(void) { Slot * h0_mine; Slot * h1_theirs; HERO_NODEBUG int64_t t1, t5, t7, t8; HERO_NODEBUG Slot *t2, *t3, *t4, *t6, *t9; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); t2 = slot_open(t1); hero_handle_acquired(t2, "slot_close"); h0_mine = t2;
+    t3 = slot_peek(); hero_handle_lent(t3); h1_theirs = t3;
+    t4 = h0_mine; hero_handle_alive(t4, "the argument `s` of `slot_value`"); t5 = slot_value(t4); t6 = h1_theirs; hero_handle_alive(t6, "the argument `s` of `slot_value`"); t7 = slot_value(t6); if (__builtin_add_overflow(t5, t7, &t8)) hero_panic_overflow(); hero_print_int(t8); hero_print_end();
+    t9 = h0_mine; { hero_handle_alive(t9, "the argument `s` of `slot_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t9, "slot_close", NULL); (void)slot_close(t9); if (hero_handle_ended(t9, hero_life_0_0) && h0_mine == t9) h0_mine = hero_handle_dead(); }
+    t10 = HERO_STR_LIT(hero_str_2f69e1a4); hero_print_str(t10); hero_print_end(); return;
+#line 173 "ffiborrowsowesnothing.c"
 }
 HERO_TU_LOCAL bool h_ffiborrowsowesnothing_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

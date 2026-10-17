@@ -83,11 +83,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 93 "adversarialdivergingarms.c"
 #pragma clang diagnostic pop
@@ -106,86 +106,16 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs);
 
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
-int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) {
-#line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
-    int64_t h1_seen; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t18; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t13, t14, t15, t16, t17; h_adversarialdivergingarms_Step h4_s; HERO_NODEBUG h_adversarialdivergingarms_Step h5_s0, t10, t11, t12; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
-#line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 12 "tests/golden/ir/adversarial-diverging-arms.hero"
-    h1_seen = t1;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t2 = h0_xs;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t18 = h2_xs0;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    hero_array_incref(t2);
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    h2_xs0 = t2;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    hero_array_decref(t18);
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t3 = INT64_C(0);
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    h3_i0 = t3;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    goto bb1;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-bb1:
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t4 = h3_i0;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t5 = h2_xs0;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t7 = t4 < t6;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    if (t7) goto bb2; else goto bb4;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-bb2:
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t8 = h2_xs0;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t9 = h3_i0;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_adversarialdivergingarms_Step) ? hero_unreachable() : (void)0), ((h_adversarialdivergingarms_Step const *)(const void *)(t8 + 1))[t9]);
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    h4_s = t10;
-    t11 = h4_s;
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
-    h5_s0 = t11;
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t12 = h5_s0;
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t13 = t12.tag;
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
-    switch (t13) {
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
-        case 0: goto bb6;
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
-        case 1: goto bb7;
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
-        default: hero_unreachable();
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
-    }
-#line 15 "tests/golden/ir/adversarial-diverging-arms.hero"
-bb3:
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t14 = h3_i0;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    t15 = INT64_C(1);
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    h3_i0 = t16;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-    goto bb1;
-#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
-bb4:
-#line 21 "tests/golden/ir/adversarial-diverging-arms.hero"
+int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) { int64_t h1_seen; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t18; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t13, t14, t15, t16, t17; h_adversarialdivergingarms_Step h4_s; HERO_NODEBUG h_adversarialdivergingarms_Step h5_s0, t10, t11, t12; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_seen = t1;
+#line 14
+    t2 = h0_xs; t18 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t18); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_adversarialdivergingarms_Step) ? hero_unreachable() : (void)0), ((h_adversarialdivergingarms_Step const *)(const void *)(t8 + 1))[t9]); h4_s = t10;
+    t11 = h4_s; h5_s0 = t11; t12 = h5_s0; t13 = t12.tag; switch (t13) { case 0: goto bb6; case 1: goto bb7; default: hero_unreachable(); } bb3:
+#line 14
+    t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow(); h3_i0 = t16; goto bb1; bb4:
+#line 21
     t17 = h1_seen;
-#line 189 "adversarialdivergingarms.c"
+#line 119 "adversarialdivergingarms.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 bb6:

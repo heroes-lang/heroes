@@ -82,11 +82,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 92 "placepaths.c"
 #pragma clang diagnostic pop
@@ -112,45 +112,15 @@ void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c,
 int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c);
 
 #line 12 "tests/golden/ir/place-paths.hero"
-void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c, int64_t h3_v) {
-#line 12 "tests/golden/ir/place-paths.hero"
-    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
-#line 12 "tests/golden/ir/place-paths.hero"
-bb0:
-    t1 = h1_r;
-#line 13 "tests/golden/ir/place-paths.hero"
-    t2 = h2_c;
-#line 13 "tests/golden/ir/place-paths.hero"
-    t3 = h3_v;
-#line 13 "tests/golden/ir/place-paths.hero"
-    hero_array_unshare(&((*ph0_g).f_rows));
-#line 13 "tests/golden/ir/place-paths.hero"
-    hero_array_set(&((*((void)(((*ph0_g).f_rows == NULL || t1 < 0 || t1 >= (*ph0_g).f_rows->len) ? ((void)hero_array_at_mut((*ph0_g).f_rows, t1), hero_unreachable()) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), (h_placepaths_Row *)(void *)((*ph0_g).f_rows + 1) + t1)).f_cells), t2, &t3);
-#line 13 "tests/golden/ir/place-paths.hero"
-    return;
-#line 132 "placepaths.c"
+void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c, int64_t h3_v) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h1_r; t2 = h2_c; t3 = h3_v; hero_array_unshare(&((*ph0_g).f_rows)); hero_array_set(&((*((void)(((*ph0_g).f_rows == NULL || t1 < 0 || t1 >= (*ph0_g).f_rows->len) ? ((void)hero_array_at_mut((*ph0_g).f_rows, t1), hero_unreachable()) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), (h_placepaths_Row *)(void *)((*ph0_g).f_rows + 1) + t1)).f_cells), t2, &t3); return;
+#line 118 "placepaths.c"
 }
 
 #line 15 "tests/golden/ir/place-paths.hero"
-int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c) {
-#line 15 "tests/golden/ir/place-paths.hero"
-    HERO_NODEBUG HeroArrayHeader *t1, *t4; HERO_NODEBUG int64_t t2, t5, t6; HERO_NODEBUG h_placepaths_Row t3; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/ir/place-paths.hero"
-bb0:
-    t1 = h0_g.f_rows;
-#line 16 "tests/golden/ir/place-paths.hero"
-    t2 = h1_r;
-#line 16 "tests/golden/ir/place-paths.hero"
-    t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), ((h_placepaths_Row const *)(const void *)(t1 + 1))[t2]);
-#line 16 "tests/golden/ir/place-paths.hero"
-    t4 = t3.f_cells;
-#line 16 "tests/golden/ir/place-paths.hero"
-    t5 = h2_c;
-#line 16 "tests/golden/ir/place-paths.hero"
-    t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
-#line 16 "tests/golden/ir/place-paths.hero"
-    return t6;
-#line 154 "placepaths.c"
+int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c) { HERO_NODEBUG HeroArrayHeader *t1, *t4; HERO_NODEBUG int64_t t2, t5, t6; HERO_NODEBUG h_placepaths_Row t3; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_g.f_rows; t2 = h1_r; t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), ((h_placepaths_Row const *)(const void *)(t1 + 1))[t2]); t4 = t3.f_cells; t5 = h2_c; t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]); return t6;
+#line 124 "placepaths.c"
 }
 HERO_TU_LOCAL void h_placepaths_Row_retain(const h_placepaths_Row *v) {
     hero_array_incref(v->f_cells);

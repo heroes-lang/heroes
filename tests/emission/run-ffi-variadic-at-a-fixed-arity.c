@@ -133,11 +133,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffivariadicatafixedarity_pr
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "ffivariadicatafixedarity.c"
 #pragma clang diagnostic pop
@@ -154,26 +154,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_ffivariadicatafixedarity_main(void);
 
 #line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-void h_ffivariadicatafixedarity_main(void) {
-#line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t5; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_18109220);
-#line 11 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-    t2 = hero_str_lend(t1);
-#line 11 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-    t3 = INT64_C(42);
-#line 11 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-    (void)printf(hero_cstr_nonnull(t2), t3);
-    t5 = INT64_C(7);
-#line 12 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-    hero_print_int(t5);
-#line 12 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-    hero_print_end();
-#line 12 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-    return;
-#line 177 "ffivariadicatafixedarity.c"
+void h_ffivariadicatafixedarity_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_18109220); t2 = hero_str_lend(t1); t3 = INT64_C(42); (void)printf(hero_cstr_nonnull(t2), t3);
+    t5 = INT64_C(7); hero_print_int(t5); hero_print_end(); return;
+#line 161 "ffivariadicatafixedarity.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

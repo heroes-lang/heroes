@@ -134,7 +134,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 13 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_hero_exit_status_of(int32_t a0) { (void)(hero_exit_status_of)(a0); }
-#line 15 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
+#line 15
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_hero_bits_free(bit_set * a0) { (void)(hero_bits_free)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_hero_bits_zero(bit_set * a0) { (void)(hero_bits_zero)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_hero_bits_set(int32_t a0, bit_set * a1) { (void)(hero_bits_set)(a0, a1); }
@@ -142,11 +142,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs143statementmacros
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 152 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
 #pragma clang diagnostic pop
@@ -165,91 +165,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_main(void);
 
 #line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-void h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_main(void) {
-#line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    bit_set * h0_s; HERO_NODEBUG int32_t t1, t2, t5, t7, t9, t11, t12, t14, t15, t17; HERO_NODEBUG bit_set *t3, *t4, *t6, *t8, *t10, *t13, *t16, *t18; HERO_ENTRY_STOP; goto bb0;
-#line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-bb0:
-    t1 = INT64_C(256);
-#line 21 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    t2 = hero_exit_status_of(t1);
-#line 21 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_print_int(t2);
-#line 21 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_print_end();
-    t3 = hero_bits_new();
-#line 22 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_handle_acquired(t3, "hero_bits_free");
-#line 22 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    h0_s = t3;
-    t4 = h0_s;
-#line 23 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_handle_alive(t4, "the argument `s` of `hero_bits_zero`");
-#line 23 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    (void)hero_bits_zero(t4);
-    t5 = INT64_C(3);
-#line 24 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    t6 = h0_s;
-#line 24 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_handle_alive(t6, "the argument `s` of `hero_bits_set`");
-#line 24 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    (void)hero_bits_set(t5, t6);
-    t7 = INT64_C(70);
-#line 25 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    t8 = h0_s;
-#line 25 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_handle_alive(t8, "the argument `s` of `hero_bits_set`");
-#line 25 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    (void)hero_bits_set(t7, t8);
-    t9 = INT64_C(3);
-#line 26 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    t10 = h0_s;
-#line 26 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_handle_alive(t10, "the argument `s` of `hero_bits_isset`");
-#line 26 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    t11 = hero_bits_isset(t9, t10);
-#line 26 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_print_int(t11);
-#line 26 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_print_end();
-    t12 = INT64_C(4);
-#line 27 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    t13 = h0_s;
-#line 27 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_handle_alive(t13, "the argument `s` of `hero_bits_isset`");
-#line 27 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    t14 = hero_bits_isset(t12, t13);
-#line 27 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_print_int(t14);
-#line 27 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_print_end();
-    t15 = INT64_C(70);
-#line 28 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    t16 = h0_s;
-#line 28 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_handle_alive(t16, "the argument `s` of `hero_bits_isset`");
-#line 28 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    t17 = hero_bits_isset(t15, t16);
-#line 28 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_print_int(t17);
-#line 28 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_print_end();
-    t18 = h0_s;
-#line 29 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    {
-#line 29 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    hero_handle_alive(t18, "the argument `s` of `hero_bits_free`");
-#line 29 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t18, "hero_bits_free", NULL);
-#line 29 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    (void)hero_bits_free(t18);
-#line 29 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    if (hero_handle_ended(t18, hero_life_0_0) && h0_s == t18) h0_s = hero_handle_dead();
-#line 29 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    }
-#line 29 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    return;
-#line 253 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
+void h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_main(void) { bit_set * h0_s; HERO_NODEBUG int32_t t1, t2, t5, t7, t9, t11, t12, t14, t15, t17; HERO_NODEBUG bit_set *t3, *t4, *t6, *t8, *t10, *t13, *t16, *t18; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(256); t2 = hero_exit_status_of(t1); hero_print_int(t2); hero_print_end();
+    t3 = hero_bits_new(); hero_handle_acquired(t3, "hero_bits_free"); h0_s = t3;
+    t4 = h0_s; hero_handle_alive(t4, "the argument `s` of `hero_bits_zero`"); (void)hero_bits_zero(t4);
+    t5 = INT64_C(3); t6 = h0_s; hero_handle_alive(t6, "the argument `s` of `hero_bits_set`"); (void)hero_bits_set(t5, t6);
+    t7 = INT64_C(70); t8 = h0_s; hero_handle_alive(t8, "the argument `s` of `hero_bits_set`"); (void)hero_bits_set(t7, t8);
+    t9 = INT64_C(3); t10 = h0_s; hero_handle_alive(t10, "the argument `s` of `hero_bits_isset`"); t11 = hero_bits_isset(t9, t10); hero_print_int(t11); hero_print_end();
+    t12 = INT64_C(4); t13 = h0_s; hero_handle_alive(t13, "the argument `s` of `hero_bits_isset`"); t14 = hero_bits_isset(t12, t13); hero_print_int(t14); hero_print_end();
+    t15 = INT64_C(70); t16 = h0_s; hero_handle_alive(t16, "the argument `s` of `hero_bits_isset`"); t17 = hero_bits_isset(t15, t16); hero_print_int(t17); hero_print_end();
+    t18 = h0_s; { hero_handle_alive(t18, "the argument `s` of `hero_bits_free`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t18, "hero_bits_free", NULL); (void)hero_bits_free(t18); if (hero_handle_ended(t18, hero_life_0_0) && h0_s == t18) h0_s = hero_handle_dead(); } return;
+#line 179 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_BitSet_eq(bit_set * const *a, bit_set * const *b) {
     return hero_handle_eq(*a, *b);

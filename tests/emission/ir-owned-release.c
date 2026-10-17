@@ -136,16 +136,16 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 23 "tests/golden/ir/owned-release.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ownedrelease_free(char * a0) { (void)(free)(a0); }
-#line 26 "tests/golden/ir/owned-release.hero"
+#line 26
 __attribute__((unused)) static void hero_ffi_probe_h_ownedrelease_strdup(const char * a0) { (void)(strdup)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 151 "ownedrelease.c"
 #pragma clang diagnostic pop
@@ -164,111 +164,9 @@ int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 28 "tests/golden/ir/owned-release.hero"
-HeroStr h_ownedrelease_copy_of(HeroStr h0_text) {
-#line 28 "tests/golden/ir/owned-release.hero"
-    HERO_NODEBUG const char *h1_owned0, *t2, *t3, *t4, *t6, *t7, *t9; HERO_NODEBUG h_0opt_f87774a h2_owned1 = {0}, h3_f0 = {0}, h5_own5 = {0}, t5, t11, t12, t16, t20, t21, t22; HERO_NODEBUG HeroStr h4_r0 = {0}, t1, t17, t18, t19, t23, t24; HERO_NODEBUG bool t8, t15; HERO_NODEBUG void *t10; HERO_NODEBUG int64_t t13, t14; HERO_ENTRY_STOP; goto bb0;
-#line 28 "tests/golden/ir/owned-release.hero"
-bb0:
-    t1 = h0_text;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t2 = hero_str_lend(t1);
-#line 29 "tests/golden/ir/owned-release.hero"
-    t3 = (const char *)strdup(hero_cstr_nonnull(t2));
-#line 29 "tests/golden/ir/owned-release.hero"
-    h1_owned0 = t3;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t4 = h1_owned0;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t5 = h_library_validated(t4);
-#line 29 "tests/golden/ir/owned-release.hero"
-    t20 = h5_own5;
-#line 29 "tests/golden/ir/owned-release.hero"
-    h5_own5 = t5;
-#line 29 "tests/golden/ir/owned-release.hero"
-    h_0opt_f87774a_release(&t20);
-#line 29 "tests/golden/ir/owned-release.hero"
-    t21 = h2_owned1;
-#line 29 "tests/golden/ir/owned-release.hero"
-    h_0opt_f87774a_retain(&t5);
-#line 29 "tests/golden/ir/owned-release.hero"
-    h2_owned1 = t5;
-#line 29 "tests/golden/ir/owned-release.hero"
-    h_0opt_f87774a_release(&t21);
-#line 29 "tests/golden/ir/owned-release.hero"
-    t6 = ((void *)0);
-#line 29 "tests/golden/ir/owned-release.hero"
-    t7 = h1_owned0;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t8 = t7 != t6;
-#line 29 "tests/golden/ir/owned-release.hero"
-    if (t8) goto bb1; else goto bb2;
-#line 29 "tests/golden/ir/owned-release.hero"
-bb1:
-#line 29 "tests/golden/ir/owned-release.hero"
-    t9 = h1_owned0;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t10 = (void *)(char *)t9;
-#line 29 "tests/golden/ir/owned-release.hero"
-    (void)free(t10);
-#line 29 "tests/golden/ir/owned-release.hero"
-    goto bb2;
-#line 29 "tests/golden/ir/owned-release.hero"
-bb2:
-#line 29 "tests/golden/ir/owned-release.hero"
-    t11 = h2_owned1;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t22 = h3_f0;
-#line 29 "tests/golden/ir/owned-release.hero"
-    h_0opt_f87774a_retain(&t11);
-#line 29 "tests/golden/ir/owned-release.hero"
-    h3_f0 = t11;
-#line 29 "tests/golden/ir/owned-release.hero"
-    h_0opt_f87774a_release(&t22);
-#line 29 "tests/golden/ir/owned-release.hero"
-    t12 = h3_f0;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t13 = t12.tag;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t14 = INT64_C(0);
-#line 29 "tests/golden/ir/owned-release.hero"
-    t15 = t13 == t14;
-#line 29 "tests/golden/ir/owned-release.hero"
-    if (t15) goto bb3; else goto bb4;
-#line 29 "tests/golden/ir/owned-release.hero"
-bb3:
-#line 29 "tests/golden/ir/owned-release.hero"
-    t16 = h3_f0;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t17 = t16.as.ok;
-#line 29 "tests/golden/ir/owned-release.hero"
-    t23 = h4_r0;
-#line 29 "tests/golden/ir/owned-release.hero"
-    hero_str_incref(t17);
-#line 29 "tests/golden/ir/owned-release.hero"
-    h4_r0 = t17;
-#line 29 "tests/golden/ir/owned-release.hero"
-    hero_str_decref(t23);
-#line 29 "tests/golden/ir/owned-release.hero"
-    goto bb5;
-#line 29 "tests/golden/ir/owned-release.hero"
-bb4:
-#line 29 "tests/golden/ir/owned-release.hero"
-    t18 = HERO_STR_LIT(hero_str_0);
-#line 29 "tests/golden/ir/owned-release.hero"
-    t24 = h4_r0;
-#line 29 "tests/golden/ir/owned-release.hero"
-    hero_str_incref(t18);
-#line 29 "tests/golden/ir/owned-release.hero"
-    h4_r0 = t18;
-#line 29 "tests/golden/ir/owned-release.hero"
-    hero_str_decref(t24);
-#line 29 "tests/golden/ir/owned-release.hero"
-    goto bb5;
-#line 29 "tests/golden/ir/owned-release.hero"
-bb5:
-#line 29 "tests/golden/ir/owned-release.hero"
-    t19 = h4_r0;
-#line 272 "ownedrelease.c"
+HeroStr h_ownedrelease_copy_of(HeroStr h0_text) { HERO_NODEBUG const char *h1_owned0, *t2, *t3, *t4, *t6, *t7, *t9; HERO_NODEBUG h_0opt_f87774a h2_owned1 = {0}, h3_f0 = {0}, h5_own5 = {0}, t5, t11, t12, t16, t20, t21, t22; HERO_NODEBUG HeroStr h4_r0 = {0}, t1, t17, t18, t19, t23, t24; HERO_NODEBUG bool t8, t15; HERO_NODEBUG void *t10; HERO_NODEBUG int64_t t13, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_text; t2 = hero_str_lend(t1); t3 = (const char *)strdup(hero_cstr_nonnull(t2)); h1_owned0 = t3; t4 = h1_owned0; t5 = h_library_validated(t4); t20 = h5_own5; h5_own5 = t5; h_0opt_f87774a_release(&t20); t21 = h2_owned1; h_0opt_f87774a_retain(&t5); h2_owned1 = t5; h_0opt_f87774a_release(&t21); t6 = ((void *)0); t7 = h1_owned0; t8 = t7 != t6; if (t8) goto bb1; else goto bb2; bb1: t9 = h1_owned0; t10 = (void *)(char *)t9; (void)free(t10); goto bb2; bb2: t11 = h2_owned1; t22 = h3_f0; h_0opt_f87774a_retain(&t11); h3_f0 = t11; h_0opt_f87774a_release(&t22); t12 = h3_f0; t13 = t12.tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb3; else goto bb4; bb3: t16 = h3_f0; t17 = t16.as.ok; t23 = h4_r0; hero_str_incref(t17); h4_r0 = t17; hero_str_decref(t23); goto bb5; bb4: t18 = HERO_STR_LIT(hero_str_0); t24 = h4_r0; hero_str_incref(t18); h4_r0 = t18; hero_str_decref(t24); goto bb5; bb5: t19 = h4_r0;
+#line 170 "ownedrelease.c"
     hero_str_incref(t19);
     h_0opt_f87774a_release(hero_slot_escape(&h2_owned1));
     h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
@@ -278,132 +176,28 @@ bb5:
 }
 
 #line 123 "<heroes library>"
-int64_t h_library_HERO_STR_OK(void) {
-#line 123 "<heroes library>"
-    return HERO_STR_OK;
-#line 285 "ownedrelease.c"
+int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
+#line 181 "ownedrelease.c"
 }
 
 #line 153 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 153 "<heroes library>"
+#line 153
 #define h1_status (*hero_lend_h1_status)
-#line 153 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0;
-#line 153 "<heroes library>"
-bb0:
-    t1 = h0_c;
-#line 154 "<heroes library>"
-    t2 = ((void *)0);
-#line 154 "<heroes library>"
-    t3 = t1 == t2;
-#line 154 "<heroes library>"
-    if (t3) goto bb2; else goto bb3;
-#line 154 "<heroes library>"
-bb1:
-#line 156 "<heroes library>"
-    t7 = INT64_C(0);
-#line 156 "<heroes library>"
-    h1_status = t7;
-    t8 = h0_c;
-#line 157 "<heroes library>"
-    hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status");
-#line 157 "<heroes library>"
-    t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status);
-#line 157 "<heroes library>"
-    t19 = h4_own4;
-#line 157 "<heroes library>"
-    h4_own4 = t9;
-#line 157 "<heroes library>"
-    hero_str_decref(t19);
-#line 157 "<heroes library>"
-    t20 = h2_text;
-#line 157 "<heroes library>"
-    hero_str_incref(t9);
-#line 157 "<heroes library>"
-    h2_text = t9;
-#line 157 "<heroes library>"
-    hero_str_decref(t20);
-    t10 = h1_status;
-#line 158 "<heroes library>"
-    t11 = h_library_HERO_STR_OK();
-#line 158 "<heroes library>"
-    t12 = t10 == t11;
-#line 158 "<heroes library>"
-    if (t12) goto bb5; else goto bb6;
-#line 158 "<heroes library>"
-bb2:
-#line 155 "<heroes library>"
-    t4 = HERO_STR_LIT(hero_str_4a05a740);
-#line 155 "<heroes library>"
-    t5 = HERO_STR_LIT(hero_str_5263489);
-#line 155 "<heroes library>"
-    hero_str_incref(t4);
-#line 155 "<heroes library>"
-    hero_str_incref(t5);
-#line 155 "<heroes library>"
-    t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
-#line 155 "<heroes library>"
-    t21 = h5_own5;
-#line 155 "<heroes library>"
-    h5_own5 = t6;
-#line 155 "<heroes library>"
-    h_0opt_f87774a_release(&t21);
-#line 155 "<heroes library>"
-    h3_ret0 = t6;
-#line 155 "<heroes library>"
-    goto bb7;
-#line 155 "<heroes library>"
-bb3:
-#line 155 "<heroes library>"
-    goto bb1;
-#line 155 "<heroes library>"
-bb4:
-#line 160 "<heroes library>"
-    t15 = HERO_STR_LIT(hero_str_34624695);
-#line 160 "<heroes library>"
-    t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 160 "<heroes library>"
-    hero_str_incref(t15);
-#line 160 "<heroes library>"
-    hero_str_incref(t16);
-#line 160 "<heroes library>"
-    t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
-#line 160 "<heroes library>"
-    t22 = h6_own6;
-#line 160 "<heroes library>"
-    h6_own6 = t17;
-#line 160 "<heroes library>"
-    h_0opt_f87774a_release(&t22);
-#line 160 "<heroes library>"
-    h3_ret0 = t17;
-#line 160 "<heroes library>"
-    goto bb7;
-#line 160 "<heroes library>"
-bb5:
-#line 159 "<heroes library>"
-    t13 = h2_text;
-#line 159 "<heroes library>"
-    hero_str_incref(t13);
-#line 159 "<heroes library>"
-    t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
-#line 159 "<heroes library>"
-    t23 = h7_own7;
-#line 159 "<heroes library>"
-    h7_own7 = t14;
-#line 159 "<heroes library>"
-    h_0opt_f87774a_release(&t23);
-#line 159 "<heroes library>"
-    h3_ret0 = t14;
-#line 159 "<heroes library>"
-    goto bb7;
-#line 159 "<heroes library>"
-bb6:
-#line 159 "<heroes library>"
-    goto bb4;
-#line 159 "<heroes library>"
-bb7:
-#line 407 "ownedrelease.c"
+#line 153
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+#line 156
+    t7 = INT64_C(0); h1_status = t7;
+    t8 = h0_c; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status); t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+#line 155
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+#line 160
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+#line 159
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
+#line 201 "ownedrelease.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

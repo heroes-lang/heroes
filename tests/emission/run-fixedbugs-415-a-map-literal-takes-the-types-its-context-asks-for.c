@@ -162,11 +162,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 172 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
 #pragma clang diagnostic pop
@@ -238,130 +238,16 @@ void h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_main(void);
 HERO_TU_LOCAL int64_t h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_ident_1b9a87(int64_t h0_x);
 
 #line 25 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-uint8_t h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_total(HeroMapHeader * h0_m) {
-#line 25 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    uint8_t h1_sum; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *t3, *t6, *t9, *t29, *t30; HERO_NODEBUG int64_t h3_i0, t4, t5, t7, t10, t17, t18, t25, t26, t27; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_1ec004 h5_f0 = {0}, h7_own7 = {0}, t15, t16, t20, t22, t32, t33; HERO_NODEBUG uint8_t t1, t12, t23, t24, t28; HERO_NODEBUG HeroMapHeader *t2, *t13; HERO_NODEBUG bool t8, t19; HERO_NODEBUG HeroStr t11, t14, t31; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb0:
-    t1 = UINT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h1_sum = t1;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t2 = h0_m;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t3 = hero_map_keys(t2);
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t29 = h6_own6;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h6_own6 = t3;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_array_decref(t29);
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t30 = h2_xs0;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_array_incref(t3);
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h2_xs0 = t3;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_array_decref(t30);
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t4 = INT64_C(0);
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h3_i0 = t4;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    goto bb1;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb1:
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t5 = h3_i0;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t6 = h2_xs0;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t8 = t5 < t7;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t8) goto bb2; else goto bb4;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb2:
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t9 = h2_xs0;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t10 = h3_i0;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t31 = h4_k;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_str_incref(t11);
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h4_k = t11;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_str_decref(t31);
-    t12 = h1_sum;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t13 = h0_m;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t14 = h4_k;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t13, &t14);
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t15 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t15 = (h_0opt_1ec004){.tag = INT64_C(0)};
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_u8)->copy(&t15.as.ok, found);
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t32 = h7_own7;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h7_own7 = t15;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t32);
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t33 = h5_f0;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_retain(&t15);
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h5_f0 = t15;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t33);
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t16 = h5_f0;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t17 = t16.tag;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t18 = INT64_C(0);
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t19 = t17 == t18;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t19) goto bb5; else goto bb6;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb3:
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t25 = h3_i0;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t26 = INT64_C(1);
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow();
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h3_i0 = t27;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    goto bb1;
-#line 28 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb4:
-#line 31 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
+uint8_t h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_total(HeroMapHeader * h0_m) { uint8_t h1_sum; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *t3, *t6, *t9, *t29, *t30; HERO_NODEBUG int64_t h3_i0, t4, t5, t7, t10, t17, t18, t25, t26, t27; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_1ec004 h5_f0 = {0}, h7_own7 = {0}, t15, t16, t20, t22, t32, t33; HERO_NODEBUG uint8_t t1, t12, t23, t24, t28; HERO_NODEBUG HeroMapHeader *t2, *t13; HERO_NODEBUG bool t8, t19; HERO_NODEBUG HeroStr t11, t14, t31; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(0); h1_sum = t1;
+#line 28
+    t2 = h0_m; t3 = hero_map_keys(t2); t29 = h6_own6; h6_own6 = t3; hero_array_decref(t29); t30 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t30); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t31 = h4_k; hero_str_incref(t11); h4_k = t11; hero_str_decref(t31);
+    t12 = h1_sum; t13 = h0_m; t14 = h4_k; { HERO_NODEBUG const void *found = hero_map_find(t13, &t14); if (found == NULL) { t15 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t15 = (h_0opt_1ec004){.tag = INT64_C(0)}; (&hero_desc_u8)->copy(&t15.as.ok, found); } } t32 = h7_own7; h7_own7 = t15; h_0opt_1ec004_release(&t32); t33 = h5_f0; h_0opt_1ec004_retain(&t15); h5_f0 = t15; h_0opt_1ec004_release(&t33); t16 = h5_f0; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb5; else goto bb6; bb3:
+#line 28
+    t25 = h3_i0; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow(); h3_i0 = t27; goto bb1; bb4:
+#line 31
     t28 = h1_sum;
-#line 365 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+#line 251 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_k);
     h_0opt_1ec004_release(hero_slot_escape(&h5_f0));
@@ -370,81 +256,25 @@ bb4:
     return t28;
 bb5:
 #line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t22 = h5_f0;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t23 = t22.as.ok;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (__builtin_add_overflow(t12, t23, &t24)) hero_panic_overflow();
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h1_sum = t24;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    goto bb3;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb6:
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t20 = h5_f0;
-#line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t21 = t20.as.err;
-#line 389 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t22 = h5_f0; t23 = t22.as.ok; if (__builtin_add_overflow(t12, t23, &t24)) hero_panic_overflow(); h1_sum = t24; goto bb3; bb6: t20 = h5_f0; t21 = t20.as.err;
+#line 261 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t21);
     hero_unreachable();
 }
 
 #line 33 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-HeroMapHeader * h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_made(void) {
-#line 33 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0;
-#line 33 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_78);
-#line 34 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t2 = UINT64_C(7);
-#line 34 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t3 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1);
-#line 34 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t3, &t1, &t2);
-#line 34 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t4 = h0_own0;
-#line 34 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h0_own0 = t3;
-#line 34 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t4);
-#line 413 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+HeroMapHeader * h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_made(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_78); t2 = UINT64_C(7); t3 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1); hero_map_put(t3, &t1, &t2); t4 = h0_own0; h0_own0 = t3; hero_map_decref(t4);
+#line 269 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_map_incref(t3);
     hero_map_release_at(&h0_own0);
     return t3;
 }
 
 #line 36 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-h_0opt_74e50e7b h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_maybe(void) {
-#line 36 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t3, *t5; HERO_NODEBUG h_0opt_74e50e7b h1_own1 = {0}, t4, t6; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0;
-#line 36 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_79);
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t2 = UINT64_C(8);
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t3 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1);
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t3, &t1, &t2);
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t5 = h0_own0;
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h0_own0 = t3;
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t5);
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t3);
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t4 = (h_0opt_74e50e7b){.tag = INT64_C(0), .as.ok = t3};
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t6 = h1_own1;
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h1_own1 = t4;
-#line 37 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_74e50e7b_release(&t6);
-#line 448 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+h_0opt_74e50e7b h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_maybe(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t3, *t5; HERO_NODEBUG h_0opt_74e50e7b h1_own1 = {0}, t4, t6; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint8_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_79); t2 = UINT64_C(8); t3 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1); hero_map_put(t3, &t1, &t2); t5 = h0_own0; h0_own0 = t3; hero_map_decref(t5); hero_map_incref(t3); t4 = (h_0opt_74e50e7b){.tag = INT64_C(0), .as.ok = t3}; t6 = h1_own1; h1_own1 = t4; h_0opt_74e50e7b_release(&t6);
+#line 278 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     h_0opt_74e50e7b_retain(&t4);
     hero_map_release_at(&h0_own0);
     h_0opt_74e50e7b_release(hero_slot_escape(&h1_own1));
@@ -452,1155 +282,131 @@ bb0:
 }
 
 #line 39 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-void h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_main(void) {
-#line 39 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    HeroMapHeader * h0_m = {0}; HERO_NODEBUG h_0opt_1ec004 h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h6_f3 = {0}, h8_f5 = {0}, h26_own26 = {0}, h29_own29 = {0}, h33_own33 = {0}, h35_own35 = {0}, h37_own37 = {0}, t6, t7, t11, t13, t23, t24, t28, t30, t44, t45, t49, t51, t55, t56, t60, t62, t74, t75, t79, t81, t201, t202, t207, t208, t213, t214, t216, t217, t220, t221; HeroMapHeader * h2_cell = {0}; h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder h4_h = {0}; HERO_NODEBUG h_0opt_74e50e7b h7_f4 = {0}, h36_own36 = {0}, t64, t65, t69, t71, t218, t219; HeroMapHeader * h9_nested = {0}; HERO_NODEBUG h_0opt_4d1c207c h10_f6 = {0}, h11_f7 = {0}, h41_own41 = {0}, h42_own42 = {0}, t92, t93, t97, t99, t105, t106, t110, t112, t226, t227, t228, t229; HeroMapHeader * h12_names = {0}; uint8_t h13_eleven; HERO_NODEBUG h_0opt_f87774a h14_f8 = {0}, h44_own44 = {0}, t121, t122, t126, t128, t232, t233; HeroMapHeader * h15_ops = {0}; HERO_NODEBUG h_0opt_78ca30ae h16_f9 = {0}, h46_own46 = {0}, t137, t138, t142, t144, t236, t237; HERO_NODEBUG h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op h17_s0, t131, t133, t145, t146; HeroMapHeader * h18_halves = {0}; HERO_NODEBUG h_0opt_db86062 h19_f10 = {0}, h48_own48 = {0}, t155, t156, t160, t162, t240, t241; HeroMapHeader * h20_calls = {0}; HERO_NODEBUG h_0opt_30514ebf h21_f11 = {0}, h50_own50 = {0}, t169, t170, t174, t176, t244, t245; HeroMapHeader * h22_none = {0}; HeroMapHeader * h23_plain = {0}; HERO_NODEBUG h_0opt_e201354 h24_f12 = {0}, h53_own53 = {0}, t188, t189, t193, t195, t250, t251; HERO_NODEBUG HeroMapHeader *h25_own25 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h30_own30 = {0}, *h31_own31 = {0}, *h34_own34 = {0}, *h40_own40 = {0}, *h43_own43 = {0}, *h45_own45 = {0}, *h47_own47 = {0}, *h49_own49 = {0}, *h51_own51 = {0}, *h52_own52 = {0}, *t3, *t4, *t17, *t20, *t21, *t36, *t40, *t42, *t53, *t72, *t89, *t90, *t103, *t117, *t119, *t134, *t135, *t152, *t153, *t166, *t167, *t180, *t181, *t185, *t186, *t199, *t200, *t203, *t204, *t205, *t206, *t209, *t210, *t215, *t224, *t225, *t230, *t231, *t234, *t235, *t238, *t239, *t242, *t243, *t246, *t247, *t248, *t249; HERO_NODEBUG h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder h32_own32 = {0}, t41, t211, t212; HERO_NODEBUG HeroArrayHeader *h38_own38 = {0}, *h39_own39 = {0}, *t86, *t88, *t100, *t113, *t222, *t223; HERO_NODEBUG HeroStr t1, t5, t15, t18, t22, t32, t34, t38, t43, t54, t73, t83, t87, t91, t104, t116, t129, t130, t132, t136, t148, t149, t150, t154, t164, t168, t183, t187; HERO_NODEBUG uint8_t t2, t14, t16, t19, t31, t33, t35, t37, t39, t52, t63, t82, t84, t85, t102, t115, t118, t120; HERO_NODEBUG int64_t t8, t9, t25, t26, t46, t47, t57, t58, t66, t67, t76, t77, t94, t95, t101, t107, t108, t114, t123, t124, t139, t140, t147, t157, t158, t171, t172, t178, t179, t182, t184, t190, t191, t196, t197, t198; HERO_NODEBUG bool t10, t27, t48, t59, t68, t78, t96, t109, t125, t141, t159, t173, t192; HERO_NODEBUG HeroFailure t12, t29, t50, t61, t70, t80, t98, t111, t127, t143, t161, t175, t194; HERO_NODEBUG float t151, t163; HERO_NODEBUG h_0fn_48ac9712 t165, t177; HERO_ENTRY_STOP; goto bb0;
-#line 39 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_61);
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t2 = UINT64_C(1);
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t3 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1);
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t3, &t1, &t2);
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t199 = h25_own25;
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h25_own25 = t3;
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t199);
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t200 = h0_m;
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t3);
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h0_m = t3;
-#line 40 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t200);
-    t4 = h0_m;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t5 = HERO_STR_LIT(hero_str_61);
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t4, &t5);
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t6 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t6 = (h_0opt_1ec004){.tag = INT64_C(0)};
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_u8)->copy(&t6.as.ok, found);
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t201 = h26_own26;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h26_own26 = t6;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t201);
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t202 = h1_f0;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_retain(&t6);
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h1_f0 = t6;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t202);
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t7 = h1_f0;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t8 = t7.tag;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t9 = INT64_C(0);
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t10 = t8 == t9;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t10) goto bb1; else goto bb2;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb1:
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t13 = h1_f0;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t14 = t13.as.ok;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t14);
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t15 = HERO_STR_LIT(hero_str_62);
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t16 = UINT64_C(2);
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t17 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1);
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t17, &t15, &t16);
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t203 = h27_own27;
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h27_own27 = t17;
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t203);
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t204 = h2_cell;
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t17);
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h2_cell = t17;
-#line 42 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t204);
-    t18 = HERO_STR_LIT(hero_str_62);
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t19 = UINT64_C(3);
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t20 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1);
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t20, &t18, &t19);
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t205 = h28_own28;
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h28_own28 = t20;
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t205);
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t206 = h2_cell;
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t20);
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h2_cell = t20;
-#line 43 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t206);
-    t21 = h2_cell;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t22 = HERO_STR_LIT(hero_str_62);
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t21, &t22);
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t23 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t23 = (h_0opt_1ec004){.tag = INT64_C(0)};
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_u8)->copy(&t23.as.ok, found);
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t207 = h29_own29;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h29_own29 = t23;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t207);
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t208 = h3_f1;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_retain(&t23);
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h3_f1 = t23;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t208);
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t24 = h3_f1;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t25 = t24.tag;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t26 = INT64_C(0);
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t27 = t25 == t26;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t27) goto bb3; else goto bb4;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb2:
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t11 = h1_f0;
-#line 41 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t12 = t11.as.err;
-#line 630 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+void h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_main(void) { HeroMapHeader * h0_m = {0}; HERO_NODEBUG h_0opt_1ec004 h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h6_f3 = {0}, h8_f5 = {0}, h26_own26 = {0}, h29_own29 = {0}, h33_own33 = {0}, h35_own35 = {0}, h37_own37 = {0}, t6, t7, t11, t13, t23, t24, t28, t30, t44, t45, t49, t51, t55, t56, t60, t62, t74, t75, t79, t81, t201, t202, t207, t208, t213, t214, t216, t217, t220, t221; HeroMapHeader * h2_cell = {0}; h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder h4_h = {0}; HERO_NODEBUG h_0opt_74e50e7b h7_f4 = {0}, h36_own36 = {0}, t64, t65, t69, t71, t218, t219; HeroMapHeader * h9_nested = {0}; HERO_NODEBUG h_0opt_4d1c207c h10_f6 = {0}, h11_f7 = {0}, h41_own41 = {0}, h42_own42 = {0}, t92, t93, t97, t99, t105, t106, t110, t112, t226, t227, t228, t229; HeroMapHeader * h12_names = {0}; uint8_t h13_eleven; HERO_NODEBUG h_0opt_f87774a h14_f8 = {0}, h44_own44 = {0}, t121, t122, t126, t128, t232, t233; HeroMapHeader * h15_ops = {0}; HERO_NODEBUG h_0opt_78ca30ae h16_f9 = {0}, h46_own46 = {0}, t137, t138, t142, t144, t236, t237; HERO_NODEBUG h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op h17_s0, t131, t133, t145, t146; HeroMapHeader * h18_halves = {0}; HERO_NODEBUG h_0opt_db86062 h19_f10 = {0}, h48_own48 = {0}, t155, t156, t160, t162, t240, t241; HeroMapHeader * h20_calls = {0}; HERO_NODEBUG h_0opt_30514ebf h21_f11 = {0}, h50_own50 = {0}, t169, t170, t174, t176, t244, t245; HeroMapHeader * h22_none = {0}; HeroMapHeader * h23_plain = {0}; HERO_NODEBUG h_0opt_e201354 h24_f12 = {0}, h53_own53 = {0}, t188, t189, t193, t195, t250, t251; HERO_NODEBUG HeroMapHeader *h25_own25 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h30_own30 = {0}, *h31_own31 = {0}, *h34_own34 = {0}, *h40_own40 = {0}, *h43_own43 = {0}, *h45_own45 = {0}, *h47_own47 = {0}, *h49_own49 = {0}, *h51_own51 = {0}, *h52_own52 = {0}, *t3, *t4, *t17, *t20, *t21, *t36, *t40, *t42, *t53, *t72, *t89, *t90, *t103, *t117, *t119, *t134, *t135, *t152, *t153, *t166, *t167, *t180, *t181, *t185, *t186, *t199, *t200, *t203, *t204, *t205, *t206, *t209, *t210, *t215, *t224, *t225, *t230, *t231, *t234, *t235, *t238, *t239, *t242, *t243, *t246, *t247, *t248, *t249; HERO_NODEBUG h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder h32_own32 = {0}, t41, t211, t212; HERO_NODEBUG HeroArrayHeader *h38_own38 = {0}, *h39_own39 = {0}, *t86, *t88, *t100, *t113, *t222, *t223; HERO_NODEBUG HeroStr t1, t5, t15, t18, t22, t32, t34, t38, t43, t54, t73, t83, t87, t91, t104, t116, t129, t130, t132, t136, t148, t149, t150, t154, t164, t168, t183, t187; HERO_NODEBUG uint8_t t2, t14, t16, t19, t31, t33, t35, t37, t39, t52, t63, t82, t84, t85, t102, t115, t118, t120; HERO_NODEBUG int64_t t8, t9, t25, t26, t46, t47, t57, t58, t66, t67, t76, t77, t94, t95, t101, t107, t108, t114, t123, t124, t139, t140, t147, t157, t158, t171, t172, t178, t179, t182, t184, t190, t191, t196, t197, t198; HERO_NODEBUG bool t10, t27, t48, t59, t68, t78, t96, t109, t125, t141, t159, t173, t192; HERO_NODEBUG HeroFailure t12, t29, t50, t61, t70, t80, t98, t111, t127, t143, t161, t175, t194; HERO_NODEBUG float t151, t163; HERO_NODEBUG h_0fn_48ac9712 t165, t177; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_61); t2 = UINT64_C(1); t3 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1); hero_map_put(t3, &t1, &t2); t199 = h25_own25; h25_own25 = t3; hero_map_decref(t199); t200 = h0_m; hero_map_incref(t3); h0_m = t3; hero_map_decref(t200);
+    t4 = h0_m; t5 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG const void *found = hero_map_find(t4, &t5); if (found == NULL) { t6 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t6 = (h_0opt_1ec004){.tag = INT64_C(0)}; (&hero_desc_u8)->copy(&t6.as.ok, found); } } t201 = h26_own26; h26_own26 = t6; h_0opt_1ec004_release(&t201); t202 = h1_f0; h_0opt_1ec004_retain(&t6); h1_f0 = t6; h_0opt_1ec004_release(&t202); t7 = h1_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb1; else goto bb2; bb1: t13 = h1_f0; t14 = t13.as.ok; hero_print_int(t14); hero_print_end();
+    t15 = HERO_STR_LIT(hero_str_62); t16 = UINT64_C(2); t17 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1); hero_map_put(t17, &t15, &t16); t203 = h27_own27; h27_own27 = t17; hero_map_decref(t203); t204 = h2_cell; hero_map_incref(t17); h2_cell = t17; hero_map_decref(t204);
+    t18 = HERO_STR_LIT(hero_str_62); t19 = UINT64_C(3); t20 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1); hero_map_put(t20, &t18, &t19); t205 = h28_own28; h28_own28 = t20; hero_map_decref(t205); t206 = h2_cell; hero_map_incref(t20); h2_cell = t20; hero_map_decref(t206);
+    t21 = h2_cell; t22 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG const void *found = hero_map_find(t21, &t22); if (found == NULL) { t23 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t23 = (h_0opt_1ec004){.tag = INT64_C(0)}; (&hero_desc_u8)->copy(&t23.as.ok, found); } } t207 = h29_own29; h29_own29 = t23; h_0opt_1ec004_release(&t207); t208 = h3_f1; h_0opt_1ec004_retain(&t23); h3_f1 = t23; h_0opt_1ec004_release(&t208); t24 = h3_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb3; else goto bb4; bb2:
+#line 41
+    t11 = h1_f0; t12 = t11.as.err;
+#line 294 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb3:
 #line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t30 = h3_f1;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t31 = t30.as.ok;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t31);
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t32 = HERO_STR_LIT(hero_str_63);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t33 = UINT64_C(4);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t34 = HERO_STR_LIT(hero_str_64);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t35 = UINT64_C(1);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t36 = hero_map_new(&hero_desc_str, &hero_desc_u8, 2);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t36, &t32, &t33);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t36, &t34, &t35);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t209 = h30_own30;
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h30_own30 = t36;
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t209);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t37 = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_total(t36);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t37);
-#line 45 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t38 = HERO_STR_LIT(hero_str_65);
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t39 = UINT64_C(6);
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t40 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1);
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t40, &t38, &t39);
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t210 = h31_own31;
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h31_own31 = t40;
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t210);
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t40);
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t41 = (h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder){.f_counts = t40};
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t211 = h32_own32;
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h32_own32 = t41;
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_release(&t211);
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t212 = h4_h;
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_retain(&t41);
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h4_h = t41;
-#line 46 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_release(&t212);
-    t42 = h4_h.f_counts;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t43 = HERO_STR_LIT(hero_str_65);
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t42, &t43);
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t44 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t44 = (h_0opt_1ec004){.tag = INT64_C(0)};
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_u8)->copy(&t44.as.ok, found);
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t213 = h33_own33;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h33_own33 = t44;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t213);
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t214 = h5_f2;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_retain(&t44);
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h5_f2 = t44;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t214);
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t45 = h5_f2;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t46 = t45.tag;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t47 = INT64_C(0);
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t48 = t46 == t47;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t48) goto bb5; else goto bb6;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb4:
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t28 = h3_f1;
-#line 44 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t29 = t28.as.err;
-#line 749 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t30 = h3_f1; t31 = t30.as.ok; hero_print_int(t31); hero_print_end();
+    t32 = HERO_STR_LIT(hero_str_63); t33 = UINT64_C(4); t34 = HERO_STR_LIT(hero_str_64); t35 = UINT64_C(1); t36 = hero_map_new(&hero_desc_str, &hero_desc_u8, 2); hero_map_put(t36, &t32, &t33); hero_map_put(t36, &t34, &t35); t209 = h30_own30; h30_own30 = t36; hero_map_decref(t209); t37 = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_total(t36); hero_print_int(t37); hero_print_end();
+    t38 = HERO_STR_LIT(hero_str_65); t39 = UINT64_C(6); t40 = hero_map_new(&hero_desc_str, &hero_desc_u8, 1); hero_map_put(t40, &t38, &t39); t210 = h31_own31; h31_own31 = t40; hero_map_decref(t210); hero_map_incref(t40); t41 = (h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder){.f_counts = t40}; t211 = h32_own32; h32_own32 = t41; h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_release(&t211); t212 = h4_h; h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_retain(&t41); h4_h = t41; h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_release(&t212);
+    t42 = h4_h.f_counts; t43 = HERO_STR_LIT(hero_str_65); { HERO_NODEBUG const void *found = hero_map_find(t42, &t43); if (found == NULL) { t44 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t44 = (h_0opt_1ec004){.tag = INT64_C(0)}; (&hero_desc_u8)->copy(&t44.as.ok, found); } } t213 = h33_own33; h33_own33 = t44; h_0opt_1ec004_release(&t213); t214 = h5_f2; h_0opt_1ec004_retain(&t44); h5_f2 = t44; h_0opt_1ec004_release(&t214); t45 = h5_f2; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb5; else goto bb6; bb4:
+#line 44
+    t28 = h3_f1; t29 = t28.as.err;
+#line 305 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb5:
 #line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t51 = h5_f2;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t52 = t51.as.ok;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t52);
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t53 = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_made();
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t215 = h34_own34;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h34_own34 = t53;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t215);
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t54 = HERO_STR_LIT(hero_str_78);
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t53, &t54);
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t55 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t55 = (h_0opt_1ec004){.tag = INT64_C(0)};
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_u8)->copy(&t55.as.ok, found);
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t216 = h35_own35;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h35_own35 = t55;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t216);
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t217 = h6_f3;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_retain(&t55);
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h6_f3 = t55;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t217);
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t56 = h6_f3;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t57 = t56.tag;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t58 = INT64_C(0);
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t59 = t57 == t58;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t59) goto bb7; else goto bb8;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb6:
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t49 = h5_f2;
-#line 47 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t50 = t49.as.err;
-#line 818 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t51 = h5_f2; t52 = t51.as.ok; hero_print_int(t52); hero_print_end();
+    t53 = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_made(); t215 = h34_own34; h34_own34 = t53; hero_map_decref(t215); t54 = HERO_STR_LIT(hero_str_78); { HERO_NODEBUG const void *found = hero_map_find(t53, &t54); if (found == NULL) { t55 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t55 = (h_0opt_1ec004){.tag = INT64_C(0)}; (&hero_desc_u8)->copy(&t55.as.ok, found); } } t216 = h35_own35; h35_own35 = t55; h_0opt_1ec004_release(&t216); t217 = h6_f3; h_0opt_1ec004_retain(&t55); h6_f3 = t55; h_0opt_1ec004_release(&t217); t56 = h6_f3; t57 = t56.tag; t58 = INT64_C(0); t59 = t57 == t58; if (t59) goto bb7; else goto bb8; bb6:
+#line 47
+    t49 = h5_f2; t50 = t49.as.err;
+#line 314 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t50);
     hero_unreachable();
 bb7:
 #line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t62 = h6_f3;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t63 = t62.as.ok;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t63);
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t64 = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_maybe();
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t218 = h36_own36;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h36_own36 = t64;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_74e50e7b_release(&t218);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t219 = h7_f4;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_74e50e7b_retain(&t64);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h7_f4 = t64;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_74e50e7b_release(&t219);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t65 = h7_f4;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t66 = t65.tag;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t67 = INT64_C(0);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t68 = t66 == t67;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t68) goto bb9; else goto bb10;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb8:
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t60 = h6_f3;
-#line 48 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t61 = t60.as.err;
-#line 861 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t62 = h6_f3; t63 = t62.as.ok; hero_print_int(t63); hero_print_end();
+    t64 = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_maybe(); t218 = h36_own36; h36_own36 = t64; h_0opt_74e50e7b_release(&t218); t219 = h7_f4; h_0opt_74e50e7b_retain(&t64); h7_f4 = t64; h_0opt_74e50e7b_release(&t219); t65 = h7_f4; t66 = t65.tag; t67 = INT64_C(0); t68 = t66 == t67; if (t68) goto bb9; else goto bb10; bb8:
+#line 48
+    t60 = h6_f3; t61 = t60.as.err;
+#line 323 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t61);
     hero_unreachable();
 bb9:
 #line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t71 = h7_f4;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t72 = t71.as.ok;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t73 = HERO_STR_LIT(hero_str_79);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t72, &t73);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t74 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t74 = (h_0opt_1ec004){.tag = INT64_C(0)};
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_u8)->copy(&t74.as.ok, found);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t220 = h37_own37;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h37_own37 = t74;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t220);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t221 = h8_f5;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_retain(&t74);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h8_f5 = t74;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_1ec004_release(&t221);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t75 = h8_f5;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t76 = t75.tag;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t77 = INT64_C(0);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t78 = t76 == t77;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t78) goto bb11; else goto bb12;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb10:
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t69 = h7_f4;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t70 = t69.as.err;
-#line 919 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t71 = h7_f4; t72 = t71.as.ok; t73 = HERO_STR_LIT(hero_str_79); { HERO_NODEBUG const void *found = hero_map_find(t72, &t73); if (found == NULL) { t74 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t74 = (h_0opt_1ec004){.tag = INT64_C(0)}; (&hero_desc_u8)->copy(&t74.as.ok, found); } } t220 = h37_own37; h37_own37 = t74; h_0opt_1ec004_release(&t220); t221 = h8_f5; h_0opt_1ec004_retain(&t74); h8_f5 = t74; h_0opt_1ec004_release(&t221); t75 = h8_f5; t76 = t75.tag; t77 = INT64_C(0); t78 = t76 == t77; if (t78) goto bb11; else goto bb12; bb10: t69 = h7_f4; t70 = t69.as.err;
+#line 329 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t70);
     hero_unreachable();
 bb11:
 #line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t81 = h8_f5;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t82 = t81.as.ok;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t82);
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t83 = HERO_STR_LIT(hero_str_66);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t84 = UINT64_C(9);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t85 = UINT64_C(10);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t86 = hero_array_new(&hero_desc_u8, 2);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_array_push_owned(&t86, &t84);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_array_push_owned(&t86, &t85);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t222 = h38_own38;
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h38_own38 = t86;
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_array_decref(t222);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t87 = HERO_STR_LIT(hero_str_67);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t88 = hero_array_new(&hero_desc_u8, 1);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t223 = h39_own39;
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h39_own39 = t88;
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_array_decref(t223);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t89 = hero_map_new(&hero_desc_str, &hero_desc_array, 2);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t89, &t83, &t86);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t89, &t87, &t88);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t224 = h40_own40;
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h40_own40 = t89;
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t224);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t225 = h9_nested;
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t89);
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h9_nested = t89;
-#line 50 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t225);
-    t90 = h9_nested;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t91 = HERO_STR_LIT(hero_str_66);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t90, &t91);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t92 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t92 = (h_0opt_4d1c207c){.tag = INT64_C(0)};
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_array)->copy(&t92.as.ok, found);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t226 = h41_own41;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h41_own41 = t92;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_4d1c207c_release(&t226);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t227 = h10_f6;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_4d1c207c_retain(&t92);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h10_f6 = t92;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_4d1c207c_release(&t227);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t93 = h10_f6;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t94 = t93.tag;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t95 = INT64_C(0);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t96 = t94 == t95;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t96) goto bb13; else goto bb14;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb12:
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t79 = h8_f5;
-#line 49 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t80 = t79.as.err;
-#line 1029 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t81 = h8_f5; t82 = t81.as.ok; hero_print_int(t82); hero_print_end();
+    t83 = HERO_STR_LIT(hero_str_66); t84 = UINT64_C(9); t85 = UINT64_C(10); t86 = hero_array_new(&hero_desc_u8, 2); hero_array_push_owned(&t86, &t84); hero_array_push_owned(&t86, &t85); t222 = h38_own38; h38_own38 = t86; hero_array_decref(t222); t87 = HERO_STR_LIT(hero_str_67); t88 = hero_array_new(&hero_desc_u8, 1); t223 = h39_own39; h39_own39 = t88; hero_array_decref(t223); t89 = hero_map_new(&hero_desc_str, &hero_desc_array, 2); hero_map_put(t89, &t83, &t86); hero_map_put(t89, &t87, &t88); t224 = h40_own40; h40_own40 = t89; hero_map_decref(t224); t225 = h9_nested; hero_map_incref(t89); h9_nested = t89; hero_map_decref(t225);
+    t90 = h9_nested; t91 = HERO_STR_LIT(hero_str_66); { HERO_NODEBUG const void *found = hero_map_find(t90, &t91); if (found == NULL) { t92 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t92 = (h_0opt_4d1c207c){.tag = INT64_C(0)}; (&hero_desc_array)->copy(&t92.as.ok, found); } } t226 = h41_own41; h41_own41 = t92; h_0opt_4d1c207c_release(&t226); t227 = h10_f6; h_0opt_4d1c207c_retain(&t92); h10_f6 = t92; h_0opt_4d1c207c_release(&t227); t93 = h10_f6; t94 = t93.tag; t95 = INT64_C(0); t96 = t94 == t95; if (t96) goto bb13; else goto bb14; bb12:
+#line 49
+    t79 = h8_f5; t80 = t79.as.err;
+#line 339 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t80);
     hero_unreachable();
 bb13:
 #line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t99 = h10_f6;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t100 = t99.as.ok;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t101 = INT64_C(1);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t102 = ((void)((t100 == NULL || t101 < 0 || t101 >= t100->len) ? ((void)hero_array_at(t100, t101), hero_unreachable()) : (void)0), (void)(t100->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t100 + 1))[t101]);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t102);
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t103 = h9_nested;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t104 = HERO_STR_LIT(hero_str_67);
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t103, &t104);
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t105 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t105 = (h_0opt_4d1c207c){.tag = INT64_C(0)};
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_array)->copy(&t105.as.ok, found);
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t228 = h42_own42;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h42_own42 = t105;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_4d1c207c_release(&t228);
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t229 = h11_f7;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_4d1c207c_retain(&t105);
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h11_f7 = t105;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_4d1c207c_release(&t229);
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t106 = h11_f7;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t107 = t106.tag;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t108 = INT64_C(0);
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t109 = t107 == t108;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t109) goto bb15; else goto bb16;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb14:
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t97 = h10_f6;
-#line 51 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t98 = t97.as.err;
-#line 1096 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t99 = h10_f6; t100 = t99.as.ok; t101 = INT64_C(1); t102 = ((void)((t100 == NULL || t101 < 0 || t101 >= t100->len) ? ((void)hero_array_at(t100, t101), hero_unreachable()) : (void)0), (void)(t100->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t100 + 1))[t101]); hero_print_int(t102); hero_print_end();
+    t103 = h9_nested; t104 = HERO_STR_LIT(hero_str_67); { HERO_NODEBUG const void *found = hero_map_find(t103, &t104); if (found == NULL) { t105 = (h_0opt_4d1c207c){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t105 = (h_0opt_4d1c207c){.tag = INT64_C(0)}; (&hero_desc_array)->copy(&t105.as.ok, found); } } t228 = h42_own42; h42_own42 = t105; h_0opt_4d1c207c_release(&t228); t229 = h11_f7; h_0opt_4d1c207c_retain(&t105); h11_f7 = t105; h_0opt_4d1c207c_release(&t229); t106 = h11_f7; t107 = t106.tag; t108 = INT64_C(0); t109 = t107 == t108; if (t109) goto bb15; else goto bb16; bb14:
+#line 51
+    t97 = h10_f6; t98 = t97.as.err;
+#line 348 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t98);
     hero_unreachable();
 bb15:
 #line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t112 = h11_f7;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t113 = t112.as.ok;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t114 = ((void)(t113 == NULL ? ((void)hero_array_len(t113), hero_unreachable()) : (void)0), t113->len);
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t114);
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t115 = UINT64_C(11);
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t116 = HERO_STR_LIT(hero_str_30a26e1a);
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t117 = hero_map_new(&hero_desc_u8, &hero_desc_str, 1);
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t117, &t115, &t116);
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t230 = h43_own43;
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h43_own43 = t117;
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t230);
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t231 = h12_names;
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t117);
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h12_names = t117;
-#line 53 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t231);
-    t118 = UINT64_C(11);
-#line 54 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h13_eleven = t118;
-    t119 = h12_names;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t120 = h13_eleven;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t119, &t120);
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t121 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t121 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_str)->copy(&t121.as.ok, found);
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t232 = h44_own44;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h44_own44 = t121;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_f87774a_release(&t232);
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t233 = h14_f8;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_f87774a_retain(&t121);
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h14_f8 = t121;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_f87774a_release(&t233);
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t122 = h14_f8;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t123 = t122.tag;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t124 = INT64_C(0);
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t125 = t123 == t124;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t125) goto bb17; else goto bb18;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb16:
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t110 = h11_f7;
-#line 52 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t111 = t110.as.err;
-#line 1185 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t112 = h11_f7; t113 = t112.as.ok; t114 = ((void)(t113 == NULL ? ((void)hero_array_len(t113), hero_unreachable()) : (void)0), t113->len); hero_print_int(t114); hero_print_end();
+    t115 = UINT64_C(11); t116 = HERO_STR_LIT(hero_str_30a26e1a); t117 = hero_map_new(&hero_desc_u8, &hero_desc_str, 1); hero_map_put(t117, &t115, &t116); t230 = h43_own43; h43_own43 = t117; hero_map_decref(t230); t231 = h12_names; hero_map_incref(t117); h12_names = t117; hero_map_decref(t231);
+    t118 = UINT64_C(11); h13_eleven = t118;
+    t119 = h12_names; t120 = h13_eleven; { HERO_NODEBUG const void *found = hero_map_find(t119, &t120); if (found == NULL) { t121 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t121 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t121.as.ok, found); } } t232 = h44_own44; h44_own44 = t121; h_0opt_f87774a_release(&t232); t233 = h14_f8; h_0opt_f87774a_retain(&t121); h14_f8 = t121; h_0opt_f87774a_release(&t233); t122 = h14_f8; t123 = t122.tag; t124 = INT64_C(0); t125 = t123 == t124; if (t125) goto bb17; else goto bb18; bb16:
+#line 52
+    t110 = h11_f7; t111 = t110.as.err;
+#line 359 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t111);
     hero_unreachable();
 bb17:
 #line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t128 = h14_f8;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t129 = t128.as.ok;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_str(t129);
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t130 = HERO_STR_LIT(hero_str_70);
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t131 = (h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op){.tag = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op_tag_plus};
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t132 = HERO_STR_LIT(hero_str_71);
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t133 = (h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op){.tag = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op_tag_minus};
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t134 = hero_map_new(&hero_desc_str, &h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op_desc, 2);
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t134, &t130, &t131);
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t134, &t132, &t133);
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t234 = h45_own45;
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h45_own45 = t134;
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t234);
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t235 = h15_ops;
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t134);
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h15_ops = t134;
-#line 56 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t235);
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t135 = h15_ops;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t136 = HERO_STR_LIT(hero_str_71);
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t135, &t136);
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t137 = (h_0opt_78ca30ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t137 = (h_0opt_78ca30ae){.tag = INT64_C(0)};
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op_desc)->copy(&t137.as.ok, found);
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t236 = h46_own46;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h46_own46 = t137;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_78ca30ae_release(&t236);
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t237 = h16_f9;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_78ca30ae_retain(&t137);
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h16_f9 = t137;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_78ca30ae_release(&t237);
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t138 = h16_f9;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t139 = t138.tag;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t140 = INT64_C(0);
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t141 = t139 == t140;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t141) goto bb19; else goto bb20;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb18:
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t126 = h14_f8;
-#line 55 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t127 = t126.as.err;
-#line 1276 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t128 = h14_f8; t129 = t128.as.ok; hero_print_str(t129); hero_print_end();
+    t130 = HERO_STR_LIT(hero_str_70); t131 = (h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op){.tag = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op_tag_plus}; t132 = HERO_STR_LIT(hero_str_71); t133 = (h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op){.tag = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op_tag_minus}; t134 = hero_map_new(&hero_desc_str, &h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op_desc, 2); hero_map_put(t134, &t130, &t131); hero_map_put(t134, &t132, &t133); t234 = h45_own45; h45_own45 = t134; hero_map_decref(t234); t235 = h15_ops; hero_map_incref(t134); h15_ops = t134; hero_map_decref(t235);
+#line 58
+    t135 = h15_ops; t136 = HERO_STR_LIT(hero_str_71); { HERO_NODEBUG const void *found = hero_map_find(t135, &t136); if (found == NULL) { t137 = (h_0opt_78ca30ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t137 = (h_0opt_78ca30ae){.tag = INT64_C(0)}; (&h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op_desc)->copy(&t137.as.ok, found); } } t236 = h46_own46; h46_own46 = t137; h_0opt_78ca30ae_release(&t236); t237 = h16_f9; h_0opt_78ca30ae_retain(&t137); h16_f9 = t137; h_0opt_78ca30ae_release(&t237); t138 = h16_f9; t139 = t138.tag; t140 = INT64_C(0); t141 = t139 == t140; if (t141) goto bb19; else goto bb20; bb18:
+#line 55
+    t126 = h14_f8; t127 = t126.as.err;
+#line 370 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t127);
     hero_unreachable();
 bb19:
 #line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t144 = h16_f9;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t145 = t144.as.ok;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h17_s0 = t145;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t146 = h17_s0;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t147 = t146.tag;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    switch (t147) {
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        case 0: goto bb22;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        case 1: goto bb23;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        default: hero_unreachable();
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb20:
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t142 = h16_f9;
-#line 58 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t143 = t142.as.err;
-#line 1306 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t144 = h16_f9; t145 = t144.as.ok; h17_s0 = t145; t146 = h17_s0; t147 = t146.tag; switch (t147) { case 0: goto bb22; case 1: goto bb23; default: hero_unreachable(); } bb20: t142 = h16_f9; t143 = t142.as.err;
+#line 376 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t143);
     hero_unreachable();
 bb21:
 #line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t150 = HERO_STR_LIT(hero_str_68);
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t151 = 0x1.9p+3;
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t152 = hero_map_new(&hero_desc_str, &hero_desc_f32, 1);
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t152, &t150, &t151);
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t238 = h47_own47;
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h47_own47 = t152;
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t238);
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t239 = h18_halves;
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t152);
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h18_halves = t152;
-#line 62 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t239);
-    t153 = h18_halves;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t154 = HERO_STR_LIT(hero_str_68);
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t153, &t154);
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t155 = (h_0opt_db86062){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t155 = (h_0opt_db86062){.tag = INT64_C(0)};
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_f32)->copy(&t155.as.ok, found);
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t240 = h48_own48;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h48_own48 = t155;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_db86062_release(&t240);
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t241 = h19_f10;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_db86062_retain(&t155);
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h19_f10 = t155;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_db86062_release(&t241);
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t156 = h19_f10;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t157 = t156.tag;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t158 = INT64_C(0);
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t159 = t157 == t158;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t159) goto bb24; else goto bb25;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb22:
-#line 59 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t148 = HERO_STR_LIT(hero_str_f1e77ee);
-#line 59 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_str(t148);
-#line 59 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-#line 59 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    goto bb21;
-#line 59 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb23:
-    t149 = HERO_STR_LIT(hero_str_7857f4f);
-#line 60 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_str(t149);
-#line 60 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-#line 60 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    goto bb21;
-#line 60 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb24:
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t162 = h19_f10;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t163 = t162.as.ok;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_f32(t163);
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t164 = HERO_STR_LIT(hero_str_69);
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t165 = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_ident_1b9a87;
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t166 = hero_map_new(&hero_desc_str, &hero_desc_func, 1);
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t166, &t164, &t165);
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t242 = h49_own49;
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h49_own49 = t166;
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t242);
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t243 = h20_calls;
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t166);
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h20_calls = t166;
-#line 64 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t243);
-    t167 = h20_calls;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t168 = HERO_STR_LIT(hero_str_69);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t167, &t168);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t169 = (h_0opt_30514ebf){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t169 = (h_0opt_30514ebf){.tag = INT64_C(0)};
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_func)->copy(&t169.as.ok, found);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t244 = h50_own50;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h50_own50 = t169;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_30514ebf_release(&t244);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t245 = h21_f11;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_30514ebf_retain(&t169);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h21_f11 = t169;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_30514ebf_release(&t245);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t170 = h21_f11;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t171 = t170.tag;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t172 = INT64_C(0);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t173 = t171 == t172;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t173) goto bb26; else goto bb27;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb25:
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t160 = h19_f10;
-#line 63 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t161 = t160.as.err;
-#line 1478 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t150 = HERO_STR_LIT(hero_str_68); t151 = 0x1.9p+3; t152 = hero_map_new(&hero_desc_str, &hero_desc_f32, 1); hero_map_put(t152, &t150, &t151); t238 = h47_own47; h47_own47 = t152; hero_map_decref(t238); t239 = h18_halves; hero_map_incref(t152); h18_halves = t152; hero_map_decref(t239);
+    t153 = h18_halves; t154 = HERO_STR_LIT(hero_str_68); { HERO_NODEBUG const void *found = hero_map_find(t153, &t154); if (found == NULL) { t155 = (h_0opt_db86062){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t155 = (h_0opt_db86062){.tag = INT64_C(0)}; (&hero_desc_f32)->copy(&t155.as.ok, found); } } t240 = h48_own48; h48_own48 = t155; h_0opt_db86062_release(&t240); t241 = h19_f10; h_0opt_db86062_retain(&t155); h19_f10 = t155; h_0opt_db86062_release(&t241); t156 = h19_f10; t157 = t156.tag; t158 = INT64_C(0); t159 = t157 == t158; if (t159) goto bb24; else goto bb25; bb22:
+#line 59
+    t148 = HERO_STR_LIT(hero_str_f1e77ee); hero_print_str(t148); hero_print_end(); goto bb21; bb23:
+    t149 = HERO_STR_LIT(hero_str_7857f4f); hero_print_str(t149); hero_print_end(); goto bb21; bb24:
+#line 63
+    t162 = h19_f10; t163 = t162.as.ok; hero_print_f32(t163); hero_print_end();
+    t164 = HERO_STR_LIT(hero_str_69); t165 = h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_ident_1b9a87; t166 = hero_map_new(&hero_desc_str, &hero_desc_func, 1); hero_map_put(t166, &t164, &t165); t242 = h49_own49; h49_own49 = t166; hero_map_decref(t242); t243 = h20_calls; hero_map_incref(t166); h20_calls = t166; hero_map_decref(t243);
+    t167 = h20_calls; t168 = HERO_STR_LIT(hero_str_69); { HERO_NODEBUG const void *found = hero_map_find(t167, &t168); if (found == NULL) { t169 = (h_0opt_30514ebf){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t169 = (h_0opt_30514ebf){.tag = INT64_C(0)}; (&hero_desc_func)->copy(&t169.as.ok, found); } } t244 = h50_own50; h50_own50 = t169; h_0opt_30514ebf_release(&t244); t245 = h21_f11; h_0opt_30514ebf_retain(&t169); h21_f11 = t169; h_0opt_30514ebf_release(&t245); t170 = h21_f11; t171 = t170.tag; t172 = INT64_C(0); t173 = t171 == t172; if (t173) goto bb26; else goto bb27; bb25:
+#line 63
+    t160 = h19_f10; t161 = t160.as.err;
+#line 392 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t161);
     hero_unreachable();
 bb26:
 #line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t176 = h21_f11;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t177 = t176.as.ok;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t178 = INT64_C(13);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t179 = t177(t178);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t179);
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t180 = hero_map_new(&hero_desc_str, &hero_desc_u8, 0);
-#line 66 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t246 = h51_own51;
-#line 66 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h51_own51 = t180;
-#line 66 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t246);
-#line 66 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t247 = h22_none;
-#line 66 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t180);
-#line 66 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h22_none = t180;
-#line 66 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t247);
-    t181 = h22_none;
-#line 67 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t182 = hero_map_len(t181);
-#line 67 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t182);
-#line 67 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-    t183 = HERO_STR_LIT(hero_str_6a);
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t184 = INT64_C(1);
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t185 = hero_map_new(&hero_desc_str, &hero_desc_int, 1);
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_put(t185, &t183, &t184);
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t248 = h52_own52;
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h52_own52 = t185;
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t248);
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t249 = h23_plain;
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_incref(t185);
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h23_plain = t185;
-#line 68 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_map_decref(t249);
-    t186 = h23_plain;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t187 = HERO_STR_LIT(hero_str_6a);
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    {
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t186, &t187);
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      if (found == NULL) {
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t188 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      } else {
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        t188 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-        (&hero_desc_int)->copy(&t188.as.ok, found);
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-      }
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    }
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t250 = h53_own53;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h53_own53 = t188;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_e201354_release(&t250);
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t251 = h24_f12;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_e201354_retain(&t188);
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h24_f12 = t188;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    h_0opt_e201354_release(&t251);
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t189 = h24_f12;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t190 = t189.tag;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t191 = INT64_C(0);
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t192 = t190 == t191;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (t192) goto bb28; else goto bb29;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb27:
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t174 = h21_f11;
-#line 65 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t175 = t174.as.err;
-#line 1588 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t176 = h21_f11; t177 = t176.as.ok; t178 = INT64_C(13); t179 = t177(t178); hero_print_int(t179); hero_print_end();
+    t180 = hero_map_new(&hero_desc_str, &hero_desc_u8, 0); t246 = h51_own51; h51_own51 = t180; hero_map_decref(t246); t247 = h22_none; hero_map_incref(t180); h22_none = t180; hero_map_decref(t247);
+    t181 = h22_none; t182 = hero_map_len(t181); hero_print_int(t182); hero_print_end();
+    t183 = HERO_STR_LIT(hero_str_6a); t184 = INT64_C(1); t185 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); hero_map_put(t185, &t183, &t184); t248 = h52_own52; h52_own52 = t185; hero_map_decref(t248); t249 = h23_plain; hero_map_incref(t185); h23_plain = t185; hero_map_decref(t249);
+    t186 = h23_plain; t187 = HERO_STR_LIT(hero_str_6a); { HERO_NODEBUG const void *found = hero_map_find(t186, &t187); if (found == NULL) { t188 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t188 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t188.as.ok, found); } } t250 = h53_own53; h53_own53 = t188; h_0opt_e201354_release(&t250); t251 = h24_f12; h_0opt_e201354_retain(&t188); h24_f12 = t188; h_0opt_e201354_release(&t251); t189 = h24_f12; t190 = t189.tag; t191 = INT64_C(0); t192 = t190 == t191; if (t192) goto bb28; else goto bb29; bb27:
+#line 65
+    t174 = h21_f11; t175 = t174.as.err;
+#line 404 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t175);
     hero_unreachable();
 bb28:
 #line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t195 = h24_f12;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t196 = t195.as.ok;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t197 = INT64_C(1000000000000);
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    if (__builtin_mul_overflow(t196, t197, &t198)) hero_panic_overflow();
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_int(t198);
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    hero_print_end();
-#line 1604 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t195 = h24_f12; t196 = t195.as.ok; t197 = INT64_C(1000000000000); if (__builtin_mul_overflow(t196, t197, &t198)) hero_panic_overflow(); hero_print_int(t198); hero_print_end();
+#line 410 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_map_release_at(&h0_m);
     h_0opt_1ec004_release(hero_slot_escape(&h1_f0));
     hero_map_release_at(&h2_cell);
@@ -1656,26 +462,16 @@ bb28:
     return;
 bb29:
 #line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t193 = h24_f12;
-#line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    t194 = t193.as.err;
-#line 1663 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+    t193 = h24_f12; t194 = t193.as.err;
+#line 467 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_panic_must(t194);
     hero_unreachable();
 }
 
 #line 22 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-/* ident<i64> */
-#line 22 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-HERO_TU_LOCAL int64_t h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_ident_1b9a87(int64_t h0_x) {
-#line 22 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-bb0:
-    t1 = h0_x;
-#line 23 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
-    return t1;
-#line 1679 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
+/* ident<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_ident_1b9a87(int64_t h0_x) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_x; return t1;
+#line 475 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op_eq(const h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op *a, const h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Op *b) {
     if (a->tag != b->tag) return false;

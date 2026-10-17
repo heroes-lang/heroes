@@ -79,11 +79,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 89 "fixedbugsanemptyresultboundbyitscontext.c"
 #pragma clang diagnostic pop
@@ -103,135 +103,17 @@ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugsanemptyresultboundbyitscontext_empty_
 HERO_TU_LOCAL HeroMapHeader * h_fixedbugsanemptyresultboundbyitscontext_no_map_d3eff76(HeroStr h0_why);
 
 #line 17 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-void h_fixedbugsanemptyresultboundbyitscontext_main(void) {
-#line 17 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_fs = {0}; HeroMapHeader * h2_m = {0}; HeroArrayHeader * h3_ys = {0}; HeroArrayHeader * h4_gs = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t2, *t4, *t7, *t10, *t15, *t19, *t23, *t27, *t30, *t31, *t32, *t33, *t36, *t37; HERO_NODEBUG HeroMapHeader *h7_own7 = {0}, *t6, *t13, *t34, *t35; HERO_NODEBUG HeroStr t1, t3, t5, t9, t12, t26; HERO_NODEBUG int64_t t8, t11, t14, t17, t24, t25, t28; HERO_NODEBUG double t21, t29; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_e2ede40);
-#line 18 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t2 = h_fixedbugsanemptyresultboundbyitscontext_empty_of_1b9a87(t1);
-#line 18 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t30 = h5_own5;
-#line 18 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h5_own5 = t2;
-#line 18 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_decref(t30);
-#line 18 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t31 = h0_xs;
-#line 18 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_incref(t2);
-#line 18 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h0_xs = t2;
-#line 18 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_decref(t31);
-    t3 = HERO_STR_LIT(hero_str_2d7849a2);
-#line 19 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t4 = h_fixedbugsanemptyresultboundbyitscontext_empty_of_1ad16c(t3);
-#line 19 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t32 = h6_own6;
-#line 19 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h6_own6 = t4;
-#line 19 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_decref(t32);
-#line 19 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t33 = h1_fs;
-#line 19 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_incref(t4);
-#line 19 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h1_fs = t4;
-#line 19 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_decref(t33);
-    t5 = HERO_STR_LIT(hero_str_d08fd49);
-#line 20 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t6 = h_fixedbugsanemptyresultboundbyitscontext_no_map_d3eff76(t5);
-#line 20 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t34 = h7_own7;
-#line 20 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h7_own7 = t6;
-#line 20 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_map_decref(t34);
-#line 20 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t35 = h2_m;
-#line 20 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_map_incref(t6);
-#line 20 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h2_m = t6;
-#line 20 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_map_decref(t35);
-    t7 = h0_xs;
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t9 = HERO_STR_LIT(hero_str_20);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t10 = h1_fs;
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t12 = HERO_STR_LIT(hero_str_20);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t13 = h2_m;
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t14 = hero_map_len(t13);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_int(t8);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_str(t9);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_int(t11);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_str(t12);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_int(t14);
-#line 21 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_end();
-    t15 = h0_xs;
-#line 22 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t36 = h3_ys;
-#line 22 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_incref(t15);
-#line 22 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h3_ys = t15;
-#line 22 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_decref(t36);
-    t17 = INT64_C(7);
-#line 23 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_push_owned(&h3_ys, &t17);
-    t19 = h1_fs;
-#line 24 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t37 = h4_gs;
-#line 24 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_incref(t19);
-#line 24 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h4_gs = t19;
-#line 24 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_decref(t37);
-    t21 = 0x1.8p+0;
-#line 25 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_push_owned(&h4_gs, &t21);
-    t23 = h3_ys;
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t24 = INT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]);
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t26 = HERO_STR_LIT(hero_str_20);
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t27 = h4_gs;
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t28 = INT64_C(0);
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t27 + 1))[t28]);
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_int(t25);
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_str(t26);
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_f64(t29);
-#line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_end();
-#line 235 "fixedbugsanemptyresultboundbyitscontext.c"
+void h_fixedbugsanemptyresultboundbyitscontext_main(void) { HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_fs = {0}; HeroMapHeader * h2_m = {0}; HeroArrayHeader * h3_ys = {0}; HeroArrayHeader * h4_gs = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t2, *t4, *t7, *t10, *t15, *t19, *t23, *t27, *t30, *t31, *t32, *t33, *t36, *t37; HERO_NODEBUG HeroMapHeader *h7_own7 = {0}, *t6, *t13, *t34, *t35; HERO_NODEBUG HeroStr t1, t3, t5, t9, t12, t26; HERO_NODEBUG int64_t t8, t11, t14, t17, t24, t25, t28; HERO_NODEBUG double t21, t29; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_e2ede40); t2 = h_fixedbugsanemptyresultboundbyitscontext_empty_of_1b9a87(t1); t30 = h5_own5; h5_own5 = t2; hero_array_decref(t30); t31 = h0_xs; hero_array_incref(t2); h0_xs = t2; hero_array_decref(t31);
+    t3 = HERO_STR_LIT(hero_str_2d7849a2); t4 = h_fixedbugsanemptyresultboundbyitscontext_empty_of_1ad16c(t3); t32 = h6_own6; h6_own6 = t4; hero_array_decref(t32); t33 = h1_fs; hero_array_incref(t4); h1_fs = t4; hero_array_decref(t33);
+    t5 = HERO_STR_LIT(hero_str_d08fd49); t6 = h_fixedbugsanemptyresultboundbyitscontext_no_map_d3eff76(t5); t34 = h7_own7; h7_own7 = t6; hero_map_decref(t34); t35 = h2_m; hero_map_incref(t6); h2_m = t6; hero_map_decref(t35);
+    t7 = h0_xs; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = HERO_STR_LIT(hero_str_20); t10 = h1_fs; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = HERO_STR_LIT(hero_str_20); t13 = h2_m; t14 = hero_map_len(t13); hero_print_int(t8); hero_print_str(t9); hero_print_int(t11); hero_print_str(t12); hero_print_int(t14); hero_print_end();
+    t15 = h0_xs; t36 = h3_ys; hero_array_incref(t15); h3_ys = t15; hero_array_decref(t36);
+    t17 = INT64_C(7); hero_array_push_owned(&h3_ys, &t17);
+    t19 = h1_fs; t37 = h4_gs; hero_array_incref(t19); h4_gs = t19; hero_array_decref(t37);
+    t21 = 0x1.8p+0; hero_array_push_owned(&h4_gs, &t21);
+    t23 = h3_ys; t24 = INT64_C(0); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]); t26 = HERO_STR_LIT(hero_str_20); t27 = h4_gs; t28 = INT64_C(0); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? ((void)hero_array_at(t27, t28), hero_unreachable()) : (void)0), (void)(t27->elem->size != sizeof(double) ? hero_unreachable() : (void)0), ((double const *)(const void *)(t27 + 1))[t28]); hero_print_int(t25); hero_print_str(t26); hero_print_f64(t29); hero_print_end();
+#line 117 "fixedbugsanemptyresultboundbyitscontext.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_fs);
     hero_map_release_at(&h2_m);
@@ -244,78 +126,30 @@ bb0:
 }
 
 #line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-/* empty_of<i64> */
-#line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-HERO_TU_LOCAL HeroArrayHeader * h_fixedbugsanemptyresultboundbyitscontext_empty_of_1b9a87(HeroStr h0_why) {
-#line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-bb0:
-    t1 = h0_why;
-#line 10 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_str(t1);
-#line 10 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_end();
-    t2 = hero_array_new(&hero_desc_int, 1);
-#line 11 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t3 = h1_own1;
-#line 11 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h1_own1 = t2;
-#line 11 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_decref(t3);
-#line 267 "fixedbugsanemptyresultboundbyitscontext.c"
+/* empty_of<i64> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugsanemptyresultboundbyitscontext_empty_of_1b9a87(HeroStr h0_why) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_why; hero_print_str(t1); hero_print_end();
+    t2 = hero_array_new(&hero_desc_int, 1); t3 = h1_own1; h1_own1 = t2; hero_array_decref(t3);
+#line 133 "fixedbugsanemptyresultboundbyitscontext.c"
     hero_array_incref(t2);
     hero_array_release_at(&h1_own1);
     return t2;
 }
 
 #line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-/* empty_of<f64> */
-#line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-HERO_TU_LOCAL HeroArrayHeader * h_fixedbugsanemptyresultboundbyitscontext_empty_of_1ad16c(HeroStr h0_why) {
-#line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-bb0:
-    t1 = h0_why;
-#line 10 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_str(t1);
-#line 10 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_end();
-    t2 = hero_array_new(&hero_desc_f64, 1);
-#line 11 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t3 = h1_own1;
-#line 11 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h1_own1 = t2;
-#line 11 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_array_decref(t3);
-#line 293 "fixedbugsanemptyresultboundbyitscontext.c"
+/* empty_of<f64> */ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugsanemptyresultboundbyitscontext_empty_of_1ad16c(HeroStr h0_why) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_why; hero_print_str(t1); hero_print_end();
+    t2 = hero_array_new(&hero_desc_f64, 1); t3 = h1_own1; h1_own1 = t2; hero_array_decref(t3);
+#line 143 "fixedbugsanemptyresultboundbyitscontext.c"
     hero_array_incref(t2);
     hero_array_release_at(&h1_own1);
     return t2;
 }
 
 #line 13 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-/* no_map<bool> */
-#line 13 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-HERO_TU_LOCAL HeroMapHeader * h_fixedbugsanemptyresultboundbyitscontext_no_map_d3eff76(HeroStr h0_why) {
-#line 13 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    HERO_NODEBUG HeroMapHeader *h1_own1 = {0}, *t2, *t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-bb0:
-    t1 = h0_why;
-#line 14 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_str(t1);
-#line 14 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_print_end();
-    t2 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
-#line 15 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    t3 = h1_own1;
-#line 15 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    h1_own1 = t2;
-#line 15 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    hero_map_decref(t3);
-#line 319 "fixedbugsanemptyresultboundbyitscontext.c"
+/* no_map<bool> */ HERO_TU_LOCAL HeroMapHeader * h_fixedbugsanemptyresultboundbyitscontext_no_map_d3eff76(HeroStr h0_why) { HERO_NODEBUG HeroMapHeader *h1_own1 = {0}, *t2, *t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_why; hero_print_str(t1); hero_print_end();
+    t2 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0); t3 = h1_own1; h1_own1 = t2; hero_map_decref(t3);
+#line 153 "fixedbugsanemptyresultboundbyitscontext.c"
     hero_map_incref(t2);
     hero_map_release_at(&h1_own1);
     return t2;

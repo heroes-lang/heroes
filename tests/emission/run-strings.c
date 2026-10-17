@@ -80,11 +80,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 90 "strings.c"
 #pragma clang diagnostic pop
@@ -101,126 +101,16 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_strings_main(void);
 
 #line 5 "tests/golden/run/strings.hero"
-void h_strings_main(void) {
-#line 5 "tests/golden/run/strings.hero"
-    HeroStr h0_greeting = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t10, t13, t16, t17, t18, t20, t21, t24, t26, t27, t28, t29, t30, t31, t32; HERO_NODEBUG int64_t t9, t11, t14, t15, t23; HERO_NODEBUG uint8_t t12; HERO_NODEBUG bool t19, t22, t25; HERO_ENTRY_STOP; goto bb0;
-#line 5 "tests/golden/run/strings.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_2f372e9c);
-#line 6 "tests/golden/run/strings.hero"
-    t27 = h0_greeting;
-#line 6 "tests/golden/run/strings.hero"
-    hero_str_incref(t1);
-#line 6 "tests/golden/run/strings.hero"
-    h0_greeting = t1;
-#line 6 "tests/golden/run/strings.hero"
-    hero_str_decref(t27);
-    t2 = h0_greeting;
-#line 7 "tests/golden/run/strings.hero"
-    hero_print_str(t2);
-#line 7 "tests/golden/run/strings.hero"
-    hero_print_end();
-    t3 = h0_greeting;
-#line 8 "tests/golden/run/strings.hero"
-    t4 = HERO_STR_LIT(hero_str_20);
-#line 8 "tests/golden/run/strings.hero"
-    t5 = hero_str_concat(t3, t4);
-#line 8 "tests/golden/run/strings.hero"
-    t28 = h1_own1;
-#line 8 "tests/golden/run/strings.hero"
-    h1_own1 = t5;
-#line 8 "tests/golden/run/strings.hero"
-    hero_str_decref(t28);
-#line 8 "tests/golden/run/strings.hero"
-    t6 = HERO_STR_LIT(hero_str_37dd7796);
-#line 8 "tests/golden/run/strings.hero"
-    t7 = hero_str_concat(t5, t6);
-#line 8 "tests/golden/run/strings.hero"
-    t29 = h2_own2;
-#line 8 "tests/golden/run/strings.hero"
-    h2_own2 = t7;
-#line 8 "tests/golden/run/strings.hero"
-    hero_str_decref(t29);
-#line 8 "tests/golden/run/strings.hero"
-    hero_print_str(t7);
-#line 8 "tests/golden/run/strings.hero"
-    hero_print_end();
-    t8 = h0_greeting;
-#line 9 "tests/golden/run/strings.hero"
-    t9 = hero_str_len(t8);
-#line 9 "tests/golden/run/strings.hero"
-    hero_print_int(t9);
-#line 9 "tests/golden/run/strings.hero"
-    hero_print_end();
-    t10 = h0_greeting;
-#line 10 "tests/golden/run/strings.hero"
-    t11 = INT64_C(0);
-#line 10 "tests/golden/run/strings.hero"
-    t12 = ((void)((t10.ptr == NULL || t11 < 0 || t11 >= t10.len) ? ((void)hero_str_byte(t10, t11), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t10.ptr[t11]);
-#line 10 "tests/golden/run/strings.hero"
-    hero_print_int(t12);
-#line 10 "tests/golden/run/strings.hero"
-    hero_print_end();
-    t13 = h0_greeting;
-#line 11 "tests/golden/run/strings.hero"
-    t14 = INT64_C(1);
-#line 11 "tests/golden/run/strings.hero"
-    t15 = INT64_C(3);
-#line 11 "tests/golden/run/strings.hero"
-    t16 = hero_str_slice(t13, t14, t15);
-#line 11 "tests/golden/run/strings.hero"
-    t30 = h3_own3;
-#line 11 "tests/golden/run/strings.hero"
-    h3_own3 = t16;
-#line 11 "tests/golden/run/strings.hero"
-    hero_str_decref(t30);
-#line 11 "tests/golden/run/strings.hero"
-    hero_print_str(t16);
-#line 11 "tests/golden/run/strings.hero"
-    hero_print_end();
-    t17 = HERO_STR_LIT(hero_str_61);
-#line 12 "tests/golden/run/strings.hero"
-    t18 = HERO_STR_LIT(hero_str_61);
-#line 12 "tests/golden/run/strings.hero"
-    t19 = hero_str_eq(t17, t18);
-#line 12 "tests/golden/run/strings.hero"
-    t20 = HERO_STR_LIT(hero_str_61);
-#line 12 "tests/golden/run/strings.hero"
-    t21 = HERO_STR_LIT(hero_str_62);
-#line 12 "tests/golden/run/strings.hero"
-    t22 = hero_str_eq(t20, t21);
-#line 12 "tests/golden/run/strings.hero"
-    hero_print_bool(t19);
-#line 12 "tests/golden/run/strings.hero"
-    hero_print_bool(t22);
-#line 12 "tests/golden/run/strings.hero"
-    hero_print_end();
-    t23 = INT64_C(42);
-#line 13 "tests/golden/run/strings.hero"
-    t24 = hero_int_to_str(t23);
-#line 13 "tests/golden/run/strings.hero"
-    t31 = h4_own4;
-#line 13 "tests/golden/run/strings.hero"
-    h4_own4 = t24;
-#line 13 "tests/golden/run/strings.hero"
-    hero_str_decref(t31);
-#line 13 "tests/golden/run/strings.hero"
-    t25 = true;
-#line 13 "tests/golden/run/strings.hero"
-    t26 = hero_bool_to_str(t25);
-#line 13 "tests/golden/run/strings.hero"
-    t32 = h5_own5;
-#line 13 "tests/golden/run/strings.hero"
-    h5_own5 = t26;
-#line 13 "tests/golden/run/strings.hero"
-    hero_str_decref(t32);
-#line 13 "tests/golden/run/strings.hero"
-    hero_print_str(t24);
-#line 13 "tests/golden/run/strings.hero"
-    hero_print_str(t26);
-#line 13 "tests/golden/run/strings.hero"
-    hero_print_end();
-#line 224 "strings.c"
+void h_strings_main(void) { HeroStr h0_greeting = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t10, t13, t16, t17, t18, t20, t21, t24, t26, t27, t28, t29, t30, t31, t32; HERO_NODEBUG int64_t t9, t11, t14, t15, t23; HERO_NODEBUG uint8_t t12; HERO_NODEBUG bool t19, t22, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_2f372e9c); t27 = h0_greeting; hero_str_incref(t1); h0_greeting = t1; hero_str_decref(t27);
+    t2 = h0_greeting; hero_print_str(t2); hero_print_end();
+    t3 = h0_greeting; t4 = HERO_STR_LIT(hero_str_20); t5 = hero_str_concat(t3, t4); t28 = h1_own1; h1_own1 = t5; hero_str_decref(t28); t6 = HERO_STR_LIT(hero_str_37dd7796); t7 = hero_str_concat(t5, t6); t29 = h2_own2; h2_own2 = t7; hero_str_decref(t29); hero_print_str(t7); hero_print_end();
+    t8 = h0_greeting; t9 = hero_str_len(t8); hero_print_int(t9); hero_print_end();
+    t10 = h0_greeting; t11 = INT64_C(0); t12 = ((void)((t10.ptr == NULL || t11 < 0 || t11 >= t10.len) ? ((void)hero_str_byte(t10, t11), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t10.ptr[t11]); hero_print_int(t12); hero_print_end();
+    t13 = h0_greeting; t14 = INT64_C(1); t15 = INT64_C(3); t16 = hero_str_slice(t13, t14, t15); t30 = h3_own3; h3_own3 = t16; hero_str_decref(t30); hero_print_str(t16); hero_print_end();
+    t17 = HERO_STR_LIT(hero_str_61); t18 = HERO_STR_LIT(hero_str_61); t19 = hero_str_eq(t17, t18); t20 = HERO_STR_LIT(hero_str_61); t21 = HERO_STR_LIT(hero_str_62); t22 = hero_str_eq(t20, t21); hero_print_bool(t19); hero_print_bool(t22); hero_print_end();
+    t23 = INT64_C(42); t24 = hero_int_to_str(t23); t31 = h4_own4; h4_own4 = t24; hero_str_decref(t31); t25 = true; t26 = hero_bool_to_str(t25); t32 = h5_own5; h5_own5 = t26; hero_str_decref(t32); hero_print_str(t24); hero_print_str(t26); hero_print_end();
+#line 114 "strings.c"
     hero_str_release_at(&h0_greeting);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

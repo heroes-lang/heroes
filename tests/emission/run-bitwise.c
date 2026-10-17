@@ -90,11 +90,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 100 "bitwise.c"
 #pragma clang diagnostic pop
@@ -111,288 +111,32 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_bitwise_main(void);
 
 #line 22 "tests/golden/run/bitwise.hero"
-void h_bitwise_main(void) {
-#line 22 "tests/golden/run/bitwise.hero"
-    int64_t h0_read; int64_t h1_write; int64_t h2_exec; int64_t h3_every; HERO_NODEBUG HeroStr t1, t5, t9, t13, t17, t20, t27, t31, t35, t39, t45, t51, t75, t77, t83; HERO_NODEBUG int64_t t2, t3, t4, t6, t7, t8, t10, t11, t12, t14, t15, t16, t18, t19, t21, t22, t23, t24, t25, t26, t28, t29, t30, t32, t33, t34, t36, t37, t38, t40, t41, t42, t43, t44, t46, t47, t48, t49, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t76, t78, t79, t80, t81, t84, t85, t86, t87; HERO_NODEBUG bool t50, t82; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/bitwise.hero"
-bb0:
-#line 24 "tests/golden/run/bitwise.hero"
-    t1 = HERO_STR_LIT(hero_str_79aa128c);
-#line 24 "tests/golden/run/bitwise.hero"
-    t2 = INT64_C(2);
-#line 24 "tests/golden/run/bitwise.hero"
-    t3 = INT64_C(3);
-#line 24 "tests/golden/run/bitwise.hero"
-    t4 = t2 | t3;
-#line 24 "tests/golden/run/bitwise.hero"
-    hero_print_str(t1);
-#line 24 "tests/golden/run/bitwise.hero"
-    hero_print_int(t4);
-#line 24 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t5 = HERO_STR_LIT(hero_str_54856257);
-#line 25 "tests/golden/run/bitwise.hero"
-    t6 = INT64_C(448);
-#line 25 "tests/golden/run/bitwise.hero"
-    t7 = INT64_C(256);
-#line 25 "tests/golden/run/bitwise.hero"
-    t8 = t6 | t7;
-#line 25 "tests/golden/run/bitwise.hero"
-    hero_print_str(t5);
-#line 25 "tests/golden/run/bitwise.hero"
-    hero_print_int(t8);
-#line 25 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-#line 27 "tests/golden/run/bitwise.hero"
-    t9 = HERO_STR_LIT(hero_str_6573c541);
-#line 27 "tests/golden/run/bitwise.hero"
-    t10 = INT64_C(6);
-#line 27 "tests/golden/run/bitwise.hero"
-    t11 = INT64_C(3);
-#line 27 "tests/golden/run/bitwise.hero"
-    t12 = t10 & t11;
-#line 27 "tests/golden/run/bitwise.hero"
-    hero_print_str(t9);
-#line 27 "tests/golden/run/bitwise.hero"
-    hero_print_int(t12);
-#line 27 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t13 = HERO_STR_LIT(hero_str_11c482ff);
-#line 28 "tests/golden/run/bitwise.hero"
-    t14 = INT64_C(6);
-#line 28 "tests/golden/run/bitwise.hero"
-    t15 = INT64_C(3);
-#line 28 "tests/golden/run/bitwise.hero"
-    t16 = t14 ^ t15;
-#line 28 "tests/golden/run/bitwise.hero"
-    hero_print_str(t13);
-#line 28 "tests/golden/run/bitwise.hero"
-    hero_print_int(t16);
-#line 28 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t17 = HERO_STR_LIT(hero_str_3ede2b03);
-#line 29 "tests/golden/run/bitwise.hero"
-    t18 = INT64_C(0);
-#line 29 "tests/golden/run/bitwise.hero"
-    t19 = ~t18;
-#line 29 "tests/golden/run/bitwise.hero"
-    hero_print_str(t17);
-#line 29 "tests/golden/run/bitwise.hero"
-    hero_print_int(t19);
-#line 29 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t20 = HERO_STR_LIT(hero_str_4f8cfd93);
-#line 30 "tests/golden/run/bitwise.hero"
-    t21 = INT64_C(0);
-#line 30 "tests/golden/run/bitwise.hero"
-    t22 = INT64_C(9223372036854775807);
-#line 30 "tests/golden/run/bitwise.hero"
-    if (__builtin_sub_overflow(t21, t22, &t23)) hero_panic_overflow();
-#line 30 "tests/golden/run/bitwise.hero"
-    t24 = INT64_C(1);
-#line 30 "tests/golden/run/bitwise.hero"
-    if (__builtin_sub_overflow(t23, t24, &t25)) hero_panic_overflow();
-#line 30 "tests/golden/run/bitwise.hero"
-    t26 = ~t25;
-#line 30 "tests/golden/run/bitwise.hero"
-    hero_print_str(t20);
-#line 30 "tests/golden/run/bitwise.hero"
-    hero_print_int(t26);
-#line 30 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-#line 32 "tests/golden/run/bitwise.hero"
-    t27 = HERO_STR_LIT(hero_str_2c813b8c);
-#line 32 "tests/golden/run/bitwise.hero"
-    t28 = INT64_C(1);
-#line 32 "tests/golden/run/bitwise.hero"
-    t29 = INT64_C(10);
-#line 32 "tests/golden/run/bitwise.hero"
-    if (t29 < 0 || t29 > 63) hero_panic("shift count outside 0..63");
-#line 32 "tests/golden/run/bitwise.hero"
-    t30 = (int64_t)((uint64_t)t28 << (uint64_t)t29);
-#line 32 "tests/golden/run/bitwise.hero"
-    hero_print_str(t27);
-#line 32 "tests/golden/run/bitwise.hero"
-    hero_print_int(t30);
-#line 32 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t31 = HERO_STR_LIT(hero_str_535eeb7d);
-#line 33 "tests/golden/run/bitwise.hero"
-    t32 = INT64_C(1);
-#line 33 "tests/golden/run/bitwise.hero"
-    t33 = INT64_C(63);
-#line 33 "tests/golden/run/bitwise.hero"
-    if (t33 < 0 || t33 > 63) hero_panic("shift count outside 0..63");
-#line 33 "tests/golden/run/bitwise.hero"
-    t34 = (int64_t)((uint64_t)t32 << (uint64_t)t33);
-#line 33 "tests/golden/run/bitwise.hero"
-    hero_print_str(t31);
-#line 33 "tests/golden/run/bitwise.hero"
-    hero_print_int(t34);
-#line 33 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t35 = HERO_STR_LIT(hero_str_2d4f0d2e);
-#line 34 "tests/golden/run/bitwise.hero"
-    t36 = INT64_C(1024);
-#line 34 "tests/golden/run/bitwise.hero"
-    t37 = INT64_C(3);
-#line 34 "tests/golden/run/bitwise.hero"
-    if (t37 < 0 || t37 > 63) hero_panic("shift count outside 0..63");
-#line 34 "tests/golden/run/bitwise.hero"
-    t38 = (t36 < 0) ? ~(int64_t)((~(uint64_t)t36) >> (uint64_t)t37) : (int64_t)((uint64_t)t36 >> (uint64_t)t37);
-#line 34 "tests/golden/run/bitwise.hero"
-    hero_print_str(t35);
-#line 34 "tests/golden/run/bitwise.hero"
-    hero_print_int(t38);
-#line 34 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t39 = HERO_STR_LIT(hero_str_3f189351);
-#line 35 "tests/golden/run/bitwise.hero"
-    t40 = INT64_C(0);
-#line 35 "tests/golden/run/bitwise.hero"
-    t41 = INT64_C(8);
-#line 35 "tests/golden/run/bitwise.hero"
-    if (__builtin_sub_overflow(t40, t41, &t42)) hero_panic_overflow();
-#line 35 "tests/golden/run/bitwise.hero"
-    t43 = INT64_C(1);
-#line 35 "tests/golden/run/bitwise.hero"
-    if (t43 < 0 || t43 > 63) hero_panic("shift count outside 0..63");
-#line 35 "tests/golden/run/bitwise.hero"
-    t44 = (t42 < 0) ? ~(int64_t)((~(uint64_t)t42) >> (uint64_t)t43) : (int64_t)((uint64_t)t42 >> (uint64_t)t43);
-#line 35 "tests/golden/run/bitwise.hero"
-    hero_print_str(t39);
-#line 35 "tests/golden/run/bitwise.hero"
-    hero_print_int(t44);
-#line 35 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-#line 38 "tests/golden/run/bitwise.hero"
-    t45 = HERO_STR_LIT(hero_str_2e38b983);
-#line 38 "tests/golden/run/bitwise.hero"
-    t46 = INT64_C(6);
-#line 38 "tests/golden/run/bitwise.hero"
-    t47 = INT64_C(1);
-#line 38 "tests/golden/run/bitwise.hero"
-    t48 = t46 & t47;
-#line 38 "tests/golden/run/bitwise.hero"
-    t49 = INT64_C(0);
-#line 38 "tests/golden/run/bitwise.hero"
-    t50 = t48 == t49;
-#line 38 "tests/golden/run/bitwise.hero"
-    hero_print_str(t45);
-#line 38 "tests/golden/run/bitwise.hero"
-    hero_print_bool(t50);
-#line 38 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t51 = HERO_STR_LIT(hero_str_25c4466a);
-#line 39 "tests/golden/run/bitwise.hero"
-    t52 = INT64_C(1);
-#line 39 "tests/golden/run/bitwise.hero"
-    t53 = INT64_C(2);
-#line 39 "tests/golden/run/bitwise.hero"
-    t54 = INT64_C(3);
-#line 39 "tests/golden/run/bitwise.hero"
-    t55 = INT64_C(4);
-#line 39 "tests/golden/run/bitwise.hero"
-    t56 = INT64_C(1);
-#line 39 "tests/golden/run/bitwise.hero"
-    if (t56 < 0 || t56 > 63) hero_panic("shift count outside 0..63");
-#line 39 "tests/golden/run/bitwise.hero"
-    t57 = (int64_t)((uint64_t)t55 << (uint64_t)t56);
-#line 39 "tests/golden/run/bitwise.hero"
-    t58 = t54 & t57;
-#line 39 "tests/golden/run/bitwise.hero"
-    t59 = t53 ^ t58;
-#line 39 "tests/golden/run/bitwise.hero"
-    t60 = t52 | t59;
-#line 39 "tests/golden/run/bitwise.hero"
-    hero_print_str(t51);
-#line 39 "tests/golden/run/bitwise.hero"
-    hero_print_int(t60);
-#line 39 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-#line 42 "tests/golden/run/bitwise.hero"
-    t61 = INT64_C(1);
-#line 42 "tests/golden/run/bitwise.hero"
-    t62 = INT64_C(0);
-#line 42 "tests/golden/run/bitwise.hero"
-    if (t62 < 0 || t62 > 63) hero_panic("shift count outside 0..63");
-#line 42 "tests/golden/run/bitwise.hero"
-    t63 = (int64_t)((uint64_t)t61 << (uint64_t)t62);
-#line 42 "tests/golden/run/bitwise.hero"
-    h0_read = t63;
-    t64 = INT64_C(1);
-#line 43 "tests/golden/run/bitwise.hero"
-    t65 = INT64_C(1);
-#line 43 "tests/golden/run/bitwise.hero"
-    if (t65 < 0 || t65 > 63) hero_panic("shift count outside 0..63");
-#line 43 "tests/golden/run/bitwise.hero"
-    t66 = (int64_t)((uint64_t)t64 << (uint64_t)t65);
-#line 43 "tests/golden/run/bitwise.hero"
-    h1_write = t66;
-    t67 = INT64_C(1);
-#line 44 "tests/golden/run/bitwise.hero"
-    t68 = INT64_C(2);
-#line 44 "tests/golden/run/bitwise.hero"
-    if (t68 < 0 || t68 > 63) hero_panic("shift count outside 0..63");
-#line 44 "tests/golden/run/bitwise.hero"
-    t69 = (int64_t)((uint64_t)t67 << (uint64_t)t68);
-#line 44 "tests/golden/run/bitwise.hero"
-    h2_exec = t69;
-    t70 = h0_read;
-#line 45 "tests/golden/run/bitwise.hero"
-    t71 = h1_write;
-#line 45 "tests/golden/run/bitwise.hero"
-    t72 = t70 | t71;
-#line 45 "tests/golden/run/bitwise.hero"
-    t73 = h2_exec;
-#line 45 "tests/golden/run/bitwise.hero"
-    t74 = t72 | t73;
-#line 45 "tests/golden/run/bitwise.hero"
-    h3_every = t74;
-    t75 = HERO_STR_LIT(hero_str_3e4223b);
-#line 46 "tests/golden/run/bitwise.hero"
-    t76 = h3_every;
-#line 46 "tests/golden/run/bitwise.hero"
-    hero_print_str(t75);
-#line 46 "tests/golden/run/bitwise.hero"
-    hero_print_int(t76);
-#line 46 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t77 = HERO_STR_LIT(hero_str_5671f1f7);
-#line 47 "tests/golden/run/bitwise.hero"
-    t78 = h3_every;
-#line 47 "tests/golden/run/bitwise.hero"
-    t79 = h1_write;
-#line 47 "tests/golden/run/bitwise.hero"
-    t80 = t78 & t79;
-#line 47 "tests/golden/run/bitwise.hero"
-    t81 = h1_write;
-#line 47 "tests/golden/run/bitwise.hero"
-    t82 = t80 == t81;
-#line 47 "tests/golden/run/bitwise.hero"
-    hero_print_str(t77);
-#line 47 "tests/golden/run/bitwise.hero"
-    hero_print_bool(t82);
-#line 47 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-    t83 = HERO_STR_LIT(hero_str_6cc5431);
-#line 48 "tests/golden/run/bitwise.hero"
-    t84 = h3_every;
-#line 48 "tests/golden/run/bitwise.hero"
-    t85 = h1_write;
-#line 48 "tests/golden/run/bitwise.hero"
-    t86 = ~t85;
-#line 48 "tests/golden/run/bitwise.hero"
-    t87 = t84 & t86;
-#line 48 "tests/golden/run/bitwise.hero"
-    hero_print_str(t83);
-#line 48 "tests/golden/run/bitwise.hero"
-    hero_print_int(t87);
-#line 48 "tests/golden/run/bitwise.hero"
-    hero_print_end();
-#line 48 "tests/golden/run/bitwise.hero"
-    return;
-#line 396 "bitwise.c"
+void h_bitwise_main(void) { int64_t h0_read; int64_t h1_write; int64_t h2_exec; int64_t h3_every; HERO_NODEBUG HeroStr t1, t5, t9, t13, t17, t20, t27, t31, t35, t39, t45, t51, t75, t77, t83; HERO_NODEBUG int64_t t2, t3, t4, t6, t7, t8, t10, t11, t12, t14, t15, t16, t18, t19, t21, t22, t23, t24, t25, t26, t28, t29, t30, t32, t33, t34, t36, t37, t38, t40, t41, t42, t43, t44, t46, t47, t48, t49, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t76, t78, t79, t80, t81, t84, t85, t86, t87; HERO_NODEBUG bool t50, t82; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 24
+    t1 = HERO_STR_LIT(hero_str_79aa128c); t2 = INT64_C(2); t3 = INT64_C(3); t4 = t2 | t3; hero_print_str(t1); hero_print_int(t4); hero_print_end();
+    t5 = HERO_STR_LIT(hero_str_54856257); t6 = INT64_C(448); t7 = INT64_C(256); t8 = t6 | t7; hero_print_str(t5); hero_print_int(t8); hero_print_end();
+#line 27
+    t9 = HERO_STR_LIT(hero_str_6573c541); t10 = INT64_C(6); t11 = INT64_C(3); t12 = t10 & t11; hero_print_str(t9); hero_print_int(t12); hero_print_end();
+    t13 = HERO_STR_LIT(hero_str_11c482ff); t14 = INT64_C(6); t15 = INT64_C(3); t16 = t14 ^ t15; hero_print_str(t13); hero_print_int(t16); hero_print_end();
+    t17 = HERO_STR_LIT(hero_str_3ede2b03); t18 = INT64_C(0); t19 = ~t18; hero_print_str(t17); hero_print_int(t19); hero_print_end();
+    t20 = HERO_STR_LIT(hero_str_4f8cfd93); t21 = INT64_C(0); t22 = INT64_C(9223372036854775807); if (__builtin_sub_overflow(t21, t22, &t23)) hero_panic_overflow(); t24 = INT64_C(1); if (__builtin_sub_overflow(t23, t24, &t25)) hero_panic_overflow(); t26 = ~t25; hero_print_str(t20); hero_print_int(t26); hero_print_end();
+#line 32
+    t27 = HERO_STR_LIT(hero_str_2c813b8c); t28 = INT64_C(1); t29 = INT64_C(10); if (t29 < 0 || t29 > 63) hero_panic("shift count outside 0..63"); t30 = (int64_t)((uint64_t)t28 << (uint64_t)t29); hero_print_str(t27); hero_print_int(t30); hero_print_end();
+    t31 = HERO_STR_LIT(hero_str_535eeb7d); t32 = INT64_C(1); t33 = INT64_C(63); if (t33 < 0 || t33 > 63) hero_panic("shift count outside 0..63"); t34 = (int64_t)((uint64_t)t32 << (uint64_t)t33); hero_print_str(t31); hero_print_int(t34); hero_print_end();
+    t35 = HERO_STR_LIT(hero_str_2d4f0d2e); t36 = INT64_C(1024); t37 = INT64_C(3); if (t37 < 0 || t37 > 63) hero_panic("shift count outside 0..63"); t38 = (t36 < 0) ? ~(int64_t)((~(uint64_t)t36) >> (uint64_t)t37) : (int64_t)((uint64_t)t36 >> (uint64_t)t37); hero_print_str(t35); hero_print_int(t38); hero_print_end();
+    t39 = HERO_STR_LIT(hero_str_3f189351); t40 = INT64_C(0); t41 = INT64_C(8); if (__builtin_sub_overflow(t40, t41, &t42)) hero_panic_overflow(); t43 = INT64_C(1); if (t43 < 0 || t43 > 63) hero_panic("shift count outside 0..63"); t44 = (t42 < 0) ? ~(int64_t)((~(uint64_t)t42) >> (uint64_t)t43) : (int64_t)((uint64_t)t42 >> (uint64_t)t43); hero_print_str(t39); hero_print_int(t44); hero_print_end();
+#line 38
+    t45 = HERO_STR_LIT(hero_str_2e38b983); t46 = INT64_C(6); t47 = INT64_C(1); t48 = t46 & t47; t49 = INT64_C(0); t50 = t48 == t49; hero_print_str(t45); hero_print_bool(t50); hero_print_end();
+    t51 = HERO_STR_LIT(hero_str_25c4466a); t52 = INT64_C(1); t53 = INT64_C(2); t54 = INT64_C(3); t55 = INT64_C(4); t56 = INT64_C(1); if (t56 < 0 || t56 > 63) hero_panic("shift count outside 0..63"); t57 = (int64_t)((uint64_t)t55 << (uint64_t)t56); t58 = t54 & t57; t59 = t53 ^ t58; t60 = t52 | t59; hero_print_str(t51); hero_print_int(t60); hero_print_end();
+#line 42
+    t61 = INT64_C(1); t62 = INT64_C(0); if (t62 < 0 || t62 > 63) hero_panic("shift count outside 0..63"); t63 = (int64_t)((uint64_t)t61 << (uint64_t)t62); h0_read = t63;
+    t64 = INT64_C(1); t65 = INT64_C(1); if (t65 < 0 || t65 > 63) hero_panic("shift count outside 0..63"); t66 = (int64_t)((uint64_t)t64 << (uint64_t)t65); h1_write = t66;
+    t67 = INT64_C(1); t68 = INT64_C(2); if (t68 < 0 || t68 > 63) hero_panic("shift count outside 0..63"); t69 = (int64_t)((uint64_t)t67 << (uint64_t)t68); h2_exec = t69;
+    t70 = h0_read; t71 = h1_write; t72 = t70 | t71; t73 = h2_exec; t74 = t72 | t73; h3_every = t74;
+    t75 = HERO_STR_LIT(hero_str_3e4223b); t76 = h3_every; hero_print_str(t75); hero_print_int(t76); hero_print_end();
+    t77 = HERO_STR_LIT(hero_str_5671f1f7); t78 = h3_every; t79 = h1_write; t80 = t78 & t79; t81 = h1_write; t82 = t80 == t81; hero_print_str(t77); hero_print_bool(t82); hero_print_end();
+    t83 = HERO_STR_LIT(hero_str_6cc5431); t84 = h3_every; t85 = h1_write; t86 = ~t85; t87 = t84 & t86; hero_print_str(t83); hero_print_int(t87); hero_print_end(); return;
+#line 140 "bitwise.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

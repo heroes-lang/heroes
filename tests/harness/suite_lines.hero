@@ -337,9 +337,15 @@ function offences(c: str, source: str) -> [str]
 
         if strings.starts_with(text: row, prefix: "#line ")
             rest = strings.without_prefix(text: row, prefix: "#line ")
+            kept = claim_file
             claim_line @ 0
             claim_file @ ""
             space = strings.index_of(text: rest, needle: " ")
+            bare = strings.to_number(rest)
+
+            if space.is_err() && !bare.is_err() && kept.len() > 0
+                claim_line @ bare.must()
+                claim_file @ kept
 
             if !space.is_err()
                 number = strings.to_number(rest.slice(from: 0, to: space.must()))
@@ -431,8 +437,14 @@ function entry_offences(c: str, source: str) -> [str]
         if strings.starts_with(text: row, prefix: "#line ")
             rest = strings.without_prefix(text: row, prefix: "#line ")
             space = strings.index_of(text: rest, needle: " ")
+            kept = file
             file @ ""
             line @ 0
+            bare = strings.to_number(rest)
+
+            if space.is_err() && !bare.is_err() && kept.len() > 0
+                line @ bare.must()
+                file @ kept
 
             if !space.is_err()
                 number = strings.to_number(rest.slice(from: 0, to: space.must()))
@@ -448,7 +460,7 @@ function entry_offences(c: str, source: str) -> [str]
             continue
 
         if pending
-            if strings.ends_with(text: row, suffix: "goto bb0;")
+            if strings.ends_with(text: row, suffix: "goto bb0;") || strings.ends_with(text: row, suffix: "goto bb0; bb0:")
                 entries @ entries + 1
                 pending @ false
 
@@ -468,7 +480,11 @@ function entry_offences(c: str, source: str) -> [str]
             else
                 pending @ false
 
-        if row.len() > 0 && row[0] != 32 && strings.ends_with(text: row, suffix: ") {")
+        # An entry written on its signature's own physical line (panel 219's
+        # R1), which the signature's claim claims by construction.
+        if row.len() > 0 && row[0] != 32 && !strings.index_of(text: row, needle: ") { ").is_err() && !strings.index_of(text: row, needle: " goto bb0;").is_err()
+            entries @ entries + 1
+        else if row.len() > 0 && row[0] != 32 && strings.ends_with(text: row, suffix: ") {")
             pending @ true
             spread @ 0
             signature_file @ file
@@ -477,7 +493,7 @@ function entry_offences(c: str, source: str) -> [str]
 
     if entries == 0
         found @ found.push(
-            "    no function's entry, a line ending `goto bb0;` after a signature's `{`, was found in the C of " + source + ", so the walk asked nothing"
+            "    no function's entry, a line ending `goto bb0;` after a signature's `{` or a signature's line holding it, was found in the C of " + source + ", so the walk asked nothing"
         )
     return found
 
@@ -641,6 +657,33 @@ test "a function's entry is claimed by its signature's line, and an entry under 
     assert found.len() == 1
     assert strings.contains(text: found[0], needle: "claimed by a.hero:4, and its signature by a.hero:3")
     assert strings.contains(text: entry_offences(c: "int x;\n", source: "t")[0], needle: "so the walk asked nothing")
+
+# PANEL 219'S R1: a `#line` naming no file keeps the one clang presumes, so
+# a bare one is read as a claim on that file, and an entry joined onto its
+# signature's physical line is that signature's.
+test "a bare #line claims the file clang presumes, and an entry on its signature's own line is its signature's (panel 219)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/lines"
+    assert !shell.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "/s.hero", text: "function main()\n\n    print(1)\n").is_err()
+    bare = "#line 1 " + quoted(tree + "/s.hero") + "\nint main(void) {\n#line 3\n    print(1);\n"
+    assert offences(c: bare, source: "t").len() == 0
+    blank = "#line 1 " + quoted(tree + "/s.hero") + "\nint a;\n#line 2\nint b;\n"
+    assert offences(c: blank, source: "t").len() == 1
+    assert strings.contains(text: offences(c: blank, source: "t")[0], needle: "s.hero:2 is a blank line")
+
+    # A bare restore of the generated file names its own next line too.
+    assert offences(c: "#line 2 \"m.c\"\nint a;\n#line 4\nint b;\n", source: "t").len() == 0
+    assert offences(c: "#line 2 \"m.c\"\nint a;\n#line 3\nint b;\n", source: "t").len() == 1
+    assert !shell.remove_tree(scratch).is_err()
+    joined = "#line 3 \"a.hero\"\nint64_t f(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:\n    t1 = 1;\n"
+    assert entry_offences(c: joined, source: "t").len() == 0
+    guarded = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3\n#define h1_x (*p)\n#line 3\n    int64_t *const p = 0; goto bb0; bb0:\n"
+    assert entry_offences(c: guarded, source: "t").len() == 0
+    drifted = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 4\n    int64_t t1; goto bb0; bb0:\n"
+    found = entry_offences(c: drifted, source: "t")
+    assert found.len() == 1
+    assert strings.contains(text: found[0], needle: "claimed by a.hero:4, and its signature by a.hero:3")
 
 test "unquoted undoes C's escapes"
     assert unquoted("\"a.hero\"").must() == "a.hero"

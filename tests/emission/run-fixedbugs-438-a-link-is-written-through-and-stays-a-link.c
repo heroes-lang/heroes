@@ -178,22 +178,22 @@ typedef struct h_0opt_a8ea2 {
 #line 14 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_symlink(const char * a0, const char * a1) { (void)(symlink)(a0, a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_readlink(const char * a0, int8_t * a1, uint64_t a2) { (void)(readlink)(a0, (void *)a1, a2); }
-#line 19 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
+#line 19
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_mkdir_all(const char * a0) { (void)(hero_fs_mkdir_all)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_kind(const char * a0) { (void)(hero_fs_kind)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_mode(const char * a0) { (void)(hero_fs_mode)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_set_mode(const char * a0, int64_t a1) { (void)(hero_fs_set_mode)(a0, a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_dir_scan(const char * a0, int64_t a1, int64_t a2) { (void)(hero_dir_scan)(a0, a1, a2); }
-#line 25 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
+#line 25
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_dir_remove_tree(const char * a0) { (void)(hero_dir_remove_tree)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 199 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 #pragma clang diagnostic pop
@@ -265,112 +265,26 @@ int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(void) {
 }
 
 #line 29 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-HeroStr h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(void) {
-#line 29 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 29 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb0:
+HeroStr h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 275 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 271 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 33 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(HeroStr h0_path) {
-#line 33 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroArrayHeader * h1_buf = {0}; int64_t h2_got; HeroArrayHeader * h3_out = {0}; int64_t h4_i; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t6, *t12, *t19, *t20, *t21, *t22, *t23; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG int64_t t5, t7, t8, t9, t13, t16, t17, t18; HERO_NODEBUG bool t10; HERO_NODEBUG int8_t t14; HERO_ENTRY_STOP; goto bb0;
-#line 33 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_i8, 1);
-#line 34 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t20 = h5_own5;
-#line 34 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h5_own5 = t1;
-#line 34 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t20);
-#line 34 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t21 = h1_buf;
-#line 34 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_incref(t1);
-#line 34 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h1_buf = t1;
-#line 34 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t21);
-    t2 = h0_path;
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t3 = hero_str_lend(t2);
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t4 = UINT64_C(256);
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    {
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *restrict)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), char) && (char)-1 < 0), "heroes-ffi-buffer readlink buf 873 876 i8 char *restrict");
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HERO_NODEBUG int64_t hero_lend_e0_1 = hero_lend_count_u64((uint64_t)(t4), "readlink", "buf");
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HERO_NODEBUG void *hero_lend_b0_1 = hero_lend_take(h1_buf, hero_lend_e0_1, "readlink", "buf");
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t5 = readlink(hero_cstr_nonnull(t3), (void *)hero_lend_b0_1, t4);
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h1_buf = hero_lend_give(h1_buf, hero_lend_b0_1, hero_lend_e0_1);
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    }
-#line 35 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h2_got = t5;
-    t6 = hero_array_new(&hero_desc_i8, 1);
-#line 36 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t22 = h6_own6;
-#line 36 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h6_own6 = t6;
-#line 36 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t22);
-#line 36 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t23 = h3_out;
-#line 36 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_incref(t6);
-#line 36 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h3_out = t6;
-#line 36 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t23);
-    t7 = INT64_C(0);
-#line 37 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h4_i = t7;
-#line 37 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb1;
-#line 37 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb1:
-#line 39 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t8 = h4_i;
-#line 39 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t9 = h2_got;
-#line 39 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t10 = t8 < t9;
-#line 39 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t10) goto bb2; else goto bb3;
-#line 39 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb2:
-    t12 = h1_buf;
-#line 40 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t13 = h4_i;
-#line 40 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t12 + 1))[t13]);
-#line 40 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_push_owned(&h3_out, &t14);
-    t16 = h4_i;
-#line 41 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t17 = INT64_C(1);
-#line 41 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
-#line 41 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h4_i = t18;
-#line 41 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb1;
-#line 41 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb3:
-#line 43 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
+HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(HeroStr h0_path) { HeroArrayHeader * h1_buf = {0}; int64_t h2_got; HeroArrayHeader * h3_out = {0}; int64_t h4_i; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t6, *t12, *t19, *t20, *t21, *t22, *t23; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG int64_t t5, t7, t8, t9, t13, t16, t17, t18; HERO_NODEBUG bool t10; HERO_NODEBUG int8_t t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_i8, 1); t20 = h5_own5; h5_own5 = t1; hero_array_decref(t20); t21 = h1_buf; hero_array_incref(t1); h1_buf = t1; hero_array_decref(t21);
+    t2 = h0_path; t3 = hero_str_lend(t2); t4 = UINT64_C(256); { _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *restrict)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), char) && (char)-1 < 0), "heroes-ffi-buffer readlink buf 873 876 i8 char *restrict"); HERO_NODEBUG int64_t hero_lend_e0_1 = hero_lend_count_u64((uint64_t)(t4), "readlink", "buf"); HERO_NODEBUG void *hero_lend_b0_1 = hero_lend_take(h1_buf, hero_lend_e0_1, "readlink", "buf"); t5 = readlink(hero_cstr_nonnull(t3), (void *)hero_lend_b0_1, t4); h1_buf = hero_lend_give(h1_buf, hero_lend_b0_1, hero_lend_e0_1); } h2_got = t5;
+    t6 = hero_array_new(&hero_desc_i8, 1); t22 = h6_own6; h6_own6 = t6; hero_array_decref(t22); t23 = h3_out; hero_array_incref(t6); h3_out = t6; hero_array_decref(t23);
+    t7 = INT64_C(0); h4_i = t7; goto bb1; bb1:
+#line 39
+    t8 = h4_i; t9 = h2_got; t10 = t8 < t9; if (t10) goto bb2; else goto bb3; bb2:
+    t12 = h1_buf; t13 = h4_i; t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t12 + 1))[t13]); hero_array_push_owned(&h3_out, &t14);
+    t16 = h4_i; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); h4_i = t18; goto bb1; bb3:
+#line 43
     t19 = h3_out;
-#line 374 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 288 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t19);
     hero_array_release_at(&h1_buf);
     hero_array_release_at(&h3_out);
@@ -380,89 +294,15 @@ bb3:
 }
 
 #line 45 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(HeroStr h0_text) {
-#line 45 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG h_0opt_1b9b98 h3_f0 = {0}, h5_own5 = {0}, t11, t12, t16, t18, t27, t28; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t24, *t25, *t26; HERO_NODEBUG int64_t t2, t3, t5, t9, t13, t14, t21, t22, t23; HERO_NODEBUG HeroStr t4, t8; HERO_NODEBUG bool t6, t15; HERO_NODEBUG uint8_t t10; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG int8_t t19; HERO_ENTRY_STOP; goto bb0;
-#line 45 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_i8, 1);
-#line 46 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t25 = h4_own4;
-#line 46 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h4_own4 = t1;
-#line 46 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t25);
-#line 46 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t26 = h1_out;
-#line 46 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_incref(t1);
-#line 46 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h1_out = t1;
-#line 46 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t26);
-    t2 = INT64_C(0);
-#line 47 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h2_i = t2;
-#line 47 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb1;
-#line 47 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb1:
-#line 49 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t3 = h2_i;
-#line 49 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t4 = h0_text;
-#line 49 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t5 = hero_str_len(t4);
-#line 49 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t6 = t3 < t5;
-#line 49 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 49 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb2:
-    t8 = h0_text;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t9 = h2_i;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t10 <= 127ULL) {
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-        t11 = (h_0opt_1b9b98){.tag = INT64_C(0), .as.ok = (int8_t)t10};
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    } else {
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-        t11 = (h_0opt_1b9b98){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    }
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t27 = h5_own5;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h5_own5 = t11;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_1b9b98_release(&t27);
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t28 = h3_f0;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_1b9b98_retain(&t11);
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h3_f0 = t11;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_1b9b98_release(&t28);
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t12 = h3_f0;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t13 = t12.tag;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t14 = INT64_C(0);
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t15 = t13 == t14;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t15) goto bb4; else goto bb5;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb3:
-#line 53 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
+HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG h_0opt_1b9b98 h3_f0 = {0}, h5_own5 = {0}, t11, t12, t16, t18, t27, t28; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t24, *t25, *t26; HERO_NODEBUG int64_t t2, t3, t5, t9, t13, t14, t21, t22, t23; HERO_NODEBUG HeroStr t4, t8; HERO_NODEBUG bool t6, t15; HERO_NODEBUG uint8_t t10; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG int8_t t19; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_i8, 1); t25 = h4_own4; h4_own4 = t1; hero_array_decref(t25); t26 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t26);
+    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+#line 49
+    t3 = h2_i; t4 = h0_text; t5 = hero_str_len(t4); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb2:
+    t8 = h0_text; t9 = h2_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); if (t10 <= 127ULL) { t11 = (h_0opt_1b9b98){.tag = INT64_C(0), .as.ok = (int8_t)t10}; } else { t11 = (h_0opt_1b9b98){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t27 = h5_own5; h5_own5 = t11; h_0opt_1b9b98_release(&t27); t28 = h3_f0; h_0opt_1b9b98_retain(&t11); h3_f0 = t11; h_0opt_1b9b98_release(&t28); t12 = h3_f0; t13 = t12.tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb4; else goto bb5; bb3:
+#line 53
     t24 = h1_out;
-#line 466 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 306 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t24);
     hero_array_release_at(&h1_out);
     h_0opt_1b9b98_release(hero_slot_escape(&h3_f0));
@@ -471,109 +311,19 @@ bb3:
     return t24;
 bb4:
 #line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t18 = h3_f0;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t19 = t18.as.ok;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_push_owned(&h1_out, &t19);
-    t21 = h2_i;
-#line 51 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t22 = INT64_C(1);
-#line 51 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow();
-#line 51 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h2_i = t23;
-#line 51 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb1;
-#line 51 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb5:
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t16 = h3_f0;
-#line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t17 = t16.as.err;
-#line 495 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    t18 = h3_f0; t19 = t18.as.ok; hero_array_push_owned(&h1_out, &t19);
+    t21 = h2_i; t22 = INT64_C(1); if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow(); h2_i = t23; goto bb1; bb5:
+#line 50
+    t16 = h3_f0; t17 = t16.as.err;
+#line 319 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_panic_must(t17);
     hero_unreachable();
 }
 
 #line 55 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bool h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(HeroStr h0_path) {
-#line 55 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t13, t14; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t1, t8, t9, t10, t11, t15, t16, t17; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6, t12; HERO_ENTRY_STOP; goto bb0;
-#line 55 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb0:
-    t1 = h0_path;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t2 = h_library_read_file(t1);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t13 = h3_own3;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h3_own3 = t2;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_f87774a_release(&t13);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t14 = h1_f0;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_f87774a_retain(&t2);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h1_f0 = t2;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_f87774a_release(&t14);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t3 = h1_f0;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t4 = t3.tag;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t5 = INT64_C(0);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t6 = t4 == t5;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t6) goto bb1; else goto bb2;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb1:
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t7 = h1_f0;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t8 = t7.as.ok;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t15 = h2_r0;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_incref(t8);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h2_r0 = t8;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t15);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb3;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb2:
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t9 = HERO_STR_LIT(hero_str_c328310);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t16 = h2_r0;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_incref(t9);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h2_r0 = t9;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t16);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb3;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb3:
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t10 = h2_r0;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t11 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT();
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t17 = h4_own4;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h4_own4 = t11;
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t17);
-#line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t12 = hero_str_eq(t10, t11);
-#line 577 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+bool h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(HeroStr h0_path) { HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t13, t14; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t1, t8, t9, t10, t11, t15, t16, t17; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_path; t2 = h_library_read_file(t1); t13 = h3_own3; h3_own3 = t2; h_0opt_f87774a_release(&t13); t14 = h1_f0; h_0opt_f87774a_retain(&t2); h1_f0 = t2; h_0opt_f87774a_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; t15 = h2_r0; hero_str_incref(t8); h2_r0 = t8; hero_str_decref(t15); goto bb3; bb2: t9 = HERO_STR_LIT(hero_str_c328310); t16 = h2_r0; hero_str_incref(t9); h2_r0 = t9; hero_str_decref(t16); goto bb3; bb3: t10 = h2_r0; t11 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(); t17 = h4_own4; h4_own4 = t11; hero_str_decref(t17); t12 = hero_str_eq(t10, t11);
+#line 327 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -582,315 +332,41 @@ bb3:
 }
 
 #line 59 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(HeroStr h0_dir) {
-#line 59 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 59 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb0:
-    t1 = h0_dir;
-#line 60 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t2 = hero_str_lend(t1);
-#line 60 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t3 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_DIR_FILES();
-#line 60 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t4 = INT64_C(0);
-#line 60 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t5 = hero_dir_scan(hero_cstr_nonnull(t2), t3, t4);
-#line 60 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h1_count = t5;
+int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(HeroStr h0_dir) { int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_dir; t2 = hero_str_lend(t1); t3 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_DIR_FILES(); t4 = INT64_C(0); t5 = hero_dir_scan(hero_cstr_nonnull(t2), t3, t4); h1_count = t5;
     (void)hero_dir_release();
-    t6 = h1_count;
-#line 62 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    return t6;
-#line 606 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    t6 = h1_count; return t6;
+#line 340 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_a_file(HeroStr h0_dir) {
-#line 64 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroStr h1_file = {0}; HeroStr h2_link = {0}; HERO_NODEBUG bool h3_b0, h4_b1, h9_b2, t13, t19, t20, t27, t28, t40, t41, t43, t46, t52, t58, t63, t64; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}, h7_f1 = {0}, h12_own12 = {0}, h14_own14 = {0}, t9, t10, t36, t37, t72, t73, t75, t76; int64_t h6_before; bool h8_written; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t14, t21, t23, t29, t30, t31, t34, t35, t42, t44, t45, t47, t48, t53, t54, t59, t61, t65, t66, t68, t69, t70, t71, t74; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *h16_own16 = {0}, *t60, *t62, *t77, *t78; HERO_NODEBUG int64_t t11, t12, t16, t17, t18, t33, t38, t39, t50, t51, t56, t57, t67; HERO_NODEBUG const char *t15, *t22, *t24, *t32, *t49, *t55; HERO_NODEBUG int32_t t25, t26; HERO_ENTRY_STOP; goto bb0;
-#line 64 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb0:
-    t1 = h0_dir;
-#line 65 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t2 = HERO_STR_LIT(hero_str_4c012b42);
-#line 65 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 65 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t68 = h10_own10;
-#line 65 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h10_own10 = t3;
-#line 65 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t68);
-#line 65 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t69 = h1_file;
-#line 65 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_incref(t3);
-#line 65 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h1_file = t3;
-#line 65 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t69);
-    t4 = h0_dir;
-#line 66 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t5 = HERO_STR_LIT(hero_str_78dac22a);
-#line 66 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t6 = hero_str_concat(t4, t5);
-#line 66 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t70 = h11_own11;
-#line 66 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h11_own11 = t6;
-#line 66 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t70);
-#line 66 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t71 = h2_link;
-#line 66 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_incref(t6);
-#line 66 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h2_link = t6;
-#line 66 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t71);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t7 = h1_file;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t8 = HERO_STR_LIT(hero_str_14d6ef);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t9 = h_library_write_file(t7, t8);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t72 = h12_own12;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h12_own12 = t9;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_a8ea2_release(&t72);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t73 = h5_f0;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_a8ea2_retain(&t9);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h5_f0 = t9;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_a8ea2_release(&t73);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t10 = h5_f0;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t11 = t10.tag;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t12 = INT64_C(1);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t13 = t11 == t12;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h4_b1 = t13;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t13) goto bb3; else goto bb2;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb1:
-#line 71 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t31 = h1_file;
-#line 71 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t32 = hero_str_lend(t31);
-#line 71 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t33 = hero_fs_mode(hero_cstr_nonnull(t32));
-#line 71 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h6_before = t33;
-    t34 = h2_link;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t35 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT();
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t74 = h13_own13;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h13_own13 = t35;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t74);
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t36 = h_library_write_file(t34, t35);
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t75 = h14_own14;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h14_own14 = t36;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_a8ea2_release(&t75);
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t76 = h7_f1;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_a8ea2_retain(&t36);
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h7_f1 = t36;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_a8ea2_release(&t76);
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t37 = h7_f1;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t38 = t37.tag;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t39 = INT64_C(1);
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t40 = t38 == t39;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t41 = !t40;
-#line 72 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h8_written = t41;
-#line 74 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
+void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_a_file(HeroStr h0_dir) { HeroStr h1_file = {0}; HeroStr h2_link = {0}; HERO_NODEBUG bool h3_b0, h4_b1, h9_b2, t13, t19, t20, t27, t28, t40, t41, t43, t46, t52, t58, t63, t64; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}, h7_f1 = {0}, h12_own12 = {0}, h14_own14 = {0}, t9, t10, t36, t37, t72, t73, t75, t76; int64_t h6_before; bool h8_written; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t14, t21, t23, t29, t30, t31, t34, t35, t42, t44, t45, t47, t48, t53, t54, t59, t61, t65, t66, t68, t69, t70, t71, t74; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *h16_own16 = {0}, *t60, *t62, *t77, *t78; HERO_NODEBUG int64_t t11, t12, t16, t17, t18, t33, t38, t39, t50, t51, t56, t57, t67; HERO_NODEBUG const char *t15, *t22, *t24, *t32, *t49, *t55; HERO_NODEBUG int32_t t25, t26; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_dir; t2 = HERO_STR_LIT(hero_str_4c012b42); t3 = hero_str_concat(t1, t2); t68 = h10_own10; h10_own10 = t3; hero_str_decref(t68); t69 = h1_file; hero_str_incref(t3); h1_file = t3; hero_str_decref(t69);
+    t4 = h0_dir; t5 = HERO_STR_LIT(hero_str_78dac22a); t6 = hero_str_concat(t4, t5); t70 = h11_own11; h11_own11 = t6; hero_str_decref(t70); t71 = h2_link; hero_str_incref(t6); h2_link = t6; hero_str_decref(t71);
+#line 68
+    t7 = h1_file; t8 = HERO_STR_LIT(hero_str_14d6ef); t9 = h_library_write_file(t7, t8); t72 = h12_own12; h12_own12 = t9; h_0opt_a8ea2_release(&t72); t73 = h5_f0; h_0opt_a8ea2_retain(&t9); h5_f0 = t9; h_0opt_a8ea2_release(&t73); t10 = h5_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; h4_b1 = t13; if (t13) goto bb3; else goto bb2; bb1:
+#line 71
+    t31 = h1_file; t32 = hero_str_lend(t31); t33 = hero_fs_mode(hero_cstr_nonnull(t32)); h6_before = t33;
+    t34 = h2_link; t35 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(); t74 = h13_own13; h13_own13 = t35; hero_str_decref(t74); t36 = h_library_write_file(t34, t35); t75 = h14_own14; h14_own14 = t36; h_0opt_a8ea2_release(&t75); t76 = h7_f1; h_0opt_a8ea2_retain(&t36); h7_f1 = t36; h_0opt_a8ea2_release(&t76); t37 = h7_f1; t38 = t37.tag; t39 = INT64_C(1); t40 = t38 == t39; t41 = !t40; h8_written = t41;
+#line 74
     t42 = HERO_STR_LIT(hero_str_49e87488);
     t43 = h8_written;
     t44 = HERO_STR_LIT(hero_str_93d4c3d);
-    t45 = h1_file;
-#line 77 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t46 = h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(t45);
+    t45 = h1_file; t46 = h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(t45);
     t47 = HERO_STR_LIT(hero_str_54eddff4);
-    t48 = h1_file;
-#line 79 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t49 = hero_str_lend(t48);
-#line 79 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t50 = hero_fs_mode(hero_cstr_nonnull(t49));
-#line 79 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t51 = h6_before;
-#line 79 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t52 = t50 == t51;
+    t48 = h1_file; t49 = hero_str_lend(t48); t50 = hero_fs_mode(hero_cstr_nonnull(t49)); t51 = h6_before; t52 = t50 == t51;
     t53 = HERO_STR_LIT(hero_str_1f6a4262);
-    t54 = h2_link;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t55 = hero_str_lend(t54);
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t56 = hero_fs_kind(hero_cstr_nonnull(t55));
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t57 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK();
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t58 = t56 == t57;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h9_b2 = t58;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t58) goto bb8; else goto bb9;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb2:
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t14 = h1_file;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t15 = hero_str_lend(t14);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t16 = INT64_C(416);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t17 = hero_fs_set_mode(hero_cstr_nonnull(t15), t16);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t18 = INT64_C(0);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t19 = t17 != t18;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h4_b1 = t19;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb3;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb3:
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t20 = h4_b1;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h3_b0 = t20;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t20) goto bb5; else goto bb4;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb4:
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t21 = HERO_STR_LIT(hero_str_40b1649b);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t22 = hero_str_lend(t21);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t23 = h2_link;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t24 = hero_str_lend(t23);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t25 = symlink(hero_cstr_nonnull(t22), hero_cstr_nonnull(t24));
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t26 = INT64_C(0);
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t27 = t25 != t26;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h3_b0 = t27;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb5;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb5:
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t28 = h3_b0;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t28) goto bb6; else goto bb7;
-#line 68 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb6:
-    t29 = HERO_STR_LIT(hero_str_552d9e74);
-#line 69 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t30 = h2_link;
-#line 69 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t29);
-#line 69 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t30);
-#line 69 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_end();
-#line 69 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb10;
-#line 69 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb7:
-#line 69 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb1;
-#line 69 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb8:
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t59 = h2_link;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t60 = h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(t59);
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t77 = h15_own15;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h15_own15 = t60;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t77);
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t61 = HERO_STR_LIT(hero_str_40b1649b);
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t62 = h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(t61);
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t78 = h16_own16;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h16_own16 = t62;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t78);
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t63 = hero_array_eq(t60, t62);
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h9_b2 = t63;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb9;
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb9:
-#line 81 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t64 = h9_b2;
+    t54 = h2_link; t55 = hero_str_lend(t54); t56 = hero_fs_kind(hero_cstr_nonnull(t55)); t57 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(); t58 = t56 == t57; h9_b2 = t58; if (t58) goto bb8; else goto bb9; bb2:
+#line 68
+    t14 = h1_file; t15 = hero_str_lend(t14); t16 = INT64_C(416); t17 = hero_fs_set_mode(hero_cstr_nonnull(t15), t16); t18 = INT64_C(0); t19 = t17 != t18; h4_b1 = t19; goto bb3; bb3: t20 = h4_b1; h3_b0 = t20; if (t20) goto bb5; else goto bb4; bb4: t21 = HERO_STR_LIT(hero_str_40b1649b); t22 = hero_str_lend(t21); t23 = h2_link; t24 = hero_str_lend(t23); t25 = symlink(hero_cstr_nonnull(t22), hero_cstr_nonnull(t24)); t26 = INT64_C(0); t27 = t25 != t26; h3_b0 = t27; goto bb5; bb5: t28 = h3_b0; if (t28) goto bb6; else goto bb7; bb6:
+    t29 = HERO_STR_LIT(hero_str_552d9e74); t30 = h2_link; hero_print_str(t29); hero_print_str(t30); hero_print_end(); goto bb10; bb7: goto bb1; bb8:
+#line 81
+    t59 = h2_link; t60 = h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(t59); t77 = h15_own15; h15_own15 = t60; hero_array_decref(t77); t61 = HERO_STR_LIT(hero_str_40b1649b); t62 = h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(t61); t78 = h16_own16; h16_own16 = t62; hero_array_decref(t78); t63 = hero_array_eq(t60, t62); h9_b2 = t63; goto bb9; bb9: t64 = h9_b2;
     t65 = HERO_STR_LIT(hero_str_5dbce935);
-    t66 = h0_dir;
-#line 83 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t67 = h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(t66);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t42);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_bool(t43);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t44);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_bool(t46);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t47);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_bool(t52);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t53);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_bool(t64);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t65);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_int(t67);
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_end();
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb10;
-#line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb10:
-#line 894 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    t66 = h0_dir; t67 = h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(t66);
+#line 73
+    hero_print_str(t42); hero_print_bool(t43); hero_print_str(t44); hero_print_bool(t46); hero_print_str(t47); hero_print_bool(t52); hero_print_str(t53); hero_print_bool(t64); hero_print_str(t65); hero_print_int(t67); hero_print_end(); goto bb10; bb10:
+#line 370 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h1_file);
     hero_str_release_at(&h2_link);
     h_0opt_a8ea2_release(hero_slot_escape(&h5_f0));
@@ -906,203 +382,29 @@ bb10:
 }
 
 #line 86 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_nothing(HeroStr h0_dir) {
-#line 86 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroStr h1_link = {0}; HeroStr h2_named = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h9_own9 = {0}, t18, t19, t49, t50; bool h4_written; HERO_NODEBUG bool h5_b0, t13, t22, t23, t25, t28, t34, t39, t40; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t2, t3, t4, t5, t6, t7, t9, t14, t15, t16, t17, t24, t26, t27, t29, t30, t35, t37, t41, t42, t44, t45, t46, t47, t48; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *h11_own11 = {0}, *t36, *t38, *t51, *t52; HERO_NODEBUG const char *t8, *t10, *t31; HERO_NODEBUG int32_t t11, t12; HERO_NODEBUG int64_t t20, t21, t32, t33, t43; HERO_ENTRY_STOP; goto bb0;
-#line 86 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb0:
-    t1 = h0_dir;
-#line 87 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t2 = HERO_STR_LIT(hero_str_79201c1);
-#line 87 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t3 = hero_str_concat(t1, t2);
-#line 87 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t44 = h6_own6;
-#line 87 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h6_own6 = t3;
-#line 87 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t44);
-#line 87 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t45 = h1_link;
-#line 87 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_incref(t3);
-#line 87 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h1_link = t3;
-#line 87 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t45);
-    t4 = h0_dir;
-#line 88 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t5 = HERO_STR_LIT(hero_str_6446902f);
-#line 88 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t6 = hero_str_concat(t4, t5);
-#line 88 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t46 = h7_own7;
-#line 88 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h7_own7 = t6;
-#line 88 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t46);
-#line 88 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t47 = h2_named;
-#line 88 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_incref(t6);
-#line 88 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h2_named = t6;
-#line 88 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t47);
-#line 90 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t7 = HERO_STR_LIT(hero_str_1a73e8af);
-#line 90 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t8 = hero_str_lend(t7);
-#line 90 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t9 = h1_link;
-#line 90 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t10 = hero_str_lend(t9);
-#line 90 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t11 = symlink(hero_cstr_nonnull(t8), hero_cstr_nonnull(t10));
-#line 90 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t12 = INT64_C(0);
-#line 90 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t13 = t11 != t12;
-#line 90 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t13) goto bb2; else goto bb3;
-#line 90 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb1:
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t16 = h1_link;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t17 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT();
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t48 = h8_own8;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h8_own8 = t17;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t48);
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t18 = h_library_write_file(t16, t17);
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t49 = h9_own9;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h9_own9 = t18;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_a8ea2_release(&t49);
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t50 = h3_f0;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_a8ea2_retain(&t18);
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h3_f0 = t18;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_0opt_a8ea2_release(&t50);
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t19 = h3_f0;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t20 = t19.tag;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t21 = INT64_C(1);
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t22 = t20 == t21;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t23 = !t22;
-#line 93 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h4_written = t23;
-#line 95 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
+void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_nothing(HeroStr h0_dir) { HeroStr h1_link = {0}; HeroStr h2_named = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h9_own9 = {0}, t18, t19, t49, t50; bool h4_written; HERO_NODEBUG bool h5_b0, t13, t22, t23, t25, t28, t34, t39, t40; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t2, t3, t4, t5, t6, t7, t9, t14, t15, t16, t17, t24, t26, t27, t29, t30, t35, t37, t41, t42, t44, t45, t46, t47, t48; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *h11_own11 = {0}, *t36, *t38, *t51, *t52; HERO_NODEBUG const char *t8, *t10, *t31; HERO_NODEBUG int32_t t11, t12; HERO_NODEBUG int64_t t20, t21, t32, t33, t43; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_dir; t2 = HERO_STR_LIT(hero_str_79201c1); t3 = hero_str_concat(t1, t2); t44 = h6_own6; h6_own6 = t3; hero_str_decref(t44); t45 = h1_link; hero_str_incref(t3); h1_link = t3; hero_str_decref(t45);
+    t4 = h0_dir; t5 = HERO_STR_LIT(hero_str_6446902f); t6 = hero_str_concat(t4, t5); t46 = h7_own7; h7_own7 = t6; hero_str_decref(t46); t47 = h2_named; hero_str_incref(t6); h2_named = t6; hero_str_decref(t47);
+#line 90
+    t7 = HERO_STR_LIT(hero_str_1a73e8af); t8 = hero_str_lend(t7); t9 = h1_link; t10 = hero_str_lend(t9); t11 = symlink(hero_cstr_nonnull(t8), hero_cstr_nonnull(t10)); t12 = INT64_C(0); t13 = t11 != t12; if (t13) goto bb2; else goto bb3; bb1:
+#line 93
+    t16 = h1_link; t17 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(); t48 = h8_own8; h8_own8 = t17; hero_str_decref(t48); t18 = h_library_write_file(t16, t17); t49 = h9_own9; h9_own9 = t18; h_0opt_a8ea2_release(&t49); t50 = h3_f0; h_0opt_a8ea2_retain(&t18); h3_f0 = t18; h_0opt_a8ea2_release(&t50); t19 = h3_f0; t20 = t19.tag; t21 = INT64_C(1); t22 = t20 == t21; t23 = !t22; h4_written = t23;
+#line 95
     t24 = HERO_STR_LIT(hero_str_23eb5559);
     t25 = h4_written;
     t26 = HERO_STR_LIT(hero_str_4263828d);
-    t27 = h2_named;
-#line 98 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t28 = h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(t27);
+    t27 = h2_named; t28 = h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(t27);
     t29 = HERO_STR_LIT(hero_str_1f6a4262);
-    t30 = h1_link;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t31 = hero_str_lend(t30);
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t32 = hero_fs_kind(hero_cstr_nonnull(t31));
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t33 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK();
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t34 = t32 == t33;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h5_b0 = t34;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t34) goto bb4; else goto bb5;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb2:
-#line 91 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t14 = HERO_STR_LIT(hero_str_552d9e74);
-#line 91 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t15 = h1_link;
-#line 91 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t14);
-#line 91 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t15);
-#line 91 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_end();
-#line 91 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb6;
-#line 91 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb3:
-#line 91 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb1;
-#line 91 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb4:
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t35 = h1_link;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t36 = h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(t35);
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t51 = h10_own10;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h10_own10 = t36;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t51);
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t37 = HERO_STR_LIT(hero_str_1a73e8af);
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t38 = h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(t37);
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t52 = h11_own11;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h11_own11 = t38;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_array_decref(t52);
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t39 = hero_array_eq(t36, t38);
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h5_b0 = t39;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb5;
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb5:
-#line 100 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t40 = h5_b0;
+    t30 = h1_link; t31 = hero_str_lend(t30); t32 = hero_fs_kind(hero_cstr_nonnull(t31)); t33 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(); t34 = t32 == t33; h5_b0 = t34; if (t34) goto bb4; else goto bb5; bb2:
+#line 91
+    t14 = HERO_STR_LIT(hero_str_552d9e74); t15 = h1_link; hero_print_str(t14); hero_print_str(t15); hero_print_end(); goto bb6; bb3: goto bb1; bb4:
+#line 100
+    t35 = h1_link; t36 = h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(t35); t51 = h10_own10; h10_own10 = t36; hero_array_decref(t51); t37 = HERO_STR_LIT(hero_str_1a73e8af); t38 = h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(t37); t52 = h11_own11; h11_own11 = t38; hero_array_decref(t52); t39 = hero_array_eq(t36, t38); h5_b0 = t39; goto bb5; bb5: t40 = h5_b0;
     t41 = HERO_STR_LIT(hero_str_5dbce935);
-    t42 = h0_dir;
-#line 102 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t43 = h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(t42);
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t24);
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_bool(t25);
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t26);
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_bool(t28);
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t29);
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_bool(t40);
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t41);
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_int(t43);
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_end();
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb6;
-#line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb6:
-#line 1106 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    t42 = h0_dir; t43 = h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(t42);
+#line 94
+    hero_print_str(t24); hero_print_bool(t25); hero_print_str(t26); hero_print_bool(t28); hero_print_str(t29); hero_print_bool(t40); hero_print_str(t41); hero_print_int(t43); hero_print_end(); goto bb6; bb6:
+#line 408 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h1_link);
     hero_str_release_at(&h2_named);
     h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
@@ -1116,148 +418,20 @@ bb6:
 }
 
 #line 105 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-void h_fixedbugs438alinkiswrittenthroughandstaysalink_main(void) {
-#line 105 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroStr h0_root = {0}; HeroStr h1_one = {0}; HeroStr h2_two = {0}; HERO_NODEBUG bool h3_b0, t15, t20, t21; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t10, t11, t16, t22, t23, t24, t25, t26, t29, t30, t31, t32, t33, t34, t35; HERO_NODEBUG int64_t t2, t13, t14, t18, t19; HERO_NODEBUG const char *t12, *t17, *t27; HERO_ENTRY_STOP; goto bb0;
-#line 105 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_6accdeb7);
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t2 = hero_os_pid();
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t3 = hero_int_to_str(t2);
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t29 = h4_own4;
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h4_own4 = t3;
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t29);
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t4 = hero_str_concat(t1, t3);
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t30 = h5_own5;
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h5_own5 = t4;
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t30);
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t31 = h0_root;
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_incref(t4);
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h0_root = t4;
-#line 106 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t31);
-    t5 = h0_root;
-#line 107 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t6 = HERO_STR_LIT(hero_str_669890b);
-#line 107 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t7 = hero_str_concat(t5, t6);
-#line 107 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t32 = h6_own6;
-#line 107 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h6_own6 = t7;
-#line 107 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t32);
-#line 107 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t33 = h1_one;
-#line 107 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_incref(t7);
-#line 107 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h1_one = t7;
-#line 107 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t33);
-    t8 = h0_root;
-#line 108 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t9 = HERO_STR_LIT(hero_str_66adcdd);
-#line 108 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t10 = hero_str_concat(t8, t9);
-#line 108 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t34 = h7_own7;
-#line 108 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h7_own7 = t10;
-#line 108 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t34);
-#line 108 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t35 = h2_two;
-#line 108 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_incref(t10);
-#line 108 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h2_two = t10;
-#line 108 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_str_decref(t35);
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t11 = h1_one;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t12 = hero_str_lend(t11);
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t13 = hero_fs_mkdir_all(hero_cstr_nonnull(t12));
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t14 = INT64_C(0);
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t15 = t13 != t14;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h3_b0 = t15;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t15) goto bb3; else goto bb2;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb1:
-#line 113 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t24 = h1_one;
-#line 113 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_fixedbugs438alinkiswrittenthroughandstaysalink_to_a_file(t24);
-    t25 = h2_two;
-#line 114 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h_fixedbugs438alinkiswrittenthroughandstaysalink_to_nothing(t25);
-    t26 = h0_root;
-#line 115 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t27 = hero_str_lend(t26);
-#line 115 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    (void)hero_dir_remove_tree(hero_cstr_nonnull(t27));
-#line 115 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb6;
-#line 115 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb2:
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t16 = h2_two;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t17 = hero_str_lend(t16);
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t18 = hero_fs_mkdir_all(hero_cstr_nonnull(t17));
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t19 = INT64_C(0);
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t20 = t18 != t19;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    h3_b0 = t20;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb3;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb3:
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t21 = h3_b0;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    if (t21) goto bb4; else goto bb5;
-#line 110 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb4:
-    t22 = HERO_STR_LIT(hero_str_552d9e74);
-#line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t23 = h0_root;
-#line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t22);
-#line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_str(t23);
-#line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    hero_print_end();
-#line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb6;
-#line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb5:
-#line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    goto bb1;
-#line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bb6:
-#line 1261 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+void h_fixedbugs438alinkiswrittenthroughandstaysalink_main(void) { HeroStr h0_root = {0}; HeroStr h1_one = {0}; HeroStr h2_two = {0}; HERO_NODEBUG bool h3_b0, t15, t20, t21; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t10, t11, t16, t22, t23, t24, t25, t26, t29, t30, t31, t32, t33, t34, t35; HERO_NODEBUG int64_t t2, t13, t14, t18, t19; HERO_NODEBUG const char *t12, *t17, *t27; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_6accdeb7); t2 = hero_os_pid(); t3 = hero_int_to_str(t2); t29 = h4_own4; h4_own4 = t3; hero_str_decref(t29); t4 = hero_str_concat(t1, t3); t30 = h5_own5; h5_own5 = t4; hero_str_decref(t30); t31 = h0_root; hero_str_incref(t4); h0_root = t4; hero_str_decref(t31);
+    t5 = h0_root; t6 = HERO_STR_LIT(hero_str_669890b); t7 = hero_str_concat(t5, t6); t32 = h6_own6; h6_own6 = t7; hero_str_decref(t32); t33 = h1_one; hero_str_incref(t7); h1_one = t7; hero_str_decref(t33);
+    t8 = h0_root; t9 = HERO_STR_LIT(hero_str_66adcdd); t10 = hero_str_concat(t8, t9); t34 = h7_own7; h7_own7 = t10; hero_str_decref(t34); t35 = h2_two; hero_str_incref(t10); h2_two = t10; hero_str_decref(t35);
+#line 110
+    t11 = h1_one; t12 = hero_str_lend(t11); t13 = hero_fs_mkdir_all(hero_cstr_nonnull(t12)); t14 = INT64_C(0); t15 = t13 != t14; h3_b0 = t15; if (t15) goto bb3; else goto bb2; bb1:
+#line 113
+    t24 = h1_one; h_fixedbugs438alinkiswrittenthroughandstaysalink_to_a_file(t24);
+    t25 = h2_two; h_fixedbugs438alinkiswrittenthroughandstaysalink_to_nothing(t25);
+    t26 = h0_root; t27 = hero_str_lend(t26); (void)hero_dir_remove_tree(hero_cstr_nonnull(t27)); goto bb6; bb2:
+#line 110
+    t16 = h2_two; t17 = hero_str_lend(t16); t18 = hero_fs_mkdir_all(hero_cstr_nonnull(t17)); t19 = INT64_C(0); t20 = t18 != t19; h3_b0 = t20; goto bb3; bb3: t21 = h3_b0; if (t21) goto bb4; else goto bb5; bb4:
+    t22 = HERO_STR_LIT(hero_str_552d9e74); t23 = h0_root; hero_print_str(t22); hero_print_str(t23); hero_print_end(); goto bb6; bb5: goto bb1; bb6:
+#line 435 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h0_root);
     hero_str_release_at(&h1_one);
     hero_str_release_at(&h2_two);
@@ -1269,265 +443,51 @@ bb6:
 }
 
 #line 109 "<heroes library>"
-int64_t h_library_HERO_OS_OK(void) {
-#line 109 "<heroes library>"
-    return HERO_OS_OK;
-#line 1276 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
+#line 448 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 110 "<heroes library>"
-int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 110 "<heroes library>"
-    return HERO_OS_NOT_FOUND;
-#line 1283 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
+#line 453 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 111 "<heroes library>"
-int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 111 "<heroes library>"
-    return HERO_OS_NOT_TEXT;
-#line 1290 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
+#line 458 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 112 "<heroes library>"
-int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 112 "<heroes library>"
-    return HERO_OS_BAD_NAME;
-#line 1297 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
+#line 463 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 167 "<heroes library>"
+#line 167
 #define h1_status (*hero_lend_h1_status)
-#line 167 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0;
-#line 167 "<heroes library>"
-bb0:
-    t1 = INT64_C(0);
-#line 168 "<heroes library>"
-    h1_status = t1;
-    t2 = h0_path;
-#line 169 "<heroes library>"
-    hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status");
-#line 169 "<heroes library>"
-    t3 = hero_file_read_str(t2, (void *)&h1_status);
-#line 169 "<heroes library>"
-    t39 = h4_own4;
-#line 169 "<heroes library>"
-    h4_own4 = t3;
-#line 169 "<heroes library>"
-    hero_str_decref(t39);
-#line 169 "<heroes library>"
-    t40 = h2_text;
-#line 169 "<heroes library>"
-    hero_str_incref(t3);
-#line 169 "<heroes library>"
-    h2_text = t3;
-#line 169 "<heroes library>"
-    hero_str_decref(t40);
-    t4 = h1_status;
-#line 170 "<heroes library>"
-    t5 = h_library_HERO_OS_OK();
-#line 170 "<heroes library>"
-    t6 = t4 == t5;
-#line 170 "<heroes library>"
-    if (t6) goto bb2; else goto bb3;
-#line 170 "<heroes library>"
-bb1:
-#line 174 "<heroes library>"
-    t9 = h1_status;
-#line 174 "<heroes library>"
-    t10 = h_library_HERO_OS_BAD_NAME();
-#line 174 "<heroes library>"
-    t11 = t9 == t10;
-#line 174 "<heroes library>"
-    if (t11) goto bb5; else goto bb6;
-#line 174 "<heroes library>"
-bb2:
-#line 171 "<heroes library>"
-    t7 = h2_text;
-#line 171 "<heroes library>"
-    hero_str_incref(t7);
-#line 171 "<heroes library>"
-    t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
-#line 171 "<heroes library>"
-    t41 = h5_own5;
-#line 171 "<heroes library>"
-    h5_own5 = t8;
-#line 171 "<heroes library>"
-    h_0opt_f87774a_release(&t41);
-#line 171 "<heroes library>"
-    h3_ret0 = t8;
-#line 171 "<heroes library>"
-    goto bb13;
-#line 171 "<heroes library>"
-bb3:
-#line 171 "<heroes library>"
-    goto bb1;
-#line 171 "<heroes library>"
-bb4:
-#line 176 "<heroes library>"
-    t15 = h1_status;
-#line 176 "<heroes library>"
-    t16 = h_library_HERO_OS_NOT_FOUND();
-#line 176 "<heroes library>"
-    t17 = t15 == t16;
-#line 176 "<heroes library>"
-    if (t17) goto bb8; else goto bb9;
-#line 176 "<heroes library>"
-bb5:
-#line 175 "<heroes library>"
-    t12 = HERO_STR_LIT(hero_str_3e46668);
-#line 175 "<heroes library>"
-    t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 175 "<heroes library>"
-    hero_str_incref(t12);
-#line 175 "<heroes library>"
-    hero_str_incref(t13);
-#line 175 "<heroes library>"
-    t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
-#line 175 "<heroes library>"
-    t42 = h6_own6;
-#line 175 "<heroes library>"
-    h6_own6 = t14;
-#line 175 "<heroes library>"
-    h_0opt_f87774a_release(&t42);
-#line 175 "<heroes library>"
-    h3_ret0 = t14;
-#line 175 "<heroes library>"
-    goto bb13;
-#line 175 "<heroes library>"
-bb6:
-#line 175 "<heroes library>"
-    goto bb4;
-#line 175 "<heroes library>"
-bb7:
-#line 181 "<heroes library>"
-    t23 = h1_status;
-#line 181 "<heroes library>"
-    t24 = h_library_HERO_OS_NOT_TEXT();
-#line 181 "<heroes library>"
-    t25 = t23 == t24;
-#line 181 "<heroes library>"
-    if (t25) goto bb11; else goto bb12;
-#line 181 "<heroes library>"
-bb8:
-#line 177 "<heroes library>"
-    t18 = HERO_STR_LIT(hero_str_5b56e076);
-#line 177 "<heroes library>"
-    t19 = HERO_STR_LIT(hero_str_2ae119c5);
-#line 177 "<heroes library>"
-    t20 = h0_path;
-#line 177 "<heroes library>"
-    t21 = hero_str_concat(t19, t20);
-#line 177 "<heroes library>"
-    t43 = h7_own7;
-#line 177 "<heroes library>"
-    h7_own7 = t21;
-#line 177 "<heroes library>"
-    hero_str_decref(t43);
-#line 177 "<heroes library>"
-    hero_str_incref(t18);
-#line 177 "<heroes library>"
-    hero_str_incref(t21);
-#line 177 "<heroes library>"
-    t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
-#line 177 "<heroes library>"
-    t44 = h8_own8;
-#line 177 "<heroes library>"
-    h8_own8 = t22;
-#line 177 "<heroes library>"
-    h_0opt_f87774a_release(&t44);
-#line 177 "<heroes library>"
-    h3_ret0 = t22;
-#line 177 "<heroes library>"
-    goto bb13;
-#line 177 "<heroes library>"
-bb9:
-#line 177 "<heroes library>"
-    goto bb7;
-#line 177 "<heroes library>"
-bb10:
-#line 183 "<heroes library>"
-    t33 = HERO_STR_LIT(hero_str_3e46668);
-#line 183 "<heroes library>"
-    t34 = HERO_STR_LIT(hero_str_b908f30);
-#line 183 "<heroes library>"
-    t35 = h0_path;
-#line 183 "<heroes library>"
-    t36 = hero_str_concat(t34, t35);
-#line 183 "<heroes library>"
-    t45 = h9_own9;
-#line 183 "<heroes library>"
-    h9_own9 = t36;
-#line 183 "<heroes library>"
-    hero_str_decref(t45);
-#line 183 "<heroes library>"
-    hero_str_incref(t33);
-#line 183 "<heroes library>"
-    hero_str_incref(t36);
-#line 183 "<heroes library>"
-    t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
-#line 183 "<heroes library>"
-    t46 = h10_own10;
-#line 183 "<heroes library>"
-    h10_own10 = t37;
-#line 183 "<heroes library>"
-    h_0opt_f87774a_release(&t46);
-#line 183 "<heroes library>"
-    h3_ret0 = t37;
-#line 183 "<heroes library>"
-    goto bb13;
-#line 183 "<heroes library>"
-bb11:
-#line 182 "<heroes library>"
-    t26 = HERO_STR_LIT(hero_str_34624695);
-#line 182 "<heroes library>"
-    t27 = HERO_STR_LIT(hero_str_d028710);
-#line 182 "<heroes library>"
-    t28 = h0_path;
-#line 182 "<heroes library>"
-    t29 = hero_str_concat(t27, t28);
-#line 182 "<heroes library>"
-    t47 = h11_own11;
-#line 182 "<heroes library>"
-    h11_own11 = t29;
-#line 182 "<heroes library>"
-    hero_str_decref(t47);
-#line 182 "<heroes library>"
-    t30 = HERO_STR_LIT(hero_str_612f4355);
-#line 182 "<heroes library>"
-    t31 = hero_str_concat(t29, t30);
-#line 182 "<heroes library>"
-    t48 = h12_own12;
-#line 182 "<heroes library>"
-    h12_own12 = t31;
-#line 182 "<heroes library>"
-    hero_str_decref(t48);
-#line 182 "<heroes library>"
-    hero_str_incref(t26);
-#line 182 "<heroes library>"
-    hero_str_incref(t31);
-#line 182 "<heroes library>"
-    t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
-#line 182 "<heroes library>"
-    t49 = h13_own13;
-#line 182 "<heroes library>"
-    h13_own13 = t32;
-#line 182 "<heroes library>"
-    h_0opt_f87774a_release(&t49);
-#line 182 "<heroes library>"
-    h3_ret0 = t32;
-#line 182 "<heroes library>"
-    goto bb13;
-#line 182 "<heroes library>"
-bb12:
-#line 182 "<heroes library>"
-    goto bb10;
-#line 182 "<heroes library>"
-bb13:
-#line 1531 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 167
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_status = t1;
+    t2 = h0_path; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
+    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 174
+    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
+#line 171
+    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto bb13; bb3: goto bb1; bb4:
+#line 176
+    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb5:
+#line 175
+    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto bb13; bb6: goto bb4; bb7:
+#line 181
+    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb8:
+#line 177
+    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto bb13; bb9: goto bb7; bb10:
+#line 183
+    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
+#line 182
+    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
+#line 491 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1547,114 +507,18 @@ bb13:
 #undef h1_status
 
 #line 186 "<heroes library>"
-h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-#line 186 "<heroes library>"
-    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0;
-#line 186 "<heroes library>"
-bb0:
-    t1 = h0_path;
-#line 187 "<heroes library>"
-    t2 = h1_text;
-#line 187 "<heroes library>"
-    t3 = hero_file_write_str(t1, t2);
-#line 187 "<heroes library>"
-    h2_wrote = t3;
-    t4 = h2_wrote;
-#line 188 "<heroes library>"
-    t5 = h_library_HERO_OS_OK();
-#line 188 "<heroes library>"
-    t6 = t4 == t5;
-#line 188 "<heroes library>"
-    if (t6) goto bb2; else goto bb3;
-#line 188 "<heroes library>"
-bb1:
-#line 190 "<heroes library>"
-    t8 = h2_wrote;
-#line 190 "<heroes library>"
-    t9 = h_library_HERO_OS_BAD_NAME();
-#line 190 "<heroes library>"
-    t10 = t8 == t9;
-#line 190 "<heroes library>"
-    if (t10) goto bb5; else goto bb6;
-#line 190 "<heroes library>"
-bb2:
-#line 189 "<heroes library>"
-    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)};
-#line 189 "<heroes library>"
-    t20 = h4_own4;
-#line 189 "<heroes library>"
-    h4_own4 = t7;
-#line 189 "<heroes library>"
-    h_0opt_a8ea2_release(&t20);
-#line 189 "<heroes library>"
-    h3_ret0 = t7;
-#line 189 "<heroes library>"
-    goto bb7;
-#line 189 "<heroes library>"
-bb3:
-#line 189 "<heroes library>"
-    goto bb1;
-#line 189 "<heroes library>"
-bb4:
-#line 192 "<heroes library>"
-    t14 = HERO_STR_LIT(hero_str_7e662f9e);
-#line 192 "<heroes library>"
-    t15 = HERO_STR_LIT(hero_str_39d7c22a);
-#line 192 "<heroes library>"
-    t16 = h0_path;
-#line 192 "<heroes library>"
-    t17 = hero_str_concat(t15, t16);
-#line 192 "<heroes library>"
-    t21 = h5_own5;
-#line 192 "<heroes library>"
-    h5_own5 = t17;
-#line 192 "<heroes library>"
-    hero_str_decref(t21);
-#line 192 "<heroes library>"
-    hero_str_incref(t14);
-#line 192 "<heroes library>"
-    hero_str_incref(t17);
-#line 192 "<heroes library>"
-    t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}};
-#line 192 "<heroes library>"
-    t22 = h6_own6;
-#line 192 "<heroes library>"
-    h6_own6 = t18;
-#line 192 "<heroes library>"
-    h_0opt_a8ea2_release(&t22);
-#line 192 "<heroes library>"
-    h3_ret0 = t18;
-#line 192 "<heroes library>"
-    goto bb7;
-#line 192 "<heroes library>"
-bb5:
-#line 191 "<heroes library>"
-    t11 = HERO_STR_LIT(hero_str_7e662f9e);
-#line 191 "<heroes library>"
-    t12 = HERO_STR_LIT(hero_str_1755ec20);
-#line 191 "<heroes library>"
-    hero_str_incref(t11);
-#line 191 "<heroes library>"
-    hero_str_incref(t12);
-#line 191 "<heroes library>"
-    t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}};
-#line 191 "<heroes library>"
-    t23 = h7_own7;
-#line 191 "<heroes library>"
-    h7_own7 = t13;
-#line 191 "<heroes library>"
-    h_0opt_a8ea2_release(&t23);
-#line 191 "<heroes library>"
-    h3_ret0 = t13;
-#line 191 "<heroes library>"
-    goto bb7;
-#line 191 "<heroes library>"
-bb6:
-#line 191 "<heroes library>"
-    goto bb4;
-#line 191 "<heroes library>"
-bb7:
-#line 1658 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_path; t2 = h1_text; t3 = hero_file_write_str(t1, t2); h2_wrote = t3;
+    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+#line 190
+    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+#line 189
+    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
+#line 192
+    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
+#line 191
+    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
+#line 522 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

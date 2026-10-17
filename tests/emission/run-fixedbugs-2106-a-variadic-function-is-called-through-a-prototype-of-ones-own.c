@@ -151,11 +151,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2106avariadicfunct
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 161 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
 #pragma clang diagnostic pop
@@ -181,42 +181,12 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 18 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-void h_fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown_main(void) {
-#line 18 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    Pair h0_p; HERO_NODEBUG int32_t t1, t2, t6, t7, t8; HERO_NODEBUG Pair t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char *t5; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 19 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    t2 = INT64_C(2);
-#line 19 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    t3 = (Pair){.a = t1, .b = t2};
-#line 19 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    h0_p = t3;
-#line 19 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    hero_pad_fill(&h0_p, sizeof(Pair), 1, hero_pad_g_0, hero_pad_n_0);
-    t4 = HERO_STR_LIT(hero_str_10a31f64);
-#line 20 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    t5 = hero_str_lend(t4);
-#line 20 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    t6 = scan_int(hero_cstr_nonnull(t5), (void *)&h0_p.a);
-#line 20 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    hero_print_int(t6);
-#line 20 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    hero_print_end();
-    t7 = h0_p.a;
-#line 21 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    hero_print_int(t7);
-#line 21 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    hero_print_end();
-    t8 = h0_p.b;
-#line 22 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    hero_print_int(t8);
-#line 22 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    hero_print_end();
-#line 22 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
-    return;
-#line 220 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
+void h_fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown_main(void) { Pair h0_p; HERO_NODEBUG int32_t t1, t2, t6, t7, t8; HERO_NODEBUG Pair t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char *t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(2); t3 = (Pair){.a = t1, .b = t2}; h0_p = t3; hero_pad_fill(&h0_p, sizeof(Pair), 1, hero_pad_g_0, hero_pad_n_0);
+    t4 = HERO_STR_LIT(hero_str_10a31f64); t5 = hero_str_lend(t4); t6 = scan_int(hero_cstr_nonnull(t5), (void *)&h0_p.a); hero_print_int(t6); hero_print_end();
+    t7 = h0_p.a; hero_print_int(t7); hero_print_end();
+    t8 = h0_p.b; hero_print_int(t8); hero_print_end(); return;
+#line 190 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown_Pair_eq(const Pair *a, const Pair *b) {
     if (!(a->a == b->a)) return false;

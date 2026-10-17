@@ -74,31 +74,29 @@ _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *
 _Static_assert(__builtin_classify_type(((Color *)0)->g) == 1 && sizeof(((Color *)0)->g) == sizeof(uint8_t) && (_Generic(((Color *)0)->g, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color g");
 _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *)0)->b) == sizeof(uint8_t) && (_Generic(((Color *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color b");
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
-#line 68 "examples/raylib/main.hero"
+#line 68
 _Static_assert(_Generic(&((Vector2 *)0)->x, float *: 1, default: 0) && sizeof(((Vector2 *)0)->x) == sizeof(float), "heroes-ffi-field Vector2 x");
 _Static_assert(_Generic(&((Vector2 *)0)->y, float *: 1, default: 0) && sizeof(((Vector2 *)0)->y) == sizeof(float), "heroes-ffi-field Vector2 y");
-#line 71 "examples/raylib/main.hero"
+#line 71
 _Static_assert(_Generic(&((Rectangle *)0)->x, float *: 1, default: 0) && sizeof(((Rectangle *)0)->x) == sizeof(float), "heroes-ffi-field Rectangle x");
 _Static_assert(_Generic(&((Rectangle *)0)->y, float *: 1, default: 0) && sizeof(((Rectangle *)0)->y) == sizeof(float), "heroes-ffi-field Rectangle y");
 _Static_assert(_Generic(&((Rectangle *)0)->width, float *: 1, default: 0) && sizeof(((Rectangle *)0)->width) == sizeof(float), "heroes-ffi-field Rectangle width");
 _Static_assert(_Generic(&((Rectangle *)0)->height, float *: 1, default: 0) && sizeof(((Rectangle *)0)->height) == sizeof(float), "heroes-ffi-field Rectangle height");
-#line 99 "examples/raylib/main.hero"
+#line 99
 _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->frame) == 1 && sizeof(((AutomationEvent *)0)->frame) == sizeof(uint32_t) && (_Generic(((AutomationEvent *)0)->frame, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field AutomationEvent frame");
 _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->type) == 1 && sizeof(((AutomationEvent *)0)->type) == sizeof(uint32_t) && (_Generic(((AutomationEvent *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field AutomationEvent type");
-_Static_assert(sizeof(AutomationEvent) - __builtin_offsetof(AutomationEvent, params) != 0, "heroes-ffi-flex AutomationEvent params");
-#line 101 "examples/raylib/main.hero"
-_Static_assert(_Generic(&((AutomationEvent *)0)->params, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int32_t) && (((_Bool)-1 < 0) == ((int32_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int32_t) && (((char)-1 < 0) == ((int32_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int32_t) && (((signed char)-1 < 0) == ((int32_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int32_t) && (((short)-1 < 0) == ((int32_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int32_t) && (((int)-1 < 0) == ((int32_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int32_t) && (((long)-1 < 0) == ((int32_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int32_t) && (((long long)-1 < 0) == ((int32_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int32_t) && (((unsigned char)-1 < 0) == ((int32_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int32_t) && (((unsigned short)-1 < 0) == ((int32_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int32_t) && (((unsigned int)-1 < 0) == ((int32_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int32_t) && (((unsigned long)-1 < 0) == ((int32_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int32_t) && (((unsigned long long)-1 < 0) == ((int32_t)-1 < 0))), default: 0), "heroes-ffi-field AutomationEvent params");
-#line 92 "main.c"
+_Static_assert(sizeof(AutomationEvent) - __builtin_offsetof(AutomationEvent, params) != 0, "heroes-ffi-flex AutomationEvent params"); _Static_assert(_Generic(&((AutomationEvent *)0)->params, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int32_t) && (((_Bool)-1 < 0) == ((int32_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int32_t) && (((char)-1 < 0) == ((int32_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int32_t) && (((signed char)-1 < 0) == ((int32_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int32_t) && (((short)-1 < 0) == ((int32_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int32_t) && (((int)-1 < 0) == ((int32_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int32_t) && (((long)-1 < 0) == ((int32_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int32_t) && (((long long)-1 < 0) == ((int32_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int32_t) && (((unsigned char)-1 < 0) == ((int32_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int32_t) && (((unsigned short)-1 < 0) == ((int32_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int32_t) && (((unsigned int)-1 < 0) == ((int32_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int32_t) && (((unsigned long)-1 < 0) == ((int32_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int32_t) && (((unsigned long long)-1 < 0) == ((int32_t)-1 < 0))), default: 0), "heroes-ffi-field AutomationEvent params");
+#line 90 "main.c"
 
 #line 62 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
-#line 67 "examples/raylib/main.hero"
+#line 67
 _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union Vector2 x y");
-#line 70 "examples/raylib/main.hero"
+#line 70
 _Static_assert(__builtin_classify_type(*(Rectangle *)0) != 13, "heroes-ffi-union Rectangle x y width height");
-#line 98 "examples/raylib/main.hero"
+#line 98
 _Static_assert(__builtin_classify_type(*(AutomationEvent *)0) != 13, "heroes-ffi-union AutomationEvent frame type params");
-#line 102 "main.c"
+#line 100 "main.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -182,23 +180,23 @@ typedef struct h_0opt_a8ea2 {
 #line 75 "examples/raylib/main.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_main_SetRandomSeed(uint32_t a0) { (void)(SetRandomSeed)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_main_GetRandomValue(int32_t a0, int32_t a1) { (void)(GetRandomValue)(a0, a1); }
-#line 78 "examples/raylib/main.hero"
+#line 78
 __attribute__((unused)) static void hero_ffi_probe_h_main_ColorToInt(Color a0) { (void)(ColorToInt)(a0); }
-#line 80 "examples/raylib/main.hero"
+#line 80
 __attribute__((unused)) static void hero_ffi_probe_h_main_ColorAlpha(Color a0, float a1) { (void)(ColorAlpha)(a0, a1); }
-#line 83 "examples/raylib/main.hero"
+#line 83
 __attribute__((unused)) static void hero_ffi_probe_h_main_GetSplinePointLinear(Vector2 a0, Vector2 a1, float a2) { (void)(GetSplinePointLinear)(a0, a1, a2); }
 __attribute__((unused)) static void hero_ffi_probe_h_main_CheckCollisionPointRec(Vector2 a0, Rectangle a1) { (void)(CheckCollisionPointRec)(a0, a1); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 202 "main.c"
+#line 200 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b);
@@ -240,161 +238,29 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 103 "examples/raylib/main.hero"
-void h_main_main(void) {
-#line 103 "examples/raylib/main.hero"
-    Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; HERO_NODEBUG uint32_t t1, t28, t29; HERO_NODEBUG HeroStr t2, t26; HERO_NODEBUG int32_t t3, t4, t5, t12, t16, t30, t31, t32, t33, t39; HERO_NODEBUG uint8_t t6, t7, t8, t9; HERO_NODEBUG Color t10, t11, t13, t15; HERO_NODEBUG float t14, t17, t18, t20, t21, t23, t25, t27, t40, t41, t42, t43, t45, t46, t50, t51; HERO_NODEBUG Vector2 t19, t22, t24, t47, t52; HERO_NODEBUG AutomationEvent t35, t36; HERO_NODEBUG int64_t t38; HERO_NODEBUG Rectangle t44, t48, t53; HERO_NODEBUG bool t49, t54; HERO_ENTRY_STOP; goto bb0;
-#line 103 "examples/raylib/main.hero"
-bb0:
-    t1 = UINT64_C(7);
-#line 104 "examples/raylib/main.hero"
-    (void)SetRandomSeed(t1);
-    t2 = HERO_STR_LIT(hero_str_106b1639);
-#line 105 "examples/raylib/main.hero"
-    t3 = INT64_C(1);
-#line 105 "examples/raylib/main.hero"
-    t4 = INT64_C(6);
-#line 105 "examples/raylib/main.hero"
-    t5 = GetRandomValue(t3, t4);
-#line 105 "examples/raylib/main.hero"
-    hero_print_str(t2);
-#line 105 "examples/raylib/main.hero"
-    hero_print_int(t5);
-#line 105 "examples/raylib/main.hero"
-    hero_print_end();
-#line 107 "examples/raylib/main.hero"
-    t6 = UINT64_C(255);
-#line 107 "examples/raylib/main.hero"
-    t7 = UINT64_C(0);
-#line 107 "examples/raylib/main.hero"
-    t8 = UINT64_C(0);
-#line 107 "examples/raylib/main.hero"
-    t9 = UINT64_C(255);
-#line 107 "examples/raylib/main.hero"
-    t10 = (Color){.r = t6, .g = t7, .b = t8, .a = t9};
-#line 107 "examples/raylib/main.hero"
-    h0_red = t10;
-#line 107 "examples/raylib/main.hero"
-    hero_pad_fill(&h0_red, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
-    t11 = h0_red;
-#line 108 "examples/raylib/main.hero"
-    t12 = ColorToInt(t11);
-#line 108 "examples/raylib/main.hero"
-    hero_print_int(t12);
-#line 108 "examples/raylib/main.hero"
-    hero_print_end();
-    t13 = h0_red;
-#line 109 "examples/raylib/main.hero"
-    t14 = 0x1p-1;
-#line 109 "examples/raylib/main.hero"
-    t15 = ColorAlpha(t13, t14);
-#line 109 "examples/raylib/main.hero"
-    t16 = ColorToInt(t15);
-#line 109 "examples/raylib/main.hero"
-    hero_print_int(t16);
-#line 109 "examples/raylib/main.hero"
-    hero_print_end();
-#line 112 "examples/raylib/main.hero"
-    t17 = 0x0p+0;
-#line 112 "examples/raylib/main.hero"
-    t18 = 0x0p+0;
-#line 112 "examples/raylib/main.hero"
-    t19 = (Vector2){.x = t17, .y = t18};
-    t20 = 0x1.4p+3;
-#line 113 "examples/raylib/main.hero"
-    t21 = 0x1.4p+4;
-#line 113 "examples/raylib/main.hero"
-    t22 = (Vector2){.x = t20, .y = t21};
+void h_main_main(void) { Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; HERO_NODEBUG uint32_t t1, t28, t29; HERO_NODEBUG HeroStr t2, t26; HERO_NODEBUG int32_t t3, t4, t5, t12, t16, t30, t31, t32, t33, t39; HERO_NODEBUG uint8_t t6, t7, t8, t9; HERO_NODEBUG Color t10, t11, t13, t15; HERO_NODEBUG float t14, t17, t18, t20, t21, t23, t25, t27, t40, t41, t42, t43, t45, t46, t50, t51; HERO_NODEBUG Vector2 t19, t22, t24, t47, t52; HERO_NODEBUG AutomationEvent t35, t36; HERO_NODEBUG int64_t t38; HERO_NODEBUG Rectangle t44, t48, t53; HERO_NODEBUG bool t49, t54; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(7); (void)SetRandomSeed(t1);
+    t2 = HERO_STR_LIT(hero_str_106b1639); t3 = INT64_C(1); t4 = INT64_C(6); t5 = GetRandomValue(t3, t4); hero_print_str(t2); hero_print_int(t5); hero_print_end();
+#line 107
+    t6 = UINT64_C(255); t7 = UINT64_C(0); t8 = UINT64_C(0); t9 = UINT64_C(255); t10 = (Color){.r = t6, .g = t7, .b = t8, .a = t9}; h0_red = t10; hero_pad_fill(&h0_red, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
+    t11 = h0_red; t12 = ColorToInt(t11); hero_print_int(t12); hero_print_end();
+    t13 = h0_red; t14 = 0x1p-1; t15 = ColorAlpha(t13, t14); t16 = ColorToInt(t15); hero_print_int(t16); hero_print_end();
+#line 112
+    t17 = 0x0p+0; t18 = 0x0p+0; t19 = (Vector2){.x = t17, .y = t18};
+    t20 = 0x1.4p+3; t21 = 0x1.4p+4; t22 = (Vector2){.x = t20, .y = t21};
     t23 = 0x1p-1;
-#line 111 "examples/raylib/main.hero"
-    t24 = GetSplinePointLinear(t19, t22, t23);
-#line 111 "examples/raylib/main.hero"
-    h1_mid = t24;
-#line 111 "examples/raylib/main.hero"
-    hero_pad_fill(&h1_mid, sizeof(Vector2), 1, hero_pad_g_1, hero_pad_n_1);
-#line 116 "examples/raylib/main.hero"
-    t25 = h1_mid.x;
-#line 116 "examples/raylib/main.hero"
-    t26 = HERO_STR_LIT(hero_str_20);
-#line 116 "examples/raylib/main.hero"
-    t27 = h1_mid.y;
-#line 116 "examples/raylib/main.hero"
-    hero_print_f32(t25);
-#line 116 "examples/raylib/main.hero"
-    hero_print_str(t26);
-#line 116 "examples/raylib/main.hero"
-    hero_print_f32(t27);
-#line 116 "examples/raylib/main.hero"
-    hero_print_end();
-#line 120 "examples/raylib/main.hero"
-    t28 = UINT64_C(0);
-#line 120 "examples/raylib/main.hero"
-    t29 = UINT64_C(0);
-#line 120 "examples/raylib/main.hero"
-    t30 = INT64_C(10);
-#line 120 "examples/raylib/main.hero"
-    t31 = INT64_C(20);
-#line 120 "examples/raylib/main.hero"
-    t32 = INT64_C(30);
-#line 120 "examples/raylib/main.hero"
-    t33 = INT64_C(40);
-#line 120 "examples/raylib/main.hero"
-    t35 = (AutomationEvent){.frame = t28, .type = t29, .params = {t30, t31, t32, t33}};
-#line 120 "examples/raylib/main.hero"
-    h2_event = t35;
-#line 120 "examples/raylib/main.hero"
-    hero_pad_fill(&h2_event, sizeof(AutomationEvent), 1, hero_pad_g_9, hero_pad_n_9);
-    t36 = h2_event;
-#line 121 "examples/raylib/main.hero"
-    t38 = INT64_C(2);
-#line 121 "examples/raylib/main.hero"
-    t39 = t36.params[((uint64_t)(t38) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t38))];
-#line 121 "examples/raylib/main.hero"
-    hero_print_int(t39);
-#line 121 "examples/raylib/main.hero"
-    hero_print_end();
-#line 123 "examples/raylib/main.hero"
-    t40 = 0x0p+0;
-#line 123 "examples/raylib/main.hero"
-    t41 = 0x0p+0;
-#line 123 "examples/raylib/main.hero"
-    t42 = 0x1.4p+3;
-#line 123 "examples/raylib/main.hero"
-    t43 = 0x1.4p+3;
-#line 123 "examples/raylib/main.hero"
-    t44 = (Rectangle){.x = t40, .y = t41, .width = t42, .height = t43};
-#line 123 "examples/raylib/main.hero"
-    h3_box = t44;
-#line 123 "examples/raylib/main.hero"
-    hero_pad_fill(&h3_box, sizeof(Rectangle), 1, hero_pad_g_2, hero_pad_n_2);
-    t45 = 0x1.4p+2;
-#line 124 "examples/raylib/main.hero"
-    t46 = 0x1.4p+2;
-#line 124 "examples/raylib/main.hero"
-    t47 = (Vector2){.x = t45, .y = t46};
-#line 124 "examples/raylib/main.hero"
-    t48 = h3_box;
-#line 124 "examples/raylib/main.hero"
-    t49 = CheckCollisionPointRec(t47, t48);
-#line 124 "examples/raylib/main.hero"
-    hero_print_bool(t49);
-#line 124 "examples/raylib/main.hero"
-    hero_print_end();
-    t50 = 0x1.9p+5;
-#line 125 "examples/raylib/main.hero"
-    t51 = 0x1.4p+2;
-#line 125 "examples/raylib/main.hero"
-    t52 = (Vector2){.x = t50, .y = t51};
-#line 125 "examples/raylib/main.hero"
-    t53 = h3_box;
-#line 125 "examples/raylib/main.hero"
-    t54 = CheckCollisionPointRec(t52, t53);
-#line 125 "examples/raylib/main.hero"
-    hero_print_bool(t54);
-#line 125 "examples/raylib/main.hero"
-    hero_print_end();
-#line 125 "examples/raylib/main.hero"
-    return;
-#line 398 "main.c"
+#line 111
+    t24 = GetSplinePointLinear(t19, t22, t23); h1_mid = t24; hero_pad_fill(&h1_mid, sizeof(Vector2), 1, hero_pad_g_1, hero_pad_n_1);
+#line 116
+    t25 = h1_mid.x; t26 = HERO_STR_LIT(hero_str_20); t27 = h1_mid.y; hero_print_f32(t25); hero_print_str(t26); hero_print_f32(t27); hero_print_end();
+#line 120
+    t28 = UINT64_C(0); t29 = UINT64_C(0); t30 = INT64_C(10); t31 = INT64_C(20); t32 = INT64_C(30); t33 = INT64_C(40); t35 = (AutomationEvent){.frame = t28, .type = t29, .params = {t30, t31, t32, t33}}; h2_event = t35; hero_pad_fill(&h2_event, sizeof(AutomationEvent), 1, hero_pad_g_9, hero_pad_n_9);
+    t36 = h2_event; t38 = INT64_C(2); t39 = t36.params[((uint64_t)(t38) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t38))]; hero_print_int(t39); hero_print_end();
+#line 123
+    t40 = 0x0p+0; t41 = 0x0p+0; t42 = 0x1.4p+3; t43 = 0x1.4p+3; t44 = (Rectangle){.x = t40, .y = t41, .width = t42, .height = t43}; h3_box = t44; hero_pad_fill(&h3_box, sizeof(Rectangle), 1, hero_pad_g_2, hero_pad_n_2);
+    t45 = 0x1.4p+2; t46 = 0x1.4p+2; t47 = (Vector2){.x = t45, .y = t46}; t48 = h3_box; t49 = CheckCollisionPointRec(t47, t48); hero_print_bool(t49); hero_print_end();
+    t50 = 0x1.9p+5; t51 = 0x1.4p+2; t52 = (Vector2){.x = t50, .y = t51}; t53 = h3_box; t54 = CheckCollisionPointRec(t52, t53); hero_print_bool(t54); hero_print_end(); return;
+#line 264 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

@@ -132,11 +132,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 142 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
 #pragma clang diagnostic pop
@@ -246,37 +246,11 @@ int64_t h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_EXTRA(vo
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 22 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-void h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_main(void) {
-#line 22 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG int32_t t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-bb0:
-    t1 = h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_LIMIT();
-#line 23 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    hero_print_int(t1);
-#line 23 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    hero_print_end();
-    t2 = h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_EXTRA();
-#line 24 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    hero_print_int(t2);
-#line 24 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    hero_print_end();
-    t3 = aye();
-#line 25 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    t4 = bee();
-#line 25 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
-#line 25 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    t6 = h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_WANT_EXTRA();
-#line 25 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 25 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    hero_print_int(t7);
-#line 25 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    hero_print_end();
-#line 25 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    return;
-#line 280 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
+void h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_main(void) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG int32_t t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_LIMIT(); hero_print_int(t1); hero_print_end();
+    t2 = h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_EXTRA(); hero_print_int(t2); hero_print_end();
+    t3 = aye(); t4 = bee(); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow(); t6 = h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_WANT_EXTRA(); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow(); hero_print_int(t7); hero_print_end(); return;
+#line 254 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

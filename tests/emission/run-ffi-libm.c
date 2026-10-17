@@ -140,16 +140,16 @@ typedef struct h_0opt_a8ea2 {
 #line 20 "tests/golden/run/ffi-libm.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffilibm_sqrt(double a0) { (void)(sqrt)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_ffilibm_pow(double a0, double a1) { (void)(pow)(a0, a1); }
-#line 30 "tests/golden/run/ffi-libm.hero"
+#line 30
 __attribute__((unused)) static void hero_ffi_probe_h_ffilibm_llabs(int64_t a0) { (void)(llabs)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 155 "ffilibm.c"
 #pragma clang diagnostic pop
@@ -166,53 +166,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_ffilibm_main(void);
 
 #line 32 "tests/golden/run/ffi-libm.hero"
-void h_ffilibm_main(void) {
-#line 32 "tests/golden/run/ffi-libm.hero"
-    HERO_NODEBUG double t1, t2, t3, t4, t5, t10, t11, t12, t13; HERO_NODEBUG int64_t t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
-#line 32 "tests/golden/run/ffi-libm.hero"
-bb0:
-    t1 = 0x1p+4;
-#line 33 "tests/golden/run/ffi-libm.hero"
-    t2 = sqrt(t1);
-#line 33 "tests/golden/run/ffi-libm.hero"
-    hero_print_f64(t2);
-#line 33 "tests/golden/run/ffi-libm.hero"
-    hero_print_end();
-    t3 = 0x1p+1;
-#line 34 "tests/golden/run/ffi-libm.hero"
-    t4 = 0x1.4p+3;
-#line 34 "tests/golden/run/ffi-libm.hero"
-    t5 = pow(t3, t4);
-#line 34 "tests/golden/run/ffi-libm.hero"
-    hero_print_f64(t5);
-#line 34 "tests/golden/run/ffi-libm.hero"
-    hero_print_end();
-    t6 = INT64_C(0);
-#line 35 "tests/golden/run/ffi-libm.hero"
-    t7 = INT64_C(7);
-#line 35 "tests/golden/run/ffi-libm.hero"
-    if (__builtin_sub_overflow(t6, t7, &t8)) hero_panic_overflow();
-#line 35 "tests/golden/run/ffi-libm.hero"
-    t9 = llabs(t8);
-#line 35 "tests/golden/run/ffi-libm.hero"
-    hero_print_int(t9);
-#line 35 "tests/golden/run/ffi-libm.hero"
-    hero_print_end();
-#line 39 "tests/golden/run/ffi-libm.hero"
-    t10 = 0x1.8p+1;
-#line 39 "tests/golden/run/ffi-libm.hero"
-    t11 = 0x1p+2;
-#line 39 "tests/golden/run/ffi-libm.hero"
-    t12 = pow(t10, t11);
-#line 39 "tests/golden/run/ffi-libm.hero"
-    t13 = sqrt(t12);
-#line 39 "tests/golden/run/ffi-libm.hero"
-    hero_print_f64(t13);
-#line 39 "tests/golden/run/ffi-libm.hero"
-    hero_print_end();
-#line 39 "tests/golden/run/ffi-libm.hero"
-    return;
-#line 216 "ffilibm.c"
+void h_ffilibm_main(void) { HERO_NODEBUG double t1, t2, t3, t4, t5, t10, t11, t12, t13; HERO_NODEBUG int64_t t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1p+4; t2 = sqrt(t1); hero_print_f64(t2); hero_print_end();
+    t3 = 0x1p+1; t4 = 0x1.4p+3; t5 = pow(t3, t4); hero_print_f64(t5); hero_print_end();
+    t6 = INT64_C(0); t7 = INT64_C(7); if (__builtin_sub_overflow(t6, t7, &t8)) hero_panic_overflow(); t9 = llabs(t8); hero_print_int(t9); hero_print_end();
+#line 39
+    t10 = 0x1.8p+1; t11 = 0x1p+2; t12 = pow(t10, t11); t13 = sqrt(t12); hero_print_f64(t13); hero_print_end(); return;
+#line 176 "ffilibm.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

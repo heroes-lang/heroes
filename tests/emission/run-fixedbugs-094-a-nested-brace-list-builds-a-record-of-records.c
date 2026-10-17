@@ -68,7 +68,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 8 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int32_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 11 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
+#line 11
 _Static_assert(_Generic(&((struct line *)0)->a, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->a) == sizeof(struct pt), "heroes-ffi-field Line a");
 _Static_assert(_Generic(&((struct line *)0)->b, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->b) == sizeof(struct pt), "heroes-ffi-field Line b");
 #line 75 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
@@ -143,11 +143,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 153 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
@@ -239,53 +239,15 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void) {
-#line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    struct line h0_l; struct line h1_f; HERO_NODEBUG struct line t1, t6; HERO_NODEBUG int32_t t2, t3, t4, t5, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-bb0:
-    t1 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT();
-#line 17 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    h0_l = t1;
-#line 17 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_pad_fill(&h0_l, sizeof(struct line), 1, hero_pad_g_1, hero_pad_n_1);
-    t2 = h0_l.a.x;
-#line 18 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_int(t2);
-#line 18 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_end();
-    t3 = h0_l.a.y;
-#line 19 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_int(t3);
-#line 19 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_end();
-    t4 = h0_l.b.x;
-#line 20 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_int(t4);
-#line 20 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_end();
-    t5 = h0_l.b.y;
-#line 21 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_int(t5);
-#line 21 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_end();
-    t6 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT();
-#line 22 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    h1_f = t6;
-#line 22 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_pad_fill(&h1_f, sizeof(struct line), 1, hero_pad_g_1, hero_pad_n_1);
-    t7 = h1_f.a.x;
-#line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    t8 = h1_f.b.y;
-#line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_int(t9);
-#line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    hero_print_end();
-#line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    return;
-#line 289 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void) { struct line h0_l; struct line h1_f; HERO_NODEBUG struct line t1, t6; HERO_NODEBUG int32_t t2, t3, t4, t5, t7, t8, t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(); h0_l = t1; hero_pad_fill(&h0_l, sizeof(struct line), 1, hero_pad_g_1, hero_pad_n_1);
+    t2 = h0_l.a.x; hero_print_int(t2); hero_print_end();
+    t3 = h0_l.a.y; hero_print_int(t3); hero_print_end();
+    t4 = h0_l.b.x; hero_print_int(t4); hero_print_end();
+    t5 = h0_l.b.y; hero_print_int(t5); hero_print_end();
+    t6 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(); h1_f = t6; hero_pad_fill(&h1_f, sizeof(struct line), 1, hero_pad_g_1, hero_pad_n_1);
+    t7 = h1_f.a.x; t8 = h1_f.b.y; if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow(); hero_print_int(t9); hero_print_end(); return;
+#line 251 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

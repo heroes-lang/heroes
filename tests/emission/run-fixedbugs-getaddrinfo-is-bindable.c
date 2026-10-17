@@ -135,11 +135,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugsgetaddrinfoisbinda
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 145 "fixedbugsgetaddrinfoisbindable.c"
 #pragma clang diagnostic pop
@@ -159,53 +159,15 @@ void h_fixedbugsgetaddrinfoisbindable_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 void h_fixedbugsgetaddrinfoisbindable_main(void) {
-#line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
+#line 25
 #define h0_res (*hero_lend_h0_res)
-#line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    struct addrinfo * *const hero_lend_h0_res = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsgetaddrinfoisbindable.main", "res"); int32_t h1_rc; HERO_NODEBUG struct addrinfo *t1, *t8; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG void *t4, *t5; HERO_NODEBUG int32_t t6, t7; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-bb0:
-    t1 = ((void *)0);
-#line 26 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    h0_res = t1;
-    t2 = HERO_STR_LIT(hero_str_69fd5e8e);
-#line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    t3 = hero_str_lend(t2);
-#line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    t4 = ((void *)0);
-#line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    t5 = ((void *)0);
-#line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    hero_lend_local_name(hero_lend_h0_res, "getaddrinfo", "res");
-#line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    t6 = getaddrinfo(hero_cstr_nonnull(t3), t4, t5, &h0_res);
-#line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    hero_handle_acquired(h0_res, "freeaddrinfo");
-#line 27 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    h1_rc = t6;
-    t7 = h1_rc;
-#line 28 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    hero_print_int(t7);
-#line 28 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    hero_print_end();
-    t8 = h0_res;
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    {
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    hero_handle_alive(t8, "the argument `ai` of `freeaddrinfo`");
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "freeaddrinfo", NULL);
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    (void)freeaddrinfo(t8);
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    if (hero_handle_ended(t8, hero_life_0_0) && h0_res == t8) h0_res = hero_handle_dead();
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    }
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    hero_lend_local_give(hero_lend_h0_res);
-#line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    return;
-#line 209 "fixedbugsgetaddrinfoisbindable.c"
+#line 25
+    struct addrinfo * *const hero_lend_h0_res = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsgetaddrinfoisbindable.main", "res"); int32_t h1_rc; HERO_NODEBUG struct addrinfo *t1, *t8; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG void *t4, *t5; HERO_NODEBUG int32_t t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = ((void *)0); h0_res = t1;
+    t2 = HERO_STR_LIT(hero_str_69fd5e8e); t3 = hero_str_lend(t2); t4 = ((void *)0); t5 = ((void *)0); hero_lend_local_name(hero_lend_h0_res, "getaddrinfo", "res"); t6 = getaddrinfo(hero_cstr_nonnull(t3), t4, t5, &h0_res); hero_handle_acquired(h0_res, "freeaddrinfo"); h1_rc = t6;
+    t7 = h1_rc; hero_print_int(t7); hero_print_end();
+    t8 = h0_res; { hero_handle_alive(t8, "the argument `ai` of `freeaddrinfo`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "freeaddrinfo", NULL); (void)freeaddrinfo(t8); if (hero_handle_ended(t8, hero_life_0_0) && h0_res == t8) h0_res = hero_handle_dead(); } hero_lend_local_give(hero_lend_h0_res); return;
+#line 171 "fixedbugsgetaddrinfoisbindable.c"
 }
 #undef h0_res
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {

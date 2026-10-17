@@ -147,11 +147,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs151onearmofananony
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 157 "fixedbugs151onearmofananonymousunionbuiltandread.c"
 #pragma clang diagnostic pop
@@ -189,47 +189,11 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void) {
-#line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    SA h0_s; HERO_NODEBUG int32_t t1, t2, t3, t5, t6, t8, t9, t11, t12; HERO_NODEBUG SA t4, t7, t10; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-bb0:
-    t1 = INT64_C(1);
-#line 16 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    t2 = INT64_C(7);
-#line 16 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    t3 = INT64_C(3);
-#line 16 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    t4 = (SA){.kind = t1, .i = t2, .x = t3};
-#line 16 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    h0_s = t4;
-#line 16 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    hero_pad_fill(&h0_s, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
-    t5 = h0_s.i;
-#line 17 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    hero_print_int(t5);
-#line 17 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    hero_print_end();
-    t6 = INT64_C(12);
-#line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    t7 = make_sa(t6);
-#line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    t8 = t7.i;
-#line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    t9 = INT64_C(12);
-#line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    t10 = make_sa(t9);
-#line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    t11 = t10.x;
-#line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    if (__builtin_add_overflow(t8, t11, &t12)) hero_panic_overflow();
-#line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    hero_print_int(t12);
-#line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    return;
-#line 233 "fixedbugs151onearmofananonymousunionbuiltandread.c"
+void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void) { SA h0_s; HERO_NODEBUG int32_t t1, t2, t3, t5, t6, t8, t9, t11, t12; HERO_NODEBUG SA t4, t7, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1); t2 = INT64_C(7); t3 = INT64_C(3); t4 = (SA){.kind = t1, .i = t2, .x = t3}; h0_s = t4; hero_pad_fill(&h0_s, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
+    t5 = h0_s.i; hero_print_int(t5); hero_print_end();
+    t6 = INT64_C(12); t7 = make_sa(t6); t8 = t7.i; t9 = INT64_C(12); t10 = make_sa(t9); t11 = t10.x; if (__builtin_add_overflow(t8, t11, &t12)) hero_panic_overflow(); hero_print_int(t12); hero_print_end(); return;
+#line 197 "fixedbugs151onearmofananonymousunionbuiltandread.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151onearmofananonymousunionbuiltandread_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

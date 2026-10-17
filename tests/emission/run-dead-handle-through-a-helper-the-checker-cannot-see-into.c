@@ -137,11 +137,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_deadhandlethroughahelperthe
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 147 "deadhandlethroughahelperthecheckercannotseeinto.c"
 #pragma clang diagnostic pop
@@ -161,83 +161,19 @@ void h_deadhandlethroughahelperthecheckercannotseeinto_finish(Obj * *ph0_j);
 void h_deadhandlethroughahelperthecheckercannotseeinto_main(void);
 
 #line 15 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-void h_deadhandlethroughahelperthecheckercannotseeinto_finish(Obj * *ph0_j) {
-#line 15 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    HERO_NODEBUG Obj *t1; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-bb0:
-    t1 = (*ph0_j);
-#line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    {
-#line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    hero_handle_alive(t1, "the argument `item` of `obj_delete`");
-#line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t1, "obj_delete", NULL);
-#line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    (void)obj_delete(t1);
-#line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_j) == t1) (*ph0_j) = hero_handle_dead();
-#line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    }
-#line 16 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    return;
-#line 185 "deadhandlethroughahelperthecheckercannotseeinto.c"
+void h_deadhandlethroughahelperthecheckercannotseeinto_finish(Obj * *ph0_j) { HERO_NODEBUG Obj *t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = (*ph0_j); { hero_handle_alive(t1, "the argument `item` of `obj_delete`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t1, "obj_delete", NULL); (void)obj_delete(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_j) == t1) (*ph0_j) = hero_handle_dead(); } return;
+#line 167 "deadhandlethroughahelperthecheckercannotseeinto.c"
 }
 
 #line 18 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-void h_deadhandlethroughahelperthecheckercannotseeinto_main(void) {
-#line 18 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    Obj * h0_a; Obj * h1_b; HERO_NODEBUG Obj *t1, *t2, *t3, *t6, *t8; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char *t5; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-bb0:
-    t1 = obj_new();
-#line 19 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    hero_handle_acquired(t1, "obj_delete");
-#line 19 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    h0_a = t1;
-    t2 = obj_new();
-#line 20 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    hero_handle_acquired(t2, "obj_delete");
-#line 20 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    h1_b = t2;
+void h_deadhandlethroughahelperthecheckercannotseeinto_main(void) { Obj * h0_a; Obj * h1_b; HERO_NODEBUG Obj *t1, *t2, *t3, *t6, *t8; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char *t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = obj_new(); hero_handle_acquired(t1, "obj_delete"); h0_a = t1;
+    t2 = obj_new(); hero_handle_acquired(t2, "obj_delete"); h1_b = t2;
     h_deadhandlethroughahelperthecheckercannotseeinto_finish(&h1_b);
-    t3 = h0_a;
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    t4 = HERO_STR_LIT(hero_str_62);
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    t5 = hero_str_lend(t4);
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    t6 = h1_b;
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    {
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    hero_handle_alive(t3, "the argument `object` of `obj_add`");
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    hero_handle_alive(t6, "the argument `item` of `obj_add`");
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    HERO_NODEBUG uint64_t hero_life_2_0 = hero_handle_ending(t6, "obj_add", NULL);
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    (void)obj_add(t3, hero_cstr_nonnull(t5), t6);
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    if (hero_handle_ended(t6, hero_life_2_0) && h1_b == t6) h1_b = hero_handle_dead();
-#line 22 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    }
-    t8 = h0_a;
-#line 23 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    {
-#line 23 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    hero_handle_alive(t8, "the argument `item` of `obj_delete`");
-#line 23 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "obj_delete", NULL);
-#line 23 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    (void)obj_delete(t8);
-#line 23 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    if (hero_handle_ended(t8, hero_life_0_0) && h0_a == t8) h0_a = hero_handle_dead();
-#line 23 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    }
-#line 23 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    return;
-#line 241 "deadhandlethroughahelperthecheckercannotseeinto.c"
+    t3 = h0_a; t4 = HERO_STR_LIT(hero_str_62); t5 = hero_str_lend(t4); t6 = h1_b; { hero_handle_alive(t3, "the argument `object` of `obj_add`"); hero_handle_alive(t6, "the argument `item` of `obj_add`"); HERO_NODEBUG uint64_t hero_life_2_0 = hero_handle_ending(t6, "obj_add", NULL); (void)obj_add(t3, hero_cstr_nonnull(t5), t6); if (hero_handle_ended(t6, hero_life_2_0) && h1_b == t6) h1_b = hero_handle_dead(); }
+    t8 = h0_a; { hero_handle_alive(t8, "the argument `item` of `obj_delete`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "obj_delete", NULL); (void)obj_delete(t8); if (hero_handle_ended(t8, hero_life_0_0) && h0_a == t8) h0_a = hero_handle_dead(); } return;
+#line 177 "deadhandlethroughahelperthecheckercannotseeinto.c"
 }
 HERO_TU_LOCAL bool h_deadhandlethroughahelperthecheckercannotseeinto_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

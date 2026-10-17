@@ -1,0 +1,96 @@
+# Which physical line a C line is written on (design.md §3.1; panel 219's
+# R1, ratified 2026-10-17). `#line N` anchors the next line and C then
+# auto-increments, so the writer restated a Heroes line under a `#line` of
+# its own before every C line after the first that the line lowers to. A C
+# line whose restore would re-anchor the very line the previous C line sits
+# on is written on that line instead, one space between: the compiler's own
+# C fell from 52,044,067 bytes to 25,897,631 with its file name written only
+# where it changes (`emit/line_name.hero`), and under `-gline-tables-only`
+# clang's line table names the same file and line at 1,348,372 addresses of
+# 1,348,372 (measured 2026-10-17).
+#
+# **What may stand beside what.** Never onto a directive, a preprocessor
+# line, a blank line, a line holding a newline or a `//`, and never such a
+# line onto another: a `//` would swallow what follows it, and a directive
+# or a preprocessor line ends at its own line's end. Whether the restore
+# would re-anchor the held line is the writer's question, asked of what
+# clang believes (`emit/writer.hero`'s `sits_on`); this module holds the line
+# written last out of the chunk (`Held`) until the next one says whether it
+# joins, and says which lines may.
+
+# The line written last, not yet in the writer's chunk.
+record Held
+    text: str
+    held: bool
+    # Whether a line may be joined onto it: `plain`'s answer, kept.
+    plain: bool
+
+function nothing_held() -> Held
+    return Held(text: "", held: false, plain: false)
+
+# Hold `text` in place of the line held before it, which the writer has
+# written whole.
+function hold(@h: Held, text: str)
+    h.text @ text
+    h.held @ true
+    h.plain @ plain(text)
+
+# Whether `text` may be written on the held line, as far as the two lines
+# themselves say.
+function joins(h: Held, text: str) -> bool
+    return h.held && h.plain && plain(text)
+
+# `text` written on the held line, its indentation dropped.
+function write_beside(@h: Held, text: str)
+    h.text @ h.text + " " + unindented(text)
+
+# The held line, ended, or nothing where none is held: the output's last.
+function tail(h: Held) -> str
+    if !h.held
+        return ""
+    return h.text + "\n"
+
+# Whether a line of C may stand on a physical line beside another: not
+# blank, not a directive or a preprocessor line, and holding no newline and
+# no `//`.
+function plain(text: str) -> bool
+    body = unindented(text)
+
+    if body.len() == 0 || body[0] == '#'
+        return false
+    i: i64 @= 0
+
+    while i < text.len()
+        if text[i] == '\n' || text[i] == '/' && i + 1 < text.len() && text[i + 1] == '/'
+            return false
+        i @ i + 1
+
+    return true
+
+function unindented(text: str) -> str
+    i: i64 @= 0
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\t')
+        i @ i + 1
+
+    return text.slice(from: i, to: text.len())
+
+## Tests
+
+test "a plain line joins a plain line, and a directive, a blank, a newline or a // stands alone (panel 219)"
+    h: Held @= nothing_held()
+    assert !joins(h, text: "x;")
+    assert tail(h) == ""
+    hold(@h, text: "    t1 = h0_a;")
+    assert joins(h, text: "    t2 = t1;")
+    write_beside(@h, text: "    t2 = t1;")
+    assert tail(h) == "    t1 = h0_a; t2 = t1;\n"
+
+    for alone in ["", "    ", "#line 3", "  #include \"a.h\"", "x; // y", "a;\nb;"]
+        assert !plain(alone)
+        assert !joins(h, text: alone)
+
+    hold(@h, text: "#pragma once")
+    assert !joins(h, text: "x;")
+    assert plain("x = '#'; y = a / b;")
+    assert unindented("\t  bb0:") == "bb0:"

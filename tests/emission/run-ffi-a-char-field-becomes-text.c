@@ -62,18 +62,14 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #endif
 
 #line 34 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-_Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-flex Tag name");
-#line 34 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-_Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
-_Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, raw) != 0, "heroes-ffi-flex Tag raw");
-#line 35 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-_Static_assert(_Generic(&((Tag *)0)->raw, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag raw");
+_Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-flex Tag name"); _Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
+_Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, raw) != 0, "heroes-ffi-flex Tag raw"); _Static_assert(_Generic(&((Tag *)0)->raw, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag raw");
 _Static_assert(__builtin_classify_type(((Tag *)0)->id) == 1 && sizeof(((Tag *)0)->id) == sizeof(int32_t) && (_Generic(((Tag *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tag id");
-#line 73 "ffiacharfieldbecomestext.c"
+#line 69 "ffiacharfieldbecomestext.c"
 
 #line 33 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(__builtin_classify_type(*(Tag *)0) != 13, "heroes-ffi-union Tag name raw id");
-#line 77 "ffiacharfieldbecomestext.c"
+#line 73 "ffiacharfieldbecomestext.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -162,13 +158,13 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffiacharfieldbecomestext_ta
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 172 "ffiacharfieldbecomestext.c"
+#line 168 "ffiacharfieldbecomestext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_Tag_eq(const Tag *a, const Tag *b);
@@ -196,522 +192,64 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-void h_ffiacharfieldbecomestext_main(void) {
-#line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    Tag h0_t; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, h5_f3 = {0}, h7_s0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t23, t24, t28, t30, t34, t35, t39, t41, t65, t66, t70, t72, t77, t78, t82, t84, t109, t110, t112, t116, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139; Tag h3_full; Tag h6_bad; HeroStr h8_text = {0}; HeroFailure h9_e = {0}; HERO_NODEBUG h_0opt_e201354 h10_f4 = {0}, h16_own16 = {0}, t121, t122, t126, t128, t140, t141; HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8, t43, t44, t45, t46, t47, t48, t49, t50, t87, t88, t89, t90, t91, t92, t93, t94; HERO_NODEBUG uint8_t t10, t11, t12, t13, t14, t15, t16, t17, t52, t53, t54, t55, t56, t57, t58, t59, t96, t97, t98, t99, t100, t101, t102, t103; HERO_NODEBUG int32_t t19, t61, t105, t120; HERO_NODEBUG Tag t20, t21, t32, t62, t63, t75, t106, t107, t119; HERO_NODEBUG int64_t t25, t26, t36, t37, t67, t68, t79, t80, t111, t123, t124, t129; HERO_NODEBUG bool t27, t38, t69, t81, t125; HERO_NODEBUG HeroFailure t29, t40, t71, t83, t117, t127, t143; HERO_NODEBUG HeroStr t31, t42, t73, t74, t85, t86, t113, t114, t115, t118, t142; HERO_ENTRY_STOP; goto bb0;
-#line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-bb0:
-#line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t1 = INT64_C(72);
-#line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t2 = INT64_C(101);
-#line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t3 = INT64_C(114);
-#line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t4 = INT64_C(111);
-#line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t5 = INT64_C(101);
-#line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t6 = INT64_C(115);
-#line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t7 = INT64_C(0);
-#line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t8 = INT64_C(0);
-    t10 = UINT64_C(98);
-#line 42 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t11 = UINT64_C(121);
-#line 42 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t12 = UINT64_C(116);
-#line 42 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t13 = UINT64_C(101);
-#line 42 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t14 = UINT64_C(115);
-#line 42 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t15 = UINT64_C(0);
-#line 42 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t16 = UINT64_C(0);
-#line 42 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t17 = UINT64_C(0);
+void h_ffiacharfieldbecomestext_main(void) { Tag h0_t; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, h5_f3 = {0}, h7_s0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t23, t24, t28, t30, t34, t35, t39, t41, t65, t66, t70, t72, t77, t78, t82, t84, t109, t110, t112, t116, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139; Tag h3_full; Tag h6_bad; HeroStr h8_text = {0}; HeroFailure h9_e = {0}; HERO_NODEBUG h_0opt_e201354 h10_f4 = {0}, h16_own16 = {0}, t121, t122, t126, t128, t140, t141; HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8, t43, t44, t45, t46, t47, t48, t49, t50, t87, t88, t89, t90, t91, t92, t93, t94; HERO_NODEBUG uint8_t t10, t11, t12, t13, t14, t15, t16, t17, t52, t53, t54, t55, t56, t57, t58, t59, t96, t97, t98, t99, t100, t101, t102, t103; HERO_NODEBUG int32_t t19, t61, t105, t120; HERO_NODEBUG Tag t20, t21, t32, t62, t63, t75, t106, t107, t119; HERO_NODEBUG int64_t t25, t26, t36, t37, t67, t68, t79, t80, t111, t123, t124, t129; HERO_NODEBUG bool t27, t38, t69, t81, t125; HERO_NODEBUG HeroFailure t29, t40, t71, t83, t117, t127, t143; HERO_NODEBUG HeroStr t31, t42, t73, t74, t85, t86, t113, t114, t115, t118, t142; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 41
+    t1 = INT64_C(72); t2 = INT64_C(101); t3 = INT64_C(114); t4 = INT64_C(111); t5 = INT64_C(101); t6 = INT64_C(115); t7 = INT64_C(0); t8 = INT64_C(0);
+    t10 = UINT64_C(98); t11 = UINT64_C(121); t12 = UINT64_C(116); t13 = UINT64_C(101); t14 = UINT64_C(115); t15 = UINT64_C(0); t16 = UINT64_C(0); t17 = UINT64_C(0);
     t19 = INT64_C(7);
-#line 40 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t20 = (Tag){.name = {t1, t2, t3, t4, t5, t6, t7, t8}, .raw = {t10, t11, t12, t13, t14, t15, t16, t17}, .id = t19};
-#line 40 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h0_t = t20;
-#line 40 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_pad_fill(&h0_t, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t21 = h0_t;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    {
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG int64_t hero_vb_status = 0;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t21.name), INT64_C(8), &hero_vb_status);
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        if (hero_vb_status == HERO_STR_OK) {
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t23 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text};
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        } else {
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t23 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()};
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        }
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    }
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t130 = h11_own11;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h11_own11 = t23;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t130);
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t131 = h1_f0;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_retain(&t23);
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h1_f0 = t23;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t131);
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t24 = h1_f0;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t25 = t24.tag;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t26 = INT64_C(0);
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t27 = t25 == t26;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    if (t27) goto bb1; else goto bb2;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-bb1:
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t30 = h1_f0;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t31 = t30.as.ok;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t31);
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_end();
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t32 = h0_t;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    {
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG int64_t hero_vb_status = 0;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t32.raw), INT64_C(8), &hero_vb_status);
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        if (hero_vb_status == HERO_STR_OK) {
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t34 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text};
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        } else {
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t34 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()};
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        }
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    }
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t132 = h12_own12;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h12_own12 = t34;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t132);
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t133 = h2_f1;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_retain(&t34);
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h2_f1 = t34;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t133);
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t35 = h2_f1;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t36 = t35.tag;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t37 = INT64_C(0);
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t38 = t36 == t37;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    if (t38) goto bb3; else goto bb4;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-bb2:
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t28 = h1_f0;
-#line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t29 = t28.as.err;
-#line 347 "ffiacharfieldbecomestext.c"
+#line 40
+    t20 = (Tag){.name = {t1, t2, t3, t4, t5, t6, t7, t8}, .raw = {t10, t11, t12, t13, t14, t15, t16, t17}, .id = t19}; h0_t = t20; hero_pad_fill(&h0_t, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
+#line 47
+    t21 = h0_t; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t21.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t23 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t23 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t130 = h11_own11; h11_own11 = t23; h_0opt_f87774a_release(&t130); t131 = h1_f0; h_0opt_f87774a_retain(&t23); h1_f0 = t23; h_0opt_f87774a_release(&t131); t24 = h1_f0; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb1; else goto bb2; bb1: t30 = h1_f0; t31 = t30.as.ok; hero_print_str(t31); hero_print_end();
+#line 51
+    t32 = h0_t; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t32.raw), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t34 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t34 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t132 = h12_own12; h12_own12 = t34; h_0opt_f87774a_release(&t132); t133 = h2_f1; h_0opt_f87774a_retain(&t34); h2_f1 = t34; h_0opt_f87774a_release(&t133); t35 = h2_f1; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb3; else goto bb4; bb2:
+#line 47
+    t28 = h1_f0; t29 = t28.as.err;
+#line 209 "ffiacharfieldbecomestext.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb3:
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t41 = h2_f1;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t42 = t41.as.ok;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t42);
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_end();
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t43 = INT64_C(102);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t44 = INT64_C(117);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t45 = INT64_C(108);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t46 = INT64_C(108);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t47 = INT64_C(101);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t48 = INT64_C(115);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t49 = INT64_C(116);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t50 = INT64_C(33);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t52 = UINT64_C(0);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t53 = UINT64_C(0);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t54 = UINT64_C(0);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t55 = UINT64_C(0);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t56 = UINT64_C(0);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t57 = UINT64_C(0);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t58 = UINT64_C(0);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t59 = UINT64_C(0);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t61 = INT64_C(1);
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t62 = (Tag){.name = {t43, t44, t45, t46, t47, t48, t49, t50}, .raw = {t52, t53, t54, t55, t56, t57, t58, t59}, .id = t61};
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h3_full = t62;
-#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_pad_fill(&h3_full, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
-    t63 = h3_full;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    {
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG int64_t hero_vb_status = 0;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t63.name), INT64_C(8), &hero_vb_status);
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        if (hero_vb_status == HERO_STR_OK) {
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t65 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text};
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        } else {
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t65 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()};
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        }
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    }
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t134 = h13_own13;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h13_own13 = t65;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t134);
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t135 = h4_f2;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_retain(&t65);
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h4_f2 = t65;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t135);
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t66 = h4_f2;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t67 = t66.tag;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t68 = INT64_C(0);
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t69 = t67 == t68;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    if (t69) goto bb5; else goto bb6;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-bb4:
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t39 = h2_f1;
-#line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t40 = t39.as.err;
-#line 448 "ffiacharfieldbecomestext.c"
+    t41 = h2_f1; t42 = t41.as.ok; hero_print_str(t42); hero_print_end();
+#line 55
+    t43 = INT64_C(102); t44 = INT64_C(117); t45 = INT64_C(108); t46 = INT64_C(108); t47 = INT64_C(101); t48 = INT64_C(115); t49 = INT64_C(116); t50 = INT64_C(33); t52 = UINT64_C(0); t53 = UINT64_C(0); t54 = UINT64_C(0); t55 = UINT64_C(0); t56 = UINT64_C(0); t57 = UINT64_C(0); t58 = UINT64_C(0); t59 = UINT64_C(0); t61 = INT64_C(1); t62 = (Tag){.name = {t43, t44, t45, t46, t47, t48, t49, t50}, .raw = {t52, t53, t54, t55, t56, t57, t58, t59}, .id = t61}; h3_full = t62; hero_pad_fill(&h3_full, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
+    t63 = h3_full; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t63.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t65 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t65 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t134 = h13_own13; h13_own13 = t65; h_0opt_f87774a_release(&t134); t135 = h4_f2; h_0opt_f87774a_retain(&t65); h4_f2 = t65; h_0opt_f87774a_release(&t135); t66 = h4_f2; t67 = t66.tag; t68 = INT64_C(0); t69 = t67 == t68; if (t69) goto bb5; else goto bb6; bb4:
+#line 51
+    t39 = h2_f1; t40 = t39.as.err;
+#line 220 "ffiacharfieldbecomestext.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb5:
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t72 = h4_f2;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t73 = t72.as.ok;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t73);
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_end();
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t74 = HERO_STR_LIT(hero_str_5b);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t75 = h3_full;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    {
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG int64_t hero_vb_status = 0;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t75.raw), INT64_C(8), &hero_vb_status);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        if (hero_vb_status == HERO_STR_OK) {
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t77 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text};
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        } else {
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t77 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()};
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        }
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    }
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t136 = h14_own14;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h14_own14 = t77;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t136);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t137 = h5_f3;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_retain(&t77);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h5_f3 = t77;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t137);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t78 = h5_f3;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t79 = t78.tag;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t80 = INT64_C(0);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t81 = t79 == t80;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    if (t81) goto bb7; else goto bb8;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-bb6:
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t70 = h4_f2;
-#line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t71 = t70.as.err;
-#line 512 "ffiacharfieldbecomestext.c"
+    t72 = h4_f2; t73 = t72.as.ok; hero_print_str(t73); hero_print_end();
+#line 59
+    t74 = HERO_STR_LIT(hero_str_5b); t75 = h3_full; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t75.raw), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t77 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t77 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t136 = h14_own14; h14_own14 = t77; h_0opt_f87774a_release(&t136); t137 = h5_f3; h_0opt_f87774a_retain(&t77); h5_f3 = t77; h_0opt_f87774a_release(&t137); t78 = h5_f3; t79 = t78.tag; t80 = INT64_C(0); t81 = t79 == t80; if (t81) goto bb7; else goto bb8; bb6:
+#line 56
+    t70 = h4_f2; t71 = t70.as.err;
+#line 230 "ffiacharfieldbecomestext.c"
     hero_panic_must(t71);
     hero_unreachable();
 bb7:
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t84 = h5_f3;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t85 = t84.as.ok;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t86 = HERO_STR_LIT(hero_str_5d);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t74);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t85);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t86);
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_end();
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t87 = INT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t88 = INT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t89 = INT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t90 = INT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t91 = INT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t92 = INT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t93 = INT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t94 = INT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t96 = UINT64_C(97);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t97 = UINT64_C(98);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t98 = UINT64_C(255);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t99 = UINT64_C(254);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t100 = UINT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t101 = UINT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t102 = UINT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t103 = UINT64_C(0);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t105 = INT64_C(2);
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t106 = (Tag){.name = {t87, t88, t89, t90, t91, t92, t93, t94}, .raw = {t96, t97, t98, t99, t100, t101, t102, t103}, .id = t105};
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h6_bad = t106;
-#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_pad_fill(&h6_bad, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t107 = h6_bad;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    {
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG int64_t hero_vb_status = 0;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t107.raw), INT64_C(8), &hero_vb_status);
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        if (hero_vb_status == HERO_STR_OK) {
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t109 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text};
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        } else {
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-            t109 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()};
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        }
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    }
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t138 = h15_own15;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h15_own15 = t109;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t138);
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t139 = h7_s0;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_retain(&t109);
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h7_s0 = t109;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_f87774a_release(&t139);
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t110 = h7_s0;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t111 = t110.tag;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    switch (t111) {
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        case 0: goto bb10;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        case 1: goto bb11;
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-        default: hero_unreachable();
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    }
-#line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-bb8:
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t82 = h5_f3;
-#line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t83 = t82.as.err;
-#line 624 "ffiacharfieldbecomestext.c"
+    t84 = h5_f3; t85 = t84.as.ok; t86 = HERO_STR_LIT(hero_str_5d); hero_print_str(t74); hero_print_str(t85); hero_print_str(t86); hero_print_end();
+#line 68
+    t87 = INT64_C(0); t88 = INT64_C(0); t89 = INT64_C(0); t90 = INT64_C(0); t91 = INT64_C(0); t92 = INT64_C(0); t93 = INT64_C(0); t94 = INT64_C(0); t96 = UINT64_C(97); t97 = UINT64_C(98); t98 = UINT64_C(255); t99 = UINT64_C(254); t100 = UINT64_C(0); t101 = UINT64_C(0); t102 = UINT64_C(0); t103 = UINT64_C(0); t105 = INT64_C(2); t106 = (Tag){.name = {t87, t88, t89, t90, t91, t92, t93, t94}, .raw = {t96, t97, t98, t99, t100, t101, t102, t103}, .id = t105}; h6_bad = t106; hero_pad_fill(&h6_bad, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
+#line 70
+    t107 = h6_bad; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t107.raw), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t109 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t109 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t138 = h15_own15; h15_own15 = t109; h_0opt_f87774a_release(&t138); t139 = h7_s0; h_0opt_f87774a_retain(&t109); h7_s0 = t109; h_0opt_f87774a_release(&t139); t110 = h7_s0; t111 = t110.tag; switch (t111) { case 0: goto bb10; case 1: goto bb11; default: hero_unreachable(); } bb8:
+#line 59
+    t82 = h5_f3; t83 = t82.as.err;
+#line 242 "ffiacharfieldbecomestext.c"
     hero_panic_must(t83);
     hero_unreachable();
 bb9:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t119 = h0_t;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t120 = tag_id(t119);
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t121 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t120};
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t140 = h16_own16;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h16_own16 = t121;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_e201354_release(&t140);
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t141 = h10_f4;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_e201354_retain(&t121);
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h10_f4 = t121;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h_0opt_e201354_release(&t141);
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t122 = h10_f4;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t123 = t122.tag;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t124 = INT64_C(0);
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t125 = t123 == t124;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    if (t125) goto bb12; else goto bb13;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-bb10:
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t112 = h7_s0;
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t113 = t112.as.ok;
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t142 = h8_text;
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_str_incref(t113);
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h8_text = t113;
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_str_decref(t142);
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t114 = HERO_STR_LIT(hero_str_6044c9d2);
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t115 = h8_text;
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t114);
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t115);
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_end();
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    goto bb9;
-#line 71 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-bb11:
-    t116 = h7_s0;
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t117 = t116.as.err;
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t143 = h9_e;
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_failure_retain(&t117);
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    h9_e = t117;
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_failure_release(&t143);
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t118 = h9_e.code;
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_str(t118);
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_end();
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    goto bb9;
-#line 72 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-bb12:
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t128 = h10_f4;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t129 = t128.as.ok;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_int(t129);
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    hero_print_end();
-#line 715 "ffiacharfieldbecomestext.c"
+    t119 = h0_t; t120 = tag_id(t119); t121 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t120}; t140 = h16_own16; h16_own16 = t121; h_0opt_e201354_release(&t140); t141 = h10_f4; h_0opt_e201354_retain(&t121); h10_f4 = t121; h_0opt_e201354_release(&t141); t122 = h10_f4; t123 = t122.tag; t124 = INT64_C(0); t125 = t123 == t124; if (t125) goto bb12; else goto bb13; bb10:
+#line 71
+    t112 = h7_s0; t113 = t112.as.ok; t142 = h8_text; hero_str_incref(t113); h8_text = t113; hero_str_decref(t142); t114 = HERO_STR_LIT(hero_str_6044c9d2); t115 = h8_text; hero_print_str(t114); hero_print_str(t115); hero_print_end(); goto bb9; bb11:
+    t116 = h7_s0; t117 = t116.as.err; t143 = h9_e; hero_failure_retain(&t117); h9_e = t117; hero_failure_release(&t143); t118 = h9_e.code; hero_print_str(t118); hero_print_end(); goto bb9; bb12:
+#line 75
+    t128 = h10_f4; t129 = t128.as.ok; hero_print_int(t129); hero_print_end();
+#line 253 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f2));
@@ -729,10 +267,8 @@ bb12:
     return;
 bb13:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t126 = h10_f4;
-#line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    t127 = t126.as.err;
-#line 736 "ffiacharfieldbecomestext.c"
+    t126 = h10_f4; t127 = t126.as.err;
+#line 272 "ffiacharfieldbecomestext.c"
     hero_panic_must(t127);
     hero_unreachable();
 }

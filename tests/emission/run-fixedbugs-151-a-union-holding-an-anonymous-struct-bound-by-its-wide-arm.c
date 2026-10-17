@@ -134,11 +134,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 144 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
 #pragma clang diagnostic pop
@@ -157,21 +157,9 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
-void h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_main(void) {
-#line 17 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
-    HERO_NODEBUG UAS t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
-bb0:
-    t1 = make_uas();
-#line 18 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
-    t2 = t1.q;
-#line 18 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
-    hero_print_int(t2);
-#line 18 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
-    return;
-#line 175 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
+void h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_main(void) { HERO_NODEBUG UAS t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = make_uas(); t2 = t1.q; hero_print_int(t2); hero_print_end(); return;
+#line 163 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_UAS_eq(const UAS *a, const UAS *b) {
     if (!(a->kind == b->kind)) return false;

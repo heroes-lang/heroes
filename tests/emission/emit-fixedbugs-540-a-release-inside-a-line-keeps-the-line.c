@@ -80,11 +80,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 90 "fixedbugs540areleaseinsidealinekeepstheline.c"
 #pragma clang diagnostic pop
@@ -107,78 +107,16 @@ h_fixedbugs540areleaseinsidealinekeepstheline_Box h_fixedbugs540areleaseinsideal
 void h_fixedbugs540areleaseinsidealinekeepstheline_main(void);
 
 #line 17 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-HeroStr h_fixedbugs540areleaseinsidealinekeepstheline_greet(int64_t h0_n) {
-#line 17 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    HeroStr h1_a = {0}; HeroStr h2_b = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, t2, t3, t4, t5, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t6, t7; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto bb0;
-#line 17 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-bb0:
-    t1 = h0_n;
-#line 18 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t2 = hero_int_to_str(t1);
-#line 18 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t12 = h4_own4;
-#line 18 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h4_own4 = t2;
-#line 18 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_decref(t12);
-#line 18 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t13 = h1_a;
-#line 18 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_incref(t2);
-#line 18 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h1_a = t2;
-#line 18 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_decref(t13);
-    t3 = h1_a;
-#line 19 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t4 = HERO_STR_LIT(hero_str_21);
-#line 19 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t5 = hero_str_concat(t3, t4);
-#line 19 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t14 = h5_own5;
-#line 19 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h5_own5 = t5;
-#line 19 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_decref(t14);
-#line 19 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t15 = h2_b;
-#line 19 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_incref(t5);
-#line 19 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h2_b = t5;
-#line 19 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_decref(t15);
-#line 21 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t6 = h0_n;
-#line 21 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t7 = INT64_C(0);
-#line 21 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t8 = t6 == t7;
-#line 21 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    if (t8) goto bb2; else goto bb3;
-#line 21 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-bb1:
-#line 23 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t10 = h2_b;
-#line 23 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h3_ret0 = t10;
-#line 23 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    goto bb4;
-#line 23 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-bb2:
-#line 22 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t9 = h1_a;
-#line 22 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h3_ret0 = t9;
-#line 22 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    goto bb4;
-#line 22 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-bb3:
-#line 22 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    goto bb1;
-#line 22 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-bb4:
-#line 182 "fixedbugs540areleaseinsidealinekeepstheline.c"
+HeroStr h_fixedbugs540areleaseinsidealinekeepstheline_greet(int64_t h0_n) { HeroStr h1_a = {0}; HeroStr h2_b = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, t2, t3, t4, t5, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t6, t7; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_n; t2 = hero_int_to_str(t1); t12 = h4_own4; h4_own4 = t2; hero_str_decref(t12); t13 = h1_a; hero_str_incref(t2); h1_a = t2; hero_str_decref(t13);
+    t3 = h1_a; t4 = HERO_STR_LIT(hero_str_21); t5 = hero_str_concat(t3, t4); t14 = h5_own5; h5_own5 = t5; hero_str_decref(t14); t15 = h2_b; hero_str_incref(t5); h2_b = t5; hero_str_decref(t15);
+#line 21
+    t6 = h0_n; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb2; else goto bb3; bb1:
+#line 23
+    t10 = h2_b; h3_ret0 = t10; goto bb4; bb2:
+#line 22
+    t9 = h1_a; h3_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
+#line 120 "fixedbugs540areleaseinsidealinekeepstheline.c"
     t11 = h3_ret0;
     hero_str_incref(t11);
     hero_str_release_at(&h1_a);
@@ -189,32 +127,10 @@ bb4:
 }
 
 #line 25 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-h_fixedbugs540areleaseinsidealinekeepstheline_Box h_fixedbugs540areleaseinsidealinekeepstheline_keep(HeroStr h0_s) {
-#line 25 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box h1_b = {0}; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}, t2, t3, t4, t5; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 25 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-bb0:
-    t1 = h0_s;
-#line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_incref(t1);
-#line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t2 = (h_fixedbugs540areleaseinsidealinekeepstheline_Box){.f_s = t1};
-#line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t4 = h2_own2;
-#line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h2_own2 = t2;
-#line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t4);
-#line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t5 = h1_b;
-#line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box_retain(&t2);
-#line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h1_b = t2;
-#line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t5);
+h_fixedbugs540areleaseinsidealinekeepstheline_Box h_fixedbugs540areleaseinsidealinekeepstheline_keep(HeroStr h0_s) { h_fixedbugs540areleaseinsidealinekeepstheline_Box h1_b = {0}; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}, t2, t3, t4, t5; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; hero_str_incref(t1); t2 = (h_fixedbugs540areleaseinsidealinekeepstheline_Box){.f_s = t1}; t4 = h2_own2; h2_own2 = t2; h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t4); t5 = h1_b; h_fixedbugs540areleaseinsidealinekeepstheline_Box_retain(&t2); h1_b = t2; h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t5);
     t3 = h1_b;
-#line 218 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 134 "fixedbugs540areleaseinsidealinekeepstheline.c"
     h_fixedbugs540areleaseinsidealinekeepstheline_Box_retain(&t3);
     h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(hero_slot_escape(&h1_b));
     h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(hero_slot_escape(&h2_own2));
@@ -222,48 +138,10 @@ bb0:
 }
 
 #line 29 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-void h_fixedbugs540areleaseinsidealinekeepstheline_main(void) {
-#line 29 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3, t4, t6, t7, t8; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}, t5, t9; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 29 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-bb0:
-    t1 = INT64_C(3);
-#line 30 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t2 = h_fixedbugs540areleaseinsidealinekeepstheline_greet(t1);
-#line 30 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t7 = h1_own1;
-#line 30 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h1_own1 = t2;
-#line 30 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_decref(t7);
-#line 30 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t8 = h0_s;
-#line 30 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_incref(t2);
-#line 30 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h0_s = t2;
-#line 30 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_str_decref(t8);
-    t3 = h0_s;
-#line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t4 = h0_s;
-#line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t5 = h_fixedbugs540areleaseinsidealinekeepstheline_keep(t4);
-#line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t9 = h2_own2;
-#line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h2_own2 = t5;
-#line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t9);
-#line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    t6 = t5.f_s;
-#line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_print_str(t3);
-#line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_print_str(t6);
-#line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    hero_print_end();
-#line 267 "fixedbugs540areleaseinsidealinekeepstheline.c"
+void h_fixedbugs540areleaseinsidealinekeepstheline_main(void) { HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3, t4, t6, t7, t8; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}, t5, t9; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(3); t2 = h_fixedbugs540areleaseinsidealinekeepstheline_greet(t1); t7 = h1_own1; h1_own1 = t2; hero_str_decref(t7); t8 = h0_s; hero_str_incref(t2); h0_s = t2; hero_str_decref(t8);
+    t3 = h0_s; t4 = h0_s; t5 = h_fixedbugs540areleaseinsidealinekeepstheline_keep(t4); t9 = h2_own2; h2_own2 = t5; h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t9); t6 = t5.f_s; hero_print_str(t3); hero_print_str(t6); hero_print_end();
+#line 145 "fixedbugs540areleaseinsidealinekeepstheline.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
     h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(hero_slot_escape(&h2_own2));

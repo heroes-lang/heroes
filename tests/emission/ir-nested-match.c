@@ -104,11 +104,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 114 "nestedmatch.c"
 #pragma clang diagnostic pop
@@ -131,33 +131,9 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c);
 
 #line 21 "tests/golden/ir/nested-match.hero"
-HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c) {
-#line 21 "tests/golden/ir/nested-match.hero"
-    HERO_NODEBUG h_nestedmatch_Shape h2_s0, t1, t2; HERO_NODEBUG HeroStr h3_r0 = {0}, h5_r1 = {0}, h7_r2 = {0}, t7, t8, t9, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG h_nestedmatch_Colour h4_s1, h6_s2, t4, t5, t10, t11; HERO_NODEBUG int64_t t3, t6, t12; HERO_ENTRY_STOP; goto bb0;
-#line 21 "tests/golden/ir/nested-match.hero"
-bb0:
-    t1 = h0_s;
-#line 22 "tests/golden/ir/nested-match.hero"
-    h2_s0 = t1;
-#line 22 "tests/golden/ir/nested-match.hero"
-    t2 = h2_s0;
-#line 22 "tests/golden/ir/nested-match.hero"
-    t3 = t2.tag;
-#line 22 "tests/golden/ir/nested-match.hero"
-    switch (t3) {
-#line 22 "tests/golden/ir/nested-match.hero"
-        case 0: goto bb2;
-#line 22 "tests/golden/ir/nested-match.hero"
-        case 1: goto bb3;
-#line 22 "tests/golden/ir/nested-match.hero"
-        default: hero_unreachable();
-#line 22 "tests/golden/ir/nested-match.hero"
-    }
-#line 22 "tests/golden/ir/nested-match.hero"
-bb1:
-#line 22 "tests/golden/ir/nested-match.hero"
-    t16 = h3_r0;
-#line 161 "nestedmatch.c"
+HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c) { HERO_NODEBUG h_nestedmatch_Shape h2_s0, t1, t2; HERO_NODEBUG HeroStr h3_r0 = {0}, h5_r1 = {0}, h7_r2 = {0}, t7, t8, t9, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG h_nestedmatch_Colour h4_s1, h6_s2, t4, t5, t10, t11; HERO_NODEBUG int64_t t3, t6, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h0_s; h2_s0 = t1; t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t16 = h3_r0;
+#line 137 "nestedmatch.c"
     hero_str_incref(t16);
     hero_str_release_at(&h3_r0);
     hero_str_release_at(&h5_r1);
@@ -165,128 +141,34 @@ bb1:
     return t16;
 bb2:
 #line 24 "tests/golden/ir/nested-match.hero"
-    t4 = h1_c;
-#line 24 "tests/golden/ir/nested-match.hero"
-    h4_s1 = t4;
-#line 24 "tests/golden/ir/nested-match.hero"
-    t5 = h4_s1;
-#line 24 "tests/golden/ir/nested-match.hero"
-    t6 = t5.tag;
-#line 24 "tests/golden/ir/nested-match.hero"
-    switch (t6) {
-#line 24 "tests/golden/ir/nested-match.hero"
-        case 0: goto bb5;
-#line 24 "tests/golden/ir/nested-match.hero"
-        case 1: goto bb6;
-#line 24 "tests/golden/ir/nested-match.hero"
-        default: hero_unreachable();
-#line 24 "tests/golden/ir/nested-match.hero"
-    }
-#line 24 "tests/golden/ir/nested-match.hero"
-bb3:
-#line 28 "tests/golden/ir/nested-match.hero"
-    t10 = h1_c;
-#line 28 "tests/golden/ir/nested-match.hero"
-    h6_s2 = t10;
-#line 28 "tests/golden/ir/nested-match.hero"
-    t11 = h6_s2;
-#line 28 "tests/golden/ir/nested-match.hero"
-    t12 = t11.tag;
-#line 28 "tests/golden/ir/nested-match.hero"
-    switch (t12) {
-#line 28 "tests/golden/ir/nested-match.hero"
-        case 0: goto bb8;
-#line 28 "tests/golden/ir/nested-match.hero"
-        case 1: goto bb9;
-#line 28 "tests/golden/ir/nested-match.hero"
-        default: hero_unreachable();
-#line 28 "tests/golden/ir/nested-match.hero"
-    }
-#line 28 "tests/golden/ir/nested-match.hero"
-bb4:
-#line 24 "tests/golden/ir/nested-match.hero"
+    t4 = h1_c; h4_s1 = t4; t5 = h4_s1; t6 = t5.tag; switch (t6) { case 0: goto bb5; case 1: goto bb6; default: hero_unreachable(); } bb3:
+#line 28
+    t10 = h1_c; h6_s2 = t10; t11 = h6_s2; t12 = t11.tag; switch (t12) { case 0: goto bb8; case 1: goto bb9; default: hero_unreachable(); } bb4:
+#line 24
     t9 = h5_r1;
-#line 22 "tests/golden/ir/nested-match.hero"
-    t17 = h3_r0;
-#line 22 "tests/golden/ir/nested-match.hero"
-    hero_str_incref(t9);
-#line 22 "tests/golden/ir/nested-match.hero"
-    h3_r0 = t9;
-#line 22 "tests/golden/ir/nested-match.hero"
-    hero_str_decref(t17);
-#line 22 "tests/golden/ir/nested-match.hero"
-    goto bb1;
-#line 22 "tests/golden/ir/nested-match.hero"
-bb5:
-#line 25 "tests/golden/ir/nested-match.hero"
+#line 22
+    t17 = h3_r0; hero_str_incref(t9); h3_r0 = t9; hero_str_decref(t17); goto bb1; bb5:
+#line 25
     t7 = HERO_STR_LIT(hero_str_127e9def);
-#line 24 "tests/golden/ir/nested-match.hero"
-    t18 = h5_r1;
-#line 24 "tests/golden/ir/nested-match.hero"
-    hero_str_incref(t7);
-#line 24 "tests/golden/ir/nested-match.hero"
-    h5_r1 = t7;
-#line 24 "tests/golden/ir/nested-match.hero"
-    hero_str_decref(t18);
-#line 24 "tests/golden/ir/nested-match.hero"
-    goto bb4;
-#line 24 "tests/golden/ir/nested-match.hero"
-bb6:
-#line 26 "tests/golden/ir/nested-match.hero"
+#line 24
+    t18 = h5_r1; hero_str_incref(t7); h5_r1 = t7; hero_str_decref(t18); goto bb4; bb6:
+#line 26
     t8 = HERO_STR_LIT(hero_str_56e1b672);
-#line 24 "tests/golden/ir/nested-match.hero"
-    t19 = h5_r1;
-#line 24 "tests/golden/ir/nested-match.hero"
-    hero_str_incref(t8);
-#line 24 "tests/golden/ir/nested-match.hero"
-    h5_r1 = t8;
-#line 24 "tests/golden/ir/nested-match.hero"
-    hero_str_decref(t19);
-#line 24 "tests/golden/ir/nested-match.hero"
-    goto bb4;
-#line 24 "tests/golden/ir/nested-match.hero"
-bb7:
-#line 28 "tests/golden/ir/nested-match.hero"
+#line 24
+    t19 = h5_r1; hero_str_incref(t8); h5_r1 = t8; hero_str_decref(t19); goto bb4; bb7:
+#line 28
     t15 = h7_r2;
-#line 22 "tests/golden/ir/nested-match.hero"
-    t20 = h3_r0;
-#line 22 "tests/golden/ir/nested-match.hero"
-    hero_str_incref(t15);
-#line 22 "tests/golden/ir/nested-match.hero"
-    h3_r0 = t15;
-#line 22 "tests/golden/ir/nested-match.hero"
-    hero_str_decref(t20);
-#line 22 "tests/golden/ir/nested-match.hero"
-    goto bb1;
-#line 22 "tests/golden/ir/nested-match.hero"
-bb8:
-#line 29 "tests/golden/ir/nested-match.hero"
+#line 22
+    t20 = h3_r0; hero_str_incref(t15); h3_r0 = t15; hero_str_decref(t20); goto bb1; bb8:
+#line 29
     t13 = HERO_STR_LIT(hero_str_77dba954);
-#line 28 "tests/golden/ir/nested-match.hero"
-    t21 = h7_r2;
-#line 28 "tests/golden/ir/nested-match.hero"
-    hero_str_incref(t13);
-#line 28 "tests/golden/ir/nested-match.hero"
-    h7_r2 = t13;
-#line 28 "tests/golden/ir/nested-match.hero"
-    hero_str_decref(t21);
-#line 28 "tests/golden/ir/nested-match.hero"
-    goto bb7;
-#line 28 "tests/golden/ir/nested-match.hero"
-bb9:
-#line 30 "tests/golden/ir/nested-match.hero"
+#line 28
+    t21 = h7_r2; hero_str_incref(t13); h7_r2 = t13; hero_str_decref(t21); goto bb7; bb9:
+#line 30
     t14 = HERO_STR_LIT(hero_str_769134a3);
-#line 28 "tests/golden/ir/nested-match.hero"
-    t22 = h7_r2;
-#line 28 "tests/golden/ir/nested-match.hero"
-    hero_str_incref(t14);
-#line 28 "tests/golden/ir/nested-match.hero"
-    h7_r2 = t14;
-#line 28 "tests/golden/ir/nested-match.hero"
-    hero_str_decref(t22);
-#line 28 "tests/golden/ir/nested-match.hero"
-    goto bb7;
-#line 290 "nestedmatch.c"
+#line 28
+    t22 = h7_r2; hero_str_incref(t14); h7_r2 = t14; hero_str_decref(t22); goto bb7;
+#line 172 "nestedmatch.c"
 }
 HERO_TU_LOCAL bool h_nestedmatch_Shape_c_line_eq(const h_nestedmatch_Shape_c_line *a, const h_nestedmatch_Shape_c_line *b) {
     if (!(a->f_length == b->f_length)) return false;

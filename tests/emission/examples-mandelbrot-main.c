@@ -84,11 +84,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_main_hero_thread_join(int64
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 94 "main.c"
 #pragma clang diagnostic pop
@@ -121,372 +121,80 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 
 #line 20 "examples/mandelbrot/main.hero"
-int64_t h_main_SCALE(void) {
-#line 20 "examples/mandelbrot/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 20 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = INT64_C(1000);
-#line 21 "examples/mandelbrot/main.hero"
-    return t1;
+int64_t h_main_SCALE(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(1000); return t1;
+#line 127 "main.c"
+}
+
+#line 23 "examples/mandelbrot/main.hero"
+int64_t h_main_ROWS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(64); return t1;
 #line 133 "main.c"
 }
 
-#line 23 "examples/mandelbrot/main.hero"
-int64_t h_main_ROWS(void) {
-#line 23 "examples/mandelbrot/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 23 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = INT64_C(64);
-#line 24 "examples/mandelbrot/main.hero"
-    return t1;
+#line 26 "examples/mandelbrot/main.hero"
+int64_t h_main_COLS(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(64); return t1;
+#line 139 "main.c"
+}
+
+#line 29 "examples/mandelbrot/main.hero"
+int64_t h_main_LIMIT(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(100); return t1;
 #line 145 "main.c"
 }
 
-#line 26 "examples/mandelbrot/main.hero"
-int64_t h_main_COLS(void) {
-#line 26 "examples/mandelbrot/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 26 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = INT64_C(64);
-#line 27 "examples/mandelbrot/main.hero"
-    return t1;
-#line 157 "main.c"
-}
-
-#line 29 "examples/mandelbrot/main.hero"
-int64_t h_main_LIMIT(void) {
-#line 29 "examples/mandelbrot/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 29 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = INT64_C(100);
-#line 30 "examples/mandelbrot/main.hero"
-    return t1;
-#line 169 "main.c"
-}
-
 #line 34 "examples/mandelbrot/main.hero"
-int64_t h_main_escapes_at(int64_t h0_cx, int64_t h1_cy) {
-#line 34 "examples/mandelbrot/main.hero"
-    int64_t h2_zx; int64_t h3_zy; int64_t h4_n; int64_t h5_xx; int64_t h6_yy; int64_t h7_nx; HERO_NODEBUG int64_t h8_ret0, t1, t2, t3, t4, t5, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44; HERO_NODEBUG bool t6, t23; HERO_ENTRY_STOP; goto bb0;
-#line 34 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 35 "examples/mandelbrot/main.hero"
-    h2_zx = t1;
-    t2 = INT64_C(0);
-#line 36 "examples/mandelbrot/main.hero"
-    h3_zy = t2;
-    t3 = INT64_C(0);
-#line 37 "examples/mandelbrot/main.hero"
-    h4_n = t3;
-#line 37 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 37 "examples/mandelbrot/main.hero"
-bb1:
-#line 39 "examples/mandelbrot/main.hero"
-    t4 = h4_n;
-#line 39 "examples/mandelbrot/main.hero"
-    t5 = h_main_LIMIT();
-#line 39 "examples/mandelbrot/main.hero"
-    t6 = t4 < t5;
-#line 39 "examples/mandelbrot/main.hero"
-    if (t6) goto bb2; else goto bb3;
-#line 39 "examples/mandelbrot/main.hero"
-bb2:
-    t7 = h2_zx;
-#line 40 "examples/mandelbrot/main.hero"
-    t8 = h2_zx;
-#line 40 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 40 "examples/mandelbrot/main.hero"
-    t10 = h_main_SCALE();
-#line 40 "examples/mandelbrot/main.hero"
-    if (t10 == 0) hero_panic("division by zero");
-#line 40 "examples/mandelbrot/main.hero"
-    if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow();
-#line 40 "examples/mandelbrot/main.hero"
-    t11 = t9 / t10;
-#line 40 "examples/mandelbrot/main.hero"
-    h5_xx = t11;
-    t12 = h3_zy;
-#line 41 "examples/mandelbrot/main.hero"
-    t13 = h3_zy;
-#line 41 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 41 "examples/mandelbrot/main.hero"
-    t15 = h_main_SCALE();
-#line 41 "examples/mandelbrot/main.hero"
-    if (t15 == 0) hero_panic("division by zero");
-#line 41 "examples/mandelbrot/main.hero"
-    if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic_overflow();
-#line 41 "examples/mandelbrot/main.hero"
-    t16 = t14 / t15;
-#line 41 "examples/mandelbrot/main.hero"
-    h6_yy = t16;
-#line 43 "examples/mandelbrot/main.hero"
-    t17 = h5_xx;
-#line 43 "examples/mandelbrot/main.hero"
-    t18 = h6_yy;
-#line 43 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 43 "examples/mandelbrot/main.hero"
-    t20 = INT64_C(4);
-#line 43 "examples/mandelbrot/main.hero"
-    t21 = h_main_SCALE();
-#line 43 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t20, t21, &t22)) hero_panic_overflow();
-#line 43 "examples/mandelbrot/main.hero"
-    t23 = t19 > t22;
-#line 43 "examples/mandelbrot/main.hero"
-    if (t23) goto bb5; else goto bb6;
-#line 43 "examples/mandelbrot/main.hero"
-bb3:
-#line 50 "examples/mandelbrot/main.hero"
-    t43 = h_main_LIMIT();
-#line 50 "examples/mandelbrot/main.hero"
-    h8_ret0 = t43;
-#line 50 "examples/mandelbrot/main.hero"
-    goto bb7;
-#line 50 "examples/mandelbrot/main.hero"
-bb4:
-#line 45 "examples/mandelbrot/main.hero"
-    t25 = h5_xx;
-#line 45 "examples/mandelbrot/main.hero"
-    t26 = h6_yy;
-#line 45 "examples/mandelbrot/main.hero"
-    if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow();
-#line 45 "examples/mandelbrot/main.hero"
-    t28 = h0_cx;
-#line 45 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 45 "examples/mandelbrot/main.hero"
-    h7_nx = t29;
-    t30 = INT64_C(2);
-#line 46 "examples/mandelbrot/main.hero"
-    t31 = h2_zx;
-#line 46 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t30, t31, &t32)) hero_panic_overflow();
-#line 46 "examples/mandelbrot/main.hero"
-    t33 = h3_zy;
-#line 46 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t32, t33, &t34)) hero_panic_overflow();
-#line 46 "examples/mandelbrot/main.hero"
-    t35 = h_main_SCALE();
-#line 46 "examples/mandelbrot/main.hero"
-    if (t35 == 0) hero_panic("division by zero");
-#line 46 "examples/mandelbrot/main.hero"
-    if (t34 == INT64_MIN && t35 == INT64_C(-1)) hero_panic_overflow();
-#line 46 "examples/mandelbrot/main.hero"
-    t36 = t34 / t35;
-#line 46 "examples/mandelbrot/main.hero"
-    t37 = h1_cy;
-#line 46 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow();
-#line 46 "examples/mandelbrot/main.hero"
-    h3_zy = t38;
-    t39 = h7_nx;
-#line 47 "examples/mandelbrot/main.hero"
-    h2_zx = t39;
-    t40 = h4_n;
-#line 48 "examples/mandelbrot/main.hero"
-    t41 = INT64_C(1);
-#line 48 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow();
-#line 48 "examples/mandelbrot/main.hero"
-    h4_n = t42;
-#line 48 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 48 "examples/mandelbrot/main.hero"
-bb5:
-#line 44 "examples/mandelbrot/main.hero"
-    t24 = h4_n;
-#line 44 "examples/mandelbrot/main.hero"
-    h8_ret0 = t24;
-#line 44 "examples/mandelbrot/main.hero"
-    goto bb7;
-#line 44 "examples/mandelbrot/main.hero"
-bb6:
-#line 44 "examples/mandelbrot/main.hero"
-    goto bb4;
-#line 44 "examples/mandelbrot/main.hero"
-bb7:
-#line 318 "main.c"
+int64_t h_main_escapes_at(int64_t h0_cx, int64_t h1_cy) { int64_t h2_zx; int64_t h3_zy; int64_t h4_n; int64_t h5_xx; int64_t h6_yy; int64_t h7_nx; HERO_NODEBUG int64_t h8_ret0, t1, t2, t3, t4, t5, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44; HERO_NODEBUG bool t6, t23; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h2_zx = t1;
+    t2 = INT64_C(0); h3_zy = t2;
+    t3 = INT64_C(0); h4_n = t3; goto bb1; bb1:
+#line 39
+    t4 = h4_n; t5 = h_main_LIMIT(); t6 = t4 < t5; if (t6) goto bb2; else goto bb3; bb2:
+    t7 = h2_zx; t8 = h2_zx; if (__builtin_mul_overflow(t7, t8, &t9)) hero_panic_overflow(); t10 = h_main_SCALE(); if (t10 == 0) hero_panic("division by zero"); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow(); t11 = t9 / t10; h5_xx = t11;
+    t12 = h3_zy; t13 = h3_zy; if (__builtin_mul_overflow(t12, t13, &t14)) hero_panic_overflow(); t15 = h_main_SCALE(); if (t15 == 0) hero_panic("division by zero"); if (t14 == INT64_MIN && t15 == INT64_C(-1)) hero_panic_overflow(); t16 = t14 / t15; h6_yy = t16;
+#line 43
+    t17 = h5_xx; t18 = h6_yy; if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow(); t20 = INT64_C(4); t21 = h_main_SCALE(); if (__builtin_mul_overflow(t20, t21, &t22)) hero_panic_overflow(); t23 = t19 > t22; if (t23) goto bb5; else goto bb6; bb3:
+#line 50
+    t43 = h_main_LIMIT(); h8_ret0 = t43; goto bb7; bb4:
+#line 45
+    t25 = h5_xx; t26 = h6_yy; if (__builtin_sub_overflow(t25, t26, &t27)) hero_panic_overflow(); t28 = h0_cx; if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow(); h7_nx = t29;
+    t30 = INT64_C(2); t31 = h2_zx; if (__builtin_mul_overflow(t30, t31, &t32)) hero_panic_overflow(); t33 = h3_zy; if (__builtin_mul_overflow(t32, t33, &t34)) hero_panic_overflow(); t35 = h_main_SCALE(); if (t35 == 0) hero_panic("division by zero"); if (t34 == INT64_MIN && t35 == INT64_C(-1)) hero_panic_overflow(); t36 = t34 / t35; t37 = h1_cy; if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow(); h3_zy = t38;
+    t39 = h7_nx; h2_zx = t39;
+    t40 = h4_n; t41 = INT64_C(1); if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow(); h4_n = t42; goto bb1; bb5:
+#line 44
+    t24 = h4_n; h8_ret0 = t24; goto bb7; bb6: goto bb4; bb7:
+#line 168 "main.c"
     t44 = h8_ret0;
     return t44;
 }
 
 #line 53 "examples/mandelbrot/main.hero"
-int64_t h_main_row_total(int64_t h0_row) {
-#line 53 "examples/mandelbrot/main.hero"
-    int64_t h1_total; int64_t h2_cy; int64_t h3_col; int64_t h4_cx; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34; HERO_NODEBUG bool t14; HERO_ENTRY_STOP; goto bb0;
-#line 53 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 54 "examples/mandelbrot/main.hero"
-    h1_total = t1;
-    t2 = h0_row;
-#line 55 "examples/mandelbrot/main.hero"
-    t3 = INT64_C(2);
-#line 55 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow();
-#line 55 "examples/mandelbrot/main.hero"
-    t5 = h_main_SCALE();
-#line 55 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 55 "examples/mandelbrot/main.hero"
-    t7 = h_main_ROWS();
-#line 55 "examples/mandelbrot/main.hero"
-    if (t7 == 0) hero_panic("division by zero");
-#line 55 "examples/mandelbrot/main.hero"
-    if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow();
-#line 55 "examples/mandelbrot/main.hero"
-    t8 = t6 / t7;
-#line 55 "examples/mandelbrot/main.hero"
-    t9 = h_main_SCALE();
-#line 55 "examples/mandelbrot/main.hero"
-    if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow();
-#line 55 "examples/mandelbrot/main.hero"
-    h2_cy = t10;
-    t11 = INT64_C(0);
-#line 56 "examples/mandelbrot/main.hero"
-    h3_col = t11;
-#line 56 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 56 "examples/mandelbrot/main.hero"
-bb1:
-#line 58 "examples/mandelbrot/main.hero"
-    t12 = h3_col;
-#line 58 "examples/mandelbrot/main.hero"
-    t13 = h_main_COLS();
-#line 58 "examples/mandelbrot/main.hero"
-    t14 = t12 < t13;
-#line 58 "examples/mandelbrot/main.hero"
-    if (t14) goto bb2; else goto bb3;
-#line 58 "examples/mandelbrot/main.hero"
-bb2:
-    t15 = h3_col;
-#line 59 "examples/mandelbrot/main.hero"
-    t16 = INT64_C(3);
-#line 59 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 59 "examples/mandelbrot/main.hero"
-    t18 = h_main_SCALE();
-#line 59 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 59 "examples/mandelbrot/main.hero"
-    t20 = h_main_COLS();
-#line 59 "examples/mandelbrot/main.hero"
-    if (t20 == 0) hero_panic("division by zero");
-#line 59 "examples/mandelbrot/main.hero"
-    if (t19 == INT64_MIN && t20 == INT64_C(-1)) hero_panic_overflow();
-#line 59 "examples/mandelbrot/main.hero"
-    t21 = t19 / t20;
-#line 59 "examples/mandelbrot/main.hero"
-    t22 = INT64_C(2);
-#line 59 "examples/mandelbrot/main.hero"
-    t23 = h_main_SCALE();
-#line 59 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t22, t23, &t24)) hero_panic_overflow();
-#line 59 "examples/mandelbrot/main.hero"
-    if (__builtin_sub_overflow(t21, t24, &t25)) hero_panic_overflow();
-#line 59 "examples/mandelbrot/main.hero"
-    h4_cx = t25;
-    t26 = h1_total;
-#line 60 "examples/mandelbrot/main.hero"
-    t27 = h4_cx;
-#line 60 "examples/mandelbrot/main.hero"
-    t28 = h2_cy;
-#line 60 "examples/mandelbrot/main.hero"
-    t29 = h_main_escapes_at(t27, t28);
-#line 60 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t26, t29, &t30)) hero_panic_overflow();
-#line 60 "examples/mandelbrot/main.hero"
-    h1_total = t30;
-    t31 = h3_col;
-#line 61 "examples/mandelbrot/main.hero"
-    t32 = INT64_C(1);
-#line 61 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow();
-#line 61 "examples/mandelbrot/main.hero"
-    h3_col = t33;
-#line 61 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 61 "examples/mandelbrot/main.hero"
-bb3:
-#line 63 "examples/mandelbrot/main.hero"
-    t34 = h1_total;
-#line 63 "examples/mandelbrot/main.hero"
-    return t34;
-#line 425 "main.c"
+int64_t h_main_row_total(int64_t h0_row) { int64_t h1_total; int64_t h2_cy; int64_t h3_col; int64_t h4_cx; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34; HERO_NODEBUG bool t14; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_total = t1;
+    t2 = h0_row; t3 = INT64_C(2); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow(); t5 = h_main_SCALE(); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow(); t7 = h_main_ROWS(); if (t7 == 0) hero_panic("division by zero"); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow(); t8 = t6 / t7; t9 = h_main_SCALE(); if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow(); h2_cy = t10;
+    t11 = INT64_C(0); h3_col = t11; goto bb1; bb1:
+#line 58
+    t12 = h3_col; t13 = h_main_COLS(); t14 = t12 < t13; if (t14) goto bb2; else goto bb3; bb2:
+    t15 = h3_col; t16 = INT64_C(3); if (__builtin_mul_overflow(t15, t16, &t17)) hero_panic_overflow(); t18 = h_main_SCALE(); if (__builtin_mul_overflow(t17, t18, &t19)) hero_panic_overflow(); t20 = h_main_COLS(); if (t20 == 0) hero_panic("division by zero"); if (t19 == INT64_MIN && t20 == INT64_C(-1)) hero_panic_overflow(); t21 = t19 / t20; t22 = INT64_C(2); t23 = h_main_SCALE(); if (__builtin_mul_overflow(t22, t23, &t24)) hero_panic_overflow(); if (__builtin_sub_overflow(t21, t24, &t25)) hero_panic_overflow(); h4_cx = t25;
+    t26 = h1_total; t27 = h4_cx; t28 = h2_cy; t29 = h_main_escapes_at(t27, t28); if (__builtin_add_overflow(t26, t29, &t30)) hero_panic_overflow(); h1_total = t30;
+    t31 = h3_col; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow(); h3_col = t33; goto bb1; bb3:
+#line 63
+    t34 = h1_total; return t34;
+#line 185 "main.c"
 }
 
 #line 66 "examples/mandelbrot/main.hero"
-int64_t h_main_band(int64_t h0_index) {
-#line 66 "examples/mandelbrot/main.hero"
-    hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_row; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t12, t13, t14, t15, t16, t17, t18, t19; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
-#line 66 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 67 "examples/mandelbrot/main.hero"
-    h1_total = t1;
-    t2 = h0_index;
-#line 68 "examples/mandelbrot/main.hero"
-    t3 = INT64_C(8);
-#line 68 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow();
-#line 68 "examples/mandelbrot/main.hero"
-    h2_row = t4;
-#line 68 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 68 "examples/mandelbrot/main.hero"
-bb1:
-#line 70 "examples/mandelbrot/main.hero"
-    t5 = h2_row;
-#line 70 "examples/mandelbrot/main.hero"
-    t6 = h0_index;
-#line 70 "examples/mandelbrot/main.hero"
-    t7 = INT64_C(8);
-#line 70 "examples/mandelbrot/main.hero"
-    if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow();
-#line 70 "examples/mandelbrot/main.hero"
-    t9 = INT64_C(8);
-#line 70 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow();
-#line 70 "examples/mandelbrot/main.hero"
-    t11 = t5 < t10;
-#line 70 "examples/mandelbrot/main.hero"
-    if (t11) goto bb2; else goto bb3;
-#line 70 "examples/mandelbrot/main.hero"
-bb2:
-    t12 = h1_total;
-#line 71 "examples/mandelbrot/main.hero"
-    t13 = h2_row;
-#line 71 "examples/mandelbrot/main.hero"
-    t14 = h_main_row_total(t13);
-#line 71 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t12, t14, &t15)) hero_panic_overflow();
-#line 71 "examples/mandelbrot/main.hero"
-    h1_total = t15;
-    t16 = h2_row;
-#line 72 "examples/mandelbrot/main.hero"
-    t17 = INT64_C(1);
-#line 72 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow();
-#line 72 "examples/mandelbrot/main.hero"
-    h2_row = t18;
-#line 72 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 72 "examples/mandelbrot/main.hero"
-bb3:
-#line 74 "examples/mandelbrot/main.hero"
-    t19 = h1_total;
-#line 74 "examples/mandelbrot/main.hero"
-    return t19;
-#line 490 "main.c"
+int64_t h_main_band(int64_t h0_index) { hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_row; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t12, t13, t14, t15, t16, t17, t18, t19; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h1_total = t1;
+    t2 = h0_index; t3 = INT64_C(8); if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow(); h2_row = t4; goto bb1; bb1:
+#line 70
+    t5 = h2_row; t6 = h0_index; t7 = INT64_C(8); if (__builtin_mul_overflow(t6, t7, &t8)) hero_panic_overflow(); t9 = INT64_C(8); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow(); t11 = t5 < t10; if (t11) goto bb2; else goto bb3; bb2:
+    t12 = h1_total; t13 = h2_row; t14 = h_main_row_total(t13); if (__builtin_add_overflow(t12, t14, &t15)) hero_panic_overflow(); h1_total = t15;
+    t16 = h2_row; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow(); h2_row = t18; goto bb1; bb3:
+#line 74
+    t19 = h1_total; return t19;
+#line 198 "main.c"
 }
 
 int64_t h_0cb_main_band(int64_t h0_index) {
@@ -495,139 +203,23 @@ int64_t h_0cb_main_band(int64_t h0_index) {
 }
 
 #line 76 "examples/mandelbrot/main.hero"
-int64_t h_main_together(void) {
-#line 76 "examples/mandelbrot/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t17, *t20, *t23, *t34, *t35, *t36; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t5, t6, t10, t11, t13, t14, t15, t16, t18, t19, t21, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33; int64_t h5_h; HERO_NODEBUG bool t7, t22; HERO_NODEBUG h_0fn_48ac9712 t9; HERO_ENTRY_STOP; goto bb0;
-#line 76 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = hero_array_new(&hero_desc_int, 1);
-#line 77 "examples/mandelbrot/main.hero"
-    t34 = h6_own6;
-#line 77 "examples/mandelbrot/main.hero"
-    h6_own6 = t1;
-#line 77 "examples/mandelbrot/main.hero"
-    hero_array_decref(t34);
-#line 77 "examples/mandelbrot/main.hero"
-    t35 = h0_handles;
-#line 77 "examples/mandelbrot/main.hero"
-    hero_array_incref(t1);
-#line 77 "examples/mandelbrot/main.hero"
-    h0_handles = t1;
-#line 77 "examples/mandelbrot/main.hero"
-    hero_array_decref(t35);
-    t2 = INT64_C(0);
-#line 78 "examples/mandelbrot/main.hero"
-    h1_i = t2;
-#line 78 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 78 "examples/mandelbrot/main.hero"
-bb1:
-#line 80 "examples/mandelbrot/main.hero"
-    t3 = h1_i;
-#line 80 "examples/mandelbrot/main.hero"
-    t4 = h_main_ROWS();
-#line 80 "examples/mandelbrot/main.hero"
-    t5 = INT64_C(8);
-#line 80 "examples/mandelbrot/main.hero"
-    if (t5 == 0) hero_panic("division by zero");
-#line 80 "examples/mandelbrot/main.hero"
-    if (t4 == INT64_MIN && t5 == INT64_C(-1)) hero_panic_overflow();
-#line 80 "examples/mandelbrot/main.hero"
-    t6 = t4 / t5;
-#line 80 "examples/mandelbrot/main.hero"
-    t7 = t3 < t6;
-#line 80 "examples/mandelbrot/main.hero"
-    if (t7) goto bb2; else goto bb3;
-#line 80 "examples/mandelbrot/main.hero"
-bb2:
-    t9 = h_main_band;
-#line 81 "examples/mandelbrot/main.hero"
-    t10 = h1_i;
-#line 81 "examples/mandelbrot/main.hero"
-    t11 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t9), t10);
-#line 81 "examples/mandelbrot/main.hero"
-    hero_array_push_owned(&h0_handles, &t11);
-    t13 = h1_i;
-#line 82 "examples/mandelbrot/main.hero"
-    t14 = INT64_C(1);
-#line 82 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 82 "examples/mandelbrot/main.hero"
-    h1_i = t15;
-#line 82 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 82 "examples/mandelbrot/main.hero"
-bb3:
-#line 84 "examples/mandelbrot/main.hero"
-    t16 = INT64_C(0);
-#line 84 "examples/mandelbrot/main.hero"
-    h2_total = t16;
-#line 86 "examples/mandelbrot/main.hero"
-    t17 = h0_handles;
-#line 86 "examples/mandelbrot/main.hero"
-    t36 = h3_xs0;
-#line 86 "examples/mandelbrot/main.hero"
-    hero_array_incref(t17);
-#line 86 "examples/mandelbrot/main.hero"
-    h3_xs0 = t17;
-#line 86 "examples/mandelbrot/main.hero"
-    hero_array_decref(t36);
-#line 86 "examples/mandelbrot/main.hero"
-    t18 = INT64_C(0);
-#line 86 "examples/mandelbrot/main.hero"
-    h4_i0 = t18;
-#line 86 "examples/mandelbrot/main.hero"
-    goto bb4;
-#line 86 "examples/mandelbrot/main.hero"
-bb4:
-#line 86 "examples/mandelbrot/main.hero"
-    t19 = h4_i0;
-#line 86 "examples/mandelbrot/main.hero"
-    t20 = h3_xs0;
-#line 86 "examples/mandelbrot/main.hero"
-    t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len);
-#line 86 "examples/mandelbrot/main.hero"
-    t22 = t19 < t21;
-#line 86 "examples/mandelbrot/main.hero"
-    if (t22) goto bb5; else goto bb7;
-#line 86 "examples/mandelbrot/main.hero"
-bb5:
-#line 86 "examples/mandelbrot/main.hero"
-    t23 = h3_xs0;
-#line 86 "examples/mandelbrot/main.hero"
-    t24 = h4_i0;
-#line 86 "examples/mandelbrot/main.hero"
-    t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]);
-#line 86 "examples/mandelbrot/main.hero"
-    h5_h = t25;
-    t26 = h2_total;
-#line 87 "examples/mandelbrot/main.hero"
-    t27 = h5_h;
-#line 87 "examples/mandelbrot/main.hero"
-    t28 = hero_thread_join(t27);
-#line 87 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t26, t28, &t29)) hero_panic_overflow();
-#line 87 "examples/mandelbrot/main.hero"
-    h2_total = t29;
-#line 87 "examples/mandelbrot/main.hero"
-    goto bb6;
-#line 87 "examples/mandelbrot/main.hero"
-bb6:
-#line 86 "examples/mandelbrot/main.hero"
-    t30 = h4_i0;
-#line 86 "examples/mandelbrot/main.hero"
-    t31 = INT64_C(1);
-#line 86 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow();
-#line 86 "examples/mandelbrot/main.hero"
-    h4_i0 = t32;
-#line 86 "examples/mandelbrot/main.hero"
-    goto bb4;
-#line 86 "examples/mandelbrot/main.hero"
-bb7:
-#line 89 "examples/mandelbrot/main.hero"
+int64_t h_main_together(void) { HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t17, *t20, *t23, *t34, *t35, *t36; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t5, t6, t10, t11, t13, t14, t15, t16, t18, t19, t21, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33; int64_t h5_h; HERO_NODEBUG bool t7, t22; HERO_NODEBUG h_0fn_48ac9712 t9; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = hero_array_new(&hero_desc_int, 1); t34 = h6_own6; h6_own6 = t1; hero_array_decref(t34); t35 = h0_handles; hero_array_incref(t1); h0_handles = t1; hero_array_decref(t35);
+    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
+#line 80
+    t3 = h1_i; t4 = h_main_ROWS(); t5 = INT64_C(8); if (t5 == 0) hero_panic("division by zero"); if (t4 == INT64_MIN && t5 == INT64_C(-1)) hero_panic_overflow(); t6 = t4 / t5; t7 = t3 < t6; if (t7) goto bb2; else goto bb3; bb2:
+    t9 = h_main_band; t10 = h1_i; t11 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t9), t10); hero_array_push_owned(&h0_handles, &t11);
+    t13 = h1_i; t14 = INT64_C(1); if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow(); h1_i = t15; goto bb1; bb3:
+#line 84
+    t16 = INT64_C(0); h2_total = t16;
+#line 86
+    t17 = h0_handles; t36 = h3_xs0; hero_array_incref(t17); h3_xs0 = t17; hero_array_decref(t36); t18 = INT64_C(0); h4_i0 = t18; goto bb4; bb4: t19 = h4_i0; t20 = h3_xs0; t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len); t22 = t19 < t21; if (t22) goto bb5; else goto bb7; bb5: t23 = h3_xs0; t24 = h4_i0; t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? ((void)hero_array_at(t23, t24), hero_unreachable()) : (void)0), (void)(t23->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t23 + 1))[t24]); h5_h = t25;
+    t26 = h2_total; t27 = h5_h; t28 = hero_thread_join(t27); if (__builtin_add_overflow(t26, t28, &t29)) hero_panic_overflow(); h2_total = t29; goto bb6; bb6:
+#line 86
+    t30 = h4_i0; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow(); h4_i0 = t32; goto bb4; bb7:
+#line 89
     t33 = h2_total;
-#line 631 "main.c"
+#line 223 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -635,92 +227,22 @@ bb7:
 }
 
 #line 91 "examples/mandelbrot/main.hero"
-int64_t h_main_alone(void) {
-#line 91 "examples/mandelbrot/main.hero"
-    int64_t h0_total; int64_t h1_row; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
-#line 91 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 92 "examples/mandelbrot/main.hero"
-    h0_total = t1;
-    t2 = INT64_C(0);
-#line 93 "examples/mandelbrot/main.hero"
-    h1_row = t2;
-#line 93 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 93 "examples/mandelbrot/main.hero"
-bb1:
-#line 95 "examples/mandelbrot/main.hero"
-    t3 = h1_row;
-#line 95 "examples/mandelbrot/main.hero"
-    t4 = h_main_ROWS();
-#line 95 "examples/mandelbrot/main.hero"
-    t5 = t3 < t4;
-#line 95 "examples/mandelbrot/main.hero"
-    if (t5) goto bb2; else goto bb3;
-#line 95 "examples/mandelbrot/main.hero"
-bb2:
-    t6 = h0_total;
-#line 96 "examples/mandelbrot/main.hero"
-    t7 = h1_row;
-#line 96 "examples/mandelbrot/main.hero"
-    t8 = h_main_row_total(t7);
-#line 96 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow();
-#line 96 "examples/mandelbrot/main.hero"
-    h0_total = t9;
-    t10 = h1_row;
-#line 97 "examples/mandelbrot/main.hero"
-    t11 = INT64_C(1);
-#line 97 "examples/mandelbrot/main.hero"
-    if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 97 "examples/mandelbrot/main.hero"
-    h1_row = t12;
-#line 97 "examples/mandelbrot/main.hero"
-    goto bb1;
-#line 97 "examples/mandelbrot/main.hero"
-bb3:
-#line 99 "examples/mandelbrot/main.hero"
-    t13 = h0_total;
-#line 99 "examples/mandelbrot/main.hero"
-    return t13;
-#line 688 "main.c"
+int64_t h_main_alone(void) { int64_t h0_total; int64_t h1_row; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_total = t1;
+    t2 = INT64_C(0); h1_row = t2; goto bb1; bb1:
+#line 95
+    t3 = h1_row; t4 = h_main_ROWS(); t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t6 = h0_total; t7 = h1_row; t8 = h_main_row_total(t7); if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow(); h0_total = t9;
+    t10 = h1_row; t11 = INT64_C(1); if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow(); h1_row = t12; goto bb1; bb3:
+#line 99
+    t13 = h0_total; return t13;
+#line 240 "main.c"
 }
 
 #line 101 "examples/mandelbrot/main.hero"
-void h_main_main(void) {
-#line 101 "examples/mandelbrot/main.hero"
-    HERO_NODEBUG HeroStr t1, t3, t5; HERO_NODEBUG int64_t t2, t4, t6; HERO_ENTRY_STOP; goto bb0;
-#line 101 "examples/mandelbrot/main.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_45927d37);
-#line 102 "examples/mandelbrot/main.hero"
-    t2 = h_main_COLS();
-#line 102 "examples/mandelbrot/main.hero"
-    t3 = HERO_STR_LIT(hero_str_4639add);
-#line 102 "examples/mandelbrot/main.hero"
-    t4 = h_main_ROWS();
-#line 102 "examples/mandelbrot/main.hero"
-    t5 = HERO_STR_LIT(hero_str_54040d35);
-#line 102 "examples/mandelbrot/main.hero"
-    t6 = h_main_together();
-#line 102 "examples/mandelbrot/main.hero"
-    hero_print_str(t1);
-#line 102 "examples/mandelbrot/main.hero"
-    hero_print_int(t2);
-#line 102 "examples/mandelbrot/main.hero"
-    hero_print_str(t3);
-#line 102 "examples/mandelbrot/main.hero"
-    hero_print_int(t4);
-#line 102 "examples/mandelbrot/main.hero"
-    hero_print_str(t5);
-#line 102 "examples/mandelbrot/main.hero"
-    hero_print_int(t6);
-#line 102 "examples/mandelbrot/main.hero"
-    hero_print_end();
-#line 102 "examples/mandelbrot/main.hero"
-    return;
-#line 724 "main.c"
+void h_main_main(void) { HERO_NODEBUG HeroStr t1, t3, t5; HERO_NODEBUG int64_t t2, t4, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_45927d37); t2 = h_main_COLS(); t3 = HERO_STR_LIT(hero_str_4639add); t4 = h_main_ROWS(); t5 = HERO_STR_LIT(hero_str_54040d35); t6 = h_main_together(); hero_print_str(t1); hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end(); return;
+#line 246 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

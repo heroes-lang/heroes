@@ -136,11 +136,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 146 "fixedbugsarecordsonlygrouplosesitsheader.c"
 #pragma clang diagnostic pop
@@ -166,37 +166,11 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-void h_fixedbugsarecordsonlygrouplosesitsheader_main(void) {
-#line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    Color h0_red; HERO_NODEBUG uint8_t t1, t2, t3, t4, t6, t7; HERO_NODEBUG Color t5; HERO_ENTRY_STOP; goto bb0;
-#line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-bb0:
-    t1 = UINT64_C(255);
-#line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    t2 = UINT64_C(0);
-#line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    t3 = UINT64_C(0);
-#line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    t4 = UINT64_C(255);
-#line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    t5 = (Color){.r = t1, .g = t2, .b = t3, .a = t4};
-#line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    h0_red = t5;
-#line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    hero_pad_fill(&h0_red, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
-    t6 = h0_red.r;
-#line 30 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    hero_print_int(t6);
-#line 30 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    hero_print_end();
-    t7 = h0_red.a;
-#line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    hero_print_int(t7);
-#line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    hero_print_end();
-#line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    return;
-#line 200 "fixedbugsarecordsonlygrouplosesitsheader.c"
+void h_fixedbugsarecordsonlygrouplosesitsheader_main(void) { Color h0_red; HERO_NODEBUG uint8_t t1, t2, t3, t4, t6, t7; HERO_NODEBUG Color t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = UINT64_C(255); t2 = UINT64_C(0); t3 = UINT64_C(0); t4 = UINT64_C(255); t5 = (Color){.r = t1, .g = t2, .b = t3, .a = t4}; h0_red = t5; hero_pad_fill(&h0_red, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
+    t6 = h0_red.r; hero_print_int(t6); hero_print_end();
+    t7 = h0_red.a; hero_print_int(t7); hero_print_end(); return;
+#line 174 "fixedbugsarecordsonlygrouplosesitsheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsarecordsonlygrouplosesitsheader_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

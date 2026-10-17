@@ -133,11 +133,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugscwritesoverastring
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 143 "fixedbugscwritesoverastringsheader.c"
 #pragma clang diagnostic pop
@@ -154,41 +154,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugscwritesoverastringsheader_main(void);
 
 #line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-void h_fixedbugscwritesoverastringsheader_main(void) {
-#line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t3, t4, t6, t7, t8; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_ENTRY_STOP; goto bb0;
-#line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-bb0:
-    t1 = HERO_STR_LIT(hero_str_3205);
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    t2 = UINT64_C(4);
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    t3 = hero_str_repeat(t1, t2);
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    t7 = h1_own1;
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    h1_own1 = t3;
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    hero_str_decref(t7);
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    t8 = h0_word;
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    hero_str_incref(t3);
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    h0_word = t3;
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    hero_str_decref(t8);
-    t4 = h0_word;
-#line 32 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    t5 = hero_str_lend(t4);
-#line 32 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    (void)clobber_before(hero_cstr_nonnull(t5));
-    t6 = h0_word;
-#line 33 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    hero_print_str(t6);
-#line 33 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    hero_print_end();
-#line 192 "fixedbugscwritesoverastringsheader.c"
+void h_fixedbugscwritesoverastringsheader_main(void) { HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t3, t4, t6, t7, t8; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = HERO_STR_LIT(hero_str_3205); t2 = UINT64_C(4); t3 = hero_str_repeat(t1, t2); t7 = h1_own1; h1_own1 = t3; hero_str_decref(t7); t8 = h0_word; hero_str_incref(t3); h0_word = t3; hero_str_decref(t8);
+    t4 = h0_word; t5 = hero_str_lend(t4); (void)clobber_before(hero_cstr_nonnull(t5));
+    t6 = h0_word; hero_print_str(t6); hero_print_end();
+#line 162 "fixedbugscwritesoverastringsheader.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     return;

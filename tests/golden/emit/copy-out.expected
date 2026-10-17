@@ -74,11 +74,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 84 "copyout.c"
 #pragma clang diagnostic pop
@@ -96,95 +96,23 @@ void h_copyout_count_down(int64_t *ph0_n, int64_t *ph1_seen);
 void h_copyout_main(void);
 
 #line 10 "tests/golden/emit/copy-out.hero"
-void h_copyout_count_down(int64_t *ph0_n, int64_t *ph1_seen) {
-#line 10 "tests/golden/emit/copy-out.hero"
-    HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8, t9, t10, t11; HERO_NODEBUG bool t3, t12; HERO_ENTRY_STOP; goto bb0;
-#line 10 "tests/golden/emit/copy-out.hero"
-bb0:
-#line 10 "tests/golden/emit/copy-out.hero"
-    goto bb1;
-#line 10 "tests/golden/emit/copy-out.hero"
-bb1:
-    t1 = (*ph0_n);
-#line 11 "tests/golden/emit/copy-out.hero"
-    t2 = INT64_C(0);
-#line 11 "tests/golden/emit/copy-out.hero"
-    t3 = t1 > t2;
-#line 11 "tests/golden/emit/copy-out.hero"
-    if (t3) goto bb2; else goto bb3;
-#line 11 "tests/golden/emit/copy-out.hero"
-bb2:
-    t4 = (*ph1_seen);
-#line 12 "tests/golden/emit/copy-out.hero"
-    t5 = INT64_C(1);
-#line 12 "tests/golden/emit/copy-out.hero"
-    if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 12 "tests/golden/emit/copy-out.hero"
-    (*ph1_seen) = t6;
-    t7 = (*ph0_n);
-#line 13 "tests/golden/emit/copy-out.hero"
-    t8 = INT64_C(1);
-#line 13 "tests/golden/emit/copy-out.hero"
-    if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 13 "tests/golden/emit/copy-out.hero"
-    (*ph0_n) = t9;
-#line 15 "tests/golden/emit/copy-out.hero"
-    t10 = (*ph1_seen);
-#line 15 "tests/golden/emit/copy-out.hero"
-    t11 = INT64_C(2);
-#line 15 "tests/golden/emit/copy-out.hero"
-    t12 = t10 > t11;
-#line 15 "tests/golden/emit/copy-out.hero"
-    if (t12) goto bb5; else goto bb6;
-#line 15 "tests/golden/emit/copy-out.hero"
-bb3:
-#line 15 "tests/golden/emit/copy-out.hero"
-    goto bb7;
-#line 15 "tests/golden/emit/copy-out.hero"
-bb4:
-#line 15 "tests/golden/emit/copy-out.hero"
-    goto bb1;
-#line 15 "tests/golden/emit/copy-out.hero"
-bb5:
-#line 15 "tests/golden/emit/copy-out.hero"
-    goto bb7;
-#line 15 "tests/golden/emit/copy-out.hero"
-bb6:
-#line 15 "tests/golden/emit/copy-out.hero"
-    goto bb4;
-#line 15 "tests/golden/emit/copy-out.hero"
-bb7:
-#line 15 "tests/golden/emit/copy-out.hero"
-    return;
-#line 160 "copyout.c"
+void h_copyout_count_down(int64_t *ph0_n, int64_t *ph1_seen) { HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8, t9, t10, t11; HERO_NODEBUG bool t3, t12; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
+    t1 = (*ph0_n); t2 = INT64_C(0); t3 = t1 > t2; if (t3) goto bb2; else goto bb3; bb2:
+    t4 = (*ph1_seen); t5 = INT64_C(1); if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow(); (*ph1_seen) = t6;
+    t7 = (*ph0_n); t8 = INT64_C(1); if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow(); (*ph0_n) = t9;
+#line 15
+    t10 = (*ph1_seen); t11 = INT64_C(2); t12 = t10 > t11; if (t12) goto bb5; else goto bb6; bb3: goto bb7; bb4: goto bb1; bb5: goto bb7; bb6: goto bb4; bb7: return;
+#line 106 "copyout.c"
 }
 
 #line 18 "tests/golden/emit/copy-out.hero"
-void h_copyout_main(void) {
-#line 18 "tests/golden/emit/copy-out.hero"
-    int64_t h0_n; int64_t h1_seen; HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
-#line 18 "tests/golden/emit/copy-out.hero"
-bb0:
-    t1 = INT64_C(10);
-#line 19 "tests/golden/emit/copy-out.hero"
-    h0_n = t1;
-    t2 = INT64_C(0);
-#line 20 "tests/golden/emit/copy-out.hero"
-    h1_seen = t2;
+void h_copyout_main(void) { int64_t h0_n; int64_t h1_seen; HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(10); h0_n = t1;
+    t2 = INT64_C(0); h1_seen = t2;
     h_copyout_count_down(&h0_n, &h1_seen);
-    t3 = h0_n;
-#line 22 "tests/golden/emit/copy-out.hero"
-    hero_print_int(t3);
-#line 22 "tests/golden/emit/copy-out.hero"
-    hero_print_end();
-    t4 = h1_seen;
-#line 23 "tests/golden/emit/copy-out.hero"
-    hero_print_int(t4);
-#line 23 "tests/golden/emit/copy-out.hero"
-    hero_print_end();
-#line 23 "tests/golden/emit/copy-out.hero"
-    return;
-#line 188 "copyout.c"
+    t3 = h0_n; hero_print_int(t3); hero_print_end();
+    t4 = h1_seen; hero_print_int(t4); hero_print_end(); return;
+#line 116 "copyout.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

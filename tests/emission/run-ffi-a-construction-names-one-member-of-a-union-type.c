@@ -143,11 +143,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionnamesonemem
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 153 "ffiaconstructionnamesonememberofauniontype.c"
 #pragma clang diagnostic pop
@@ -179,33 +179,11 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-void h_ffiaconstructionnamesonememberofauniontype_main(void) {
-#line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    UT h0_u; HERO_NODEBUG float t1; HERO_NODEBUG UT t2, t3; HERO_NODEBUG int32_t t4, t5; HERO_ENTRY_STOP; goto bb0;
-#line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-bb0:
-    t1 = 0x1.8p+0;
-#line 17 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    t2 = (UT){.f = t1};
-#line 17 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    h0_u = t2;
-#line 17 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    hero_pad_fill(&h0_u, sizeof(UT), 1, hero_pad_g_0, hero_pad_n_0);
-    t3 = h0_u;
-#line 18 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    t4 = ut_i(t3);
-#line 18 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    hero_print_int(t4);
-#line 18 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    hero_print_end();
-    t5 = h0_u.i;
-#line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    hero_print_int(t5);
-#line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    hero_print_end();
-#line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    return;
-#line 209 "ffiaconstructionnamesonememberofauniontype.c"
+void h_ffiaconstructionnamesonememberofauniontype_main(void) { UT h0_u; HERO_NODEBUG float t1; HERO_NODEBUG UT t2, t3; HERO_NODEBUG int32_t t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = 0x1.8p+0; t2 = (UT){.f = t1}; h0_u = t2; hero_pad_fill(&h0_u, sizeof(UT), 1, hero_pad_g_0, hero_pad_n_0);
+    t3 = h0_u; t4 = ut_i(t3); hero_print_int(t4); hero_print_end();
+    t5 = h0_u.i; hero_print_int(t5); hero_print_end(); return;
+#line 187 "ffiaconstructionnamesonememberofauniontype.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_UT_eq(const UT *a, const UT *b) {
     if (!(a->i == b->i)) return false;

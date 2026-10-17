@@ -145,11 +145,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_ffilentonanoutparameter_wid
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 155 "ffilentonanoutparameter.c"
 #pragma clang diagnostic pop
@@ -176,68 +176,18 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 void h_ffilentonanoutparameter_main(void) {
-#line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+#line 13
 #define h0_e (*hero_lend_h0_e)
-#line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+#line 13
 #define h1_s (*hero_lend_h1_s)
-#line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3; HERO_NODEBUG HeroStr t4, t10; HERO_NODEBUG int64_t t6, t7, t9, t11; HERO_NODEBUG struct span t8; HERO_ENTRY_STOP; goto bb0;
-#line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-bb0:
-    t1 = INT64_C(0);
-#line 14 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    h0_e = t1;
-    t2 = 0x1.8p+1;
-#line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_lend_local_name(hero_lend_h0_e, "halve", "e");
-#line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t3 = halve(t2, (void *)&h0_e);
-#line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t4 = HERO_STR_LIT(hero_str_20);
-#line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t5 = h0_e;
-#line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_f64(t3);
-#line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_str(t4);
-#line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_int(t5);
-#line 15 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_end();
-    t6 = INT64_C(10);
-#line 16 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t7 = INT64_C(20);
-#line 16 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t8 = (struct span){.lo = t6, .hi = t7};
-#line 16 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    h1_s = t8;
-#line 16 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0);
-    hero_lend_local_name(hero_lend_h1_s, "widen", "s");
-#line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0);
-#line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    (void)widen(&h1_s);
-    t9 = h1_s.lo;
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t10 = HERO_STR_LIT(hero_str_20);
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    t11 = h1_s.hi;
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_int(t9);
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_str(t10);
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_int(t11);
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_print_end();
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_lend_local_give(hero_lend_h1_s);
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    hero_lend_local_give(hero_lend_h0_e);
-#line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    return;
-#line 241 "ffilentonanoutparameter.c"
+#line 13
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3; HERO_NODEBUG HeroStr t4, t10; HERO_NODEBUG int64_t t6, t7, t9, t11; HERO_NODEBUG struct span t8; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(0); h0_e = t1;
+    t2 = 0x1.8p+1; hero_lend_local_name(hero_lend_h0_e, "halve", "e"); t3 = halve(t2, (void *)&h0_e); t4 = HERO_STR_LIT(hero_str_20); t5 = h0_e; hero_print_f64(t3); hero_print_str(t4); hero_print_int(t5); hero_print_end();
+    t6 = INT64_C(10); t7 = INT64_C(20); t8 = (struct span){.lo = t6, .hi = t7}; h1_s = t8; hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0);
+    hero_lend_local_name(hero_lend_h1_s, "widen", "s"); hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0); (void)widen(&h1_s);
+    t9 = h1_s.lo; t10 = HERO_STR_LIT(hero_str_20); t11 = h1_s.hi; hero_print_int(t9); hero_print_str(t10); hero_print_int(t11); hero_print_end(); hero_lend_local_give(hero_lend_h1_s); hero_lend_local_give(hero_lend_h0_e); return;
+#line 191 "ffilentonanoutparameter.c"
 }
 #undef h0_e
 #undef h1_s

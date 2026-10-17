@@ -140,11 +140,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_handlesetanyreleasernameden
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 150 "handlesetanyreleasernamedendsthelife.c"
 #pragma clang diagnostic pop
@@ -163,76 +163,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_handlesetanyreleasernamedendsthelife_main(void);
 
 #line 14 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-void h_handlesetanyreleasernamedendsthelife_main(void) {
-#line 14 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hh * h0_a; hh * h1_b; HERO_NODEBUG int64_t t1, t3, t6, t8, t9; HERO_NODEBUG hh *t2, *t4, *t5, *t7, *t10, *t11; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0;
-#line 14 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-bb0:
-    t1 = INT64_C(7);
-#line 15 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    t2 = h_open(t1);
-#line 15 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_acquired(t2, "h_close|h_close_v2");
-#line 15 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    h0_a = t2;
-    t3 = INT64_C(9);
-#line 16 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    t4 = h_open(t3);
-#line 16 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_acquired(t4, "h_close|h_close_v2");
-#line 16 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    h1_b = t4;
-    t5 = h0_a;
-#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_alive(t5, "the argument `x` of `h_value`");
-#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    t6 = h_value(t5);
-#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    t7 = h1_b;
-#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_alive(t7, "the argument `x` of `h_value`");
-#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    t8 = h_value(t7);
-#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow();
-#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_print_int(t9);
-#line 17 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_print_end();
-    t10 = h0_a;
-#line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    {
-#line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_alive(t10, "the argument `x` of `h_close`");
-#line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "h_close", NULL);
-#line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    (void)h_close(t10);
-#line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead();
-#line 18 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    }
-    t11 = h1_b;
-#line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    {
-#line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_handle_alive(t11, "the argument `x` of `h_close_v2`");
-#line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t11, "h_close_v2", NULL);
-#line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    (void)h_close_v2(t11);
-#line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    if (hero_handle_ended(t11, hero_life_0_0) && h1_b == t11) h1_b = hero_handle_dead();
-#line 19 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    }
-    t12 = HERO_STR_LIT(hero_str_69279300);
-#line 20 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_print_str(t12);
-#line 20 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hero_print_end();
-#line 20 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    return;
-#line 236 "handlesetanyreleasernamedendsthelife.c"
+void h_handlesetanyreleasernamedendsthelife_main(void) { hh * h0_a; hh * h1_b; HERO_NODEBUG int64_t t1, t3, t6, t8, t9; HERO_NODEBUG hh *t2, *t4, *t5, *t7, *t10, *t11; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = INT64_C(7); t2 = h_open(t1); hero_handle_acquired(t2, "h_close|h_close_v2"); h0_a = t2;
+    t3 = INT64_C(9); t4 = h_open(t3); hero_handle_acquired(t4, "h_close|h_close_v2"); h1_b = t4;
+    t5 = h0_a; hero_handle_alive(t5, "the argument `x` of `h_value`"); t6 = h_value(t5); t7 = h1_b; hero_handle_alive(t7, "the argument `x` of `h_value`"); t8 = h_value(t7); if (__builtin_add_overflow(t6, t8, &t9)) hero_panic_overflow(); hero_print_int(t9); hero_print_end();
+    t10 = h0_a; { hero_handle_alive(t10, "the argument `x` of `h_close`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "h_close", NULL); (void)h_close(t10); if (hero_handle_ended(t10, hero_life_0_0) && h0_a == t10) h0_a = hero_handle_dead(); }
+    t11 = h1_b; { hero_handle_alive(t11, "the argument `x` of `h_close_v2`"); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t11, "h_close_v2", NULL); (void)h_close_v2(t11); if (hero_handle_ended(t11, hero_life_0_0) && h1_b == t11) h1_b = hero_handle_dead(); }
+    t12 = HERO_STR_LIT(hero_str_69279300); hero_print_str(t12); hero_print_end(); return;
+#line 174 "handlesetanyreleasernamedendsthelife.c"
 }
 HERO_TU_LOCAL bool h_handlesetanyreleasernamedendsthelife_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

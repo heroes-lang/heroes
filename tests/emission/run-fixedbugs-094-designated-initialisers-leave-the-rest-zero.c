@@ -132,11 +132,11 @@ typedef struct h_0opt_a8ea2 {
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
-#line 116 "<heroes library>"
+#line 116
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
-#line 124 "<heroes library>"
+#line 124
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
 #line 142 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic pop
@@ -226,44 +226,14 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-void h_fixedbugs094designatedinitialisersleavetherestzero_main(void) {
-#line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    struct pt h0_p; struct pt h1_t; HERO_NODEBUG struct pt t1, t4; HERO_NODEBUG int32_t t2, t3, t5, t6; HERO_ENTRY_STOP; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-bb0:
-    t1 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y();
-#line 16 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    h0_p = t1;
-#line 16 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_pad_fill(&h0_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_p.x;
-#line 17 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_int(t2);
-#line 17 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_end();
-    t3 = h0_p.y;
-#line 18 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_int(t3);
-#line 18 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_end();
-    t4 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE();
-#line 19 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    h1_t = t4;
-#line 19 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_pad_fill(&h1_t, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
-    t5 = h1_t.x;
-#line 20 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_int(t5);
-#line 20 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_end();
-    t6 = h1_t.y;
-#line 21 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_int(t6);
-#line 21 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    hero_print_end();
-#line 21 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    return;
-#line 267 "fixedbugs094designatedinitialisersleavetherestzero.c"
+void h_fixedbugs094designatedinitialisersleavetherestzero_main(void) { struct pt h0_p; struct pt h1_t; HERO_NODEBUG struct pt t1, t4; HERO_NODEBUG int32_t t2, t3, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+    t1 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y(); h0_p = t1; hero_pad_fill(&h0_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
+    t2 = h0_p.x; hero_print_int(t2); hero_print_end();
+    t3 = h0_p.y; hero_print_int(t3); hero_print_end();
+    t4 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(); h1_t = t4; hero_pad_fill(&h1_t, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
+    t5 = h1_t.x; hero_print_int(t5); hero_print_end();
+    t6 = h1_t.y; hero_print_int(t6); hero_print_end(); return;
+#line 237 "fixedbugs094designatedinitialisersleavetherestzero.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094designatedinitialisersleavetherestzero_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;
