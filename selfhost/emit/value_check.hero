@@ -58,24 +58,12 @@ use check/state
 use ir/containers
 use emit/externs as emit_externs
 use emit/record_constant
+use emit/undefined_words
 use emit/writer
 use parse
 use resolve
 use checker
 use ir/lower
-use cli/strings
-
-# clang's warnings that the value is one C leaves undefined, each an error in
-# the region; the reader tells an error naming one of them by why.
-constant UNDEFINED: [str]
-    [
-        "-Wshift-count-overflow"
-        "-Wshift-count-negative"
-        "-Wshift-negative-value"
-        "-Wshift-sign-overflow"
-        "-Winteger-overflow"
-        "-Wdivision-by-zero"
-    ]
 
 constant PUSH: str
     "#pragma clang diagnostic push"
@@ -103,16 +91,12 @@ function opened(@w: writer.Writer)
     writer.at_generated(@w)
     writer.line(@w, text: PUSH)
 
-    for one in UNDEFINED
+    for one in undefined_words.UNDEFINED
         writer.line(@w, text: "#pragma clang diagnostic error \"" + one + "\"")
 
 # Whether clang's message names one of the region's warnings as an error.
 function undefined(message: str) -> bool
-    for one in UNDEFINED
-        if strings.holds(text: message, needle: "[-Werror," + one + "]")
-            return true
-
-    return false
+    return undefined_words.undefined(message)
 
 ## Tests
 

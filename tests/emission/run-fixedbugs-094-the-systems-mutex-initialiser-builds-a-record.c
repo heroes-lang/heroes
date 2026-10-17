@@ -192,7 +192,7 @@ hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 12 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
-    hero_mutex hero_constant_value = HERO_MUTEX_INIT;
+    static hero_mutex hero_constant_value = HERO_MUTEX_INIT;
 #line 197 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 #pragma clang diagnostic pop
     return hero_constant_value;

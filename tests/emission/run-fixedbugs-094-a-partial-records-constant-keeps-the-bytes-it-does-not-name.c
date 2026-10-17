@@ -184,7 +184,7 @@ struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_I
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 11 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
-    struct big hero_constant_value = BIG_INIT;
+    static struct big hero_constant_value = BIG_INIT;
 #line 189 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 #pragma clang diagnostic pop
     return hero_constant_value;

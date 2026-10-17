@@ -1,0 +1,52 @@
+# clang's warnings that a header constant's value is one C leaves undefined:
+# errors in the region around a number's `return` (`emit/value_check.hero`,
+# defect 2072); and, said as warnings beside a record's static initialiser that
+# clang refuses as no constant, the reason that refusal is told by
+# (`emit/ffi_value.hero`, panel 221, the ffi-pragmatist's condition: `{ 1 / 0,
+# 2 }` is a value C leaves undefined, not an object read twice). Never errors in
+# a record's accessor: an error stops the unit's compile, and every constant the
+# probes would tell waits for the next build. Moved out of
+# `emit/value_check.hero`, which `emit/ffi_value.hero` cannot use.
+
+use cli/strings
+
+constant UNDEFINED: [str]
+    [
+        "-Wshift-count-overflow"
+        "-Wshift-count-negative"
+        "-Wshift-negative-value"
+        "-Wshift-sign-overflow"
+        "-Winteger-overflow"
+        "-Wdivision-by-zero"
+    ]
+
+# Whether clang's message names one of these warnings as an error.
+function undefined(message: str) -> bool
+    for one in UNDEFINED
+        if strings.holds(text: message, needle: "[-Werror," + one + "]")
+            return true
+
+    return false
+
+# Whether clang's line names one of these warnings, as a warning or an error.
+function said(line: str) -> bool
+    for one in UNDEFINED
+        if strings.holds(text: line, needle: one + "]")
+            return true
+
+    return false
+
+# The note a value C leaves undefined is told with.
+function note(name: str) -> str
+    return "C leaves this value undefined: a program reading `" + name + "` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines"
+
+## Tests
+
+test "an error naming one of the warnings is told by why, and a warning alone or another flag is not"
+    assert undefined("division by zero is undefined [-Werror,-Wdivision-by-zero]")
+    assert !undefined("division by zero is undefined [-Wdivision-by-zero]")
+    assert !undefined("excess elements in struct initializer [-Werror,-Wexcess-initializers]")
+    assert UNDEFINED.len() == 6
+    assert said("m.h:1:2: warning: division by zero is undefined [-Wdivision-by-zero]")
+    assert said("m.h:1:2: error: division by zero is undefined [-Werror,-Wdivision-by-zero]")
+    assert !said("m.h:1:2: warning: unused variable [-Wunused-variable]")

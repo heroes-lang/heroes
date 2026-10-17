@@ -119,7 +119,7 @@ function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, n
         writer.line(@w, text: "#pragma clang diagnostic ignored \"" + one + "\"")
 
     writer.at_span(@w, s, offset: name.start)
-    writer.line(@w, text: "    " + spelled + " " + VALUE + " = " + source.span_text(s, name) + ";")
+    writer.line(@w, text: "    static " + spelled + " " + VALUE + " = " + source.span_text(s, name) + ";")
     writer.at_generated(@w)
     writer.line(@w, text: "#pragma clang diagnostic pop")
     writer.line(@w, text: "    return " + VALUE + ";")
@@ -155,7 +155,7 @@ test "a record's constant is built from the header's value at its own line, a ha
             # else does: the pragmas and the return are the generated file's.
             assert strings.holds(
                 text: got,
-                needle: "#line 6 \"t.hero\"\n    struct pt hero_constant_value = PT_INIT;\n#line "
+                needle: "#line 6 \"t.hero\"\n    static struct pt hero_constant_value = PT_INIT;\n#line "
             )
             assert strings.holds(text: got, needle: "#pragma clang diagnostic error \"-Wexcess-initializers\"\n")
             assert strings.holds(text: got, needle: "#pragma clang diagnostic ignored \"-Wmissing-braces\"\n")

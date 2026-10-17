@@ -19,6 +19,7 @@ use emit/ffi_asked
 use emit/ffi_result
 use emit/ffi_held
 use emit/ffi_switched
+use emit/ffi_value
 use parse
 use resolve
 use checker
@@ -100,24 +101,7 @@ function not_constant(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this name")
-    d: diag.Diagnostic @= diag.new_diagnostic(
-        code: "ffi_not_constant",
-        message: "`" + found.must().header + "` has `" + name + "`, but not as a constant — clang cannot read its value while compiling",
-        span: found.must().span
-    )
-
-    # The note's last sentence said *reached through an `extern function` that
-    # returns it* until defect 152 (2026-10-02), which reads as `function
-    # errno() -> i32`, the declaration that defect is about: what returns it is
-    # a C function of the program's own, and the header's type is not one this
-    # assertion learns, so the author writes it. It said *`X` is an object or a
-    # macro that expands to one — reading it twice could give two answers* until
-    # defect 2101 (2026-10-17) brought statement expressions here: false of
-    # `({ int x = 3; x; })`, which gives one answer and is no object.
-    d.notes @ d.notes.push(
-        "a `constant` names one value forever (§4.4), and clang reads `" + name + "` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global §4.2 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_" + name + "(void) { return " + name + "; }`"
-    )
-    return ok(d)
+    return ok(ffi_value.told_not_constant(found.must(), name: name, body: "return " + name + ";"))
 
 # The note an absent name is told with, its name after it, which
 # `cli/header_order.hero` replaces where the header declares the name read

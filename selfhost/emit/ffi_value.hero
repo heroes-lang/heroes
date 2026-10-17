@@ -40,6 +40,7 @@ use emit/ffi_result
 use emit/clang_place
 use emit/clang_name
 use emit/record_constant
+use emit/undefined_words
 use cli/clang_first
 use cli/clang_excerpt
 use parse
@@ -49,6 +50,13 @@ use ir/lower
 
 constant ERROR: str
     "error: "
+
+# What clang says where a value is not one it folds, of an object of static
+# storage (C11 § 6.7.9 p4), as the accessor's `static const` local is: the
+# constness a scalar's `__builtin_constant_p` asks, which answers 0 for every
+# struct (panel 063), asked of a record by C's own rule (panel 221).
+constant NOT_FOLDED: str
+    "not a compile-time constant"
 
 # What clang says of a struct it cannot lay out, at the signature and at the
 # declaration alike: the record's readers' mistake, not the value's.
@@ -90,6 +98,22 @@ function refused_value(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: co
     if !clang_place.offset_of(text: message, needle: INCOMPLETE).is_err()
         return fail(code: "none", msg: "the record's own readers tell an incomplete type")
     known = ffi_lookup.declaration(s, decls, name: found.name)?
+
+    if !clang_place.offset_of(text: message, needle: NOT_FOLDED).is_err()
+        # Where clang said at this line that the value is undefined, that is
+        # why it is no constant, and it is told so (panel 221: `{ 1 / 0, 2 }`).
+        why = undefined_at(stderr: stderr, file: at.file, row: at.line, s: s)
+
+        if !why.is_err()
+            rows = ffi_lookup.lines(text: stderr)
+            none: [str] = []
+            struct_c = ctype.c_type(names, c: c, ty: found.f.result).must()
+            return ok(
+                told(name: found.name, declared: render.render_ty(c.types, s, decls, found.f.result, none), struct_c: struct_c, known: known, message: why.must(), spelled: spelled_at(rows, line: line, name: found.name), program: s.files[at.file].name)
+            )
+        return ok(
+            told_not_constant(known, name: found.name, body: "<its C type> value = " + found.name + "; return value;")
+        )
     none: [str] = []
     declared = render.render_ty(c.types, s, decls, found.f.result, none)
     typed = ffi_asked.typed_in(message)
@@ -103,6 +127,45 @@ function refused_value(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: co
     return ok(
         told(name: found.name, declared: declared, struct_c: struct_c, known: known, message: message, spelled: spelled_at(rows, line: line, name: found.name), program: s.files[at.file].name)
     )
+
+# What clang wrote at the same file and line naming a warning that the value
+# is undefined, its words after `warning: ` or `error: `.
+function undefined_at(stderr: str, file: i64, row: i64, s: source.Source) -> str?
+    for one in ffi_lookup.lines(text: stderr)
+        at = ffi_site.location(s, one)
+
+        if !at.is_err() && at.must().file == file && at.must().line == row && undefined_words.said(one)
+            said = ffi_lookup.trimmed(clang_place.without_return(at.must().rest))
+            colon = clang_place.offset_of(text: said, needle: ": ")
+
+            if !colon.is_err()
+                return ok(said.slice(from: colon.must() + 2, to: said.len()))
+
+    return fail(code: "none", msg: "clang said no undefined value here")
+
+# The refusal of a value clang does not fold, a scalar's `__builtin_constant_p`
+# or a record's static initialiser (C11 § 6.7.9 p4, this file);
+# `body` is the function the note offers, which for a record declares the
+# value first, since C takes a brace list only as an initialiser.
+function told_not_constant(found: ffi_lookup.Declared, name: str, body: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_not_constant",
+        message: "`" + found.header + "` has `" + name + "`, but not as a constant — clang cannot read its value while compiling",
+        span: found.span
+    )
+
+    # The note's last sentence said *reached through an `extern function` that
+    # returns it* until defect 152 (2026-10-02), which reads as `function
+    # errno() -> i32`, the declaration that defect is about: what returns it is
+    # a C function of the program's own, and the header's type is not one this
+    # assertion learns, so the author writes it. It said *`X` is an object or a
+    # macro that expands to one — reading it twice could give two answers* until
+    # defect 2101 (2026-10-17) brought statement expressions here: false of
+    # `({ int x = 3; x; })`, which gives one answer and is no object.
+    d.notes @ d.notes.push(
+        "a `constant` names one value forever (§4.4), and clang reads `" + name + "` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global §4.2 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_" + name + "(void) { " + body + " }`"
+    )
+    return d
 
 # The diagnostic for a value C will not build as the record: clang's message,
 # the header's line that spells the value, and what a record's constant is.
@@ -127,6 +190,10 @@ function told(name: str, declared: str, struct_c: str, known: ffi_lookup.Declare
         d.notes @ d.notes.push(
             "`" + file + "` line " + spelled.must().row.to_str() + " reads `" + spelled.must().quoted.must() + "`"
         )
+
+    if undefined_words.said(message)
+        d.notes @ d.notes.push(undefined_words.note(name))
+        return d
 
     if !clang_place.offset_of(text: message, needle: AS_ERROR).is_err()
         d.notes @ d.notes.push(

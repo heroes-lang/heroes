@@ -185,7 +185,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY(void) 
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 9 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    struct pt hero_constant_value = PT_EMPTY;
+    static struct pt hero_constant_value = PT_EMPTY;
 #line 190 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
@@ -216,7 +216,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO(void) {
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 10 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    struct pt hero_constant_value = PT_ZERO;
+    static struct pt hero_constant_value = PT_ZERO;
 #line 221 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic pop
     return hero_constant_value;

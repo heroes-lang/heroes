@@ -2,16 +2,19 @@
 # before the repair, held now that the accessor's declaration asks their type
 # instead of the return assertion: a compound literal as raylib's `CLITERAL`
 # writes it, a call, and an object. Green before and after.
+#
+# Corrected 2026-10-17 (panel 221's S, defect 2116): the call, `PT_CALL`
+# (`make_pt()`), is no constant, since two reads of a call may give two
+# values, and is refused `ffi_not_constant` as its scalar twin always was; it
+# moved to unsupported/fixedbugs-2116-a-record-constant-whose-value-is-no-constant-is-refused.
 
 extern "fixedbugs-094-values.h"
     record Pt tag pt
         x: i32
         y: i32
     constant PT_LIT: Pt
-    constant PT_CALL: Pt
     constant PT_OBJ: Pt
 
 function main()
     print(PT_LIT.y)
-    print(PT_CALL.y)
     print(PT_OBJ.y)

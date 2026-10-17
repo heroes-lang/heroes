@@ -510,7 +510,7 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK(void) {
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 25 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    struct pt hero_constant_value = R_OK;
+    static struct pt hero_constant_value = R_OK;
 #line 515 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
@@ -541,7 +541,7 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(void) {
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 26 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-    struct pt hero_constant_value = M_ROBJ_OK;
+    static struct pt hero_constant_value = M_ROBJ_OK;
 #line 546 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
     return hero_constant_value;

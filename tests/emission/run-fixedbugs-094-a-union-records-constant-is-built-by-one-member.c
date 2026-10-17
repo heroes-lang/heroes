@@ -191,7 +191,7 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 10 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    Num hero_constant_value = NUM_INIT;
+    static Num hero_constant_value = NUM_INIT;
 #line 196 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
@@ -222,7 +222,7 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 11 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    Num hero_constant_value = NUM_F;
+    static Num hero_constant_value = NUM_F;
 #line 227 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
     return hero_constant_value;

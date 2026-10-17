@@ -1,0 +1,20 @@
+error[ffi_not_constant]: `fixedbugs-2116-calls.h` has `R_CNT`, but not as a constant — clang cannot read its value while compiling
+  at tests/golden/unsupported/fixedbugs-2116-a-record-constant-whose-value-is-no-constant-is-refused.hero:25:5
+     |
+  25 |     constant R_CNT: pt  #~ ffi_not_constant
+     |     ^^^^^^^^^^^^^^^^^^
+  note: a `constant` names one value forever (§4.4), and clang reads `R_CNT` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global §4.2 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_R_CNT(void) { <its C type> value = R_CNT; return value; }`
+
+error[ffi_not_constant]: `fixedbugs-2116-calls.h` has `R_MADE`, but not as a constant — clang cannot read its value while compiling
+  at tests/golden/unsupported/fixedbugs-2116-a-record-constant-whose-value-is-no-constant-is-refused.hero:26:5
+     |
+  26 |     constant R_MADE: pt  #~ ffi_not_constant
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: a `constant` names one value forever (§4.4), and clang reads `R_MADE` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global §4.2 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_R_MADE(void) { <its C type> value = R_MADE; return value; }`
+
+error[ffi_not_constant]: `fixedbugs-2116-calls.h` has `R_DEAD`, but not as a constant — clang cannot read its value while compiling
+  at tests/golden/unsupported/fixedbugs-2116-a-record-constant-whose-value-is-no-constant-is-refused.hero:27:5
+     |
+  27 |     constant R_DEAD: held  #~ ffi_not_constant
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: a `constant` names one value forever (§4.4), and clang reads `R_DEAD` as something computed each time it is read, an object, a call or a statement expression it does not fold, so nothing holds two reads of it to one answer: the mutable global §4.2 forbids. A value computed in C is reached through a function of the program's own that returns it, written in a header beside this file and bound by `extern` naming that header like any function: `static inline <its C type> hero_R_DEAD(void) { <its C type> value = R_DEAD; return value; }`

@@ -177,7 +177,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y(void) {
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 12 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    struct pt hero_constant_value = PT_Y;
+    static struct pt hero_constant_value = PT_Y;
 #line 182 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
@@ -208,7 +208,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 13 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    struct pt hero_constant_value = PT_TWICE;
+    static struct pt hero_constant_value = PT_TWICE;
 #line 213 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic pop
     return hero_constant_value;

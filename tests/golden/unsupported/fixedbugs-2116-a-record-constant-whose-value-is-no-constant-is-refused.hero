@@ -1,0 +1,34 @@
+# FIXED DEFECT 2116, 2026-10-17, lane land215 (panel 221's S).
+#
+# SYMPTOM: a record constant whose header value calls a function built at
+# exit 0, and two reads of `R_CNT` printed `1` then `2`, where the same call as
+# a scalar constant was refused `ffi_not_constant`; and a record holding a
+# compound literal array's address, `R_DEAD`, returned a pointer into the
+# accessor's dead frame (panel 221's compiler-engineer: `1` at `-O0`, `1000`
+# at `-O2`, `stack-use-after-return` under ASan).
+#
+# CAUSE: panel 063 left the constancy question unasked of a struct,
+# `__builtin_constant_p` answering 0 for every one.
+#
+# FIX: the accessor's value is a `static` local, so C's own rule for an
+# object of static storage asks that its initialiser be constant
+# (`emit/record_constant.hero`), and the refusal is told `ffi_not_constant`
+# (`emit/ffi_value.hero`), the scalar's class and words.
+
+extern "fixedbugs-2116-calls.h"
+    record pt
+        x: i32
+        y: i32
+    record held
+        s: ptr
+        p: ptr
+    constant R_CNT: pt  #~ ffi_not_constant
+    constant R_MADE: pt  #~ ffi_not_constant
+    constant R_DEAD: held  #~ ffi_not_constant
+
+function main()
+    a = R_CNT
+    b = R_MADE
+    c = R_DEAD
+    _ = c
+    print(a.x + b.x)

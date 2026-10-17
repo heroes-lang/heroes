@@ -190,7 +190,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    struct line hero_constant_value = LINE_INIT;
+    static struct line hero_constant_value = LINE_INIT;
 #line 195 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
@@ -221,7 +221,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    struct line hero_constant_value = LINE_FLAT;
+    static struct line hero_constant_value = LINE_FLAT;
 #line 226 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;

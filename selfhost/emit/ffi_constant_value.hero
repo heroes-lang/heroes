@@ -33,6 +33,7 @@ use emit/ffi_site
 use emit/ffi_value
 use emit/clang_place
 use emit/value_check
+use emit/undefined_words
 use parse
 use resolve
 use checker
@@ -104,7 +105,7 @@ function told(name: str, declared: str, known: ffi_lookup.Declared, words: str, 
 # undefined, and one C cannot read as an expression.
 function note_of(name: str, undefined: bool) -> str
     if undefined
-        return "C leaves this value undefined: a program reading `" + name + "` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines"
+        return undefined_words.note(name)
     return "C cannot read the header's value of `" + name + "` as an expression, so no program that reads it can be built. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant the header spells as one"
 
 # clang's lines, with a static assertion's failure read whole where clang

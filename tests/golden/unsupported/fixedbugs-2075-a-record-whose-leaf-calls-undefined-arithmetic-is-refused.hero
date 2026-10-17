@@ -4,12 +4,17 @@
 #
 # A record constant's accessor is asked as a scalar's is: its leaf, a call
 # dividing `INT_MIN` by -1, runs under the checks and traps.
+#
+# Corrected 2026-10-17, the same day (panel 221's S, defect 2116): a call is
+# no constant, so the record is refused `ffi_not_constant` when its unit
+# compiles, before the probe runs; the probe still asks a record's accessor,
+# which a constant's leaf can reach only through an operation, never a call.
 
 extern "fixedbugs-2075-calls.h"
     record Pair tag pair
         x: i32
         y: i32
-    constant C_PAIR: Pair  #~ ffi_constant_type
+    constant C_PAIR: Pair  #~ ffi_not_constant
 
 function main()
     v = C_PAIR

@@ -184,7 +184,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
 #pragma clang diagnostic ignored "-Wmissing-braces"
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 23 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    struct pt hero_constant_value = PT_INIT;
+    static struct pt hero_constant_value = PT_INIT;
 #line 189 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
