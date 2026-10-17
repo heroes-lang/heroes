@@ -16,8 +16,8 @@
 # tree emitted by the compiler built from it (the batch's fixpoint, `cmp`),
 # so a seed that defines it was emitted by a compiler that writes it; the
 # seed of a lane opened before the writer landed defines it nowhere, and
-# that lane's merge is the state this asks about (`.claude/rules/records.md`
-# § Working in lanes names the side a merge takes). No compiler runs.
+# that lane's merge is the state this asks about, the side a merge takes
+# named in `.claude/rules/records.md` § Working in lanes. No compiler runs.
 #
 # AND WHEN NO MODULE BINDS IT the suite is red, not green: a question that
 # holds of nothing passes in silence, so a reader moved or renamed is told,
