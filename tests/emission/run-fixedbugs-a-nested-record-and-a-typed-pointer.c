@@ -199,6 +199,21 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsanestedrecordandatypedpointer_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Font *)0) == 13 ? sizeof(Font) : 0), __builtin_offsetof(Font, baseSize), sizeof(((Font *)0)->baseSize), __builtin_offsetof(Font, glyphCount), sizeof(((Font *)0)->glyphCount), __builtin_offsetof(Font, glyphPadding), sizeof(((Font *)0)->glyphPadding), __builtin_offsetof(Font, texture), (__builtin_classify_type(((Font *)0)->texture) == 13 ? sizeof(((Font *)0)->texture) : 0), __builtin_offsetof(Font, texture.id), sizeof(((Font *)0)->texture.id), __builtin_offsetof(Font, texture.width), sizeof(((Font *)0)->texture.width), __builtin_offsetof(Font, texture.height), sizeof(((Font *)0)->texture.height), __builtin_offsetof(Font, texture.mipmaps), sizeof(((Font *)0)->texture.mipmaps), __builtin_offsetof(Font, texture.format), sizeof(((Font *)0)->texture.format), __builtin_offsetof(Font, recs), sizeof(((Font *)0)->recs), __builtin_offsetof(Font, glyphs), sizeof(((Font *)0)->glyphs)};
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Vector2 *)0) == 13 ? sizeof(Vector2) : 0), __builtin_offsetof(Vector2, x), sizeof(((Vector2 *)0)->x), __builtin_offsetof(Vector2, y), sizeof(((Vector2 *)0)->y)};
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_2;
+__attribute__((unused)) static const size_t hero_pad_t_3[] = {0, (__builtin_classify_type(*(Camera2D *)0) == 13 ? sizeof(Camera2D) : 0), __builtin_offsetof(Camera2D, offset), (__builtin_classify_type(((Camera2D *)0)->offset) == 13 ? sizeof(((Camera2D *)0)->offset) : 0), __builtin_offsetof(Camera2D, offset.x), sizeof(((Camera2D *)0)->offset.x), __builtin_offsetof(Camera2D, offset.y), sizeof(((Camera2D *)0)->offset.y), __builtin_offsetof(Camera2D, target), (__builtin_classify_type(((Camera2D *)0)->target) == 13 ? sizeof(((Camera2D *)0)->target) : 0), __builtin_offsetof(Camera2D, target.x), sizeof(((Camera2D *)0)->target.x), __builtin_offsetof(Camera2D, target.y), sizeof(((Camera2D *)0)->target.y), __builtin_offsetof(Camera2D, rotation), sizeof(((Camera2D *)0)->rotation), __builtin_offsetof(Camera2D, zoom), sizeof(((Camera2D *)0)->zoom)};
+__attribute__((unused)) static size_t hero_pad_g_3[sizeof hero_pad_t_3 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_3;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_1 = hero_pad_gaps(sizeof(Font), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+    hero_pad_n_2 = hero_pad_gaps(sizeof(Vector2), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
+    hero_pad_n_3 = hero_pad_gaps(sizeof(Camera2D), hero_pad_t_3, sizeof hero_pad_t_3 / (2 * sizeof(size_t)), hero_pad_g_3);
+}
+
 
 #line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 void h_fixedbugsanestedrecordandatypedpointer_main(void) {
@@ -223,6 +238,8 @@ bb0:
     t9 = (Camera2D){.offset = t3, .target = t6, .rotation = t7, .zoom = t8};
 #line 62 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     h0_c = t9;
+#line 62 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
+    hero_pad_fill(&h0_c, sizeof(Camera2D), 1, hero_pad_g_3, hero_pad_n_3);
 #line 68 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t10 = 0x1.8p+1;
 #line 68 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
@@ -235,6 +252,8 @@ bb0:
     t14 = GetWorldToScreen2D(t12, t13);
 #line 68 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     h1_p = t14;
+#line 68 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
+    hero_pad_fill(&h1_p, sizeof(Vector2), 1, hero_pad_g_2, hero_pad_n_2);
     t15 = h1_p.x;
 #line 69 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     hero_print_f32(t15);
@@ -266,6 +285,8 @@ bb0:
     t28 = (Font){.baseSize = t17, .glyphCount = t18, .glyphPadding = t19, .texture = t25, .recs = t26, .glyphs = t27};
 #line 75 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     h2_empty = t28;
+#line 75 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
+    hero_pad_fill(&h2_empty, sizeof(Font), 1, hero_pad_g_1, hero_pad_n_1);
 #line 83 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t29 = h2_empty;
 #line 83 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
@@ -276,7 +297,7 @@ bb0:
     hero_print_end();
 #line 83 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     return;
-#line 280 "fixedbugsanestedrecordandatypedpointer.c"
+#line 301 "fixedbugsanestedrecordandatypedpointer.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b) {
     if (!(a->id == b->id)) return false;

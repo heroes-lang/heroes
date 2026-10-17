@@ -174,10 +174,30 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void);
 void h_ffialentfieldcountedbyaconstant_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Sl *)0) == 13 ? sizeof(Sl) : 0), __builtin_offsetof(Sl, name), sizeof(((Sl *)0)->name), __builtin_offsetof(Sl, id), sizeof(((Sl *)0)->id)};
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+#pragma push_macro("hidden_a")
+#undef hidden_a
+#pragma push_macro("hidden_b")
+#undef hidden_b
+#pragma push_macro("name")
+#undef name
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(Both, name), sizeof(((Both *)0)->name), __builtin_offsetof(Both, hidden_a), sizeof(((Both *)0)->hidden_a), __builtin_offsetof(Both, hidden_b), sizeof(((Both *)0)->hidden_b)};
+#pragma pop_macro("hidden_a")
+#pragma pop_macro("hidden_b")
+#pragma pop_macro("name")
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_2;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_1 = hero_pad_gaps(sizeof(Sl), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+    hero_pad_n_2 = hero_pad_gaps(sizeof(Both), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
+}
+
 
 #line 19 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
-#line 181 "ffialentfieldcountedbyaconstant.c"
+#line 201 "ffialentfieldcountedbyaconstant.c"
     _Static_assert(HERO_RET_INT(SL_NAME_LEN), "heroes-ffi-return SL_NAME_LEN i64");
     _Static_assert(__builtin_constant_p(SL_NAME_LEN), "heroes-ffi-const SL_NAME_LEN");
 #pragma clang diagnostic push
@@ -189,7 +209,7 @@ int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 19 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     return SL_NAME_LEN;
-#line 193 "ffialentfieldcountedbyaconstant.c"
+#line 213 "ffialentfieldcountedbyaconstant.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -214,6 +234,8 @@ bb0:
     t1 = sl_make();
 #line 31 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     h0_s = t1;
+#line 31 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
+    hero_pad_fill(&h0_s, sizeof(Sl), 1, hero_pad_g_1, hero_pad_n_1);
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t4 = (void *)(h0_s.name);
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -305,6 +327,8 @@ bb0:
     t35 = both_make();
 #line 48 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     h2_b = t35;
+#line 48 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
+    hero_pad_fill(&h2_b, sizeof(Both), 1, hero_pad_g_2, hero_pad_n_2);
     t38 = (const void *)(h2_b.name);
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t39 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN();
@@ -320,7 +344,7 @@ bb0:
     hero_print_end();
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     return;
-#line 324 "ffialentfieldcountedbyaconstant.c"
+#line 348 "ffialentfieldcountedbyaconstant.c"
 }
 HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_Sl_eq(const Sl *a, const Sl *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;

@@ -156,10 +156,23 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_INIT(void);
 void h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_main(void);
+#pragma push_macro("opaque")
+#undef opaque
+#pragma push_macro("sig")
+#undef sig
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct big, sig), sizeof(((struct big *)0)->sig), __builtin_offsetof(struct big, opaque), sizeof(((struct big *)0)->opaque)};
+#pragma pop_macro("opaque")
+#pragma pop_macro("sig")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct big), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 11 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
 struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_INIT(void) {
-#line 163 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+#line 176 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -171,7 +184,7 @@ struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_I
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 11 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     struct big hero_constant_value = BIG_INIT;
-#line 175 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+#line 188 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -197,6 +210,8 @@ bb0:
     t1 = h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_INIT();
 #line 15 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     h0_b = t1;
+#line 15 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
+    hero_pad_fill(&h0_b, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_b.sig;
 #line 16 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     hero_print_int(t2);
@@ -211,7 +226,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     return;
-#line 215 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+#line 230 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_Big_eq(const struct big *a, const struct big *b) {
     hero_panic("h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_Big_eq: a partial record has no structural equality");

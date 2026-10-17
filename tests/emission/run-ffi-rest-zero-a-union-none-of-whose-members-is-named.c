@@ -265,6 +265,8 @@ bb0:
     t1 = h_ffirestzeroaunionnoneofwhosemembersisnamed_in_a_struct();
 #line 37 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     h0_s = t1;
+#line 37 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+    hero_pad_fill(&h0_s, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_s.kind;
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     t3 = HERO_STR_LIT(hero_str_20);
@@ -298,6 +300,8 @@ bb0:
     t7 = h_ffirestzeroaunionnoneofwhosemembersisnamed_a_union_type();
 #line 40 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     h1_u = t7;
+#line 40 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+    hero_pad_fill(&h1_u, sizeof(UD), 1, hero_pad_g_1, hero_pad_n_1);
     hero_lend_local_name(hero_lend_h1_u, "ud_all", "u");
 #line 41 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     hero_pad_fill(&h1_u, sizeof(UD), 1, hero_pad_g_1, hero_pad_n_1);
@@ -319,6 +323,8 @@ bb0:
     t11 = h_ffirestzeroaunionnoneofwhosemembersisnamed_nothing_named();
 #line 43 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     h2_n = t11;
+#line 43 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+    hero_pad_fill(&h2_n, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t12 = h2_n.kind;
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     t13 = HERO_STR_LIT(hero_str_20);
@@ -356,7 +362,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_s);
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return;
-#line 360 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 366 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 #undef h0_s
 #undef h1_u

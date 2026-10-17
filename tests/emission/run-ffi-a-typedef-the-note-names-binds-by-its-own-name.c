@@ -206,6 +206,8 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 22 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     h0_m = t1;
+#line 22 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+    hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
     hero_lend_local_name(hero_lend_h0_m, "lock_init", "m");
 #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     hero_pad_fill(&h0_m, sizeof(lock_t), 1, hero_pad_g_0, hero_pad_n_0);
@@ -232,6 +234,8 @@ bb0:
     __builtin_memset(&t5, 0, sizeof t5);
 #line 24 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     h1_p = t5;
+#line 24 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+    hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
     hero_lend_local_name(hero_lend_h1_p, "pattern_init", "p");
 #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     hero_pad_fill(&h1_p, sizeof(pattern_t), 1, hero_pad_g_1, hero_pad_n_1);
@@ -267,7 +271,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     return;
-#line 271 "ffiatypedefthenotenamesbindsbyitsownname.c"
+#line 275 "ffiatypedefthenotenamesbindsbyitsownname.c"
 }
 #undef h0_m
 #undef h1_p

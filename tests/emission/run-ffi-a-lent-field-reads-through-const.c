@@ -163,6 +163,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_ffialentfieldreadsthroughconst_total(Slot h0_s);
 void h_ffialentfieldreadsthroughconst_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Slot *)0) == 13 ? sizeof(Slot) : 0), __builtin_offsetof(Slot, nsap), sizeof(((Slot *)0)->nsap), __builtin_offsetof(Slot, id), sizeof(((Slot *)0)->id)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(Slot), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 24 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 int64_t h_ffialentfieldreadsthroughconst_total(Slot h0_s) {
@@ -181,7 +188,7 @@ bb0:
     t5 = slot_sum(t3, t4);
 #line 25 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     return t5;
-#line 185 "ffialentfieldreadsthroughconst.c"
+#line 192 "ffialentfieldreadsthroughconst.c"
 }
 
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
@@ -194,6 +201,8 @@ bb0:
     t1 = slot_make();
 #line 29 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     h0_t = t1;
+#line 29 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
+    hero_pad_fill(&h0_t, sizeof(Slot), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = (const void *)(h0_t.nsap);
 #line 30 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t5 = INT64_C(8);
@@ -218,6 +227,8 @@ bb0:
     t9 = slot_make();
 #line 35 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     h1_u = t9;
+#line 35 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
+    hero_pad_fill(&h1_u, sizeof(Slot), 1, hero_pad_g_0, hero_pad_n_0);
     t12 = (void *)(h1_u.nsap);
 #line 36 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t13 = INT64_C(8);
@@ -261,7 +272,7 @@ bb0:
     hero_print_end();
 #line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     return;
-#line 265 "ffialentfieldreadsthroughconst.c"
+#line 276 "ffialentfieldreadsthroughconst.c"
 }
 HERO_TU_LOCAL bool h_ffialentfieldreadsthroughconst_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;

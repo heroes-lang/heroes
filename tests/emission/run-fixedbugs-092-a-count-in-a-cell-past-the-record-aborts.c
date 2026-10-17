@@ -182,6 +182,8 @@ bb0:
     t2 = (struct one){.a = t1};
 #line 15 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     h0_o = t2;
+#line 15 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
+    hero_pad_fill(&h0_o, sizeof(struct one), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = UINT64_C(4096);
 #line 16 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     h1_n = t3;
@@ -214,7 +216,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 19 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     return;
-#line 218 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 220 "fixedbugs092acountinacellpasttherecordaborts.c"
 }
 #undef h0_o
 #undef h1_n

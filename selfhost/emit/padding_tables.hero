@@ -38,7 +38,19 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
                                 for decl in lent_by(c, s, decls, f, run: cl.arguments, decl: e.decl)
                                     reached(c, names, s, decls, decl: decl, @lent)
                             .heroes_fn | .builtin_fn | .indirect => continue
-                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .func_ref  => continue
+
+                    # A group record written whole is zeroed after the store
+                    # (defect 2112), so its table stands here too.
+                    .store st =>
+                        stored = padding.record_of(
+                            c,
+                            decls,
+                            ty: padding.innermost(c, ty: containers.value_type(f, st.value))
+                        )
+
+                        if stored >= 0
+                            reached(c, names, s, decls, decl: stored, @lent)
+                    .lit | .load | .push_owned | .unary | .binary | .cast | .func_ref           => continue
                     .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
                     .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 

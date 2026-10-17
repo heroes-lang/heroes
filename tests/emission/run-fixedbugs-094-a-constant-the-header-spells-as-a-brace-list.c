@@ -162,10 +162,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void);
 void h_fixedbugs094aconstanttheheaderspellsasabracelist_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct pt *)0) == 13 ? sizeof(struct pt) : 0), __builtin_offsetof(struct pt, x), sizeof(((struct pt *)0)->x), __builtin_offsetof(struct pt, y), sizeof(((struct pt *)0)->y)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct pt), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 23 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
 struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
-#line 169 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 176 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -177,7 +184,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 23 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
     struct pt hero_constant_value = PT_INIT;
-#line 181 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 188 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -203,6 +210,8 @@ bb0:
     t1 = h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT();
 #line 26 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
     h0_p = t1;
+#line 26 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
+    hero_pad_fill(&h0_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_p.x;
 #line 27 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
     hero_print_int(t2);
@@ -224,7 +233,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
     return;
-#line 228 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 237 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094aconstanttheheaderspellsasabracelist_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

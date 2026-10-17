@@ -422,6 +422,8 @@ bb3:
     t25 = (struct linger){.l_onoff = t23, .l_linger = t24};
 #line 22 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h3_l = t25;
+#line 22 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
+    hero_pad_fill(&h3_l, sizeof(struct linger), 1, hero_pad_g_4, hero_pad_n_4);
     t26 = UINT64_C(8);
 #line 23 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h4_n = t26;
@@ -468,7 +470,7 @@ bb4:
     t17 = h1_f1;
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t18 = t17.as.err;
-#line 472 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 474 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t18);
     hero_unreachable();
 bb5:
@@ -518,7 +520,7 @@ bb6:
     t34 = h5_f2;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t35 = t34.as.err;
-#line 522 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 524 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t35);
     hero_unreachable();
 bb7:
@@ -550,7 +552,7 @@ bb7:
     hero_print_int(t50);
 #line 26 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     hero_print_end();
-#line 554 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 556 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     h_0opt_e1f4933_release(hero_slot_escape(&h0_f0));
     h_0opt_e1f4933_release(hero_slot_escape(&h1_f1));
     h_0opt_e1f4933_release(hero_slot_escape(&h5_f2));
@@ -567,7 +569,7 @@ bb8:
     t44 = h6_f3;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t45 = t44.as.err;
-#line 571 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 573 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t45);
     hero_unreachable();
 }

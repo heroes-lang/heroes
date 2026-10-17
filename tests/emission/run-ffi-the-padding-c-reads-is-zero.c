@@ -309,6 +309,8 @@ bb0:
     t3.d = t2;
 #line 49 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     h0_a = t3;
+#line 49 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
+    hero_pad_fill(&h0_a, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0);
 #line 51 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     t4 = h0_a;
 #line 51 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
@@ -376,11 +378,15 @@ bb0:
     t21 = cd_made();
 #line 56 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     h3_made = t21;
+#line 56 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
+    hero_pad_fill(&h3_made, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0);
     t22 = h0_a;
 #line 57 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     t23 = h_ffithepaddingcreadsiszero_cd_through(t22);
 #line 57 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     h4_handed = t23;
+#line 57 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
+    hero_pad_fill(&h4_handed, sizeof(struct cd), 1, hero_pad_g_0, hero_pad_n_0);
 #line 59 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     t24 = h1_held.f_h;
 #line 59 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
@@ -451,7 +457,7 @@ bb0:
     hero_print_int(t38);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     hero_print_end();
-#line 455 "ffithepaddingcreadsiszero.c"
+#line 461 "ffithepaddingcreadsiszero.c"
     hero_array_release_at(&h2_pairs);
     hero_array_release_at(&h5_own5);
     hero_lend_local_give(hero_lend_h4_handed);
@@ -471,7 +477,7 @@ bb0:
     h_ffithepaddingcreadsiszero_work();
 #line 76 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     return;
-#line 475 "ffithepaddingcreadsiszero.c"
+#line 481 "ffithepaddingcreadsiszero.c"
 }
 HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Cd_eq(const struct cd *a, const struct cd *b) {
     if (!(a->c == b->c)) return false;

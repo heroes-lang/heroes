@@ -162,6 +162,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs168awholerecordbesideasamenamedheader_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(E *)0) == 13 ? sizeof(E) : 0), __builtin_offsetof(E, x), sizeof(((E *)0)->x)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(E), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 void h_fixedbugs168awholerecordbesideasamenamedheader_main(void) {
@@ -174,11 +181,15 @@ bb0:
     t2 = hero_168_make(t1);
 #line 20 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     h0_p = t2;
+#line 20 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
+    hero_pad_fill(&h0_p, sizeof(E), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = INT64_C(1);
 #line 21 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     t4 = hero_168_make(t3);
 #line 21 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     h1_q = t4;
+#line 21 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
+    hero_pad_fill(&h1_q, sizeof(E), 1, hero_pad_g_0, hero_pad_n_0);
     t5 = h0_p;
 #line 22 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     t6 = h1_q;
@@ -195,7 +206,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     return;
-#line 199 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 210 "fixedbugs168awholerecordbesideasamenamedheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_E_eq(const E *a, const E *b) {
     if (!(a->x == b->x)) return false;

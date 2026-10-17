@@ -34,6 +34,7 @@ use emit/abort
 use emit/construct
 use emit/container
 use emit/aggregate
+use emit/padding
 use emit/places
 use emit/term
 use emit/unread
@@ -162,6 +163,12 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                         @w,
                         text: "    " + byte_copy.assignment(w, c, decls, ty: containers.value_type(f, st.value), target: aggregate.place(c, s, decls, f, at: st.place), value: mangle.value(st.value))
                     )
+
+                    # A group record written whole is its padding written zero
+                    # again, as at a lend: C may read the place through an
+                    # address it kept (defect 2112, `emit/padding.hero`).
+                    for line in padding.of_place(c, names, s, decls, ty: containers.value_type(f, st.value), address: "&" + aggregate.place(c, s, decls, f, at: st.place))
+                        writer.line(@w, text: "    " + line)
         # Housekeeping the author did not write. Dispatched by TYPE: a
         # str owns one block, so the runtime counts it; an aggregate
         # owns nothing of its own and CONTAINS what is counted, so its

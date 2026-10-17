@@ -144,6 +144,16 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void);
+#pragma push_macro("a")
+#undef a
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct old_pair, a), sizeof(((struct old_pair *)0)->a)};
+#pragma pop_macro("a")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct old_pair), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
 void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void) {
@@ -156,6 +166,8 @@ bb0:
     t2 = (struct old_pair){.a = t1};
 #line 17 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
     h0_p = t2;
+#line 17 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
+    hero_pad_fill(&h0_p, sizeof(struct old_pair), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_p.a;
 #line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
     hero_print_int(t3);
@@ -163,7 +175,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
     return;
-#line 167 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
+#line 179 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs584adeprecatedrecordasalocalbuildssilent_OldPair_eq(const struct old_pair *a, const struct old_pair *b) {
     if (!(a->a == b->a)) return false;

@@ -184,6 +184,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main(void);
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(S *)0) == 13 ? sizeof(S) : 0), __builtin_offsetof(S, a), sizeof(((S *)0)->a), __builtin_offsetof(S, b), sizeof(((S *)0)->b)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(S), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main(void) {
@@ -198,6 +205,8 @@ bb0:
     t3 = (S){.a = t1, .b = t2};
 #line 19 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     h0_s = t3;
+#line 19 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
+    hero_pad_fill(&h0_s, sizeof(S), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = INT64_C(3);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     t5 = h_fixedbugs559wide_doubled(t4);
@@ -245,7 +254,7 @@ bb1:
     hero_print_int(t18);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     hero_print_end();
-#line 249 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 258 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return;
@@ -254,7 +263,7 @@ bb2:
     t14 = h1_f0;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     t15 = t14.as.err;
-#line 258 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 267 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     hero_panic_must(t15);
     hero_unreachable();
 }
@@ -270,7 +279,7 @@ bb0:
     t2 = twice(t1);
 #line 8 "tests/golden/run/fixedbugs559/wide.hero"
     return t2;
-#line 274 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 283 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;

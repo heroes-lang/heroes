@@ -318,6 +318,8 @@ bb0:
     __builtin_memset(&t2, 0, sizeof t2);
 #line 36 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     h1_a = t2;
+#line 36 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
+    hero_pad_fill(&h1_a, sizeof(struct uv_timer_s), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_loop;
 #line 37 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t4 = h_fixedbugs413libuvkeepseveryhandlesaddress_start(t3, &h1_a);
@@ -400,7 +402,7 @@ bb0:
     t21 = h0_loop;
 #line 44 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     (void)uv_walk(t19, (h_0fn_7d30c22)hero_callback_of((void (*)(void))t20), t21);
-#line 404 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 406 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_release_at(&h2_ts);
     hero_array_release_at(&h3_own3);
     hero_lend_local_give(hero_lend_h1_a);

@@ -168,6 +168,25 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void);
+#pragma push_macro("f")
+#undef f
+#pragma push_macro("i")
+#undef i
+#pragma push_macro("kind")
+#undef kind
+#pragma push_macro("x")
+#undef x
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, i), sizeof(((SA *)0)->i), __builtin_offsetof(SA, f), sizeof(((SA *)0)->f), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)};
+#pragma pop_macro("f")
+#pragma pop_macro("i")
+#pragma pop_macro("kind")
+#pragma pop_macro("x")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(SA), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
 void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void) {
@@ -184,6 +203,8 @@ bb0:
     t4 = (SA){.kind = t1, .i = t2, .x = t3};
 #line 16 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
     h0_s = t4;
+#line 16 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
+    hero_pad_fill(&h0_s, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t5 = h0_s.i;
 #line 17 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
     hero_print_int(t5);
@@ -208,7 +229,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
     return;
-#line 212 "fixedbugs151onearmofananonymousunionbuiltandread.c"
+#line 233 "fixedbugs151onearmofananonymousunionbuiltandread.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151onearmofananonymousunionbuiltandread_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

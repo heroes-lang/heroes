@@ -220,6 +220,25 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsafixedarrayelementiswrittenatanyd
 
 void h_fixedbugsafixedarrayelementiswrittenatanydepth_main(void);
 HeroArrayHeader * h_library_args(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct row *)0) == 13 ? sizeof(struct row) : 0), __builtin_offsetof(struct row, a), sizeof(((struct row *)0)->a)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct outer *)0) == 13 ? sizeof(struct outer) : 0), __builtin_offsetof(struct outer, rows), sizeof(((struct outer *)0)->rows), __builtin_offsetof(struct outer, tail), sizeof(((struct outer *)0)->tail)};
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct cell *)0) == 13 ? sizeof(struct cell) : 0), __builtin_offsetof(struct cell, v), sizeof(((struct cell *)0)->v), __builtin_offsetof(struct cell, w), sizeof(((struct cell *)0)->w)};
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_2;
+__attribute__((unused)) static const size_t hero_pad_t_3[] = {0, (__builtin_classify_type(*(struct holder *)0) == 13 ? sizeof(struct holder) : 0), __builtin_offsetof(struct holder, xs), sizeof(((struct holder *)0)->xs)};
+__attribute__((unused)) static size_t hero_pad_g_3[sizeof hero_pad_t_3 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_3;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct row), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+    hero_pad_n_1 = hero_pad_gaps(sizeof(struct outer), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+    hero_pad_n_2 = hero_pad_gaps(sizeof(struct cell), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
+    hero_pad_n_3 = hero_pad_gaps(sizeof(struct holder), hero_pad_t_3, sizeof hero_pad_t_3 / (2 * sizeof(size_t)), hero_pad_g_3);
+}
+
 
 #line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 void h_fixedbugsafixedarrayelementiswrittenatanydepth_main(void) {
@@ -264,6 +283,14 @@ bb0:
     t17 = (struct outer){.rows = {t9, t14}, .tail = t16};
 #line 41 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h1_o = t17;
+#line 41 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    hero_pad_fill(&h1_o, sizeof(struct outer), 1, hero_pad_g_1, hero_pad_n_1);
+#line 41 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) {
+#line 41 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    hero_pad_fill((unsigned char *)(&h1_o) + hero_pad_k0 * sizeof(struct outer) + __builtin_offsetof(struct outer, rows), sizeof(struct row), sizeof(((struct outer *)0)->rows) / sizeof(struct row), hero_pad_g_0, hero_pad_n_0);
+#line 41 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    }
     t18 = INT64_C(1);
 #line 42 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t19 = INT64_C(2);
@@ -382,6 +409,14 @@ bb0:
     t72 = (struct holder){.xs = {t64, t67, t70}};
 #line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h2_r = t72;
+#line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    hero_pad_fill(&h2_r, sizeof(struct holder), 1, hero_pad_g_3, hero_pad_n_3);
+#line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) {
+#line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    hero_pad_fill((unsigned char *)(&h2_r) + hero_pad_k0 * sizeof(struct holder) + __builtin_offsetof(struct holder, xs), sizeof(struct cell), sizeof(((struct holder *)0)->xs) / sizeof(struct cell), hero_pad_g_2, hero_pad_n_2);
+#line 47 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+    }
     t73 = INT64_C(1);
 #line 48 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t74 = INT64_C(33);
@@ -544,7 +579,7 @@ bb0:
     hero_print_int(t133);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_end();
-#line 548 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 583 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_release_at(&h3_xs);
     hero_array_release_at(&h4_ys);
     hero_array_release_at(&h5_own5);
@@ -612,7 +647,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 616 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 651 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

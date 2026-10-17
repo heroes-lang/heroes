@@ -268,6 +268,8 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 31 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h0_s = t1;
+#line 31 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = INT64_C(-1);
 #line 32 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t3 = (const char *)zlibVersion();
@@ -402,6 +404,8 @@ bb0:
     __builtin_memset(&t30, 0, sizeof t30);
 #line 41 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h8_t = t30;
+#line 41 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+    hero_pad_fill(&h8_t, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
     t31 = h_fixedbugs413zlibknowsastreambyitsaddress_init(&h8_t);
 #line 42 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h9_g = t31;
@@ -486,7 +490,7 @@ bb0:
     hero_print_int(t49);
 #line 49 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_print_end();
-#line 490 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 494 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_release_at(&h4_zs);
     hero_array_release_at(&h15_own15);
     hero_lend_local_give(hero_lend_h8_t);

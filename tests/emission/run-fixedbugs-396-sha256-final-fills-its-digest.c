@@ -280,6 +280,8 @@ bb0:
     t2 = (struct SHA256state_st){.num = t1};
 #line 31 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h0_c = t2;
+#line 31 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+    hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_2, hero_pad_n_2);
     t3 = UINT64_C(9);
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t4 = UINT64_C(9);
@@ -550,7 +552,7 @@ bb0:
     if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     }
-#line 554 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 556 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);

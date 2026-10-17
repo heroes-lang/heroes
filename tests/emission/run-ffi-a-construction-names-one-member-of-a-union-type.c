@@ -164,6 +164,19 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaconstructionnamesonememberofauniontype_main(void);
+#pragma push_macro("f")
+#undef f
+#pragma push_macro("i")
+#undef i
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(UT, i), sizeof(((UT *)0)->i), __builtin_offsetof(UT, f), sizeof(((UT *)0)->f)};
+#pragma pop_macro("f")
+#pragma pop_macro("i")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(UT), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 void h_ffiaconstructionnamesonememberofauniontype_main(void) {
@@ -176,6 +189,8 @@ bb0:
     t2 = (UT){.f = t1};
 #line 17 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     h0_u = t2;
+#line 17 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
+    hero_pad_fill(&h0_u, sizeof(UT), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = h0_u;
 #line 18 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     t4 = ut_i(t3);
@@ -190,7 +205,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     return;
-#line 194 "ffiaconstructionnamesonememberofauniontype.c"
+#line 209 "ffiaconstructionnamesonememberofauniontype.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_UT_eq(const UT *a, const UT *b) {
     if (!(a->i == b->i)) return false;

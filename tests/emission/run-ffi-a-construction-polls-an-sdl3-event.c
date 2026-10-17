@@ -528,6 +528,8 @@ bb0:
     t11 = (SDL_Event){.user = t10};
 #line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h0_sent = t11;
+#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+    hero_pad_fill(&h0_sent, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2);
 #line 51 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_lend_local_name(hero_lend_h0_sent, "SDL_PushEvent", "event");
 #line 51 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
@@ -569,6 +571,8 @@ bb2:
     t24 = (SDL_Event){.type = t23};
 #line 58 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h6_got = t24;
+#line 58 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+    hero_pad_fill(&h6_got, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2);
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_lend_local_name(hero_lend_h6_got, "SDL_PollEvent", "event");
 #line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
@@ -673,7 +677,7 @@ bb9:
 bb10:
 #line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
-#line 677 "ffiaconstructionpollsansdl3event.c"
+#line 681 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got

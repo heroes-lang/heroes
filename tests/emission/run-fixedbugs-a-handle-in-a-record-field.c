@@ -166,6 +166,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsahandleinarecordfield_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Slot *)0) == 13 ? sizeof(Slot) : 0), __builtin_offsetof(Slot, handle), sizeof(((Slot *)0)->handle), __builtin_offsetof(Slot, ratio), sizeof(((Slot *)0)->ratio), __builtin_offsetof(Slot, count), sizeof(((Slot *)0)->count)};
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_1 = hero_pad_gaps(sizeof(Slot), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+}
+
 
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 void h_fixedbugsahandleinarecordfield_main(void) {
@@ -178,6 +185,8 @@ bb0:
     t2 = slot_make(t1);
 #line 51 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     h0_s = t2;
+#line 51 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
+    hero_pad_fill(&h0_s, sizeof(Slot), 1, hero_pad_g_1, hero_pad_n_1);
     t3 = h0_s;
 #line 52 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     hero_handle_alive(t3.handle, "the argument `s` of `slot_count`, at `.handle`");
@@ -204,7 +213,7 @@ bb0:
     hero_print_end();
 #line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     return;
-#line 208 "fixedbugsahandleinarecordfield.c"
+#line 217 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {
     return hero_handle_eq(*a, *b);

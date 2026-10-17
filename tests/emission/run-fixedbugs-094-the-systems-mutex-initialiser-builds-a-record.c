@@ -220,6 +220,8 @@ bb0:
     t1 = h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT();
 #line 17 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     h0_m = t1;
+#line 17 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
+    hero_pad_fill(&h0_m, sizeof(hero_mutex), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_m.id;
 #line 18 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     hero_print_int(t2);
@@ -247,7 +249,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     return;
-#line 251 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 253 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 }
 #undef h0_m
 HERO_TU_LOCAL bool h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_hero_mutex_eq(const hero_mutex *a, const hero_mutex *b) {

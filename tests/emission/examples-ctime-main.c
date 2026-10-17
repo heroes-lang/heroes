@@ -230,6 +230,46 @@ h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, i
 HeroStr h_main_shown(struct tm h0_b);
 HeroStr h_main_padded(int64_t h0_n);
 void h_main_main(void);
+#pragma push_macro("tm_gmtoff")
+#undef tm_gmtoff
+#pragma push_macro("tm_hour")
+#undef tm_hour
+#pragma push_macro("tm_isdst")
+#undef tm_isdst
+#pragma push_macro("tm_mday")
+#undef tm_mday
+#pragma push_macro("tm_min")
+#undef tm_min
+#pragma push_macro("tm_mon")
+#undef tm_mon
+#pragma push_macro("tm_sec")
+#undef tm_sec
+#pragma push_macro("tm_wday")
+#undef tm_wday
+#pragma push_macro("tm_yday")
+#undef tm_yday
+#pragma push_macro("tm_year")
+#undef tm_year
+#pragma push_macro("tm_zone")
+#undef tm_zone
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct tm, tm_sec), sizeof(((struct tm *)0)->tm_sec), __builtin_offsetof(struct tm, tm_min), sizeof(((struct tm *)0)->tm_min), __builtin_offsetof(struct tm, tm_hour), sizeof(((struct tm *)0)->tm_hour), __builtin_offsetof(struct tm, tm_mday), sizeof(((struct tm *)0)->tm_mday), __builtin_offsetof(struct tm, tm_mon), sizeof(((struct tm *)0)->tm_mon), __builtin_offsetof(struct tm, tm_year), sizeof(((struct tm *)0)->tm_year), __builtin_offsetof(struct tm, tm_wday), sizeof(((struct tm *)0)->tm_wday), __builtin_offsetof(struct tm, tm_yday), sizeof(((struct tm *)0)->tm_yday), __builtin_offsetof(struct tm, tm_isdst), sizeof(((struct tm *)0)->tm_isdst), __builtin_offsetof(struct tm, tm_gmtoff), sizeof(((struct tm *)0)->tm_gmtoff), __builtin_offsetof(struct tm, tm_zone), sizeof(((struct tm *)0)->tm_zone)};
+#pragma pop_macro("tm_gmtoff")
+#pragma pop_macro("tm_hour")
+#pragma pop_macro("tm_isdst")
+#pragma pop_macro("tm_mday")
+#pragma pop_macro("tm_min")
+#pragma pop_macro("tm_mon")
+#pragma pop_macro("tm_sec")
+#pragma pop_macro("tm_wday")
+#pragma pop_macro("tm_yday")
+#pragma pop_macro("tm_year")
+#pragma pop_macro("tm_zone")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct tm), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 66 "examples/ctime/main.hero"
 int64_t h_main_C_EPOCH_YEAR(void) {
@@ -240,7 +280,7 @@ bb0:
     t1 = INT64_C(1900);
 #line 67 "examples/ctime/main.hero"
     return t1;
-#line 244 "main.c"
+#line 284 "main.c"
 }
 
 #line 69 "examples/ctime/main.hero"
@@ -286,7 +326,7 @@ bb1:
     t11 = h_main_C_EPOCH_YEAR();
 #line 70 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 290 "main.c"
+#line 330 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -295,7 +335,7 @@ bb2:
     t7 = h1_f0;
 #line 70 "examples/ctime/main.hero"
     t8 = t7.as.err;
-#line 299 "main.c"
+#line 339 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
@@ -343,7 +383,7 @@ bb1:
     t11 = INT64_C(1);
 #line 74 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 347 "main.c"
+#line 387 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -352,7 +392,7 @@ bb2:
     t7 = h1_f0;
 #line 74 "examples/ctime/main.hero"
     t8 = t7.as.err;
-#line 356 "main.c"
+#line 396 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
@@ -396,7 +436,7 @@ bb1:
     t9 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t10 = t9.as.ok;
-#line 400 "main.c"
+#line 440 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
@@ -405,7 +445,7 @@ bb2:
     t7 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t8 = t7.as.err;
-#line 409 "main.c"
+#line 449 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
@@ -449,7 +489,7 @@ bb1:
     t9 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t10 = t9.as.ok;
-#line 453 "main.c"
+#line 493 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
@@ -458,7 +498,7 @@ bb2:
     t7 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t8 = t7.as.err;
-#line 462 "main.c"
+#line 502 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
@@ -749,7 +789,7 @@ bb8:
     goto bb9;
 #line 86 "examples/ctime/main.hero"
 bb9:
-#line 753 "main.c"
+#line 793 "main.c"
     t55 = h12_ret0;
     h_0opt_13b8cf25_retain(&t55);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -885,7 +925,7 @@ bb0:
     h11_own11 = t23;
 #line 90 "examples/ctime/main.hero"
     hero_str_decref(t34);
-#line 889 "main.c"
+#line 929 "main.c"
     hero_str_incref(t23);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -918,7 +958,7 @@ bb0:
 bb1:
 #line 93 "examples/ctime/main.hero"
     t10 = h1_r0;
-#line 922 "main.c"
+#line 962 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_r0);
     hero_str_release_at(&h2_own2);
@@ -978,7 +1018,7 @@ bb3:
     hero_str_decref(t15);
 #line 93 "examples/ctime/main.hero"
     goto bb1;
-#line 982 "main.c"
+#line 1022 "main.c"
 }
 
 #line 98 "examples/ctime/main.hero"
@@ -1029,6 +1069,8 @@ bb1:
     t13 = t12.as.ok;
 #line 100 "examples/ctime/main.hero"
     h1_landing = t13;
+#line 100 "examples/ctime/main.hero"
+    hero_pad_fill(&h1_landing, sizeof(struct tm), 1, hero_pad_g_0, hero_pad_n_0);
     t14 = h1_landing;
 #line 101 "examples/ctime/main.hero"
     t15 = h_main_shown(t14);
@@ -1119,7 +1161,7 @@ bb2:
     t10 = h0_f0;
 #line 100 "examples/ctime/main.hero"
     t11 = t10.as.err;
-#line 1123 "main.c"
+#line 1165 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb3:
@@ -1129,6 +1171,8 @@ bb3:
     t37 = t36.as.ok;
 #line 112 "examples/ctime/main.hero"
     h3_millennium = t37;
+#line 112 "examples/ctime/main.hero"
+    hero_pad_fill(&h3_millennium, sizeof(struct tm), 1, hero_pad_g_0, hero_pad_n_0);
     t38 = h3_millennium;
 #line 113 "examples/ctime/main.hero"
     t39 = h_main_shown(t38);
@@ -1206,7 +1250,7 @@ bb3:
     hero_print_bool(t57);
 #line 121 "examples/ctime/main.hero"
     hero_print_end();
-#line 1210 "main.c"
+#line 1254 "main.c"
     h_0opt_13b8cf25_release(hero_slot_escape(&h0_f0));
     h_0opt_13b8cf25_release(hero_slot_escape(&h2_f1));
     h_0opt_13b8cf25_release(hero_slot_escape(&h4_f2));
@@ -1221,7 +1265,7 @@ bb4:
     t34 = h2_f1;
 #line 112 "examples/ctime/main.hero"
     t35 = t34.as.err;
-#line 1225 "main.c"
+#line 1269 "main.c"
     hero_panic_must(t35);
     hero_unreachable();
 }

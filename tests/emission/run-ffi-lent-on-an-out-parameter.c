@@ -211,6 +211,8 @@ bb0:
     t8 = (struct span){.lo = t6, .hi = t7};
 #line 16 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     h1_s = t8;
+#line 16 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+    hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0);
     hero_lend_local_name(hero_lend_h1_s, "widen", "s");
 #line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     hero_pad_fill(&h1_s, sizeof(struct span), 1, hero_pad_g_0, hero_pad_n_0);
@@ -235,7 +237,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_e);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     return;
-#line 239 "ffilentonanoutparameter.c"
+#line 241 "ffilentonanoutparameter.c"
 }
 #undef h0_e
 #undef h1_s

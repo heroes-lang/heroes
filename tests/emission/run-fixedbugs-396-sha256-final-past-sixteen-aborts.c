@@ -202,6 +202,8 @@ bb0:
     t2 = (struct SHA256state_st){.num = t1};
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     h0_c = t2;
+#line 15 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
+    hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = hero_array_new(&hero_desc_u8, 1);
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t14 = h2_own2;
@@ -276,7 +278,7 @@ bb0:
     hero_print_int(t13);
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_print_end();
-#line 280 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 282 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h0_c);

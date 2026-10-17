@@ -202,6 +202,8 @@ bb0:
     t3 = (struct tagged){.kind = t1, .fd = t2};
 #line 16 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
     h0_t = t3;
+#line 16 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
+    hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
     hero_lend_local_name(hero_lend_h0_t, "tg_kind", "t");
 #line 17 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
     hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
@@ -220,7 +222,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_t);
 #line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
     return;
-#line 224 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
+#line 226 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
 }
 #undef h0_t
 HERO_TU_LOCAL bool h_fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown_Tagged_eq(const struct tagged *a, const struct tagged *b) {

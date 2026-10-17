@@ -193,17 +193,21 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_fficountedbyastatedextent_HELD_LEN(void);
 struct held h_fficountedbyastatedextent_zero(void);
 void h_fficountedbyastatedextent_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct held *)0) == 13 ? sizeof(struct held) : 0), __builtin_offsetof(struct held, buf), sizeof(((struct held *)0)->buf), __builtin_offsetof(struct held, after), sizeof(((struct held *)0)->after)};
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct pair *)0) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_2;
 __attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_1 = hero_pad_gaps(sizeof(struct held), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
     hero_pad_n_2 = hero_pad_gaps(sizeof(struct pair), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
 }
 
 
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
-#line 207 "fficountedbyastatedextent.c"
+#line 211 "fficountedbyastatedextent.c"
     _Static_assert(HERO_RET_INT(HELD_LEN), "heroes-ffi-return HELD_LEN i64");
     _Static_assert(__builtin_constant_p(HELD_LEN), "heroes-ffi-const HELD_LEN");
 #pragma clang diagnostic push
@@ -215,7 +219,7 @@ int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return HELD_LEN;
-#line 219 "fficountedbyastatedextent.c"
+#line 223 "fficountedbyastatedextent.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -274,7 +278,7 @@ bb0:
     t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18};
 #line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return t19;
-#line 278 "fficountedbyastatedextent.c"
+#line 282 "fficountedbyastatedextent.c"
 }
 
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
@@ -288,6 +292,8 @@ bb0:
     t1 = h_fficountedbyastatedextent_zero();
 #line 32 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     h0_h = t1;
+#line 32 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
     t4 = (void *)(h0_h.buf);
 #line 33 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16 p 16 1499 1510 16 bytes unsigned char *");
@@ -327,6 +333,8 @@ bb0:
     t16 = h_fficountedbyastatedextent_zero();
 #line 35 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     h0_h = t16;
+#line 35 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
     t19 = (void *)(h0_h.buf);
 #line 36 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(HELD_LEN) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_const p HELD_LEN 1597 1608 16 bytes unsigned char *");
@@ -366,6 +374,8 @@ bb0:
     t31 = h_fficountedbyastatedextent_zero();
 #line 38 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     h0_h = t31;
+#line 38 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
     t34 = (void *)(h0_h.buf);
 #line 39 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(unsigned char *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_under p 1_6 1695 1706 16 bytes unsigned char *");
@@ -393,6 +403,8 @@ bb0:
     t41 = h_fficountedbyastatedextent_zero();
 #line 41 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     h0_h = t41;
+#line 41 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
     t44 = (void *)(h0_h.buf);
 #line 42 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(16) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill16_hex p 0x10 1776 1787 16 bytes void *");
@@ -420,6 +432,8 @@ bb0:
     t51 = h_fficountedbyastatedextent_zero();
 #line 44 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     h0_h = t51;
+#line 44 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    hero_pad_fill(&h0_h, sizeof(struct held), 1, hero_pad_g_1, hero_pad_n_1);
     t54 = (void *)(h0_h.buf);
 #line 45 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(int32_t *)0) != 1 || ((uint64_t)(4) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent-stated fill_ints4 p 4 1857 1868 16 bytes int32_t *");
@@ -463,6 +477,8 @@ bb0:
     t68 = (struct pair){.a = t66, .b = t67};
 #line 47 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     h1_pair = t68;
+#line 47 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    hero_pad_fill(&h1_pair, sizeof(struct pair), 1, hero_pad_g_2, hero_pad_n_2);
     _Static_assert(sizeof(*(struct pair *)0) != 1 || ((uint64_t)(1) <= (uint64_t)sizeof(h1_pair)), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 bytes struct pair *");
 #line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(struct pair *)0) == 1 || ((uint64_t)(1) <= (uint64_t)(sizeof(h1_pair) / sizeof(*(struct pair *)0))), "heroes-ffi-extent-stated-record fill_pair p 1 1959 1975 0 unit struct pair *");
@@ -489,7 +505,7 @@ bb0:
     hero_lend_local_give(hero_lend_h1_pair);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return;
-#line 493 "fficountedbyastatedextent.c"
+#line 509 "fficountedbyastatedextent.c"
 }
 #undef h1_pair
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b) {

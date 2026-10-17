@@ -173,6 +173,22 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_beside(void);
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_named(int32_t h0_zero);
 void h_fixedbugs401abindingcalledzerobesidethewords_main(void);
+#pragma push_macro("a")
+#undef a
+#pragma push_macro("b")
+#undef b
+#pragma push_macro("zero")
+#undef zero
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b), __builtin_offsetof(struct pair, zero), sizeof(((struct pair *)0)->zero)};
+#pragma pop_macro("a")
+#pragma pop_macro("b")
+#pragma pop_macro("zero")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct pair), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 16 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_beside(void) {
@@ -197,7 +213,7 @@ bb0:
     t4.a = t3;
 #line 19 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     return t4;
-#line 201 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 217 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
@@ -219,7 +235,7 @@ bb0:
     t3.zero = t2;
 #line 23 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     return t3;
-#line 223 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 239 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
@@ -232,11 +248,15 @@ bb0:
     t1 = h_fixedbugs401abindingcalledzerobesidethewords_beside();
 #line 27 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     h0_p = t1;
+#line 27 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
+    hero_pad_fill(&h0_p, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = INT64_C(7);
 #line 28 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     t3 = h_fixedbugs401abindingcalledzerobesidethewords_named(t2);
 #line 28 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     h1_q = t3;
+#line 28 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
+    hero_pad_fill(&h1_q, sizeof(struct pair), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = h0_p.a;
 #line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     t5 = HERO_STR_LIT(hero_str_20);
@@ -284,7 +304,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     return;
-#line 288 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 308 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_Pair_eq(const struct pair *a, const struct pair *b) {
     if (!(a->a == b->a)) return false;

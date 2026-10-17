@@ -206,12 +206,16 @@ __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct pad *)0) == 13 ? sizeof(struct pad) : 0), __builtin_offsetof(struct pad, c), sizeof(((struct pad *)0)->c), __builtin_offsetof(struct pad, d), sizeof(((struct pad *)0)->d)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct outer *)0) == 13 ? sizeof(struct outer) : 0), __builtin_offsetof(struct outer, inner), (__builtin_classify_type(((struct outer *)0)->inner) == 13 ? sizeof(((struct outer *)0)->inner) : 0), __builtin_offsetof(struct outer, inner.a), sizeof(((struct outer *)0)->inner.a), __builtin_offsetof(struct outer, z), sizeof(((struct outer *)0)->z)};
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_2;
 __attribute__((unused)) static const size_t hero_pad_t_3[] = {0, (__builtin_classify_type(*(struct pfd *)0) == 13 ? sizeof(struct pfd) : 0), __builtin_offsetof(struct pfd, fd), sizeof(((struct pfd *)0)->fd), __builtin_offsetof(struct pfd, events), sizeof(((struct pfd *)0)->events), __builtin_offsetof(struct pfd, revents), sizeof(((struct pfd *)0)->revents)};
 __attribute__((unused)) static size_t hero_pad_g_3[sizeof hero_pad_t_3 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_3;
 __attribute__((constructor)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(struct one), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     hero_pad_n_1 = hero_pad_gaps(sizeof(struct pad), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+    hero_pad_n_2 = hero_pad_gaps(sizeof(struct outer), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
     hero_pad_n_3 = hero_pad_gaps(sizeof(struct pfd), hero_pad_t_3, sizeof hero_pad_t_3 / (2 * sizeof(size_t)), hero_pad_g_3);
 }
 
@@ -225,7 +229,7 @@ bb0:
     t1 = h0_k;
 #line 34 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     return t1;
-#line 229 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 233 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
@@ -247,6 +251,8 @@ bb0:
     t2 = (struct one){.a = t1};
 #line 37 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     h0_o = t2;
+#line 37 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_pad_fill(&h0_o, sizeof(struct one), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = INT64_C(0);
 #line 38 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t4 = INT64_C(0);
@@ -254,6 +260,8 @@ bb0:
     t5 = (struct pad){.c = t3, .d = t4};
 #line 38 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     h1_p = t5;
+#line 38 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_pad_fill(&h1_p, sizeof(struct pad), 1, hero_pad_g_1, hero_pad_n_1);
     t6 = INT64_C(0);
 #line 39 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t7 = (struct one){.a = t6};
@@ -263,6 +271,8 @@ bb0:
     t9 = (struct outer){.inner = t7, .z = t8};
 #line 39 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     h2_w = t9;
+#line 39 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_pad_fill(&h2_w, sizeof(struct outer), 1, hero_pad_g_2, hero_pad_n_2);
     t10 = INT64_C(0);
 #line 40 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t11 = INT64_C(1);
@@ -272,6 +282,8 @@ bb0:
     t13 = (struct pfd){.fd = t10, .events = t11, .revents = t12};
 #line 40 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     h3_q = t13;
+#line 40 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_pad_fill(&h3_q, sizeof(struct pfd), 1, hero_pad_g_3, hero_pad_n_3);
     t14 = UINT64_C(4);
 #line 41 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_o)), "heroes-ffi-extent-record fill buf n 1820 1821 bytes void *");
@@ -452,7 +464,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     return;
-#line 456 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 468 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 #undef h0_o
 #undef h1_p

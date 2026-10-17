@@ -163,6 +163,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsafixedarrayelementiswritteninplace_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct nums *)0) == 13 ? sizeof(struct nums) : 0), __builtin_offsetof(struct nums, a), sizeof(((struct nums *)0)->a)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct nums), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
 void h_fixedbugsafixedarrayelementiswritteninplace_main(void) {
@@ -181,6 +188,8 @@ bb0:
     t6 = (struct nums){.a = {t1, t2, t3, t4}};
 #line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     h0_n = t6;
+#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
+    hero_pad_fill(&h0_n, sizeof(struct nums), 1, hero_pad_g_0, hero_pad_n_0);
     t7 = INT64_C(0);
 #line 28 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     t8 = INT64_C(9);
@@ -199,7 +208,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     return;
-#line 203 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 212 "fixedbugsafixedarrayelementiswritteninplace.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswritteninplace_Nums_eq(const struct nums *a, const struct nums *b) {
     if (!((a->a[0] == b->a[0] && a->a[1] == b->a[1] && a->a[2] == b->a[2] && a->a[3] == b->a[3]))) return false;

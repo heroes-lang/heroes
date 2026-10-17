@@ -219,6 +219,25 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_main_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)0) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Vector2 *)0) == 13 ? sizeof(Vector2) : 0), __builtin_offsetof(Vector2, x), sizeof(((Vector2 *)0)->x), __builtin_offsetof(Vector2, y), sizeof(((Vector2 *)0)->y)};
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Rectangle *)0) == 13 ? sizeof(Rectangle) : 0), __builtin_offsetof(Rectangle, x), sizeof(((Rectangle *)0)->x), __builtin_offsetof(Rectangle, y), sizeof(((Rectangle *)0)->y), __builtin_offsetof(Rectangle, width), sizeof(((Rectangle *)0)->width), __builtin_offsetof(Rectangle, height), sizeof(((Rectangle *)0)->height)};
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_2;
+__attribute__((unused)) static const size_t hero_pad_t_9[] = {0, (__builtin_classify_type(*(AutomationEvent *)0) == 13 ? sizeof(AutomationEvent) : 0), __builtin_offsetof(AutomationEvent, frame), sizeof(((AutomationEvent *)0)->frame), __builtin_offsetof(AutomationEvent, type), sizeof(((AutomationEvent *)0)->type), __builtin_offsetof(AutomationEvent, params), sizeof(((AutomationEvent *)0)->params)};
+__attribute__((unused)) static size_t hero_pad_g_9[sizeof hero_pad_t_9 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_9;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(Color), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+    hero_pad_n_1 = hero_pad_gaps(sizeof(Vector2), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+    hero_pad_n_2 = hero_pad_gaps(sizeof(Rectangle), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
+    hero_pad_n_9 = hero_pad_gaps(sizeof(AutomationEvent), hero_pad_t_9, sizeof hero_pad_t_9 / (2 * sizeof(size_t)), hero_pad_g_9);
+}
+
 
 #line 103 "examples/raylib/main.hero"
 void h_main_main(void) {
@@ -254,6 +273,8 @@ bb0:
     t10 = (Color){.r = t6, .g = t7, .b = t8, .a = t9};
 #line 107 "examples/raylib/main.hero"
     h0_red = t10;
+#line 107 "examples/raylib/main.hero"
+    hero_pad_fill(&h0_red, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
     t11 = h0_red;
 #line 108 "examples/raylib/main.hero"
     t12 = ColorToInt(t11);
@@ -288,6 +309,8 @@ bb0:
     t24 = GetSplinePointLinear(t19, t22, t23);
 #line 111 "examples/raylib/main.hero"
     h1_mid = t24;
+#line 111 "examples/raylib/main.hero"
+    hero_pad_fill(&h1_mid, sizeof(Vector2), 1, hero_pad_g_1, hero_pad_n_1);
 #line 116 "examples/raylib/main.hero"
     t25 = h1_mid.x;
 #line 116 "examples/raylib/main.hero"
@@ -318,6 +341,8 @@ bb0:
     t35 = (AutomationEvent){.frame = t28, .type = t29, .params = {t30, t31, t32, t33}};
 #line 120 "examples/raylib/main.hero"
     h2_event = t35;
+#line 120 "examples/raylib/main.hero"
+    hero_pad_fill(&h2_event, sizeof(AutomationEvent), 1, hero_pad_g_9, hero_pad_n_9);
     t36 = h2_event;
 #line 121 "examples/raylib/main.hero"
     t38 = INT64_C(2);
@@ -339,6 +364,8 @@ bb0:
     t44 = (Rectangle){.x = t40, .y = t41, .width = t42, .height = t43};
 #line 123 "examples/raylib/main.hero"
     h3_box = t44;
+#line 123 "examples/raylib/main.hero"
+    hero_pad_fill(&h3_box, sizeof(Rectangle), 1, hero_pad_g_2, hero_pad_n_2);
     t45 = 0x1.4p+2;
 #line 124 "examples/raylib/main.hero"
     t46 = 0x1.4p+2;
@@ -367,7 +394,7 @@ bb0:
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 371 "main.c"
+#line 398 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

@@ -209,6 +209,8 @@ bb0:
     t1 = h_ffirestzeroapartialrecord_built();
 #line 17 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     h0_s = t1;
+#line 17 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+    hero_pad_fill(&h0_s, sizeof(SP), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_s.kind;
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     t3 = HERO_STR_LIT(hero_str_20);
@@ -230,7 +232,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_s);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return;
-#line 234 "ffirestzeroapartialrecord.c"
+#line 236 "ffirestzeroapartialrecord.c"
 }
 #undef h0_s
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b) {

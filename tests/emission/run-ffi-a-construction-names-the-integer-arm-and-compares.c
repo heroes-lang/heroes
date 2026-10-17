@@ -177,6 +177,25 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaconstructionnamestheintegerarmandcompares_main(void);
+#pragma push_macro("f")
+#undef f
+#pragma push_macro("i")
+#undef i
+#pragma push_macro("kind")
+#undef kind
+#pragma push_macro("x")
+#undef x
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, i), sizeof(((SA *)0)->i), __builtin_offsetof(SA, f), sizeof(((SA *)0)->f), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)};
+#pragma pop_macro("f")
+#pragma pop_macro("i")
+#pragma pop_macro("kind")
+#pragma pop_macro("x")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(SA), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 void h_ffiaconstructionnamestheintegerarmandcompares_main(void) {
@@ -187,6 +206,8 @@ bb0:
     t1 = make_sa();
 #line 21 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h0_m = t1;
+#line 21 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
+    hero_pad_fill(&h0_m, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_m.i;
 #line 22 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     hero_print_int(t2);
@@ -201,6 +222,8 @@ bb0:
     t6 = (SA){.kind = t3, .i = t4, .x = t5};
 #line 23 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h1_b = t6;
+#line 23 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
+    hero_pad_fill(&h1_b, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t7 = h1_b;
 #line 24 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t8 = sa_f(t7);
@@ -218,9 +241,13 @@ bb0:
     t11 = make_sa();
 #line 26 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h2_p = t11;
+#line 26 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
+    hero_pad_fill(&h2_p, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t12 = make_sa();
 #line 27 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h3_q = t12;
+#line 27 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
+    hero_pad_fill(&h3_q, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t13 = h2_p;
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t14 = h3_q;
@@ -232,7 +259,7 @@ bb0:
     hero_print_end();
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     return;
-#line 236 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 263 "ffiaconstructionnamestheintegerarmandcompares.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamestheintegerarmandcompares_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

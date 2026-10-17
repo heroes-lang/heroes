@@ -181,6 +181,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugstheunacquiredsiblingleaksloudly_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Pair *)0) == 13 ? sizeof(Pair) : 0), __builtin_offsetof(Pair, a), (__builtin_classify_type(((Pair *)0)->a) == 13 ? sizeof(((Pair *)0)->a) : 0), __builtin_offsetof(Pair, a.s), sizeof(((Pair *)0)->a.s), __builtin_offsetof(Pair, b), (__builtin_classify_type(((Pair *)0)->b) == 13 ? sizeof(((Pair *)0)->b) : 0), __builtin_offsetof(Pair, b.s), sizeof(((Pair *)0)->b.s)};
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_2;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_2 = hero_pad_gaps(sizeof(Pair), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
+}
+
 
 #line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
 void h_fixedbugstheunacquiredsiblingleaksloudly_main(void) {
@@ -197,6 +204,8 @@ bb0:
     hero_handle_acquired(t2.b.s, "slot_close");
 #line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     h0_p = t2;
+#line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
+    hero_pad_fill(&h0_p, sizeof(Pair), 1, hero_pad_g_2, hero_pad_n_2);
     t3 = h0_p.a.s;
 #line 32 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     hero_handle_alive(t3, "the argument `s` of `slot_value`");
@@ -235,7 +244,7 @@ bb0:
     hero_print_end();
 #line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     return;
-#line 239 "fixedbugstheunacquiredsiblingleaksloudly.c"
+#line 248 "fixedbugstheunacquiredsiblingleaksloudly.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstheunacquiredsiblingleaksloudly_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

@@ -192,6 +192,8 @@ bb0:
     t2.kind = t1;
 #line 13 "tests/golden/run/fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.hero"
     h0_t = t2;
+#line 13 "tests/golden/run/fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.hero"
+    hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
     hero_lend_local_name(hero_lend_h0_t, "tg_kind", "t");
 #line 14 "tests/golden/run/fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.hero"
     hero_pad_fill(&h0_t, sizeof(struct tagged), 1, hero_pad_g_0, hero_pad_n_0);
@@ -205,7 +207,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_t);
 #line 14 "tests/golden/run/fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.hero"
     return;
-#line 209 "fixedbugs2062arecordholdingaunionboundpartialbuilds.c"
+#line 211 "fixedbugs2062arecordholdingaunionboundpartialbuilds.c"
 }
 #undef h0_t
 HERO_TU_LOCAL bool h_fixedbugs2062arecordholdingaunionboundpartialbuilds_Tagged_eq(const struct tagged *a, const struct tagged *b) {

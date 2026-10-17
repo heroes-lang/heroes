@@ -182,6 +182,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiachararraymember_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Tag *)0) == 13 ? sizeof(Tag) : 0), __builtin_offsetof(Tag, name), sizeof(((Tag *)0)->name), __builtin_offsetof(Tag, id), sizeof(((Tag *)0)->id)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(Tag), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 39 "tests/golden/run/ffi-a-char-array-member.hero"
 void h_ffiachararraymember_main(void) {
@@ -203,6 +210,8 @@ bb0:
     t7 = (Tag){.name = {t1, t2, t3, t4}, .id = t6};
 #line 42 "tests/golden/run/ffi-a-char-array-member.hero"
     h0_t = t7;
+#line 42 "tests/golden/run/ffi-a-char-array-member.hero"
+    hero_pad_fill(&h0_t, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
     t8 = h0_t;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t9 = tag_first(t8);
@@ -279,7 +288,7 @@ bb2:
     t15 = h1_f0;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t16 = t15.as.err;
-#line 283 "ffiachararraymember.c"
+#line 292 "ffiachararraymember.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb3:
@@ -323,7 +332,7 @@ bb4:
     t28 = h2_f1;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t29 = t28.as.err;
-#line 327 "ffiachararraymember.c"
+#line 336 "ffiachararraymember.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb5:
@@ -339,7 +348,7 @@ bb5:
     hero_print_int(t42);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     hero_print_end();
-#line 343 "ffiachararraymember.c"
+#line 352 "ffiachararraymember.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
     h_0opt_e201354_release(hero_slot_escape(&h3_f2));
@@ -352,7 +361,7 @@ bb6:
     t39 = h3_f2;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t40 = t39.as.err;
-#line 356 "ffiachararraymember.c"
+#line 365 "ffiachararraymember.c"
     hero_panic_must(t40);
     hero_unreachable();
 }

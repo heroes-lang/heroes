@@ -147,6 +147,43 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_aheaderfieldthatisnotconst_main(void);
+#pragma push_macro("pw_change")
+#undef pw_change
+#pragma push_macro("pw_class")
+#undef pw_class
+#pragma push_macro("pw_dir")
+#undef pw_dir
+#pragma push_macro("pw_expire")
+#undef pw_expire
+#pragma push_macro("pw_gecos")
+#undef pw_gecos
+#pragma push_macro("pw_gid")
+#undef pw_gid
+#pragma push_macro("pw_name")
+#undef pw_name
+#pragma push_macro("pw_passwd")
+#undef pw_passwd
+#pragma push_macro("pw_shell")
+#undef pw_shell
+#pragma push_macro("pw_uid")
+#undef pw_uid
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct passwd, pw_name), sizeof(((struct passwd *)0)->pw_name), __builtin_offsetof(struct passwd, pw_passwd), sizeof(((struct passwd *)0)->pw_passwd), __builtin_offsetof(struct passwd, pw_uid), sizeof(((struct passwd *)0)->pw_uid), __builtin_offsetof(struct passwd, pw_gid), sizeof(((struct passwd *)0)->pw_gid), __builtin_offsetof(struct passwd, pw_change), sizeof(((struct passwd *)0)->pw_change), __builtin_offsetof(struct passwd, pw_class), sizeof(((struct passwd *)0)->pw_class), __builtin_offsetof(struct passwd, pw_gecos), sizeof(((struct passwd *)0)->pw_gecos), __builtin_offsetof(struct passwd, pw_dir), sizeof(((struct passwd *)0)->pw_dir), __builtin_offsetof(struct passwd, pw_shell), sizeof(((struct passwd *)0)->pw_shell), __builtin_offsetof(struct passwd, pw_expire), sizeof(((struct passwd *)0)->pw_expire)};
+#pragma pop_macro("pw_change")
+#pragma pop_macro("pw_class")
+#pragma pop_macro("pw_dir")
+#pragma pop_macro("pw_expire")
+#pragma pop_macro("pw_gecos")
+#pragma pop_macro("pw_gid")
+#pragma pop_macro("pw_name")
+#pragma pop_macro("pw_passwd")
+#pragma pop_macro("pw_shell")
+#pragma pop_macro("pw_uid")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct passwd), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 void h_aheaderfieldthatisnotconst_main(void) {
@@ -162,6 +199,8 @@ bb0:
     t3 = (struct passwd){.pw_name = (__typeof__(((struct passwd *)0)->pw_name))t1, .pw_dir = (__typeof__(((struct passwd *)0)->pw_dir))t2};
 #line 59 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
     h0_empty = t3;
+#line 59 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
+    hero_pad_fill(&h0_empty, sizeof(struct passwd), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = h0_empty.pw_name;
 #line 60 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
     t5 = ((void *)0);
@@ -178,6 +217,8 @@ bb0:
     t9 = (struct passwd){.pw_name = (__typeof__(((struct passwd *)0)->pw_name))t7, .pw_dir = (__typeof__(((struct passwd *)0)->pw_dir))t8};
 #line 61 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
     h1_filled = t9;
+#line 61 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
+    hero_pad_fill(&h1_filled, sizeof(struct passwd), 1, hero_pad_g_0, hero_pad_n_0);
     t10 = h1_filled.pw_dir;
 #line 62 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
     t11 = ((void *)0);
@@ -189,7 +230,7 @@ bb0:
     hero_print_end();
 #line 62 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
     return;
-#line 193 "aheaderfieldthatisnotconst.c"
+#line 234 "aheaderfieldthatisnotconst.c"
 }
 HERO_TU_LOCAL bool h_aheaderfieldthatisnotconst_Passwd_eq(const struct passwd *a, const struct passwd *b) {
     hero_panic("h_aheaderfieldthatisnotconst_Passwd_eq: a partial record has no structural equality");

@@ -239,6 +239,8 @@ bb0:
     t2.n = t1;
 #line 29 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     h0_c = t2;
+#line 29 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
+    hero_pad_fill(&h0_c, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0);
     hero_lend_local_name(hero_lend_h0_c, "counter_init", "c");
 #line 30 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     hero_pad_fill(&h0_c, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0);
@@ -272,6 +274,8 @@ bb0:
     t12 = counter_made();
 #line 36 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     h2_m = t12;
+#line 36 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
+    hero_pad_fill(&h2_m, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0);
     hero_lend_local_name(hero_lend_h2_m, "counter_lock", "c");
 #line 37 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     hero_pad_fill(&h2_m, sizeof(struct counter), 1, hero_pad_g_0, hero_pad_n_0);
@@ -317,7 +321,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_c);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     return;
-#line 321 "ffiarecordholdingalockislentinplace.c"
+#line 325 "ffiarecordholdingalockislentinplace.c"
 }
 #undef h0_c
 #undef h2_m

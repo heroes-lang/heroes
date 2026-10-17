@@ -260,6 +260,8 @@ bb0:
     t1 = h_ffirestzeroanestedgrouprecord_left_out();
 #line 26 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     h0_a = t1;
+#line 26 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_pad_fill(&h0_a, sizeof(struct outer), 1, hero_pad_g_1, hero_pad_n_1);
     t2 = h0_a.k;
 #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     t3 = HERO_STR_LIT(hero_str_20);
@@ -289,6 +291,8 @@ bb0:
     t7 = h_ffirestzeroanestedgrouprecord_built();
 #line 29 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     h1_b = t7;
+#line 29 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+    hero_pad_fill(&h1_b, sizeof(struct outer), 1, hero_pad_g_1, hero_pad_n_1);
     t8 = h1_b.k;
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     t9 = HERO_STR_LIT(hero_str_20);
@@ -320,7 +324,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return;
-#line 324 "ffirestzeroanestedgrouprecord.c"
+#line 328 "ffirestzeroanestedgrouprecord.c"
 }
 #undef h0_a
 #undef h1_b

@@ -238,6 +238,8 @@ bb0:
     t1 = h_ffirestzeroarecordoflongarrays_one_named();
 #line 31 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     h0_a = t1;
+#line 31 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
+    hero_pad_fill(&h0_a, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_a.n;
 #line 32 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t3 = HERO_STR_LIT(hero_str_20);
@@ -259,6 +261,8 @@ bb0:
     t5 = h_ffirestzeroarecordoflongarrays_none_named();
 #line 34 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     h1_b = t5;
+#line 34 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
+    hero_pad_fill(&h1_b, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0);
     t6 = h1_b.n;
 #line 35 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t7 = HERO_STR_LIT(hero_str_20);
@@ -282,7 +286,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 35 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return;
-#line 286 "ffirestzeroarecordoflongarrays.c"
+#line 290 "ffirestzeroarecordoflongarrays.c"
 }
 #undef h0_a
 #undef h1_b

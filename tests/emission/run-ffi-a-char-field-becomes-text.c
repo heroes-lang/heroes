@@ -187,6 +187,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiacharfieldbecomestext_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Tag *)0) == 13 ? sizeof(Tag) : 0), __builtin_offsetof(Tag, name), sizeof(((Tag *)0)->name), __builtin_offsetof(Tag, raw), sizeof(((Tag *)0)->raw), __builtin_offsetof(Tag, id), sizeof(((Tag *)0)->id)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(Tag), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 void h_ffiacharfieldbecomestext_main(void) {
@@ -230,6 +237,8 @@ bb0:
     t20 = (Tag){.name = {t1, t2, t3, t4, t5, t6, t7, t8}, .raw = {t10, t11, t12, t13, t14, t15, t16, t17}, .id = t19};
 #line 40 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h0_t = t20;
+#line 40 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
+    hero_pad_fill(&h0_t, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t21 = h0_t;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -334,7 +343,7 @@ bb2:
     t28 = h1_f0;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t29 = t28.as.err;
-#line 338 "ffiacharfieldbecomestext.c"
+#line 347 "ffiacharfieldbecomestext.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb3:
@@ -384,6 +393,8 @@ bb3:
     t62 = (Tag){.name = {t43, t44, t45, t46, t47, t48, t49, t50}, .raw = {t52, t53, t54, t55, t56, t57, t58, t59}, .id = t61};
 #line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h3_full = t62;
+#line 55 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
+    hero_pad_fill(&h3_full, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
     t63 = h3_full;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     {
@@ -433,7 +444,7 @@ bb4:
     t39 = h2_f1;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t40 = t39.as.err;
-#line 437 "ffiacharfieldbecomestext.c"
+#line 448 "ffiacharfieldbecomestext.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb5:
@@ -497,7 +508,7 @@ bb6:
     t70 = h4_f2;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t71 = t70.as.err;
-#line 501 "ffiacharfieldbecomestext.c"
+#line 512 "ffiacharfieldbecomestext.c"
     hero_panic_must(t71);
     hero_unreachable();
 bb7:
@@ -553,6 +564,8 @@ bb7:
     t106 = (Tag){.name = {t87, t88, t89, t90, t91, t92, t93, t94}, .raw = {t96, t97, t98, t99, t100, t101, t102, t103}, .id = t105};
 #line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     h6_bad = t106;
+#line 68 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
+    hero_pad_fill(&h6_bad, sizeof(Tag), 1, hero_pad_g_0, hero_pad_n_0);
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t107 = h6_bad;
 #line 70 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -607,7 +620,7 @@ bb8:
     t82 = h5_f3;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t83 = t82.as.err;
-#line 611 "ffiacharfieldbecomestext.c"
+#line 624 "ffiacharfieldbecomestext.c"
     hero_panic_must(t83);
     hero_unreachable();
 bb9:
@@ -698,7 +711,7 @@ bb12:
     hero_print_int(t129);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     hero_print_end();
-#line 702 "ffiacharfieldbecomestext.c"
+#line 715 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f2));
@@ -719,7 +732,7 @@ bb13:
     t126 = h10_f4;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t127 = t126.as.err;
-#line 723 "ffiacharfieldbecomestext.c"
+#line 736 "ffiacharfieldbecomestext.c"
     hero_panic_must(t127);
     hero_unreachable();
 }

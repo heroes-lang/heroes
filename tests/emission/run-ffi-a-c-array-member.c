@@ -222,6 +222,21 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiacarraymember_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Matrix *)0) == 13 ? sizeof(Matrix) : 0), __builtin_offsetof(Matrix, m0), sizeof(((Matrix *)0)->m0), __builtin_offsetof(Matrix, m4), sizeof(((Matrix *)0)->m4), __builtin_offsetof(Matrix, m8), sizeof(((Matrix *)0)->m8), __builtin_offsetof(Matrix, m12), sizeof(((Matrix *)0)->m12), __builtin_offsetof(Matrix, m1), sizeof(((Matrix *)0)->m1), __builtin_offsetof(Matrix, m5), sizeof(((Matrix *)0)->m5), __builtin_offsetof(Matrix, m9), sizeof(((Matrix *)0)->m9), __builtin_offsetof(Matrix, m13), sizeof(((Matrix *)0)->m13), __builtin_offsetof(Matrix, m2), sizeof(((Matrix *)0)->m2), __builtin_offsetof(Matrix, m6), sizeof(((Matrix *)0)->m6), __builtin_offsetof(Matrix, m10), sizeof(((Matrix *)0)->m10), __builtin_offsetof(Matrix, m14), sizeof(((Matrix *)0)->m14), __builtin_offsetof(Matrix, m3), sizeof(((Matrix *)0)->m3), __builtin_offsetof(Matrix, m7), sizeof(((Matrix *)0)->m7), __builtin_offsetof(Matrix, m11), sizeof(((Matrix *)0)->m11), __builtin_offsetof(Matrix, m15), sizeof(((Matrix *)0)->m15)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(VrStereoConfig *)0) == 13 ? sizeof(VrStereoConfig) : 0), __builtin_offsetof(VrStereoConfig, projection), sizeof(((VrStereoConfig *)0)->projection), __builtin_offsetof(VrStereoConfig, viewOffset), sizeof(((VrStereoConfig *)0)->viewOffset), __builtin_offsetof(VrStereoConfig, leftLensCenter), sizeof(((VrStereoConfig *)0)->leftLensCenter), __builtin_offsetof(VrStereoConfig, rightLensCenter), sizeof(((VrStereoConfig *)0)->rightLensCenter), __builtin_offsetof(VrStereoConfig, leftScreenCenter), sizeof(((VrStereoConfig *)0)->leftScreenCenter), __builtin_offsetof(VrStereoConfig, rightScreenCenter), sizeof(((VrStereoConfig *)0)->rightScreenCenter), __builtin_offsetof(VrStereoConfig, scale), sizeof(((VrStereoConfig *)0)->scale), __builtin_offsetof(VrStereoConfig, scaleIn), sizeof(((VrStereoConfig *)0)->scaleIn)};
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(VrDeviceInfo *)0) == 13 ? sizeof(VrDeviceInfo) : 0), __builtin_offsetof(VrDeviceInfo, hResolution), sizeof(((VrDeviceInfo *)0)->hResolution), __builtin_offsetof(VrDeviceInfo, vResolution), sizeof(((VrDeviceInfo *)0)->vResolution), __builtin_offsetof(VrDeviceInfo, hScreenSize), sizeof(((VrDeviceInfo *)0)->hScreenSize), __builtin_offsetof(VrDeviceInfo, vScreenSize), sizeof(((VrDeviceInfo *)0)->vScreenSize), __builtin_offsetof(VrDeviceInfo, eyeToScreenDistance), sizeof(((VrDeviceInfo *)0)->eyeToScreenDistance), __builtin_offsetof(VrDeviceInfo, lensSeparationDistance), sizeof(((VrDeviceInfo *)0)->lensSeparationDistance), __builtin_offsetof(VrDeviceInfo, interpupillaryDistance), sizeof(((VrDeviceInfo *)0)->interpupillaryDistance), __builtin_offsetof(VrDeviceInfo, lensDistortionValues), sizeof(((VrDeviceInfo *)0)->lensDistortionValues), __builtin_offsetof(VrDeviceInfo, chromaAbCorrection), sizeof(((VrDeviceInfo *)0)->chromaAbCorrection)};
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_2;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(Matrix), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+    hero_pad_n_1 = hero_pad_gaps(sizeof(VrStereoConfig), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+    hero_pad_n_2 = hero_pad_gaps(sizeof(VrDeviceInfo), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
+}
+
 
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
@@ -257,6 +272,8 @@ bb0:
     t19 = (VrDeviceInfo){.hResolution = t1, .vResolution = t2, .hScreenSize = t3, .vScreenSize = t4, .eyeToScreenDistance = t5, .lensSeparationDistance = t6, .interpupillaryDistance = t7, .lensDistortionValues = {t8, t9, t10, t11}, .chromaAbCorrection = {t13, t15, t16, t17}};
 #line 84 "tests/golden/run/ffi-a-c-array-member.hero"
     h0_device = t19;
+#line 84 "tests/golden/run/ffi-a-c-array-member.hero"
+    hero_pad_fill(&h0_device, sizeof(VrDeviceInfo), 1, hero_pad_g_2, hero_pad_n_2);
 #line 95 "tests/golden/run/ffi-a-c-array-member.hero"
     t20 = h0_device;
 #line 95 "tests/golden/run/ffi-a-c-array-member.hero"
@@ -273,6 +290,20 @@ bb0:
     t25 = LoadVrStereoConfig(t24);
 #line 98 "tests/golden/run/ffi-a-c-array-member.hero"
     h1_config = t25;
+#line 98 "tests/golden/run/ffi-a-c-array-member.hero"
+    hero_pad_fill(&h1_config, sizeof(VrStereoConfig), 1, hero_pad_g_1, hero_pad_n_1);
+#line 98 "tests/golden/run/ffi-a-c-array-member.hero"
+    for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) {
+#line 98 "tests/golden/run/ffi-a-c-array-member.hero"
+    hero_pad_fill((unsigned char *)(&h1_config) + hero_pad_k0 * sizeof(VrStereoConfig) + __builtin_offsetof(VrStereoConfig, projection), sizeof(Matrix), sizeof(((VrStereoConfig *)0)->projection) / sizeof(Matrix), hero_pad_g_0, hero_pad_n_0);
+#line 98 "tests/golden/run/ffi-a-c-array-member.hero"
+    }
+#line 98 "tests/golden/run/ffi-a-c-array-member.hero"
+    for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) {
+#line 98 "tests/golden/run/ffi-a-c-array-member.hero"
+    hero_pad_fill((unsigned char *)(&h1_config) + hero_pad_k0 * sizeof(VrStereoConfig) + __builtin_offsetof(VrStereoConfig, viewOffset), sizeof(Matrix), sizeof(((VrStereoConfig *)0)->viewOffset) / sizeof(Matrix), hero_pad_g_0, hero_pad_n_0);
+#line 98 "tests/golden/run/ffi-a-c-array-member.hero"
+    }
     t26 = h1_config;
 #line 99 "tests/golden/run/ffi-a-c-array-member.hero"
     t28 = INT64_C(0);
@@ -308,7 +339,7 @@ bb0:
     (void)UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
-#line 312 "ffiacarraymember.c"
+#line 343 "ffiacarraymember.c"
 }
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;

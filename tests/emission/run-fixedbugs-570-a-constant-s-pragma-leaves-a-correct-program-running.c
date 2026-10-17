@@ -165,10 +165,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(void);
 void h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Slot *)0) == 13 ? sizeof(Slot) : 0), __builtin_offsetof(Slot, nsap), sizeof(((Slot *)0)->nsap), __builtin_offsetof(Slot, id), sizeof(((Slot *)0)->id)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(Slot), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 15 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
 int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(void) {
-#line 172 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 179 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
     _Static_assert(HERO_RET_I32(QUIET_FIVE), "heroes-ffi-return QUIET_FIVE i32");
     _Static_assert(__builtin_constant_p(QUIET_FIVE), "heroes-ffi-const QUIET_FIVE");
 #pragma clang diagnostic push
@@ -180,7 +187,7 @@ int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(vo
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     return QUIET_FIVE;
-#line 184 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 191 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -205,6 +212,8 @@ bb0:
     t1 = slot_make();
 #line 18 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     h0_t = t1;
+#line 18 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
+    hero_pad_fill(&h0_t, sizeof(Slot), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = (void *)(h0_t.nsap);
 #line 19 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     t5 = INT64_C(8);
@@ -238,7 +247,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     return;
-#line 242 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 251 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;

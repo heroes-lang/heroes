@@ -163,6 +163,19 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void);
+#pragma push_macro("i")
+#undef i
+#pragma push_macro("n")
+#undef n
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(W, i), sizeof(((W *)0)->i), __builtin_offsetof(W, n), sizeof(((W *)0)->n)};
+#pragma pop_macro("i")
+#pragma pop_macro("n")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(W), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void) {
@@ -173,6 +186,8 @@ bb0:
     t1 = make_w();
 #line 21 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     h0_w = t1;
+#line 21 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
+    hero_pad_fill(&h0_w, sizeof(W), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_w.i;
 #line 22 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     hero_print_int(t2);
@@ -185,7 +200,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     return;
-#line 189 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 204 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_W_eq(const W *a, const W *b) {
     if (!(a->i == b->i)) return false;

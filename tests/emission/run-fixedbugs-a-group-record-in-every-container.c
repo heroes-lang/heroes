@@ -221,6 +221,13 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsagrouprecordineverycontainer_Colo
 };
 
 void h_fixedbugsagrouprecordineverycontainer_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)0) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(Color), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 41 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 void h_fixedbugsagrouprecordineverycontainer_main(void) {
@@ -239,6 +246,8 @@ bb0:
     t5 = (Color){.r = t1, .g = t2, .b = t3, .a = t4};
 #line 42 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h0_a = t5;
+#line 42 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
+    hero_pad_fill(&h0_a, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
     t6 = UINT64_C(1);
 #line 43 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t7 = UINT64_C(2);
@@ -250,6 +259,8 @@ bb0:
     t10 = (Color){.r = t6, .g = t7, .b = t8, .a = t9};
 #line 43 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h1_b = t10;
+#line 43 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
+    hero_pad_fill(&h1_b, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
     t11 = UINT64_C(9);
 #line 44 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t12 = UINT64_C(9);
@@ -261,6 +272,8 @@ bb0:
     t15 = (Color){.r = t11, .g = t12, .b = t13, .a = t14};
 #line 44 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h2_c = t15;
+#line 44 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
+    hero_pad_fill(&h2_c, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
 #line 47 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t16 = h0_a;
 #line 47 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -475,7 +488,7 @@ bb2:
     t42 = h5_f0;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t43 = t42.as.err;
-#line 479 "fixedbugsagrouprecordineverycontainer.c"
+#line 492 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t43);
     hero_unreachable();
 bb3:
@@ -534,7 +547,7 @@ bb3:
     hero_print_int(t70);
 #line 68 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_print_end();
-#line 538 "fixedbugsagrouprecordineverycontainer.c"
+#line 551 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
     h_0opt_31fbd75_release(hero_slot_escape(&h5_f0));
@@ -554,7 +567,7 @@ bb4:
     t58 = h7_f1;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t59 = t58.as.err;
-#line 558 "fixedbugsagrouprecordineverycontainer.c"
+#line 571 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t59);
     hero_unreachable();
 }

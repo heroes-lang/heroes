@@ -185,6 +185,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(int64_t *ph0_x);
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(struct cell *ph0_c);
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct cell *)0) == 13 ? sizeof(struct cell) : 0), __builtin_offsetof(struct cell, v), sizeof(((struct cell *)0)->v), __builtin_offsetof(struct cell, w), sizeof(((struct cell *)0)->w)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct holder *)0) == 13 ? sizeof(struct holder) : 0), __builtin_offsetof(struct holder, xs), sizeof(((struct holder *)0)->xs), __builtin_offsetof(struct holder, a), sizeof(((struct holder *)0)->a)};
+__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct cell), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+    hero_pad_n_1 = hero_pad_gaps(sizeof(struct holder), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
+}
+
 
 #line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(int64_t *ph0_x) {
@@ -201,7 +212,7 @@ bb0:
     (*ph0_x) = t3;
 #line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 205 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 216 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
@@ -219,7 +230,7 @@ bb0:
     (*ph0_c).w = t3;
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 223 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 234 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
@@ -257,6 +268,14 @@ bb0:
     t16 = (struct holder){.xs = {t3, t6, t9}, .a = {t11, t12, t13, t14}};
 #line 32 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     h0_h = t16;
+#line 32 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    hero_pad_fill(&h0_h, sizeof(struct holder), 1, hero_pad_g_1, hero_pad_n_1);
+#line 32 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) {
+#line 32 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    hero_pad_fill((unsigned char *)(&h0_h) + hero_pad_k0 * sizeof(struct holder) + __builtin_offsetof(struct holder, xs), sizeof(struct cell), sizeof(((struct holder *)0)->xs) / sizeof(struct cell), hero_pad_g_0, hero_pad_n_0);
+#line 32 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    }
     t17 = INT64_C(2);
 #line 33 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(&h0_h.a[((uint64_t)(t17) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t17))]);
@@ -346,7 +365,7 @@ bb0:
     hero_print_end();
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 350 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 369 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->v == b->v)) return false;

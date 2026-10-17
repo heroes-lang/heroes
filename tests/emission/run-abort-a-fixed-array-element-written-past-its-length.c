@@ -173,6 +173,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_abortafixedarrayelementwrittenpastitslength_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct nums *)0) == 13 ? sizeof(struct nums) : 0), __builtin_offsetof(struct nums, a), sizeof(((struct nums *)0)->a), __builtin_offsetof(struct nums, after), sizeof(((struct nums *)0)->after)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct nums), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 void h_abortafixedarrayelementwrittenpastitslength_main(void) {
@@ -193,6 +200,8 @@ bb0:
     t7 = (struct nums){.a = {t1, t2, t3, t4}, .after = t6};
 #line 24 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h0_n = t7;
+#line 24 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
+    hero_pad_fill(&h0_n, sizeof(struct nums), 1, hero_pad_g_0, hero_pad_n_0);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t8 = INT64_C(0);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
@@ -299,7 +308,7 @@ bb4:
     hero_print_int(t35);
 #line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_print_end();
-#line 303 "abortafixedarrayelementwrittenpastitslength.c"
+#line 312 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_own4);
     return;
@@ -357,7 +366,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 361 "abortafixedarrayelementwrittenpastitslength.c"
+#line 370 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

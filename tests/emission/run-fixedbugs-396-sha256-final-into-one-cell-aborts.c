@@ -204,6 +204,8 @@ bb0:
     t2 = (struct SHA256state_st){.num = t1};
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
     h0_c = t2;
+#line 17 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
+    hero_pad_fill(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_g_0, hero_pad_n_0);
     t3 = UINT64_C(0);
 #line 18 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
     h1_m = t3;
@@ -260,7 +262,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_c);
 #line 21 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
     return;
-#line 264 "fixedbugs396sha256finalintoonecellaborts.c"
+#line 266 "fixedbugs396sha256finalintoonecellaborts.c"
 }
 #undef h0_c
 #undef h1_m

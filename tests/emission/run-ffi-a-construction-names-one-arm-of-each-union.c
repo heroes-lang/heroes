@@ -176,6 +176,25 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaconstructionnamesonearmofeachunion_main(void);
+#pragma push_macro("f")
+#undef f
+#pragma push_macro("i")
+#undef i
+#pragma push_macro("kind")
+#undef kind
+#pragma push_macro("x")
+#undef x
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, i), sizeof(((SA *)0)->i), __builtin_offsetof(SA, f), sizeof(((SA *)0)->f), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)};
+#pragma pop_macro("f")
+#pragma pop_macro("i")
+#pragma pop_macro("kind")
+#pragma pop_macro("x")
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(SA), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 void h_ffiaconstructionnamesonearmofeachunion_main(void) {
@@ -186,6 +205,8 @@ bb0:
     t1 = make_sa();
 #line 23 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     h0_s = t1;
+#line 23 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
+    hero_pad_fill(&h0_s, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t2 = h0_s.i;
 #line 24 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     hero_print_int(t2);
@@ -200,6 +221,8 @@ bb0:
     t6 = (SA){.kind = t3, .f = t4, .x = t5};
 #line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     h1_t = t6;
+#line 25 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
+    hero_pad_fill(&h1_t, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t7 = h1_t;
 #line 26 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     t8 = sa_f(t7);
@@ -217,9 +240,13 @@ bb0:
     t11 = make_sa();
 #line 28 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     h2_a = t11;
+#line 28 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
+    hero_pad_fill(&h2_a, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t12 = make_sa();
 #line 29 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     h3_b = t12;
+#line 29 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
+    hero_pad_fill(&h3_b, sizeof(SA), 1, hero_pad_g_0, hero_pad_n_0);
     t13 = h2_a.kind;
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     t14 = h3_b.kind;
@@ -271,7 +298,7 @@ bb4:
     hero_print_end();
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     return;
-#line 275 "ffiaconstructionnamesonearmofeachunion.c"
+#line 302 "ffiaconstructionnamesonearmofeachunion.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonearmofeachunion_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

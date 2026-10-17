@@ -1,0 +1,33 @@
+# FIXED DEFECT 2112, 2026-10-17, lane land215 (task 2100's fifth shape,
+# docs/measurements/046).
+#
+# SYMPTOM: a group record lent through `@` to a C function that keeps its
+# address, then written whole by the program, `k @ made(n: 3)`, then read by
+# C through the kept address with no call between: on Linux x86-64 at `-O0`
+# MemorySanitizer reported seven bytes nothing wrote, made by the store's
+# `memcpy`. A record returned by value carries no padding in the x86-64 ABI.
+#
+# CAUSE: panel 215's R1 wrote the padding zero before each `extern` call that
+# lends the place, and only there.
+#
+# FIX: a group record written whole is its padding written zero again after the
+# store (`emit/inst.hero`, `emit/padding.hero`), so C reads zeros there however
+# it reaches the place. The count of padding bytes set prints 0 on every
+# platform and level.
+
+extern "fixedbugs-2112-kept.h"
+    record Kept
+        c: u8
+        n: i64
+    function keep_it(@k: Kept) -> i64
+    function padding_set() -> i64
+
+function made(n: i64) -> Kept
+    return Kept(c: 1, n: n)
+
+function main()
+    k: Kept @= made(n: 2)
+    print(keep_it(@k))
+    k @ made(n: 3)
+    print(padding_set())
+    print(k.n)

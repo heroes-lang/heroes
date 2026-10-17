@@ -217,6 +217,8 @@ bb0:
     t3 = (struct addrinfo){.ai_family = t1, .ai_socktype = t2};
 #line 36 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     h0_h = t3;
+#line 36 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    hero_pad_fill(&h0_h, sizeof(struct addrinfo), 1, hero_pad_g_1, hero_pad_n_1);
     t4 = ((void *)0);
 #line 37 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     h1_r = t4;
@@ -261,7 +263,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_h);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
-#line 265 "fixedbugsatagnamesahandleandarecord.c"
+#line 267 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r

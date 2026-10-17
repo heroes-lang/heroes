@@ -172,6 +172,17 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Cell *)0) == 13 ? sizeof(Cell) : 0), __builtin_offsetof(Cell, v), sizeof(((Cell *)0)->v)};
+__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_2;
+__attribute__((unused)) static const size_t hero_pad_t_3[] = {0, (__builtin_classify_type(*(Holder *)0) == 13 ? sizeof(Holder) : 0), __builtin_offsetof(Holder, count), sizeof(((Holder *)0)->count), __builtin_offsetof(Holder, cells), sizeof(((Holder *)0)->cells)};
+__attribute__((unused)) static size_t hero_pad_g_3[sizeof hero_pad_t_3 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_3;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_2 = hero_pad_gaps(sizeof(Cell), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
+    hero_pad_n_3 = hero_pad_gaps(sizeof(Holder), hero_pad_t_3, sizeof hero_pad_t_3 / (2 * sizeof(size_t)), hero_pad_g_3);
+}
+
 
 #line 8 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void) {
@@ -192,6 +203,14 @@ bb0:
     t7 = (Holder){.count = t1, .cells = {t3, t5}};
 #line 9 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
     h0_h = t7;
+#line 9 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
+    hero_pad_fill(&h0_h, sizeof(Holder), 1, hero_pad_g_3, hero_pad_n_3);
+#line 9 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
+    for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) {
+#line 9 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
+    hero_pad_fill((unsigned char *)(&h0_h) + hero_pad_k0 * sizeof(Holder) + __builtin_offsetof(Holder, cells), sizeof(Cell), sizeof(((Holder *)0)->cells) / sizeof(Cell), hero_pad_g_2, hero_pad_n_2);
+#line 9 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
+    }
     t8 = h0_h;
 #line 10 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
     t10 = INT64_C(0);
@@ -222,7 +241,7 @@ bb0:
     hero_print_end();
 #line 11 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
     return;
-#line 226 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 245 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_Cell_eq(const Cell *a, const Cell *b) {
     if (!(a->v == b->v)) return false;

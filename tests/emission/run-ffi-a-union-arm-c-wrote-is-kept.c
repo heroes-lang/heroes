@@ -203,6 +203,8 @@ bb0:
     t2 = (UN){.c = t1};
 #line 23 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
     h0_u = t2;
+#line 23 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
+    hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0);
     hero_lend_local_name(hero_lend_h0_u, "un_set", "p");
 #line 24 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
     hero_pad_fill(&h0_u, sizeof(UN), 1, hero_pad_g_0, hero_pad_n_0);
@@ -226,6 +228,8 @@ bb0:
     t7 = (struct nu){.kind = t4, .via = t6};
 #line 26 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
     h1_n = t7;
+#line 26 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
+    hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2);
     hero_lend_local_name(hero_lend_h1_n, "nu_set", "p");
 #line 27 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
     hero_pad_fill(&h1_n, sizeof(struct nu), 1, hero_pad_g_2, hero_pad_n_2);
@@ -246,7 +250,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_u);
 #line 28 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
     return;
-#line 250 "ffiaunionarmcwroteiskept.c"
+#line 254 "ffiaunionarmcwroteiskept.c"
 }
 #undef h0_u
 #undef h1_n

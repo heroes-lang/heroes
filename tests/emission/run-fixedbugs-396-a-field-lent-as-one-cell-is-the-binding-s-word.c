@@ -171,6 +171,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct cell *)0) == 13 ? sizeof(struct cell) : 0), __builtin_offsetof(struct cell, m), sizeof(((struct cell *)0)->m), __builtin_offsetof(struct cell, rest), sizeof(((struct cell *)0)->rest), __builtin_offsetof(struct cell, after), sizeof(((struct cell *)0)->after)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(struct cell), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void) {
@@ -199,6 +206,8 @@ bb0:
     t11 = (struct cell){.m = t1, .rest = {t2, t3, t4, t5, t6, t7, t8}, .after = t10};
 #line 20 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     h0_b = t11;
+#line 20 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
+    hero_pad_fill(&h0_b, sizeof(struct cell), 1, hero_pad_g_0, hero_pad_n_0);
     t12 = digest_cell((void *)&h0_b.m);
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     t13 = HERO_STR_LIT(hero_str_20);
@@ -234,7 +243,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     return;
-#line 238 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 247 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->m == b->m)) return false;

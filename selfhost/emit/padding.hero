@@ -30,9 +30,15 @@
 # C array of structs the binding does not declare as a fixed array of a group
 # record, covered whole (the dump prints it as one line); the bytes past a
 # union's widest arm where the union is taken by its declared arms; a record
-# handed to C BY VALUE, which is no lend; bytes a Heroes store dirties after
-# the zeroing and C reads through an address it kept; and a record whose
-# dump this reader cannot read, which gets nothing written, silently.
+# handed to C BY VALUE, which is no lend; and a record whose dump this reader
+# cannot read, which gets nothing written, silently. **Bytes a Heroes store
+# dirtied after the zeroing**, read by C through an address it kept, are
+# written zero again after every store of a group record whole since defect
+# 2112 (`emit/inst.hero`'s store, measured on Linux x86-64 at `-O0`: a record
+# returned by value carries no padding there, and the store copied seven bytes
+# nothing wrote). Task 2100's measurement, `docs/measurements/046`, ran the
+# others: a record handed by value is the x86-64 ABI's own, and none of five
+# unusual layouts went unread.
 
 use ast
 use source

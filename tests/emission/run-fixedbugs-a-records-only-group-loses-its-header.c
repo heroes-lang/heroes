@@ -157,6 +157,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsarecordsonlygrouplosesitsheader_main(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)0) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
+__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((unused)) static size_t hero_pad_n_0;
+__attribute__((constructor)) static void hero_pad_init(void) {
+    hero_pad_n_0 = hero_pad_gaps(sizeof(Color), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
+}
+
 
 #line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 void h_fixedbugsarecordsonlygrouplosesitsheader_main(void) {
@@ -175,6 +182,8 @@ bb0:
     t5 = (Color){.r = t1, .g = t2, .b = t3, .a = t4};
 #line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     h0_red = t5;
+#line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
+    hero_pad_fill(&h0_red, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
     t6 = h0_red.r;
 #line 30 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     hero_print_int(t6);
@@ -187,7 +196,7 @@ bb0:
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     return;
-#line 191 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 200 "fixedbugsarecordsonlygrouplosesitsheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsarecordsonlygrouplosesitsheader_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;
