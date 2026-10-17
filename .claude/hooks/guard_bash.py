@@ -444,8 +444,8 @@ def placed(command, cwd):
 
 
 def stale_compiler(w, here):
-    """The refusal when a harness run names a compiler older than the tree it
-    runs in, else None.
+    """The refusal when a harness run names a compiler built from other sources
+    than the tree it runs in, else None.
 
     **Added 2026-09-29 (CL-079).** On 2026-09-18 the full net was judged by a
     binary built at 02:08 against a HEAD of 18:17: 1862 passed, 23 failed, none
@@ -462,6 +462,14 @@ def stale_compiler(w, here):
     Until that day the session's directory was asked, and a lane's run from a
     session on the trunk was refused for the trunk's age while the lane's
     compiler was newer than every file of the lane.
+
+    **Asked of the digest since 2026-10-17** (panel 222's R1 and R2,
+    `provenance.py`): the compiler's `--version` says the key of the sources it
+    was compiled from, and the tree's is mirrored here; until then the age was
+    asked, which passed a copy built before an edit and refused a compiler whose
+    sources were rewritten with the same bytes, both measured by the sitting.
+    The compiler is the arbiter, and every refusal names both keys and the way
+    to the tree's own compiler.
     """
     if not is_harness_run(w) or "--" not in w:
         return None
@@ -482,15 +490,38 @@ def stale_compiler(w, here):
         tree = trees.tree_of(compiler)
     if tree is None:
         return None
-    old = trees.older_than_tree(compiler, tree)
-    if old is None:
+    import provenance  # only a harness run pays for its tables
+
+    said, why = provenance.compiler_said(compiler, tree)
+    try:
+        want, unkeyed = provenance.tree_sources(tree), None
+    except provenance.Unmirrored as e:
+        want, unkeyed = None, str(e)
+    if said is not None and said == want:
         return None
-    where, built, wrote = old
+    arbiter = (
+        "The compiler is the arbiter (panel 222's R2): `" + named + " build selfhost/main.hero --emit-c` "
+        "writes the tree's key beside its `main`, and where that is the key its `--version` says, the "
+        "mirror is the one that is wrong. "
+    )
+    stages = (
+        "Build stage 2 there, `./heroes build selfhost/main.hero -o heroes-next`, then `mv heroes-next "
+        "heroes` in a command of its own, once more where the library moved; or stage 1 from the seed, "
+        "`clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, where the seed is the newer. "
+    )
+    if said is None:
+        return "refused: " + named + " cannot say what it was compiled from: " + why + ". " + stages + LAST_JUDGE
+    if want is None:
+        return (
+            "refused: " + named + " says it was compiled from sources " + said + ", and the hook's mirror "
+            "(`.claude/hooks/provenance.py`) cannot key the tree this run judges, " + tree + ": " + unkeyed
+            + ". " + arbiter + LAST_JUDGE
+        )
     return (
-        "refused: " + named + " was built at " + trees.stamp(built) + ", before " + where
-        + " was written at " + trees.stamp(wrote) + " in the tree this run judges, " + tree
-        + ", so the net would judge with a compiler older than the tree. Build it first, "
-        "there: " + trees.rebuild_hint(where) + ". " + LAST_JUDGE
+        "refused: " + named + " says it was compiled from sources " + said + ", and the tree this run "
+        "judges, " + tree + ", keys " + want + " by the hook's mirror (`.claude/hooks/provenance.py`), so "
+        "the net would judge with a compiler built from other sources than the tree's. " + stages + arbiter
+        + LAST_JUDGE
     )
 
 

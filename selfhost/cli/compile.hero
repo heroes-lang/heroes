@@ -157,7 +157,7 @@ function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: container
 
 # The pipeline to a translation unit. The failure's code carries the
 # exit: "diagnostics" is 1, "failed" is 2 — the caller maps e.code.
-function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
+function to_unit(s: source.Source, options: Options, version: str, sources: str) -> Artifact?
     parsed = parse.parse_source(s)
     stop = stage(parsed.diagnostics, s)
 
@@ -263,6 +263,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         s: s,
         decls: parsed.decls,
         version: version,
+        sources: sources,
         text: wants_text,
         struct_tags: no_tags
     )
@@ -349,7 +350,7 @@ test "the two stops, the hole refusal, and the missing main"
         library: no_flags
     )
     s = source.new_source(name: "t.hero", text: "function main()\n    print(1)\n")
-    got = to_unit(s, options, version: "0.0.0-test")
+    got = to_unit(s, options, version: "0.0.0-test", sources: "0123456789abcdef")
     assert !got.is_err()
 
     # **`--emit-c` IS NO LONGER `stopped` HERE, AND THE ASSERT BELOW IS THE
@@ -378,7 +379,7 @@ test "the two stops, the hole refusal, and the missing main"
         headers_from: no_flags,
         library: no_flags
     )
-    holed = to_unit(hs, hopt, version: "0.0.0-test")
+    holed = to_unit(hs, hopt, version: "0.0.0-test", sources: "0123456789abcdef")
 
     match holed
         .ok    => assert false
@@ -386,7 +387,7 @@ test "the two stops, the hole refusal, and the missing main"
 
     # No main, Program target: refused on the root's last byte.
     ns = source.new_source(name: "t.hero", text: "function helper() -> i64\n    return 1\n")
-    named = to_unit(ns, hopt, version: "0.0.0-test")
+    named = to_unit(ns, hopt, version: "0.0.0-test", sources: "0123456789abcdef")
 
     match named
         .ok    => assert false
@@ -407,7 +408,7 @@ test "the two stops, the hole refusal, and the missing main"
         name: "t.hero",
         text: "function helper() -> i64\n    return 1\n\ntest \"helper answers\"\n    assert helper() == 1\n"
     )
-    unit = to_unit(ts, topt, version: "0.0.0-test")
+    unit = to_unit(ts, topt, version: "0.0.0-test", sources: "0123456789abcdef")
     assert !unit.is_err()
     assert !unit.must().stopped
     assert unit.must().tests.len() == 1

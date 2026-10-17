@@ -331,6 +331,7 @@
 #pragma push_macro("hero_print_int")
 #pragma push_macro("hero_print_str")
 #pragma push_macro("hero_print_uint")
+#pragma push_macro("hero_program_sources")
 #pragma push_macro("hero_run_arg")
 #pragma push_macro("hero_run_discard_path")
 #pragma push_macro("hero_run_exe_suffix")

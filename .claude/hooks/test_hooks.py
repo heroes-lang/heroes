@@ -41,12 +41,17 @@ sys.path.insert(0, HOOKS)
 
 import guard_bash  # noqa: E402
 import marks  # noqa: E402
+import provenance  # noqa: E402
 import runs as what_runs  # noqa: E402
 
 FAKE = r"""#!/bin/sh
 here=$(cd "$(dirname "$0")" && pwd)
 echo "$PWD|$*" >> "$here/calls.log"
 case "$1" in
+--version)
+    echo "heroes 0.0.0"
+    if [ -f "$here/sources" ]; then echo "sources $(cat "$here/sources")"; fi
+    exit 0 ;;
 fmt)
     src=$2
     if [ "$src" = /dev/stdin ]; then src="$here/stdin.$$"; cat > "$src"; fi
@@ -80,6 +85,10 @@ GIT_ENV = dict(
 # A day the sources are dated to, so a test sets a compiler before or after it.
 T0 = 1_800_000_000
 
+# A tree's library, as `selfhost/library_source.hero` holds it: the shape the
+# digest's mirror reads.
+LIBRARY = 'constant LINES: [str]\n    [\n        "# the library"\n        "function x()"\n    ]\n'
+
 
 def write(path, text, at=None):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -105,6 +114,7 @@ def make_tree(root, compiler=True, built=T0 + 100, repo=False):
     write(os.path.join(root, "seed", "heroes.c"), "/* seed */\n", T0)
     write(os.path.join(root, "selfhost", "main.hero"), "function main()\n    return\n", T0)
     write(os.path.join(root, "runtime", "runtime.c"), "/* runtime */\n", T0)
+    write(os.path.join(root, "selfhost", "library_source.hero"), LIBRARY, T0)
     if repo:
         git(root, "init", "-q", "-b", "main", ".")
         git(root, "add", "seed", "selfhost", "runtime")
@@ -115,7 +125,14 @@ def make_tree(root, compiler=True, built=T0 + 100, repo=False):
         heroes = write(os.path.join(root, "heroes"), FAKE)
         os.chmod(heroes, 0o755)
         date(heroes, built)
+        built_from(root)
     return root
+
+
+def built_from(tree):
+    """The stand-in in `tree` made to say it was compiled from the tree's
+    sources as they stand (panel 222's digest, `provenance.py`)."""
+    write(os.path.join(tree, "sources"), provenance.tree_sources(tree) + "\n")
 
 
 def fresh(prefix):
@@ -135,6 +152,7 @@ def make_lane(trunk, name, built=T0 + 100):
     heroes = write(os.path.join(lane, "heroes"), FAKE)
     os.chmod(heroes, 0o755)
     date(heroes, built)
+    built_from(lane)
     return lane
 
 
@@ -328,9 +346,10 @@ class HarnessTree(unittest.TestCase):
         self.trunk = make_tree(os.path.join(self.top, "trunk"))
         self.lane = make_tree(os.path.join(self.trunk, ".claude", "worktrees", "lane"))
 
-    def age(self, tree, what="selfhost/resolve/state.hero"):
-        """`tree`'s compiler made older than one of its sources."""
-        write(os.path.join(tree, what), "# moved\n", T0 + 200)
+    def age(self, tree):
+        """`tree`'s compiler made one built from other sources than the tree's:
+        its root moved after it was built (panel 222's digest)."""
+        write(os.path.join(tree, "selfhost", "main.hero"), "function main()\n    return\n# moved\n", T0 + 200)
 
     def test_a_lane_run_from_a_trunk_session_is_judged_by_the_lane(self):
         self.age(self.trunk)
@@ -341,7 +360,7 @@ class HarnessTree(unittest.TestCase):
         self.age(self.lane)
         said = guard_bash.verdict("cd " + self.lane + " && ./heroes run tests/harness/main.hero -- ./heroes records", self.trunk)
         self.assertIsNotNone(said)
-        self.assertIn("selfhost/resolve/state.hero", said)
+        self.assertIn(provenance.tree_sources(self.lane), said)
         self.assertIn(self.lane, said)
 
     def test_a_relative_cd_moves_the_tree_too(self):
@@ -374,6 +393,148 @@ class HarnessTree(unittest.TestCase):
         self.age(self.trunk)
         said = guard_bash.verdict("./heroes run tests/harness/main.hero -- ./heroes", self.trunk)
         self.assertIsNotNone(said)
+
+
+class Provenance(unittest.TestCase):
+    """Panel 222: a harness run's compiler is judged by what it says it was
+    compiled from, against the tree's key, never by its file's date. Each test
+    is one of the sitting's measured cases, or a coverage it ratified."""
+
+    def setUp(self):
+        self.tree = make_tree(os.path.join(fresh("hooks-222-"), "tree"))
+        self.run = "./heroes run tests/harness/main.hero -- ./heroes records"
+
+    def test_a_copy_built_before_an_edit_is_refused_whatever_its_date(self):
+        write(os.path.join(self.tree, "selfhost", "main.hero"), "function main()\n    print(1)\n", T0 + 50)
+        date(os.path.join(self.tree, "heroes"), T0 + 10_000)
+        said = guard_bash.verdict(self.run, self.tree)
+        self.assertIsNotNone(said)
+        self.assertIn("keys " + provenance.tree_sources(self.tree), said)
+
+    def test_sources_rewritten_with_the_same_bytes_pass(self):
+        main = os.path.join(self.tree, "selfhost", "main.hero")
+        with open(main, encoding="utf-8") as handle:
+            same = handle.read()
+        write(main, same, T0 + 10_000)
+        self.assertIsNone(guard_bash.verdict(self.run, self.tree))
+
+    def test_a_compiler_that_says_no_sources_is_refused(self):
+        os.remove(os.path.join(self.tree, "sources"))
+        said = guard_bash.verdict(self.run, self.tree)
+        self.assertIsNotNone(said)
+        self.assertIn("prints no `sources` line", said)
+
+    def test_a_runtime_edit_is_refused(self):
+        write(os.path.join(self.tree, "runtime", "runtime.c"), "/* runtime, moved */\n")
+        self.assertIsNotNone(guard_bash.verdict(self.run, self.tree))
+
+    def test_a_runtime_part_edit_is_refused(self):
+        write(os.path.join(self.tree, "runtime", "runtime.c"), '#include "parts/a.c"\n')
+        write(os.path.join(self.tree, "runtime", "parts", "a.c"), "int a;\n")
+        built_from(self.tree)
+        self.assertIsNone(guard_bash.verdict(self.run, self.tree))
+        write(os.path.join(self.tree, "runtime", "parts", "a.c"), "int b;\n")
+        self.assertIsNotNone(guard_bash.verdict(self.run, self.tree))
+
+    def test_a_library_edit_is_refused(self):
+        write(os.path.join(self.tree, "selfhost", "library_source.hero"), LIBRARY.replace("function x()", "function y()"))
+        self.assertIsNotNone(guard_bash.verdict(self.run, self.tree))
+
+    def test_a_module_the_root_reaches_is_covered_and_one_it_does_not_is_not(self):
+        write(os.path.join(self.tree, "selfhost", "unused.hero"), "function u()\n    return\n")
+        self.assertIsNone(guard_bash.verdict(self.run, self.tree))
+        write(os.path.join(self.tree, "selfhost", "main.hero"), "use sub/used  # the one it reaches\n\nfunction main()\n    return\n")
+        write(os.path.join(self.tree, "selfhost", "sub", "used.hero"), "function v()\n    return\n")
+        built_from(self.tree)
+        self.assertIsNone(guard_bash.verdict(self.run, self.tree))
+        write(os.path.join(self.tree, "selfhost", "sub", "used.hero"), "function w()\n    return\n")
+        self.assertIsNotNone(guard_bash.verdict(self.run, self.tree))
+
+    def test_the_refusal_names_both_keys_the_stages_and_the_arbiter(self):
+        said_before = provenance.compiler_said(os.path.join(self.tree, "heroes"), self.tree)[0]
+        write(os.path.join(self.tree, "selfhost", "main.hero"), "function main()\n    print(2)\n")
+        said = guard_bash.verdict(self.run, self.tree)
+        self.assertIn("compiled from sources " + said_before, said)
+        self.assertIn("keys " + provenance.tree_sources(self.tree), said)
+        self.assertIn("./heroes build selfhost/main.hero -o heroes-next", said)
+        self.assertIn("build selfhost/main.hero --emit-c", said)
+        self.assertIn("the mirror is the one that is wrong", said)
+
+    def test_a_tree_the_mirror_cannot_key_is_refused_with_the_arbiter(self):
+        with open(os.path.join(self.tree, "selfhost", "main.hero"), "wb") as handle:
+            handle.write(b"function main()\n    print(\"\xff\")\n")
+        said = guard_bash.verdict(self.run, self.tree)
+        self.assertIn("is not UTF-8", said)
+        self.assertIn("build selfhost/main.hero --emit-c", said)
+
+
+class Digest(unittest.TestCase):
+    """The mirror's key is `cli/digest.hero`'s, computed a chunk at a time:
+    held here to the recurrence the compiler runs byte by byte."""
+
+    @staticmethod
+    def by_byte(data):
+        a = b = 0
+        for v in data:
+            a = (a * 131 + v) % provenance.M
+            b = (b * 137 + v) % provenance.M
+        return "%08x%08x" % (a, b)
+
+    def test_every_length_about_a_chunk_keys_as_the_recurrence_does(self):
+        n = provenance.CHUNK
+        for size in (0, 1, 2, n - 1, n, n + 1, 3 * n + 7):
+            data = bytes((i * 97 + 13) % 256 for i in range(size))
+            self.assertEqual(provenance.digest(data), self.by_byte(data), size)
+
+    def test_a_use_line_is_read_as_the_compiler_reads_its_tokens(self):
+        text = "use a\nuse sub/helper  # a comment\nuse x/y as z\n  use indented\nuser = 1\n# use not\nuse a / b\nuse\n"
+        self.assertEqual(provenance.uses_of(text), ["a", "sub/helper", "x/y", "indented", "a"])
+
+    def test_a_string_literal_reads_the_seven_escapes(self):
+        self.assertEqual(provenance.unescaped('a\\n\\t\\r\\\\\\"\\\'\\u{e9}', "x"), "a\n\t\r\\\"'\u00e9")
+        with self.assertRaises(provenance.Unmirrored):
+            provenance.unescaped("\\q", "x")
+
+
+class MirrorHeldToCompiler(unittest.TestCase):
+    """Panel 222's R2: the mirror is held to a real compiler, this tree's own,
+    over a program whose `use` lines take every spelling the language writes:
+    a name, a path, a path behind a comment, a path under another name, and a
+    nested module's own `use`, resolved from the root's directory."""
+
+    PROGRAM = {
+        "main.hero": "use a\nuse sub/helper  # the helper\nuse sub/x as y\n\nfunction main()\n    print(a.one() + helper.two() + y.three())\n",
+        "a.hero": "function one() -> i64\n    return 1\n",
+        "sub/helper.hero": "use sub/deep\n\nfunction two() -> i64\n    return deep.four() - 2\n",
+        "sub/deep.hero": "function four() -> i64\n    return 4\n",
+        "sub/x.hero": "function three() -> i64\n    return 3\n",
+    }
+
+    def test_the_mirror_keys_a_program_as_the_compiler_writes_it(self):
+        tree = os.path.dirname(os.path.dirname(HOOKS))
+        compiler = os.path.join(tree, "heroes")
+        if not os.access(compiler, os.X_OK) or provenance.compiler_said(compiler, tree)[0] is None:
+            self.skipTest("no compiler of this tree that prints its sources: build it to hold the mirror to it")
+        top = fresh("hooks-222-held-")
+        for rel, text in self.PROGRAM.items():
+            write(os.path.join(top, rel), text)
+        env = dict(os.environ, HEROES_RUNTIME=os.path.join(tree, "runtime"))
+        done = subprocess.run([compiler, "build", "main.hero", "--emit-c"], cwd=top, env=env, capture_output=True, text=True, timeout=300)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        head = 'hero_program_sources(void) { return hero_str_from_bytes("'
+        at = done.stdout.find(head)
+        self.assertGreaterEqual(at, 0, "the program's C carries no key")
+        written = done.stdout[at + len(head):at + len(head) + 16]
+        mirrored = provenance.sources_key(
+            os.path.join(top, "main.hero"),
+            os.path.join(tree, "selfhost", "library_source.hero"),
+            os.path.join(tree, "runtime"),
+        )
+        self.assertEqual(
+            mirrored, written,
+            "the mirror and " + compiler + " key one program apart; the compiler is the arbiter, unless it "
+            "was built from another library than the tree's (`--version`'s line against its own `--emit-c`)",
+        )
 
 
 class CommitTree(unittest.TestCase):

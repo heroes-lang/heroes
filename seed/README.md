@@ -9,6 +9,13 @@ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
 ./heroes --version
 ```
 
+`--version` prints two lines: the release, `heroes 0.4.0`, and `sources` with
+sixteen characters, the key of the modules, the library and the runtime that
+binary was compiled from (panel 222, ratified 2026-10-17). Every program the
+compiler builds carries its own beside its `main`; the compiler's is the one a
+gate asks, so a compiler built from other sources than the tree it judges is
+told by what it was built from, never by its file's date.
+
 That is the whole of it: one command, no flags beyond the include path, no
 configure, no make — **on POSIX. Windows needs one more flag, and it is not a
 preference**:
@@ -49,6 +56,15 @@ The compiler it produces is the real one. It compiles programs, it compiles
 `selfhost/`, and what it emits for `selfhost/main.hero` is this file again, byte
 for byte.
 
+**At a release and at each refresh, since 2026-10-17** (the rhythm below):
+between two refreshes this file is an earlier day's compiler, and the tree's own
+is stage 2, what this one builds from `selfhost/`:
+
+```sh
+./heroes build selfhost/main.hero -o heroes-next
+./heroes-next --version     # its `sources` line, the tree's
+```
+
 ## What it needs beside itself
 
 Twenty-two files on 2026-09-03, and they are all in the checkout:
@@ -80,6 +96,27 @@ library file on disk would be a file clang cannot type-check and therefore a
 decoy the `_Static_assert` cannot guard.
 
 ## When this file must be regenerated
+
+**Since 2026-10-17, M-bounded-seed's rhythm** (the author's policy of
+2026-10-14, landed with panel 222's digest, issue 2087): the compiler is always
+built in two stages, clang on this file and then `heroes build
+selfhost/main.hero` with what clang made, and the fixpoint is checked one
+generation further, stage 2 and the stage 3 it builds emitting the same bytes.
+**This file is refreshed only when that two-stage build goes red, and at each
+release**, whose `VERSION` it carries. **A new form enters `selfhost/` only after
+the refresh whose seed knows it**, since stage 1 must read the source it builds.
+The CI checks both at every push: where stage 1 and stage 2 say they were
+compiled from the same sources, this file must be what stage 2 emits; where
+they differ, stage 2 must reproduce itself one stage later.
+
+**And one invariant binds every commit** (panel 222's R3): no commit holds a
+reader of what the emitter writes into every program while this file's compiler
+does not write it, or stage 2 cannot link; the net's `seed` suite asks it. A
+refresh in that state is emitted by a scaffold, a compiler of the tree with the
+reader taken out, and a lane's merge takes the side of this file that defines
+`hero_program_sources`.
+
+What follows is the rule as it stood before, kept.
 
 **In the same commit as the change that breaks it**, by whoever has a working
 compiler in hand. That is not a preference. Generated C cannot be hand-patched:
@@ -156,6 +193,14 @@ committed seed no longer builds today's source. Nobody has a working compiler.
 carries its own `seed/heroes.c`, and each one was green at
 `the_seed_builds_from_a_clean_checkout` when it was made. So there is always a
 last-known-good rung to stand on:
+
+**Its shape since 2026-10-17** (the author's one rule for the past and the
+future, 2026-10-14, `docs/roadmap/milestones/M-bounded-seed.md`): **every tag
+builds from its own tree.** A tag before the rhythm does by the seed it carries;
+a tag after it by the two-stage build, clang on the seed it carries and then
+stage 2 from its `selfhost/`, which the CI checks at every push. A commit
+between two tags is built or bisected under `refs/archive/`, which keeps every
+commit with the seed it carried.
 
 ```sh
 git tag --list --sort=creatordate            # newest last

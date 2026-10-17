@@ -522,6 +522,12 @@ reading, and a fifth from 2026-10-06:
   `seed/heroes.c` is never resolved by hand: take one side, build, regenerate,
   verify the fixpoint by `cmp`. The seed is regenerated at the batch's close
   and travels in the closing commit; a repair commit does not carry it.
+  **The side, since panel 222 landed (2026-10-17)**: the seed that defines
+  `hero_program_sources`, the trunk's, never the seed of a lane opened before
+  the landing, whose compiler would build a stage 2 that cannot link; the net's
+  `seed` suite asks it. And the seed is regenerated only where the two-stage
+  build goes red or a release closes, M-bounded-seed's rhythm
+  (`.claude/rules/verification.md` § The batch).
 - **A repair commit's body is about fifteen lines**: the class, the cases, the
   gate line. The story is written once, in the defect's issue at the batch's
   close, by `close` as its `## The repair`. Measured on that night: repair

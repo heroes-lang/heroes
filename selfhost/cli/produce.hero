@@ -25,6 +25,7 @@ use modules
 use emit/ffi_asked
 use emit/externs as emit_externs
 use emit/header_packages
+use emit/provenance
 use cli/io
 use cli/compile
 use cli/toolchain
@@ -80,7 +81,12 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if floor.is_err()
         io.eprint(text: "error: " + whose.failure_message(floor))
         return fail(code: "failed", msg: "clang is below the floor")
-    art = compile.to_unit(s, options, version: version)
+
+    # What the program is compiled from, its modules, its library and its
+    # runtime, keyed once here, where the sources and the toolchain meet
+    # (panel 222's R1, `emit/provenance.hero`).
+    sources = provenance.key_of(s, runtime: t.runtime_key)
+    art = compile.to_unit(s, options, version: version, sources: sources)
 
     # **A failure here used to be propagated without a word.** `_ = art?`
     # hands the error up and `exit_of` prints nothing when its code is
@@ -194,7 +200,8 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         package_flags: package_flags.must(),
         package_words: each.must(),
         by_header: header_packages.by_header(art.must().program, s, art.must().decls),
-        version: version
+        version: version,
+        sources: sources
     )
     under = assemble.compiled_under(t, options, site)
 
@@ -236,7 +243,8 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             under: under,
             struct_tags: went.struct_tags,
             kept: went.kept,
-            version: version
+            version: version,
+            sources: sources
         )
 
         # The one file refused, told already (defect 453).

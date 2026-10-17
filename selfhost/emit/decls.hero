@@ -44,6 +44,7 @@ use emit/c_text
 use emit/macro_guard
 use emit/nodebug
 use emit/entry_stop
+use emit/provenance
 use parse
 use resolve
 use checker
@@ -260,9 +261,10 @@ function live_strings(p: containers.Program, target: BuildTarget, s: source.Sour
 # No title reaches the C: the index is the whole protocol. The switch
 # is the one place the test's POSITION (the protocol) and its
 # DECLARATION index (the unique name) meet.
-function test_shim(@w: writer.Writer, p: containers.Program, s: source.Source)
+function test_shim(@w: writer.Writer, p: containers.Program, s: source.Source, sources: str)
     writer.blank(@w)
     writer.at_generated(@w)
+    provenance.write(@w, sources: sources)
     writer.line(@w, text: "int main(int argc, char **argv) {")
     writer.line(@w, text: "    hero_args_set(argc, argv);")
     writer.line(@w, text: "    int64_t which = hero_test_index(argc, argv);")
@@ -295,9 +297,10 @@ function test_shim(@w: writer.Writer, p: containers.Program, s: source.Source)
 # The program's shim. argc/argv ALWAYS, whether or not the program
 # calls args(): two shims chosen by reachability would be a condition
 # that can be wrong, and the parameters cost nothing.
-function shim(@w: writer.Writer, f: containers.Function, s: source.Source)
+function shim(@w: writer.Writer, f: containers.Function, s: source.Source, sources: str)
     writer.blank(@w)
     writer.at_generated(@w)
+    provenance.write(@w, sources: sources)
     writer.line(@w, text: "int main(int argc, char **argv) {")
     writer.line(@w, text: "    hero_args_set(argc, argv);")
     writer.line(
@@ -399,14 +402,14 @@ test "the shim calls the mangled main and gates leaks on the way out"
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     w: writer.Writer @= writer.new_writer("t")
-    shim(@w, low.program.functions[0], s)
+    shim(@w, low.program.functions[0], s, sources: "0123456789abcdef")
     got = writer.finish(w)
     assert has(text: got, needle: "int main(int argc, char **argv) {")
     assert has(text: got, needle: "    hero_args_set(argc, argv);")
     assert has(text: got, needle: "    h_t_main();")
     assert has(text: got, needle: "    hero_runtime_check_leaks();")
     tw: writer.Writer @= writer.new_writer("t")
-    test_shim(@tw, low.program, s)
+    test_shim(@tw, low.program, s, sources: "0123456789abcdef")
     runner = writer.finish(tw)
     assert has(text: runner, needle: "    case 0:")
     assert has(text: runner, needle: "        h_t_test1();")

@@ -127,3 +127,15 @@ HeroStr hero_file_key(const char *path, int64_t *status) {
     hero_release(buffer);
     return hero_str_from_bytes(key, 16);
 }
+
+/* The key of a text in hand (panel 222's R1, `hero_compiler.h`): the UTF-8
+ * branch of `hero_file_key` above over the bytes of a `str`, which holds UTF-8
+ * by construction, so it is `cli/digest.hero`'s `digest` of the same text. */
+HeroStr hero_text_key(HeroStr text) {
+    hero_str_require(text);
+    HeroKeySums k = {0, 0};
+    char key[16];
+    hero_key_run(&k, text.ptr, text.len);
+    hero_key_spell(&k, key);
+    return hero_str_from_bytes(key, 16);
+}

@@ -185,7 +185,7 @@ function command(_: i64) -> i64
     # The ones that answer without reading a program.
     match inv.tag
         .version_cmd =>
-            print("heroes " + VERSION)
+            print(help.version(number: VERSION))
             exit(code: 0)
         .help_cmd =>
             print(help.help())

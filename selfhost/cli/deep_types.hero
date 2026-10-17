@@ -274,7 +274,8 @@ test "the debug information meets a type chain past the emitter's depth from its
     unit = compile.to_unit(
         source.new_source(name: "t.hero", text: parts.join("\n")),
         options,
-        version: "0.0.0-test"
+        version: "0.0.0-test",
+        sources: "0123456789abcdef"
     ).must()
     root = "build/selftest-retained-219"
     assert !process.mkdir_all(root).is_err()

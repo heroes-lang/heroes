@@ -1,0 +1,113 @@
+# The seed a clean clone starts from can build the tree's compiler (panel
+# 222's R3, ratified 2026-10-17): no commit holds a reader of what every
+# program carries while `seed/heroes.c` lacks its writer.
+#
+# WHY. The compiler reads `hero_program_sources`, the sixteen characters
+# `selfhost/emit/provenance.hero` writes beside every program's `main`, so
+# the compiler's own C defines what its `--version` reads. Stage 1, clang's
+# build of the seed, builds stage 2 from the tree; a seed whose compiler did
+# not write the definition makes a stage 2 that reads it and defines it
+# nowhere, `ffi_missing_link` at the link, and no documented refresh rescues
+# that tree, a refresh being emitted by the stage 2 it cannot build (panel
+# 222's critic, `docs/panel/222-reports/critic.md` § 2).
+#
+# WHAT IS ASKED, AND THE PREMISE IT RESTS ON. The seed defines the function
+# exactly once wherever a module of `selfhost/` binds it. A seed is its own
+# tree emitted by the compiler built from it (the batch's fixpoint, `cmp`),
+# so a seed that defines it was emitted by a compiler that writes it; the
+# seed of a lane opened before the writer landed defines it nowhere, and
+# that lane's merge is the state this asks about (`.claude/rules/records.md`
+# § Working in lanes names the side a merge takes). No compiler runs.
+#
+# AND WHEN NO MODULE BINDS IT the suite is red, not green: a question that
+# holds of nothing passes in silence, so a reader moved or renamed is told,
+# and a reader removed on purpose takes this question with it.
+
+use report
+use shell
+use strings
+
+constant SEED: str
+    "seed/heroes.c"
+
+constant COMPILER: str
+    "selfhost"
+
+# What `emit/provenance.hero` writes, and how a group binds it.
+constant DEFINITION: str
+    "HeroStr hero_program_sources(void) {"
+
+constant BINDING: str
+    "    function hero_program_sources("
+
+function run_all(scratch: str) -> report.Report?
+    r: report.Report @= report.empty()
+    nothing: [str] = []
+    readers: [str] @= []
+
+    for path in shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
+        if !strings.ends_with(text: path, suffix: ".hero")
+            continue
+        text = read_file(path)
+
+        if text.is_err()
+            report.keep_failure(@r, label: "seed/writer", detail: "  cannot read " + path)
+            return ok(r)
+
+        if strings.contains(text: text.must(), needle: BINDING)
+            readers @ readers.push(path)
+
+    seed = read_file(SEED)
+
+    if seed.is_err()
+        report.keep_failure(@r, label: "seed/writer", detail: "  cannot read " + SEED)
+        return ok(r)
+    said = judged(readers: readers, seed: seed.must())
+
+    if said == ""
+        report.keep_pass(@r)
+    else
+        report.keep_failure(@r, label: "seed/writer", detail: said)
+    return ok(r)
+
+# The verdict on the modules that bind the function and the seed's text:
+# "" where it holds, else what to do.
+function judged(readers: [str], seed: str) -> str
+    if readers.len() == 0
+        return "  no module of " + COMPILER + "/ binds hero_program_sources, so the seed's writer is asked of nothing: a reader moved or renamed is this suite's `BINDING` to correct, and a reader removed on purpose takes this suite with it"
+    count = strings.split_text(text: seed, separator: DEFINITION).len() - 1
+
+    if count == 1
+        return ""
+
+    if count == 0
+        return "  " + readers.join(", ") + " reads hero_program_sources and " + SEED + " does not define it, so the compiler clang builds from this seed builds a stage 2 that cannot link (panel 222's R3). In a merge, take the side of the seed that defines it; else build a compiler of this tree with its reader taken out, which writes the function and reads it nowhere, emit the seed with it, `<that compiler> build selfhost/main.hero --emit-c`, and verify the fixpoint by `cmp`"
+    return "  " + SEED + " defines hero_program_sources " + count.to_str() + " times, where one program's C defines it once"
+
+## Tests
+
+test "a seed that defines the function once holds, none or two is told, and no reader is told"
+    seed = "int a;\nHeroStr hero_program_sources(void) { return hero_str_from_bytes(\"0123456789abcdef\", 16); }\nint main(void) { return 0; }\n"
+    assert judged(readers: ["selfhost/cli/help.hero"], seed: seed) == ""
+    lacking = judged(readers: ["selfhost/cli/help.hero"], seed: "int main(void) { return 0; }\n")
+    assert strings.starts_with(
+        text: lacking,
+        prefix: "  selfhost/cli/help.hero reads hero_program_sources and seed/heroes.c does not define it"
+    )
+    twice = judged(readers: ["selfhost/cli/help.hero"], seed: seed + seed)
+    assert twice == "  seed/heroes.c defines hero_program_sources 2 times, where one program's C defines it once"
+    none: [str] = []
+    assert strings.starts_with(
+        text: judged(readers: none, seed: seed),
+        prefix: "  no module of selfhost/ binds hero_program_sources"
+    )
+
+test "the binding and the definition are spelt as the compiler's own source and emitter spell them"
+    help = read_file("selfhost/cli/help.hero").must()
+    assert strings.contains(text: help, needle: "extern \"heroes_runtime.h\"\n" + BINDING + ") -> str\n")
+    provenance = read_file("selfhost/emit/provenance.hero").must()
+    assert strings.contains(text: provenance, needle: "\"hero_program_sources\"")
+    assert strings.contains(
+        text: provenance,
+        needle: "\"HeroStr \" + FUNCTION + \"(void) { return hero_str_from_bytes("
+    )

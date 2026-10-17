@@ -1,0 +1,106 @@
+# What a program was compiled from, written into its C beside `main` (panel
+# 222's R1, ratified 2026-10-17; design.md §3.1). One row per input, the rows
+# in byte order and keyed again: sixteen characters, the same for the same
+# inputs whatever directory the build ran in and whatever path `-o` names
+# (§3.1 *Determinism*).
+#
+# THE ROWS, and why each kind is one:
+#   - `module <name> <key>` for every module the root reaches, `<name>` as its
+#     `use` line spells it and the root by its stem;
+#   - `library <name> <key>` for the library compiled in, which is the
+#     COMPILING compiler's own text (`library_source.hero`), not the tree's:
+#     a compiler built by one older than its library says so, one stage behind;
+#   - `runtime <key>` for the runtime the build links, `Toolchain.runtime_key`,
+#     every file `runtime.c` includes, keyed by its bytes and by no flag.
+# A kind word opens each row, so no module's row can spell the runtime's.
+#
+# WHO COMPUTES IT. `cli/produce.hero`, once per build, the one place that
+# holds the sources and the toolchain together; the emitter writes what it is
+# handed, in the root unit and in the one file `--emit-c` writes alike. Each
+# text is keyed as `cli/digest.hero` keys one, by its twin in C
+# (`hero_text_key`), since the compiler's own sources are seven megabytes.
+#
+# WHO READS IT. `heroes --version` prints the compiler's own on its second
+# line (`cli/help.hero`), and a gate compares it with the tree's (R2): the
+# judged compiler's own `--emit-c` of the tree is the arbiter, and
+# `.claude/hooks/provenance.py` a mirror of this file held to it by a test.
+# A program that reads it not carries forty bytes nobody reads.
+
+use source
+use source_extent
+use emit/writer
+use cli/digest
+
+extern "hero_compiler.h"
+    function hero_text_key(text: str) -> str
+
+# The C function the line defines, declared in `heroes_runtime.h`.
+constant FUNCTION: str
+    "hero_program_sources"
+
+# The rows of a compilation and the runtime keyed `runtime`, in byte order.
+function rows_of(s: source.Source, runtime: str) -> [str]
+    rows: [str] @= ["runtime " + runtime]
+
+    for at in range(from: 0, to: s.files.len())
+        kind: str @= "module "
+
+        if s.files[at].is_library
+            kind @ "library "
+        rows @ rows.push(kind + s.files[at].module + " " + hero_text_key(text: source_extent.text_of(s, index: at)))
+
+    return sort(rows)
+
+# The sixteen characters a program built from `s` with that runtime carries.
+function key_of(s: source.Source, runtime: str) -> str
+    return hero_text_key(text: rows_of(s, runtime: runtime).join("\n") + "\n")
+
+# The line every program's root unit carries beside `main`.
+function write(@w: writer.Writer, sources: str)
+    assert sources.len() == 16
+    writer.line(@w, text: "HeroStr " + FUNCTION + "(void) { return hero_str_from_bytes(\"" + sources + "\", 16); }")
+
+## Tests
+
+function compiled(files: [source.InputFile]) -> source.Source
+    return source.from_files(files)
+
+test "the key in C is the key in Heroes, for an empty text, ASCII and UTF-8"
+    for text in ["", "abc", "use cli/io\n", "café 😀\n"]
+        assert hero_text_key(text: text) == digest.digest(text: text)
+
+test "the sources' key moves with a module's text and the runtime's, and not with the order the files came in"
+    a = source.InputFile(name: "a.hero", module: "a", text: "x\n", is_library: false)
+    b = source.InputFile(name: "b.hero", module: "b", text: "y\n", is_library: false)
+    b2 = source.InputFile(name: "b.hero", module: "b", text: "z\n", is_library: false)
+    lib = source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: "q\n", is_library: true)
+    lib2 = source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: "r\n", is_library: true)
+    one = key_of(compiled([a, b, lib]), runtime: "0123456789abcdef")
+    assert one.len() == 16
+    assert one == key_of(compiled([b, a, lib]), runtime: "0123456789abcdef")
+    assert one != key_of(compiled([a, b2, lib]), runtime: "0123456789abcdef")
+    assert one != key_of(compiled([a, b, lib2]), runtime: "0123456789abcdef")
+    assert one != key_of(compiled([a, b]), runtime: "0123456789abcdef")
+    assert one != key_of(compiled([a, b, lib]), runtime: "fedcba9876543210")
+
+test "a module's text is its author's bytes, the joiner between two files in neither"
+    open_line = source.InputFile(name: "a.hero", module: "a", text: "x", is_library: false)
+    closed = source.InputFile(name: "a.hero", module: "a", text: "x\n", is_library: false)
+    b = source.InputFile(name: "b.hero", module: "b", text: "y\n", is_library: false)
+    rows = rows_of(compiled([open_line, b]), runtime: "k")
+    assert rows == ["module a " + digest.digest(text: "x"), "module b " + digest.digest(text: "y\n"), "runtime k"]
+    assert rows != rows_of(compiled([closed, b]), runtime: "k")
+
+test "a module named as the runtime or the library writes a row of its own kind"
+    named = source.InputFile(name: "runtime.hero", module: "runtime", text: "x\n", is_library: false)
+    lib = source.InputFile(name: "library.hero", module: "library", text: "q\n", is_library: false)
+    rows = rows_of(compiled([named, lib]), runtime: digest.digest(text: "x\n"))
+    assert rows.len() == 3
+    assert rows[0] == "module library " + digest.digest(text: "q\n")
+    assert rows[1] == "module runtime " + digest.digest(text: "x\n")
+    assert rows[2] == "runtime " + digest.digest(text: "x\n")
+
+test "the line defines the function the runtime's header declares, with the key it is handed"
+    w: writer.Writer @= writer.new_writer("m")
+    write(@w, sources: "0123456789abcdef")
+    assert writer.finish(w) == "HeroStr hero_program_sources(void) { return hero_str_from_bytes(\"0123456789abcdef\", 16); }\n"

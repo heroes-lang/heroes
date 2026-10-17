@@ -110,15 +110,22 @@ verdicts, the vetoes, and what lifted them.
 
 **The compiler compiles itself**, which is what this project calls v1
 (design.md §1.0). `selfhost/` is this compiler written in Heroes, and the C it
-emits for its own source is `seed/heroes.c`, byte for byte. Two commands check
-that, and `cmp` printing nothing is the whole proof:
+emits for its own source is `seed/heroes.c`, byte for byte, at each release and
+each refresh of the seed. Two commands check that, and `cmp` printing nothing is
+the whole proof:
 
 ```sh
 ./heroes build selfhost/main.hero --emit-c -o /tmp/self.c
 cmp seed/heroes.c /tmp/self.c
 ```
 
-The version number is a different thing: `heroes --version` says which release you hold, releases are tagged
+Between two refreshes the seed is an earlier day's compiler: it builds today's
+from `selfhost/`, and that one reproduces itself a stage later, which the CI
+checks on every push. `heroes --version` says which on its second line,
+`sources`, the key of the modules, the library and the runtime a compiler was
+compiled from.
+
+The version number is a different thing: `heroes --version` says which release you hold on its first line, releases are tagged
 `vX.Y.Z` and listed under
 [Releases](https://github.com/heroes-lang/heroes/releases), and the number stays
 below `1.0.0` until a compatibility promise is written. What `0.x` promises until

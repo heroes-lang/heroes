@@ -331,6 +331,7 @@
 #pragma pop_macro("hero_print_int")
 #pragma pop_macro("hero_print_str")
 #pragma pop_macro("hero_print_uint")
+#pragma pop_macro("hero_program_sources")
 #pragma pop_macro("hero_run_arg")
 #pragma pop_macro("hero_run_discard_path")
 #pragma pop_macro("hero_run_exe_suffix")

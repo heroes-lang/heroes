@@ -37,4 +37,10 @@ int64_t hero_env_put(const char *name, const char *value);
  * the key, and HERO_OS_NOT_FOUND or HERO_OS_FAILED with "". */
 HeroStr hero_file_key(const char *path, int64_t *status);
 
+/* The key of a text in hand, `cli/digest.hero`'s over its bytes, as
+ * `hero_file_key` keys a file of UTF-8 (`parts/key.c`, bound by
+ * `selfhost/emit/provenance.hero`): each module's text as the compilation
+ * holds it, keyed where it is rather than read from the disk again. */
+HeroStr hero_text_key(HeroStr text);
+
 #endif

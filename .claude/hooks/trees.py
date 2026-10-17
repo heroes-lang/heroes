@@ -24,6 +24,14 @@ compiler that judges is a build artifact), with one file left out where the
 question is about that file: the file just written is newer than the compiler
 on every write, and is the subject being judged rather than the language
 judging it.
+
+**A harness run's compiler is asked what it was compiled from instead, since
+2026-10-17** (panel 222, `provenance.py`, `guard_bash.stale_compiler`): an age
+asks about the file, never about what the binary was built from, and passed a
+copy built before an edit while refusing a compiler whose sources were
+rewritten with the same bytes. The age stays the write hook's question, how a
+refusal is told, because there the file just written is one of the sources a
+digest covers, and a key of the tree with it would differ on every write.
 """
 
 import os

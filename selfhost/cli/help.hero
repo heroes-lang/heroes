@@ -1,5 +1,6 @@
 # heroes --help: the table, plus the contract (panel 016). Port of
-# archive/bootstrap-rs/heroes-cli/src/cli/help.rs.
+# archive/bootstrap-rs/heroes-cli/src/cli/help.rs. And heroes --version, the
+# other answer the compiler gives without reading a program.
 #
 # The exit codes are printed because a wrapper script has nowhere else
 # to read them, and HEROES_RUNTIME is printed because it is the one
@@ -17,6 +18,20 @@
 # attached.
 
 use cli/table as cli_table
+
+# What this compiler was compiled from (panel 222's R1): its modules, its
+# library and its runtime, keyed by the compiler that built it and defined
+# beside its `main` (`emit/provenance.hero`).
+extern "heroes_runtime.h"
+    function hero_program_sources() -> str
+
+# `heroes --version`: the release this compiler is, then what it was compiled
+# from. The first line is the release's alone, the one a tag is checked
+# against (`.github/workflows/ci.yml`); the second moves with every byte of a
+# source, the library or the runtime, so a gate asks a compiler whether it was
+# built from the tree it judges (panel 222's R2).
+function version(number: str) -> str
+    return "heroes " + number + "\nsources " + hero_program_sources()
 
 function help() -> str
     rows: [str] @= ["heroes — the Heroes compiler\n\nusage: heroes <command> [file] [flags]\n\n"]
@@ -75,6 +90,13 @@ function has(text: str, needle: str) -> bool
         start @ start + 1
 
     return false
+
+test "the version is the release's line, then the sixteen characters this binary was compiled from"
+    head = "heroes 9.8.7\nsources "
+    said = version(number: "9.8.7")
+    assert said.len() == head.len() + 16
+    assert said.slice(from: 0, to: head.len()) == head
+    assert said.slice(from: head.len(), to: said.len()) == hero_program_sources()
 
 test "the help is the table spoken, contract and env channel included"
     text = help()

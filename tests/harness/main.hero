@@ -74,6 +74,8 @@
 #                 and every one it defines is named — both directions
 #   wholes        every temporary the blessed C and the seed define is
 #                 written whole before any part of it (panel 182)
+#   seed          the seed defines what the compiler it builds reads of
+#                 its own C, so stage 1 can build stage 2 (panel 222's R3)
 #   cache         the per-module build cache: a header edit is not
 #                 invisible, an untouched build still hits, an edit moves
 #                 exactly the objects that read the edited file, and a
@@ -100,6 +102,7 @@ use suite_canonical
 use suite_corpus
 use suite_descriptors
 use suite_wholes
+use suite_seed
 use suite_determinism
 use suite_emission
 use suite_fixes
@@ -315,6 +318,18 @@ function main()
             print("harness: the wholes suite could not run" + why(got))
             exit(2)
         print("  wholes: " + report.counted(got.must()))
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # The seed against the compiler's own source: what the compiler reads of
+    # its own C, the seed defines (panel 222's R3). No compiler runs.
+    if only == "" || only == "seed"
+        got = suite_seed.run_all(scratch: scratch)
+
+        if got.is_err()
+            print("harness: the seed suite could not run" + why(got))
+            exit(2)
+        print("  seed: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

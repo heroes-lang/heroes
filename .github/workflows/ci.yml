@@ -539,6 +539,19 @@ jobs:
           clang -I runtime seed/heroes.c runtime/runtime.c $STACK -o heroes-from-seed${{ matrix.exe }}
           ./heroes-from-seed${{ matrix.exe }} --version
 
+      # STAGE 2 JUDGES EVERY STEP BELOW (panel 222's R4, ratified 2026-10-17).
+      # The seed is refreshed when the two-stage build goes red and at each
+      # release, so between refreshes the compiler clang builds from it was
+      # compiled from older sources than this commit's, and its verdicts would
+      # be an older compiler's. Stage 2 is this commit's source built by stage
+      # 1: `--version`'s second line says what each was compiled from, both
+      # printed so a leg's log shows which tree judged it.
+      - name: Stage 2, the compiler this commit's source builds
+        shell: bash
+        run: |
+          ./heroes-from-seed${{ matrix.exe }} build selfhost/main.hero -o heroes${{ matrix.exe }}
+          ./heroes${{ matrix.exe }} --version
+
       # THE TAG'S NUMBER IS THE BINARY'S NUMBER, asserted on the one ref where
       # the two can disagree (CLAUDE.md §14, release tags). The version lives in
       # one constant, `VERSION` in `selfhost/main.hero`, and moves only in the
@@ -550,7 +563,10 @@ jobs:
         shell: bash
         run: |
           want="heroes ${GITHUB_REF_NAME#v}"
-          got="$(./heroes-from-seed${{ matrix.exe }} --version)"
+          # The first line is the release's; the second, what the binary was
+          # compiled from (panel 222), moves with every source.
+          said="$(./heroes-from-seed${{ matrix.exe }} --version)"
+          got="${said%%$'\n'*}"
           echo "the tag says:    $want"
           echo "the binary says: $got"
           test "$got" = "$want"
@@ -585,9 +601,9 @@ jobs:
       # names clang, the linker's home, the architecture, the runtime and a
       # writable cache — and it has never asked about cargo, which is what makes
       # this a rename rather than a rewrite.
-      - name: heroes doctor, from the seed-built compiler
+      - name: heroes doctor, from stage 2
         shell: bash
-        run: ./heroes-from-seed${{ matrix.exe }} doctor
+        run: ./heroes${{ matrix.exe }} doctor
 
       # The compiler's own tests: 482 of them, inside the modules they test,
       # which is where a Heroes module keeps them.
@@ -610,7 +626,7 @@ jobs:
       # "one of 519 tests fails", and those need opposite repairs.
       - name: One program, compiled and run
         run: |
-          ./heroes-from-seed${{ matrix.exe }} run examples/gallery/00-first.hero
+          ./heroes${{ matrix.exe }} run examples/gallery/00-first.hero
           echo "exit was $?"
 
       # **One small module's tests, before the whole compiler's.** Windows now
@@ -643,7 +659,7 @@ jobs:
         run: |
           mkdir -p build
           set +e
-          ./heroes-from-seed${{ matrix.exe }} check tests/golden/check/arm-pattern.hero 2> build/diag.txt
+          ./heroes${{ matrix.exe }} check tests/golden/check/arm-pattern.hero 2> build/diag.txt
           code=$?
           set -e
           cat build/diag.txt
@@ -660,7 +676,7 @@ jobs:
       # `test` does after the frontend — compiling the test binary and running
       # it once per case.
       - name: The same module, checked
-        run: ./heroes-from-seed${{ matrix.exe }} check selfhost/lexer.hero
+        run: ./heroes${{ matrix.exe }} check selfhost/lexer.hero
 
       # **Emitting, which check does not do.** `check` is green on this module
       # and `test` fails silently, and the gap between them is the backend:
@@ -690,7 +706,7 @@ jobs:
         run: |
           mkdir -p build/probe
           set +e
-          ./heroes-from-seed${{ matrix.exe }} build selfhost/lexer.hero --emit-c \
+          ./heroes${{ matrix.exe }} build selfhost/lexer.hero --emit-c \
             -o build/probe/emitted.c > build/probe/out.txt 2> build/probe/err.txt
           code=$?
           set -e
@@ -723,7 +739,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          ./heroes-from-seed${{ matrix.exe }} test selfhost/lexer.hero
+          ./heroes${{ matrix.exe }} test selfhost/lexer.hero
           code=$?
           set -e
           echo "--- exit $code ---"
@@ -740,7 +756,7 @@ jobs:
       # spot was not.
       - name: The compiler's own tests
         shell: bash
-        run: ./heroes-from-seed${{ matrix.exe }} test selfhost/main.hero
+        run: ./heroes${{ matrix.exe }} test selfhost/main.hero
 
       # The net: every suite the Rust harness carries, run by the compiler that
       # survives, against the compiler that survives. This is the configuration
@@ -753,7 +769,7 @@ jobs:
         # by the harness (`tests/harness/issue_wire.hero`).
         env:
           GH_TOKEN: ${{ github.token }}
-        run: ./heroes-from-seed${{ matrix.exe }} run tests/harness/main.hero -- ./heroes-from-seed${{ matrix.exe }}
+        run: ./heroes${{ matrix.exe }} run tests/harness/main.hero -- ./heroes${{ matrix.exe }}
 
       # THE NET'S OWN TESTS — 81 blocks that nothing ran until 2026-08-25
       # (author decision, `/decide` answer `a`). The two steps above drive the
@@ -775,8 +791,8 @@ jobs:
       - name: The net's own tests
         shell: bash
         env:
-          HEROES_COMPILER: ./heroes-from-seed${{ matrix.exe }}
-        run: ./heroes-from-seed${{ matrix.exe }} test tests/harness/main.hero
+          HEROES_COMPILER: ./heroes${{ matrix.exe }}
+        run: ./heroes${{ matrix.exe }} test tests/harness/main.hero
 
       # THE MUTATION SCORE OVER THE CORPUS — metric 3 (design.md Part 11), the
       # number the thesis rests on, printed into the log and never asserted:
@@ -819,7 +835,7 @@ jobs:
       - name: The mutation score over the corpus
         if: (github.ref_type == 'tag' || inputs.mutation == 'yes') && (matrix.name == 'Linux x86-64' || (github.event_name == 'workflow_dispatch' && inputs.only != 'all'))
         shell: bash
-        run: ./heroes-from-seed${{ matrix.exe }} mutate examples
+        run: ./heroes${{ matrix.exe }} mutate examples
 
       # THE SEED IS WHAT TODAY'S SOURCE EMITS — and until 2026-08-23 nothing
       # asked. `tests/harness/suite_determinism.hero:13` claimed this repository
@@ -855,11 +871,30 @@ jobs:
       # out of the net on purpose — the net is run mid-change, where the seed
       # is deliberately stale until the commit, and an alarm that is always on
       # is one people learn to ignore.
-      - name: The seed is what today's source emits
+      #
+      # **Two branches since panel 222's R4** (ratified 2026-10-17), since the
+      # seed is now refreshed when the two-stage build goes red and at each
+      # release rather than at every batch: where stage 1 and stage 2 say they
+      # were compiled from the same sources, the seed is this tree's and must
+      # be what stage 2 emits, byte for byte; where they differ, the seed is
+      # behind on purpose, and what must hold is that stage 2 reproduces itself
+      # one stage later, the emission of stage 2 and of the stage 3 it builds
+      # the same bytes. The sitting's critic ran both, 40.5 s and 89 s.
+      - name: The seed is what today's source emits, or stage 2 is its own fixpoint
         if: runner.os == 'Linux'
         run: |
-          ./heroes-from-seed${{ matrix.exe }} build selfhost/main.hero --emit-c -o /tmp/seed-fresh.c
-          cmp seed/heroes.c /tmp/seed-fresh.c
+          seeded="$(./heroes-from-seed${{ matrix.exe }} --version | sed -n 2p)"
+          staged="$(./heroes${{ matrix.exe }} --version | sed -n 2p)"
+          echo "stage 1: $seeded"
+          echo "stage 2: $staged"
+          ./heroes${{ matrix.exe }} build selfhost/main.hero --emit-c -o /tmp/stage-2.c
+          if [ "$seeded" = "$staged" ]; then
+            cmp seed/heroes.c /tmp/stage-2.c
+          else
+            ./heroes${{ matrix.exe }} build selfhost/main.hero -o heroes-3${{ matrix.exe }}
+            ./heroes-3${{ matrix.exe }} build selfhost/main.hero --emit-c -o /tmp/stage-3.c
+            cmp /tmp/stage-2.c /tmp/stage-3.c
+          fi
 
   # THE RELEASE, made by the machine after every leg agrees (CLAUDE.md §14,
   # release tags). What it publishes is the tag's own source archive, which

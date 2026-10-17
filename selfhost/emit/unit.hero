@@ -74,7 +74,7 @@ use emit/padding_tables
 # reads, before any probe asks them). The caller has already run the gate
 # over the whole program (a refusal is program-wide) and monomorphised;
 # `is_root` says whether this TU carries the shim.
-function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, is_root: bool, whole: members.Whole) -> str
+function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, sources: str, is_root: bool, whole: members.Whole) -> str
     module = plan.module
     mine = plan.mine
     keep = mine.defined
@@ -184,7 +184,7 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
     perfn.bodies(@w, c, names, s, decls, want: want)
 
     if is_root
-        root_shim(@w, plan, p, c, names, s, decls)
+        root_shim(@w, plan, p, c, names, s, decls, sources: sources)
     return writer.finish(w)
 
 # The root unit's `main`: the program's, or under `heroes test` the runner
@@ -192,13 +192,13 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
 # declared here, so the program's `main` never runs before a test (defect
 # 560; until 2026-10-10 `heroes test` compiled the whole program as one unit,
 # and so computed or refused another program than `build`).
-function root_shim(@w: writer.Writer, plan: unit_plan.Plan, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+function root_shim(@w: writer.Writer, plan: unit_plan.Plan, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], sources: str)
     match plan.target
         .program_build =>
             entry = emit.entry_point(p)
 
             if !entry.is_err()
-                emit_decls.shim(@w, p.functions[entry.must()], s)
+                emit_decls.shim(@w, p.functions[entry.must()], s, sources: sources)
         .tests_build =>
             for f in p.functions
                 match f.kind
@@ -207,4 +207,4 @@ function root_shim(@w: writer.Writer, plan: unit_plan.Plan, p: containers.Progra
                             signature.prototype(@w, f, c, names, s, decls)
                     .function_kind | .constant_kind | .extern_kind => continue
 
-            emit_decls.test_shim(@w, p, s)
+            emit_decls.test_shim(@w, p, s, sources: sources)

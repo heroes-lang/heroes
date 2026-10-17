@@ -87,6 +87,7 @@ constant NAMES: [str]
         "hero_panic_assert hero_panic_assert_sides hero_panic_must"
         "hero_panic_overflow hero_print_bool hero_print_end hero_print_f32"
         "hero_print_f64 hero_print_int hero_print_str hero_print_uint"
+        "hero_program_sources"
         "hero_run_arg hero_run_discard_path hero_run_exe_suffix hero_run_go"
         "hero_run_limit hero_run_limit_writes hero_run_reset hero_run_serial"
         "hero_run_signal hero_run_why hero_runtime_check_leaks hero_runtime_live"

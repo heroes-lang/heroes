@@ -3,7 +3,10 @@
 ## From a cold checkout, right now
 
 ```sh
-clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, from C alone (~3.5 s)
+clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # stage 1: the compiler, from C alone (~3.5 s)
+./heroes build selfhost/main.hero -o heroes-next             # stage 2: this tree's compiler
+mv heroes-next heroes
+./heroes --version                                           # its second line: what it was compiled from
 ./heroes run tests/harness/main.hero -- ./heroes             # the net
 ./heroes test tests/harness/main.hero                        # the net's own tests (121, 2026-09-07)
 ./heroes test selfhost/main.hero                             # the compiler's own tests
@@ -14,6 +17,13 @@ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, fro
 repository root was nine hours stale and did not know a built-in that had landed
 the evening before; a panel seat nearly filed that as a language defect. The
 first line above is 3.5 seconds and removes the whole class.
+
+**And build stage 2 from it, since 2026-10-17** (panel 222; M-bounded-seed's
+rhythm): the seed is refreshed when the two-stage build goes red and at each
+release, so between refreshes stage 1 is an earlier day's compiler, and the
+tree's own is the one stage 1 builds. `--version`'s second line says what a
+compiler was compiled from, and the hook in front of the net compares it with
+the tree's.
 
 ## End to end, per milestone
 

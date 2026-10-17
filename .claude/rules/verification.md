@@ -88,7 +88,8 @@ which pins a diagnostic's notes and excerpts (defect 289).
 
 | touched | the suites that judge it |
 |---|---|
-| `selfhost/**` | `canonical` `layout` `order` `probe` `records` `spec`, **plus the compiler's own tests** |
+| `selfhost/**` | `canonical` `layout` `order` `probe` `records` `seed` `spec`, **plus the compiler's own tests** |
+| `seed/heroes.c` | **`seed`** (it defines what the compiler it builds reads of its own C, panel 222's R3), `descriptors` `wholes`; the CI's two-stage check after the push |
 | `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**`, `tests/golden/emit/**` and `seed/heroes.c`) | **`emission`** **`emit`** `determinism` **`wholes`** `descriptors`, `lldb` (its sessions pin the `#line`s and the C names a stopped frame shows; issue 944, 2026-10-12), plus everything `selfhost/**` already gets |
 | `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, `grammar` for `selfhost/parse/**` (it reads the contextual words there), plus everything `selfhost/**` already gets, and the run by hand below before a push |
 | `tests/golden/check/**` | **`check`** `annotations` `fixes` |
@@ -321,6 +322,14 @@ way and `cmp` printed nothing. The probe M-inferred-cell's changes to
 `selfhost/print/` owed (three of its six runs unfinished on 2026-10-11, none
 refused) is not this exception's, and stays owed.
 
+**Restated 2026-10-17 by panel 222's R4** (ratified that day): every program's C
+now carries the key of the sources it was compiled from beside its `main`
+(`emit/provenance.hero`), which moves with any byte of a module, a comment's
+included, so the compiler's emitted C is never byte-identical across such a
+change. **The exception reads *identical except the line
+`hero_program_sources`***: `cmp` of the two emissions with that one line taken
+out of each, `grep -v 'hero_program_sources(void) {'`.
+
 Its cost, measured 2026-09-28 on one module and carried to the tree by
 arithmetic, so an inference: 25 µs per line of the seed for each variant with
 a compiler built at `-O2`, 8.6 variants per line in the two families, and
@@ -413,6 +422,21 @@ program that made them, and both pointed away from the cause. That is CL-078's
 shape — *a defect is written down as the finder saw it, and the shapes beside it
 are where what it actually is becomes visible* — arriving in the harness rather
 than in the language.
+
+**Asked of what it was compiled from since 2026-10-17** (panel 222, ratified
+that day): a modification time asks about the file, never about what the
+binary was built from, and the sitting measured both of its errors, a copy built
+before an edit passing and a compiler whose sources were rewritten with the same
+bytes refused. Every program carries the key of the modules its root reaches,
+the library compiled into it and the runtime it links, `heroes --version` prints
+the compiler's on its second line, `sources <key>`, and the hook in front of the
+net compares it with the tree's (`.claude/hooks/provenance.py`, a mirror held to
+the compiler by the hooks' own tests). **The compiler is the arbiter**: where
+`<compiler> build selfhost/main.hero --emit-c` writes beside its `main` the key
+its `--version` says, the mirror is the one that is wrong. And the compiler a
+gate judges with is stage 2, `./heroes build selfhost/main.hero -o heroes-next`
+from the compiler clang built, since the seed is refreshed only when that
+two-stage build goes red and at each release (§ The batch).
 
 ## And the order that makes this worth doing
 
@@ -620,7 +644,10 @@ commits, 11 merges each with a coordinator's gate, 10 repair commits, 8 gates of
   `selfhost/measure/pinned.hero`, and 251 of the compiler's 308 modules are
   nested;
 - **no seed, no fixpoint, no whole suite, no census, no platform.** The seed is
-  regenerated once, at the batch's close, and travels in the closing commit:
+  regenerated once, at the batch's close, and travels in the closing commit
+  (**since 2026-10-17 only where the two-stage build goes red or a release
+  closes**, the author's rhythm of 2026-10-14, § The batch's step 1; a new form
+  enters `selfhost/` only after the refresh whose seed knows it):
   measured over 2026-09-15 to 29, 93 commits touched `seed/heroes.c`, 22.9
   million lines of churn, about 21 whole-file rewrites, and **21 of 58 merges
   carried a seed conflict**, every one settled by rebuilding. A repair commit's
@@ -708,7 +735,13 @@ never spans a tag. The gate is what a push already owed, on the tree that will
 BE the trunk (merge the trunk into the lane once, gate the merged tree, then
 fast-forward the trunk: same tree, no second gate):
 
-1. the seed regenerated, the compiler built from it, the fixpoint by `cmp`;
+1. the two-stage build, clang on the seed and stage 2 from `selfhost/` with what
+   clang made, and its fixpoint one generation further, stage 2's and stage 3's
+   emissions the same bytes by `cmp`; the seed regenerated only where that
+   build went red or the batch closes a release, its own fixpoint then verified
+   by `cmp` over two generations (M-bounded-seed's rhythm, since 2026-10-17;
+   until then: *the seed regenerated, the compiler built from it, the fixpoint
+   by `cmp`*);
 2. the compiler's own tests, the net's own tests, **the full net**, its counts
    in the closing commit's body; the suites may run six at a time in separate
    processes, `cache` alone after them, and a red suite is re-run alone before
@@ -799,7 +832,9 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
 - **Layer 1, before a commit** (`.claude/hooks/guard_bash.py`): a harness run
   whose named compiler is older than `seed/heroes.c` or the newest file under
   `selfhost/` or `runtime/` is refused (2026-09-18 cost 31 minutes and two nets
-  to this, above), those of the tree the run stands in, found from the
+  to this, above), and since 2026-10-17 one whose `--version` says it was
+  compiled from other sources than the tree's, its age no longer asked (panel
+  222, § The compiler that judges is a build artifact), those of the tree the run stands in, found from the
   command's own `cd` since 2026-10-07 (defect 348: a lane's run from a session
   on the trunk was judged against the trunk); a `git commit` on the same command line as a gate is refused
   (two commits went past a red `records` in one week, `b5862c0a`, `2f42c1fc`,

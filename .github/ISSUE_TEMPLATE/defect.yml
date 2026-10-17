@@ -59,8 +59,8 @@ body:
     id: version
     attributes:
       label: The compiler
-      description: What `heroes --version` prints. If you built it from a commit rather than a tag, the commit.
-      placeholder: heroes 0.4.0
+      description: What `heroes --version` prints, both lines, the release and `sources`, the key of what the compiler was compiled from. If you built it from a commit rather than a tag, the commit too.
+      placeholder: heroes 0.4.0, sources 0123456789abcdef
     validations:
       required: true
   - type: input

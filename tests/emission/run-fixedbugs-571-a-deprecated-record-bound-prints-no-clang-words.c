@@ -240,6 +240,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("274e545e3c40e8fa", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs571adeprecatedrecordboundprintsnoclangwords_main();

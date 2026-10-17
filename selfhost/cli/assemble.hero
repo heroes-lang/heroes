@@ -69,6 +69,9 @@ record Site
     # (`header_packages.by_header`), which a unit's words are read from.
     by_header: {str: [str]}
     version: str
+    # What the program was compiled from (`emit/provenance.hero`), which its
+    # root unit carries beside `main`.
+    sources: str
 
 # What a round came back with: the verdict, and EVERY clang refusal it met and
 # not only the first. A program of several modules may need `struct` on a tag in
@@ -174,6 +177,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             s: s,
             decls: art.decls,
             version: site.version,
+            sources: site.sources,
             is_root: component == root,
             whole: whole
         )

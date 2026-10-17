@@ -396,6 +396,16 @@ HeroStr hero_str_try_from_bytes(const char *p, int64_t cap, int64_t *status);
    the path `hero_str_from_cstr` never sees (panel 053, CLAUDE.md §12). */
 const char *hero_cstr_nonnull(const char *p);
 
+/* -- what the program was compiled from (panel 222's R1) ------------------
+ * Sixteen characters, the key of the modules a program's root reaches, the
+ * library compiled into it and the runtime it links, which the emitter writes
+ * beside `main` in every program's root unit (`selfhost/emit/provenance.hero`):
+ * the definition is the program's, and this declaration is what clang holds
+ * it to. The runtime neither defines nor calls it, so no ABI stamp moves
+ * (panel 089's reading); the compiler prints its own on `--version`'s second
+ * line. */
+HeroStr hero_program_sources(void);
+
 /* -- f64 (proposal point 4) ------------------------------------------------ */
 float hero_int_to_f32(int64_t v);
 float hero_f64_to_f32(double v);
