@@ -115,3 +115,8 @@ Pending.
 Asked for by https://github.com/heroes-lang/heroes/issues/2123, naming the sitting as `panel 221`, with its one question and the recommendation.
 
 **Corrected 13:03, by `date`**: the head's *synthesised ... from 13:25* was written without reading the clock; `date` printed 13:02 after this file was committed.
+
+**RATIFIED, 2026-10-17**, R1 to R3 as written above, the author answering in conversation that evening, meant as *I ratify everything*, on the coordinator's list of the five open decisions, each with its recommendation. So **the question to the author is
+answered yes**: on Windows the 1,834 `extern const GUID` objects are refused as a scalar object is,
+a constant naming one value; the other answer, record objects kept as constants, is not taken.
+Recorded as a reading (CLAUDE.md § 4). The author may overturn it.

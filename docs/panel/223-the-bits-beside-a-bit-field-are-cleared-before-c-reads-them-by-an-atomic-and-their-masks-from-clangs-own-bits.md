@@ -117,3 +117,8 @@ Pending.
 
 Asked for by https://github.com/heroes-lang/heroes/issues/2129, naming the sitting as `panel 223`, with its question and the
 recommendation.
+
+**RATIFIED, 2026-10-17**, R1 to R4 as written above, the author answering in conversation that evening, meant as *I ratify everything*, on the coordinator's list of the five open decisions, each with its recommendation: the atomic `and` with masks from
+clang's own bits, as landed at `2365c4787`; the conservative route recorded (masks from the dump's
+column under a little-endian `_Static_assert`) is not taken. Recorded as a reading (CLAUDE.md § 4).
+The author may overturn it.

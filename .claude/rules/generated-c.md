@@ -79,7 +79,7 @@ stack each (`run/ffi-the-padding-c-reads-is-zero`). What it does not
 promise: the bits a bit-field's byte holds beside it (defect 2099), and five
 shapes read and not yet run (issue 2100). `hash` is never null.
 
-**And the bits beside a named bit-field, since panel 223** (2026-10-17, provisional, defect 2099):
+**And the bits beside a named bit-field, since panel 223** (ratified 2026-10-17, defect 2099):
 at both of R1's sites, before each lend and after each store of a whole group record (defect
 2112), in each byte a named bit-field shares with bits no named bit-field holds, those bits are
 cleared by `__atomic_fetch_and` through `volatile unsigned char *` (`hero_pad_clear`), the masks

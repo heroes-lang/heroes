@@ -88,3 +88,7 @@ Pending.
 Asked for by https://github.com/heroes-lang/heroes/issues/2122, naming the sitting as `panel 220`.
 
 **Corrected 13:03, by `date`**: the head's *synthesised ... from 13:20* was written without reading the clock; `date` printed 13:02 after this file was committed.
+
+**RATIFIED, 2026-10-17**, R1 to R3 as written above, the author answering in conversation that evening, meant as *I ratify everything*, on the coordinator's list of the five open decisions, each with its recommendation: C2 at about 900 code lines stands,
+reshape A, the other answer (reshape B) not taken. Recorded as a reading (CLAUDE.md § 4). The author
+may overturn it.

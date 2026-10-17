@@ -136,3 +136,8 @@ Pending.
 
 Asked for by https://github.com/heroes-lang/heroes/issues/2130, naming the sitting as `panel 224`, with its question and the
 recommendation.
+
+**RATIFIED, 2026-10-17**, R1 to R4 as written above and as amended at the landing, the author answering in conversation that evening, meant as *I ratify everything*, on the coordinator's list of the five open decisions, each with its recommendation: route
+E, its verdict counting where every error the pass adds is the region's, as landed at `32e517b9d`;
+the pass runs on every target, the `-###`-gated variant recorded and not taken. Recorded as a reading
+(CLAUDE.md § 4). The author may overturn it.

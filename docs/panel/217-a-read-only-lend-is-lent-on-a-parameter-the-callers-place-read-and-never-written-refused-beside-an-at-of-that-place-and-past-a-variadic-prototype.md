@@ -203,3 +203,10 @@ signature saying the function changes the counter.
 
 Pending: https://github.com/heroes-lang/heroes/issues/2105 asks for it, naming the sitting as `panel 217`.
 A yes settles R1 to R7 as written and the one question above the way the author answers it.
+
+**RATIFIED, 2026-10-17**, R1 to R7 as written above, the author answering in conversation that evening, meant as *I ratify everything*, on the coordinator's list of the five open decisions, each with its recommendation. So **the question to the author is
+answered with the recommendation: the form lands on a row of its own**, M-buildable-structs having
+closed that afternoon; R3(c) for `cstr` landed in its batch (defects 2102 and 2103). The row, its page
+and its feature issue are owed by R6 and were not entered at M-buildable-structs' close, the sitting
+then unratified; the coordinator says where they stand in the commit that records this reading.
+Recorded as a reading (CLAUDE.md § 4). The author may overturn it.
