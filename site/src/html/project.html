@@ -12,9 +12,10 @@
     The Heroes compiler is written in Heroes. Compiling it requires nested data, name tables, recursion, error handling and programs spread across files. It is a practical test of how the language handles a complex program.
   </p>
   <p>
-    The repository, the project&rsquo;s archive, also contains the compiler as one generated C file. You can build it on a computer without Heroes installed. Then use the resulting compiler to translate its own source into C and compare the two files:
+    The repository, the project&rsquo;s archive, also contains the compiler as one generated C file. You can build it on a computer without Heroes installed. Then use the resulting compiler to translate its own source into C and compare the two files. Do it on a release, the version the project has published:
   </p>
-  <pre class="fixpoint"><code>$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+  <pre class="fixpoint"><code>$ git checkout v{{version}}
+$ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
 $ ./heroes build selfhost/main.hero --emit-c -o out.c
 $ cmp out.c seed/heroes.c
 <span class="c">                       (cmp prints nothing: not one byte differs)</span>
@@ -22,9 +23,12 @@ $ cmp out.c seed/heroes.c
   seed/heroes.c   the C the repository ships: the way in
   out.c           what the compiler writes when it compiles itself
 
-<span class="c">  over 23 megabytes of C, and more than 800,000 lines of it</span></code></pre>
+<span class="c">  over twenty megabytes of C, and more than 250,000 lines of it</span></code></pre>
   <p>
-    If the files are identical, <code>cmp</code> prints nothing. The comparison verifies that the compiler reproduces the C it was built from. The middle command takes under a minute on a MacBook Air. Anyone can repeat the test: the repository is open and the three commands are the whole of it.
+    If the files are identical, <code>cmp</code> prints nothing. The comparison verifies that the compiler reproduces the C it was built from. The third command takes under two minutes on a MacBook Air. Anyone can repeat the test: the repository is open and the four commands are the whole of it.
+  </p>
+  <p>
+    Between two releases the generated C file is an earlier day&rsquo;s compiler. It builds the current one from the Heroes source, and that one reproduces itself one step later, which the project checks on every change. <code>heroes --version</code> says which one you hold: its second line is a fingerprint of the source it was built from.
   </p>
   <ul class="stats">
     <li><span class="n">{{modules}}+</span><span class="what">modules of Heroes</span></li>
@@ -105,6 +109,6 @@ $ cmp out.c seed/heroes.c
 
   <footer>
     <p>
-    The continuous integration system, which runs automated checks, runs the first command on all four platforms, Linux on two different processor families, macOS and Windows, whenever compiler changes are submitted. The other two commands run only on Linux: they check that the compiler reproduces its own C, which is the same everywhere. Decisions, reviews and measurements are in the <a href="https://github.com/heroes-lang/heroes">repository</a>, open to read.
+    The continuous integration system, which runs automated checks, runs the second command, the build from the C file, on all four platforms, Linux on two different processor families, macOS and Windows, whenever compiler changes are submitted. The last two commands run only on Linux: they check that the compiler reproduces its own C, which is the same everywhere. Decisions, reviews and measurements are in the <a href="https://github.com/heroes-lang/heroes">repository</a>, open to read.
   </p>
   </footer>
