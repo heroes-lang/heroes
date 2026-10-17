@@ -378,10 +378,16 @@ function prototype_of(text: str, name: str) -> str
 
 # The definition's opening line: same name, at column zero, ending in the
 # brace that opens the body.
+# The definition's head, its signature and ` {`, read to the first `) {` of
+# the row that opens it: since panel 219's s4 the prologue joins that row
+# (a re-anchoring `#line` joins its anchor), so the row goes on past ` {`.
 function definition_of(text: str, name: str) -> str
     for row in strings.lines(text)
-        if strings.contains(text: row, needle: name) && strings.ends_with(text: row, suffix: "{") && !strings.starts_with(text: row, prefix: " ")
-            return row
+        if strings.contains(text: row, needle: name + "(") && !strings.starts_with(text: row, prefix: " ")
+            head = strings.index_of(text: row, needle: ") {")
+
+            if !head.is_err()
+                return row.slice(from: 0, to: head.must() + 3)
 
     return ""
 
@@ -389,6 +395,10 @@ test "a prototype is told apart from a call to the same function"
     body = "int64_t h_m_f(int64_t a);\nint64_t h_m_f(int64_t a) {\n    t0 = h_m_f(t1);\n}\n"
     assert prototype_of(text: body, name: "h_m_f") == "int64_t h_m_f(int64_t a);"
     assert definition_of(text: body, name: "h_m_f") == "int64_t h_m_f(int64_t a) {"
+    joined = "int64_t h_m_f(int64_t a);\nint64_t h_m_f(int64_t a) { HERO_NODEBUG int64_t t0; goto bb0;\n"
+    assert definition_of(text: joined, name: "h_m_f") == "int64_t h_m_f(int64_t a) {"
+    pointer = "int f(void (*cb)(int)) { goto bb0;\n"
+    assert definition_of(text: pointer, name: "f") == "int f(void (*cb)(int)) {"
 
 test "a prototype and the definition beside it agree by construction"
     proto = "HeroArrayHeader * h_m_f(h_m_S s);"
