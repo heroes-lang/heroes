@@ -107,3 +107,14 @@ sources alone and writes the runtime down as uncovered.
 ## Author's verdict
 
 Pending.
+
+Asked for by https://github.com/heroes-lang/heroes/issues/2124, naming the sitting as
+`panel 222`, with its one question and the recommendation.
+
+**RATIFIED, 2026-10-17**, R1 to R5 as written above, the author answering in conversation that
+afternoon on the coordinator's question, which put the coverage with its measurement and the
+other answer, meant as *yes, the runtime and the libraries too*, and, asked in the same breath
+whether to build it then or in a new session, *yes, now*. So **the question to the author is
+answered: the digest covers the `.hero` sources a program's root reaches, its runtime and its
+library modules**; the other answer is not taken. Recorded as a reading (CLAUDE.md § 4). The
+author may overturn it.
