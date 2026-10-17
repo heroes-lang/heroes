@@ -595,3 +595,12 @@ explained is an entry in `docs/learn/glossary/`; a question worth re-asking is a
 file of `docs/learn/`; a change to the language is a panel. Every one but the
 glossary's and the question's is an issue on GitHub (§ The issues). The path
 between them is the git history and the commits each closing names.
+
+**And what a session hands to the next is that list of open issues, never a note of
+the assistant's memory** (author instruction 2026-10-17, meant as: *I have told you a
+thousand times that I do not want the memory used, because I use more than one
+computer*). A local note lives on one machine and a session opened on another never
+sees it, so the work a session leaves for the next is filed on GitHub before it ends,
+each item an issue of the milestone that owes it, and a session starts from `open`, never
+from a memory file. On the evening it was given, the coordinator had written the next
+session's start into the memory's index; issues 2132 and 2133 are where it went instead.
