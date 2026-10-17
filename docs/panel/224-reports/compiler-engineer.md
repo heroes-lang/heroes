@@ -12,7 +12,8 @@ and `/c/w/224-compiler-engineer` on the box (the same archive carried by `ssh` a
 `build/`, `archive/` and `site/` left out). No paid run, no credential printed. Nothing written in
 the lane but this file. **Status 18:56: complete; every row below was run, and what was not is said *unrun* where it
 stands. § 10, appended 19:05 to 19:42 at the coordinator's request, repairs the patch after the
-critic's second pass; its one open row is the box's `run` form, still running at 19:41.**
+critic's second pass; the box's `run` form, read at 19:57, gives no verdict on the patch: the
+box's disk filled under it, my directory holding 12G of the 100G.**
 
 ## The verdict
 
@@ -357,7 +358,7 @@ compile that succeeded, its staged object and dependency listing are discarded, 
 | `unsupported` whole | Mac | harness `unsupported` | **344 passed, 0 failed** |
 | `unsupported` whole | box | the same | **328 passed, 0 failed**, exit 0 (beside the box's `run`) |
 | `run` whole | Mac | harness `run` | **534 passed, 0 failed** (two cases skipped for `sys/prctl.h`, as the harness says) |
-| `run` whole | box | the same, started 19:17 | **not finished at 19:41, so its verdict is unread here**; it keeps running, writing `/c/w/224-compiler-engineer/run-e3.txt` on the box and `$C/out/box-run-e3.txt` here |
+| `run` whole | box | the same, started 19:17, ended about 19:57 | `382 passed, 134 failed`, **and no reading of the patch**: the box's disk filled during the run. Of the 134 `FAIL` lines (`grep -c` in `run-e3.txt` on the box), 114 carry *the operating system's own reason is 112* (Windows `ERROR_DISK_FULL`), 19 `LLVM ERROR: IO failure on output stream: no space on device`, 1 *reason is 28* (`ENOSPC`), summing to the 134; they run alphabetically from `fixedbugs-590` to the end and include programs binding no header value (`functions`, `strings`, `while-loop`), which the pass never reads. `df -h /c` after: 100G, 98% used, 2.9G free. **My own directory held 12G of it** (`du -sh /c/w/224-compiler-engineer`, `build/` 12G), regenerable cache I did not delete, since a deletion is asked for. A valid `run` on the box under the patch is **unrun** |
 | own tests | box | `heroes-e3.exe test selfhost/main.hero` (beside the box's `run`) | **1723 tests, all passed**, exit 0, the four new among them: the `-fwrapv` witness holds on clang 23 too |
 
 **The four tests** in `front_check.hero`, each run on this Mac in the 1723:

@@ -106,3 +106,54 @@ compiler's age, which tells how a refusal is told, a digest of the tree with the
 it differing on every write; defect 2120, `adjacent`.
 
 **The chain entry**: row 67, `m-bounded-seed`, closed 2026-10-17, this journal.
+
+## Added before the tag, 2026-10-17 evening
+
+**The tag waited on two defects the close had not counted.** Placed locally on `3c478500b`, the
+tag read `records/tagged` red: defects 2099 and 2120, each `adjacent` and open at two tags, count
+`blocking` at the second. The tag was removed, and by the author's answer (*convene the two
+sittings now*, then *by 22:30 close both steps*) panels 223 and 224 sat that evening in the
+soundness lane, a completeness critic reading every brief before the seats started: twelve repairs
+to 223's briefs and ten to 224's, among them a premise both 223 seats then measured false (*never a
+member's byte keeps R1 safe*: on the MSVC target R1 already writes inside a bit-field's access
+unit) and the finding that 2120 is the `-fwrapv` case of an order that holds on every platform
+(filed apart, 2128, `adjacent`). The CI of `6f83c0a37` read the Windows leg red on two cases, 2109's
+(2125, repaired before) and `examples/ctime`'s emission, which names `struct tm`'s members as each
+machine's header declares them (2127). And panel 223's compiler-engineer found a `partial` record
+leaving out a `const` member told *internal error* at exit 2 (2131).
+
+**What landed**: 2127, `examples/ctime/main` compared on Darwin alone (`82892e4b7`); 2099 under
+panel 223, an atomic `and` clearing the bits beside a named bit-field, masks from clang's own bits
+(`2365c4787`); 2131, the record recovered through the program's IR at clang's line
+(`52b54908a`), with `emit/ffi.hero` split along its field readers, since it stood at its ceiling;
+2120 under panel 224, a front-end pass under `-fno-wrapv` whose verdict counts only where every
+error it adds is the region's (`32e517b9d`). The seed was not regenerated: the two-stage build
+stayed green, the rhythm's first batch. Closed on GitHub: 2099, 2120, 2127, 2131; panels 223 and 224
+provisional (2129, 2130).
+
+**Predictions scored.** Panel 223's compiler-engineer, *exactly one emission moves beyond its key
+line*: **held**, `run-fixedbugs-156` +17 -3 and 609 files at their key line alone. Panel 223's
+ffi-pragmatist, libcurl's `struct curl_hstsentry` MemorySanitizer-clean through Heroes: **unrun**,
+measured in C alone. Panel 224's compiler-engineer, *the 2072 case green on the CI's Windows leg on
+its first run with clang 23*: **unscored**, the CI's leg runs clang 20.1.8; *the patch under 80
+lines by `wc -l`*: **missed, high**, 316 lines of diff and 265 inserted (`git show --format=
+32e517b9d -- selfhost | wc -l`), the repair after the critic's second pass and its four tests
+tripling it. Panel 224's ffi-pragmatist, a box program binding `VRL_ENABLE_KERNEL_BREAKS` beside
+`MB_OK` refused in its first build: **unrun** at the tag.
+
+**The gate, 2026-10-17, on `d1b031833`**, stage 2 judging (`sources 0acfc2fe242765b8`, the mirror's
+key of the tree): run 535, emission 1301, check 699, warnings 614, annotations 1167, surface 425,
+fixes 999, unsupported 345, corpus 70, determinism 575, lines 536, lldb 14, probe 27, ir 29, emit 13,
+permissive 22, full 39, records 26, spec 31, canonical 2, descriptors 631, grammar 9, order 3,
+runtime 8, special 10, unseen 3, wholes 631, seed 1, layout 6, units 3, cache 7, every one 0 failed;
+the compiler's own tests 1724 and the net's own 409. Linux arm64 said the same key and read
+`emission` 1277 and 0 after blessing its two. The Windows box (clang 23.1.1), its disk freed by the author's
+yes (this session's own build directories, about 70 GB), built stage 2 of `32e517b9d`, said the
+same key, and read `unsupported` 329 and 0, the 2072 case among them, and `emission` first 1230
+and 1: the batch's own new case, whose padding table names each bit-field's byte where the MSVC
+target lays it out, bytes 4 and 5 where Darwin's are 1 and 2. It joined `darwin_emissions`
+(`cec88be5e`), and the box read `emission` 1229 and 0, the case and `examples/ctime` skipped with
+their reasons.
+
+**Status at the tag**, for `docs/ROADMAP.md`: the compiler 669 modules and 174,028 lines of Heroes;
+the seed unchanged, 263,383 lines, 26,240,524 bytes, 56,190 `#line`s; sittings 222.
