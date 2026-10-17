@@ -209,4 +209,18 @@ a defined pointer shape.
 
 ## Author's verdict
 
-*Pending.*
+Pending: https://github.com/heroes-lang/heroes/issues/2110 asked for it, naming the sitting as
+`panel 216`, with its one question and the recommendation.
+
+**RATIFIED, 2026-10-17**, R1 to R5 as written above, the author answering in conversation on
+returning to the session that night, on the coordinator's summary, which put five decisions each
+with its measurement and a recommendation, the first this sitting's: meant as *I accept all your
+recommendations on the things I have to decide*. So **the question to the author is answered yes**:
+`heroes build` may run a program's header code to judge its constants, bounded as R1 bounds it, and
+the conservative resolution is not taken. Recorded as a reading (CLAUDE.md § 4). The author may
+overturn it.
+
+**What still stands between R1 and its landing**: the Windows box running the resuming trap probe
+and linking its unit without a change to the user's machine (R3's condition (i), both seats'),
+which only the author can start; condition (ii) is this answer. Defects 2075 and 2104 stay open
+until R1 lands.
