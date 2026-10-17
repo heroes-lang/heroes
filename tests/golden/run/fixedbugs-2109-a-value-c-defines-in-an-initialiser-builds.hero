@@ -1,0 +1,44 @@
+# FIXED DEFECT 2109, 2026-10-17, lane land215 (panel 218's R1, C2): the
+# values beside the refused ones, which C defines and which must build and
+# print C's value once the initialisers they read are asked under the
+# probe's checks at `-O0`: a chain through a second enumerator and an
+# implicit successor, `sizeof` and `offsetof`, a float folded to an integer in range, a const object read from an
+# enumerator, an unsigned wrap, a negative literal at the minimum, a `double`, an initialiser
+# whose undefined branch `__builtin_constant_p` never takes (the critic's
+# `S_BCPV`: C defines 5), and records leaf by leaf.
+
+extern "fixedbugs-2109-defined.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    constant E_B: i32
+    constant E_NEXT: i32
+    constant E_SIZE: i32
+    constant E_OFF: i32
+    constant E_30: i32
+    constant E_FDIV: i32
+    constant S_FROME: i32
+    constant S_WRAP: u32
+    constant S_NEGOK: i32
+    constant S_FOK: f64
+    constant S_BCPV: i32
+    constant R_OK: Pt
+    constant M_ROBJ_OK: Pt
+
+function main()
+    print(E_B)
+    print(E_NEXT)
+    print(E_SIZE)
+    print(E_OFF)
+    print(E_30)
+    print(E_FDIV)
+    print(S_FROME)
+    print(S_WRAP)
+    print(S_NEGOK)
+    print(S_FOK)
+    print(S_BCPV)
+    r = R_OK
+    print(r.x)
+    o = M_ROBJ_OK
+    print(o.x)
+    print(o.y)

@@ -1,0 +1,382 @@
+# What C2 asks of a header constant whose value an initialiser computes
+# (panel 218's R1, provisional 2026-10-17; defect 2109; design.md §4.19,
+# §1.12): an enumerator's, a const object's and a record's initialiser, read
+# from clang's dump of the probe's own text (`cli/clang_tree.hero`) and
+# written back as functions the probe runs under its checks at `-O0`. It never
+# parses C: every text is a slice of what clang read, cut at the offsets
+# clang's dump gives, and clang evaluates it.
+#
+# WHAT IS ASKED, from each asked accessor's own body, a scalar's `return` and
+# a record's `hero_constant_value` initialiser: a scalar's own value is panel
+# 216's R1's, asked at the program's level, since the program computes a
+# macro's value there (the critic: `__builtin_constant_p` answers by level);
+# every reference in either to an
+# enumerator or a const object of file scope is followed, and every reference
+# in what that one's initialiser reads, transitively. An enumerator with no
+# initialiser asks its predecessor in its place (C11 § 6.7.2.2 p3: its value
+# is the previous one's plus one). A brace list, the accessor's own or a const
+# object's, is asked leaf by leaf, each converted to the type C converts it to.
+#
+# WHY A SLICE NEEDS ITS REFERENCES SPLICED. An enumerator's initialiser read
+# after its enum ends can mean another thing: in `enum T { TA = 2147483647,
+# TB = TA + 1, TBIG = 0x100000000LL }`, `TA` is an `int` inside the body and a
+# `long` after it, so `TA + 1` sliced to the end of the unit computes
+# 2147483648 where clang folded an `int` overflow (the critic's `TB`). Each
+# reference to an arithmetic value is written `((T)(NAME))`, `T` the type the
+# dump gives that reference where it stands; and each initialiser's value is
+# compared, byte for byte, with the value clang folded for its declaration,
+# the guard that tells what drifts in any other way.
+
+use cli/clang_tree
+use cli/strings
+
+# One question: the C text whose value is asked; the declaration it is the
+# initialiser of, or whose brace list it is a leaf of, by its name, `member`,
+# or `""` for a leaf of an accessor's own list; whether it is a `leaf`, asked
+# at the type it is converted to, `cast`, or an initialiser, compared with the
+# value clang folded for `member`; where it begins in the probe's text; and
+# which asked accessors read it, by their index.
+record Question
+    member: str
+    leaf: bool
+    text: str
+    cast: str
+    begin: i64
+    readers: [i64]
+
+# The questions every accessor of `names` reaches, in the order first reached;
+# an accessor the dump does not define asks none.
+function questions(tree: clang_tree.Tree, text: str, names: [str]) -> [Question]
+    out: [Question] @= []
+    seen: {str: i64} @= {}
+    defined = definitions(tree)
+    reader: i64 @= 0
+
+    for name in names
+        found = defined[name]
+
+        if !found.is_err()
+            asked(@out, @seen, tree: tree, text: text, root: found.must(), reader: reader)
+        reader @ reader + 1
+
+    return out
+
+# Every function the dump defines, by its name: a `FunctionDecl` with a body.
+function definitions(tree: clang_tree.Tree) -> {str: i64}
+    out: {str: i64} @= {}
+    index: i64 @= 0
+
+    for one in tree.nodes
+        if one.kind == "FunctionDecl" && body_of(tree, at: index) >= 0
+            out[one.name] @ index
+        index @ index + 1
+
+    return out
+
+function body_of(tree: clang_tree.Tree, at: i64) -> i64
+    for child in tree.children[at]
+        if tree.nodes[child].kind == "CompoundStmt"
+            return child
+
+    return -1
+
+# The questions one accessor reaches, added to `out` once each, `reader`
+# added to each question's readers.
+function asked(@out: [Question], @seen: {str: i64}, tree: clang_tree.Tree, text: str, root: i64, reader: i64)
+    pending: [str] @= []
+    value = value_of(tree, body: body_of(tree, at: root))
+
+    if value < 0
+        return
+
+    if tree.nodes[value].kind == "InitListExpr"
+        leaves(@out, @seen, @pending, tree: tree, text: text, at: value, owner: "", reader: reader)
+    else
+        reached(@pending, tree: tree, at: value)
+    visited: {str: bool} @= {}
+
+    while pending.len() > 0
+        id = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+
+        if !visited[id].is_err()
+            continue
+        visited[id] @ true
+        found = tree.by_id[id]
+
+        if found.is_err()
+            continue
+        at = found.must()
+        one = tree.nodes[at]
+
+        if one.kind == "EnumConstantDecl" && tree.children[at].len() == 0
+            before = predecessor(tree, at: at)
+
+            if before >= 0
+                pending @ pending.push(tree.nodes[before].id)
+            continue
+        init = initialiser(tree, at: at)
+
+        if init < 0 || one.kind == "VarDecl" && !constant_object(tree, at: at)
+            continue
+
+        if tree.nodes[init].kind == "InitListExpr"
+            leaves(@out, @seen, @pending, tree: tree, text: text, at: init, owner: one.name, reader: reader)
+            continue
+        add(
+            @out,
+            @seen,
+            key: id,
+            q: Question(member: one.name, leaf: false, text: spliced(tree, text: text, at: init), cast: "", begin: tree.nodes[at].begin, readers: []),
+            reader: reader
+        )
+        reached(@pending, tree: tree, at: init)
+
+# The expression an accessor's body returns: a record's `hero_constant_value`
+# initialiser, else the `return`'s value.
+function value_of(tree: clang_tree.Tree, body: i64) -> i64
+    if body < 0
+        return -1
+
+    for statement in tree.children[body]
+        if tree.nodes[statement].kind == "DeclStmt"
+            for declared in tree.children[statement]
+                if tree.nodes[declared].kind == "VarDecl" && tree.nodes[declared].name == "hero_constant_value"
+                    return initialiser(tree, at: declared)
+
+    for statement in tree.children[body]
+        if tree.nodes[statement].kind == "ReturnStmt" && tree.children[statement].len() > 0
+            return tree.children[statement][0]
+
+    return -1
+
+# A brace list's leaves, each a question at the type C converts it to where
+# that type is arithmetic; any other value is one question of its own text,
+# never cast, and the references of either followed.
+function leaves(@out: [Question], @seen: {str: i64}, @pending: [str], tree: clang_tree.Tree, text: str, at: i64, owner: str, reader: i64)
+    one = tree.nodes[at]
+
+    if one.kind == "InitListExpr"
+        for child in tree.children[at]
+            leaves(@out, @seen, @pending, tree: tree, text: text, at: child, owner: owner, reader: reader)
+
+        return
+
+    if one.kind == "ImplicitValueInitExpr" || one.begin < 0 || one.end < 0
+        return
+    reached(@pending, tree: tree, at: at)
+    cast = arithmetic(one)
+
+    if cast.len() > 0
+        add(
+            @out,
+            @seen,
+            key: "leaf " + at.to_str(),
+            q: Question(member: owner, leaf: true, text: spliced(tree, text: text, at: at), cast: cast, begin: one.begin, readers: []),
+            reader: reader
+        )
+
+function add(@out: [Question], @seen: {str: i64}, key: str, q: Question, reader: i64)
+    found = seen[key]
+
+    if found.is_err()
+        seen[key] @ out.len()
+        out @ out.push(q)
+        out[out.len() - 1].readers @ [reader]
+        return
+
+    for one in out[found.must()].readers
+        if one == reader
+            return
+
+    out[found.must()].readers @ out[found.must()].readers.push(reader)
+
+# The declarations an expression's references name, pending a visit.
+function reached(@pending: [str], tree: clang_tree.Tree, at: i64)
+    one = tree.nodes[at]
+
+    if one.ref_kind == "EnumConstantDecl" || one.ref_kind == "VarDecl"
+        pending @ pending.push(one.ref_id)
+
+    for child in tree.children[at]
+        reached(@pending, tree: tree, at: child)
+
+# A declaration's initialiser: the last child that is no attribute.
+function initialiser(tree: clang_tree.Tree, at: i64) -> i64
+    found: i64 @= -1
+
+    for child in tree.children[at]
+        kind = tree.nodes[child].kind
+
+        if kind.len() < 4 || kind.slice(from: kind.len() - 4, to: kind.len()) != "Attr"
+            found @ child
+
+    return found
+
+# The enumerator before the one at `at` in its enum, or -1 for the first.
+function predecessor(tree: clang_tree.Tree, at: i64) -> i64
+    parent = tree.nodes[at].parent
+    before: i64 @= -1
+
+    if parent < 0
+        return -1
+
+    for child in tree.children[parent]
+        if child == at
+            return before
+
+        if tree.nodes[child].kind == "EnumConstantDecl"
+            before @ child
+
+    return -1
+
+# Whether the object at `at` is a const object of file scope, whose
+# initialiser is its value; a local, or an object the program may write, is
+# not one.
+function constant_object(tree: clang_tree.Tree, at: i64) -> bool
+    parent = tree.nodes[at].parent
+
+    if parent < 0 || tree.nodes[parent].kind != "TranslationUnitDecl"
+        return false
+    qual = tree.nodes[at].qual
+    return strings.starts_with(text: qual, prefix: "const ") && !strings.holds(text: qual, needle: "*")
+
+# The arithmetic type a node's value is, as C spells it, or `""`: its typedef
+# read through, an `enum` counted, anything else (a pointer, an array, a
+# record, a type clang names `(unnamed ...)`) not.
+function arithmetic(one: clang_tree.Node) -> str
+    t: str @= one.qual
+
+    if one.desugared.len() > 0
+        t @ one.desugared
+
+    while strings.starts_with(text: t, prefix: "const ") || strings.starts_with(text: t, prefix: "volatile ")
+        if strings.starts_with(text: t, prefix: "const ")
+            t @ t.slice(from: 6, to: t.len())
+        else
+            t @ t.slice(from: 9, to: t.len())
+
+    if strings.holds(text: t, needle: "(") || strings.holds(text: t, needle: "[") || strings.holds(text: t, needle: "*")
+        return ""
+
+    if strings.starts_with(text: t, prefix: "enum ")
+        return t
+
+    for one_type in ARITHMETIC
+        if t == one_type
+            return t
+
+    return ""
+
+constant ARITHMETIC: [str]
+    [
+        "_Bool"
+        "char"
+        "signed char"
+        "unsigned char"
+        "short"
+        "unsigned short"
+        "int"
+        "unsigned int"
+        "long"
+        "unsigned long"
+        "long long"
+        "unsigned long long"
+        "__int128"
+        "unsigned __int128"
+        "float"
+        "double"
+        "long double"
+    ]
+
+# The text of the expression at `at`, each reference in it to an arithmetic
+# enumerator or object written `((T)(NAME))` at the type the dump gives it.
+function spliced(tree: clang_tree.Tree, text: str, at: i64) -> str
+    one = tree.nodes[at]
+    stop = one.end + one.end_length
+
+    if one.begin < 0 || stop > text.len() || stop < one.begin
+        return ""
+    parts: [str] @= []
+    from: i64 @= one.begin
+
+    for ref in references(tree, at: at)
+        r = tree.nodes[ref]
+        cast = arithmetic(r)
+
+        if cast.len() > 0 && r.begin >= from && r.end + r.end_length <= stop
+            parts @ parts.push(text.slice(from: from, to: r.begin))
+            parts @ parts.push("((" + cast + ")(" + r.ref_name + "))")
+            from @ r.end + r.end_length
+
+    parts @ parts.push(text.slice(from: from, to: stop))
+    return parts.join("")
+
+# The references under `at` to an enumerator or an object, in the order clang
+# wrote them, which is their order in the text.
+function references(tree: clang_tree.Tree, at: i64) -> [i64]
+    out: [i64] @= []
+    one = tree.nodes[at]
+
+    if one.ref_kind == "EnumConstantDecl" || one.ref_kind == "VarDecl"
+        out @ out.push(at)
+
+    for child in tree.children[at]
+        for ref in references(tree, at: child)
+            out @ out.push(ref)
+
+    return out
+
+## The probe's functions
+
+# One question as a function of the probe: its value converted and kept in a
+# `volatile`, and, for a declaration's initialiser, compared with the value
+# clang folded for it, `1` where they differ.
+function function_of(q: Question, index: i64) -> str
+    name = "hero_init_" + index.to_str()
+
+    if q.leaf
+        return "int " + name + "(void) { volatile " + q.cast + " hero_v = (" + q.cast + ")(" + q.text + "); (void)hero_v; return 0; }"
+    t = "__typeof__(" + q.member + ")"
+    return "int " + name + "(void) { volatile " + t + " hero_v = (" + t + ")(" + q.text + "); " + t + " hero_a = hero_v; " + t + " hero_b = " + q.member + "; return __builtin_memcmp(&hero_a, &hero_b, sizeof hero_a) != 0; }"
+
+## Tests
+
+# `enum { EA = 1 << 31, EB = EA + 1, EC };` and an accessor returning `EB`, as
+# clang's dump gives them, cut to the fields the walk reads, every offset
+# counted on `TEXT`.
+constant TEXT: str
+    "enum { EA = 1 << 31, EB = EA + 1, EC };\nint h_m_EB(void) { return EB; }\n"
+
+constant DUMP: str
+    "{\"id\": \"0x1\", \"kind\": \"TranslationUnitDecl\", \"inner\": [{\"id\": \"0x2\", \"kind\": \"EnumDecl\", \"inner\": [{\"id\": \"0x3\", \"kind\": \"EnumConstantDecl\", \"name\": \"EA\", \"type\": {\"qualType\": \"int\"}, \"range\": {\"begin\": {\"offset\": 7}, \"end\": {\"offset\": 17, \"tokLen\": 2}}, \"inner\": [{\"id\": \"0x4\", \"kind\": \"ConstantExpr\", \"type\": {\"qualType\": \"int\"}, \"range\": {\"begin\": {\"offset\": 12}, \"end\": {\"offset\": 17, \"tokLen\": 2}}}]}, {\"id\": \"0x5\", \"kind\": \"EnumConstantDecl\", \"name\": \"EB\", \"type\": {\"qualType\": \"int\"}, \"range\": {\"begin\": {\"offset\": 21}, \"end\": {\"offset\": 31, \"tokLen\": 1}}, \"inner\": [{\"id\": \"0x6\", \"kind\": \"ConstantExpr\", \"type\": {\"qualType\": \"int\"}, \"range\": {\"begin\": {\"offset\": 26}, \"end\": {\"offset\": 31, \"tokLen\": 1}}, \"inner\": [{\"id\": \"0x7\", \"kind\": \"DeclRefExpr\", \"type\": {\"qualType\": \"int\"}, \"range\": {\"begin\": {\"offset\": 26}, \"end\": {\"offset\": 26, \"tokLen\": 2}}, \"referencedDecl\": {\"id\": \"0x3\", \"kind\": \"EnumConstantDecl\", \"name\": \"EA\"}}]}]}, {\"id\": \"0x8\", \"kind\": \"EnumConstantDecl\", \"name\": \"EC\", \"type\": {\"qualType\": \"int\"}, \"range\": {\"begin\": {\"offset\": 34}, \"end\": {\"offset\": 34, \"tokLen\": 2}}}]}, {\"id\": \"0x9\", \"kind\": \"FunctionDecl\", \"name\": \"h_m_EB\", \"inner\": [{\"id\": \"0xa\", \"kind\": \"CompoundStmt\", \"inner\": [{\"id\": \"0xb\", \"kind\": \"ReturnStmt\", \"inner\": [{\"id\": \"0xc\", \"kind\": \"DeclRefExpr\", \"type\": {\"qualType\": \"int\"}, \"range\": {\"begin\": {\"offset\": 66}, \"end\": {\"offset\": 66, \"tokLen\": 2}}, \"referencedDecl\": {\"id\": \"0x5\", \"kind\": \"EnumConstantDecl\", \"name\": \"EB\"}}]}]}]}]}"
+
+test "an accessor's reference is followed through EB to EA, each initialiser sliced, the reference spliced at its type"
+    tree = clang_tree.read(DUMP).must()
+    got = questions(tree, text: TEXT, names: ["h_m_EB", "h_m_absent"])
+    assert got.len() == 2
+    assert got[0].member == "EB"
+    assert got[0].text == "((int)(EA)) + 1"
+    assert got[1].member == "EA"
+    assert got[1].text == "1 << 31"
+    assert got[1].readers == [0]
+    assert !got[1].leaf
+    assert function_of(got[1], index: 1) == "int hero_init_1(void) { volatile __typeof__(EA) hero_v = (__typeof__(EA))(1 << 31); __typeof__(EA) hero_a = hero_v; __typeof__(EA) hero_b = EA; return __builtin_memcmp(&hero_a, &hero_b, sizeof hero_a) != 0; }"
+
+test "an enumerator with no initialiser asks its predecessor, and a type is arithmetic by what it names"
+    tree = clang_tree.read(DUMP).must()
+    assert predecessor(tree, at: tree.by_id["0x8"].must()) == tree.by_id["0x5"].must()
+    assert predecessor(tree, at: tree.by_id["0x3"].must()) == -1
+    one: clang_tree.Node @= tree.nodes[0]
+    one.qual @ "const uint32_t"
+    one.desugared @ "const unsigned int"
+    assert arithmetic(one) == "unsigned int"
+    one.desugared @ ""
+    one.qual @ "struct pt"
+    assert arithmetic(one) == ""
+    one.qual @ "char *"
+    assert arithmetic(one) == ""
+    one.qual @ "enum T"
+    assert arithmetic(one) == "enum T"
+    q = Question(member: "", leaf: true, text: "1e20", cast: "int", begin: 0, readers: [2])
+    assert function_of(q, index: 4) == "int hero_init_4(void) { volatile int hero_v = (int)(1e20); (void)hero_v; return 0; }"

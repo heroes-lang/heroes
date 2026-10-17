@@ -1,0 +1,189 @@
+# C2: the initialisers a header constant's value reads, asked under the
+# probe's checks at `-O0` (panel 218's R1, provisional 2026-10-17; defect
+# 2109; design.md §4.19, §1.12). An enumerator's, a const object's or a brace
+# list's value is folded by clang's constant evaluator, which no run-time check
+# sees, so panel 216's probe of the accessor reads it as already computed; here
+# the initialiser's own text is asked (`cli/value_init.hero`), compiled and run
+# by `cli/value_run.hero` as that probe is, but at `-O0` whatever the
+# program's level: at `-O0` clang answers `__builtin_constant_p` as its
+# constant evaluator does, and at `-O2` it does not (the critic, on both seats'
+# prototypes: `S_BCPV` refused and `S_BCPM` kept at the program's `-O2`).
+#
+# **Cold only, and not for every unit**: an accessor whose value holds no name
+# and no brace list reaches nothing a dump would show, so a unit of literal
+# macros asks no dump (`value_text.reaches`); the verdict is kept under
+# `build/init-<key>/`, so a warm build asks nothing.
+
+use emit/value_probe
+use emit/ffi_lookup
+use cli/toolchain
+use cli/process
+use cli/publish
+use cli/response_file
+use cli/read_back
+use cli/strings
+use cli/digest
+use cli/kept as kept_answers
+use cli/libraries
+use cli/clang_tree
+use cli/value_init
+use cli/value_text
+use cli/value_run
+use cli/value_told
+
+# The dump step's canary (the compiler-engineer's condition 4): an enumerator
+# C leaves undefined reached through a second, which must trap, and its
+# defined twin, which must not; appended before the dump and asked as the two
+# first accessors, so a dump this compiler misreads is its own failure, never
+# a silence.
+constant CANARY: str
+    "\nenum { hero_c2_ua = 1 << 31, hero_c2_ub = hero_c2_ua + 1 };\nenum { hero_c2_da = 1 << 30, hero_c2_db = hero_c2_da + 1 };\nint hero_c2_canary_u(void) { return hero_c2_ub; }\nint hero_c2_canary_d(void) { return hero_c2_db; }\n"
+
+# One unit's verdict: a line per refused constant, `init <trap|disagree>
+# <accessor>` and, tab-separated, the line, the file and the member whose
+# initialiser it is (`""` for a leaf of the accessor's own brace list), and a
+# probe's `death` or `unlinked` as `cli/value_run.hero` reads it; empty where
+# nothing is refused. `plain` is the unit preprocessed, shared with panel 216's
+# probe and read here only where neither kept a verdict.
+function asked(t: toolchain.Toolchain, one: value_run.Unit, accessors: [value_probe.Accessor], level: str, @plain: str?) -> str?
+    sample = value_init.Question(member: "m", leaf: false, text: "t", cast: "", begin: 0, readers: [])
+    key = digest.digest(
+        t.fingerprint + "|init|" + t.compiler_key + "|" + one.module + "|" + one.text + "|words:" + libraries.key_text(one.words) + "|" + level + "|" + t.runtime_key + "|" + t.target + "|" + CANARY + "|" + value_init.function_of(sample, index: 0) + "|" + value_run.checks().join(" ")
+    )
+    dir = t.build + "/init-" + key
+    known = kept_answers.read(dir + "/verdict.txt")
+
+    if !known.is_err()
+        return known
+
+    process.mkdir_all(dir)?
+
+    if plain.is_err()
+        plain @ ok(value_run.preprocessed(dir: dir, one: one, defines: false)?)
+    wanted: [i64] @= []
+    index: i64 @= 0
+
+    for accessor in accessors
+        if value_text.reaches(text: plain.must(), accessor: accessor.name)
+            wanted @ wanted.push(index)
+        index @ index + 1
+
+    said: str @= ""
+
+    if wanted.len() > 0
+        said @ questioned(t, dir: dir, one: one, accessors: accessors, wanted: wanted, base: plain.must() + CANARY)?
+    kept_answers.write(path: dir + "/verdict.txt", text: said)?
+    return ok(said)
+
+# The dump of `base`, its questions, and their probe at `-O0`, read into the
+# verdict's lines.
+function questioned(t: toolchain.Toolchain, dir: str, one: value_run.Unit, accessors: [value_probe.Accessor], wanted: [i64], base: str) -> str?
+    tree = dumped(dir: dir, one: one, base: base)?
+    names: [str] @= ["hero_c2_canary_u", "hero_c2_canary_d"]
+
+    for index in wanted
+        names @ names.push(accessors[index].name)
+
+    qs = value_init.questions(tree, text: base, names: names)
+    functions: [str] @= []
+    cases: [str] @= []
+    index: i64 @= 0
+
+    for q in qs
+        functions @ functions.push(value_init.function_of(q, index: index))
+        cases @ cases.push("return hero_init_" + index.to_str() + "();")
+        index @ index + 1
+
+    text = base + "\n" + functions.join("\n") + "\n" + value_probe.dispatcher(cases)
+    object = value_run.compiled(dir: dir, one: one, text: text, level: "-O0")?
+    said = value_run.linked_and_run(t, dir: dir, object: object, total: 2 + qs.len(), level: "-O0")
+    publish.discard(object)
+    return lines_of(findings: said?, qs: qs, wanted: wanted, base: base)
+
+# clang's JSON dump of `base`, under the unit's words, read as a tree.
+function dumped(dir: str, one: value_run.Unit, base: str) -> clang_tree.Tree?
+    base_i = dir + "/base.i"
+    publish.write_whole(path: base_i, text: base, keyed: false)?
+    out = publish.private_name(dir + "/dump.json")
+    errors = publish.private_name(dir + "/dump-errors.txt")
+    words = strings.with_all(
+        list: strings.with_all(list: ["clang", "-x", "cpp-output"], more: one.words),
+        more: ["-fsyntax-only", "-w", "-Xclang", "-ast-dump=json"]
+    )
+    ran = process.run(
+        program: "clang",
+        words: response_file.carried(line: words, dir: dir).push(base_i),
+        out: out,
+        err: errors
+    )
+    said_by_clang = read_back.words(errors).default("")
+    dump = read_back.words(out)
+    publish.discard(out)
+    publish.discard(errors)
+
+    if !ran.started || ran.code != 0 || dump.is_err()
+        return fail(
+            code: "broken",
+            msg: "internal error: clang did not dump the probe of module `" + one.module + "`'s header constants: " + value_told.first_error(said_by_clang)
+        )
+    tree = clang_tree.read(dump.must())
+
+    if tree.is_err()
+        return fail(
+            code: "broken",
+            msg: "internal error: clang's dump of the probe of module `" + one.module + "`'s header constants did not read as a tree"
+        )
+    return tree
+
+# A probe's findings as the verdict's lines, each refused accessor told once,
+# from the first finding that names it; the canaries' answers checked, the
+# undefined one's question trapped and no defined one's refused.
+function lines_of(findings: str, qs: [value_init.Question], wanted: [i64], base: str) -> str?
+    out: [str] @= []
+    seen: {i64: bool} @= {}
+    canary: bool @= false
+
+    for line in ffi_lookup.lines(text: findings)
+        trap = ffi_lookup.after(text: line, marker: "trap ")
+        disagree = ffi_lookup.after(text: line, marker: "disagree ")
+
+        if trap.is_err() && disagree.is_err()
+            if line.len() > 0
+                out @ out.push(line)
+                canary @ true
+            continue
+        kind: str @= "trap"
+        number = ffi_lookup.number(text: trap.default(disagree.default("")))
+
+        if !disagree.is_err()
+            kind @ "disagree"
+
+        if number.is_err() || number.must() < 2 || number.must() - 2 >= qs.len()
+            continue
+        q = qs[number.must() - 2]
+
+        for reader in q.readers
+            if reader == 1
+                return fail(
+                    code: "broken",
+                    msg: "internal error: the probe of a header constant's initialiser refused its defined canary"
+                )
+
+            if reader == 0
+                canary @ canary || kind == "trap"
+            else if seen[wanted[reader - 2]].is_err()
+                seen[wanted[reader - 2]] @ true
+                place = value_text.presumed(base, at: q.begin).default(value_text.Place(file: "", line: 0))
+                out @ out.push(
+                    "init " + kind + " " + wanted[reader - 2].to_str() + "\t" + place.line.to_str() + "\t" + place.file + "\t" + q.member
+                )
+
+    if !canary
+        return fail(
+            code: "broken",
+            msg: "internal error: the probe of a header constant's initialiser did not trap on its undefined canary, so clang's dump was not read"
+        )
+
+    if out.len() == 0
+        return ok("")
+    return ok(out.join("\n") + "\n")

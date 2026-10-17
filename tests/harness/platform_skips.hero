@@ -50,7 +50,7 @@ constant STATIC_ELSEWHERE: str
     "its words are the Windows target's, Microsoft's extension refused in a header's region (clang 23.1.1 on the Windows box, 2026-10-13), where this Mac's clang and Linux's say `static declaration of 'hero_str_len' follows non-static declaration`, which defect 2045's case judges on them; its mark is judged on every platform (defect 2053)"
 
 constant LINKED_ON_WINDOWS: str
-    "the probe of a header constant's value links on Windows with `/FORCE:UNRESOLVED`, the platform's word for leaving the program's libraries out, since neither link.exe nor lld drops a reference dead-stripping drops elsewhere (measured on the box, 2026-10-17); so a header constructor calling a function no library of the probe holds links there and ends the probe when it calls it, told as a probe that did not finish, where Darwin's and Linux's links leave the symbol undefined and it is told by its name (panel 218's R2)"
+    "the probe of a header constant's value links on Windows with `/FORCE:UNRESOLVED`, the platform's word for leaving the program's libraries out, since neither link.exe nor lld drops a reference dead-stripping drops elsewhere (measured on the box, 2026-10-17); so a header constructor calling a function no library of the probe holds links there and ends the probe when it calls it, told as a probe that did not finish (measured on the box at bc978b09d: exception 3221225477 at the constructor's call), where Darwin's and Linux's links leave the symbol undefined and it is told by its name (panel 218's R2)"
 
 # The cases and rows Windows cannot hold, by the name the report gives them.
 function windows() -> [Skip]

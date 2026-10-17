@@ -141,27 +141,43 @@ function unit_text(tu_text: str) -> str
 
 # What the probe appends to the unit's preprocessed text, so it is compiled by
 # the very words the accessors are and sees every type the header declares:
-# the two canaries, one division C leaves undefined and one it defines
-# (`volatile` keeps either from folding), and the dispatcher, which calls the
-# canaries first and then every accessor by its index, its value kept in a
+# the dispatcher, each accessor called by its index, its value kept in a
 # `volatile` of the accessor's own type, a record's as a scalar's.
 function appended(accessors: [Accessor]) -> str
+    cases: [str] @= []
+
+    for one in accessors
+        cases @ cases.push(kept(one.name))
+
+    return dispatcher(cases)
+
+# A call whose value is kept and not compared.
+function kept(name: str) -> str
+    return "{ volatile __typeof__(" + name + "()) hero_v = " + name + "(); (void)hero_v; return 0; }"
+
+# The two canaries, one division C leaves undefined and one it defines
+# (`volatile` keeps either from folding), and the dispatcher: the canaries
+# called first, then each case by its index, every case returning `1` where
+# the value it asked is not the one clang folded (panel 218's guard), `0`
+# otherwise.
+function dispatcher(cases: [str]) -> str
     lines: [str] @= [
         ""
         "int " + CANARY_UNDEFINED + "(void) { volatile int hero_a = -2147483647 - 1; volatile int hero_b = -1; return hero_a / hero_b; }"
         "int " + CANARY_DEFINED + "(void) { volatile int hero_a = 1000; volatile int hero_b = 60; return hero_a / hero_b; }"
-        "void " + DISPATCH + "(int hero_i) {"
+        "int " + DISPATCH + "(int hero_i) {"
         "    switch (hero_i) {"
+        "    case 0: " + kept(CANARY_UNDEFINED)
+        "    case 1: " + kept(CANARY_DEFINED)
     ]
-    index: i64 @= 0
+    index: i64 @= 2
 
-    for name in called(accessors)
-        lines @ lines.push(
-            "    case " + index.to_str() + ": { volatile __typeof__(" + name + "()) hero_v = " + name + "(); (void)hero_v; break; }"
-        )
+    for one in cases
+        lines @ lines.push("    case " + index.to_str() + ": " + one)
         index @ index + 1
 
     lines @ lines.push("    }")
+    lines @ lines.push("    return 0;")
     lines @ lines.push("}")
     return lines.join("\n") + "\n"
 
@@ -179,16 +195,17 @@ constant DISPATCH: str
     "hero_probe_call"
 
 # The driver: the dispatcher called with every index from the one its one
-# argument names, each written and flushed before its call, and `FINISHED`
-# once all have returned.
+# argument names, each written and flushed before its call, `disagree <i>`
+# after a call that says its value is not the one clang folded, and
+# `FINISHED` once all have returned.
 function driver(count: i64) -> str
     lines: [str] = [
         "#include <stdio.h>"
         "#include <stdlib.h>"
-        "void " + DISPATCH + "(int hero_i);"
+        "int " + DISPATCH + "(int hero_i);"
         "int main(int argc, char **argv) {"
         "    int from = argc > 1 ? atoi(argv[1]) : 0;"
-        "    for (int i = from; i < " + count.to_str() + "; i++) { printf(\"%d\\n\", i); fflush(stdout); " + DISPATCH + "(i); }"
+        "    for (int i = from; i < " + count.to_str() + "; i++) { printf(\"%d\\n\", i); fflush(stdout); if (" + DISPATCH + "(i)) { printf(\"disagree %d\\n\", i); fflush(stdout); } }"
         "    printf(\"" + FINISHED + "\\n\");"
         "    fflush(stdout);"
         "    return 0;"
@@ -207,6 +224,21 @@ function last_index(out: str) -> i64?
 
         if !number.is_err()
             found @ ok(number.must())
+
+    return found
+
+# The calls a run said disagree, by index.
+function disagreeing(out: str) -> [i64]
+    found: [i64] @= []
+
+    for line in ffi_lookup.lines(text: out)
+        said = ffi_lookup.after(text: line, marker: "disagree ")
+
+        if !said.is_err()
+            number = ffi_lookup.number(text: said.must())
+
+            if !number.is_err()
+                found @ found.push(number.must())
 
     return found
 
@@ -264,11 +296,13 @@ test "the dispatcher calls the canaries first and every accessor by index at its
     )
     assert ffi_lookup.has(text: text, needle: "case 2: { volatile __typeof__(h_m_K()) hero_v = h_m_K();")
     assert ffi_lookup.has(text: text, needle: "int hero_probe_canary_defined(void)")
-    assert ffi_lookup.has(text: text, needle: "void hero_probe_call(int hero_i) {")
+    assert ffi_lookup.has(text: text, needle: "int hero_probe_call(int hero_i) {")
     assert called([one]).len() == 3
     shown = driver(3)
     assert ffi_lookup.has(text: shown, needle: "i < 3; i++")
-    assert ffi_lookup.has(text: shown, needle: "void hero_probe_call(int hero_i);")
+    assert ffi_lookup.has(text: shown, needle: "int hero_probe_call(int hero_i);")
+    assert ffi_lookup.has(text: shown, needle: "printf(\"disagree %d\\n\", i)")
+    assert disagreeing("2\ndisagree 2\n3\n") == [2]
 
 test "a run is read by its last index, its last line and the signal that ended it"
     assert last_index("0\n1\n2\n").must() == 2

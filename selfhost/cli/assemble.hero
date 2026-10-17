@@ -40,6 +40,7 @@ use emit/lend_local
 use emit/header_packages
 use cli/libraries
 use cli/value_ask
+use cli/value_run
 use cli/io
 
 # What one build has settled before any round runs. Where the binary lands
@@ -162,7 +163,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     # rather than rebuilt per unit. It starts from the probes' own digests
     # (defect 416), the same build's answers about the same headers.
     memo: {str: str} @= lent.digests
-    asked: [value_ask.Unit] @= []
+    asked: [value_run.Unit] @= []
 
     for plan in planned.plans
         component = plan.module
@@ -201,7 +202,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         else
             objects @ objects.push(made.must())
             asked @ asked.push(
-                value_ask.Unit(module: component, text: tu_text, words: compiling.unit_words(compiling.Compiling(level: options.level, sanitize: options.sanitize, search_include: options.headers_from, package_flags: unit_words(site, headers: plan.headers), runtime: t.runtime, source_dir: site.source_dir)), defined: plan.mine.defined)
+                value_run.Unit(module: component, text: tu_text, words: compiling.unit_words(compiling.Compiling(level: options.level, sanitize: options.sanitize, search_include: options.headers_from, package_flags: unit_words(site, headers: plan.headers), runtime: t.runtime, source_dir: site.source_dir)), defined: plan.mine.defined)
             )
 
     if stopped.is_err()

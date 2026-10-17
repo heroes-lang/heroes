@@ -1,0 +1,280 @@
+# A probe of a header constant's value, run: the program's own unit
+# preprocessed under its own words, the probe's text compiled in trap mode,
+# linked with the runtime alone and run until it finishes, each run starting
+# after the call the last trapped at (panel 216's R1, ratified 2026-10-17;
+# panel 218's R1 and R2; design.md §4.19, §1.12). Panel 216's own questions,
+# the accessors at the program's level, are `cli/value_ask.hero`'s; panel
+# 218's, the initialisers at `-O0`, `cli/value_c2.hero`'s; both run here, so
+# the two probes are bounded, linked and read alike. Split out of
+# `cli/value_ask.hero` along the seam between asking and running.
+#
+# **What runs is bounded** (the ffi-pragmatist's condition (d)): stdin is the
+# discard path, the output a file of this probe's own, each run `LIMIT`
+# seconds and `CAP` bytes of output, the runtime's own watchdog and ceiling
+# as `mutate/child.hero` holds a child to them.
+#
+# **The link leaves the program's libraries out, by the platform's own word**:
+# `-dead_strip` on Darwin and `--gc-sections` on Linux drop the functions
+# that reach them, as the ffi-pragmatist measured over the corpus (84 of 84,
+# 88 of 88); on Windows neither link.exe nor lld drops such a reference, and
+# `/FORCE:UNRESOLVED` links, measured on the box 2026-10-17. A link that still
+# leaves a symbol undefined is the header's own code reaching a library, told
+# (panel 218's R2: it passed in silence).
+
+use emit/value_probe
+use emit/ffi_lookup
+use cli/toolchain
+use cli/flags
+use cli/link_flags
+use cli/process
+use cli/publish
+use cli/response_file
+use cli/read_back
+use cli/strings
+use cli/value_told
+
+# The runtime's child runner with its two limits, which `cli/process.run`
+# does not take: a group of this module's own, as `mutate/child.hero` holds
+# one, since an extern is never callable across a module boundary.
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_limit_writes(bytes: i64) -> i64
+    # `lent`, as `cli/process.hero` declares it: read while it runs, kept never.
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_run_signal() -> i64
+    function hero_run_discard_path() -> str
+
+# Seconds one run of a probe may take: a probe calls accessors that return a
+# value, so this bounds only a header whose code waits (a constructor that
+# reads stdin, the ffi-pragmatist's attack).
+constant LIMIT: i64
+    30
+
+# Bytes a run may write: an index a line per call.
+constant CAP: i64
+    1048576
+
+# One unit a probe asks: its module, its text, the words it compiled under
+# and the function indices it defines.
+record Unit
+    module: str
+    text: str
+    words: [str]
+    defined: [i64]
+
+# The unit's text preprocessed under its own words, `main` renamed, its
+# `#define`s kept only where `defines` asks: a probe compiles it without them,
+# since a kept one expands a second time (panel 218's critic, `K_W`).
+function preprocessed(dir: str, one: Unit, defines: bool) -> str?
+    process.mkdir_all(dir)?
+    unit = dir + "/" + one.module + ".c"
+    publish.write_whole(path: unit, text: value_probe.unit_text(one.text), keyed: true)?
+    i_path = publish.private_name(dir + "/unit.i")
+    head: [str] @= ["clang", "-E"]
+
+    if defines
+        head @ head.push("-dD")
+    first = response_file.carried(
+        line: strings.with_all(list: head.push("-D" + "main=" + value_probe.HIDDEN_MAIN), more: one.words),
+        dir: dir
+    )
+    errors = publish.private_name(dir + "/preprocess-errors.txt")
+    ran = process.run(
+        program: "clang",
+        words: first.push(unit).push("-o").push(i_path),
+        out: process.discard(),
+        err: errors
+    )
+    said_by_clang = read_back.words(errors).default("")
+    publish.discard(errors)
+    text = read_back.words(i_path)
+    publish.discard(i_path)
+
+    if !ran.started || ran.code != 0 || text.is_err()
+        return fail(
+            code: "broken",
+            msg: "internal error: module `" + one.module + "`'s unit did not preprocess for the probe of its header constants' values, where it compiled: " + value_told.first_error(said_by_clang)
+        )
+    return text
+
+# The words that compile and link a probe: every sanitizer of the build off,
+# the four checks on, each a trap, and the C standard's meaning of a signed
+# overflow and a shift on every target (panel 218's R3), never the program's.
+function checks() -> [str]
+    return [
+        "-fno-sanitize=all"
+        "-fsanitize=" + value_probe.CHECKS
+        "-fsanitize-trap=" + value_probe.CHECKS
+        "-fno-wrapv"
+    ]
+
+# The platform's word for leaving the program's libraries out of the link.
+function leave_out(target: str) -> [str]
+    if process.exe_suffix() == ".exe"
+        return ["-Wl,/FORCE:UNRESOLVED"]
+
+    if link_flags.apple(target)
+        return ["-Wl,-dead_strip"]
+    return ["-Wl,--gc-sections", "-lm"]
+
+# A probe's text compiled to an object, under the unit's words, the checks
+# and `level` after them, which wins where the words name another; clang
+# refusing what the compiler wrote is the compiler's failure.
+function compiled(dir: str, one: Unit, text: str, level: str) -> str?
+    probe_i = dir + "/probe.i"
+    publish.write_whole(path: probe_i, text: text, keyed: false)?
+    object = publish.private_name(dir + "/probe.o")
+    words = strings.with_all(
+        list: strings.with_all(list: ["clang", "-x", "cpp-output"], more: one.words),
+        more: strings.with_all(list: checks(), more: [level, "-g0", "-ffunction-sections", "-fdata-sections", "-w", "-c"])
+    )
+    line = response_file.carried(line: words, dir: dir)
+    errors = publish.private_name(dir + "/compile-errors.txt")
+    ran = process.run(
+        program: "clang",
+        words: line.push(probe_i).push("-o").push(object),
+        out: process.discard(),
+        err: errors
+    )
+    said_by_clang = read_back.words(errors).default("")
+    publish.discard(errors)
+
+    if !ran.started || ran.code != 0
+        publish.discard(object)
+        return fail(
+            code: "broken",
+            msg: "internal error: the probe of the header constants' values in module `" + one.module + "` did not compile, where the module's own unit did: " + value_told.first_error(said_by_clang)
+        )
+    return ok(object)
+
+# The driver linked with the probe's object and the runtime alone, then run
+# until it finishes, `total` calls, each run starting after the call the last
+# trapped at: `trap <index>`, `disagree <index>` where a call says its value
+# is not the one clang folded, `death <words>` where a run ends otherwise, and
+# `unlinked <name>` where the link leaves a symbol undefined. Any other link
+# that fails, or a canary that does not answer as it must, is the compiler's
+# failure, `broken`.
+function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, total: i64, level: str) -> str?
+    driver_c = dir + "/driver.c"
+    publish.write_whole(path: driver_c, text: value_probe.driver(total), keyed: false)?
+    runtime = toolchain.runtime_object(t, level: level, sanitize: false)?
+    binary = publish.private_name(dir + "/probe") + process.exe_suffix()
+    line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false))
+    line @ strings.with_all(list: line, more: link_flags.target_words(t.target))
+    line @ strings.with_all(list: line, more: checks())
+    line @ strings.with_all(list: line, more: ["-g0", object, driver_c, runtime])
+    line @ strings.with_all(list: line, more: leave_out(t.target))
+    errors = publish.private_name(dir + "/link-errors.txt")
+    linked = process.run(program: "clang", words: line.push("-o").push(binary), out: process.discard(), err: errors)
+    said_by_linker = read_back.words(errors).default("")
+    publish.discard(errors)
+
+    if !linked.started || linked.code != 0
+        publish.discard(binary)
+        undefined = value_told.undefined_symbol(said_by_linker, apple: link_flags.apple(t.target))
+
+        if undefined.is_err()
+            return fail(
+                code: "broken",
+                msg: "internal error: the probe of a header constant's value did not link: " + value_told.first_error(said_by_linker)
+            )
+        return ok("unlinked " + undefined.must() + "\n")
+    findings = runs_of(binary: binary, dir: dir, total: total)
+    publish.discard(binary)
+    return canaries_said(findings)
+
+# Every run of the probe until one finishes, read into findings.
+function runs_of(binary: str, dir: str, total: i64) -> [str]
+    findings: [str] @= []
+    start: i64 @= 0
+    runs: i64 @= 0
+
+    while runs <= total
+        runs @ runs + 1
+        capture = publish.private_name(dir + "/run.txt")
+        ended = bounded(program: binary, words: [binary, start.to_str()], out: capture)
+        out = read_back.words(capture).default("")
+        publish.discard(capture)
+
+        for one in value_probe.disagreeing(out)
+            findings @ findings.push("disagree " + one.to_str())
+
+        if value_probe.finished(out) && ended.code == 0
+            break
+        last = value_probe.last_index(out)
+
+        if last.is_err() || last.must() < start || !value_probe.is_trap(ended.signal)
+            findings @ findings.push("death " + death_words(ended))
+            break
+        findings @ findings.push("trap " + last.must().to_str())
+        start @ last.must() + 1
+
+    return findings
+
+# The findings, where the two canaries answered as they must: the undefined
+# one trapped and the defined one did not, unless the probe died first.
+function canaries_said(findings: [str]) -> str?
+    said = "\n" + findings.join("\n") + "\n"
+
+    if !ffi_lookup.has(text: said, needle: "\ntrap 0\n") && !ffi_lookup.has(text: said, needle: "\ndeath ")
+        return fail(
+            code: "broken",
+            msg: "internal error: the probe of a header constant's value did not trap on its undefined canary, so its checks did not fire"
+        )
+
+    if ffi_lookup.has(text: said, needle: "\ntrap 1\n") || ffi_lookup.has(text: said, needle: "\ndisagree 1\n")
+        return fail(
+            code: "broken",
+            msg: "internal error: the probe of a header constant's value trapped on its defined canary"
+        )
+    return ok(findings.join("\n") + "\n")
+
+# How a probe ended that is not a trap, in words.
+function death_words(ended: process.Ran) -> str
+    if ended.signal != 0
+        return "it was ended by signal or exception " + ended.signal.to_str()
+    return "it exited " + ended.code.to_str() + " before it finished"
+
+# One run of the probe under the limits, stdin the discard path.
+function bounded(program: str, words: [str], out: str) -> process.Ran
+    hero_run_reset()
+    hero_run_limit(seconds: LIMIT)
+    _ = hero_run_limit_writes(bytes: CAP)
+
+    for word in words
+        hero_run_arg(word: word)
+
+    status: i64 @= 0
+    code = hero_run_go(
+        program: program.cstr(),
+        in_path: hero_run_discard_path().cstr(),
+        out_path: out.cstr(),
+        err_path: hero_run_discard_path().cstr(),
+        @status
+    )
+    signal = hero_run_signal()
+    hero_run_reset()
+    hero_run_limit(seconds: 0)
+    return process.Ran(code: code, started: status == process.RUN_OK, why: 0, signal: signal)
+
+## Tests
+
+test "the link leaves the program's libraries out by the platform's own word"
+    words = leave_out("arm64-apple-darwin25.0.0")
+
+    if process.exe_suffix() == ".exe"
+        assert words == ["-Wl,/FORCE:UNRESOLVED"]
+    else
+        assert words == ["-Wl,-dead_strip"]
+        assert leave_out("aarch64-unknown-linux-gnu") == ["-Wl,--gc-sections", "-lm"]
+    assert checks()[0] == "-fno-sanitize=all"
+    assert checks()[3] == "-fno-wrapv"
+
+test "the canaries must answer as they must, or the probe is the compiler's failure"
+    assert canaries_said(["trap 0", "trap 4"]).must() == "trap 0\ntrap 4\n"
+    assert canaries_said(["death it exited 3 before it finished"]).must() == "death it exited 3 before it finished\n"
+    assert canaries_said(["trap 4"]).is_err()
+    assert canaries_said(["trap 0", "trap 1"]).is_err()
+    assert canaries_said(["trap 0", "disagree 1"]).is_err()

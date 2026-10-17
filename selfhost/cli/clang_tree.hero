@@ -1,0 +1,292 @@
+# clang's `-ast-dump=json` read as a tree of the nodes C2 walks (panel 218's
+# R1; defect 2109; design.md §4.19): every object of an `inner` array is a
+# node, the root too, and each keeps only what the walk asks of it: its `id`,
+# `kind`, `name`, the `qualType` of its `type` and the type it names where
+# that is a typedef's, `desugaredQualType`, the byte offsets its `range`
+# begins and ends at in the text clang read, the token length at its end, and,
+# for a reference, the `id`, `kind` and `name` of the declaration it names.
+#
+# **A `referencedDecl` is never a node.** It is a stub inside a reference,
+# carrying its declaration's `id`, `kind` and `name`, so a reader keyed on
+# `kind` and `id` alone meets it as well as the declaration (panel 218's
+# critic: 1,193 `EnumConstantDecl`s in SDL3's dump are 1,174 declarations and
+# 19 stubs). Here a stub's fields go to the reference that holds it.
+#
+# **Positions are offsets, never `line` or `presumedFile`.** clang writes a
+# location's file and line only where they change from the location written
+# before it, so read out of order they name another line; the offset is
+# written on every location, and a line is read from the text itself.
+#
+# **One pass, iterative, no depth limit**: a header's `A | B | C | ...` nests
+# one level per operator, deeper than a recursive reader's guard, so the
+# containers open are a stack of this reader's own. What it does not read it
+# steps over: numbers it does not keep, `true`, `false`, `null`, and every
+# string that is not a key or a value it keeps.
+
+# One node: an object of an `inner` array.
+record Node
+    parent: i64
+    id: str
+    kind: str
+    name: str
+    qual: str
+    desugared: str
+    begin: i64
+    end: i64
+    end_length: i64
+    ref_id: str
+    ref_kind: str
+    ref_name: str
+
+# The tree: the nodes in the order clang wrote them, each node's children in
+# order, and every node with an `id` found by it.
+record Tree
+    nodes: [Node]
+    children: [[i64]]
+    by_id: {str: i64}
+
+# One open container: whether it is an object, the node it belongs to, and
+# its path from that node, `""` for the node itself, `"range"`, `"range/end"`,
+# `"referencedDecl"`, `"inner"` for its array of children.
+record Open
+    object: bool
+    owner: i64
+    path: str
+
+# The tree `text` holds, or why it is not one. The containers open are
+# `stack[0]` to `stack[depth - 1]`, a slot reused once closed.
+function read(text: str) -> Tree?
+    nodes: [Node] @= []
+    stack: [Open] @= []
+    depth: i64 @= 0
+    key: str @= ""
+    at: i64 @= 0
+    n = text.len()
+
+    while at < n
+        b = text[at]
+
+        if b == '"'
+            stop = string_end(text: text, from: at + 1)?
+            after = past_space(text: text, from: stop + 1)
+
+            if after < n && text[after] == ':'
+                key @ text.slice(from: at + 1, to: stop)
+                at @ after + 1
+                continue
+
+            if depth > 0 && stack[depth - 1].object && stack[depth - 1].owner >= 0
+                kept_text(
+                    @nodes,
+                    open: stack[depth - 1],
+                    key: key,
+                    value: unescaped(text.slice(from: at + 1, to: stop))
+                )
+            at @ stop + 1
+            continue
+
+        if b == '{' || b == '['
+            parent: i64 @= -1
+
+            if depth > 0
+                parent @ stack[depth - 1].owner
+            one: Open @= Open(object: b == '{', owner: parent, path: "")
+
+            if b == '{' && (depth == 0 || !stack[depth - 1].object && stack[depth - 1].path == "inner")
+                nodes @ nodes.push(
+                    Node(parent: parent, id: "", kind: "", name: "", qual: "", desugared: "", begin: -1, end: -1, end_length: 0, ref_id: "", ref_kind: "", ref_name: "")
+                )
+                one.owner @ nodes.len() - 1
+            else if depth > 0
+                one.path @ joined(path: stack[depth - 1].path, key: key)
+
+            if depth < stack.len()
+                stack[depth] @ one
+            else
+                stack @ stack.push(one)
+            depth @ depth + 1
+            key @ ""
+            at @ at + 1
+            continue
+
+        if b == '}' || b == ']'
+            if depth == 0
+                return fail(code: "dump", msg: "a container closes that never opened, at byte " + at.to_str())
+            depth @ depth - 1
+            at @ at + 1
+            continue
+
+        if b >= '0' && b <= '9'
+            stop: i64 @= at + 1
+
+            while stop < n && text[stop] >= '0' && text[stop] <= '9'
+                stop @ stop + 1
+
+            if depth > 0 && stack[depth - 1].object && stack[depth - 1].owner >= 0
+                kept_number(@nodes, open: stack[depth - 1], key: key, value: digits(text.slice(from: at, to: stop)))
+            at @ stop
+            continue
+        at @ at + 1
+
+    if depth != 0
+        return fail(code: "dump", msg: "the dump ends with " + depth.to_str() + " containers open")
+    return ok(tree_of(nodes))
+
+# The children and the index by `id` of nodes read in order, each node's
+# parent read before it.
+function tree_of(nodes: [Node]) -> Tree
+    children: [[i64]] @= []
+    by_id: {str: i64} @= {}
+    index: i64 @= 0
+
+    for one in nodes
+        children @ children.push([])
+
+        if one.id.len() > 0
+            by_id[one.id] @ index
+
+        if one.parent >= 0
+            children[one.parent] @ children[one.parent].push(index)
+        index @ index + 1
+
+    return Tree(nodes: nodes, children: children, by_id: by_id)
+
+# A container's path from its node, the key it opens under appended; an
+# `inner` array's objects are nodes of their own.
+function joined(path: str, key: str) -> str
+    if path.len() == 0
+        return key
+    return path + "/" + key
+
+# The node's text fields this reader keeps, by the path and key they stand
+# under in the container `open`.
+function kept_text(@nodes: [Node], open: Open, key: str, value: str)
+    path = open.path
+    owner = open.owner
+
+    if path == "" && key == "id"
+        nodes[owner].id @ value
+    else if path == "" && key == "kind"
+        nodes[owner].kind @ value
+    else if path == "" && key == "name"
+        nodes[owner].name @ value
+    else if path == "type" && key == "qualType"
+        nodes[owner].qual @ value
+    else if path == "type" && key == "desugaredQualType"
+        nodes[owner].desugared @ value
+    else if path == "referencedDecl" && key == "id"
+        nodes[owner].ref_id @ value
+    else if path == "referencedDecl" && key == "kind"
+        nodes[owner].ref_kind @ value
+    else if path == "referencedDecl" && key == "name"
+        nodes[owner].ref_name @ value
+
+# The node's numbers this reader keeps: where its range begins and ends.
+function kept_number(@nodes: [Node], open: Open, key: str, value: i64)
+    path = open.path
+    owner = open.owner
+
+    if path == "range/begin" && key == "offset"
+        nodes[owner].begin @ value
+    else if path == "range/end" && key == "offset"
+        nodes[owner].end @ value
+    else if path == "range/end" && key == "tokLen"
+        nodes[owner].end_length @ value
+
+# The byte that closes the string opening before `from`.
+function string_end(text: str, from: i64) -> i64?
+    at: i64 @= from
+
+    while at < text.len()
+        if text[at] == '\\'
+            at @ at + 2
+            continue
+
+        if text[at] == '"'
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "dump", msg: "a string runs to the end of the dump")
+
+function past_space(text: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < text.len() && (text[at] == ' ' || text[at] == '\n' || text[at] == '\r' || text[at] == '\t')
+        at @ at + 1
+
+    return at
+
+# A string's inside with an escaped character taken as itself: a name or a
+# type holds no escape but `\"` and `\\`, which this reads.
+function unescaped(raw: str) -> str
+    at: i64 @= 0
+
+    while at < raw.len() && raw[at] != '\\'
+        at @ at + 1
+
+    if at == raw.len()
+        return raw
+    out: [str] @= [raw.slice(from: 0, to: at)]
+
+    while at < raw.len()
+        if raw[at] == '\\' && at + 1 < raw.len()
+            out @ out.push(raw.slice(from: at + 1, to: at + 2))
+            at @ at + 2
+            continue
+        out @ out.push(raw.slice(from: at, to: at + 1))
+        at @ at + 1
+
+    return out.join("")
+
+# The integer a run of digits writes, or -1 where it is not one.
+function digits(written: str) -> i64
+    value: i64 @= 0
+    at: i64 @= 0
+
+    while at < written.len()
+        b = written[at]
+
+        if b < '0' || b > '9' || value > 100000000000
+            return -1
+        value @ value * 10 + to_i64(b - '0').must()
+        at @ at + 1
+
+    return value
+
+## Tests
+
+# A dump of `enum { EA = 1 << 31, EB = EA + 1 };` as clang writes it, cut to
+# the fields read: EB's initialiser holds a reference to EA, whose
+# `referencedDecl` stub carries EA's own `id` and `kind`.
+constant SAMPLE: str
+    "{\"id\": \"0x1\", \"kind\": \"TranslationUnitDecl\", \"inner\": [{\"id\": \"0x2\", \"kind\": \"EnumDecl\", \"range\": {\"begin\": {\"offset\": 0}, \"end\": {\"offset\": 33, \"tokLen\": 1}}, \"inner\": [{\"id\": \"0x3\", \"kind\": \"EnumConstantDecl\", \"name\": \"EA\", \"type\": {\"qualType\": \"int\"}, \"range\": {\"begin\": {\"offset\": 7}, \"end\": {\"offset\": 17, \"tokLen\": 2}}, \"inner\": [{\"id\": \"0x4\", \"kind\": \"ConstantExpr\", \"range\": {\"begin\": {\"offset\": 12}, \"end\": {\"offset\": 17, \"tokLen\": 2}}}]}, {\"id\": \"0x5\", \"kind\": \"EnumConstantDecl\", \"name\": \"EB\", \"type\": {\"qualType\": \"int\"}, \"inner\": [{\"id\": \"0x6\", \"kind\": \"DeclRefExpr\", \"type\": {\"qualType\": \"int\", \"desugaredQualType\": \"int\"}, \"range\": {\"begin\": {\"offset\": 26}, \"end\": {\"offset\": 26, \"tokLen\": 2}}, \"referencedDecl\": {\"id\": \"0x3\", \"kind\": \"EnumConstantDecl\", \"name\": \"EA\", \"type\": {\"qualType\": \"int\"}}}]}]}]}"
+
+test "a dump's nodes are its inner objects, and a reference's stub is never one"
+    tree = read(SAMPLE).must()
+    assert tree.nodes.len() == 6
+    assert tree.by_id["0x3"].must() == 2
+    ref = tree.nodes[5]
+    assert ref.kind == "DeclRefExpr"
+    assert ref.ref_id == "0x3"
+    assert ref.ref_kind == "EnumConstantDecl"
+    assert ref.ref_name == "EA"
+    assert ref.begin == 26
+    assert ref.end_length == 2
+    assert ref.desugared == "int"
+    assert tree.nodes[2].name == "EA"
+    assert tree.nodes[2].end == 17
+    assert tree.children[1] == [2, 4]
+    assert tree.nodes[4].parent == 1
+
+test "nesting deeper than a recursive reader's guard reads, and a broken dump does not"
+    open: [str] @= []
+    close: [str] @= []
+
+    for _ in range(from: 0, to: 300)
+        open @ open.push("{\"kind\": \"ParenExpr\", \"inner\": [")
+        close @ close.push("]}")
+
+    tree = read(open.join("") + "{\"kind\": \"IntegerLiteral\"}" + close.join(""))
+    assert tree.must().nodes.len() == 301
+    assert read("{\"kind\": \"X\", \"inner\": [").is_err()
+    assert read("]").is_err()

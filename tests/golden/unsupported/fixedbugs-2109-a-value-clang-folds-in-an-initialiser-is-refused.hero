@@ -1,0 +1,33 @@
+# FIXED DEFECT 2109, 2026-10-17, lane land215 (panel 218's R1, C2).
+#
+# SYMPTOM: each constant built at exit 0 and printed a stable value C leaves
+# undefined (`E_SHIFT` printed -2147483648, `S_DIV` 1 on this Mac), where the
+# same `1 << 31` spelt as a `#define` was refused.
+#
+# CAUSE: an enumerator's, a const object's and a brace list's value is folded
+# by clang's constant evaluator, so the accessor reads it already computed and
+# no run-time check sees it, panel 216's probe included.
+#
+# FIX: the initialiser each value reads, its references followed, is read
+# from clang's dump of the probe's text and asked under the probe's checks at
+# `-O0` (`cli/value_init.hero`, `cli/value_c2.hero`): an enumerator, a const
+# object, a brace list leaf by leaf, a chain through a second enumerator, an
+# enumerator whose type moves when its enum completes, one with no initialiser
+# (its predecessor asked), and a macro naming a const object, each told
+# naming the declaration whose initialiser traps and its line.
+
+extern "fixedbugs-2109-folded.h"
+    record Pair tag pair
+        x: i32
+        y: i32
+    constant E_SHIFT: i32  #~ ffi_constant_type
+    constant S_DIV: i32  #~ ffi_constant_type
+    constant R_BRACE: Pair  #~ ffi_constant_type
+    constant EB: i32  #~ ffi_constant_type
+    constant TB: i64  #~ ffi_constant_type
+    constant IC: i32  #~ ffi_constant_type
+    constant M_OBJ: i32  #~ ffi_constant_type
+    constant M_ROBJ: Pair  #~ ffi_constant_type
+
+function main()
+    print(E_SHIFT)

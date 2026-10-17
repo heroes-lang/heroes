@@ -1,8 +1,10 @@
 # The diagnostics a probe of a header constant's value tells (panel 216's R1,
-# ratified 2026-10-17; panel 218's R2 and R4; defects 2075 and 2104): a
-# trapped accessor's constant told as an expression holding an operation C
-# leaves undefined, `ffi_constant_type` on its declaration with the header's
-# line quoted; a probe that did not finish, or did not link because the
+# ratified 2026-10-17; panel 218's R1, R2 and R4; defects 2075, 2104 and
+# 2109): a trapped accessor's constant told as an expression holding an
+# operation C leaves undefined, `ffi_constant_type` on its declaration with
+# the header's line quoted; an initialiser it reads that traps, or that
+# computes another value than clang folded, told naming that declaration and
+# its line (C2); a probe that did not finish, or did not link because the
 # header's own code reaches a library, told once, on the first constant it
 # asked, never as an undefined value (the ffi-pragmatist's condition (c)).
 # Split out of `cli/value_ask.hero`, which runs the probe, along the seam
@@ -26,6 +28,14 @@ use cli/strings
 # line; a probe's death, or its link that left a symbol undefined, told once.
 function refusals(line: str, accessors: [value_probe.Accessor], preprocessed: str?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
+    init = ffi_lookup.after(text: line, marker: "init ")
+
+    if !init.is_err()
+        d = initialiser(rest: init.must(), accessors: accessors, preprocessed: preprocessed, c: c, s: s, decls: decls)
+
+        if !d.is_err()
+            out @ out.push(d.must())
+        return out
     trap = ffi_lookup.after(text: line, marker: "trap ")
 
     if !trap.is_err()
@@ -93,9 +103,6 @@ function trapped_note(name: str) -> str
 # unit where it holds the constant's last `#define`.
 function diagnostic(one: value_probe.Accessor, words: str, note: str, preprocessed: str?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
     name = source.span_text(s, decls[one.decl].name)
-    known = ffi_lookup.declaration(s, decls, name: name)?
-    none: [str] = []
-    declared = render.render_ty(c.types, s, decls, one.result, none)
     spelled: ffi_value.Spelled? @= fail(code: "none", msg: "the header's line was not read")
 
     if !preprocessed.is_err()
@@ -107,15 +114,142 @@ function diagnostic(one: value_probe.Accessor, words: str, note: str, preprocess
             spelled @ ok(
                 ffi_value.Spelled(path: found.must().file, row: found.must().line, quoted: ok(found.must().text))
             )
+    return spelled_at(one: one, words: words, note: note, spelled: spelled, c: c, s: s, decls: decls)
+
+# The diagnostic on a constant, the header's line given.
+function spelled_at(one: value_probe.Accessor, words: str, note: str, spelled: ffi_value.Spelled?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
+    name = source.span_text(s, decls[one.decl].name)
+    known = ffi_lookup.declaration(s, decls, name: name)?
+    none: [str] = []
+    declared = render.render_ty(c.types, s, decls, one.result, none)
     return ok(
         ffi_constant_value.told(name: name, declared: declared, known: known, words: words, note: note, spelled: spelled, program: source.file_at(s, decls[one.decl].span.start).name)
     )
 
+## C2's findings (panel 218's R1)
+
+# A C2 line, `<trap|disagree> <accessor>` then, tab-separated, the line, the
+# file and the member whose initialiser it is: a leaf of the accessor's own
+# brace list told as panel 216's probe tells a trapped accessor, the
+# `#define` line quoted; a member's initialiser told naming it, its own line
+# quoted from the header.
+function initialiser(rest: str, accessors: [value_probe.Accessor], preprocessed: str?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
+    fields = tabbed(rest)
+
+    if fields.len() != 4
+        return fail(code: "none", msg: "not a C2 line")
+    head = fields[0]
+    space = bytes.locate(text: head, needle: " ", from: 0)?
+    kind = head.slice(from: 0, to: space)
+    index = ffi_lookup.number(text: head.slice(from: space + 1, to: head.len()))?
+
+    if index < 0 || index >= accessors.len()
+        return fail(code: "none", msg: "no such accessor")
+    one = accessors[index]
+    name = source.span_text(s, decls[one.decl].name)
+    member = fields[3]
+
+    if member.len() == 0
+        return diagnostic(
+            one: one,
+            words: UNDEFINED,
+            note: trapped_note(name),
+            preprocessed: preprocessed,
+            c: c,
+            s: s,
+            decls: decls
+        )
+    row = ffi_lookup.number(text: fields[1]).default(0)
+    spelled = ffi_value.Spelled(path: fields[2], row: row, quoted: header_line(path: fields[2], row: row))
+    reads: str @= "it reads `" + member + "`, whose initialiser"
+
+    if member == name
+        reads @ "its initialiser"
+
+    if kind == "disagree"
+        return spelled_at(
+            one: one,
+            words: reads + ", computed outside its declaration under clang's checks, gives another value than clang folded for it, so what C computes for it is not one value",
+            note: "§ 13: a group's constant is the value C computes from the header; an enumerator's or a const object's initialiser is asked again outside its declaration, where it must give the value clang folded, and one that gives another is a value no program can rely on. Correct the value there, or bind a constant whose value C defines",
+            spelled: ok(spelled),
+            c: c,
+            s: s,
+            decls: decls
+        )
+    return spelled_at(
+        one: one,
+        words: reads + " holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it computes it",
+        note: trapped_note(name),
+        spelled: ok(spelled),
+        c: c,
+        s: s,
+        decls: decls
+    )
+
+# A line's tab-separated fields.
+function tabbed(line: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < line.len()
+        if line[at] == '\t'
+            out @ out.push(line.slice(from: from, to: at))
+            from @ at + 1
+        at @ at + 1
+
+    return out.push(line.slice(from: from, to: line.len()))
+
+# Line `row` of the header at `path`, as the file holds it, where it reads.
+function header_line(path: str, row: i64) -> str?
+    text = read_file(path)?
+    rows = ffi_lookup.lines(text: text)
+
+    if row < 1 || row > rows.len()
+        return fail(code: "none", msg: "no such line")
+    return ok(strings.trimmed(rows[row - 1]))
+
+# Whether a C2 line repeats what panel 216's probe already told of the unit:
+# a constant it refused, or a probe's death or link it named.
+function repeats(line: str, said: str) -> bool
+    if strings.starts_with(text: line, prefix: "death ") || strings.starts_with(text: line, prefix: "unlinked ")
+        return ffi_lookup.has(text: said, needle: "death ") || ffi_lookup.has(text: said, needle: "unlinked ")
+    init = ffi_lookup.after(text: line, marker: "init ")
+
+    if init.is_err()
+        return false
+    fields = tabbed(init.must())
+    space = bytes.locate(text: fields[0], needle: " ", from: 0)
+
+    if space.is_err()
+        return false
+    index = ffi_lookup.number(text: fields[0].slice(from: space.must() + 1, to: fields[0].len()))
+
+    if index.is_err()
+        return false
+    return ffi_lookup.has(text: "\n" + said, needle: "\ntrap " + (index.must() + 2).to_str() + "\n")
+
+# A failure's words.
+function message_of(failed: str?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
+
 ## Reading what clang and the linker said
 
-# Whether a verdict refuses a constant.
+# Whether a verdict refuses a constant: a trap past the two canaries, whose
+# undefined one traps on every probe, a death, a link left undefined, or a
+# C2 line. Read so, a verdict that refuses nothing reads no `#define` line,
+# cold or warm.
 function refusing(said: str) -> bool
-    return ffi_lookup.has(text: said, needle: "trap ") || ffi_lookup.has(text: said, needle: "death ") || ffi_lookup.has(text: said, needle: "unlinked ")
+    for line in ffi_lookup.lines(text: said)
+        if strings.starts_with(text: line, prefix: "death ") || strings.starts_with(text: line, prefix: "unlinked ") || strings.starts_with(text: line, prefix: "init ")
+            return true
+
+        if strings.starts_with(text: line, prefix: "trap ") && ffi_lookup.number(text: line.slice(from: 5, to: line.len())).default(0) >= 2
+            return true
+
+    return false
 
 # The first line clang wrote that says `error`, else its first line, quoted
 # as it stands: what an internal error shows of a probe's own failure.
@@ -201,8 +335,18 @@ test "a probe's own failure quotes clang's first error, else its first line"
     assert first_error("warning: something\n") == "warning: something"
     assert first_error("") == "clang said nothing"
 
+test "a C2 line is read in its fields, and repeats a constant panel 216's probe refused"
+    assert tabbed("trap 3\t2\t./f.h\tEA") == ["trap 3", "2", "./f.h", "EA"]
+    assert tabbed("x") == ["x"]
+    assert repeats(line: "init trap 0\t2\t./f.h\tEA", said: "trap 0\ntrap 2\n")
+    assert !repeats(line: "init trap 1\t2\t./f.h\tEA", said: "trap 0\ntrap 2\n")
+    assert repeats(line: "death it exited 3 before it finished", said: "death it exited 3 before it finished\n")
+    assert !repeats(line: "unlinked f", said: "trap 0\n")
+
 test "a verdict refuses where it names a trap, a death or a link left undefined"
-    assert refusing("trap 2\n")
+    assert refusing("trap 0\ntrap 2\n")
+    assert !refusing("trap 0\n")
     assert refusing("death it exited 3 before it finished\n")
     assert refusing("unlinked ld.lld: error: undefined symbol: f\n")
+    assert refusing("init trap 2\t2\t./f.h\tEA\n")
     assert !refusing("\n")
