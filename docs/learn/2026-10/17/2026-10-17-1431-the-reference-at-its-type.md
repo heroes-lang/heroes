@@ -1,0 +1,1 @@
+- [ ] **M-buildable-structs** | In `enum T { TA = 2147483647, TB = TA + 1, TBIG = 0x100000000LL };`, what value does `TA + 1` have when sliced to the end of the unit, and what does C2 write instead so that the probe traps (give the spliced text)? | `selfhost/cli/value_init.hero` (`spliced`), `tests/golden/unsupported/fixedbugs-2109-folded.h`
