@@ -1,6 +1,6 @@
 # M-witnessed-seed — the seed witnessed by a second implementation
 
-**Scheduled 2026-10-14, at row 68, by the author's instruction**, before
+**Scheduled 2026-10-14, at row 68 (69 since 2026-10-18), by the author's instruction**, before
 `archive/bootstrap-rs/` leaves the tree. No warrant is claimed.
 
 **The fact that schedules it.** The fixpoint proves that the seed reproduces

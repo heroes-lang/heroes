@@ -1,6 +1,6 @@
 # M-compared-languages — the same tasks, written by a model in five languages
 
-**Scheduled 2026-10-14, at row 79, by the author's instruction**, meant as:
+**Scheduled 2026-10-14, at row 79 (80 since 2026-10-18), by the author's instruction**, meant as:
 *to prove the claim I will have to compare: the specification of programs of
 different kinds generated in Heroes, and in Go, Rust, C and Zig, counting the
 tokens spent and the tests that pass, where no language wins because its

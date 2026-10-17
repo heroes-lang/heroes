@@ -14,10 +14,10 @@ preamble and its items).
 
 | | |
 |---|---|
-| **Current milestone** | **none OPEN** since M-bounded-seed's close, 2026-10-17; the next scheduled row is **M-witnessed-seed**, row 68 ([its page](roadmap/milestones/M-witnessed-seed.md)) |
-| **Next** | M-witnessed-seed, and M-thesis-harness beside M-rechecked-issues in two lanes. After the push of M-bounded-seed's close, by the optimistic chain: the census of `check` over the tracked `.hero` files and panel 187's R2. The formatter's probe M-inferred-cell's changes to `selfhost/print/` still owe |
+| **Current milestone** | **none OPEN** since M-bounded-seed's close, 2026-10-17; the next scheduled row is **M-readonly-lend**, row 68 ([its page](roadmap/milestones/M-readonly-lend.md)), panel 217's form, entered 2026-10-18 ahead of M-witnessed-seed |
+| **Next** | M-readonly-lend, then M-witnessed-seed, and M-thesis-harness beside M-rechecked-issues in two lanes. After the push of M-bounded-seed's close, by the optimistic chain: the census of `check` over the tracked `.hero` files and panel 187's R2. The formatter's probe M-inferred-cell's changes to `selfhost/print/` still owe |
 | **Last closed** | **M-bounded-seed**, 2026-10-17 ([066](records/journal/066-bounded-seed.md)) — the seed bounded: panel 219's s4 halved it, it is refreshed only when the two-stage build goes red and at each release, and every program carries the key of the sources, library and runtime it was compiled from (panel 222); tagged once defects 2099, 2120, 2127 and 2131 closed under panels 223 and 224 · before it **M-buildable-structs** ([065](records/journal/065-buildable-structs.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **67** of 90 · **67** tags matching `m*`, the legacy `m0`-`m8` included |
+| Milestones closed | **67** of 91 · **67** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **174,028** lines of Heroes in **669** modules (`find selfhost -name '*.hero'`) · the seed **263,383** lines of C, 26,240,524 bytes, in panel 219's s4 shape (56,190 directives), refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
 | The spec | **7703** on the vendored ranks and **10,108** on the reader's own (`heroes measure spec/heroes-spec.md`, 2026-10-17), against the ceiling below; until then **7655** and **10,048**, against a ceiling of **16384**, raised from 10240 by author decision on 2026-10-14 with a budget of 1,500 for the consolidation block (`heroes measure spec/heroes-spec.md`, 2026-10-13). Panel 210's landing in batch 21 spent the 20 above M-inferred-cell's 10,024: an `@` parameter nothing writes or ends refused, and `@_` refused; the claim in the opening line, by author instruction, spent 6 more on 2026-10-12 and gave 2 back on 2026-10-13, when it became *a language for the age of LLMs* |
@@ -40,8 +40,8 @@ moved runs after the push, beside the CI, as § The optimistic chain says since
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–66
-are done, in the order they closed, row 67 is open, and rows 68–90 are
+One table, one row per milestone, **closed first and scheduled after**: rows 1–67
+are done, in the order they closed, and rows 68–91 are
 what is next, in the order they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -92,7 +92,12 @@ M-latency-ceiling at 74, M-compared-languages at 79 and M-launch-posts at 86)
 and the eighteen scheduled rows took a new order, consolidation first: the
 table is 90 long by a count over it. Then 1–65, 66 and 67 open and 68–90 until
 M-buildable-structs closed on 2026-10-17, opening no row. Then 1–66, 67 open and
-68–90 until M-bounded-seed closed the same day, opening no row. `warrant` is why a milestone exists: **v1** (the self-hosting
+68–90 until M-bounded-seed closed the same day, opening no row. **That close
+restated the history and not this paragraph's first sentence, and the ENTRY of
+row 68 on 2026-10-18 found it**, still reading *1–66 done, 67 open*. Then 1–67
+and 68–90 until that day, when M-readonly-lend entered at 68 by panel 217's R6,
+ratified the evening before, and the twenty-three scheduled rows after it each
+moved one down: the table is 91 long by a count over it. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -168,29 +173,30 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 65 | **M-typed-inspection** | done 2026-10-13 | `m-typed-inspection` | [064](records/journal/064-typed-inspection.md) | a stopped program shows Heroes values: the frame lists the author's bindings alone, the emitter declaring what it invented `nodebug`, and one fixed formatter, `editors/lldb/heroes_lldb.py`, which the editor loads, shows a record, a `str`, a `[T]`, a `{K: V}`, a `T?`'s live arm and a variant's case in Heroes' syntax; the names keep their C prefix, refused in the emitted C by panel 213's two vetoes and left to the author's answer on its issue 2037 · scheduled, no warrant |
 | 66 | **M-buildable-structs** | done 2026-10-17 | `m-buildable-structs` | [065](records/journal/065-buildable-structs.md) | a C struct with long arrays is built by naming the fields that matter and ending with `rest: zero`. Panel 178 counted 42 public structs on Darwin with an array longer than 8, and panel 194's recount 33 and 27 on the two Linux legs, where the repository has none; a five-field `utsname` needed 1280 literal zeros until `rest: zero` landed in batch 13 (panel 164) · **§1.11**, **§1.12** |
 | 67 | **M-bounded-seed** | done 2026-10-17 | `m-bounded-seed` | [066](records/journal/066-bounded-seed.md) | the seed bounded in shape and in rhythm: its re-anchoring `#line`s joined to their anchors, refreshed only when the two-stage build needs it and at each release, every program carrying the key of what it was compiled from, and kept in the history at every tag, the history rewritten once and announced · scheduled, no warrant |
-| 68 | **M-witnessed-seed** | scheduled | — | — | the seed witnessed by a second implementation: the archived Rust bootstrap rebuilt and compared at its root again, a gcc leg beside clang, and only then `archive/` out of the tree · scheduled, no warrant |
-| 69 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
-| 70 | **M-rechecked-issues** | scheduled | — | — | every open issue re-checked against the tree: closed with the commit that settled it, closed with the reason it no longer applies, repaired, or re-homed on a row still to come · scheduled, no warrant |
-| 71 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
-| 72 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
-| 73 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
-| 74 | **M-latency-ceiling** | scheduled | — | — | a latency the compiler may not lose without a decision: `heroes check` and clang on the seed timed at every close, the incremental frontend its return condition · CLAUDE.md § Verification |
-| 75 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
-| 76 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
-| 77 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
-| 78 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
-| 79 | **M-compared-languages** | scheduled | — | — | the same tasks written by a model in Heroes, Go, Rust, C and Zig, scored on hidden tests, turns and silent failures, the prediction registered before the first run · scheduled, no warrant |
-| 80 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
-| 81 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 82 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 83 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
-| 84 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 85 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
-| 86 | **M-launch-posts** | scheduled | — | — | the first posts, each with the numbers its command produced, after the first hour a stranger spends was tried · scheduled, no warrant |
-| 87 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
-| 88 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 89 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 90 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 68 | **M-readonly-lend** | scheduled | — | — | a function reads the caller's place without claiming to change it: `lent` on a parameter, C's `const T *` bound read-only, and beside it an `@` of the same place and a read-only lend past a variadic prototype refused · **§1.1**, **§1.11** |
+| 69 | **M-witnessed-seed** | scheduled | — | — | the seed witnessed by a second implementation: the archived Rust bootstrap rebuilt and compared at its root again, a gcc leg beside clang, and only then `archive/` out of the tree · scheduled, no warrant |
+| 70 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 71 | **M-rechecked-issues** | scheduled | — | — | every open issue re-checked against the tree: closed with the commit that settled it, closed with the reason it no longer applies, repaired, or re-homed on a row still to come · scheduled, no warrant |
+| 72 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
+| 73 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |
+| 74 | **M-compatibility-promise** | scheduled | — | — | the paragraph `1.0.0` rests on, and the suite that makes a broken promise red · CLAUDE.md §14 |
+| 75 | **M-latency-ceiling** | scheduled | — | — | a latency the compiler may not lose without a decision: `heroes check` and clang on the seed timed at every close, the incremental frontend its return condition · CLAUDE.md § Verification |
+| 76 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
+| 77 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
+| 78 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |
+| 79 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
+| 80 | **M-compared-languages** | scheduled | — | — | the same tasks written by a model in Heroes, Go, Rust, C and Zig, scored on hidden tests, turns and silent failures, the prediction registered before the first run · scheduled, no warrant |
+| 81 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
+| 82 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 83 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 84 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
+| 85 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 86 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 87 | **M-launch-posts** | scheduled | — | — | the first posts, each with the numbers its command produced, after the first hour a stranger spends was tried · scheduled, no warrant |
+| 88 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
+| 89 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 90 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 91 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**

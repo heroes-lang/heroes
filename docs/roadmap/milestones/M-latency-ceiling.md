@@ -1,6 +1,6 @@
 # M-latency-ceiling — a latency the compiler may not lose without a decision
 
-**Scheduled 2026-10-14, at row 74, by the author's instruction**, before the
+**Scheduled 2026-10-14, at row 74 (75 since 2026-10-18), by the author's instruction**, before the
 core packages. Its warrant is CLAUDE.md § Verification's *never slow the
 compiler down*, a rule with no instrument that holds it over months.
 

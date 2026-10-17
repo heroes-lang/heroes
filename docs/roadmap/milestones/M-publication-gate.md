@@ -85,3 +85,7 @@ correction read does not see rulesets; `gh api
 repos/heroes-lang/heroes/rules/branches/main` lists them. Both were suspended
 for the one rewrite of the history and put back the same (measurement 045
 § 8).
+
+**Renumbered 2026-10-18**: M-readonly-lend entered the chain at row 68 by
+panel 217's R6, so the two rows the correction of 2026-10-14 names moved one
+down, M-compatibility-promise to 74 and M-launch-posts to 87.

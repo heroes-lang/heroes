@@ -290,6 +290,9 @@ constant REFUSED: [str]
         "M-reach-manifest"
         "M-separate-site"
         "M-incremental-frontend"
+        "M-lent-parameter"
+        "M-const-lend"
+        "M-borrowed-places"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -568,8 +571,12 @@ constant REFUSED: [str]
 # the three rows considered and not entered, `M-reach-manifest`,
 # `M-separate-site` and `M-incremental-frontend`, whose rules
 # `docs/roadmap/scheduling.md` gives under the same day.
+# **94 -> 95 on 2026-10-18**, `M-readonly-lend`, entered at row 68 by panel
+# 217's R6, the read-only lend, `lent` on a parameter. `REFUSED` gains its three
+# runners-up, each refused in its `docs/roadmap/names.md` row:
+# `M-lent-parameter`, `M-const-lend` and `M-borrowed-places`.
 constant ROWS: i64
-    94
+    95
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

@@ -465,6 +465,23 @@ sitting: a scheduling changes no language
 with no gap, by a count over the table and by `site/src/lib/chain.ts`, which
 refuses a gap at build time.
 
+
+**2026-10-18, M-readonly-lend entered at row 68, by panel 217's R6**, which
+the author ratified on 2026-10-17
+(https://github.com/heroes-lang/heroes/issues/2105), its one question answered
+with the recommendation: the form, a new surface form whose walk through every
+tool that reads the language is a milestone's work and not a closing step's,
+lands on a row of its own, next in the chain. R6 owed the row at
+M-buildable-structs' close, the sitting then unratified, and the author chose to
+have it entered in the next session
+(https://github.com/heroes-lang/heroes/issues/2132). It goes before
+M-witnessed-seed because *next in the chain* is the sitting's word and that row
+had not opened; the twenty-three scheduled rows after it each move one down,
+their order kept. No new sitting: panel 217 sat on the form, and a scheduling
+changes no language (https://github.com/heroes-lang/heroes/issues/820). § The
+chain holds 91 rows with no gap, by a count over the table and by
+`site/src/lib/chain.ts`, which refuses a gap at build time.
+
 ---
 
 **What used to stand under the ROADMAP lives in `docs/roadmap/`** since

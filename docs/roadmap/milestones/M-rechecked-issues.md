@@ -1,6 +1,6 @@
 # M-rechecked-issues — every open issue re-checked against the tree
 
-**Scheduled 2026-10-14, at row 70, by the author's instruction**, meant as:
+**Scheduled 2026-10-14, at row 70 (71 since 2026-10-18), by the author's instruction**, meant as:
 *a step that analyses all the issues currently open, to see which are still
 valid, which are already solved and which are no longer pertinent, resolves
 some, and leaves the fewest open*. It runs in a lane beside M-thesis-harness,
