@@ -163,6 +163,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs396sha256finalpastsixteenaborts_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("Nh")
 #undef Nh
 #pragma push_macro("Nl")
@@ -278,7 +279,7 @@ bb0:
     hero_print_int(t13);
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_print_end();
-#line 282 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 283 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h0_c);

@@ -163,6 +163,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("i")
 #undef i
 #pragma push_macro("n")
@@ -200,7 +201,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     return;
-#line 204 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 205 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_W_eq(const W *a, const W *b) {
     if (!(a->i == b->i)) return false;

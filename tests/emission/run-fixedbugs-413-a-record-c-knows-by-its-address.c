@@ -217,6 +217,7 @@ int32_t h_fixedbugs413arecordcknowsbyitsaddress_deep(struct keeper *ph0_k, int64
 int64_t h_fixedbugs413arecordcknowsbyitsaddress_every_one(HeroArrayHeader * *ph0_ks);
 void h_fixedbugs413arecordcknowsbyitsaddress_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+void *hero_pad_nowhere(void);
 #pragma push_macro("self")
 #undef self
 #pragma push_macro("uses")
@@ -230,7 +231,7 @@ __attribute__((unused)) static size_t hero_pad_n_0;
 #undef self
 #pragma push_macro("uses")
 #undef uses
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct wrap *)0) == 13 ? sizeof(struct wrap) : 0), __builtin_offsetof(struct wrap, before), sizeof(((struct wrap *)0)->before), __builtin_offsetof(struct wrap, k.self), sizeof(((struct wrap *)0)->k.self), __builtin_offsetof(struct wrap, k.uses), sizeof(((struct wrap *)0)->k.uses)};
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct wrap *)hero_pad_nowhere()) == 13 ? sizeof(struct wrap) : 0), __builtin_offsetof(struct wrap, before), sizeof(((struct wrap *)0)->before), __builtin_offsetof(struct wrap, k.self), sizeof(((struct wrap *)0)->k.self), __builtin_offsetof(struct wrap, k.uses), sizeof(((struct wrap *)0)->k.uses)};
 #pragma pop_macro("self")
 #pragma pop_macro("uses")
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
@@ -264,7 +265,7 @@ bb0:
     t1 = keep_init(&(*ph0_k));
 #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 268 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 269 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -276,7 +277,7 @@ bb0:
     t1 = h_fixedbugs413arecordcknowsbyitsaddress_start(&(*ph0_k));
 #line 38 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 280 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 281 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 40 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -324,7 +325,7 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb4:
-#line 328 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 329 "fixedbugs413arecordcknowsbyitsaddress.c"
     t9 = h2_ret0;
     return t9;
 }
@@ -417,7 +418,7 @@ bb3:
 bb4:
 #line 52 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t24 = h1_refused;
-#line 421 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 422 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t24;
@@ -438,7 +439,7 @@ bb6:
 bb7:
 #line 50 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     goto bb5;
-#line 442 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 443 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -884,7 +885,7 @@ bb0:
     hero_print_int(t86);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_end();
-#line 888 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 889 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h1_ks);
     hero_array_release_at(&h2_ws);
     hero_array_release_at(&h9_own9);
@@ -954,7 +955,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 958 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 959 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

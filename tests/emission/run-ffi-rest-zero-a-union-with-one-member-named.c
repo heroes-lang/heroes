@@ -175,6 +175,7 @@ SA h_ffirestzeroaunionwithonemembernamed_wide(void);
 SA h_ffirestzeroaunionwithonemembernamed_narrow(void);
 UD h_ffirestzeroaunionwithonemembernamed_a_union_type(void);
 void h_ffirestzeroaunionwithonemembernamed_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("c")
 #undef c
 #pragma push_macro("d")
@@ -214,7 +215,7 @@ bb0:
     t3.d = t2;
 #line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     return t3;
-#line 218 "ffirestzeroaunionwithonemembernamed.c"
+#line 219 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 25 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
@@ -236,7 +237,7 @@ bb0:
     t3.c = t2;
 #line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     return t3;
-#line 240 "ffirestzeroaunionwithonemembernamed.c"
+#line 241 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 28 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
@@ -254,7 +255,7 @@ bb0:
     t2.d = t1;
 #line 29 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     return t2;
-#line 258 "ffirestzeroaunionwithonemembernamed.c"
+#line 259 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
@@ -342,7 +343,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_w);
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     return;
-#line 346 "ffirestzeroaunionwithonemembernamed.c"
+#line 347 "ffirestzeroaunionwithonemembernamed.c"
 }
 #undef h0_w
 #undef h1_n

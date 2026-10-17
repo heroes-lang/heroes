@@ -144,6 +144,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("a")
 #undef a
 __attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct old_pair, a), sizeof(((struct old_pair *)0)->a)};
@@ -175,7 +176,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
     return;
-#line 179 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
+#line 180 "fixedbugs584adeprecatedrecordasalocalbuildssilent.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs584adeprecatedrecordasalocalbuildssilent_OldPair_eq(const struct old_pair *a, const struct old_pair *b) {
     if (!(a->a == b->a)) return false;

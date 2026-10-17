@@ -168,6 +168,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsatagnamesahandleandarecord_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("ai_addr")
 #undef ai_addr
 #pragma push_macro("ai_addrlen")
@@ -263,7 +264,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_h);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
-#line 267 "fixedbugsatagnamesahandleandarecord.c"
+#line 268 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r

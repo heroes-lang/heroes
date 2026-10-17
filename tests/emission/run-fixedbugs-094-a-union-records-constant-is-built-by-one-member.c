@@ -163,6 +163,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void);
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void);
 void h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("f")
 #undef f
 #pragma push_macro("i")
@@ -179,7 +180,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 10 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
-#line 183 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 184 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -191,7 +192,7 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 10 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     Num hero_constant_value = NUM_INIT;
-#line 195 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 196 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -210,7 +211,7 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
 
 #line 11 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
-#line 214 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 215 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -222,7 +223,7 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 11 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     Num hero_constant_value = NUM_F;
-#line 226 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 227 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -267,7 +268,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     return;
-#line 271 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 272 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_Num_eq(const Num *a, const Num *b) {
     if (!(a->i == b->i)) return false;

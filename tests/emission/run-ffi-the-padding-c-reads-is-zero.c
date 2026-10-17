@@ -218,13 +218,14 @@ struct ocd h_ffithepaddingcreadsiszero_ocd_through(struct ocd h0_x);
 int32_t h_ffithepaddingcreadsiszero_handed_on(struct cd *ph0_p);
 void h_ffithepaddingcreadsiszero_work(void);
 void h_ffithepaddingcreadsiszero_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct cd *)0) == 13 ? sizeof(struct cd) : 0), __builtin_offsetof(struct cd, c), sizeof(((struct cd *)0)->c), __builtin_offsetof(struct cd, d), sizeof(((struct cd *)0)->d)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct cd *)hero_pad_nowhere()) == 13 ? sizeof(struct cd) : 0), __builtin_offsetof(struct cd, c), sizeof(((struct cd *)0)->c), __builtin_offsetof(struct cd, d), sizeof(((struct cd *)0)->d)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct tp *)0) == 13 ? sizeof(struct tp) : 0), __builtin_offsetof(struct tp, d), sizeof(((struct tp *)0)->d), __builtin_offsetof(struct tp, c), sizeof(((struct tp *)0)->c)};
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct tp *)hero_pad_nowhere()) == 13 ? sizeof(struct tp) : 0), __builtin_offsetof(struct tp, d), sizeof(((struct tp *)0)->d), __builtin_offsetof(struct tp, c), sizeof(((struct tp *)0)->c)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct ocd *)0) == 13 ? sizeof(struct ocd) : 0), __builtin_offsetof(struct ocd, inner), (__builtin_classify_type(((struct ocd *)0)->inner) == 13 ? sizeof(((struct ocd *)0)->inner) : 0), __builtin_offsetof(struct ocd, inner.c), sizeof(((struct ocd *)0)->inner.c), __builtin_offsetof(struct ocd, inner.d), sizeof(((struct ocd *)0)->inner.d)};
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct ocd *)hero_pad_nowhere()) == 13 ? sizeof(struct ocd) : 0), __builtin_offsetof(struct ocd, inner), (__builtin_classify_type(((struct ocd *)hero_pad_nowhere())->inner) == 13 ? sizeof(((struct ocd *)0)->inner) : 0), __builtin_offsetof(struct ocd, inner.c), sizeof(((struct ocd *)0)->inner.c), __builtin_offsetof(struct ocd, inner.d), sizeof(((struct ocd *)0)->inner.d)};
 __attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_2;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -243,7 +244,7 @@ bb0:
     t1 = h0_x;
 #line 37 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     return t1;
-#line 247 "ffithepaddingcreadsiszero.c"
+#line 248 "ffithepaddingcreadsiszero.c"
 }
 
 #line 39 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
@@ -255,7 +256,7 @@ bb0:
     t1 = h0_x;
 #line 40 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     return t1;
-#line 259 "ffithepaddingcreadsiszero.c"
+#line 260 "ffithepaddingcreadsiszero.c"
 }
 
 #line 42 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
@@ -267,7 +268,7 @@ bb0:
     t1 = h0_x;
 #line 43 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     return t1;
-#line 271 "ffithepaddingcreadsiszero.c"
+#line 272 "ffithepaddingcreadsiszero.c"
 }
 
 #line 45 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
@@ -283,7 +284,7 @@ bb0:
     t1 = cd_pad(&(*ph0_p));
 #line 46 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     return t1;
-#line 287 "ffithepaddingcreadsiszero.c"
+#line 288 "ffithepaddingcreadsiszero.c"
 }
 
 #line 48 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
@@ -457,7 +458,7 @@ bb0:
     hero_print_int(t38);
 #line 58 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     hero_print_end();
-#line 461 "ffithepaddingcreadsiszero.c"
+#line 462 "ffithepaddingcreadsiszero.c"
     hero_array_release_at(&h2_pairs);
     hero_array_release_at(&h5_own5);
     hero_lend_local_give(hero_lend_h4_handed);
@@ -477,7 +478,7 @@ bb0:
     h_ffithepaddingcreadsiszero_work();
 #line 76 "tests/golden/run/ffi-the-padding-c-reads-is-zero.hero"
     return;
-#line 481 "ffithepaddingcreadsiszero.c"
+#line 482 "ffithepaddingcreadsiszero.c"
 }
 HERO_TU_LOCAL bool h_ffithepaddingcreadsiszero_Cd_eq(const struct cd *a, const struct cd *b) {
     if (!(a->c == b->c)) return false;

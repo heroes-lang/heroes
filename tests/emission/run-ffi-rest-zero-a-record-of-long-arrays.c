@@ -174,6 +174,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 struct big h_ffirestzeroarecordoflongarrays_one_named(void);
 struct big h_ffirestzeroarecordoflongarrays_none_named(void);
 void h_ffirestzeroarecordoflongarrays_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("n")
 #undef n
 #pragma push_macro("name")
@@ -207,7 +208,7 @@ bb0:
     t2.n = t1;
 #line 20 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return t2;
-#line 211 "ffirestzeroarecordoflongarrays.c"
+#line 212 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 26 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
@@ -221,7 +222,7 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 27 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return t1;
-#line 225 "ffirestzeroarecordoflongarrays.c"
+#line 226 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
@@ -286,7 +287,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 35 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return;
-#line 290 "ffirestzeroarecordoflongarrays.c"
+#line 291 "ffirestzeroarecordoflongarrays.c"
 }
 #undef h0_a
 #undef h1_b

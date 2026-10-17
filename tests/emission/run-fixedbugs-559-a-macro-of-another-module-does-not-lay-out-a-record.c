@@ -184,7 +184,8 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main(void);
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(S *)0) == 13 ? sizeof(S) : 0), __builtin_offsetof(S, a), sizeof(((S *)0)->a), __builtin_offsetof(S, b), sizeof(((S *)0)->b)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(S *)hero_pad_nowhere()) == 13 ? sizeof(S) : 0), __builtin_offsetof(S, a), sizeof(((S *)0)->a), __builtin_offsetof(S, b), sizeof(((S *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -254,7 +255,7 @@ bb1:
     hero_print_int(t18);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     hero_print_end();
-#line 258 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 259 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return;
@@ -263,7 +264,7 @@ bb2:
     t14 = h1_f0;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     t15 = t14.as.err;
-#line 267 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 268 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     hero_panic_must(t15);
     hero_unreachable();
 }
@@ -279,7 +280,7 @@ bb0:
     t2 = twice(t1);
 #line 8 "tests/golden/run/fixedbugs559/wide.hero"
     return t2;
-#line 283 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 284 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;

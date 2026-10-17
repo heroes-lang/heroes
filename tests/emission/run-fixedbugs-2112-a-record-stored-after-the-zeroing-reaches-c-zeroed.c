@@ -168,7 +168,8 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 Kept h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_made(int64_t h0_n);
 void h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Kept *)0) == 13 ? sizeof(Kept) : 0), __builtin_offsetof(Kept, c), sizeof(((Kept *)0)->c), __builtin_offsetof(Kept, n), sizeof(((Kept *)0)->n)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Kept *)hero_pad_nowhere()) == 13 ? sizeof(Kept) : 0), __builtin_offsetof(Kept, c), sizeof(((Kept *)0)->c), __builtin_offsetof(Kept, n), sizeof(((Kept *)0)->n)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -189,7 +190,7 @@ bb0:
     t3 = (Kept){.c = t1, .n = t2};
 #line 26 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
     return t3;
-#line 193 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
+#line 194 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
@@ -237,7 +238,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_k);
 #line 33 "tests/golden/run/fixedbugs-2112-a-record-stored-after-the-zeroing-reaches-c-zeroed.hero"
     return;
-#line 241 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
+#line 242 "fixedbugs2112arecordstoredafterthezeroingreachesczeroed.c"
 }
 #undef h0_k
 HERO_TU_LOCAL bool h_fixedbugs2112arecordstoredafterthezeroingreachesczeroed_Kept_eq(const Kept *a, const Kept *b) {

@@ -173,7 +173,8 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct four *)0) == 13 ? sizeof(struct four) : 0), __builtin_offsetof(struct four, a), sizeof(((struct four *)0)->a)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct four *)hero_pad_nowhere()) == 13 ? sizeof(struct four) : 0), __builtin_offsetof(struct four, a), sizeof(((struct four *)0)->a)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -394,7 +395,7 @@ bb8:
     hero_print_int(t50);
 #line 42 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     hero_print_end();
-#line 398 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 399 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_xs1);
     hero_array_release_at(&h8_own8);
@@ -454,7 +455,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 458 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 459 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

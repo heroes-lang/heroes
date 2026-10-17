@@ -159,6 +159,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 SP h_ffirestzeroapartialrecord_built(void);
 void h_ffirestzeroapartialrecord_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("c")
 #undef c
 #pragma push_macro("d")
@@ -194,7 +195,7 @@ bb0:
     t2.kind = t1;
 #line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return t2;
-#line 198 "ffirestzeroapartialrecord.c"
+#line 199 "ffirestzeroapartialrecord.c"
 }
 
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
@@ -232,7 +233,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_s);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return;
-#line 236 "ffirestzeroapartialrecord.c"
+#line 237 "ffirestzeroapartialrecord.c"
 }
 #undef h0_s
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b) {

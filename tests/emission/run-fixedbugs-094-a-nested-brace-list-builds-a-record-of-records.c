@@ -168,7 +168,8 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void);
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void);
 void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct line *)0) == 13 ? sizeof(struct line) : 0), __builtin_offsetof(struct line, a), (__builtin_classify_type(((struct line *)0)->a) == 13 ? sizeof(((struct line *)0)->a) : 0), __builtin_offsetof(struct line, a.x), sizeof(((struct line *)0)->a.x), __builtin_offsetof(struct line, a.y), sizeof(((struct line *)0)->a.y), __builtin_offsetof(struct line, b), (__builtin_classify_type(((struct line *)0)->b) == 13 ? sizeof(((struct line *)0)->b) : 0), __builtin_offsetof(struct line, b.x), sizeof(((struct line *)0)->b.x), __builtin_offsetof(struct line, b.y), sizeof(((struct line *)0)->b.y)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct line *)hero_pad_nowhere()) == 13 ? sizeof(struct line) : 0), __builtin_offsetof(struct line, a), (__builtin_classify_type(((struct line *)hero_pad_nowhere())->a) == 13 ? sizeof(((struct line *)0)->a) : 0), __builtin_offsetof(struct line, a.x), sizeof(((struct line *)0)->a.x), __builtin_offsetof(struct line, a.y), sizeof(((struct line *)0)->a.y), __builtin_offsetof(struct line, b), (__builtin_classify_type(((struct line *)hero_pad_nowhere())->b) == 13 ? sizeof(((struct line *)0)->b) : 0), __builtin_offsetof(struct line, b.x), sizeof(((struct line *)0)->b.x), __builtin_offsetof(struct line, b.y), sizeof(((struct line *)0)->b.y)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -178,7 +179,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void) {
-#line 182 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 183 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -190,7 +191,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     struct line hero_constant_value = LINE_INIT;
-#line 194 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 195 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -209,7 +210,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void) {
-#line 213 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 214 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -221,7 +222,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     struct line hero_constant_value = LINE_FLAT;
-#line 225 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 226 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -285,7 +286,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     return;
-#line 289 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 290 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

@@ -186,13 +186,14 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs156recordsbesidebitfieldsbuild_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("kind")
 #undef kind
 __attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(BF, kind), sizeof(((BF *)0)->kind), (0) + 4, 1, (0) + 4, 4};
 #pragma pop_macro("kind")
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(UNNAMED *)0) == 13 ? sizeof(UNNAMED) : 0), __builtin_offsetof(UNNAMED, a), sizeof(((UNNAMED *)0)->a), __builtin_offsetof(UNNAMED, b), sizeof(((UNNAMED *)0)->b)};
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(UNNAMED *)hero_pad_nowhere()) == 13 ? sizeof(UNNAMED) : 0), __builtin_offsetof(UNNAMED, a), sizeof(((UNNAMED *)0)->a), __builtin_offsetof(UNNAMED, b), sizeof(((UNNAMED *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -260,7 +261,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     return;
-#line 264 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 265 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b) {
     hero_panic("h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq: a partial record has no structural equality");

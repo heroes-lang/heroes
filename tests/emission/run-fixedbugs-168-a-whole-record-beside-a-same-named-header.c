@@ -162,7 +162,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs168awholerecordbesideasamenamedheader_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(E *)0) == 13 ? sizeof(E) : 0), __builtin_offsetof(E, x), sizeof(((E *)0)->x)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(E *)hero_pad_nowhere()) == 13 ? sizeof(E) : 0), __builtin_offsetof(E, x), sizeof(((E *)0)->x)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -206,7 +207,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     return;
-#line 210 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 211 "fixedbugs168awholerecordbesideasamenamedheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_E_eq(const E *a, const E *b) {
     if (!(a->x == b->x)) return false;

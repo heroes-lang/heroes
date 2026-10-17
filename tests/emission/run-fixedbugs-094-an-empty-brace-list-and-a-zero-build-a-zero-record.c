@@ -163,7 +163,8 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY(void);
 struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO(void);
 void h_fixedbugs094anemptybracelistandazerobuildazerorecord_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct pt *)0) == 13 ? sizeof(struct pt) : 0), __builtin_offsetof(struct pt, x), sizeof(((struct pt *)0)->x), __builtin_offsetof(struct pt, y), sizeof(((struct pt *)0)->y)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct pt *)hero_pad_nowhere()) == 13 ? sizeof(struct pt) : 0), __builtin_offsetof(struct pt, x), sizeof(((struct pt *)0)->x), __builtin_offsetof(struct pt, y), sizeof(((struct pt *)0)->y)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -173,7 +174,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 9 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY(void) {
-#line 177 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 178 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -185,7 +186,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY(void) 
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 9 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     struct pt hero_constant_value = PT_EMPTY;
-#line 189 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 190 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -204,7 +205,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY(void) 
 
 #line 10 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO(void) {
-#line 208 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 209 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -216,7 +217,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 10 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     struct pt hero_constant_value = PT_ZERO;
-#line 220 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 221 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -278,7 +279,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     return;
-#line 282 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 283 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anemptybracelistandazerobuildazerorecord_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

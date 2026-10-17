@@ -181,7 +181,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiabytefieldcrossestoc_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Slot *)0) == 13 ? sizeof(Slot) : 0), __builtin_offsetof(Slot, nsap), sizeof(((Slot *)0)->nsap), __builtin_offsetof(Slot, tag), sizeof(((Slot *)0)->tag), __builtin_offsetof(Slot, id), sizeof(((Slot *)0)->id)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Slot *)hero_pad_nowhere()) == 13 ? sizeof(Slot) : 0), __builtin_offsetof(Slot, nsap), sizeof(((Slot *)0)->nsap), __builtin_offsetof(Slot, tag), sizeof(((Slot *)0)->tag), __builtin_offsetof(Slot, id), sizeof(((Slot *)0)->id)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -399,7 +400,7 @@ bb2:
     t45 = h1_f0;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t46 = t45.as.err;
-#line 403 "ffiabytefieldcrossestoc.c"
+#line 404 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb3:
@@ -411,7 +412,7 @@ bb3:
     hero_print_str(t75);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     hero_print_end();
-#line 415 "ffiabytefieldcrossestoc.c"
+#line 416 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
@@ -422,7 +423,7 @@ bb4:
     t72 = h3_f1;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t73 = t72.as.err;
-#line 426 "ffiabytefieldcrossestoc.c"
+#line 427 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t73);
     hero_unreachable();
 }

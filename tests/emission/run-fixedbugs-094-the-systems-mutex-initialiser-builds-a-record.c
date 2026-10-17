@@ -158,6 +158,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(void);
 void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("__opaque")
 #undef __opaque
 #pragma push_macro("__sig")
@@ -180,7 +181,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 12 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
 hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(void) {
-#line 184 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 185 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -192,7 +193,7 @@ hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 12 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     hero_mutex hero_constant_value = HERO_MUTEX_INIT;
-#line 196 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 197 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -249,7 +250,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     return;
-#line 253 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 254 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 }
 #undef h0_m
 HERO_TU_LOCAL bool h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_hero_mutex_eq(const hero_mutex *a, const hero_mutex *b) {

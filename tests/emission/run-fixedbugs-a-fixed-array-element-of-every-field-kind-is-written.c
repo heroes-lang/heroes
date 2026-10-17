@@ -184,7 +184,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct kinds *)0) == 13 ? sizeof(struct kinds) : 0), __builtin_offsetof(struct kinds, name), sizeof(((struct kinds *)0)->name), __builtin_offsetof(struct kinds, flags), sizeof(((struct kinds *)0)->flags), __builtin_offsetof(struct kinds, xs), sizeof(((struct kinds *)0)->xs), __builtin_offsetof(struct kinds, ps), sizeof(((struct kinds *)0)->ps), __builtin_offsetof(struct kinds, labels), sizeof(((struct kinds *)0)->labels), __builtin_offsetof(struct kinds, small), sizeof(((struct kinds *)0)->small)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct kinds *)hero_pad_nowhere()) == 13 ? sizeof(struct kinds) : 0), __builtin_offsetof(struct kinds, name), sizeof(((struct kinds *)0)->name), __builtin_offsetof(struct kinds, flags), sizeof(((struct kinds *)0)->flags), __builtin_offsetof(struct kinds, xs), sizeof(((struct kinds *)0)->xs), __builtin_offsetof(struct kinds, ps), sizeof(((struct kinds *)0)->ps), __builtin_offsetof(struct kinds, labels), sizeof(((struct kinds *)0)->labels), __builtin_offsetof(struct kinds, small), sizeof(((struct kinds *)0)->small)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -277,7 +278,7 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
     return;
-#line 281 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 282 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;

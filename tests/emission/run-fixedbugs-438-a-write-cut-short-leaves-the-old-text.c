@@ -239,7 +239,8 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 HeroArrayHeader * h_library_args(void);
 void h_library_exit(int64_t h0_code);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct rlimit *)0) == 13 ? sizeof(struct rlimit) : 0), __builtin_offsetof(struct rlimit, rlim_cur), sizeof(((struct rlimit *)0)->rlim_cur), __builtin_offsetof(struct rlimit, rlim_max), sizeof(((struct rlimit *)0)->rlim_max)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct rlimit *)hero_pad_nowhere()) == 13 ? sizeof(struct rlimit) : 0), __builtin_offsetof(struct rlimit, rlim_cur), sizeof(((struct rlimit *)0)->rlim_cur), __builtin_offsetof(struct rlimit, rlim_max), sizeof(((struct rlimit *)0)->rlim_max)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -249,7 +250,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 21 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void) {
-#line 253 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 254 "fixedbugs438awritecutshortleavestheoldtext.c"
     _Static_assert(HERO_RET_I32(RLIMIT_FSIZE), "heroes-ffi-return RLIMIT_FSIZE i32");
     _Static_assert(__builtin_constant_p(RLIMIT_FSIZE), "heroes-ffi-const RLIMIT_FSIZE");
 #pragma clang diagnostic push
@@ -261,7 +262,7 @@ int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     return RLIMIT_FSIZE;
-#line 265 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 266 "fixedbugs438awritecutshortleavestheoldtext.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -279,7 +280,7 @@ int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void) {
 
 #line 40 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 int64_t h_fixedbugs438awritecutshortleavestheoldtext_HERO_DIR_FILES(void) {
-#line 283 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 284 "fixedbugs438awritecutshortleavestheoldtext.c"
     _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
     _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
@@ -291,7 +292,7 @@ int64_t h_fixedbugs438awritecutshortleavestheoldtext_HERO_DIR_FILES(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 40 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     return HERO_DIR_FILES;
-#line 295 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 296 "fixedbugs438awritecutshortleavestheoldtext.c"
 #pragma clang diagnostic pop
 }
 
@@ -304,7 +305,7 @@ bb0:
     t1 = INT64_C(4096);
 #line 43 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     return t1;
-#line 308 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 309 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 45 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
@@ -334,7 +335,7 @@ bb0:
     h2_own2 = t3;
 #line 48 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     hero_str_decref(t4);
-#line 338 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 339 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -483,7 +484,7 @@ bb5:
     t15 = h3_f0;
 #line 54 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t16 = t15.as.err;
-#line 487 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 488 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb6:
@@ -507,7 +508,7 @@ bb8:
     h_library_exit(t32);
 #line 59 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     hero_unreachable();
-#line 511 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 512 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h3_f0));
     h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
     hero_str_release_at(&h5_own5);
@@ -528,7 +529,7 @@ bb9:
 bb10:
 #line 58 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     goto bb8;
-#line 532 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 533 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 #undef h1_limit
 
@@ -594,7 +595,7 @@ bb0:
     h3_code = t16;
     (void)hero_run_reset();
     t17 = h3_code;
-#line 598 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 599 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_release_at(&h1_program);
     hero_str_release_at(&h4_own4);
     hero_lend_local_give(hero_lend_h2_status);
@@ -623,7 +624,7 @@ bb0:
     t6 = h1_count;
 #line 78 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     return t6;
-#line 627 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 628 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 80 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
@@ -966,7 +967,7 @@ bb9:
     goto bb10;
 #line 114 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 bb10:
-#line 970 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 971 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_release_at(&h0_words);
     hero_str_release_at(&h1_dir);
     hero_str_release_at(&h2_held);
@@ -989,28 +990,28 @@ bb10:
 int64_t h_library_HERO_OS_OK(void) {
 #line 109 "<heroes library>"
     return HERO_OS_OK;
-#line 993 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 994 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
 #line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
-#line 1000 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1001 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
 #line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
-#line 1007 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1008 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
 #line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
-#line 1014 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1015 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 167 "<heroes library>"
@@ -1244,7 +1245,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 1248 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1249 "fixedbugs438awritecutshortleavestheoldtext.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1371,7 +1372,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1375 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1376 "fixedbugs438awritecutshortleavestheoldtext.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -1441,7 +1442,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 1445 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1446 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -1460,7 +1461,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 1464 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1465 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs438awritecutshortleavestheoldtext_Ceiling_eq(const struct rlimit *a, const struct rlimit *b) {
     if (!(a->rlim_cur == b->rlim_cur)) return false;

@@ -181,6 +181,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs413zlibknowsastreambyitsaddress_Z
 
 int32_t h_fixedbugs413zlibknowsastreambyitsaddress_init(struct z_stream_s *ph0_s);
 void h_fixedbugs413zlibknowsastreambyitsaddress_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("adler")
 #undef adler
 #pragma push_macro("avail_in")
@@ -250,7 +251,7 @@ bb0:
     t4 = deflateInit_(&(*ph0_s), t1, hero_cstr_nonnull(t2), t3);
 #line 28 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     return t4;
-#line 254 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 255 "fixedbugs413zlibknowsastreambyitsaddress.c"
 }
 
 #line 30 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
@@ -490,7 +491,7 @@ bb0:
     hero_print_int(t49);
 #line 49 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_print_end();
-#line 494 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 495 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_release_at(&h4_zs);
     hero_array_release_at(&h15_own15);
     hero_lend_local_give(hero_lend_h8_t);

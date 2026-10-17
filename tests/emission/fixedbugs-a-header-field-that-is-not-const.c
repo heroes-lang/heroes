@@ -147,6 +147,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_aheaderfieldthatisnotconst_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("pw_change")
 #undef pw_change
 #pragma push_macro("pw_class")
@@ -230,7 +231,7 @@ bb0:
     hero_print_end();
 #line 62 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
     return;
-#line 234 "aheaderfieldthatisnotconst.c"
+#line 235 "aheaderfieldthatisnotconst.c"
 }
 HERO_TU_LOCAL bool h_aheaderfieldthatisnotconst_Passwd_eq(const struct passwd *a, const struct passwd *b) {
     hero_panic("h_aheaderfieldthatisnotconst_Passwd_eq: a partial record has no structural equality");

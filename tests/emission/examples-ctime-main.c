@@ -230,6 +230,7 @@ h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, i
 HeroStr h_main_shown(struct tm h0_b);
 HeroStr h_main_padded(int64_t h0_n);
 void h_main_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("tm_gmtoff")
 #undef tm_gmtoff
 #pragma push_macro("tm_hour")
@@ -280,7 +281,7 @@ bb0:
     t1 = INT64_C(1900);
 #line 67 "examples/ctime/main.hero"
     return t1;
-#line 284 "main.c"
+#line 285 "main.c"
 }
 
 #line 69 "examples/ctime/main.hero"
@@ -326,7 +327,7 @@ bb1:
     t11 = h_main_C_EPOCH_YEAR();
 #line 70 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 330 "main.c"
+#line 331 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -335,7 +336,7 @@ bb2:
     t7 = h1_f0;
 #line 70 "examples/ctime/main.hero"
     t8 = t7.as.err;
-#line 339 "main.c"
+#line 340 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
@@ -383,7 +384,7 @@ bb1:
     t11 = INT64_C(1);
 #line 74 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 387 "main.c"
+#line 388 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -392,7 +393,7 @@ bb2:
     t7 = h1_f0;
 #line 74 "examples/ctime/main.hero"
     t8 = t7.as.err;
-#line 396 "main.c"
+#line 397 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
@@ -436,7 +437,7 @@ bb1:
     t9 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t10 = t9.as.ok;
-#line 440 "main.c"
+#line 441 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
@@ -445,7 +446,7 @@ bb2:
     t7 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t8 = t7.as.err;
-#line 449 "main.c"
+#line 450 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
@@ -489,7 +490,7 @@ bb1:
     t9 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t10 = t9.as.ok;
-#line 493 "main.c"
+#line 494 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
@@ -498,7 +499,7 @@ bb2:
     t7 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t8 = t7.as.err;
-#line 502 "main.c"
+#line 503 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
@@ -789,7 +790,7 @@ bb8:
     goto bb9;
 #line 86 "examples/ctime/main.hero"
 bb9:
-#line 793 "main.c"
+#line 794 "main.c"
     t55 = h12_ret0;
     h_0opt_13b8cf25_retain(&t55);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -925,7 +926,7 @@ bb0:
     h11_own11 = t23;
 #line 90 "examples/ctime/main.hero"
     hero_str_decref(t34);
-#line 929 "main.c"
+#line 930 "main.c"
     hero_str_incref(t23);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -958,7 +959,7 @@ bb0:
 bb1:
 #line 93 "examples/ctime/main.hero"
     t10 = h1_r0;
-#line 962 "main.c"
+#line 963 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_r0);
     hero_str_release_at(&h2_own2);
@@ -1018,7 +1019,7 @@ bb3:
     hero_str_decref(t15);
 #line 93 "examples/ctime/main.hero"
     goto bb1;
-#line 1022 "main.c"
+#line 1023 "main.c"
 }
 
 #line 98 "examples/ctime/main.hero"
@@ -1161,7 +1162,7 @@ bb2:
     t10 = h0_f0;
 #line 100 "examples/ctime/main.hero"
     t11 = t10.as.err;
-#line 1165 "main.c"
+#line 1166 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb3:
@@ -1250,7 +1251,7 @@ bb3:
     hero_print_bool(t57);
 #line 121 "examples/ctime/main.hero"
     hero_print_end();
-#line 1254 "main.c"
+#line 1255 "main.c"
     h_0opt_13b8cf25_release(hero_slot_escape(&h0_f0));
     h_0opt_13b8cf25_release(hero_slot_escape(&h2_f1));
     h_0opt_13b8cf25_release(hero_slot_escape(&h4_f2));
@@ -1265,7 +1266,7 @@ bb4:
     t34 = h2_f1;
 #line 112 "examples/ctime/main.hero"
     t35 = t34.as.err;
-#line 1269 "main.c"
+#line 1270 "main.c"
     hero_panic_must(t35);
     hero_unreachable();
 }

@@ -159,7 +159,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs092acountinacellpasttherecordaborts_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct one *)hero_pad_nowhere()) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -216,7 +217,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 19 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     return;
-#line 220 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 221 "fixedbugs092acountinacellpasttherecordaborts.c"
 }
 #undef h0_o
 #undef h1_n

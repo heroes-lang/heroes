@@ -228,7 +228,8 @@ h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n);
 int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p);
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n);
 int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Packed582 *)0) == 13 ? sizeof(Packed582) : 0), __builtin_offsetof(Packed582, a), sizeof(((Packed582 *)0)->a), __builtin_offsetof(Packed582, b), sizeof(((Packed582 *)0)->b)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Packed582 *)hero_pad_nowhere()) == 13 ? sizeof(Packed582) : 0), __builtin_offsetof(Packed582, a), sizeof(((Packed582 *)0)->a), __builtin_offsetof(Packed582, b), sizeof(((Packed582 *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -306,7 +307,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
     return;
-#line 310 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 311 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
@@ -322,7 +323,7 @@ bb0:
     t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2};
 #line 18 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 326 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 327 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
@@ -334,7 +335,7 @@ bb0:
     t1 = h0_p.f_b;
 #line 21 "tests/golden/run/fixedbugs582/pair.hero"
     return t1;
-#line 338 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 339 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
@@ -350,7 +351,7 @@ bb0:
     t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}};
 #line 24 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 354 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 355 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
@@ -453,7 +454,7 @@ bb6:
     t13 = h3_f0;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     t14 = t13.as.err;
-#line 457 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 458 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
     hero_panic_must(t14);
     hero_unreachable();
 bb7:

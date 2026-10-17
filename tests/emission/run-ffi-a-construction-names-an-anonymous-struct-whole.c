@@ -170,6 +170,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaconstructionnamesananonymousstructwhole_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("hi")
 #undef hi
 #pragma push_macro("i")
@@ -242,7 +243,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     return;
-#line 246 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 247 "ffiaconstructionnamesananonymousstructwhole.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesananonymousstructwhole_SB_eq(const SB *a, const SB *b) {
     if (!(a->kind == b->kind)) return false;

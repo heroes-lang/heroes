@@ -177,6 +177,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiarecordholdingalockislentinplace_twice(struct counter *ph0_c);
 void h_ffiarecordholdingalockislentinplace_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("__opaque")
 #undef __opaque
 #pragma push_macro("__sig")
@@ -217,7 +218,7 @@ bb0:
     (void)counter_unlock(&(*ph0_c));
 #line 26 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     return;
-#line 221 "ffiarecordholdingalockislentinplace.c"
+#line 222 "ffiarecordholdingalockislentinplace.c"
 }
 
 #line 28 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
@@ -321,7 +322,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_c);
 #line 39 "tests/golden/run/ffi-a-record-holding-a-lock-is-lent-in-place.hero"
     return;
-#line 325 "ffiarecordholdingalockislentinplace.c"
+#line 326 "ffiarecordholdingalockislentinplace.c"
 }
 #undef h0_c
 #undef h2_m

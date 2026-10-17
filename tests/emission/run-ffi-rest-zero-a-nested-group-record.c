@@ -174,6 +174,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 struct outer h_ffirestzeroanestedgrouprecord_left_out(void);
 struct outer h_ffirestzeroanestedgrouprecord_built(void);
 void h_ffirestzeroanestedgrouprecord_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("c")
 #undef c
 #pragma push_macro("d")
@@ -215,7 +216,7 @@ bb0:
     t2.k = t1;
 #line 19 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return t2;
-#line 219 "ffirestzeroanestedgrouprecord.c"
+#line 220 "ffirestzeroanestedgrouprecord.c"
 }
 
 #line 21 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
@@ -243,7 +244,7 @@ bb0:
     t4.inner = t3;
 #line 22 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return t4;
-#line 247 "ffirestzeroanestedgrouprecord.c"
+#line 248 "ffirestzeroanestedgrouprecord.c"
 }
 
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
@@ -324,7 +325,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return;
-#line 328 "ffirestzeroanestedgrouprecord.c"
+#line 329 "ffirestzeroanestedgrouprecord.c"
 }
 #undef h0_a
 #undef h1_b

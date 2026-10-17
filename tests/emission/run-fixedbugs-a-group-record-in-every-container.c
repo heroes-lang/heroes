@@ -221,7 +221,8 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsagrouprecordineverycontainer_Colo
 };
 
 void h_fixedbugsagrouprecordineverycontainer_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)0) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)hero_pad_nowhere()) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -488,7 +489,7 @@ bb2:
     t42 = h5_f0;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t43 = t42.as.err;
-#line 492 "fixedbugsagrouprecordineverycontainer.c"
+#line 493 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t43);
     hero_unreachable();
 bb3:
@@ -547,7 +548,7 @@ bb3:
     hero_print_int(t70);
 #line 68 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_print_end();
-#line 551 "fixedbugsagrouprecordineverycontainer.c"
+#line 552 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
     h_0opt_31fbd75_release(hero_slot_escape(&h5_f0));
@@ -567,7 +568,7 @@ bb4:
     t58 = h7_f1;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t59 = t58.as.err;
-#line 571 "fixedbugsagrouprecordineverycontainer.c"
+#line 572 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t59);
     hero_unreachable();
 }

@@ -163,6 +163,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs396sha256finalintoonecellaborts_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("Nh")
 #undef Nh
 #pragma push_macro("Nl")
@@ -262,7 +263,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_c);
 #line 21 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
     return;
-#line 266 "fixedbugs396sha256finalintoonecellaborts.c"
+#line 267 "fixedbugs396sha256finalintoonecellaborts.c"
 }
 #undef h0_c
 #undef h1_m

@@ -219,16 +219,17 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_main_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)0) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)hero_pad_nowhere()) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Vector2 *)0) == 13 ? sizeof(Vector2) : 0), __builtin_offsetof(Vector2, x), sizeof(((Vector2 *)0)->x), __builtin_offsetof(Vector2, y), sizeof(((Vector2 *)0)->y)};
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Vector2 *)hero_pad_nowhere()) == 13 ? sizeof(Vector2) : 0), __builtin_offsetof(Vector2, x), sizeof(((Vector2 *)0)->x), __builtin_offsetof(Vector2, y), sizeof(((Vector2 *)0)->y)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Rectangle *)0) == 13 ? sizeof(Rectangle) : 0), __builtin_offsetof(Rectangle, x), sizeof(((Rectangle *)0)->x), __builtin_offsetof(Rectangle, y), sizeof(((Rectangle *)0)->y), __builtin_offsetof(Rectangle, width), sizeof(((Rectangle *)0)->width), __builtin_offsetof(Rectangle, height), sizeof(((Rectangle *)0)->height)};
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Rectangle *)hero_pad_nowhere()) == 13 ? sizeof(Rectangle) : 0), __builtin_offsetof(Rectangle, x), sizeof(((Rectangle *)0)->x), __builtin_offsetof(Rectangle, y), sizeof(((Rectangle *)0)->y), __builtin_offsetof(Rectangle, width), sizeof(((Rectangle *)0)->width), __builtin_offsetof(Rectangle, height), sizeof(((Rectangle *)0)->height)};
 __attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_2;
-__attribute__((unused)) static const size_t hero_pad_t_9[] = {0, (__builtin_classify_type(*(AutomationEvent *)0) == 13 ? sizeof(AutomationEvent) : 0), __builtin_offsetof(AutomationEvent, frame), sizeof(((AutomationEvent *)0)->frame), __builtin_offsetof(AutomationEvent, type), sizeof(((AutomationEvent *)0)->type), __builtin_offsetof(AutomationEvent, params), sizeof(((AutomationEvent *)0)->params)};
+__attribute__((unused)) static const size_t hero_pad_t_9[] = {0, (__builtin_classify_type(*(AutomationEvent *)hero_pad_nowhere()) == 13 ? sizeof(AutomationEvent) : 0), __builtin_offsetof(AutomationEvent, frame), sizeof(((AutomationEvent *)0)->frame), __builtin_offsetof(AutomationEvent, type), sizeof(((AutomationEvent *)0)->type), __builtin_offsetof(AutomationEvent, params), sizeof(((AutomationEvent *)0)->params)};
 __attribute__((unused)) static size_t hero_pad_g_9[sizeof hero_pad_t_9 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_9;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -394,7 +395,7 @@ bb0:
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 398 "main.c"
+#line 399 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

@@ -178,7 +178,8 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fficonstpointer_main(void);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Handle *)0) == 13 ? sizeof(Handle) : 0), __builtin_offsetof(Handle, pMethods), sizeof(((Handle *)0)->pMethods), __builtin_offsetof(Handle, id), sizeof(((Handle *)0)->id)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Handle *)hero_pad_nowhere()) == 13 ? sizeof(Handle) : 0), __builtin_offsetof(Handle, pMethods), sizeof(((Handle *)0)->pMethods), __builtin_offsetof(Handle, id), sizeof(((Handle *)0)->id)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -294,7 +295,7 @@ bb2:
     t13 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t14 = t13.as.err;
-#line 298 "fficonstpointer.c"
+#line 299 "fficonstpointer.c"
     hero_panic_must(t14);
     hero_unreachable();
 bb3:
@@ -339,7 +340,7 @@ bb4:
     t27 = h4_f1;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t28 = t27.as.err;
-#line 343 "fficonstpointer.c"
+#line 344 "fficonstpointer.c"
     hero_panic_must(t28);
     hero_unreachable();
 bb5:
@@ -351,7 +352,7 @@ bb5:
     hero_print_str(t40);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_end();
-#line 355 "fficonstpointer.c"
+#line 356 "fficonstpointer.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h5_f2));
@@ -364,7 +365,7 @@ bb6:
     t37 = h5_f2;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t38 = t37.as.err;
-#line 368 "fficonstpointer.c"
+#line 369 "fficonstpointer.c"
     hero_panic_must(t38);
     hero_unreachable();
 }
@@ -373,7 +374,7 @@ bb6:
 int64_t h_library_HERO_STR_OK(void) {
 #line 123 "<heroes library>"
     return HERO_STR_OK;
-#line 377 "fficonstpointer.c"
+#line 378 "fficonstpointer.c"
 }
 
 #line 153 "<heroes library>"
@@ -495,7 +496,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 499 "fficonstpointer.c"
+#line 500 "fficonstpointer.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

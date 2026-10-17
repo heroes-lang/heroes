@@ -167,6 +167,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("fd")
 #undef fd
 #pragma push_macro("handle")
@@ -222,7 +223,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_t);
 #line 18 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
     return;
-#line 226 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
+#line 227 "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.c"
 }
 #undef h0_t
 HERO_TU_LOCAL bool h_fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown_Tagged_eq(const struct tagged *a, const struct tagged *b) {

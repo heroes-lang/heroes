@@ -157,7 +157,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Pair *)0) == 13 ? sizeof(Pair) : 0), __builtin_offsetof(Pair, weights), sizeof(((Pair *)0)->weights)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Pair *)hero_pad_nowhere()) == 13 ? sizeof(Pair) : 0), __builtin_offsetof(Pair, weights), sizeof(((Pair *)0)->weights)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -206,7 +207,7 @@ bb0:
     hero_print_end();
 #line 15 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
     return;
-#line 210 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 211 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_Pair_eq(const Pair *a, const Pair *b) {
     if (!((a->weights[0] == b->weights[0] && a->weights[1] == b->weights[1]))) return false;

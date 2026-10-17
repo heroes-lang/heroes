@@ -175,7 +175,8 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_main(void);
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(S *)0) == 13 ? sizeof(S) : 0), __builtin_offsetof(S, a), sizeof(((S *)0)->a), __builtin_offsetof(S, b), sizeof(((S *)0)->b)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(S *)hero_pad_nowhere()) == 13 ? sizeof(S) : 0), __builtin_offsetof(S, a), sizeof(((S *)0)->a), __builtin_offsetof(S, b), sizeof(((S *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -214,7 +215,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
     return;
-#line 218 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 219 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
@@ -228,7 +229,7 @@ bb0:
     t2 = twice(t1);
 #line 8 "tests/golden/run/fixedbugs559/wide.hero"
     return t2;
-#line 232 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 233 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;

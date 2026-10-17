@@ -170,7 +170,8 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsaborrowedhandleiswrittenintoafixedarray_main(void);
 HeroArrayHeader * h_library_args(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct four *)0) == 13 ? sizeof(struct four) : 0), __builtin_offsetof(struct four, a), sizeof(((struct four *)0)->a)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct four *)hero_pad_nowhere()) == 13 ? sizeof(struct four) : 0), __builtin_offsetof(struct four, a), sizeof(((struct four *)0)->a)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -274,7 +275,7 @@ bb0:
     hero_print_bool(t29);
 #line 28 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     hero_print_end();
-#line 278 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 279 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_release_at(&h2_own2);
     return;
 }
@@ -339,7 +340,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 343 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 344 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

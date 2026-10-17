@@ -266,16 +266,27 @@ function guarded(names: {str: bool}, line: str) -> [str]
 # its declared fields are not its members: measured, spanning `c` alone zeroed
 # `d`'s other seven bytes, `2.5` read back as `0.0`. Whether the object at
 # `prefix` is a union is C's answer, `__builtin_classify_type` 13 as
-# `emit/extern_union.hero` asks it; a struct gives a span of no bytes.
+# `emit/extern_union.hero` asks it; a struct gives a span of no bytes. The
+# object is reached through `NOWHERE`'s pointer, a function declared and
+# never defined, and never through a null one: the builtin evaluates nothing,
+# and clang 23.1.1 warns of `*(T *)0` there at `-O2` all the same (defect
+# 2119, `-Wnull-dereference`, 13 times over 8 `run` cases on the Windows box);
+# were the argument ever evaluated, the link would refuse it.
 function whole_if_union(t: str, prefix: str) -> [str]
     if prefix == ""
-        return ["0", "(__builtin_classify_type(*(" + t + " *)0) == 13 ? sizeof(" + t + ") : 0)"]
+        return ["0", "(__builtin_classify_type(*(" + t + " *)" + NOWHERE + "()) == 13 ? sizeof(" + t + ") : 0)"]
     path = prefix.slice(from: 0, to: prefix.len() - 1)
     member = "((" + t + " *)0)->" + path
+    asked = "((" + t + " *)" + NOWHERE + "())->" + path
     return [
         "__builtin_offsetof(" + t + ", " + path + ")"
-        "(__builtin_classify_type(" + member + ") == 13 ? sizeof(" + member + ") : 0)"
+        "(__builtin_classify_type(" + asked + ") == 13 ? sizeof(" + member + ") : 0)"
     ]
+
+# The function whose pointer a table's class question reaches its object
+# through, declared in every unit that writes a table and defined nowhere.
+constant NOWHERE: str
+    "hero_pad_nowhere"
 
 function span(t: str, path: str) -> [str]
     return ["__builtin_offsetof(" + t + ", " + path + ")", "sizeof(((" + t + " *)0)->" + path + ")"]

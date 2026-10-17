@@ -167,6 +167,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiatypedefthenotenamesbindsbyitsownname_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("__align")
 #undef __align
 #pragma push_macro("__size")
@@ -271,7 +272,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
     return;
-#line 275 "ffiatypedefthenotenamesbindsbyitsownname.c"
+#line 276 "ffiatypedefthenotenamesbindsbyitsownname.c"
 }
 #undef h0_m
 #undef h1_p

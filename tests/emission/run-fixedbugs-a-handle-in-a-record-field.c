@@ -166,7 +166,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsahandleinarecordfield_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Slot *)0) == 13 ? sizeof(Slot) : 0), __builtin_offsetof(Slot, handle), sizeof(((Slot *)0)->handle), __builtin_offsetof(Slot, ratio), sizeof(((Slot *)0)->ratio), __builtin_offsetof(Slot, count), sizeof(((Slot *)0)->count)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Slot *)hero_pad_nowhere()) == 13 ? sizeof(Slot) : 0), __builtin_offsetof(Slot, handle), sizeof(((Slot *)0)->handle), __builtin_offsetof(Slot, ratio), sizeof(((Slot *)0)->ratio), __builtin_offsetof(Slot, count), sizeof(((Slot *)0)->count)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -213,7 +214,7 @@ bb0:
     hero_print_end();
 #line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     return;
-#line 217 "fixedbugsahandleinarecordfield.c"
+#line 218 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {
     return hero_handle_eq(*a, *b);

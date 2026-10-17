@@ -173,6 +173,7 @@ SA h_ffirestzeroaunionnoneofwhosemembersisnamed_in_a_struct(void);
 UD h_ffirestzeroaunionnoneofwhosemembersisnamed_a_union_type(void);
 SA h_ffirestzeroaunionnoneofwhosemembersisnamed_nothing_named(void);
 void h_ffirestzeroaunionnoneofwhosemembersisnamed_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("c")
 #undef c
 #pragma push_macro("d")
@@ -218,7 +219,7 @@ bb0:
     t2.kind = t1;
 #line 27 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return t2;
-#line 222 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 223 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 29 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -232,7 +233,7 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 30 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return t1;
-#line 236 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 237 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 32 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -246,7 +247,7 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 33 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return t1;
-#line 250 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 251 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 35 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -362,7 +363,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_s);
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return;
-#line 366 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 367 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 #undef h0_s
 #undef h1_u

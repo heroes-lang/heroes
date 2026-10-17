@@ -200,16 +200,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 uint64_t h_fixedbugs092arecordlentwholewithitscountruns_at_run_time(uint64_t h0_k);
 void h_fixedbugs092arecordlentwholewithitscountruns_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct one *)hero_pad_nowhere()) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct pad *)0) == 13 ? sizeof(struct pad) : 0), __builtin_offsetof(struct pad, c), sizeof(((struct pad *)0)->c), __builtin_offsetof(struct pad, d), sizeof(((struct pad *)0)->d)};
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct pad *)hero_pad_nowhere()) == 13 ? sizeof(struct pad) : 0), __builtin_offsetof(struct pad, c), sizeof(((struct pad *)0)->c), __builtin_offsetof(struct pad, d), sizeof(((struct pad *)0)->d)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct outer *)0) == 13 ? sizeof(struct outer) : 0), __builtin_offsetof(struct outer, inner), (__builtin_classify_type(((struct outer *)0)->inner) == 13 ? sizeof(((struct outer *)0)->inner) : 0), __builtin_offsetof(struct outer, inner.a), sizeof(((struct outer *)0)->inner.a), __builtin_offsetof(struct outer, z), sizeof(((struct outer *)0)->z)};
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct outer *)hero_pad_nowhere()) == 13 ? sizeof(struct outer) : 0), __builtin_offsetof(struct outer, inner), (__builtin_classify_type(((struct outer *)hero_pad_nowhere())->inner) == 13 ? sizeof(((struct outer *)0)->inner) : 0), __builtin_offsetof(struct outer, inner.a), sizeof(((struct outer *)0)->inner.a), __builtin_offsetof(struct outer, z), sizeof(((struct outer *)0)->z)};
 __attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_2;
-__attribute__((unused)) static const size_t hero_pad_t_3[] = {0, (__builtin_classify_type(*(struct pfd *)0) == 13 ? sizeof(struct pfd) : 0), __builtin_offsetof(struct pfd, fd), sizeof(((struct pfd *)0)->fd), __builtin_offsetof(struct pfd, events), sizeof(((struct pfd *)0)->events), __builtin_offsetof(struct pfd, revents), sizeof(((struct pfd *)0)->revents)};
+__attribute__((unused)) static const size_t hero_pad_t_3[] = {0, (__builtin_classify_type(*(struct pfd *)hero_pad_nowhere()) == 13 ? sizeof(struct pfd) : 0), __builtin_offsetof(struct pfd, fd), sizeof(((struct pfd *)0)->fd), __builtin_offsetof(struct pfd, events), sizeof(((struct pfd *)0)->events), __builtin_offsetof(struct pfd, revents), sizeof(((struct pfd *)0)->revents)};
 __attribute__((unused)) static size_t hero_pad_g_3[sizeof hero_pad_t_3 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_3;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -229,7 +230,7 @@ bb0:
     t1 = h0_k;
 #line 34 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     return t1;
-#line 233 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 234 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
@@ -464,7 +465,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     return;
-#line 468 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 469 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 #undef h0_o
 #undef h1_p

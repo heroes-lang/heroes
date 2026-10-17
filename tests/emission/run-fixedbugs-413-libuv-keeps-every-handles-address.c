@@ -190,6 +190,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
+void *hero_pad_nowhere(void);
 #pragma push_macro("close_cb")
 #undef close_cb
 #pragma push_macro("data")
@@ -276,7 +277,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     return;
-#line 280 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 281 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
@@ -299,7 +300,7 @@ bb0:
     t2 = uv_timer_init(t1, &(*ph1_t));
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     return t2;
-#line 303 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 304 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
@@ -402,7 +403,7 @@ bb0:
     t21 = h0_loop;
 #line 44 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     (void)uv_walk(t19, (h_0fn_7d30c22)hero_callback_of((void (*)(void))t20), t21);
-#line 406 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 407 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_release_at(&h2_ts);
     hero_array_release_at(&h3_own3);
     hero_lend_local_give(hero_lend_h1_a);

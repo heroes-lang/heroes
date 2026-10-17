@@ -172,7 +172,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Pair *)0) == 13 ? sizeof(Pair) : 0), __builtin_offsetof(Pair, a), sizeof(((Pair *)0)->a), __builtin_offsetof(Pair, b), sizeof(((Pair *)0)->b)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Pair *)hero_pad_nowhere()) == 13 ? sizeof(Pair) : 0), __builtin_offsetof(Pair, a), sizeof(((Pair *)0)->a), __builtin_offsetof(Pair, b), sizeof(((Pair *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -216,7 +217,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-2106-a-variadic-function-is-called-through-a-prototype-of-ones-own.hero"
     return;
-#line 220 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
+#line 221 "fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs2106avariadicfunctioniscalledthroughaprototypeofonesown_Pair_eq(const Pair *a, const Pair *b) {
     if (!(a->a == b->a)) return false;

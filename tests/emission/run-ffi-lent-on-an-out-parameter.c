@@ -166,7 +166,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffilentonanoutparameter_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct span *)0) == 13 ? sizeof(struct span) : 0), __builtin_offsetof(struct span, lo), sizeof(((struct span *)0)->lo), __builtin_offsetof(struct span, hi), sizeof(((struct span *)0)->hi)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct span *)hero_pad_nowhere()) == 13 ? sizeof(struct span) : 0), __builtin_offsetof(struct span, lo), sizeof(((struct span *)0)->lo), __builtin_offsetof(struct span, hi), sizeof(((struct span *)0)->hi)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -237,7 +238,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_e);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     return;
-#line 241 "ffilentonanoutparameter.c"
+#line 242 "ffilentonanoutparameter.c"
 }
 #undef h0_e
 #undef h1_s

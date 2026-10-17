@@ -180,7 +180,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct label *)0) == 13 ? sizeof(struct label) : 0), __builtin_offsetof(struct label, id), sizeof(((struct label *)0)->id), __builtin_offsetof(struct label, name), sizeof(((struct label *)0)->name)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct label *)hero_pad_nowhere()) == 13 ? sizeof(struct label) : 0), __builtin_offsetof(struct label, id), sizeof(((struct label *)0)->id), __builtin_offsetof(struct label, name), sizeof(((struct label *)0)->name)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -305,7 +306,7 @@ bb2:
     t19 = h1_f0;
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t20 = t19.as.err;
-#line 309 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 310 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb3:
@@ -317,7 +318,7 @@ bb3:
     hero_print_int(t33);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     hero_print_end();
-#line 321 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 322 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -328,7 +329,7 @@ bb4:
     t30 = h2_f1;
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t31 = t30.as.err;
-#line 332 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 333 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must(t31);
     hero_unreachable();
 }

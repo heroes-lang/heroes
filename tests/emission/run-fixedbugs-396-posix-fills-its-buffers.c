@@ -209,7 +209,8 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs396posixfillsitsbuffers_PollFd_de
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void);
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void);
 void h_fixedbugs396posixfillsitsbuffers_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_7[] = {0, (__builtin_classify_type(*(struct pollfd *)0) == 13 ? sizeof(struct pollfd) : 0), __builtin_offsetof(struct pollfd, fd), sizeof(((struct pollfd *)0)->fd), __builtin_offsetof(struct pollfd, events), sizeof(((struct pollfd *)0)->events), __builtin_offsetof(struct pollfd, revents), sizeof(((struct pollfd *)0)->revents)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_7[] = {0, (__builtin_classify_type(*(struct pollfd *)hero_pad_nowhere()) == 13 ? sizeof(struct pollfd) : 0), __builtin_offsetof(struct pollfd, fd), sizeof(((struct pollfd *)0)->fd), __builtin_offsetof(struct pollfd, events), sizeof(((struct pollfd *)0)->events), __builtin_offsetof(struct pollfd, revents), sizeof(((struct pollfd *)0)->revents)};
 __attribute__((unused)) static size_t hero_pad_g_7[sizeof hero_pad_t_7 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_7;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -219,7 +220,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 21 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
-#line 223 "fixedbugs396posixfillsitsbuffers.c"
+#line 224 "fixedbugs396posixfillsitsbuffers.c"
     _Static_assert(HERO_RET_I32(POLLIN), "heroes-ffi-return POLLIN i32");
     _Static_assert(__builtin_constant_p(POLLIN), "heroes-ffi-const POLLIN");
 #pragma clang diagnostic push
@@ -231,7 +232,7 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     return POLLIN;
-#line 235 "fixedbugs396posixfillsitsbuffers.c"
+#line 236 "fixedbugs396posixfillsitsbuffers.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -249,7 +250,7 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
 
 #line 22 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
-#line 253 "fixedbugs396posixfillsitsbuffers.c"
+#line 254 "fixedbugs396posixfillsitsbuffers.c"
     _Static_assert(HERO_RET_I32(POLLOUT), "heroes-ffi-return POLLOUT i32");
     _Static_assert(__builtin_constant_p(POLLOUT), "heroes-ffi-const POLLOUT");
 #pragma clang diagnostic push
@@ -261,7 +262,7 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 22 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     return POLLOUT;
-#line 265 "fixedbugs396posixfillsitsbuffers.c"
+#line 266 "fixedbugs396posixfillsitsbuffers.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -461,7 +462,7 @@ bb2:
     t30 = h1_f0;
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t31 = t30.as.err;
-#line 465 "fixedbugs396posixfillsitsbuffers.c"
+#line 466 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t31);
     hero_unreachable();
 bb3:
@@ -567,7 +568,7 @@ bb4:
     t45 = h2_f1;
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t46 = t45.as.err;
-#line 571 "fixedbugs396posixfillsitsbuffers.c"
+#line 572 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb5:
@@ -627,7 +628,7 @@ bb6:
     t69 = h4_f2;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t70 = t69.as.err;
-#line 631 "fixedbugs396posixfillsitsbuffers.c"
+#line 632 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t70);
     hero_unreachable();
 bb7:
@@ -825,7 +826,7 @@ bb7:
     hero_print_bool(t131);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
-#line 829 "fixedbugs396posixfillsitsbuffers.c"
+#line 830 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_release_at(&h0_fds);
     h_0opt_e1ec52d_release(hero_slot_escape(&h1_f0));
     h_0opt_e1ec52d_release(hero_slot_escape(&h2_f1));
@@ -848,7 +849,7 @@ bb8:
     t85 = h5_f3;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t86 = t85.as.err;
-#line 852 "fixedbugs396posixfillsitsbuffers.c"
+#line 853 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t86);
     hero_unreachable();
 }

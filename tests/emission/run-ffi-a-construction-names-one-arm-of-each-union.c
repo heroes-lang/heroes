@@ -176,6 +176,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaconstructionnamesonearmofeachunion_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("f")
 #undef f
 #pragma push_macro("i")
@@ -298,7 +299,7 @@ bb4:
     hero_print_end();
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     return;
-#line 302 "ffiaconstructionnamesonearmofeachunion.c"
+#line 303 "ffiaconstructionnamesonearmofeachunion.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonearmofeachunion_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

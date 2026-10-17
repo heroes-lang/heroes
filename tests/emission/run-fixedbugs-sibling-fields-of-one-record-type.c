@@ -181,7 +181,8 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugssiblingfieldsofonerecordtype_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Pair *)0) == 13 ? sizeof(Pair) : 0), __builtin_offsetof(Pair, a), (__builtin_classify_type(((Pair *)0)->a) == 13 ? sizeof(((Pair *)0)->a) : 0), __builtin_offsetof(Pair, a.s), sizeof(((Pair *)0)->a.s), __builtin_offsetof(Pair, b), (__builtin_classify_type(((Pair *)0)->b) == 13 ? sizeof(((Pair *)0)->b) : 0), __builtin_offsetof(Pair, b.s), sizeof(((Pair *)0)->b.s)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Pair *)hero_pad_nowhere()) == 13 ? sizeof(Pair) : 0), __builtin_offsetof(Pair, a), (__builtin_classify_type(((Pair *)hero_pad_nowhere())->a) == 13 ? sizeof(((Pair *)0)->a) : 0), __builtin_offsetof(Pair, a.s), sizeof(((Pair *)0)->a.s), __builtin_offsetof(Pair, b), (__builtin_classify_type(((Pair *)hero_pad_nowhere())->b) == 13 ? sizeof(((Pair *)0)->b) : 0), __builtin_offsetof(Pair, b.s), sizeof(((Pair *)0)->b.s)};
 __attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_2;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -257,7 +258,7 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     return;
-#line 261 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 262 "fixedbugssiblingfieldsofonerecordtype.c"
 }
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

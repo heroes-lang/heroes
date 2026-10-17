@@ -4142,6 +4142,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 G999 h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_deep(void);
 G31 h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_at_the_depth(void);
 void h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("inner")
 #undef inner
 #pragma push_macro("v")
@@ -4177,7 +4178,7 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 2015 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
     return t1;
-#line 4181 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
+#line 4182 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
 }
 
 #line 2017 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
@@ -4191,7 +4192,7 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 2018 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
     return t1;
-#line 4195 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
+#line 4196 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
 }
 
 #line 2020 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
@@ -4225,7 +4226,7 @@ bb0:
     hero_print_end();
 #line 2026 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
     return;
-#line 4229 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
+#line 4230 "fixedbugs549restzeroonagrouprecordathousanddeepbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_G0_eq(const G0 *a, const G0 *b) {
     if (!(a->v == b->v)) return false;

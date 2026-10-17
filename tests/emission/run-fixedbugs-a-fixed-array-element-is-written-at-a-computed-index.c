@@ -175,7 +175,8 @@ void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_bump(struct quad *ph
 void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 HeroArrayHeader * h_library_args(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct quad *)0) == 13 ? sizeof(struct quad) : 0), __builtin_offsetof(struct quad, a), sizeof(((struct quad *)0)->a), __builtin_offsetof(struct quad, after), sizeof(((struct quad *)0)->after)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct quad *)hero_pad_nowhere()) == 13 ? sizeof(struct quad) : 0), __builtin_offsetof(struct quad, a), sizeof(((struct quad *)0)->a), __builtin_offsetof(struct quad, after), sizeof(((struct quad *)0)->after)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -217,7 +218,7 @@ bb0:
     (*ph0_q).a[((uint64_t)(t8) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t8))] = t14;
 #line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     return;
-#line 221 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 222 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
@@ -431,7 +432,7 @@ bb4:
     hero_print_int(t69);
 #line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     hero_print_end();
-#line 435 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 436 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h5_own5);
     hero_array_release_at(&h6_own6);
@@ -490,7 +491,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 494 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 495 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -557,7 +558,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 561 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 562 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

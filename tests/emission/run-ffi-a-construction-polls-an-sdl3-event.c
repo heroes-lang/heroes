@@ -192,6 +192,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaconstructionpollsansdl3event_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("adevice")
 #undef adevice
 #pragma push_macro("axis")
@@ -677,7 +678,7 @@ bb9:
 bb10:
 #line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
-#line 681 "ffiaconstructionpollsansdl3event.c"
+#line 682 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got

@@ -176,10 +176,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaunionarmcwroteiskept_main(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(UN *)0) == 13 ? sizeof(UN) : 0), __builtin_offsetof(UN, c), sizeof(((UN *)0)->c)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(UN *)hero_pad_nowhere()) == 13 ? sizeof(UN) : 0), __builtin_offsetof(UN, c), sizeof(((UN *)0)->c)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct nu *)0) == 13 ? sizeof(struct nu) : 0), __builtin_offsetof(struct nu, kind), sizeof(((struct nu *)0)->kind), __builtin_offsetof(struct nu, via), (__builtin_classify_type(((struct nu *)0)->via) == 13 ? sizeof(((struct nu *)0)->via) : 0), __builtin_offsetof(struct nu, via.fd), sizeof(((struct nu *)0)->via.fd)};
+__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct nu *)hero_pad_nowhere()) == 13 ? sizeof(struct nu) : 0), __builtin_offsetof(struct nu, kind), sizeof(((struct nu *)0)->kind), __builtin_offsetof(struct nu, via), (__builtin_classify_type(((struct nu *)hero_pad_nowhere())->via) == 13 ? sizeof(((struct nu *)0)->via) : 0), __builtin_offsetof(struct nu, via.fd), sizeof(((struct nu *)0)->via.fd)};
 __attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_2;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -250,7 +251,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_u);
 #line 28 "tests/golden/run/ffi-a-union-arm-c-wrote-is-kept.hero"
     return;
-#line 254 "ffiaunionarmcwroteiskept.c"
+#line 255 "ffiaunionarmcwroteiskept.c"
 }
 #undef h0_u
 #undef h1_n

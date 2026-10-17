@@ -57,6 +57,7 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
     if lent.len() == 0
         return
     writer.at_generated(@w)
+    writer.line(@w, text: "void *" + padding.NOWHERE + "(void);")
 
     found: [i64] @= []
 

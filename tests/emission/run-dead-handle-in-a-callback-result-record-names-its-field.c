@@ -200,7 +200,8 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct pair *)0) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct pair *)hero_pad_nowhere()) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -261,7 +262,7 @@ bb0:
 bb1:
 #line 24 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t17 = h1_p;
-#line 265 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 266 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t17;
@@ -280,7 +281,7 @@ bb3:
     t11 = h2_f0;
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t12 = t11.as.err;
-#line 284 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 285 "deadhandleinacallbackresultrecordnamesitsfield.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb4:
@@ -304,7 +305,7 @@ bb4:
 bb5:
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     goto bb1;
-#line 308 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 309 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 
 struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
@@ -333,7 +334,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     return;
-#line 337 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 338 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

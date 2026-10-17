@@ -179,6 +179,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void);
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void);
 void h_fixedbugs396sha256finalfillsitsdigest_main(void);
+void *hero_pad_nowhere(void);
 #pragma push_macro("Nh")
 #undef Nh
 #pragma push_macro("Nl")
@@ -207,7 +208,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
-#line 211 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 212 "fixedbugs396sha256finalfillsitsdigest.c"
     _Static_assert(HERO_RET_INT(SHA256_DIGEST_LENGTH), "heroes-ffi-return SHA256_DIGEST_LENGTH i64");
     _Static_assert(__builtin_constant_p(SHA256_DIGEST_LENGTH), "heroes-ffi-const SHA256_DIGEST_LENGTH");
 #pragma clang diagnostic push
@@ -219,7 +220,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return SHA256_DIGEST_LENGTH;
-#line 223 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 224 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -237,7 +238,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
-#line 241 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 242 "fixedbugs396sha256finalfillsitsdigest.c"
     _Static_assert(HERO_RET_INT(EVP_MAX_MD_SIZE), "heroes-ffi-return EVP_MAX_MD_SIZE i64");
     _Static_assert(__builtin_constant_p(EVP_MAX_MD_SIZE), "heroes-ffi-const EVP_MAX_MD_SIZE");
 #pragma clang diagnostic push
@@ -249,7 +250,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return EVP_MAX_MD_SIZE;
-#line 253 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 254 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -552,7 +553,7 @@ bb0:
     if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     }
-#line 556 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 557 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);

@@ -217,7 +217,8 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct pair *)0) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct pair *)hero_pad_nowhere()) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)};
 __attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_1;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -227,7 +228,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 20 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 int64_t h_fixedbugs396abuffercfills_DIGEST_LEN(void) {
-#line 231 "fixedbugs396abuffercfills.c"
+#line 232 "fixedbugs396abuffercfills.c"
     _Static_assert(HERO_RET_INT(DIGEST_LEN), "heroes-ffi-return DIGEST_LEN i64");
     _Static_assert(__builtin_constant_p(DIGEST_LEN), "heroes-ffi-const DIGEST_LEN");
 #pragma clang diagnostic push
@@ -239,7 +240,7 @@ int64_t h_fixedbugs396abuffercfills_DIGEST_LEN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 20 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     return DIGEST_LEN;
-#line 243 "fixedbugs396abuffercfills.c"
+#line 244 "fixedbugs396abuffercfills.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -312,7 +313,7 @@ bb0:
     hero_print_int(t9);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 316 "fixedbugs396abuffercfills.c"
+#line 317 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_other);
     hero_array_release_at(&h1_own1);
     return;
@@ -1189,7 +1190,7 @@ bb0:
     hero_print_int(t183);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 1193 "fixedbugs396abuffercfills.c"
+#line 1194 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_before);
     hero_array_release_at(&h2_named);

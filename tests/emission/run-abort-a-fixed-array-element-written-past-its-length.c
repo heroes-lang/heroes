@@ -173,7 +173,8 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_abortafixedarrayelementwrittenpastitslength_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct nums *)0) == 13 ? sizeof(struct nums) : 0), __builtin_offsetof(struct nums, a), sizeof(((struct nums *)0)->a), __builtin_offsetof(struct nums, after), sizeof(((struct nums *)0)->after)};
+void *hero_pad_nowhere(void);
+__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct nums *)hero_pad_nowhere()) == 13 ? sizeof(struct nums) : 0), __builtin_offsetof(struct nums, a), sizeof(((struct nums *)0)->a), __builtin_offsetof(struct nums, after), sizeof(((struct nums *)0)->after)};
 __attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
 __attribute__((unused)) static size_t hero_pad_n_0;
 __attribute__((constructor)) static void hero_pad_init(void) {
@@ -308,7 +309,7 @@ bb4:
     hero_print_int(t35);
 #line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_print_end();
-#line 312 "abortafixedarrayelementwrittenpastitslength.c"
+#line 313 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_own4);
     return;
@@ -366,7 +367,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 370 "abortafixedarrayelementwrittenpastitslength.c"
+#line 371 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
