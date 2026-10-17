@@ -39,6 +39,8 @@ use emit/members
 use emit/lend_local
 use emit/header_packages
 use cli/libraries
+use cli/value_ask
+use cli/io
 
 # What one build has settled before any round runs. Where the binary lands
 # is not among it: under `build/` that is named by the link line, which a
@@ -160,6 +162,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     # rather than rebuilt per unit. It starts from the probes' own digests
     # (defect 416), the same build's answers about the same headers.
     memo: {str: str} @= lent.digests
+    asked: [value_ask.Unit] @= []
 
     for plan in planned.plans
         component = plan.module
@@ -197,6 +200,9 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
                 stopped_in @ [component]
         else
             objects @ objects.push(made.must())
+            asked @ asked.push(
+                value_ask.Unit(module: component, text: tu_text, words: compiling.unit_words(compiling.Compiling(level: options.level, sanitize: options.sanitize, search_include: options.headers_from, package_flags: unit_words(site, headers: plan.headers), runtime: t.runtime, source_dir: site.source_dir)), defined: plan.mine.defined)
+            )
 
     if stopped.is_err()
         return Round(verdict: stopped, refusals: refusals, binary: "", modules: stopped_in)
@@ -204,6 +210,30 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
 
     if !unread.is_err()
         return unread.must()
+
+    # A header constant's value C leaves undefined, read by running the
+    # module's own unit in trap mode (`cli/value_ask.hero`, panel 216's R1):
+    # told once the units compile, the value check's own words first, and
+    # before anything links.
+    values = value_ask.told(
+        t,
+        units: asked,
+        level: options.level,
+        p: art.program,
+        c: art.checked,
+        s: s,
+        decls: art.decls
+    )
+
+    if !values.broken.is_err()
+        io.eprint(text: values.broken.must())
+        broken: ()? = fail(code: "failed", msg: "the probe of the constants' values is the compiler's own failure")
+        return Round(verdict: broken, refusals: [], binary: "", modules: [])
+
+    if values.found.len() > 0
+        _ = compile.stage(values.found, s).is_err()
+        undefined: ()? = fail(code: "diagnostics", msg: "a header constant's value is one C leaves undefined")
+        return Round(verdict: undefined, refusals: [], binary: "", modules: [])
 
     # Every TU compiled and none refused: for a build that does not link, that
     # IS the verdict, and the refusals it met are what a tag round reads.

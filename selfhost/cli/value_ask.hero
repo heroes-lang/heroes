@@ -1,0 +1,311 @@
+# A header constant's value asked of the program's own unit, run in trap mode,
+# once a build's units compile and before anything links (panel 216's R1,
+# ratified 2026-10-17; defects 2075 and 2104; design.md §4.19, §1.12; spec
+# § 13). What the probe is and how a run is read is `emit/value_probe.hero`;
+# this file runs clang and the probe, and keeps the verdict.
+#
+# **Three clangs and a few runs on a cold build, none on a warm one**, per
+# unit that defines an asked accessor: the verdict is kept under
+# `build/value-<key>/`, the key naming the compiler, the unit's own text, its
+# words, its level and the runtime, so a header that changes is asked again
+# with its unit. Measured by the sitting: about 0.3 s real cold on this Mac,
+# 0.07 s on Linux arm64, nothing warm.
+#
+# **What runs is bounded** (the ffi-pragmatist's condition (d)): stdin is the
+# discard path, the output a file of this probe's own, each run `LIMIT`
+# seconds and `CAP` bytes of output, the runtime's own watchdog and ceiling
+# as `mutate/child.hero` holds a child to them.
+#
+# **The link leaves the program's libraries out, by the platform's own word**:
+# `-dead_strip` on Darwin and `--gc-sections` on Linux drop the functions
+# that reach them, as the ffi-pragmatist measured over the corpus (84 of 84,
+# 88 of 88); on Windows neither link.exe nor lld drops such a reference, and
+# `/FORCE:UNRESOLVED` links, measured on the box 2026-10-17. An accessor
+# reaches none: `__builtin_constant_p` refuses a constant that is a call.
+
+use ast
+use source
+use diag
+use check/state
+use emit/ctype
+use emit/value_probe
+use emit/ffi_lookup
+use ir/containers
+use cli/toolchain
+use cli/flags
+use cli/link_flags
+use cli/process
+use cli/publish
+use cli/response_file
+use cli/digest
+use cli/kept as kept_answers
+use cli/libraries
+use cli/read_back
+use cli/strings
+use cli/value_told
+
+# The runtime's child runner with its two limits, which `cli/process.run`
+# does not take: a group of this module's own, as `mutate/child.hero` holds
+# one, since an extern is never callable across a module boundary.
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_limit_writes(bytes: i64) -> i64
+    # `lent`, as `cli/process.hero` declares it: read while it runs, kept never.
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_run_signal() -> i64
+    function hero_run_discard_path() -> str
+
+# Seconds one run of a probe may take: a probe calls accessors that return a
+# value, so this bounds only a header whose code waits (a constructor that
+# reads stdin, the ffi-pragmatist's attack).
+constant LIMIT: i64
+    30
+
+# Bytes a run may write: an index a line per accessor.
+constant CAP: i64
+    1048576
+
+# One unit the probe asks: its module, its text, the words it compiled under
+# and the function indices it defines.
+record Unit
+    module: str
+    text: str
+    words: [str]
+    defined: [i64]
+
+# What the probes said: a diagnostic per constant C leaves undefined, and the
+# compiler's own failure, present where a probe's canaries say its checks did
+# not fire, absent otherwise.
+record Told
+    found: [diag.Diagnostic]
+    broken: str?
+
+# Every unit's verdict, its refusals as diagnostics on each constant's line.
+function told(t: toolchain.Toolchain, units: [Unit], level: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Told
+    out: [diag.Diagnostic] @= []
+    names = ctype.new_names(s, decls)
+
+    for one in units
+        accessors = value_probe.asked(p, c, names, s, decls, defined: one.defined)
+
+        if accessors.len() == 0
+            continue
+        verdict = asked(t, one: one, accessors: accessors, level: level)
+
+        if verdict.is_err()
+            broken = broken_of(verdict)
+
+            if broken.len() > 0
+                return Told(found: out, broken: ok(broken))
+            continue
+
+        for line in ffi_lookup.lines(text: verdict.must().said)
+            for d in value_told.refusals(line: line, accessors: accessors, preprocessed: verdict.must().preprocessed, c: c, s: s, decls: decls)
+                out @ out.push(d)
+
+    none: str? = fail(code: "none", msg: "every probe's checks fired")
+    return Told(found: out, broken: none)
+
+# A verdict's failure where it is the compiler's own, a canary that did not
+# answer as it must; empty for every other failure, which tells nothing.
+function broken_of(failed: Verdict?) -> str
+    match failed
+        .ok => return ""
+        .err e =>
+            if e.code == "broken"
+                return e.msg
+            return ""
+
+# What one unit's probe said, one line per finding, `trap <index>` or
+# `death <words>`, and the preprocessed text the header's lines are read from.
+record Verdict
+    said: str
+    preprocessed: str?
+
+# The verdict kept under its key, or asked: the unit preprocessed, compiled
+# in trap mode with its canaries, linked with the runtime alone and run.
+function asked(t: toolchain.Toolchain, one: Unit, accessors: [value_probe.Accessor], level: str) -> Verdict?
+    key = digest.digest(
+        t.fingerprint + "|value|" + t.compiler_key + "|" + one.module + "|" + one.text + "|words:" + libraries.key_text(one.words) + "|" + level + "|" + t.runtime_key + "|" + t.target
+    )
+    dir = t.build + "/value-" + key
+    known = kept_answers.read(dir + "/verdict.txt")
+
+    # A kept verdict that refuses is preprocessed again for the header's
+    # lines: a refusal ends the build, so this never runs on one that builds.
+    if !known.is_err()
+        refusing = ffi_lookup.has(text: known.must(), needle: "trap ") || ffi_lookup.has(text: known.must(), needle: "death ")
+        unread: str? = fail(code: "none", msg: "kept, and refusing nothing")
+
+        if refusing
+            return ok(Verdict(said: known.must(), preprocessed: preprocessed_unit(dir: dir, one: one)))
+        return ok(Verdict(said: known.must(), preprocessed: unread))
+    preprocessed = preprocessed_unit(dir: dir, one: one)
+
+    if preprocessed.is_err()
+        return fail(code: "unread", msg: "the unit did not preprocess, which its own compile tells")
+    probe_i = dir + "/probe.i"
+    publish.write_whole(path: probe_i, text: preprocessed.must() + value_probe.canaries(), keyed: false)?
+    object = publish.private_name(dir + "/probe.o")
+    second = response_file.carried(
+        line: strings.with_all(list: strings.with_all(list: ["clang", "-x", "cpp-output"], more: one.words), more: strings.with_all(list: checks(), more: ["-ffunction-sections", "-fdata-sections", "-w", "-c"])),
+        dir: dir
+    )
+    compiled = process.run(
+        program: "clang",
+        words: second.push(probe_i).push("-o").push(object),
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if !compiled.started || compiled.code != 0
+        publish.discard(object)
+        return fail(code: "unread", msg: "the probe of the values did not compile")
+    said = linked_and_run(t, dir: dir, object: object, accessors: accessors, level: level)
+    publish.discard(object)
+    kept_answers.write(path: dir + "/verdict.txt", text: said?)?
+    return ok(Verdict(said: said.must(), preprocessed: ok(preprocessed.must())))
+
+# The unit's text as the probe reads it, preprocessed with `-dD` under its
+# own words, `main` renamed: what the probe compiles and what the header's
+# lines are read from.
+function preprocessed_unit(dir: str, one: Unit) -> str?
+    process.mkdir_all(dir)?
+    unit = dir + "/" + one.module + ".c"
+    publish.write_whole(path: unit, text: value_probe.unit_text(one.text), keyed: true)?
+    i_path = publish.private_name(dir + "/unit.i")
+    first = response_file.carried(
+        line: strings.with_all(list: ["clang", "-E", "-dD", "-D" + "main=" + value_probe.HIDDEN_MAIN], more: one.words),
+        dir: dir
+    )
+    ran = process.run(
+        program: "clang",
+        words: first.push(unit).push("-o").push(i_path),
+        out: process.discard(),
+        err: process.discard()
+    )
+    text = read_back.words(i_path)
+    publish.discard(i_path)
+
+    if !ran.started || ran.code != 0
+        return fail(code: "unread", msg: "the unit did not preprocess")
+    return text
+
+# The words that compile and link the probe: every sanitizer of the build off
+# and the four checks on, each a trap.
+function checks() -> [str]
+    return ["-fno-sanitize=all", "-fsanitize=" + value_probe.CHECKS, "-fsanitize-trap=" + value_probe.CHECKS]
+
+# The platform's word for leaving the program's libraries out of the link.
+function leave_out(target: str) -> [str]
+    if process.exe_suffix() == ".exe"
+        return ["-Wl,/FORCE:UNRESOLVED"]
+
+    if link_flags.apple(target)
+        return ["-Wl,-dead_strip"]
+    return ["-Wl,--gc-sections", "-lm"]
+
+# The driver linked with the unit's object and the runtime alone, then run
+# until it finishes, each run starting after the accessor the last trapped
+# at. A canary that does not answer as it must is the compiler's failure,
+# `broken`; a run that ends otherwise than by a trap or by finishing is the
+# probe's death, told as such.
+function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, accessors: [value_probe.Accessor], level: str) -> str?
+    driver_c = dir + "/driver.c"
+    publish.write_whole(path: driver_c, text: value_probe.driver(accessors), keyed: false)?
+    runtime = toolchain.runtime_object(t, level: level, sanitize: false)?
+    binary = publish.private_name(dir + "/probe") + process.exe_suffix()
+    line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false))
+    line @ strings.with_all(list: line, more: link_flags.target_words(t.target))
+    line @ strings.with_all(list: line, more: checks())
+    line @ strings.with_all(list: line, more: [object, driver_c, runtime])
+    line @ strings.with_all(list: line, more: leave_out(t.target))
+    linked = process.run(
+        program: "clang",
+        words: line.push("-o").push(binary),
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if !linked.started || linked.code != 0
+        publish.discard(binary)
+        return fail(code: "unread", msg: "the probe of the values did not link")
+    findings: [str] @= []
+    start: i64 @= 0
+    total = accessors.len() + 2
+    runs: i64 @= 0
+
+    while runs <= total
+        runs @ runs + 1
+        capture = publish.private_name(dir + "/run.txt")
+        ended = bounded(program: binary, words: [binary, start.to_str()], out: capture)
+        out = read_back.words(capture).default("")
+        publish.discard(capture)
+
+        if value_probe.finished(out) && ended.code == 0
+            break
+        last = value_probe.last_index(out)
+
+        if last.is_err() || last.must() < start || !value_probe.is_trap(ended.signal)
+            findings @ findings.push("death " + death_words(ended))
+            break
+        findings @ findings.push("trap " + last.must().to_str())
+        start @ last.must() + 1
+
+    publish.discard(binary)
+    trapped = findings.join("\n")
+
+    if !ffi_lookup.has(text: "\n" + trapped + "\n", needle: "\ntrap 0\n") && !ffi_lookup.has(text: trapped, needle: "death ")
+        return fail(
+            code: "broken",
+            msg: "internal error: the probe of a header constant's value did not trap on its undefined canary, so its checks did not fire"
+        )
+
+    if ffi_lookup.has(text: "\n" + trapped + "\n", needle: "\ntrap 1\n")
+        return fail(
+            code: "broken",
+            msg: "internal error: the probe of a header constant's value trapped on its defined canary"
+        )
+    return ok(trapped + "\n")
+
+# How a probe ended that is not a trap, in words.
+function death_words(ended: process.Ran) -> str
+    if ended.signal != 0
+        return "it was ended by signal or exception " + ended.signal.to_str()
+    return "it exited " + ended.code.to_str() + " before it finished"
+
+# One run of the probe under the limits, stdin the discard path.
+function bounded(program: str, words: [str], out: str) -> process.Ran
+    hero_run_reset()
+    hero_run_limit(seconds: LIMIT)
+    _ = hero_run_limit_writes(bytes: CAP)
+
+    for word in words
+        hero_run_arg(word: word)
+
+    status: i64 @= 0
+    code = hero_run_go(
+        program: program.cstr(),
+        in_path: hero_run_discard_path().cstr(),
+        out_path: out.cstr(),
+        err_path: hero_run_discard_path().cstr(),
+        @status
+    )
+    signal = hero_run_signal()
+    hero_run_reset()
+    hero_run_limit(seconds: 0)
+    return process.Ran(code: code, started: status == process.RUN_OK, why: 0, signal: signal)
+
+## Tests
+
+test "the link leaves the program's libraries out by the platform's own word"
+    words = leave_out("arm64-apple-darwin25.0.0")
+
+    if process.exe_suffix() == ".exe"
+        assert words == ["-Wl,/FORCE:UNRESOLVED"]
+    else
+        assert words == ["-Wl,-dead_strip"]
+        assert leave_out("aarch64-unknown-linux-gnu") == ["-Wl,--gc-sections", "-lm"]
+    assert checks()[0] == "-fno-sanitize=all"

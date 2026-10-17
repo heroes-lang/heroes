@@ -1,0 +1,6 @@
+error[ffi_constant_type]: `E_VALUE` in `fixedbugs-2075-ender.h` cannot be read as C computes it: the program's own unit, run to read the header's values, did not finish (it exited 3 before it finished), which is the header's own code ending or holding a process before `main`
+  at tests/golden/unsupported/fixedbugs-2075-a-probe-that-does-not-finish-is-told-as-such.hero:9:5
+    |
+  9 |     constant E_VALUE: i32  #~ ffi_constant_type
+    |     ^^^^^^^^^^^^^^^^^^^^^
+  note: § 13: a group's constants are the values C computes, read by running the module's own unit with clang's checks before the program links; a header whose code ends or holds a process before `main`, a constructor that exits or a read of stdin, ends or holds that run, and the program it would build the same way

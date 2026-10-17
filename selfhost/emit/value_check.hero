@@ -38,7 +38,13 @@
 # expression rule finds them, `-Wgnu-folding-constant` an error in a
 # `_Static_assert`, and that rule also refuses values C defines, `(1, 2)` and
 # `((int)(1000.0 / 60))`: a question for a sitting, not this region's.
-# `--sanitize` traps both at run time.
+# **The sitting answered, panel 216's R1, ratified 2026-10-17**: the module's
+# own unit, run in trap mode before anything links, tells them and every
+# neighbour the sitting measured (`cli/value_ask.hero`), and a value's own
+# `_Pragma`, which closes this region again (defect 2104), switches no trap
+# off. This region stays, and tells what it sees first, in clang's words.
+# (This said `--sanitize` traps both at run time until then: it reports and
+# runs on, exit 0, the critic of panel 216 measured.)
 #
 # WHAT IS NOT ASKED. A floating constant, a record's, a handle's, a `str`'s, a
 # `cstr`'s and a `ptr`'s: no integer evaluation stands in their accessors. And

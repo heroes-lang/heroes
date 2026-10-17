@@ -1,0 +1,17 @@
+# FIXED DEFECT 2104, 2026-10-17, lane land215 (panel 216's R1).
+#
+# SYMPTOM: `P_SHIFT` built at exit 0 and printed a new value on every run,
+# `6097085228` and `6158983980` on two runs of this Mac's `-O0`, where
+# `#define P_PLAIN (1 << 40)` was refused: the value check's region makes
+# clang's warning an error, and the value's own `_Pragma` closed it again.
+#
+# CAUSE: a check that is a warning is a check a header can switch off.
+#
+# FIX: the value is read by running the module's own unit in trap mode
+# (`cli/value_ask.hero`), and no pragma switches a trap off.
+
+extern "fixedbugs-2104-pragma.h"
+    constant P_SHIFT: i64  #~ ffi_constant_type
+
+function main()
+    print(P_SHIFT)

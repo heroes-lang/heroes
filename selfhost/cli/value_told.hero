@@ -1,0 +1,88 @@
+# The diagnostics a probe of a header constant's value tells (panel 216's R1,
+# ratified 2026-10-17; defects 2075 and 2104): a trapped accessor's constant
+# told as a value C leaves undefined, `ffi_constant_type` on its declaration
+# with the header's line quoted, and a probe that did not finish told on every
+# constant it asked, never as an undefined value (the ffi-pragmatist's
+# condition (c)). Split out of `cli/value_ask.hero`, which runs the probe,
+# along the seam between running and telling.
+
+use ast
+use source
+use diag
+use check/state
+use check/render
+use emit/value_probe
+use emit/ffi_lookup
+use emit/ffi_value
+use emit/ffi_constant_value
+use cli/bound_said
+use cli/strings
+
+# One finding's diagnostics: a trapped accessor's constant told as a value C
+# leaves undefined; a probe's death told on every constant it asked.
+function refusals(line: str, accessors: [value_probe.Accessor], preprocessed: str?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    trap = ffi_lookup.after(text: line, marker: "trap ")
+
+    if !trap.is_err()
+        index = ffi_lookup.number(text: trap.must())
+
+        if !index.is_err() && index.must() >= 2 && index.must() - 2 < accessors.len()
+            d = diagnostic(
+                one: accessors[index.must() - 2],
+                words: UNDEFINED,
+                undefined: true,
+                preprocessed: preprocessed,
+                c: c,
+                s: s,
+                decls: decls
+            )
+
+            if !d.is_err()
+                out @ out.push(d.must())
+        return out
+    death = ffi_lookup.after(text: line, marker: "death ")
+
+    if death.is_err() || accessors.len() == 0
+        return out
+    name = source.span_text(s, decls[accessors[0].decl].name)
+    known = ffi_lookup.declaration(s, decls, name: name)
+
+    if known.is_err()
+        return out
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_constant_type",
+        message: "`" + name + "` in `" + known.must().header + "` cannot be read as C computes it: the program's own unit, run to read the header's values, did not finish (" + death.must() + "), which is the header's own code ending or holding a process before `main`",
+        span: known.must().span
+    )
+    d.notes @ d.notes.push(
+        "§ 13: a group's constants are the values C computes, read by running the module's own unit with clang's checks before the program links; a header whose code ends or holds a process before `main`, a constructor that exits or a read of stdin, ends or holds that run, and the program it would build the same way"
+    )
+    out @ out.push(d)
+    return out
+
+# The words a trapped value is told with.
+constant UNDEFINED: str
+    "C leaves it undefined, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it"
+
+# The diagnostic on a constant, the header's line read from the preprocessed
+# unit where it holds the constant's last `#define`.
+function diagnostic(one: value_probe.Accessor, words: str, undefined: bool, preprocessed: str?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
+    name = source.span_text(s, decls[one.decl].name)
+    known = ffi_lookup.declaration(s, decls, name: name)?
+    none: [str] = []
+    declared = render.render_ty(c.types, s, decls, one.result, none)
+    spelled: ffi_value.Spelled? @= fail(code: "none", msg: "the header's line was not read")
+
+    if !preprocessed.is_err()
+        asked: {str: bool} @= {}
+        asked[name] @ true
+        found = bound_said.directives(preprocessed.must(), names: asked).found["0 " + name]
+
+        if !found.is_err() && strings.starts_with(text: found.must().text, prefix: "#define ")
+            spelled @ ok(
+                ffi_value.Spelled(path: found.must().file, row: found.must().line, quoted: ok(found.must().text))
+            )
+    return ok(
+        ffi_constant_value.told(name: name, declared: declared, known: known, words: words, undefined: undefined, spelled: spelled, program: source.file_at(s, decls[one.decl].span.start).name)
+    )

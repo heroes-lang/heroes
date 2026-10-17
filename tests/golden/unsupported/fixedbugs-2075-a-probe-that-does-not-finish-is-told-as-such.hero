@@ -1,0 +1,12 @@
+# Panel 216's R1, the ffi-pragmatist's condition (c), 2026-10-17, lane land215.
+#
+# A probe that does not finish is told with words naming its death and the
+# header, never as a value C leaves undefined: this header's constructor ends
+# every process before `main`, the probe's as the program's, so the probe ends
+# with no index written and the constant it asked is told so.
+
+extern "fixedbugs-2075-ender.h"
+    constant E_VALUE: i32  #~ ffi_constant_type
+
+function main()
+    print(E_VALUE)

@@ -1,0 +1,24 @@
+# FIXED DEFECT 2075, 2026-10-17, lane land215 (panel 216's R1, ratified that
+# night: the program's own unit run under a trap).
+#
+# SYMPTOM: each constant built at exit 0 and printed a new value on every run of
+# `heroes build`'s `-O0`, `1835574252 1794335708 1840260076` for `K_DIV` on this
+# Mac; clang folds `INT_MIN / -1`, a float cast out of an integer's range and
+# `INT_MIN % -1` with no warning, so the value check's region at the accessor
+# (defect 2072) never saw them.
+#
+# CAUSE: no route that does not run the value tells these from values C
+# defines; C's own constant-expression rule refuses both.
+#
+# FIX: the module's own unit, preprocessed under the program's words, compiled
+# with four checks in trap mode, linked with the runtime alone and run, each
+# accessor by index, the next run after the one that trapped
+# (`cli/value_ask.hero`, `emit/value_probe.hero`): each is told on its own line.
+
+extern "fixedbugs-2075-undefined.h"
+    constant K_DIV: i32  #~ ffi_constant_type
+    constant K_FLT: i32  #~ ffi_constant_type
+    constant K_REM: i32  #~ ffi_constant_type
+
+function main()
+    print(K_DIV + K_FLT + K_REM)

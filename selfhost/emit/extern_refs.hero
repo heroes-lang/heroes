@@ -24,6 +24,16 @@ use ir/containers
 use emit/writer
 use emit/externs as emit_externs
 
+# The table's first line, one home for the writer and for the probe of a
+# constant's value, which compiles the unit with the line made `UNUSED_HEAD`
+# so dead-stripping may drop what the table reaches (panel 216's R1,
+# `emit/value_probe.hero`).
+constant HEAD: str
+    "__attribute__((used)) static void hero_extern_refs(void) {"
+
+constant UNUSED_HEAD: str
+    "static void hero_extern_refs(void) {"
+
 function references(@w: writer.Writer, p: containers.Program, s: source.Source, decls: [ast.Decl])
     called: {str: bool} @= {}
 
@@ -49,7 +59,7 @@ function references(@w: writer.Writer, p: containers.Program, s: source.Source, 
     # name a header spells as a macro over an object, `#define via_slot
     # (*slot)`, has no constant address, and its unit stopped at exit 2
     # (`run/fixedbugs-171-*`, found by `warnings` at this defect's gate).
-    writer.line(@w, text: "__attribute__((used)) static void hero_extern_refs(void) {")
+    writer.line(@w, text: HEAD)
     writer.line(@w, text: "    const void *volatile hero_ref;")
 
     # ORDER: by name, so the unit's text is a function of the program.

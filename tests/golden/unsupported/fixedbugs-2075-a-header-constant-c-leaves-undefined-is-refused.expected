@@ -1,0 +1,23 @@
+error[ffi_constant_type]: `K_DIV` in `fixedbugs-2075-undefined.h` cannot be declared `i32`: clang refuses the header's value at line 4: C leaves it undefined, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2075-a-header-constant-c-leaves-undefined-is-refused.hero:19:5
+     |
+  19 |     constant K_DIV: i32  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2075-undefined.h` line 4 reads `#define K_DIV (INT_MIN / -1)`
+  note: C leaves this value undefined: a program reading `K_DIV` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `K_FLT` in `fixedbugs-2075-undefined.h` cannot be declared `i32`: clang refuses the header's value at line 5: C leaves it undefined, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2075-a-header-constant-c-leaves-undefined-is-refused.hero:20:5
+     |
+  20 |     constant K_FLT: i32  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2075-undefined.h` line 5 reads `#define K_FLT ((int)(1e20))`
+  note: C leaves this value undefined: a program reading `K_FLT` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `K_REM` in `fixedbugs-2075-undefined.h` cannot be declared `i32`: clang refuses the header's value at line 6: C leaves it undefined, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2075-a-header-constant-c-leaves-undefined-is-refused.hero:21:5
+     |
+  21 |     constant K_REM: i32  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2075-undefined.h` line 6 reads `#define K_REM (INT_MIN % -1)`
+  note: C leaves this value undefined: a program reading `K_REM` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
