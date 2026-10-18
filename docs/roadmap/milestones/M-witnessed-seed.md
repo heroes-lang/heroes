@@ -3,6 +3,19 @@
 **Scheduled 2026-10-14, at row 68 (69 since 2026-10-18), by the author's instruction**, before
 `archive/bootstrap-rs/` leaves the tree. No warrant is claimed.
 
+**Opened 2026-10-18**, by the author's instruction of the night before, given
+while M-readonly-lend was landing, meant as *if you finish this step, start the next
+one*: the next row of the chain, in one lane, `lane-witnessed-seed`, the
+items in this page's order. **What it starts from, read on 2026-10-18**: the
+archived bootstrap's `rust-toolchain.toml` pins `1.90.0` with `clippy` and
+`rust-analyzer`, all three installed on this Mac, and its `Cargo.lock` names
+the workspace's two packages and nothing from a registry, so item 1 needs no
+download and no file outside the repository. This Mac's `gcc` is Apple
+clang and the `heroes-linux-arm64` container holds no `gcc` at all (`command
+not found`, run that morning), so item 2's gcc is the CI's, on the hosted
+runners its matrix names, whose `gcc` is unrun from here. Item 4
+removes a directory of the tree and is put to the author before it is done.
+
 **The fact that schedules it.** The fixpoint proves that the seed reproduces
 itself, not where it came from: a seed carrying something that reproduces
 itself whenever it compiles `selfhost/` is a fixpoint too, which is the

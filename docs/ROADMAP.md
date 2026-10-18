@@ -14,8 +14,8 @@ preamble and its items).
 
 | | |
 |---|---|
-| **Current milestone** | **none OPEN** since M-readonly-lend's close, 2026-10-18; the next scheduled row is **M-witnessed-seed**, row 69 ([its page](roadmap/milestones/M-witnessed-seed.md)) |
-| **Next** | M-witnessed-seed, and M-thesis-harness beside M-rechecked-issues in two lanes. The formatter's probe M-inferred-cell's and M-readonly-lend's changes to `selfhost/print/` still owe |
+| **Current milestone** | **M-witnessed-seed**, row 69, **OPEN** since 2026-10-18 ([its page](roadmap/milestones/M-witnessed-seed.md)): the seed witnessed by a second implementation, the archived Rust bootstrap rebuilt and compared first, in one lane |
+| **Next** | M-thesis-harness beside M-rechecked-issues in two lanes. The formatter's probe M-inferred-cell's and M-readonly-lend's changes to `selfhost/print/` still owe |
 | **Last closed** | **M-readonly-lend**, 2026-10-18 ([067](records/journal/067-readonly-lend.md)) — panel 217's read-only lend: `lent` on a parameter, the caller's place read and never written, a group's record crossing to C as a pointer to const, the IR carrying the mode with a verifier rule; and defect 2128, a value only the probe sees told beside the build's earlier refusal · before it **M-bounded-seed** ([066](records/journal/066-bounded-seed.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **68** of 91 · **68** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **175,346** lines of Heroes in **674** modules (`find selfhost -name '*.hero'`) · the seed **263,383** lines of C, 26,240,524 bytes, in panel 219's s4 shape (56,190 directives), refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
@@ -42,7 +42,7 @@ moved runs after the push, beside the CI, as § The optimistic chain says since
 ## The chain
 
 One table, one row per milestone, **closed first and scheduled after**: rows 1–68
-are done, in the order they closed, and rows 69–91 are
+are done, in the order they closed, row 69 is open, and rows 70–91 are
 what is next, in the order they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -100,7 +100,9 @@ and 68–90 until that day, when M-readonly-lend entered at 68 by panel 217's R6
 ratified the evening before, and the twenty-three scheduled rows after it each
 moved one down: the table is 91 long by a count over it. Then 1–67 and 68–91
 until later that day, when M-readonly-lend opened at 68, opening no other row. Then
-1–67 done and 68 open until it closed that night, opening no other row. `warrant` is why a milestone exists: **v1** (the self-hosting
+1–67 done and 68 open until it closed that night, opening no other row, and
+1–68 done and 69–91 until M-witnessed-seed opened at 69 the next morning,
+opening no other row. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -177,7 +179,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 66 | **M-buildable-structs** | done 2026-10-17 | `m-buildable-structs` | [065](records/journal/065-buildable-structs.md) | a C struct with long arrays is built by naming the fields that matter and ending with `rest: zero`. Panel 178 counted 42 public structs on Darwin with an array longer than 8, and panel 194's recount 33 and 27 on the two Linux legs, where the repository has none; a five-field `utsname` needed 1280 literal zeros until `rest: zero` landed in batch 13 (panel 164) · **§1.11**, **§1.12** |
 | 67 | **M-bounded-seed** | done 2026-10-17 | `m-bounded-seed` | [066](records/journal/066-bounded-seed.md) | the seed bounded in shape and in rhythm: its re-anchoring `#line`s joined to their anchors, refreshed only when the two-stage build needs it and at each release, every program carrying the key of what it was compiled from, and kept in the history at every tag, the history rewritten once and announced · scheduled, no warrant |
 | 68 | **M-readonly-lend** | done 2026-10-18 | `m-readonly-lend` | [067](records/journal/067-readonly-lend.md) | a function reads the caller's place without claiming to change it: `lent` on a parameter, C's `const T *` bound read-only, and beside it an `@` of the same place and a read-only lend past a variadic prototype refused · **§1.1**, **§1.11** |
-| 69 | **M-witnessed-seed** | scheduled | — | — | the seed witnessed by a second implementation: the archived Rust bootstrap rebuilt and compared at its root again, a gcc leg beside clang, and only then `archive/` out of the tree · scheduled, no warrant |
+| 69 | **M-witnessed-seed** | **OPEN** | — | — | the seed witnessed by a second implementation: the archived Rust bootstrap rebuilt and compared at its root again, a gcc leg beside clang, and only then `archive/` out of the tree · scheduled, no warrant |
 | 70 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
 | 71 | **M-rechecked-issues** | scheduled | — | — | every open issue re-checked against the tree: closed with the commit that settled it, closed with the reason it no longer applies, repaired, or re-homed on a row still to come · scheduled, no warrant |
 | 72 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
