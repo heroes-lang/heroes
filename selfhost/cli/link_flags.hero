@@ -6,6 +6,7 @@
 
 use cli/process
 use cli/flags
+use cli/strings
 
 # **WHAT A BINARY IS LINKED WITH, and it exists for one platform.**
 #
@@ -113,11 +114,30 @@ function link_flags() -> [str]
 # the platform this compiler runs on: GNU ld would read `-reproducible` as
 # other words, and Linux's two generations are already one binary (defect
 # 583's measurement).
+#
+# **And an MSVC target asks its linker for the same** (defect 2142,
+# 2026-10-19): on the Windows box `link.exe` of the Visual Studio 2022 Build
+# Tools linked one object into two private directories under the build's own
+# words, `/PDBALTPATH` among them, and gave two binaries apart at byte 249,
+# the header's time, and with `/Brepro` one binary, so a keyed binary another
+# build linked is these bytes and stands (`publish.renamed_into`). lld-link
+# gave two with it and without it, its PDB's identity following the
+# directory. A MinGW target's GNU ld would read `/Brepro` as a file, so the
+# triple's environment is asked, `windows-msvc`.
 function target_words(target: str) -> [str]
     if apple(target)
         return ["-Wl,-reproducible"]
+
+    if msvc(target)
+        return ["-Wl,/Brepro"]
     none: [str] = []
     return none
+
+# A triple whose system is Windows and whose environment is MSVC's: the
+# targets clang links with `link.exe` or `lld-link` and compiles with CodeView
+# debug information (`toolchain.object_words`).
+function msvc(target: str) -> bool
+    return strings.holds(text: target, needle: "-windows-msvc")
 
 # A triple whose vendor is `apple`, the second of its words: the targets
 # clang's driver links with Apple's linker.
@@ -153,17 +173,20 @@ test "the link flags are one platform's, and the platform is asked not assumed"
     for flag in flags.flags()
         assert flag != "-Wl,/STACK:67108864"
 
-test "a link for an Apple target asks for a reproducible output, and no other link does (defect 593)"
+test "a link for an Apple or an MSVC target asks for a reproducible output, and no other link does (defects 593 and 2142)"
     assert target_words("arm64-apple-darwin25.6.0") == ["-Wl,-reproducible"]
     assert target_words("x86_64-apple-darwin") == ["-Wl,-reproducible"]
     assert target_words("aarch64-unknown-linux-gnu").len() == 0
-    assert target_words("x86_64-pc-windows-msvc").len() == 0
+    assert target_words("x86_64-pc-windows-msvc") == ["-Wl,/Brepro"]
+    assert target_words("aarch64-pc-windows-msvc19.40.33811") == ["-Wl,/Brepro"]
+    assert target_words("x86_64-w64-windows-gnu").len() == 0
     assert target_words("x86_64-pc-linux-gnu").len() == 0
     assert target_words("").len() == 0
     assert !apple("arm64-applesauce-darwin")
     assert !apple("apple")
     assert apple("arm64-apple")
 
-    # Never on a compile line: it is the linker's word alone.
+    # Never on a compile line: they are the linker's words alone.
     for flag in flags.flags()
         assert flag != "-Wl,-reproducible"
+        assert flag != "-Wl,/Brepro"

@@ -33,6 +33,8 @@
 # system's reason. Which destinations are keyed is the caller's to say,
 # because only the caller knows what the name was derived from.
 #
+# **A keyed file is never replaced by its own bytes** (`renamed_into`).
+#
 # THE AUTHOR'S OWN FILE (defect 136). A file whose name the author gave, the
 # source `fmt --in-place` and `check --apply --in-place` rewrite and the C
 # an `--emit-c -o` names, is published the same way and for the same reason
@@ -60,6 +62,7 @@
 use cli/files
 use cli/process
 use cli/strings
+use module/reading as file_reading
 
 # A name for `path` that no other process, and no other call in this one,
 # will ever ask for. The last part of the path keeps at most NAME_KEPT bytes
@@ -134,11 +137,26 @@ function publish(staged: str, path: str, keyed: bool) -> ()?
         return not_published(staged: staged, path: path, keyed: keyed)
     return renamed_into(staged: staged, path: path, keyed: keyed)
 
-# A private file already on the device moved into place as `path`.
+# A private file already on the device moved into place as `path`; a keyed one
+# by a second name first (`files.second_name`, refused where `path` is taken),
+# a file there with these bytes standing as another build's copy, and one with
+# other bytes, or no second name, renamed over as before (defect 2142: MSVC's
+# linker refused an object replaced under it, 5 times in 1,200 builds).
 function renamed_into(staged: str, path: str, keyed: bool) -> ()?
+    if keyed && (!files.second_name(existing: staged, name: path).is_err() || same_bytes(one: staged, other: path))
+        discard(staged)
+        return ok()
+
     if !process.rename_over(from: staged, to: path).is_err()
         return ok()
     return not_published(staged: staged, path: path, keyed: keyed)
+
+# Whether two files hold the same bytes, by their keys: no where either is not
+# a file that can be read.
+function same_bytes(one: str, other: str) -> bool
+    a = file_reading.key_of(one)
+    b = file_reading.key_of(other)
+    return !a.is_err() && !b.is_err() && a.must() == b.must()
 
 # A private file that could not be published, thrown away. The failure that
 # is accepted is asked of the destination rather than of the reason: a keyed
@@ -384,6 +402,29 @@ test "a keyed destination another build published is kept"
     staged = private_name(dir + "/artifact")
     assert !publish(staged: staged, path: dir + "/artifact", keyed: true).is_err()
     assert read_file(dir + "/artifact").must() == "THEIRS"
+
+# **A keyed file is never replaced by its own bytes** (defect 2142): the file
+# there stands, which a second name made before the publish witnesses, and one
+# with other bytes, which a power cut can leave, is replaced.
+test "a keyed file with these bytes stands, one with other bytes is replaced, and neither leaves a private name (defect 2142)"
+    dir = "build/selftest-publish-same"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    path = dir + "/artifact"
+    assert !write_whole(path: path, text: "SAME", keyed: true).is_err()
+    assert read_file(path).must() == "SAME"
+    assert !files.second_name(existing: path, name: dir + "/witness").is_err()
+    assert !write_whole(path: path, text: "SAME", keyed: true).is_err()
+    assert files.names_of(path) == 2
+    assert !write_whole(path: path, text: "OTHER", keyed: true).is_err()
+    assert read_file(path).must() == "OTHER"
+    assert files.names_of(path) == 1
+    assert read_file(dir + "/witness").must() == "SAME"
+
+    for name in process.files_under(dir).must()
+        assert !strings.ends_with(text: name, suffix: ".tmp")
+
+    assert !process.remove_tree(dir).is_err()
 
 test "an author's destination is never kept that way: the failure names it and says why"
     dir = "build/selftest-publish-author"

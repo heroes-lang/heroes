@@ -339,6 +339,45 @@ test "six builds of one cold program started at once all succeed, and publish on
     assert binaries == 1
     assert !process.remove_tree(dir).is_err()
 
+# **Two cold compiles of one unit, and of the runtime, write one object**
+# (defect 2142): clang names its output in a Windows object's debug
+# information, so an object named by its private name differed from another
+# build's, and a keyed object it published over a linker's read was refused,
+# `LNK1104`. Named by its unit, it is these bytes on every platform.
+test "two cold compiles of one unit, and of the runtime, each write one object byte for byte (defect 2142)"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-one-object-" + process.pid().to_str()
+    digests: [str] @= []
+    objects: [str] @= []
+
+    for again in range(from: 0, to: 2)
+        assert !process.remove_tree(t.build).is_err()
+        none: [str] = []
+        memo: {str: str} @= {}
+        told: {str: bool} @= {}
+        unit = units.tu_object(
+            t,
+            module: "same",
+            tu_text: "int main(void) { return 0; }\n",
+            level: "-O0",
+            sanitize: false,
+            search: "",
+            package_flags: none,
+            source_dir: "",
+            search_include: none,
+            @memo,
+            @told
+        ).must()
+        runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
+        objects @ objects.push(unit).push(runtime)
+        digests @ digests.push(file_reading.key_of(unit).must()).push(file_reading.key_of(runtime).must())
+        _ = again
+
+    assert objects[0] == objects[2] && objects[1] == objects[3]
+    assert digests[0] == digests[2]
+    assert digests[1] == digests[3]
+    assert !process.remove_tree(t.build).is_err()
+
 # The concurrent case's own instrument, witnessed: a failed build's note is
 # read back whole, and a directory with none, or none at all, reads nothing
 # (defect 2142).

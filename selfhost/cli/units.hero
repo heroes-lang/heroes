@@ -199,11 +199,13 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # `-fno-crash-diagnostics` (defect 170): a clang that dies writes no copy of
     # the unit and no script into the system's temporary folder (8,270,409
     # bytes of preprocessed C for 3,000 nested variants, measured 2026-10-03),
-    # since the build says what died in its own words.
+    # since the build says what died in its own words. **And two builds of one
+    # unit write one object** (defect 2142, `toolchain.object_words`).
     line @ strings.with_all(
         list: line,
         more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, "-fno-crash-diagnostics", c_file, "-o", staged]
     )
+    line @ strings.with_all(list: line, more: toolchain.object_words(t, named: dir + "/" + module + ".o"))
 
     # **What clang said is read once, and the words printed are the words
     # replayed** (defect 337): the replay below read the stream a second time

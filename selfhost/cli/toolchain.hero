@@ -29,6 +29,7 @@
 #   same fact, same key, different plumbing.
 
 use cli/io
+use cli/link_flags
 use cli/clang_floor
 use cli/deps
 use cli/digest
@@ -179,6 +180,22 @@ function asked_of_clang(line: [str], what: str, err_path: str) -> str?
 function asked_through(program: str, words: [str], what: str, err_path: str) -> str?
     return clang_asked.asked(program: program, words: words, what: what, err_path: err_path, out_path: "")
 
+# **The words a keyed object's compile adds after its output's** (defect 2142):
+# the name its debug information gives it, its own path rather than its
+# private one; and on an MSVC target no compile line in that information,
+# which named the private dependency listing, and no time in its header,
+# which only an incremental link reads and no link here is. Measured on the
+# Windows box, two compiles of one unit differed by each of the three, and
+# with these words were one object (cmp), two seconds apart included; on this
+# Mac objects were one already, the first word moved no byte and the second is
+# refused as an argument unused.
+function object_words(t: Toolchain, named: str) -> [str]
+    out: [str] @= ["-Xclang", "-object-file-name=" + named]
+
+    if link_flags.msvc(t.target)
+        out @ out.push("-gno-codeview-command-line").push("-mno-incremental-linker-compatible")
+    return out
+
 # Compile the runtime once and cache it, keyed on its own contents,
 # the level and the compiler. A stale relink is silent, so the key is
 # the only thing standing between a golden test and passing for the
@@ -226,10 +243,12 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     staged = publish.private_name(stem + ".o")
     err_path = publish.private_name(stem + ".clang-stderr.txt")
     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
+
     line @ strings.with_all(
         list: line,
         more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, t.runtime + "/runtime.c", "-I", t.runtime, "-o", staged]
     )
+    line @ strings.with_all(list: line, more: object_words(t, named: stem + ".o"))
     ran = run_clang(line: line, what: "compiling the runtime", err_path: err_path)
     publish.discard(err_path)
 
@@ -419,3 +438,15 @@ test "an object compiled under one clang answer is never served under another (d
     # And so do the sanitizer's flags, which were one bit.
     assert build_words(level: "-O0", sanitize: true) == "-O0|-g|-fsanitize=address,undefined"
     assert build_words(level: "-O2", sanitize: false) == "-O2|-gline-tables-only|"
+
+# A keyed object's own words, after its output's (defect 2142): its name for
+# its debug information on every target, and on an MSVC one no compile line
+# there, which a Mac's clang refuses as an argument unused.
+test "a keyed object's words name it, and an MSVC target's keep the compile line out of its debug information (defect 2142)"
+    t: Toolchain @= locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.target @ "x86_64-pc-windows-msvc"
+    assert object_words(t, named: "build/x/m.o") == ["-Xclang", "-object-file-name=build/x/m.o", "-gno-codeview-command-line", "-mno-incremental-linker-compatible"]
+    t.target @ "arm64-apple-darwin25.6.0"
+    assert object_words(t, named: "build/x/m.o") == ["-Xclang", "-object-file-name=build/x/m.o"]
+    t.target @ "x86_64-w64-windows-gnu"
+    assert object_words(t, named: "build/x/m.o").len() == 2
