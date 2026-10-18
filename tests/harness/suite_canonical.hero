@@ -44,9 +44,9 @@
 # four cases are refused by the parser, and every expectation cites a line and
 # a column.
 #
-# `archive/` is excluded because nothing builds it and CLAUDE.md §5
-# declares the Rust it holds spent. `tests/emission/` and
-# `tests/golden/**/*.expected` hold no `.hero` at all.
+# `archive/` was left out because nothing built it and CLAUDE.md §5
+# declares the Rust it held spent, until it left the tree on 2026-10-18.
+# `tests/emission/` and `tests/golden/**/*.expected` hold no `.hero` at all.
 #
 # ## The shape of the check
 #

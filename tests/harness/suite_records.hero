@@ -196,9 +196,10 @@ constant QUOTES_THE_OLD_SPELLING: [str]
     ]
 
 # Three entries left this list at M-bootstrap-archive — the bootstrap's
-# `emit/tests/gate.rs`, `tests/milestones.rs` and `cli/help.rs`. They are
-# inside `archive/` now, which RECORD skips whole, so an exemption for them
-# would be a line that cannot fire.
+# `emit/tests/gate.rs`, `tests/milestones.rs` and `cli/help.rs`. They were
+# inside `archive/`, which RECORD skipped whole until 2026-10-18, so an
+# exemption for them would have been a line that cannot fire; they are at
+# the tag `m-bootstrap-archive` since.
 #
 # **The record was `docs/debrief/QUEUE.md` until 2026-08-26.** The entry is a
 # SUFFIX match (`quoting` below), so the rename would have silently stopped
@@ -3504,11 +3505,18 @@ function lands_in_issues(token: str) -> bool
 
     return false
 
-# Whether a citation lands in the Rust bootstrap: a path under `BOOTSTRAP`, or
-# a `.rs` anywhere, the premise `is_claim` already rests on, which `citations`
-# asks of the tree.
+# Whether a citation lands in the Rust bootstrap: a path under `BOOTSTRAP`, a
+# directory above it, or a `.rs` anywhere, the premise `is_claim` already rests
+# on, which `citations` asks of the tree. **The directory above is the
+# folder's parent, `archive/`** (defect 2144): `citations` makes it a root once
+# the folder has left, so it is a claim, and on the CI's one-commit checkout,
+# which cannot show the archive, nothing else set it aside.
 function lands_in_bootstrap(token: str) -> bool
     if token == BOOTSTRAP || strings.starts_with(text: token, prefix: BOOTSTRAP + "/")
+        return true
+    bare = strings.without_suffix(text: token, suffix: "/")
+
+    if bare.len() > 0 && strings.starts_with(text: BOOTSTRAP, prefix: bare + "/")
         return true
     return strings.ends_with(text: token, suffix: ".rs")
 
@@ -5894,6 +5902,27 @@ test "once the Rust bootstrap leaves the tree a citation of its files is followe
     assert shallow.failed == 0
     assert strings.contains(text: shallow.skips[0], needle: "2 citations of the Rust bootstrap were not followed")
 
+    # The folder's parent, set aside with its files where the archive cannot
+    # answer, and followed where it can (defect 2144: the CI read `archive/`
+    # dead on its one-commit checkout).
+    parent = scratch + "/parent.md"
+    write_file(path: parent, text: "the bootstrap stood in `archive/`\n").must()
+    above: report.Report @= report.empty()
+    citations(
+        @above,
+        scratch: scratch,
+        present: [parent],
+        closed: closed,
+        archive: standing,
+        bootstrap: Archive(state: "unreadable", why: "this clone's history is shortened", paths: none)
+    )
+    assert above.failed == 0
+    assert strings.contains(text: above.skips[0], needle: "1 citations of the Rust bootstrap were not followed")
+    followed: report.Report @= report.empty()
+    citations(@followed, scratch: scratch, present: [parent], closed: closed, archive: standing, bootstrap: held)
+    assert followed.failed == 0
+    assert followed.passed == 1
+
     # The premise both readings rest on, failing where it dies: a file of Rust
     # outside the bootstrap, whose citations would read as the bootstrap's.
     rust: report.Report @= report.empty()
@@ -5910,6 +5939,9 @@ test "once the Rust bootstrap leaves the tree a citation of its files is followe
     assert bootstrap_of(scratch: scratch, present: ["archive/bootstrap-rs/Cargo.toml"]).state == "tree"
     assert lands_in_bootstrap("archive/bootstrap-rs/heroes/src/lib.rs")
     assert lands_in_bootstrap("emit/{ctype,typedefs}.rs")
+    assert lands_in_bootstrap("archive/")
+    assert lands_in_bootstrap("archive")
+    assert !lands_in_bootstrap("arch/")
     assert !lands_in_bootstrap("selfhost/emit/ffi.hero")
     _ = shell.remove_tree(scratch).is_err()
 
