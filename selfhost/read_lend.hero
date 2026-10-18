@@ -41,6 +41,23 @@ function at_position(a: ast.Ast, s: source.Source, decls: [ast.Decl], decl: i64,
 
     return false
 
+# Whether the parameter at `at` of `decl` is a record lent read-only to C,
+# `c: Counter lent` on an `extern`: `lent`, no `@`, and its type a record,
+# which `named` says from the checker's own table (panel 217's R3). Its slot
+# is the `@` parameter's pointer, so only the declaration tells it apart: the
+# pointee check asks its header for a `const` pointer and the probe declares
+# one, both from here, so the two cannot disagree on which parameter it is.
+function record_to_c(decls: [ast.Decl], decl: i64, at: i64, named: bool) -> bool
+    if !named
+        return false
+
+    match decls[decl].kind
+        .function_decl fd =>
+            return fd.value.is_extern && at >= 0 && at < fd.value.params.len() && fd.value.params[at].lent && !fd.value.params[at].mutable
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false
+
 # Whether an argument is handed as its own place: a name bound in the
 # function, or a field path down from one. Any other value, an element
 # among them, lands in a slot of its own first, and that slot is handed.

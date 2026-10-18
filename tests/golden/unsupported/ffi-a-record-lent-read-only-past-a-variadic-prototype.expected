@@ -1,0 +1,7 @@
+error[ffi_writable_parameter]: `t` of `tally_bump` is lent read-only as a `Tally`, and `ffi-a-record-lent-read-only-past-a-variadic-prototype.h` gives `tally_bump` 1 parameter and then `...`, where `t` stands — C reads what a call hands it there as whatever type it asks for, so nothing holds it to the `const` the lend promises
+  at tests/golden/unsupported/ffi-a-record-lent-read-only-past-a-variadic-prototype.hero:15:33
+     |
+  15 |     function tally_bump(k: i32, t: Tally lent) -> i64  #~ ffi_writable_parameter
+     |                                 ^
+  note: §4.19: a record lent read-only is the caller's own place, which C may read and never write; past a header's `...` the header declares no type for it, so neither clang nor this compiler can hold C to the `const`, and a write there changes a value the program declared unchanged
+  note: write a header of your own that includes `ffi-a-record-lent-read-only-past-a-variadic-prototype.h` and declares a `static inline` function taking `t` as a pointer to `const` of the struct `tally_bump` reads and handing it on to `tally_bump`; bind that function instead, and its prototype holds the `const`

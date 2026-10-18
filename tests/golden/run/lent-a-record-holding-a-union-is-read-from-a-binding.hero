@@ -1,0 +1,15 @@
+# Panel 217's R3, ratified 2026-10-17 (M-readonly-lend), the ffi-pragmatist's
+# prediction: defect 2062's first case, `fixedbugs-2062-a-record-holding-a-
+# union-bound-partial-builds`, whose header reads the record through
+# `const struct tagged *`, written with `lent` and no `@` and called from a
+# `=` binding, builds and prints what that case prints. Its header is that
+# case's own.
+
+extern "fixedbugs-2062-tagged.h"
+    record Tagged tag tagged partial
+        kind: i32
+    function tg_kind(t: Tagged lent) -> i32
+
+function main()
+    t = Tagged(kind: 2, rest: zero)
+    print(tg_kind(t))

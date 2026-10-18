@@ -82,10 +82,33 @@ function whole_void(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: st
         message: "`" + param + "` of `" + name + "` lends a whole record to C, and the header takes it as `" + header_type + "` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing",
         span: at
     )
+
+    # A record lent read-only crosses typed, as a pointer to `const` of its
+    # own struct (panel 217's R3(a)): the route that keeps the `const` comes
+    # first, and the counted `@` lend, which C may write, second.
+    if read_only_at(s, decls, name: name, param: param)
+        d.notes @ d.notes.push(
+            "§4.19: a record lent read-only crosses as a pointer to `const` of its own struct, and a `void *` drops both the struct and the `const`: write a header of your own that declares a `static inline` function taking `" + param + "` as that pointer and handing it on to `" + name + "`, and bind that one; or, where C may write it, take it `@" + param + ": <record> counted_by <count>`"
+        )
+        return ok(d)
     d.notes @ d.notes.push(
         "§4.19: name the parameter that carries the count, `@" + param + ": <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is"
     )
     return ok(d)
+
+# Whether the parameter `param` of the extern function `name` is lent
+# read-only, `lent` with no `@` (`read_lend.hero`).
+function read_only_at(s: source.Source, decls: [ast.Decl], name: str, param: str) -> bool
+    for d in decls
+        match d.kind
+            .function_decl fd =>
+                if fd.value.is_extern && source.span_text(s, d.name) == name
+                    for p in fd.value.params
+                        if source.span_text(s, p.name) == param
+                            return p.lent && !p.mutable
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return false
 
 # `invalid application of 'sizeof' to an incomplete type 'X'` at a counted
 # parameter's unit line: the parameter is every counted one whose pointee,

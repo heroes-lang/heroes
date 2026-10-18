@@ -1,0 +1,21 @@
+error[ffi_parameter_type]: `p` of `pt_peek_any` lends a whole record to C, and the header takes it as `const void *` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing
+  at tests/golden/unsupported/ffi-a-record-lent-read-only-to-a-header-that-may-write-it.hero:18:26
+     |
+  18 |     function pt_peek_any(p: Pt lent) -> i64  #~ ffi_parameter_type
+     |                          ^
+  note: §4.19: a record lent read-only crosses as a pointer to `const` of its own struct, and a `void *` drops both the struct and the `const`: write a header of your own that declares a `static inline` function taking `p` as that pointer and handing it on to `pt_peek_any`, and bind that one; or, where C may write it, take it `@p: <record> counted_by <count>`
+
+error[ffi_parameter_type]: `p` of `pt_poke_any` lends a whole record to C, and the header takes it as `void *` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing
+  at tests/golden/unsupported/ffi-a-record-lent-read-only-to-a-header-that-may-write-it.hero:19:26
+     |
+  19 |     function pt_poke_any(p: Pt lent) -> i64  #~ ffi_parameter_type
+     |                          ^
+  note: §4.19: a record lent read-only crosses as a pointer to `const` of its own struct, and a `void *` drops both the struct and the `const`: write a header of your own that declares a `static inline` function taking `p` as that pointer and handing it on to `pt_poke_any`, and bind that one; or, where C may write it, take it `@p: <record> counted_by <count>`
+
+error[ffi_writable_parameter]: `p` of `pt_reset` is lent read-only as a `Pt`, and the header says `struct pt *` — C does not promise to leave it alone
+  at tests/golden/unsupported/ffi-a-record-lent-read-only-to-a-header-that-may-write-it.hero:17:23
+     |
+  17 |     function pt_reset(p: Pt lent) -> i32  #~ ffi_writable_parameter
+     |                       ^
+  note: `lent` with no `@` hands C the caller's own place to read: a C write through it would change a value the program never handed over to change
+  fix (guess): where C changes it, take it `@p` and lend it at each call with `@`

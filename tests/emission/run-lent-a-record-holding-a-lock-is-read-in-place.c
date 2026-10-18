@@ -143,7 +143,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 12 "tests/golden/run/lent-a-record-holding-a-lock-is-read-in-place.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_lentarecordholdingalockisreadinplace_counter_init(struct counter * a0) { (void)(counter_init)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_lentarecordholdingalockisreadinplace_counter_value(struct counter * a0) { (void)(counter_value)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_lentarecordholdingalockisreadinplace_counter_value(const struct counter * a0) { (void)(counter_value)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }

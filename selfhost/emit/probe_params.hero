@@ -12,6 +12,7 @@ use check/freer as freer
 use widths
 use ir/containers
 use emit/ctype
+use read_lend
 
 # The declared parameter types as C, positionally named a0, a1, … — or
 # absent for a type this backend has no spelling for, which the
@@ -62,6 +63,13 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
         if mutable && freer.owned_parameter(decls, at: f.decl, index: index) && spelled == "const char *"
             spelled @ "char *"
 
+        # A record lent read-only crosses as a pointer to `const` (panel
+        # 217's R3(a)): clang's own qualifier check then refuses a header
+        # that writes it, a second wall behind the pointee check's question,
+        # and a `void *` the header takes refuses the `const` too.
+        if mutable && read_lend.record_to_c(decls, decl: f.decl, at: index, named: is_record_type(c, ty: declared.ty))
+            spelled @ "const " + spelled
+
         if mutable
             out @ out.push(spelled + " * a" + index.to_str())
         else
@@ -69,6 +77,15 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
         index @ index + 1
 
     return ok(out)
+
+# Whether a declared FFI parameter type is a record, the one type a read-only
+# lend to C may take (`check/lend_extent.hero`).
+function is_record_type(c: state.Checked, ty: i64) -> bool
+    return match table.get(c.types, ty)
+        .named                                                    => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .fallible | .function_ty         => false
+        .case_ty | .failure | .generic | .error                   => false
 
 # A declared FFI parameter type as C. The set is the boundary rule's
 # own — anything else is refused in the checker, so failing here means

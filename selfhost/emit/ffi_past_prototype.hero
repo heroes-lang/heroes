@@ -48,8 +48,11 @@
 # author's declaration, so the build stops at exit 1 before the main unit
 # compiles: one assertion that always fails, its marker carrying the
 # function, the parameter, the kind of lend and how many parameters the
-# header gives before its `...`. A record lent read-only, once that form
-# lands, is the same `LENT` ask (panel 217's R6).
+# header gives before its `...`. A record lent read-only, `c: Counter lent`,
+# asks `PLACE` and is refused here as a string lent read-only is (panel 217's
+# R3(c), M-readonly-lend): past the `...` nothing holds C to the `const`, and
+# the critic built a header writing through it, an immutable binding printing
+# `103` at exit 0, before this refusal.
 
 use token
 use ast
@@ -82,6 +85,9 @@ constant COUNTED: str
 
 constant CELL: str
     "cell"
+
+constant PLACE: str
+    "place"
 
 ## The header's answer
 
@@ -139,6 +145,8 @@ function lines(wanted: [pointee_ask.Pointee], open: {str: i64}) -> [str]
             kind @ COUNTED
         else if one.declared == pointee_ask.AT
             kind @ CELL
+        else if one.declared == pointee_ask.PLACE
+            kind @ PLACE
 
         if kind.len() > 0
             out @ out.push(c_text.line_directive(at: one.line, file: one.file))
@@ -169,7 +177,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
     at = ffi_site.location(s, line: line)
     fixed = ffi_lookup.number(text: ffi_pointee.trim_quote(parts[3]))
 
-    if at.is_err() || fixed.is_err() || kind != READ && kind != COUNTED && kind != CELL
+    if at.is_err() || fixed.is_err() || kind != READ && kind != COUNTED && kind != CELL && kind != PLACE
         return fail(code: "none", msg: "not our marker at a line of ours")
     decl = declared_at(s, decls, name: name, file: at.must().file, at_line: at.must().line)
 
@@ -182,6 +190,21 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
     if !spans.is_err()
         span @ spans.must().name
     stands = "`" + header + "` gives `" + name + "` " + given(fixed.must()) + " and then `...`, where `" + param + "` stands"
+
+    if kind == PLACE && !spans.is_err()
+        typed = source.span_text(s, spans.must().ty)
+        d: diag.Diagnostic @= diag.new_diagnostic(
+            code: "ffi_writable_parameter",
+            message: "`" + param + "` of `" + name + "` is lent read-only as a `" + typed + "`, and " + stands + " — C reads what a call hands it there as whatever type it asks for, so nothing holds it to the `const` the lend promises",
+            span: span
+        )
+        d.notes @ d.notes.push(
+            "§4.19: a record lent read-only is the caller's own place, which C may read and never write; past a header's `...` the header declares no type for it, so neither clang nor this compiler can hold C to the `const`, and a write there changes a value the program declared unchanged"
+        )
+        d.notes @ d.notes.push(
+            "write a header of your own that includes `" + header + "` and declares a `static inline` function taking `" + param + "` as a pointer to `const` of the struct `" + name + "` reads and handing it on to `" + name + "`; bind that function instead, and its prototype holds the `const`"
+        )
+        return ok(d)
 
     if kind == READ
         d: diag.Diagnostic @= diag.new_diagnostic(
@@ -348,14 +371,24 @@ test "the check unit refuses a read-only, a counted and an @ lend past the proto
         line: 2,
         depth: false
     )
+    place = pointee_ask.Pointee(
+        name: "va",
+        param: "c",
+        index: 5,
+        declared: pointee_ask.PLACE,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
     open: {str: i64} @= {}
     open["va"] @ 1
-    got = lines([lent, counted, leased, before, cell, first], open: open)
-    assert got.len() == 6
+    got = lines([lent, counted, leased, before, cell, first, place], open: open)
+    assert got.len() == 8
     assert got[0] == c_text.line_directive(at: 2, file: "t.hero")
     assert got[1] == "_Static_assert(0, \"heroes-ffi-past-prototype va s read 1\");"
     assert got[3] == "_Static_assert(0, \"heroes-ffi-past-prototype va p counted 1\");"
     assert got[5] == "_Static_assert(0, \"heroes-ffi-past-prototype va n cell 1\");"
+    assert got[7] == "_Static_assert(0, \"heroes-ffi-past-prototype va c place 1\");"
     none: {str: i64} = {}
     assert lines([lent, counted], open: none).len() == 0
 
@@ -363,7 +396,7 @@ test "the check unit refuses a read-only, a counted and an @ lend past the proto
 # string told its lease, a counted lend its pointer and an `@` lend a header of
 # the program's own, and an echo or another marker is not this one.
 test "a lend past a variadic prototype is told on its parameter (defects 2102, 2103 and 2106)"
-    text = "extern \"va.h\"\n    function va_scribble(k: i32, s: cstr lent) -> i64\n    function va_scrub(k: i32, p: ptr counted_by 4 lent) -> i64\n    function va_wide(k: i32, @n: i32) -> i64\n\nfunction main()\n    print(1)\n"
+    text = "extern \"va.h\"\n    function va_scribble(k: i32, s: cstr lent) -> i64\n    function va_scrub(k: i32, p: ptr counted_by 4 lent) -> i64\n    function va_wide(k: i32, @n: i32) -> i64\n    record Counter tag counter partial\n        n: i64\n    function va_bump(k: i32, c: Counter lent) -> i64\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -398,6 +431,19 @@ test "a lend past a variadic prototype is told on its parameter (defects 2102, 2
     assert source.span_text(s, cell.span) == "n"
     assert cell.message == "`n` of `va_wide` is an `@` parameter, and `va.h` gives `va_wide` 1 parameter and then `...`, where `n` stands — C reads the pointer there as whatever type it asks for and writes as much as that type holds, so nothing holds it to the width this program lends"
     assert ffi_lookup.has(text: cell.notes[1], needle: "includes `va.h`")
+
+    # Panel 217's R3(c): a record lent read-only there is told as its string's
+    # twin, with the one route that stays open, a prototype of the program's own.
+    place = refused(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:7:5: error: static assertion failed: heroes-ffi-past-prototype va_bump c place 1"
+    ).must()
+    assert place.code == "ffi_writable_parameter"
+    assert source.span_text(s, place.span) == "c"
+    assert place.message == "`c` of `va_bump` is lent read-only as a `Counter`, and `va.h` gives `va_bump` 1 parameter and then `...`, where `c` stands — C reads what a call hands it there as whatever type it asks for, so nothing holds it to the `const` the lend promises"
+    assert ffi_lookup.has(text: place.notes[1], needle: "a `static inline` function taking `c` as a pointer to `const`")
     echo = "_Static_assert(0, \"heroes-ffi-past-prototype va_scribble s read 1\");"
     assert refused(s, parsed.decls, parsed.tree, line: echo).is_err()
     assert refused(

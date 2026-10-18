@@ -1,0 +1,27 @@
+# UNVERIFIED — pending debrief
+# Panel 217's R3(a) and (b), ratified 2026-10-17 (M-readonly-lend): a record
+# lent read-only crosses typed, as a pointer to `const` of its own struct.
+# A header taking it through a pointer C may write is refused on the
+# parameter, `ffi_writable_parameter`, the compiler's own question and never
+# clang's words: the compiler-engineer's `w11_writable` printed `0` from a
+# `=` binding at exit 0 before it. A header taking it as `void *`, which
+# drops the struct and the `const`, is refused as a whole record behind a
+# `void *` is, its note naming the route that keeps the `const` first. The
+# header that reads it through `const struct pt *` binds.
+
+extern "ffi-a-record-lent-read-only-to-a-header-that-may-write-it.h"
+    record Pt tag pt
+        x: i64
+        y: i32
+    function pt_value(p: Pt lent) -> i64
+    function pt_reset(p: Pt lent) -> i32  #~ ffi_writable_parameter
+    function pt_peek_any(p: Pt lent) -> i64  #~ ffi_parameter_type
+    function pt_poke_any(p: Pt lent) -> i64  #~ ffi_parameter_type
+
+function main()
+    a = Pt(x: 3, y: 4)
+    print(pt_value(a))
+    print(pt_reset(a))
+    print(pt_peek_any(a))
+    print(pt_poke_any(a))
+    print(a.x)

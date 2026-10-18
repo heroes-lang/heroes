@@ -1,0 +1,1 @@
+tests/golden/check/ffi-a-record-lent-read-only-beside-an-at-of-it.hero:16:28: error[aliased_mutable_arguments]: `p` is lent read-only, the caller's own place, beside this call's `dst` argument, `@p`, which writes the same value — the callee reads it after that write, where a copy would not

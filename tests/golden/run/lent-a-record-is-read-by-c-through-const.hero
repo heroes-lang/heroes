@@ -1,0 +1,27 @@
+# Panel 217's R3, ratified 2026-10-17 (M-readonly-lend): a group's record lent
+# read-only crosses to C's `const struct pt *` as the caller's own place, from
+# a binding, from a cell's field and from a parameter lent read-only, with no
+# `@` anywhere and no copy; the probe declares a pointer to `const`, so clang
+# holds the header to it. A plain struct, so the case runs on every platform.
+
+extern "lent-a-record-is-read-by-c-through-const.h"
+    record Pt tag pt
+        x: i64
+        y: i32
+    function pt_sum(p: Pt lent) -> i64
+    function pt_scaled(p: Pt lent, k: i64) -> i64
+
+record Holder
+    p: Pt
+    k: i64
+
+function twice(p: Pt lent) -> i64
+    return pt_sum(p) + pt_scaled(p, k: 2)
+
+function main()
+    a = Pt(x: 3, y: 4)
+    h @= Holder(p: Pt(x: 10, y: 1), k: 3)
+    h.k @ 4
+    print(twice(a))
+    print(pt_sum(h.p), " ", pt_scaled(h.p, k: h.k))
+    print(a.x, " ", h.p.x)

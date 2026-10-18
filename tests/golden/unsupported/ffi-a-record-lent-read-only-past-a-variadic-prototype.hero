@@ -1,0 +1,20 @@
+# UNVERIFIED — pending debrief
+# Panel 217's R3(c), ratified 2026-10-17 (M-readonly-lend), the
+# ffi-pragmatist's veto line: a record lent read-only past a header's `...`
+# is refused on the parameter, `ffi_writable_parameter`, as a string lent
+# read-only there is (defect 2102), since C reads it as whatever type it asks
+# for and nothing holds it to the `const`. The compiler-engineer's final
+# prototype built this shape and the critic ran it: an immutable binding
+# printed `103` at exit 0. The note names the one route that stays open, a
+# prototype of the program's own, since an `@` lend there is refused too
+# (defect 2106).
+
+extern "ffi-a-record-lent-read-only-past-a-variadic-prototype.h"
+    record Tally tag tally
+        n: i64
+    function tally_bump(k: i32, t: Tally lent) -> i64  #~ ffi_writable_parameter
+
+function main()
+    s = Tally(n: 3)
+    print(tally_bump(1, s))
+    print(s.n)

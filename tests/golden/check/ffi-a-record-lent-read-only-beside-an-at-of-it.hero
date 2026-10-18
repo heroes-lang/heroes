@@ -1,0 +1,18 @@
+# Panel 217's R3(d), ratified 2026-10-17 (M-readonly-lend): a record lent
+# read-only to C beside an `@` lend of the same place, in one call, is
+# refused as the same two lends to a function of the program are,
+# `aliased_mutable_arguments`: C's `restrict` makes the call's answer depend
+# on the optimiser, `2 2 2` at -O0 and `1 2 1` at -O2 by the sitting's
+# ffi-pragmatist. Two places apart build.
+
+extern "ffi-a-record-lent-read-only-beside-an-at-of-it.h"
+    record Pt tag pt
+        x: i64
+    function mv(@dst: Pt lent, src: Pt lent) -> i64
+
+function main()
+    p @= Pt(x: 1)
+    q @= Pt(x: 5)
+    print(mv(dst: @p, src: p))  #~ aliased_mutable_arguments
+    print(mv(dst: @q, src: p))
+    print(p.x + q.x)

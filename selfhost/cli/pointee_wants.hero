@@ -17,6 +17,7 @@ use ir/containers
 use emit/externs as emit_externs
 use handles
 use cli/pointee_ask
+use read_lend
 use parse
 use resolve
 use checker
@@ -129,22 +130,18 @@ function cell_param(decls: [ast.Decl], f: containers.Function, index: i64) -> bo
             index < fd.value.params.len() && fd.value.params[index].mutable && fd.value.params[index].counted_by.is_err()
         .constant_decl | .record_decl | .variant_decl | .test_decl => false
 
-# A group's record lent read-only, `c: Counter lent` (panel 217's R3): its
-# slot is the `@` parameter's pointer, so only its declaration says C may not
-# write it, and the header is asked whether its pointer points at `const`, as
-# a `cstr`'s is.
+# A group's record lent read-only, `c: Counter lent` (panel 217's R3): the
+# header is asked whether its pointer points at `const`, as a `cstr`'s is,
+# and whether it stands past a `...`; which parameter is one is
+# `read_lend.record_to_c`'s, the probe's `const` asking the same.
 function lent_record(c: state.Checked, slot: containers.Slot, decls: [ast.Decl], f: containers.Function, index: i64) -> bool
-    match decls[f.decl].kind
-        .function_decl fd =>
-            if index >= fd.value.params.len() || !fd.value.params[index].lent || fd.value.params[index].mutable
-                return false
-        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
-
-    return match table.get(c.types, slot.ty)
+    named = match table.get(c.types, slot.ty)
         .named                                                    => true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
         .array | .fixed | .map | .fallible | .function_ty         => false
         .case_ty | .failure | .generic | .error                   => false
+
+    return read_lend.record_to_c(decls, decl: f.decl, at: index, named: named)
 
 # What a LEND asks of the header at this parameter (panel 194's R7, defects
 # 092 and 395), or absent. A parameter declared `counted_by` asks the UNIT
