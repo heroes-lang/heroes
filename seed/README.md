@@ -116,6 +116,29 @@ refresh in that state is emitted by a scaffold, a compiler of the tree with the
 reader taken out, and a lane's merge takes the side of this file that defines
 `hero_program_sources`.
 
+**And every refresh is rebuilt by the seed before it** (the author's
+instruction of 2026-10-18, given on the question whether the links
+measurement 048 walked would get a rule, in the shape the coordinator put to
+them): the compiler clang makes of the previous seed, with the refresh's own
+runtime, builds the refresh's sources, and what the compiler that makes emits
+is this file, byte for byte, by one of three routes the record already wrote
+down. **`one-stage`**, the route wherever it can be; **`abi-put-back`**, where
+the runtime's ABI moved one step, the procedure `bfeab994f` wrote down, the
+number put back in a copy of the header; **`scaffold <path>...`**, the
+scaffold above, the paths named taken from the refresh's parent for the first
+build. The refresh's commit names its route in a trailer, `Seed-link:
+<route>`, and one that names none is `one-stage`; the CI rebuilds every refresh
+a push brings by the route it names (`.github/workflows/ci.yml`, the job *A
+refresh of the seed is rebuilt by the seed before it*). **And the order of the
+paragraph above reaches past syntax since that day**: a library function, an
+`extern`, a symbol the emitter writes, anything the compiler's own code uses,
+enters `selfhost/` only after the refresh whose seed knows it. Measured the day
+it was given: of the 39 seeds since `m-bootstrap-archive`, 28 were rebuilt from
+the one before in one stage; the others asked a step of the runtime's ABI,
+stages through the commits between, or crossings measurement 048 found by
+trial, a library function defined and called in one commit and a cap the
+runtime raised among them.
+
 What follows is the rule as it stood before, kept.
 
 **In the same commit as the change that breaks it**, by whoever has a working

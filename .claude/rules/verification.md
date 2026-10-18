@@ -741,7 +741,9 @@ fast-forward the trunk: same tree, no second gate):
    build went red or the batch closes a release, its own fixpoint then verified
    by `cmp` over two generations (M-bounded-seed's rhythm, since 2026-10-17;
    until then: *the seed regenerated, the compiler built from it, the fixpoint
-   by `cmp`*);
+   by `cmp`*), and since 2026-10-18 rebuilt by the seed before it, its commit
+   naming the route in a `Seed-link:` trailer (`seed/README.md` § When this
+   file must be regenerated, the author's instruction of that day);
 2. the compiler's own tests, the net's own tests, **the full net**, its counts
    in the closing commit's body; the suites may run six at a time in separate
    processes, `cache` alone after them, and a red suite is re-run alone before

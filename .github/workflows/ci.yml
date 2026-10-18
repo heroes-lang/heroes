@@ -918,6 +918,81 @@ jobs:
           ./heroes-from-gcc build selfhost/main.hero --emit-c -o /tmp/stage-1-gcc.c
           cmp /tmp/stage-1-clang.c /tmp/stage-1-gcc.c
 
+  # A REFRESH OF THE SEED IS REBUILT BY THE SEED BEFORE IT (the author's
+  # instruction of 2026-10-18; its home is `seed/README.md` § When this file
+  # must be regenerated). Measurement 048 walked the 39 seeds since
+  # `m-bootstrap-archive` down to the one the Rust bootstrap emits, and had to
+  # find by trial how each descends from the one before. So every commit a push
+  # brings that changes `seed/heroes.c` names that route in a `Seed-link:`
+  # trailer, `one-stage` where it names none, and this job takes it: the
+  # compiler clang makes of the seed before, with the refresh's runtime (its ABI
+  # number put back one step for `abi-put-back`), builds the refresh's sources,
+  # through the scaffold of panel 222's R3 first for `scaffold <path>...`, and
+  # what the compiler that makes emits must be the refresh's seed, byte for
+  # byte. One leg, since the fixpoint step above already holds this C to the
+  # seed emitted elsewhere; the history comes as commits and trees, which is
+  # all the route needs, and a push that refreshes nothing leaves in seconds.
+  seed-link:
+    name: A refresh of the seed is rebuilt by the seed before it
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Every refresh this push brings, rebuilt from the seed before it
+        shell: bash
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            echo "the push names no earlier commit this history holds (${BEFORE}), so it has no range to read"
+            exit 0
+          fi
+          refreshes=$(git rev-list --reverse "$BEFORE..HEAD" -- seed/heroes.c)
+          if [ -z "$refreshes" ]; then echo "this push brings no refresh of the seed"; exit 0; fi
+          sudo apt-get update && sudo apt-get install -y clang
+          repo=$PWD
+          for c in $refreshes; do
+            route=$(git log -1 --format='%(trailers:key=Seed-link,valueonly,separator=%x20)' "$c")
+            set -- ${route:-one-stage}
+            p=$(git rev-list -1 "$c^" -- seed/heroes.c)
+            w=$(mktemp -d "$RUNNER_TEMP/link.XXXXXX")
+            git worktree add --quiet --detach "$w/tree" "$c"
+            cd "$w/tree"
+            git show "$p:seed/heroes.c" > "$w/before.c"
+            rt="$w/tree/runtime"
+            case "$1" in
+              abi-put-back)
+                from=$(grep -m1 -oE 'HERO_RUNTIME_ABI == [0-9]+' "$w/before.c" | grep -oE '[0-9]+$')
+                cp -R runtime "$w/runtime"
+                sed -i -E "s/#define HERO_RUNTIME_ABI [0-9]+/#define HERO_RUNTIME_ABI $from/" "$w/runtime/heroes_runtime.h"
+                rt="$w/runtime" ;;
+              one-stage|scaffold) ;;
+              *) echo "::error::$c names the route '$1', which is none of one-stage, abi-put-back and scaffold"; exit 1 ;;
+            esac
+            echo "the seed of $c, by $*, from the seed of $p"
+            clang -w -I "$rt" "$w/before.c" "$rt/runtime.c" -o "$w/k0"
+            if [ "$1" = scaffold ]; then
+              shift
+              for f in "$@"; do git show "$c^:$f" > "$f"; done
+              rm -rf build && HEROES_RUNTIME="$rt" "$w/k0" build selfhost/main.hero -o "$w/k-scaffold"
+              for f in "$@"; do git show "$c:$f" > "$f"; done
+              test -z "$(git status --porcelain --untracked-files=no)"
+              rm -rf build && "$w/k-scaffold" build selfhost/main.hero -o "$w/k1"
+            else
+              rm -rf build && HEROES_RUNTIME="$rt" "$w/k0" build selfhost/main.hero -o "$w/k1"
+            fi
+            rm -rf build && "$w/k1" build selfhost/main.hero --emit-c > "$w/emitted.c"
+            cmp "$w/emitted.c" seed/heroes.c \
+              || { echo "::error::the seed of $p does not rebuild the seed of $c by the route $*"; exit 1; }
+            echo "witnessed: $(wc -c < seed/heroes.c) bytes, byte for byte"
+            cd "$repo"
+          done
+
   # THE RELEASE, made by the machine after every leg agrees (CLAUDE.md §14,
   # release tags). What it publishes is the tag's own source archive, which
   # GitHub makes from the tag and which carries the seed inside it, where
