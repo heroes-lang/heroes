@@ -157,3 +157,48 @@ in their reports, for the author to remove.
 
 **The chain entry**: row 68, `m-readonly-lend`, closed 2026-10-18, this
 journal.
+
+## Added after the push, 2026-10-18
+
+**The CI's four legs on `4a24be59a`, every one green**: Linux x86-64, Linux
+arm64, Darwin arm64 and Windows x86-64, with CodeQL and the site's deploy
+beside them. The Windows leg read the `lent` cases that bind no pthread lock,
+which this journal carried to the box, so the box, paid by the hour, was not
+needed.
+
+**The census of `check`**, owed after the push by the optimistic chain: the
+compiler before the milestone, stage 2 of `b0065d0f9` (`sources
+0acfc2fe242765b8`), against the milestone's, stage 2 of `4a24be59a` (`sources
+57d3d798678a73fc`), each judging `4a24be59a`'s files from a worktree of its
+own: 2,293 roots, `selfhost/main.hero` and every tracked `.hero` of
+`examples/` and `tests/`, `check --brief`, eight at a time. Before 1,331 exit 0
+and 962 exit 1, after 1,339 and 954. 14 roots moved: 13 of them this
+milestone's own cases, eight from 1 to 0, the earlier compiler reading no
+`lent` on a function of the program, and five in their codes; the fourteenth
+in its words alone, `check/ffi-lent-is-read-on-a-lend-and-nowhere-else`,
+`lent_shape`'s message reworded at step 2. **And of `build`**, since R3's
+refusals and defect 2128's values are made at build, where `check` cannot see
+them: the 987 tracked `.hero` outside `docs/` holding an `extern`, built by
+each. Before 358 exit 0 and 629 exit 1, after 361 and 626, none exit 2; 12
+moved, every one this milestone's case, each as its repair says.
+
+**Panel 187's R2**: the frozen plan, 1,356 programs, 14,209 singles and
+15,737 pairs, replayed by each compiler with `heroes mutate --recovery` and
+read with `--compare`: moved 0, findings 0, in both arms. The frozen
+`examples/ledger` is told one message by both, panel 210's rule being later
+than the freeze, and is subtracted as the instrument subtracts a program's own.
+
+**The formatter's probe**, owed where `selfhost/print/` moved, M-inferred-cell's
+changes and this milestone's: the compiler built at `-O2`, seven invocations
+side by side. The fixtures with no stride and `examples` in both families read
+exit 0, `examples` 120 seeds and 69,047 variants of `single` every one held;
+`selfhost` and `tests` in both families were still running at this writing,
+an hour of CPU each, and their verdict is added below when they end.
+
+**What broke after the gate, and why**: the first Linux arm64 run read 31
+false failures and an `emission` of 1,904 where the tree holds 1,311 cases,
+because the tree's archive was made by macOS's `tar` without
+`COPYFILE_DISABLE=1 --no-mac-metadata --no-xattrs`, and its `._*` AppleDouble
+entries ran as programs. `.claude/rules/platforms.md` has said so since
+2026-09-03, and the archive was made before that section was read. Remade, the
+run read as above, and that run alone is the one this journal cites.
