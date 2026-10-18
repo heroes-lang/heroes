@@ -5,10 +5,10 @@
 # to, and this answers what the objects of a program become, a question
 # with its own key.
 
-use cli/digest
 use cli/files
 use cli/flags
 use cli/link_flags
+use cli/link_output
 use cli/libraries
 use cli/link_warning
 use cli/process
@@ -40,7 +40,7 @@ use module/reading as file_reading
 # and not a name, because on Windows the linker names the PDB after its
 # output, so a private file name would leave a new `.pdb` on every build.
 # Inside it the output is the module's own name, never a part of the path
-# asked for: an author's `-o` is not split to find one (`published_as`).
+# asked for: an author's `-o` is not split to find one (`link_output.published_as`).
 #
 # **Its words reach clang in a file in the binary's home** (defect 583,
 # `response_file.for_link`): they name every object, and Windows refuses a
@@ -55,7 +55,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         package_flags: package_flags,
         link_names: link_names
     )
-    home = binary_home(t, line: line, name: module + process.exe_suffix())
+    home = link_output.binary_home(t, line: line, name: module + process.exe_suffix())
     binary: str @= home
 
     # Where the binary lands, which is `binary` itself but for an author's
@@ -70,7 +70,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         # An author's name with no suffix takes the platform's (defect 359),
         # but where it names a device, `-o NUL`, which is written into.
         if !files.is_special(binary)
-            binary @ with_suffix(path: binary, suffix: process.exe_suffix())
+            binary @ link_output.with_suffix(path: binary, suffix: process.exe_suffix())
 
         # Refused before a byte is linked where nothing may be written: a
         # file that could not be opened for writing, a directory, and a
@@ -102,7 +102,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
     inner = module + process.exe_suffix()
     line @ strings.with_all(
         list: line,
-        more: pdb_words(suffix: process.exe_suffix(), at: at, inner: inner, module: module)
+        more: link_output.pdb_words(suffix: process.exe_suffix(), at: at, inner: inner, module: module)
     )
     line @ strings.with_all(list: line, more: ["-o", stage + "/" + inner])
     linked = link_warning.run_link(line: line, what: "linking", err_path: err_path)
@@ -121,7 +121,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         # Where the linker made a directory, a `.dSYM` being a tree, it is
         # made beside the binary as well.
         relative = made.slice(from: stage.len() + 1, to: made.len())
-        target = published_as(binary: at, inner: inner, module: module, relative: relative)
+        target = link_output.published_as(binary: at, inner: inner, module: module, relative: relative)
 
         if publish.base_of(relative) != relative
             process.mkdir_all(publish.beside(path: target, name: "."))?
@@ -198,94 +198,14 @@ function link_code(failed: ()?) -> str
         return REFUSED
     return code
 
-# **The author's `-o` takes the platform's suffix where its last part has
-# none** (defect 359, 2026-10-05): on Windows `build -o name` wrote `name`,
-# which Git Bash starts and `cmd.exe` and PowerShell do not, by that path or
-# any. GCC's driver does this for its MinGW and Cygwin targets (`gcc.cc`'s
-# `convert_filename`, the `.exe` of `config/i386/cygming.h`, read
-# 2026-10-05), and clang 23.1.1 there writes `name` as given (measured on
-# the box), so the rule is gcc's: a last part holding a `.` is the author's
-# suffix and is kept, `app.bin` and `name.` alike. The last part ends at `/`
-# or `\`, Windows' two separators, which is the only place a suffix is
-# asked for: elsewhere it is "" and the path is the author's whole.
-function with_suffix(path: str, suffix: str) -> str
-    if suffix.len() == 0
-        return path
-    at: i64 @= path.len()
-
-    while at > 0 && path[at - 1] != '/' && path[at - 1] != '\\'
-        if path[at - 1] == '.'
-            return path
-        at @ at - 1
-
-    if at == path.len()
-        return path
-    return path + suffix
-
-# Where a binary built from `line` lives under `build/`: one directory per
-# link line, every word counted by its length so no two lines share one,
-# and the layout word and the compiler that links in the key as well.
-function binary_home(t: toolchain.Toolchain, line: [str], name: str) -> str
-    words: [str] @= [t.fingerprint, t.compiler_key, name]
-
-    for word in line
-        words @ words.push(word.len().to_str() + ":" + word)
-
-    return t.build + "/" + digest.digest(words.join("|")) + "/" + name
-
-# **The PDB's name as the binary records it, on Windows** (defect 509,
-# 2026-10-09). The linker writes the PDB into the private directory, as
-# `<module>.pdb`, and records that absolute path in the binary; the PDB is
-# then published beside the binary as `<binary>.pdb` (`published_as`) and the
-# directory removed, so the path the binary carried named nothing, and the
-# name a symbolizer looks for beside the binary when the path fails was not
-# the published one either. Measured on the box (clang 23.1.1, lld-link):
-# AddressSanitizer's report at `--sanitize` and at `--sanitize -O0` named no
-# frame, every one an address alone, as on the CI's Windows leg (clang 20.1.8)
-# where defect 322's case went red; `/PDBALTPATH` naming the published PDB's
-# own last part, and the frames carry their files and lines. The last part
-# alone and not a path: a symbolizer and a debugger look for that name beside
-# the binary, so the pair can be moved together, and no directory of this
-# machine is written into the binary. `-Xlinker` and not `-Wl,`, which would
-# cut a name holding a comma. POSIX writes no PDB, and gets no word.
-function pdb_words(suffix: str, at: str, inner: str, module: str) -> [str]
-    if suffix != ".exe"
-        empty: [str] = []
-        return empty
-    pdb = published_as(binary: at, inner: inner, module: module, relative: module + ".pdb")
-    return ["-Xlinker", "/PDBALTPATH:" + last_part(pdb)]
-
-# The last part of a path, cut at Windows' two separators, `/` and `\`, the
-# one platform `pdb_words` asks it for.
-function last_part(path: str) -> str
-    at: i64 @= path.len()
-
-    while at > 0 && path[at - 1] != '/' && path[at - 1] != '\\'
-        at @ at - 1
-
-    return path.slice(from: at, to: path.len())
-
-# Where a file the linker wrote is published: the binary at the path asked
-# for, verbatim, and anything else under the binary's name and what followed
-# the module's own, `app.exe.pdb` for `p.pdb`, the name it had when the
-# linker wrote `app.exe.tmp`. **The author's path is never split to find a
-# name**: `-o C:\x\app.exe` is Windows' own separator, and a name cut at `/`
-# alone from it put the linker's output in a directory that is not there.
-function published_as(binary: str, inner: str, module: str, relative: str) -> str
-    if relative == inner
-        return binary
-
-    if strings.starts_with(text: relative, prefix: module)
-        return binary + relative.slice(from: module.len(), to: relative.len())
-    return binary + "." + relative
-
 ## Tests
 
 # THE CONCURRENT CASE's body, run on six threads at once by the test of that
 # name below: its own toolchain, one scratch `build/` for all six, and a
 # whole build, the runtime's object, one unit and the link. One `i64`
 # crosses a thread (`examples/threads/main.hero`), so the answer is 1 for a
-# binary that is there and runs, and 0 for anything else.
+# binary that is there and runs, and 0 for anything else, with a note of
+# where and why (`failed_at`).
 extern "hero_os.h"
     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
     function hero_thread_join(handle: i64) -> i64
@@ -293,14 +213,42 @@ extern "hero_os.h"
 constant TOGETHER_BUILD: str
     "build/selftest-together"
 
+# A failed build's place and the words clang or the system gave there, left
+# in `dir` for the test to read (defect 2142): the CI's Windows leg read five
+# of six at 7b97b9438, and a 0 alone named none of the five places a build
+# can fail, its private names, its run's words and its objects' seals each
+# read and none the cause.
+function failed_at(dir: str, index: i64, step: str, words: str) -> i64
+    _ = process.mkdir_all(dir).is_err()
+    _ = write_file(
+        path: dir + "/failed-" + index.to_str() + ".txt",
+        text: "build " + index.to_str() + ", " + step + ": " + words
+    ).is_err()
+    return 0
+
+# Every note `failed_at` left in `dir`, none where it holds none or is not
+# there.
+function notes_in(dir: str) -> [str]
+    listed = process.files_under(dir)
+    notes: [str] @= []
+
+    if listed.is_err()
+        return notes
+
+    for path in listed.must()
+        if strings.holds(text: path, needle: "failed-")
+            notes @ notes.push(read_file(path).default("a note that cannot be read: " + path))
+
+    return notes
+
 function build_beside(index: i64) -> i64
-    _ = index
+    dir = TOGETHER_BUILD + "-" + process.pid().to_str()
     found = toolchain.locate_toolchain(hint: "", fingerprint: "port-test")
 
     if found.is_err()
-        return 0
+        return failed_at(dir: dir, index: index, step: "the toolchain", words: "not found")
     t: toolchain.Toolchain @= found.must()
-    t.build @ TOGETHER_BUILD + "-" + process.pid().to_str()
+    t.build @ dir
     none: [str] = []
     memo: {str: str} @= {}
     told: {str: bool} @= {}
@@ -319,8 +267,11 @@ function build_beside(index: i64) -> i64
         @told
     )
 
-    if runtime.is_err() || made.is_err()
-        return 0
+    if runtime.is_err()
+        return failed_at(dir: dir, index: index, step: "the runtime's object", words: units.failure_text(runtime))
+
+    if made.is_err()
+        return failed_at(dir: dir, index: index, step: "the unit's object", words: units.failure_text(made))
     no_output: str? = fail(code: "none", msg: "no -o")
     binary = link_objects(
         t,
@@ -335,11 +286,24 @@ function build_beside(index: i64) -> i64
     )
 
     if binary.is_err()
-        return 0
+        return failed_at(dir: dir, index: index, step: "the link", words: units.failure_text(binary))
     ran = process.run(program: binary.must(), words: [binary.must()], out: process.discard(), err: process.discard())
 
-    if !ran.started || ran.code != 0
-        return 0
+    if !ran.started
+        return failed_at(
+            dir: dir,
+            index: index,
+            step: "the run",
+            words: "it did not start, the system's reason " + ran.why.to_str()
+        )
+
+    if ran.code != 0
+        return failed_at(
+            dir: dir,
+            index: index,
+            step: "the run",
+            words: "it exited " + ran.code.to_str() + ", signal or exception " + ran.signal.to_str()
+        )
     return 1
 
 test "six builds of one cold program started at once all succeed, and publish one object and one binary (defect 134)"
@@ -355,6 +319,8 @@ test "six builds of one cold program started at once all succeed, and publish on
     for h in handles
         done @ done + hero_thread_join(handle: h)
 
+    # Every failed build's note, so a red names its place and its words.
+    assert notes_in(dir).join("\n") == ""
     assert done == 6
     objects: i64 @= 0
     binaries: i64 @= 0
@@ -373,15 +339,31 @@ test "six builds of one cold program started at once all succeed, and publish on
     assert binaries == 1
     assert !process.remove_tree(dir).is_err()
 
+# The concurrent case's own instrument, witnessed: a failed build's note is
+# read back whole, and a directory with none, or none at all, reads nothing
+# (defect 2142).
+test "a failed build's note names its place and its words, and a build with none leaves none"
+    dir = "build/selftest-notes-" + process.pid().to_str()
+    assert !process.remove_tree(dir).is_err()
+    assert notes_in(dir).len() == 0
+    assert failed_at(dir: dir, index: 4, step: "the link", words: "clang said no") == 0
+    assert failed_at(dir: dir, index: 5, step: "the run", words: "it exited 1, signal or exception 0") == 0
+    notes = notes_in(dir)
+    assert notes.len() == 2
+    told = notes.join("\n")
+    assert strings.holds(text: told, needle: "build 4, the link: clang said no")
+    assert strings.holds(text: told, needle: "build 5, the run: it exited 1, signal or exception 0")
+    assert !process.remove_tree(dir).is_err()
+
 test "a binary's home is named by every word of its link line, and an author's -o is theirs (defect 134)"
     t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-link"
     assert !process.remove_tree(t.build).is_err()
-    assert binary_home(t, line: ["clang", "a.o"], name: "p") == binary_home(t, line: ["clang", "a.o"], name: "p")
-    assert binary_home(t, line: ["clang", "a.o"], name: "p") != binary_home(t, line: ["clang", "b.o"], name: "p")
+    assert link_output.binary_home(t, line: ["clang", "a.o"], name: "p") == link_output.binary_home(t, line: ["clang", "a.o"], name: "p")
+    assert link_output.binary_home(t, line: ["clang", "a.o"], name: "p") != link_output.binary_home(t, line: ["clang", "b.o"], name: "p")
 
     # Two words are never one: each is counted by its length.
-    assert binary_home(t, line: ["a b"], name: "p") != binary_home(t, line: ["a", "b"], name: "p")
+    assert link_output.binary_home(t, line: ["a b"], name: "p") != link_output.binary_home(t, line: ["a", "b"], name: "p")
     none: [str] = []
     memo: {str: str} @= {}
     told: {str: bool} @= {}
@@ -456,19 +438,6 @@ test "a binary's home is named by every word of its link line, and an author's -
     for path in process.files_under(t.build).must()
         assert !strings.ends_with(text: path, suffix: ".tmp")
 
-# gcc's rule, asked with Windows' suffix on every platform (defect 359).
-test "an -o whose last part has no suffix takes the platform's, and one that has one keeps it (defect 359)"
-    assert with_suffix(path: "p231/astar800", suffix: ".exe") == "p231/astar800.exe"
-    assert with_suffix(path: "name", suffix: ".exe") == "name.exe"
-    assert with_suffix(path: "dir.d/name", suffix: ".exe") == "dir.d/name.exe"
-    assert with_suffix(path: "C:\\w\\dir.d\\name", suffix: ".exe") == "C:\\w\\dir.d\\name.exe"
-    assert with_suffix(path: "app.bin", suffix: ".exe") == "app.bin"
-    assert with_suffix(path: "app.exe", suffix: ".exe") == "app.exe"
-    assert with_suffix(path: "name.", suffix: ".exe") == "name."
-    assert with_suffix(path: ".hidden", suffix: ".exe") == ".hidden"
-    assert with_suffix(path: "dir/", suffix: ".exe") == "dir/"
-    assert with_suffix(path: "p231/astar800", suffix: "") == "p231/astar800"
-
 # **A link over a package's compile words prints nothing** (defect 206). On
 # Linux a `-F` at a link is *argument unused during compilation*, so a
 # framework's headers found through a `.pc` warned on every build; the line
@@ -514,14 +483,6 @@ test "a link over a package's compile words carries none of them and prints noth
     out = t.build + "/linkwords" + process.exe_suffix()
     assert !toolchain.run_clang(line: strings.with_all(list: line, more: ["-o", out]), what: "linking", err_path: said).is_err()
     assert read_file(said).must() == ""
-
-test "a Windows link records the published PDB's own name, and a POSIX link records none (defect 509)"
-    assert pdb_words(suffix: ".exe", at: "build/0123456789abcdef/prog.exe", inner: "prog.exe", module: "prog") == ["-Xlinker", "/PDBALTPATH:prog.exe.pdb"]
-    assert pdb_words(suffix: ".exe", at: "C:\\out\\app.exe", inner: "m.exe", module: "m") == ["-Xlinker", "/PDBALTPATH:app.exe.pdb"]
-    assert pdb_words(suffix: ".exe", at: "dir/a,b.exe", inner: "a.exe", module: "a") == ["-Xlinker", "/PDBALTPATH:a,b.exe.pdb"]
-    assert pdb_words(suffix: "", at: "build/0123456789abcdef/prog", inner: "prog", module: "prog").len() == 0
-    assert last_part("a/b\\c.pdb") == "c.pdb"
-    assert last_part("plain.pdb") == "plain.pdb"
 
 # **A link past what one Windows line holds** (defect 583): one object named
 # over and over until the paths alone pass 32,767 characters, as the
@@ -592,7 +553,7 @@ test "a link whose objects pass what one Windows command line holds reads every 
         package_flags: none,
         link_names: none
     )
-    home = binary_home(t, line: line, name: "linklong" + process.exe_suffix())
+    home = link_output.binary_home(t, line: line, name: "linklong" + process.exe_suffix())
     assert binary == home
     words = publish.beside(path: home, name: "link-words.rsp")
     assert response_file.for_link(line: line, home: home).must() == ["clang", "--rsp-quoting=posix", "@" + words]

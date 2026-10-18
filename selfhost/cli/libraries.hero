@@ -235,7 +235,7 @@ function tail_after(word: str, prefix: str) -> str?
 
 # Words as a key names them, each by its length, a colon and itself, so a
 # word holding a space is never read as two: the shape `cli/link.hero`'s
-# `binary_home` keys the link line with.
+# `link_output.binary_home` keys the link line with.
 function key_text(words: [str]) -> str
     parts: [str] @= []
 

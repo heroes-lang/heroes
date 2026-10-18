@@ -53,7 +53,7 @@ function through(line: [str], at: str, keyed: bool) -> [str]?
     publish.write_whole(path: at, text: text_of(line), keyed: keyed)?
     return ok(["clang", QUOTING, "@" + at])
 
-# **A link's words, in a file in the binary's home** (`link.binary_home`,
+# **A link's words, in a file in the binary's home** (`link_output.binary_home`,
 # defect 583). The home is named by every one of those words, so the file's
 # path and its bytes are the line's alone, it is keyed, and six builds of one
 # program publish one file; it is never a word of a key, so a warm build
@@ -64,7 +64,7 @@ function for_link(line: [str], home: str) -> [str]?
     return through(line: line, at: publish.beside(path: home, name: LINK_WORDS), keyed: true)
 
 # The file's name in the home. What the linker writes is published under
-# the binary's own name (`link.published_as`), the binary, a `.pdb`, a
+# the binary's own name (`link_output.published_as`), the binary, a `.pdb`, a
 # `.dSYM`, and a linker writes no `.rsp`, so none of it is published as this.
 constant LINK_WORDS: str
     "link-words.rsp"
