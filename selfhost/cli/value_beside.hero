@@ -103,6 +103,8 @@ function again(message: str, tu_text: str, plan: unit_plan.Plan, art: compile.Ar
         defined: plan.mine.defined
     )
 
+    # ORDER: none — only how many constants were refused is asked, which no
+    # order of the keys changes.
     if keys(inert).len() == 0
         return fail(code: "none", msg: "no constant's accessor holds every error")
     copy = unit.unit(
