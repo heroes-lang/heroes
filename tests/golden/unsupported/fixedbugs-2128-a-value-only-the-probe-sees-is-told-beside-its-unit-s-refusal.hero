@@ -1,0 +1,21 @@
+# FIXED DEFECT 2128, 2026-10-18, lane lane-readonly-lend (M-readonly-lend
+# step 7; panel 224's R4 filed it apart).
+#
+# SYMPTOM: `K_SHIFT`, which the value region refuses at its accessor, was
+# told alone at exit 1, and `K_DIV` and `K_FLT`, which only the probe sees,
+# on the next build, once `K_SHIFT` was corrected.
+#
+# CAUSE: the probe was asked only once every unit had compiled
+# (`cli/assemble.hero`), and this one did not.
+#
+# FIX: beside a refusal the probe asks the refused unit again, the constants
+# clang refused written inert (`cli/value_beside.hero`), and every unit that
+# compiled; what it finds is told with the refusal.
+
+extern "fixedbugs-2128-values.h"
+    constant K_SHIFT: i64  #~ ffi_constant_type
+    constant K_DIV: i64  #~ ffi_constant_type
+    constant K_FLT: i64  #~ ffi_constant_type
+
+function main()
+    print(K_SHIFT + K_DIV + K_FLT)

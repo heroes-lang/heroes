@@ -22,6 +22,7 @@ use cli/compile
 use cli/toolchain
 use cli/compiling
 use cli/assemble
+use cli/settled
 use cli/probing
 use cli/pointee_ask
 use cli/tag_spelling
@@ -35,6 +36,8 @@ use emit/lock_screen
 use check/lock_copies
 use cli/locks
 use emit/lend_type
+use cli/value_run
+use cli/value_beside
 
 # What the rounds came back with: the verdict, the failure already told where
 # it is the author's (`whose.of_refusal`); where the binary landed; the tags
@@ -47,13 +50,18 @@ record Rounds
     asked: ffi_asked.Asked?
     kept: {str: bool}
 
-function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: assemble.Site, under: compiling.Compiling, planned: probing.Planned, @answered: [pointee_ask.Answered]) -> Rounds
+function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: settled.Site, under: compiling.Compiling, planned: probing.Planned, @answered: [pointee_ask.Answered]) -> Rounds
     struct_tags: {str: bool} @= {}
     told: {str: bool} @= {}
     linked: ()? @= ok()
     binary: str @= ""
     asked: ffi_asked.Asked? @= fail(code: "none", msg: "the header was not asked")
     refused_in: [str] @= []
+
+    # What the value probe asks beside the last round's refusal (defect
+    # 2128): the round's units that compiled, and the one it refused with the
+    # constants clang refused inert (`cli/value_beside.hero`).
+    beside: [value_run.Unit] @= []
 
     # A name a group binds whose meaning another group's header gives it, a
     # macro read before or after the group's own (`cli/bound_macro.hero`,
@@ -82,7 +90,8 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
             planned: planned,
             struct_tags: struct_tags,
             kept: kept,
-            told: @told
+            told: @told,
+            beside: @beside
         )
         linked @ went.verdict
         binary @ went.binary
@@ -111,7 +120,17 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
         # Some clang failures are the AUTHOR's, and the ffi mapping is
         # the only place that decides which (panel 036 rider 3); the
         # pipeline pieces ride in the Artifact for exactly this call. The
-        # questions are asked of the headers of the units that refused.
+        # questions are asked of the headers of the units that refused. A
+        # value only the probe sees is asked beside it and told with it.
+        found = value_beside.told(
+            t,
+            units: beside,
+            level: options.level,
+            p: art.program,
+            c: art.checked,
+            s: s,
+            decls: art.decls
+        )
         refused = whose.of_refusal(
             linked,
             art,
@@ -123,7 +142,8 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
             asked: asked,
             asking: probing.holding(planned.probings, modules: refused_in),
             unit_headers: unit_headers(planned: planned, modules: refused_in),
-            refused: "clang refused the generated C"
+            refused: "clang refused the generated C",
+            beside: found
         )
         return Rounds(verdict: refused, binary: "", struct_tags: struct_tags, asked: asked, kept: kept)
     return Rounds(verdict: ok(), binary: binary, struct_tags: struct_tags, asked: asked, kept: kept)
@@ -133,7 +153,9 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
 # the first did, and replays it where it is warm. `planned` is the build's
 # (`cli/probing.hero`), the same for every round: each module's plan and the
 # probes of their headers.
-function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: assemble.Site, @answered: [pointee_ask.Answered], planned: probing.Planned, struct_tags: {str: bool}, kept: {str: bool}, @told: {str: bool}) -> assemble.Round
+function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: settled.Site, @answered: [pointee_ask.Answered], planned: probing.Planned, struct_tags: {str: bool}, kept: {str: bool}, @told: {str: bool}, @beside: [value_run.Unit]) -> assemble.Round
+    beside @ []
+
     # What the extern out-parameters point at, asked of each module's headers
     # before any unit compiles (panel 103; panel 202's C0): the width and sign
     # of a numeric `@` against the header's own type. Then the header's
@@ -213,7 +235,8 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
         planned: planned,
         struct_tags: struct_tags,
         lent: lent,
-        told: @told
+        told: @told,
+        beside: @beside
     )
 
 # Two lists of diagnostics as one.

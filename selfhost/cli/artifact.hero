@@ -34,7 +34,7 @@
 # have their refusal instead, which is what panel 157 R1 said an artifact owes
 # (defect 049).
 #
-# **The rounds do not link for `--emit-c`** (`assemble.Site.link`), since a
+# **The rounds do not link for `--emit-c`** (`settled.Site.link`), since a
 # module with no `main`, every `tests/golden/ir/` fixture, has C to hand out and
 # no binary, so a program refused only at the link still has its C: measured
 # 2026-10-05, `fixedbugs/ffi-missing-link` emits at exit 0 where `build` is

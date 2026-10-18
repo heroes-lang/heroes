@@ -50,7 +50,7 @@ use cli/package_missing
 # `unit_headers` are the headers the refused unit includes, in its order: a
 # header clang refused there that compiles alone is told after the earlier
 # one it does not compile after (`cli/header_alone.hero`, defect 557).
-function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, asking: [probing.Probing], unit_headers: [str], refused: str) -> ()?
+function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, asking: [probing.Probing], unit_headers: [str], refused: str, beside: [diag.Diagnostic]) -> ()?
     code = failure_code(failed)
     message = failure_message(failed) + deep_types.note(code, art.decls, art.checked, s)
 
@@ -62,7 +62,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
     # headers are asked under the unit's own words (defect 572).
     words = unit_words(under, asking: asking, unit_headers: unit_headers)
 
-    if told_header(message, art, s, t, under: words, unit_headers: unit_headers)
+    if told_header(message, art, s, t, under: words, unit_headers: unit_headers, beside: beside)
         return fail(code: "diagnostics", msg: "a header this program binds does not compile")
 
     # A function the linker found no definition of whose header defines it
@@ -72,7 +72,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         inline = inline_only.told(message, s, art.decls, t, asking: asking)
 
         if inline.len() > 0
-            _ = compile.stage(inline, s).is_err()
+            _ = compile.stage(with_beside(told: inline, beside: beside), s).is_err()
             return fail(code: "diagnostics", msg: "a header defines a called function only inline")
 
         # A symbol a header's label gave a C name (defects 591, 592,
@@ -80,7 +80,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         relabelled = renamed.told(message, s, art.decls, t, asking: asking)
 
         if relabelled.len() > 0
-            _ = compile.stage(relabelled, s).is_err()
+            _ = compile.stage(with_beside(told: relabelled, beside: beside), s).is_err()
             return fail(code: "diagnostics", msg: "a header gives a C name a linker name nothing defines")
 
     # Asked only now, of a round clang refused (defect 152), unless the rounds
@@ -110,7 +110,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         theirs @ theirs.push(name_order.unknown(d, s, art.decls, t, under: words, unit_headers: unit_headers))
 
     if theirs.len() > 0
-        _ = compile.stage(theirs, s).is_err()
+        _ = compile.stage(with_beside(told: theirs, beside: beside), s).is_err()
         return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
 
     # A package's `-l` the linker found no library for, asked after every
@@ -125,7 +125,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         )
 
         if lacked.len() > 0
-            _ = compile.stage(lacked, s).is_err()
+            _ = compile.stage(with_beside(told: lacked, beside: beside), s).is_err()
             return fail(code: "diagnostics", msg: "a package names a library this machine does not have")
 
     # What no reader of clang's words named is the headers' where the unit's
@@ -137,7 +137,10 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         late = opening_told.told(art, s, t, under: words, unit_headers: unit_headers)
 
         if late.len() > 0
-            _ = compile.stage(system_paths.shown(t, under: words, told: late), s).is_err()
+            _ = compile.stage(
+                with_beside(told: system_paths.shown(t, under: words, told: late), beside: beside),
+                s
+            ).is_err()
             return fail(code: "diagnostics", msg: "a header this program binds does not compile")
 
     # A unit clang refused carries its own path inside the message
@@ -189,7 +192,7 @@ function unit_words(under: compiling.Compiling, asking: [probing.Probing], unit_
 # Whether clang's refusal is a header a group binds that does not compile
 # (`cli/header_refused.hero`, defect 360): told on the group's string, and the
 # answer is yes.
-function told_header(message: str, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> bool
+function told_header(message: str, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str], beside: [diag.Diagnostic]) -> bool
     # The refused unit, compiled again once where a reader asks the name
     # under one of clang's carets (`cli/caret_bytes.hero`, defect 2117).
     again: caret_bytes.Again @= caret_bytes.of(
@@ -202,7 +205,7 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
     macro = macro_twice.told(message, s, art.decls, t, under: under, unit_headers: unit_headers, @again)
 
     if macro.len() > 0
-        _ = compile.stage(macro, s).is_err()
+        _ = compile.stage(with_beside(told: macro, beside: beside), s).is_err()
         return true
     refusal: [diag.Diagnostic] @= header_refused.refused(
         stderr: message,
@@ -244,8 +247,19 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
 
     # A file of the C library or the toolchain named as an include names it
     # (`cli/system_paths.hero`, defect 2047).
-    _ = compile.stage(system_paths.shown(t, under: under, told: told), s).is_err()
+    _ = compile.stage(with_beside(told: system_paths.shown(t, under: under, told: told), beside: beside), s).is_err()
     return true
+
+# What a refusal is told with, then what the value probe found beside it
+# (`cli/value_beside.hero`, defect 2128), as one list: one staging, so a
+# blank line stands between every two of them as between any two.
+function with_beside(told: [diag.Diagnostic], beside: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= told
+
+    for d in beside
+        out @ out.push(d)
+
+    return out
 
 # The message of a failed `()?`.
 function failure_message(failed: ()?) -> str

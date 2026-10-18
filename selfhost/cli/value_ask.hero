@@ -31,6 +31,8 @@ use cli/libraries
 use cli/value_run
 use cli/value_c2
 use cli/value_told
+use cli/compile
+use cli/io
 
 # What the probes said: a diagnostic per constant a probe refuses, and the
 # compiler's own failure, present where a probe of the compiler's own making
@@ -41,6 +43,22 @@ use cli/value_told
 record Told
     found: [diag.Diagnostic]
     broken: str?
+
+# Panel 216's verdict on a round whose units compiled, before anything links:
+# a value C leaves undefined told, the value check's own words first, and a
+# probe of the compiler's own making that could not answer told as the
+# compiler's failure; ok where the probes found nothing.
+function judged(t: toolchain.Toolchain, units: [value_run.Unit], level: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> ()?
+    values = told(t, units: units, level: level, p: p, c: c, s: s, decls: decls)
+
+    if !values.broken.is_err()
+        io.eprint(text: values.broken.must())
+        return fail(code: "failed", msg: "the probe of the constants' values is the compiler's own failure")
+
+    if values.found.len() > 0
+        _ = compile.stage(values.found, s).is_err()
+        return fail(code: "diagnostics", msg: "a header constant's value is one C leaves undefined")
+    return ok()
 
 # Every unit's verdicts, their refusals as diagnostics on each constant's
 # line: panel 216's first, then C2's for a constant panel 216's did not

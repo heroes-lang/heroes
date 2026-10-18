@@ -1,0 +1,8 @@
+# A module of defect 2128's cases (M-readonly-lend step 7, 2026-10-18): a
+# value only the probe sees, in a unit that compiles beside one clang refuses.
+
+extern "fixedbugs-2128-values.h"
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function divided() -> i64
+    return K_DIV

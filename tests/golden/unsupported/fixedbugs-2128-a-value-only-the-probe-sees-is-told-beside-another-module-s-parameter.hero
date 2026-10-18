@@ -1,0 +1,16 @@
+# FIXED DEFECT 2128, 2026-10-18, lane lane-readonly-lend (M-readonly-lend
+# step 7), the shape beside its reproducer: another module's refusal that is
+# no constant's, a parameter wider than the header's `int`.
+#
+# SYMPTOM: `narrow`'s parameter was told alone at exit 1, and `K_DIV` of
+# `fixedbugs2128/values` on the next build.
+#
+# FIX: every unit that compiled is asked beside the refusal, whatever the
+# refusal is (`cli/value_beside.hero`).
+use fixedbugs2128/values
+
+extern "fixedbugs-2128-narrow.h"
+    function narrow(x: i64) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(to_i64(narrow(x: 3)).must() + values.divided())

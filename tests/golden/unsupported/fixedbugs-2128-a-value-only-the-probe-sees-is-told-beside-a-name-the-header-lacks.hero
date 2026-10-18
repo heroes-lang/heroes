@@ -1,0 +1,18 @@
+# FIXED DEFECT 2128, 2026-10-18, lane lane-readonly-lend (M-readonly-lend
+# step 7; panel 224's R4 filed it apart).
+#
+# SYMPTOM: `K_NONE`, a name the header never defines, was told alone at
+# exit 1, and `K_DIV`, which only the probe sees, on the next build.
+#
+# CAUSE: the probe was asked only once every unit had compiled, and clang
+# refuses this unit at `K_NONE`'s accessor, its assertions and its `return`.
+#
+# FIX: the unit asked again with `K_NONE`'s accessor written inert, every
+# error clang reported standing in it (`cli/value_beside.hero`).
+
+extern "fixedbugs-2128-values.h"
+    constant K_NONE: i64  #~ ffi_unknown_name
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function main()
+    print(K_NONE + K_DIV)

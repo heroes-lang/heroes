@@ -161,6 +161,77 @@ function reported_with_file(text: str) -> [str]
 
     return found
 
+# Every diagnostic in an expectation with the file it is told in, as
+# `<file>:<line>:<code>`, in both of `reported_by`'s forms: a case of several
+# modules tells a diagnostic in another of them, which its file alone tells
+# apart from one at the same line of the case (defect 2128). The file is what
+# precedes the line's number, a path with no colon of its own, as every path
+# an expectation prints is.
+function reported_by_file(text: str) -> [str]
+    found: [str] @= []
+    pending: str @= ""
+
+    for row in strings.lines(text)
+        if strings.starts_with(text: row, prefix: "  at ")
+            if pending.len() > 0
+                parts = strings.split_on(text: strings.without_prefix(text: row, prefix: "  at "), byte: 58)
+
+                if parts.len() > 1
+                    number = strings.to_number(parts[1])
+
+                    if !number.is_err()
+                        found @ found.push(parts[0] + ":" + number.must().to_str() + ":" + pending)
+                pending @ ""
+            continue
+        code = code_of(row)
+
+        if code.is_err()
+            continue
+        parts = strings.split_on(text: row, byte: 58)
+        placed: bool @= false
+
+        if parts.len() > 1
+            number = strings.to_number(strings.trimmed(parts[1]))
+
+            if !number.is_err()
+                found @ found.push(parts[0] + ":" + number.must().to_str() + ":" + code.must())
+                placed @ true
+
+        if !placed
+            pending @ code.must()
+
+    return found
+
+# The `<line>:<code>` of the diagnostics `said` tells in `path`.
+function told_in(said: [str], path: str) -> [str]
+    out: [str] @= []
+
+    for one in said
+        if strings.starts_with(text: one, prefix: path + ":")
+            out @ out.push(strings.without_prefix(text: one, prefix: path + ":"))
+
+    return out
+
+# The files other than `path` that `said` tells a diagnostic in, each once,
+# in the order it first names them.
+function other_files(said: [str], path: str) -> [str]
+    out: [str] @= []
+
+    for one in said
+        file = strings.split_on(text: one, byte: 58)[0]
+
+        if file != path && !named(out, one: file)
+            out @ out.push(file)
+
+    return out
+
+function named(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
 # The `<code>` out of `…<kind>[<code>]:…`, for any kind.
 function code_of(row: str) -> str?
     open = strings.index_of(text: row, needle: "[")
@@ -276,3 +347,14 @@ test "a code beginning with `v` is this line's, not the next one's"
     assert both.len() == 2
     assert both[0] == "3:empty_record"
     assert both[1] == "4:variant_not_callable"
+
+test "a case's expectation is read with each diagnostic's file, so another module's is told apart"
+    rich = "error[ffi_constant_type]: a\n  at t/case.hero:15:5\n\nerror[ffi_constant_type]: b\n  at t/sub/values.hero:5:5\n"
+    said = reported_by_file(rich)
+    assert said == ["t/case.hero:15:ffi_constant_type", "t/sub/values.hero:5:ffi_constant_type"]
+    assert told_in(said, path: "t/case.hero") == ["15:ffi_constant_type"]
+    assert told_in(said, path: "t/sub/values.hero") == ["5:ffi_constant_type"]
+    assert other_files(said, path: "t/case.hero") == ["t/sub/values.hero"]
+    brief = "t/case.hero:3:5: error[unused_binding]: x\n"
+    assert reported_by_file(brief) == ["t/case.hero:3:unused_binding"]
+    assert other_files(reported_by_file(brief), path: "t/case.hero").len() == 0

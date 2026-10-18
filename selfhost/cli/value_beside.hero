@@ -1,0 +1,246 @@
+# A header constant's value only the probe sees, asked beside a build's
+# earlier refusal (defect 2128, filed apart by panel 224's R4; the probe is
+# panel 216's R1, `cli/value_ask.hero`; design.md §4.19, §4.17). The probe
+# ran only once every unit of the build had compiled (`cli/assemble.hero`),
+# so a value C leaves undefined, `INT_MIN / -1` or a float cast out of an
+# integer's range, was told one build after a refusal clang made first: the
+# region's at another constant of the same unit, a name the header lacks, or
+# another module's unit. Measured on this Mac on 2026-10-18 on the critic's
+# four programs: each told the first refusal alone, at exit 1.
+#
+# **Beside a refusal the probe asks two kinds of unit.** Every unit that
+# compiled, as it would once the refusal was corrected; and the unit clang
+# refused, again, with each constant it refused written inert
+# (`emit/constant_accessor.inert`), where every error clang reported stands
+# in such a constant's accessor: at the constant's own line of its `.hero`
+# file, where the accessor's signature and its `return` are told, or at a
+# line of the unit's own C between the accessor's `{` and its `}`, where its
+# assertions stand. An error anywhere else, or with no place, and the copy
+# would not compile either, so the refused unit is not asked again.
+#
+# What the probe finds there is told with the refusal, in one list
+# (`cli/whose.hero`). Where the probe cannot answer, its own failure is not
+# told beside an author's refusal: the next build, past the refusal, asks it
+# again and says why.
+
+use ast
+use source
+use diag
+use check/state
+use ir/containers
+use emit/ctype
+use emit/signature
+use emit/body
+use emit/clang_place
+use emit/ffi_lookup
+use cli/front_check
+use cli/toolchain
+use cli/value_run
+use cli/value_ask
+use cli/compile
+use emit/unit
+use emit/members
+use emit/unit_plan
+use emit/writer
+use emit/constant_accessor
+use parse
+use resolve
+use checker
+use ir/lower
+
+# One accessor of a unit: its constant's declaration, the place its
+# signature and its `return` are told at, and the lines of the unit's own C
+# from its `{` to its `}`, counted from 1 as clang counts them.
+record Accessor
+    decl: i64
+    file: str
+    line: i64
+    open: i64
+    close: i64
+
+# The constants of a unit clang refused whose accessors hold every error it
+# reported, by declaration; empty where any error stands elsewhere or has no
+# place, or where an accessor is not found once in the unit's text.
+# `generated` is the name the unit's own C lines are told under.
+function refused(message: str, tu_text: str, generated: str, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], defined: [i64]) -> {i64: bool}
+    none: {i64: bool} = {}
+    found = accessors(tu_text, p, c, names, s, decls, defined: defined)
+
+    if found.is_err()
+        return none
+    held: {i64: bool} @= {}
+
+    for one in ffi_lookup.lines(text: message)
+        kind = front_check.severity(one)
+
+        if kind != ": error: " && kind != ": fatal error: " && kind != "unplaced"
+            continue
+        at = clang_place.place(one)
+
+        if kind == "unplaced" || at.is_err()
+            return none
+        decl = holding(found.must(), at: at.must(), generated: generated)
+
+        if decl < 0
+            return none
+        held[decl] @ true
+
+    return held
+
+# The refused unit asked again: written with the constants clang refused
+# inert, where `refused` finds every error clang reported in their accessors;
+# absent where it finds none, the copy then compiling no better than the unit.
+function again(message: str, tu_text: str, plan: unit_plan.Plan, art: compile.Artifact, s: source.Source, whole: members.Whole, version: str, sources: str, is_root: bool, words: [str]) -> value_run.Unit?
+    inert = refused(
+        message: message,
+        tu_text: tu_text,
+        generated: writer.new_writer(plan.module).generated,
+        art.program,
+        art.checked,
+        whole.names,
+        s,
+        art.decls,
+        defined: plan.mine.defined
+    )
+
+    if keys(inert).len() == 0
+        return fail(code: "none", msg: "no constant's accessor holds every error")
+    copy = unit.unit(
+        plan: plan,
+        p: art.program,
+        c: art.checked,
+        s: s,
+        decls: art.decls,
+        version: version,
+        sources: sources,
+        is_root: is_root,
+        whole: whole,
+        inert: inert
+    )
+    return ok(value_run.Unit(module: plan.module, text: copy, words: words, defined: plan.mine.defined))
+
+# The accessors of the constants a unit defines, each found by its
+# signature's line in the unit's text, which stands alone there; absent
+# where one stands twice or nowhere, so no error is read against a range
+# nobody located.
+function accessors(tu_text: str, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], defined: [i64]) -> [Accessor]?
+    rows = ffi_lookup.lines(text: tu_text)
+
+    # Each line that opens a body, by its text, once: -2 where it stands
+    # twice.
+    opening: {str: i64} @= {}
+    index: i64 @= 0
+
+    while index < rows.len()
+        if rows[index].len() > 2 && rows[index].slice(from: rows[index].len() - 2, to: rows[index].len()) == " {"
+            if opening[rows[index]].is_err()
+                opening[rows[index]] @ index
+            else
+                opening[rows[index]] @ -2
+        index @ index + 1
+
+    out: [Accessor] @= []
+
+    for at in defined
+        f = p.functions[at]
+
+        if !body.is_extern_constant(decls, f)
+            continue
+        line = signature.signature(f, c, names, s, decls) + " {"
+        start = opening[line].default(-1)
+
+        if start < 0
+            return fail(code: "unlocated", msg: line)
+        end: i64 @= start + 1
+
+        while end < rows.len() && rows[end] != "}"
+            end @ end + 1
+
+        if end >= rows.len()
+            return fail(code: "unclosed", msg: line)
+        place = source.source_line(s, f.span.start)
+        out @ out.push(Accessor(decl: f.decl, file: place.file, line: place.line, open: start + 1, close: end + 1))
+
+    return ok(out)
+
+# The constant whose accessor holds a place clang named, -1 for none.
+function holding(located: [Accessor], at: clang_place.Place, generated: str) -> i64
+    for one in located
+        if at.path == generated && at.row >= one.open && at.row <= one.close
+            return one.decl
+
+        if at.path == one.file && at.row == one.line
+            return one.decl
+
+    return -1
+
+# What the probe finds in `units` beside a refusal: its diagnostics, those
+# of the units it asked before one it could not answer included, and no word
+# of that failure, which the next build tells.
+function told(t: toolchain.Toolchain, units: [value_run.Unit], level: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    if units.len() == 0
+        none: [diag.Diagnostic] = []
+        return none
+    return value_ask.told(t, units: units, level: level, p: p, c: c, s: s, decls: decls).found
+
+## Tests
+
+test "an error at a constant's line or inside its accessor's C names the constant, and one elsewhere names none"
+    found = [Accessor(decl: 7, file: "m.hero", line: 2, open: 3, close: 9)]
+    inside: clang_place.Place = clang_place.Place(path: "m.c", row: 5)
+    at_line: clang_place.Place = clang_place.Place(path: "m.hero", row: 2)
+    below: clang_place.Place = clang_place.Place(path: "m.c", row: 11)
+    other: clang_place.Place = clang_place.Place(path: "m.hero", row: 3)
+    assert holding(found, at: inside, generated: "m.c") == 7
+    assert holding(found, at: at_line, generated: "m.c") == 7
+    assert holding(found, at: below, generated: "m.c") == -1
+    assert holding(found, at: other, generated: "m.c") == -1
+
+# The accessor the emitter writes, found in a unit's text and read against
+# clang's words: an error in it names its constant, and an error outside any
+# accessor, or one with no place, leaves the refused unit unasked.
+test "a refused unit's errors are read against the accessors its text holds"
+    text = "extern \"cinit.h\"\n    constant LIMIT: i64\n\nfunction main()\n    print(LIMIT)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @= writer.new_writer("t")
+    defined: [i64] @= []
+    index: i64 @= 0
+
+    for f in low.program.functions
+        if body.is_extern_constant(parsed.decls, f)
+            writer.line(@w, text: "int before;")
+            constant_accessor.accessor(@w, f, c, names, s, parsed.decls)
+            defined @ defined.push(index)
+        index @ index + 1
+
+    unit_text = writer.finish(w)
+    found = accessors(unit_text, low.program, c, names, s, parsed.decls, defined: defined)
+    assert !found.is_err()
+    assert found.must().len() == 1
+    one = found.must()[0]
+    rows = ffi_lookup.lines(text: unit_text)
+    assert one.file == "t.hero" && one.line == 2
+    assert rows[one.close - 1] == "}" && one.close > one.open + 1
+    inside = "t.c:" + (one.open + 2).to_str() + ":5: error: use of undeclared identifier 'LIMIT'\nt.hero:2:12: error: use of undeclared identifier 'LIMIT'\n2 errors generated.\n"
+    held = refused(
+        message: inside,
+        tu_text: unit_text,
+        generated: "t.c",
+        low.program,
+        c,
+        names,
+        s,
+        parsed.decls,
+        defined: defined
+    )
+    assert keys(held).len() == 1 && !held[one.decl].is_err()
+    beyond = inside + "t.c:1:1: error: unknown type name 'x'\n"
+    assert keys(refused(message: beyond, tu_text: unit_text, generated: "t.c", low.program, c, names, s, parsed.decls, defined: defined)).len() == 0
+    unplaced = inside + "fatal error: too many errors emitted, stopping now\n"
+    assert keys(refused(message: unplaced, tu_text: unit_text, generated: "t.c", low.program, c, names, s, parsed.decls, defined: defined)).len() == 0

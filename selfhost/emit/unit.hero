@@ -66,6 +66,7 @@ use emit/perfn
 use emit/descriptors
 use emit/signature
 use emit/body
+use emit/constant_accessor
 use emit/callback_thunk
 use emit/padding_tables
 
@@ -73,8 +74,11 @@ use emit/padding_tables
 # (`emit/unit_plan.hero`, which decides what it holds and which headers it
 # reads, before any probe asks them). The caller has already run the gate
 # over the whole program (a refusal is program-wide) and monomorphised;
-# `is_root` says whether this TU carries the shim.
-function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, sources: str, is_root: bool, whole: members.Whole) -> str
+# `is_root` says whether this TU carries the shim. `inert` names the
+# constants whose accessors are written inert, by declaration: empty for
+# every unit a build compiles, and in the value probe's copy of a unit clang
+# refused the constants it refused (`cli/value_beside.hero`, defect 2128).
+function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, sources: str, is_root: bool, whole: members.Whole, inert: {i64: bool}) -> str
     module = plan.module
     mine = plan.mine
     keep = mine.defined
@@ -179,7 +183,10 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
             # `hero_unreachable()` at exit 0 potential — found by the
             # first real per-module build, as three symptoms of this
             # one cause.
-            body.definition(@w, whole.callees, c, names, s, decls, f: f, guarded_decls: guarded_decls)
+            if body.is_extern_constant(decls, f) && !inert[f.decl].is_err()
+                constant_accessor.inert(@w, f, c, names, s, decls)
+            else
+                body.definition(@w, whole.callees, c, names, s, decls, f: f, guarded_decls: guarded_decls)
 
     perfn.bodies(@w, c, names, s, decls, want: want)
 

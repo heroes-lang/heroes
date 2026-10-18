@@ -1,0 +1,23 @@
+error[ffi_constant_type]: `K_SHIFT` in `fixedbugs-2128-values.h` cannot be declared `i64`: clang refuses the header's value at line 3: shift count >= width of type
+  at tests/golden/unsupported/fixedbugs-2128-a-value-only-the-probe-sees-is-told-beside-its-unit-s-refusal.hero:16:5
+     |
+  16 |     constant K_SHIFT: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2128-values.h` line 3 reads `#define K_SHIFT (1 << 40)`
+  note: C leaves this value undefined: a program reading `K_SHIFT` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `K_DIV` in `fixedbugs-2128-values.h` cannot be declared `i64`: clang refuses the header's value at line 4: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2128-a-value-only-the-probe-sees-is-told-beside-its-unit-s-refusal.hero:17:5
+     |
+  17 |     constant K_DIV: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2128-values.h` line 4 reads `#define K_DIV ((-2147483647 - 1) / -1)`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `K_DIV` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `K_FLT` in `fixedbugs-2128-values.h` cannot be declared `i64`: clang refuses the header's value at line 5: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2128-a-value-only-the-probe-sees-is-told-beside-its-unit-s-refusal.hero:18:5
+     |
+  18 |     constant K_FLT: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2128-values.h` line 5 reads `#define K_FLT ((int)1e20)`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `K_FLT` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines

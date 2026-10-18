@@ -1,0 +1,18 @@
+# FIXED DEFECT 2128, 2026-10-18, lane lane-readonly-lend (M-readonly-lend
+# step 7; panel 224's R4 filed it apart).
+#
+# SYMPTOM: this module's `K_SHIFT` was told alone at exit 1, and `K_DIV` of
+# `fixedbugs2128/values`, a unit that compiles, on the next build.
+#
+# CAUSE: the probe was asked only once every unit had compiled, and the
+# other module's unit, which did, was never asked.
+#
+# FIX: every unit that compiled is asked beside the refusal
+# (`cli/value_beside.hero`).
+use fixedbugs2128/values
+
+extern "fixedbugs-2128-values.h"
+    constant K_SHIFT: i64  #~ ffi_constant_type
+
+function main()
+    print(K_SHIFT + values.divided())

@@ -1,0 +1,82 @@
+# What one build has settled before any round runs, and the words each of
+# its units compiles under (design.md §4.19). Split out of
+# `cli/assemble.hero` on 2026-10-18, when defect 2128's repair took that file
+# past §11's 300 lines: a round reads all of this and decides none of it, and
+# the value probe asks a unit under the very words its compile used
+# (`cli/value_beside.hero`).
+#
+# Everything a round needs and does not decide rides in `Site`, so two rounds
+# cannot differ in anything but the tags they learn (`cli/rounds.hero`).
+
+use cli/compile
+use cli/toolchain
+use cli/compiling
+use cli/libraries
+use emit/header_packages
+use emit/unit_plan
+
+# What one build has settled before any round runs. Where the binary lands
+# is not among it: under `build/` that is named by the link line, which a
+# round learns (`link.link_objects`); `output` is the author's `-o`.
+record Site
+    object: str
+    output: str?
+    # Whether the round LINKS after it compiles. `--emit-c` says no (defect
+    # 049, 2026-09-17): a tag's spelling is learned at the compile, where clang
+    # says *must use 'struct' tag*, and a module with no `main` — every
+    # `tests/golden/ir/` fixture — has C worth handing out and no binary to
+    # link. With the link on, eighteen of them died at exit 2, *Undefined
+    # symbols: _main*, the compiler blaming itself for a legal program.
+    link: bool
+    source_dir: str
+    link_names: [str]
+    package_flags: [str]
+
+    # Each package's own words: a unit is compiled with the words of the
+    # packages named by the groups whose headers it reads (panel 205's R3,
+    # defect 572), the link with every package's.
+    package_words: {str: [str]}
+
+    # Each group's header and the packages its groups name, asked once
+    # (`header_packages.by_header`), which a unit's words are read from.
+    by_header: {str: [str]}
+    version: str
+    # What the program was compiled from (`emit/provenance.hero`), which its
+    # root unit carries beside `main`.
+    sources: str
+
+# What every probe of this build compiles the program's headers under
+# (`cli/compiling`): the level, the sanitizers, the `--include`
+# directories, the package's answer, the runtime and the source's own
+# directory, the ones its units are compiled with (defect 167). One place
+# builds it, so the round's two checks, the artifact's and a refused round's
+# questions ask under the same words.
+function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: Site) -> compiling.Compiling
+    return compiling.Compiling(
+        level: options.level,
+        sanitize: options.sanitize,
+        search_include: options.headers_from,
+        package_flags: site.package_flags,
+        runtime: t.runtime,
+        source_dir: site.source_dir
+    )
+
+# The package words one module's unit compiles under: those of the packages
+# named by the groups whose headers it reads, in their written order (panel
+# 205's R3, defect 572; `emit/header_packages.hero`). A package's `-D`
+# reached every unit until then, so a module binding `wcwidth` from
+# `wchar.h` was told *`wchar.h` declares no `wcwidth`* unless `main` named
+# `ncursesw`, whose `.pc` answers `-D_XOPEN_SOURCE=600`, and another module's
+# package decided its verdict.
+function unit_words(site: Site, headers: [str]) -> [str]
+    return libraries.words_of(
+        site.package_words,
+        packages: header_packages.of(site.by_header, listed: headers)
+    )
+
+# The words a unit's value probe compiles it under, its own compile's
+# (`cli/value_run.hero`).
+function probe_words(t: toolchain.Toolchain, options: compile.Options, site: Site, plan: unit_plan.Plan) -> [str]
+    under: compiling.Compiling @= compiled_under(t, options, site)
+    under.package_flags @ unit_words(site, headers: plan.headers)
+    return compiling.unit_words(under)

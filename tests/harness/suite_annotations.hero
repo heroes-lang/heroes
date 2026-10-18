@@ -225,6 +225,30 @@ constant RUN_LEAST: i64
 # and to the run roots' groups it names (`asked_groups`, defect 485); a
 # narrowed run asks neither the thesis witnesses nor the floors, which are
 # questions about the whole.
+# Another module of a case, whose diagnostic the case's expectation tells:
+# its marks held to what the expectation says of its file, a failure kept
+# where they disagree or it cannot be read; the count of what was said.
+function module_marks(@r: report.Report, item: cases.Case, said: [str], other: str) -> i64
+    told = sorted(mark_readers.told_in(said, path: other))
+    text = cases.shown(other)
+
+    if text.is_err()
+        report.keep_failure(
+            @r,
+            label: "annotations/" + item.name,
+            detail: "  cannot read " + other + ", which the expectation tells a diagnostic in"
+        )
+        return told.len()
+    marked = sorted(mark_readers.claimed_by(text.must().text))
+
+    if marked != told
+        report.keep_failure(
+            @r,
+            label: "annotations/" + item.name,
+            detail: "  " + other + ", a module of " + item.source + ": the annotations and the diagnostics disagree\n    annotated: " + marked.join(" ") + "\n    reported:  " + told.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one"
+        )
+    return told.len()
+
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     r: report.Report @= report.empty()
     annotated: i64 @= 0
@@ -245,8 +269,16 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                 )
             else
                 claimed = sorted(mark_readers.claimed_by(source.must().text))
-                reported = sorted(mark_readers.reported_by(expectation.must()))
+
+                # The case's own lines, its file read with each diagnostic:
+                # another module of the case tells its own, held to its own
+                # marks below (defect 2128).
+                said = mark_readers.reported_by_file(expectation.must())
+                reported = sorted(mark_readers.told_in(said, path: item.source))
                 annotated @ annotated + reported.len()
+
+                for other in mark_readers.other_files(said, path: item.source)
+                    annotated @ annotated + module_marks(@r, item: item, said: said, other: other)
 
                 for code in witness_codes(dir: dir, claimed: claimed)
                     witnessed[code] @ true

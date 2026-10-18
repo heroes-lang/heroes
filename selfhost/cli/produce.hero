@@ -32,7 +32,7 @@ use cli/toolchain
 use cli/pointee_ask
 use cli/clang_floor
 use cli/artifact
-use cli/assemble
+use cli/settled
 use cli/rounds
 use cli/probing
 use cli/units
@@ -191,7 +191,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
     if source_dir.len() == 0
         source_dir @ "."
-    site = assemble.Site(
+    site = settled.Site(
         object: object.must(),
         output: options.output,
         link: !art.must().emit_c,
@@ -203,7 +203,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         version: version,
         sources: sources
     )
-    under = assemble.compiled_under(t, options, site)
+    under = settled.compiled_under(t, options, site)
 
     # THE ROUNDS (`cli/rounds.hero`; defect 037, panel 152 R1): each asks every
     # module's headers its questions, then compiles and links, and runs again
@@ -263,7 +263,8 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
                 asked: went.asked,
                 asking: planned.probings,
                 unit_headers: emit_externs.headers(art.must().program, s, art.must().decls),
-                refused: "the artifact was not written"
+                refused: "the artifact was not written",
+                beside: []
             )
             return fail(code: whose.failure_code(refused), msg: whose.failure_message(refused))
         none_e: [str] = []
