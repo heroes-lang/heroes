@@ -14,23 +14,24 @@ preamble and its items).
 
 | | |
 |---|---|
-| **Current milestone** | **M-readonly-lend**, row 68, **OPEN** since 2026-10-18 ([its page](roadmap/milestones/M-readonly-lend.md)): panel 217's read-only lend, `lent` on a parameter, landing in one lane |
-| **Next** | M-witnessed-seed, and M-thesis-harness beside M-rechecked-issues in two lanes. The formatter's probe M-inferred-cell's changes to `selfhost/print/` still owe |
-| **Last closed** | **M-bounded-seed**, 2026-10-17 ([066](records/journal/066-bounded-seed.md)) — the seed bounded: panel 219's s4 halved it, it is refreshed only when the two-stage build goes red and at each release, and every program carries the key of the sources, library and runtime it was compiled from (panel 222); tagged once defects 2099, 2120, 2127 and 2131 closed under panels 223 and 224 · before it **M-buildable-structs** ([065](records/journal/065-buildable-structs.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **67** of 91 · **67** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **174,028** lines of Heroes in **669** modules (`find selfhost -name '*.hero'`) · the seed **263,383** lines of C, 26,240,524 bytes, in panel 219's s4 shape (56,190 directives), refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
+| **Current milestone** | **none OPEN** since M-readonly-lend's close, 2026-10-18; the next scheduled row is **M-witnessed-seed**, row 69 ([its page](roadmap/milestones/M-witnessed-seed.md)) |
+| **Next** | M-witnessed-seed, and M-thesis-harness beside M-rechecked-issues in two lanes. The formatter's probe M-inferred-cell's and M-readonly-lend's changes to `selfhost/print/` still owe |
+| **Last closed** | **M-readonly-lend**, 2026-10-18 ([067](records/journal/067-readonly-lend.md)) — panel 217's read-only lend: `lent` on a parameter, the caller's place read and never written, a group's record crossing to C as a pointer to const, the IR carrying the mode with a verifier rule; and defect 2128, a value only the probe sees told beside the build's earlier refusal · before it **M-bounded-seed** ([066](records/journal/066-bounded-seed.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **68** of 91 · **68** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **175,346** lines of Heroes in **674** modules (`find selfhost -name '*.hero'`) · the seed **263,383** lines of C, 26,240,524 bytes, in panel 219's s4 shape (56,190 directives), refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
-| The spec | **7703** on the vendored ranks and **10,108** on the reader's own (`heroes measure spec/heroes-spec.md`, 2026-10-17), against the ceiling below; until then **7655** and **10,048**, against a ceiling of **16384**, raised from 10240 by author decision on 2026-10-14 with a budget of 1,500 for the consolidation block (`heroes measure spec/heroes-spec.md`, 2026-10-13). Panel 210's landing in batch 21 spent the 20 above M-inferred-cell's 10,024: an `@` parameter nothing writes or ends refused, and `@_` refused; the claim in the opening line, by author instruction, spent 6 more on 2026-10-12 and gave 2 back on 2026-10-13, when it became *a language for the age of LLMs* |
+| The spec | **7846** on the vendored ranks and **10,286** on the reader's own (`heroes measure spec/heroes-spec.md`, 2026-10-18), against the ceiling below, panel 217's `lent` spending 178 and the consolidation block 238 of its 1,500; until then **7703** and **10,108** (2026-10-17), and before them **7655** and **10,048**, against a ceiling of **16384**, raised from 10240 by author decision on 2026-10-14 with a budget of 1,500 for the consolidation block (`heroes measure spec/heroes-spec.md`, 2026-10-13). Panel 210's landing in batch 21 spent the 20 above M-inferred-cell's 10,024: an `@` parameter nothing writes or ends refused, and `@_` refused; the claim in the opening line, by author instruction, spent 6 more on 2026-10-12 and gave 2 back on 2026-10-13, when it became *a language for the age of LLMs* |
 | The contract | **8167** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-29 |
-| Records | sittings **222** · journals **67**, numbered files only · milestone pages **60** in `docs/roadmap/milestones/` · measurements **47** · issues on GitHub, counted there since 2026-10-12 · questions **478** in `docs/learn/`, 453 open, not issues since 2026-10-05 · `docs/records/book/beats/` **134** |
+| Records | sittings **222** · journals **68**, numbered files only · milestone pages **61** in `docs/roadmap/milestones/` · measurements **47** · issues on GitHub, counted there since 2026-10-12 · questions **486** in `docs/learn/`, 461 open, not issues since 2026-10-05 · `docs/records/book/beats/` **135** |
 | Waiting on the author | the open decision issues on GitHub, the `kind:decision` label; CodeQL's default setup switched off by the author on 2026-10-12 and replaced by `.github/workflows/codeql.yml` (defect 674) |
 
-**Re-measured 2026-10-17 at M-bounded-seed's tag, the full net on stage 2, the
+**Re-measured 2026-10-18 at M-readonly-lend's close, the full net on stage 2, the
 compiler the seed's builds from the tree, the seed not refreshed: every one of the
-31 suites at 0 failed**, plus the compiler's own 1,724 and the net's own 409;
-Linux arm64's `emission` read 1277 and 0. The account is
-[066](records/journal/066-bounded-seed.md); M-buildable-structs' close is
-[065](records/journal/065-buildable-structs.md).
+31 suites at 0 failed**, plus the compiler's own 1,730 and the net's own 410;
+Linux arm64's `emission` read 1283 and 0, its 635 blessed files the Mac's
+byte for byte. The account is
+[067](records/journal/067-readonly-lend.md); M-bounded-seed's close is
+[066](records/journal/066-bounded-seed.md).
 
 **The by-hand probe `.claude/rules/verification.md` owes where `selfhost/print/`
 moved runs after the push, beside the CI, as § The optimistic chain says since
@@ -40,8 +41,8 @@ moved runs after the push, beside the CI, as § The optimistic chain says since
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–67
-are done, in the order they closed, row 68 is open, and rows 69–91 are
+One table, one row per milestone, **closed first and scheduled after**: rows 1–68
+are done, in the order they closed, and rows 69–91 are
 what is next, in the order they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -98,7 +99,8 @@ row 68 on 2026-10-18 found it**, still reading *1–66 done, 67 open*. Then 1–
 and 68–90 until that day, when M-readonly-lend entered at 68 by panel 217's R6,
 ratified the evening before, and the twenty-three scheduled rows after it each
 moved one down: the table is 91 long by a count over it. Then 1–67 and 68–91
-until later that day, when M-readonly-lend opened at 68, opening no other row. `warrant` is why a milestone exists: **v1** (the self-hosting
+until later that day, when M-readonly-lend opened at 68, opening no other row. Then
+1–67 done and 68 open until it closed that night, opening no other row. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -174,7 +176,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 65 | **M-typed-inspection** | done 2026-10-13 | `m-typed-inspection` | [064](records/journal/064-typed-inspection.md) | a stopped program shows Heroes values: the frame lists the author's bindings alone, the emitter declaring what it invented `nodebug`, and one fixed formatter, `editors/lldb/heroes_lldb.py`, which the editor loads, shows a record, a `str`, a `[T]`, a `{K: V}`, a `T?`'s live arm and a variant's case in Heroes' syntax; the names keep their C prefix, refused in the emitted C by panel 213's two vetoes and left to the author's answer on its issue 2037 · scheduled, no warrant |
 | 66 | **M-buildable-structs** | done 2026-10-17 | `m-buildable-structs` | [065](records/journal/065-buildable-structs.md) | a C struct with long arrays is built by naming the fields that matter and ending with `rest: zero`. Panel 178 counted 42 public structs on Darwin with an array longer than 8, and panel 194's recount 33 and 27 on the two Linux legs, where the repository has none; a five-field `utsname` needed 1280 literal zeros until `rest: zero` landed in batch 13 (panel 164) · **§1.11**, **§1.12** |
 | 67 | **M-bounded-seed** | done 2026-10-17 | `m-bounded-seed` | [066](records/journal/066-bounded-seed.md) | the seed bounded in shape and in rhythm: its re-anchoring `#line`s joined to their anchors, refreshed only when the two-stage build needs it and at each release, every program carrying the key of what it was compiled from, and kept in the history at every tag, the history rewritten once and announced · scheduled, no warrant |
-| 68 | **M-readonly-lend** | **OPEN** | — | — | a function reads the caller's place without claiming to change it: `lent` on a parameter, C's `const T *` bound read-only, and beside it an `@` of the same place and a read-only lend past a variadic prototype refused · **§1.1**, **§1.11** |
+| 68 | **M-readonly-lend** | done 2026-10-18 | `m-readonly-lend` | [067](records/journal/067-readonly-lend.md) | a function reads the caller's place without claiming to change it: `lent` on a parameter, C's `const T *` bound read-only, and beside it an `@` of the same place and a read-only lend past a variadic prototype refused · **§1.1**, **§1.11** |
 | 69 | **M-witnessed-seed** | scheduled | — | — | the seed witnessed by a second implementation: the archived Rust bootstrap rebuilt and compared at its root again, a gcc leg beside clang, and only then `archive/` out of the tree · scheduled, no warrant |
 | 70 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
 | 71 | **M-rechecked-issues** | scheduled | — | — | every open issue re-checked against the tree: closed with the commit that settled it, closed with the reason it no longer applies, repaired, or re-homed on a row still to come · scheduled, no warrant |

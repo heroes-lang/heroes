@@ -1,0 +1,1 @@
+- [ ] **M-readonly-lend** | Mutation drill, offered at the close: `heroes mutate` over a folder holding `run/lent-a-record-is-read-in-the-callers-place` and the `ir` case killed 108 of 110 mutants by `check`, both survivors of `positional-named`. Run it again, name the two survivors, and say whether either changes what the program means. | `selfhost/mutate/ops.hero`; journal 067
