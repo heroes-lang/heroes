@@ -310,7 +310,15 @@ is a full panel.
      none does;
    - the seats' working copies stay in the scratchpad, which a reboot empties;
      what must survive is in the sitting's own briefs and reports directories
-     under `docs/panel/`, in the tree.
+     under `docs/panel/`, in the tree. **Its evidence goes there too, at the
+     synthesis**: `NNN-reports/evidence.tar.xz`, every text file under 2 MiB
+     of the folders its reports cite, the copies of the repository, every
+     `build/` and every binary left out, read back byte for byte and scanned
+     for keys, with an `evidence.md` beside it saying what is kept and what
+     was already gone, as the evidence of sittings 198 to 224 is (the
+     author's instruction of 2026-10-12, meant as *put the evidence in the
+     panel's result, then throw the folders away*; task 2135). The folders
+     are then the author's to remove.
 4. **Synthesize** into `docs/panel/NNN-<topic>.md`:
    - the proposal, verbatim
    - the verdict table (verdict · section · cost/delta · prediction ·
