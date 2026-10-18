@@ -1455,6 +1455,27 @@ reach one place (below): copy in, copy out is the model the refusal is argued fr
 itself is what a reader, and C, sees. Why the sentence changed is the sitting's own file,
 `docs/panel/215-a-group-records-padding-is-zeroed-where-c-receives-it-a-record-holding-a-lock-is-refused-as-a-value-and-rest-zeros-sentences-say-what-c-reads.md`.
 
+**And a parameter may take the caller's place to read it alone, since 2026-10-18** (panel 217's
+R1 to R5, ratified 2026-10-17, landed at M-readonly-lend): `function peek(l: Lex lent)` works on
+the caller's place as an `@` parameter does, reads it and never writes it, and is called `peek(l)`,
+unmarked, since nothing on the caller's line changes; the `@` at a call still marks every argument
+the call may change, which is the locality this section argues for. It answers a function that
+only reads a record holding a lock, which had two spellings and neither was true: a copy, which
+panel 215's R2 refuses for a lock, and `@`, which claims a change. Its refusals are R2's, each
+built by a seat: `@p: T lent`, which the specification's `Param` does not derive; the place
+written or handed on to an `@` parameter, and returned or copied where the lock rule refuses a
+copy (a copyable value copied out of it stays legal, the coordinator's decision of 2026-10-18 on
+how R2 was built); a function with one used as a value (§4.13); and an `@` argument of the same
+call reaching the place, **nested in another argument included**, Hylo's rule: the unmarked
+argument reads as a value taken where it stands, and the place would show a write the nested
+call made before the callee ran. **An `@` beside a nested `@` of its own place stays accepted**,
+measured 2026-10-18: `both(@p, bump(@p))` prints 4, both arguments marked and the nested call
+returned before `both` runs, which is what copy in at the call reads too. The IR carries the
+mode on the parameter's slot, which owes no copy-out, and the verifier refuses a store, a push or
+a copy-out through it (`ir/read_only.hero`). The reasoning, and what the sitting's three blind
+arms measured, is the sitting's own file,
+`docs/panel/217-a-read-only-lend-is-lent-on-a-parameter-the-callers-place-read-and-never-written-refused-beside-an-at-of-that-place-and-past-a-variadic-prototype.md`.
+
 **Why this was added.** Value semantics (4.10) forced the parser to invent a `Step` record just to
 thread a position through recursive descent — seven lines of struct plus `step.pos` scattered
 everywhere, and forgetting to propagate `pos` was a *silent* bug. With `@` parameters, the four
@@ -1950,6 +1971,14 @@ underneath it remains this section's, unchanged:
 
 **Functions that capture nothing are values.** A top-level function passed as an argument is just a
 pointer — no environment to allocate, no refcounting interaction.
+
+**But not one with an `@` or a `lent` parameter** (the `lent` half panel 217's R1, landed
+2026-10-18 at M-readonly-lend; the `@` half `error[mutable_parameter_as_value]`, which the
+specification left to its function type's production, `TypeArg`, until that landing): no
+function type carries either mode, so a call through a value, `f(x)`, would hide the `@` the call
+owes, or take a copy of what `lent` reads in place. Measured the day it landed: `fs = [inc]` with
+`function inc(@x: i64)` and `fs = [get]` with `function get(p: Pt lent) -> i64` are refused at
+exit 1, and the same `get` without `lent` builds.
 
 ```
 function plus(a: i64, b: i64) -> i64
@@ -2700,6 +2729,23 @@ yes**: for an `extern` record, a forgotten field in a construction is told by `b
 Mac the day it landed, each at exit 0 with no warning and no C beside the program: `SA` built
 holding `f` while `i` is read, and an SDL3 event built as `SDL_Event(type: 0)`, polled, and read
 through `user.code`.
+
+**A group's record lent read-only crosses as C's pointer to `const`, since 2026-10-18** (panel
+217's R3, ratified 2026-10-17, landed at M-readonly-lend): a C parameter declared `p: Pt lent`
+with no `@` is the header's `const struct pt *`, the caller's place, which C reads and never
+writes. The ffi-pragmatist's four conditions are the form's own: (a) it crosses typed, through a
+probe whose parameter carries the `const` (`emit/probe_params.hero`), never `void *`; (b) the
+read-only question defect 411 asks of a `cstr` (`emit/ffi_read_only.hero`) is asked of the
+record, so a header that takes a pointer to a writable struct refuses the binding in the
+compiler's own words; (c) a read-only lend past a header's variadic prototype is refused
+(`ffi_writable_parameter`, `emit/ffi_past_prototype.hero`), C being free to write what `...`
+receives, the record here and the `cstr` at defects 2102 and 2103; (d) an `@` argument of the
+same call reaching the place is refused as at a Heroes call, where C's `restrict` would let two
+optimisation levels answer differently. Its padding is written zero before the call, as an `@`
+lend's is (panel 215's R1). **What stays open, recorded by the sitting**: C writing through an
+address a binding let it keep, which the specification states in § 13 and no check reaches; and
+a pointer C hands back into a read-only lend with its `const` cast away, which issue 1292 (panel
+171) records as left open for strings.
 
 **The remaining accepted loss:** no automatic binding *generation* — declarations are still written
 by hand, they are merely verified. C++ libraries are still reachable only through a shim.

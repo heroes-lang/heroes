@@ -121,7 +121,7 @@ a written body computes over literals and other constants. An integer operator i
                 | "test" string Block
                 | Extern .
     Params      = "(" [ Param { "," Param } ] ")" .
-    Param       = [ "@" ] ident ":" Type .
+    Param       = "@" ident ":" Type | ident ":" Type [ "lent" ] .
     Fields      = INDENT { ident ":" Type NEWLINE } DEDENT .
     Case        = ident NEWLINE [ Fields ] .
 
@@ -269,10 +269,14 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
   inheritance, no overloading, no default values, no user variadics, no
   anonymous functions.
 - Mutable parameters are marked `@` in the signature and at the call site:
-  `function advance(@l: Lex)` … `advance(@l)`. Semantics: the callee works on
-  the caller's place itself. UFCS does
-  not apply when the first parameter is `@`.
-- Top-level functions are values: `xs.fold(0, add)`.
+  `function advance(@l: Lex)` … `advance(@l)`; a read-only one is marked
+  `lent`, in the signature alone, where one with neither mark would be a copy:
+  `function peek(l: Lex lent)` … `peek(l)`. Either way the callee works on the
+  caller's place itself, which no other `@` argument of the call may reach,
+  nor, for `lent`, one nested in another argument.
+  UFCS does not apply when the first parameter is `@`.
+- Top-level functions are values, but not one with an `@` or `lent` parameter:
+  `xs.fold(0, add)`.
 - Generics: on functions only, no constraints, always inferred, never written
   at the call site: `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]`.
   A type parameter takes its type from the arguments that have one of their
@@ -357,7 +361,8 @@ says `size_t` — and one that
 disagrees is refused, except a parameter C converts exactly (`i16` against int)
 and what a `ptr` points at. A C out-parameter is an `@` parameter, and C receives
 the place itself, which it may keep only while the place does not move: a copy,
-a return and an array's growth move it. What it points at is ONE element, held
+a return and an array's growth move it, and a `lent` parameter reading it sees
+C's later writes. What it points at is ONE element, held
 to the same width and sign — `@n: u64` where it says `size_t *`:
 ```
 extern "sqlite3.h" link "sqlite3"
@@ -412,7 +417,9 @@ naming the sibling C reads the extent from, a constant of the group or a number,
 and one past the field is refused; a group's record lent whole with `@` may say it too.
 C writes back through the lend only where the binding is a `@` name. A lend
 lives for its call and no longer: a parameter, `@` or not, is taken to keep what
-it is handed unless declared `lent`, and a lend reaches only one so declared.
+it is handed unless declared `lent`, and a lend reaches only one so declared; a
+group's record declared `lent` without `@` is a pointer to const, the place C
+reads and never writes.
 `x: cstr @= s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's

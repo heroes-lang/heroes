@@ -67,8 +67,10 @@ two equal records hash differently and silently.
 
 **And C never reads a group record's padding as it was left** (panel 215's
 R1, ratified 2026-10-16): before each `extern` call, the bytes no C member
-holds in every group record the call lends through `@`, a whole cell, a
-field, an element, an `@` parameter handed on and the elements of an array's
+holds in every group record the call lends through `@`, or read-only through
+`lent` since panel 217's R3 (2026-10-18, the emission of
+`run/lent-a-record-is-read-by-c-through-const`), a whole cell, a field, an
+element, an `@` or `lent` parameter handed on and the elements of an array's
 buffer, are written zero in place, never a byte a member holds and never
 inside a union (`emit/padding.hero`). Every span is clang's `offsetof` and
 `sizeof` of a member, in a table each unit writes once, a member's own name
