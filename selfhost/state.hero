@@ -1,5 +1,5 @@
 # Owned lexing state — position, layout, output — and the two ways a token
-# enters the stream. Port of the LexState half of archive/bootstrap-rs/heroes/src/lexer/mod.rs.
+# enters the stream. Port of the LexState half of heroes/src/lexer/mod.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # The source text is a parameter everywhere and never a field (the Cyclone
 # rule, kept across the port: tokens point into the source by byte offset).

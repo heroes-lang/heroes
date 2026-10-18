@@ -1,6 +1,6 @@
 # The classes where the header contradicts a RECORD (design.md §4.19;
 # panels 060, 061, 073, 077, 079). Port of
-# archive/bootstrap-rs/heroes/src/emit/ffi_record.rs.
+# heroes/src/emit/ffi_record.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # The reader of the union assertions `emit/extern_union.hero` writes into
 # the program's own unit, which fault the DECLARATION of a record over a C

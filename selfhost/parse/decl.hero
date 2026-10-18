@@ -1,7 +1,7 @@
 # The top level: the dispatcher and the seven declaration heads (design.md
 # §4.1, §4.2, §4.18; panels 018, 055, 060, 061, 074).
-# Port of the dispatch half of `archive/bootstrap-rs/heroes/src/syntax/decl.rs`
-# and `archive/bootstrap-rs/heroes/src/syntax/data.rs`.
+# Port of the dispatch half of `heroes/src/syntax/decl.rs` in the Rust bootstrap at `m-bootstrap-archive`
+# and `heroes/src/syntax/data.rs` in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # **The entry point is `file`**, and it is the whole public surface for a
 # caller that wants a program parsed: it reads declarations until `eof`, and

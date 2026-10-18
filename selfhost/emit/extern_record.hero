@@ -1,6 +1,6 @@
 # Where a group record's assertions GO (design.md §4.19; panels 060,
 # 061, 062, 072, 077, 186). Port of
-# archive/bootstrap-rs/heroes/src/emit/{extern_record,extern_complete}.rs.
+# heroes/src/emit/{extern_record,extern_complete}.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # The field assertions ask, of every field the program NAMES, whether
 # the header agrees — and say nothing about a field left out. record

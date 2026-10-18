@@ -3,7 +3,7 @@
 #
 # WHY IT EXISTS. design.md §2 says lldb breaks on and steps through `.hero`
 # lines, and the one test that executed the sentence was
-# `lldb_breaks_on_a_hero_line`, `archive/bootstrap-rs/heroes-cli/tests/golden.rs`,
+# `lldb_breaks_on_a_hero_line`, `heroes-cli/tests/golden.rs` in the Rust bootstrap at `m-bootstrap-archive`,
 # which nothing has built since M-bootstrap-archive on 2026-08-19. From then
 # until this suite the claim had no instrument, while `.github/workflows/ci.yml`
 # installed lldb on the Linux legs for a test it never ran. The `#line` mapping

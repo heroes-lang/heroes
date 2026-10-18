@@ -1,5 +1,5 @@
 # One expression on one line, with the minimum parentheses (design.md
-# §4.15; `fmt_expr.rs` of `archive/bootstrap-rs/heroes/src/printer/`).
+# §4.15; `fmt_expr.rs` of `heroes/src/printer/` in the Rust bootstrap at `m-bootstrap-archive`).
 # Split out of `print/fmt.hero` on 2026-09-25, with the repair of defect
 # 101, along its one clean seam: pure functions of the tree that every walk
 # in `fmt` calls and that call none of them back, so the cut makes no cycle.

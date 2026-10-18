@@ -1,6 +1,6 @@
 # The record checks: what the repository must be true of ITSELF.
 #
-# Port of archive/bootstrap-rs/heroes-cli/tests/milestones.rs, five checks that read no
+# Port of heroes-cli/tests/milestones.rs in the Rust bootstrap at `m-bootstrap-archive`, five checks that read no
 # compiler output at all — they read the tree. Panel 085 named
 # `milestones.rs ×5` among the tests with no successor whatever, and this
 # is the module that answers it.
@@ -82,8 +82,11 @@ constant RECORD: [str]
         "docs/records/contract"
         "vendor"
         "editors/vscode/icons"
-        "archive"
     ]
+
+# **`archive` was on that list and is not any more** (2026-10-18): the Rust
+# bootstrap, its one tree, left the tree with M-witnessed-seed's fourth item and
+# is kept at the tag `m-bootstrap-archive`, so the entry would select nothing.
 
 # **`site/log.html` was on that list and is not any more** (deleted 2026-08-18), and it is
 # rather than repointed. The entry stopped matching anything the day the site's
@@ -173,9 +176,9 @@ constant GENERATED: [str]
 # **RECORD is for trees this repository OWNS and writes no prose for. A tree
 # that is not this repository's does not belong on it at all.**
 
-# **The archived bootstrap is a frozen tree, not a living file.** `archive/bootstrap-rs/`
-# became `archive/bootstrap-rs/` at M-bootstrap-archive; nothing builds it,
-# nothing runs its tests, and its 25,482 lines of Rust name every milestone
+# **The archived bootstrap was a frozen tree, not a living file**, and since 2026-10-18
+# it is out of the tree, kept at `m-bootstrap-archive`; nothing built it,
+# nothing ran its tests, and its 25,482 lines of Rust named every milestone
 # this project ever had under the spelling it had then. Walking it would
 # report five years of history as today's claims — the same argument that
 # kept `.claude/worktrees` out when it was a list of exclusions: a second
@@ -898,6 +901,7 @@ function run_all(scratch: str, only: str) -> report.Report?
             living @ living.push(path)
 
     archive = archive_of(scratch: scratch, present: walked)
+    bootstrap = bootstrap_of(scratch: scratch, present: walked)
     known: {str: bool} @= {}
 
     for path in walked
@@ -907,9 +911,9 @@ function run_all(scratch: str, only: str) -> report.Report?
     named(@r, living: living)
     sections(@r, living: living)
     c_files(@r, living: living)
-    citations(@r, scratch: scratch, present: walked, closed: closed, archive: archive)
+    citations(@r, scratch: scratch, present: walked, closed: closed, archive: archive, bootstrap: bootstrap)
     english(@r, present: walked, closed: closed)
-    exemptions(@r, present: walked)
+    exemptions(@r, present: walked, bootstrap: bootstrap)
     redirects(@r, present: walked, archive: archive)
     rules(@r, present: walked)
     expectations(@r, scratch: scratch)
@@ -1841,7 +1845,7 @@ function redirects(@r: report.Report, present: [str], archive: Archive)
             detail: "  " + archive.why + ", so these rows were not asked of it:\n" + unread.join("\n")
         )
 
-function exemptions(@r: report.Report, present: [str])
+function exemptions(@r: report.Report, present: [str], bootstrap: Archive)
     dead: [str] @= []
 
     for entry in RECORD
@@ -1863,6 +1867,20 @@ function exemptions(@r: report.Report, present: [str])
     for entry in HOMES
         if entry != "" && !selects_tree(entry: strings.without_suffix(text: entry, suffix: "/"), present: present)
             dead @ dead.push("    HOMES: " + entry)
+
+    # The Rust bootstrap's homes are asked of the tree that holds it: this one
+    # while it stood, its archive since it left (`BOOTSTRAP_ARCHIVED_AT`). An
+    # archive this clone cannot show answers nothing here, and
+    # `records/citations` says so once.
+    if bootstrap.state != "unreadable"
+        held: [str] @= present
+
+        if bootstrap.state != "tree"
+            held @ bootstrap.paths
+
+        for entry in BOOTSTRAP_HOMES
+            if !selects_tree(entry: strings.without_suffix(text: entry, suffix: "/"), present: held)
+                dead @ dead.push("    BOOTSTRAP_HOMES: " + entry)
 
     # `ISSUES` left this list on 2026-10-12: GitHub holds the issues, and the
     # folder is an archive no check reads as a list, gone once the coordinator
@@ -2820,6 +2838,17 @@ constant HOMES: [str]
         "site/src/"
         "tests/golden/"
         ".claude/skills/"
+    ]
+
+# **The Rust bootstrap's shorthand, the homes of a tree that left.** Its ports
+# wrote `emit/structural.rs` for `archive/bootstrap-rs/heroes/src/emit/structural.rs`
+# and `commands/libraries.rs` for the command line's
+# `archive/bootstrap-rs/heroes-cli/src/commands/libraries.rs`. These five stood in
+# `HOMES` until the folder left the tree with M-witnessed-seed's fourth item, and
+# are asked since of its archive (`BOOTSTRAP_ARCHIVED_AT`), where a file named
+# through them is still a claim that can die rather than a line excused by a date.
+constant BOOTSTRAP_HOMES: [str]
+    [
         "archive/bootstrap-rs/"
         "archive/bootstrap-rs/heroes/"
         "archive/bootstrap-rs/heroes/src/"
@@ -3045,6 +3074,12 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
         if !known[home + part].is_err()
             return true
 
+    # The Rust bootstrap's own shorthand, asked of its archive since it left
+    # the tree (`BOOTSTRAP_HOMES`).
+    for home in BOOTSTRAP_HOMES
+        if !known[home + part].is_err()
+            return true
+
     dir: str @= document
     walking: bool @= true
 
@@ -3192,7 +3227,9 @@ function is_claim(token: str, roots: {str: bool}) -> bool
     # — which is vocabulary rather than citation, and reading it as a claim put
     # fourteen correct sentences on the report. `.rs` is left because this
     # repository writes no Rust any more: a `.rs` in live prose is a pointer
-    # into the bootstrap and nothing else.
+    # into the bootstrap and nothing else. Since the bootstrap left the tree
+    # such a pointer is followed to its archive (`lands_in_bootstrap`), and the
+    # premise is asked of the tree where it would die (`citations`).
     return strings.ends_with(text: token, suffix: ".rs")
 
 # Every path claim on one line of prose.
@@ -3228,7 +3265,7 @@ function slashes(token: str) -> i64
 # **IT READ TWO DOCUMENTS UNTIL 2026-09-06 AND WAS GREEN OVER 164 DEAD
 # POINTERS.** Measured 2026-09-06: `crates/` appeared 179 times in 145 files under
 # `selfhost/` and 19 under `tests/`, eighteen days after that tree became
-# `archive/bootstrap-rs/`, and one of the 164 was THIS FILE. Three reasons, and
+# `archive/bootstrap-rs/` on 2026-08-19, and one of the 164 was THIS FILE. Three reasons, and
 # each one is a line of code above: it read `design.md` and `CLAUDE.md` only;
 # it read backticked tokens only, while the compiler's own citations are bare;
 # and it could not read the brace form, which panel 086 measured and recorded as
@@ -3364,30 +3401,70 @@ function ignored_by_git(scratch: str, tree: str, tokens: [str]) -> {str: bool}
 constant ISSUES_ARCHIVED_AT: str
     "03f9fb9b58f41ef9552696dbda9969fc5adf5d63"
 
-# What the archive answers a run: `tree` while the folder stands, so nothing
-# is added; `read`, every path under `ISSUES` at `ISSUES_ARCHIVED_AT`;
-# `unset` where the folder is gone and the constant names no commit holding it
-# (a failure); `unreadable` where this clone's history is shortened and cannot
-# show the commit (a skip, as the CI's one-commit checkout is). `why` says
-# which.
+# THE COMMIT THE RUST BOOTSTRAP IS FOLLOWED TO. It left the tree with
+# M-witnessed-seed's fourth item, on the author's yes, and its living citations
+# say *in the Rust bootstrap at `m-bootstrap-archive`*: this is that tag's
+# commit, written whole because a clone can hold the commit and not the tag.
+# The folder did not change between the tag and the last commit that held it,
+# `2883d3a59`: `git log` over it between the two printed nothing, and `git
+# ls-tree` named 296 files at both. So a citation of one of its files is still
+# a claim that can die, followed to this tree as an issue file's is to
+# `ISSUES_ARCHIVED_AT`, and never excused by a date it does not need.
+constant BOOTSTRAP: str
+    "archive/bootstrap-rs"
+
+constant BOOTSTRAP_ARCHIVED_AT: str
+    "027f69d72c364123bb3da7f603260a48b61386dc"
+
+# What the archive of a tree that left answers a run (`left_tree`): `tree`
+# while the folder stands, so nothing is added; `read`, every path under it at
+# the commit its constant names; `unset` where the folder is gone and the
+# constant names no commit holding it (a failure); `unreadable` where this
+# clone's history is shortened and cannot show the commit (a skip, as the CI's
+# one-commit checkout is). `why` says which.
 record Archive
     state: str
     why: str
     paths: [str]
 
 function archive_of(scratch: str, present: [str]) -> Archive
+    return left_tree(
+        scratch: scratch,
+        present: present,
+        root: ISSUES,
+        at: ISSUES_ARCHIVED_AT,
+        kept_in: "ISSUES_ARCHIVED_AT",
+        what: "the issue files' last commit",
+        asked: "the last commit that holds the folder"
+    )
+
+function bootstrap_of(scratch: str, present: [str]) -> Archive
+    return left_tree(
+        scratch: scratch,
+        present: present,
+        root: BOOTSTRAP,
+        at: BOOTSTRAP_ARCHIVED_AT,
+        kept_in: "BOOTSTRAP_ARCHIVED_AT",
+        what: "the commit of the tag `m-bootstrap-archive`",
+        asked: "the commit the tag `m-bootstrap-archive` names"
+    )
+
+# One tree that left, read at the commit its constant holds: `root` the
+# folder, `at` the commit, `kept_in` the constant holding it, `what` the
+# commit in a sentence and `asked` the commit the constant owes.
+function left_tree(scratch: str, present: [str], root: str, at: str, kept_in: str, what: str, asked: str) -> Archive
     none: [str] = []
 
-    if selects_tree(entry: ISSUES, present: present)
+    if selects_tree(entry: root, present: present)
         return Archive(state: "tree", why: "", paths: none)
 
-    if ISSUES_ARCHIVED_AT == ""
+    if at == ""
         return Archive(
             state: "unset",
-            why: "`" + ISSUES + "/` has left the tree and `ISSUES_ARCHIVED_AT` (tests/harness/suite_records.hero) names no commit: set it to the last commit that holds the folder",
+            why: "`" + root + "/` has left the tree and `" + kept_in + "` (tests/harness/suite_records.hero) names no commit: set it to " + asked,
             paths: none
         )
-    listed = listed_at(scratch: scratch, tag: ISSUES_ARCHIVED_AT, roots: [ISSUES])
+    listed = listed_at(scratch: scratch, tag: at, roots: [root])
 
     if listed.is_err()
         shallow = shell.run(scratch: scratch, program: "git", words: ["git", "rev-parse", "--is-shallow-repository"])
@@ -3395,19 +3472,19 @@ function archive_of(scratch: str, present: [str]) -> Archive
         if !shallow.is_err() && shallow.must().code == 0 && strings.trimmed(shallow.must().out) == "true"
             return Archive(
                 state: "unreadable",
-                why: "this clone's history is shortened and cannot show " + ISSUES_ARCHIVED_AT + ", the issue files' last commit",
+                why: "this clone's history is shortened and cannot show " + at + ", " + what,
                 paths: none
             )
         return Archive(
             state: "unset",
-            why: "`ISSUES_ARCHIVED_AT` names " + ISSUES_ARCHIVED_AT + ", which git cannot show: " + failure_of(listed),
+            why: "`" + kept_in + "` names " + at + ", which git cannot show: " + failure_of(listed),
             paths: none
         )
 
     if listed.must().len() == 0
         return Archive(
             state: "unset",
-            why: "`ISSUES_ARCHIVED_AT` names " + ISSUES_ARCHIVED_AT + ", whose tree holds no `" + ISSUES + "/`: name the last commit that holds the folder",
+            why: "`" + kept_in + "` names " + at + ", whose tree holds no `" + root + "/`: name " + asked,
             paths: none
         )
     return Archive(state: "read", why: "", paths: listed.must())
@@ -3427,7 +3504,15 @@ function lands_in_issues(token: str) -> bool
 
     return false
 
-function citations(@r: report.Report, scratch: str, present: [str], closed: {str: bool}, archive: Archive)
+# Whether a citation lands in the Rust bootstrap: a path under `BOOTSTRAP`, or
+# a `.rs` anywhere, the premise `is_claim` already rests on, which `citations`
+# asks of the tree.
+function lands_in_bootstrap(token: str) -> bool
+    if token == BOOTSTRAP || strings.starts_with(text: token, prefix: BOOTSTRAP + "/")
+        return true
+    return strings.ends_with(text: token, suffix: ".rs")
+
+function citations(@r: report.Report, scratch: str, present: [str], closed: {str: bool}, archive: Archive, bootstrap: Archive)
     known: {str: bool} @= {}
     roots: {str: bool} @= {}
 
@@ -3437,7 +3522,21 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
     if archive.state != "tree"
         roots[ISSUES] @ true
 
+    # And the Rust bootstrap's, whose root `archive` holds nothing tracked once
+    # it left: without it `archive/bootstrap-rs/...` would stop being a claim
+    # on the day it most needs to be one, the hole `RETIRED_ROOTS` closes.
+    if bootstrap.state != "tree"
+        top = strings.split_on(text: BOOTSTRAP, byte: 47)[0]
+        roots[top] @ true
+    archived: [str] @= []
+
     for path in archive.paths
+        archived @ archived.push(path)
+
+    for path in bootstrap.paths
+        archived @ archived.push(path)
+
+    for path in archived
         known[path] @ true
         above: str @= path
         climbing: bool @= true
@@ -3514,6 +3613,7 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
     excused = ignored_by_git(scratch: scratch, tree: ".", tokens: tokens)
     speaking: [str] @= []
     unjudged: [str] @= []
+    unfollowed: [str] @= []
     at: i64 @= 0
 
     while at < dead.len()
@@ -3521,9 +3621,12 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
 
         # Either form: `ignored_by_git` asks both and says why. A citation of
         # an issue file where the archive cannot answer is set aside, said
-        # once below with the reason, and never read as dead.
+        # once below with the reason, and never read as dead; so is one of the
+        # Rust bootstrap where its own archive cannot.
         if (archive.state == "unset" || archive.state == "unreadable") && lands_in_issues(token)
             unjudged @ unjudged.push(dead[at])
+        else if (bootstrap.state == "unset" || bootstrap.state == "unreadable") && lands_in_bootstrap(token)
+            unfollowed @ unfollowed.push(dead[at])
         else if excused[token].is_err() && excused[token + "/"].is_err()
             speaking @ speaking.push(dead[at])
         at @ at + 1
@@ -3540,6 +3643,39 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
             @r,
             label: "records/citations",
             detail: "  " + archive.why + ", so " + unjudged.len().to_str() + " citations of an issue file were not followed; they are judged where the history is whole"
+        )
+
+    if unfollowed.len() > 0 && bootstrap.state == "unset"
+        report.keep_failure(
+            @r,
+            label: "records/citations",
+            detail: "  " + bootstrap.why + ".\n  " + unfollowed.len().to_str() + " citations of the Rust bootstrap could not be followed, the first of them:\n" + unfollowed.slice(from: 0, to: first_few(unfollowed.len())).join("\n")
+        )
+
+    if unfollowed.len() > 0 && bootstrap.state == "unreadable"
+        report.keep_skip(
+            @r,
+            label: "records/citations",
+            detail: "  " + bootstrap.why + ", so " + unfollowed.len().to_str() + " citations of the Rust bootstrap were not followed; they are judged where the history is whole"
+        )
+
+    # **The premise `is_claim` and `lands_in_bootstrap` rest on, asked where it
+    # would die**: a `.rs` is the bootstrap's because the tree holds no other
+    # Rust. A file of Rust outside it would have a dead citation of it set
+    # aside as the bootstrap's wherever that archive cannot answer, a skip
+    # where a failure is owed; so the file is the failure, naming what depends
+    # on it.
+    rust: [str] @= []
+
+    for path in present
+        if strings.ends_with(text: path, suffix: ".rs") && !strings.starts_with(text: path, prefix: BOOTSTRAP + "/")
+            rust @ rust.push("    " + path)
+
+    if rust.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/citations",
+            detail: "  a file of Rust stands outside the Rust bootstrap:\n" + rust.join("\n") + "\n  `is_claim` reads every `.rs` in prose as a path, and `lands_in_bootstrap` as a\n  file of the bootstrap, which has left the tree; both learn a second home of\n  Rust before a citation of it can be judged where that archive cannot answer."
         )
 
     if speaking.len() > 0
@@ -5016,7 +5152,8 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
         scratch: "build/harness-selftest",
         present: ["design.md"],
         closed: no_closed,
-        archive: Archive(state: "tree", why: "", paths: unarchived)
+        archive: Archive(state: "tree", why: "", paths: unarchived),
+        bootstrap: Archive(state: "tree", why: "", paths: unarchived)
     )
     assert fired.failed + fired.passed == 1
 
@@ -5661,14 +5798,17 @@ test "once the issue files leave the tree a citation of one is followed to their
     ).must()
     closed: {str: bool} = {}
     none: [str] = []
+
+    # The Rust bootstrap stands, so the issue files' archive is the one asked.
+    standing = Archive(state: "tree", why: "", paths: none)
     held = Archive(state: "read", why: "", paths: ["issues/2026-10/01/2026-10-01-0000-a.md"])
     found: report.Report @= report.empty()
-    citations(@found, scratch: scratch, present: [document], closed: closed, archive: held)
+    citations(@found, scratch: scratch, present: [document], closed: closed, archive: held, bootstrap: standing)
     assert found.failed == 0
     assert found.passed == 1
     other = Archive(state: "read", why: "", paths: ["issues/2026-10/01/2026-10-01-0001-b.md"])
     lost: report.Report @= report.empty()
-    citations(@lost, scratch: scratch, present: [document], closed: closed, archive: other)
+    citations(@lost, scratch: scratch, present: [document], closed: closed, archive: other, bootstrap: standing)
     assert lost.failed == 1
     assert strings.contains(text: lost.failures[0], needle: "issues/2026-10/01/2026-10-01-0000-a.md")
     unset: report.Report @= report.empty()
@@ -5677,7 +5817,8 @@ test "once the issue files leave the tree a citation of one is followed to their
         scratch: scratch,
         present: [document],
         closed: closed,
-        archive: Archive(state: "unset", why: "the constant names no commit", paths: none)
+        archive: Archive(state: "unset", why: "the constant names no commit", paths: none),
+        bootstrap: standing
     )
     assert unset.failed == 1
     assert strings.contains(text: unset.failures[0], needle: "the constant names no commit")
@@ -5688,7 +5829,8 @@ test "once the issue files leave the tree a citation of one is followed to their
         scratch: scratch,
         present: [document],
         closed: closed,
-        archive: Archive(state: "unreadable", why: "this clone's history is shortened", paths: none)
+        archive: Archive(state: "unreadable", why: "this clone's history is shortened", paths: none),
+        bootstrap: standing
     )
     assert shallow.failed == 0
     assert strings.contains(text: shallow.skips[0], needle: "2 citations of an issue file were not followed")
@@ -5696,6 +5838,79 @@ test "once the issue files leave the tree a citation of one is followed to their
     assert lands_in_issues("issues/2026-10/01/x.md")
     assert lands_in_issues("docs/work/defects/187-four.md")
     assert !lands_in_issues("docs/panel/190-x.md")
+    _ = shell.remove_tree(scratch).is_err()
+
+test "once the Rust bootstrap leaves the tree a citation of its files is followed to its tag's commit, a short name through its homes, and an archive that cannot answer says so"
+    scratch = shell.own_scratch()
+    shell.mkdir_all(scratch).must()
+    document = scratch + "/note.md"
+    write_file(
+        path: document,
+        text: "ported from `emit/structural.rs` and `archive/bootstrap-rs/heroes-cli/src/main.rs`, in the Rust bootstrap at `m-bootstrap-archive`\n"
+    ).must()
+    closed: {str: bool} = {}
+    none: [str] = []
+
+    # The issue files stand, so the bootstrap's archive is the one asked.
+    standing = Archive(state: "tree", why: "", paths: none)
+    held = Archive(
+        state: "read",
+        why: "",
+        paths: ["archive/bootstrap-rs/heroes/src/emit/structural.rs", "archive/bootstrap-rs/heroes-cli/src/main.rs"]
+    )
+    found: report.Report @= report.empty()
+    citations(@found, scratch: scratch, present: [document], closed: closed, archive: standing, bootstrap: held)
+    assert found.failed == 0
+    assert found.passed == 1
+
+    # A file its archive does not hold is dead, named short or whole.
+    other = Archive(state: "read", why: "", paths: ["archive/bootstrap-rs/heroes/src/emit/gate.rs"])
+    lost: report.Report @= report.empty()
+    citations(@lost, scratch: scratch, present: [document], closed: closed, archive: standing, bootstrap: other)
+    assert lost.failed == 1
+    assert strings.contains(text: lost.failures[0], needle: "emit/structural.rs")
+    assert strings.contains(text: lost.failures[0], needle: "archive/bootstrap-rs/heroes-cli/src/main.rs")
+    unset: report.Report @= report.empty()
+    citations(
+        @unset,
+        scratch: scratch,
+        present: [document],
+        closed: closed,
+        archive: standing,
+        bootstrap: Archive(state: "unset", why: "the constant names no commit", paths: none)
+    )
+    assert unset.failed == 1
+    assert strings.contains(text: unset.failures[0], needle: "the constant names no commit")
+    assert strings.contains(text: unset.failures[0], needle: "2 citations of the Rust bootstrap could not be followed")
+    shallow: report.Report @= report.empty()
+    citations(
+        @shallow,
+        scratch: scratch,
+        present: [document],
+        closed: closed,
+        archive: standing,
+        bootstrap: Archive(state: "unreadable", why: "this clone's history is shortened", paths: none)
+    )
+    assert shallow.failed == 0
+    assert strings.contains(text: shallow.skips[0], needle: "2 citations of the Rust bootstrap were not followed")
+
+    # The premise both readings rest on, failing where it dies: a file of Rust
+    # outside the bootstrap, whose citations would read as the bootstrap's.
+    rust: report.Report @= report.empty()
+    citations(
+        @rust,
+        scratch: scratch,
+        present: [document, "tools/probe.rs"],
+        closed: closed,
+        archive: standing,
+        bootstrap: held
+    )
+    assert rust.failed == 1
+    assert strings.contains(text: rust.failures[0], needle: "tools/probe.rs")
+    assert bootstrap_of(scratch: scratch, present: ["archive/bootstrap-rs/Cargo.toml"]).state == "tree"
+    assert lands_in_bootstrap("archive/bootstrap-rs/heroes/src/lib.rs")
+    assert lands_in_bootstrap("emit/{ctype,typedefs}.rs")
+    assert !lands_in_bootstrap("selfhost/emit/ffi.hero")
     _ = shell.remove_tree(scratch).is_err()
 
 test "a redirect that lands in the issue files is asked of their archive once they are gone"

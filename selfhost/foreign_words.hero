@@ -1,6 +1,6 @@
 # The foreign words: a keyword imported from another language is a compile
 # error carrying its own repair (spec/reserved-words.md; design.md §4.17).
-# Port of archive/bootstrap-rs/heroes/src/lexer/keywords.rs (M-selfhost-probe).
+# Port of heroes/src/lexer/keywords.rs in the Rust bootstrap at `m-bootstrap-archive` (M-selfhost-probe).
 #
 # This is the registry's half that is not Heroes' own words, and the
 # language's first executable thesis feature: the likeliest mistake from a

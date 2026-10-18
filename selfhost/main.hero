@@ -1,6 +1,6 @@
 # THE ONE COMMAND (CLAUDE.md §10, design.md §3.5): every capability is
 # a subcommand of `heroes`, never a second binary, script, or Makefile.
-# Port of archive/bootstrap-rs/heroes-cli/src/main.rs — and the selfhost compiler's
+# Port of heroes-cli/src/main.rs in the Rust bootstrap at `m-bootstrap-archive` — and the selfhost compiler's
 # own entry point, which is what makes this file the finish line's
 # front door.
 #

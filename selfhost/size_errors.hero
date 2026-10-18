@@ -1,6 +1,6 @@
 # A type that would have to contain one of itself at every depth (panel
 # 023).
-# Port of archive/bootstrap-rs/heroes/src/types/errors/sizes.rs.
+# Port of heroes/src/types/errors/sizes.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # Its own file because size is its own subject: data_errors answers "does
 # this shape have that field", and this answers "can this shape exist at

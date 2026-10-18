@@ -1,5 +1,5 @@
 # heroes lex <file.hero> [--dump-tokens] [--json] — the token stream
-# (design.md §3.5). Port of archive/bootstrap-rs/heroes-cli/src/commands/lex.rs.
+# (design.md §3.5). Port of heroes-cli/src/commands/lex.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # Without a flag it is a lexical check: silent on success, diagnostics
 # on stderr. --dump-tokens prints the stream, --json says HOW — the

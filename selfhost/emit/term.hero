@@ -1,5 +1,5 @@
 # How a block ends (design.md §3.1, CLAUDE.md §7).
-# Port of archive/bootstrap-rs/heroes/src/emit/term.rs.
+# Port of heroes/src/emit/term.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # ONE GOTO OR ONE RETURN PER BLOCK, ALWAYS. The IR guarantees exactly
 # one terminator, which is what makes the emitted C never fall through

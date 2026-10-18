@@ -1,7 +1,7 @@
 # One function per operator: every mutant it makes from one source, as text
 # edits guided by the tree (design.md Part 11, `docs/metrics/operators.md`).
 #
-# Port of archive/bootstrap-rs/heroes/src/mutate/edits.rs. Each operator imitates a
+# Port of heroes/src/mutate/edits.rs in the Rust bootstrap at `m-bootstrap-archive`. Each operator imitates a
 # *plausible* mistake — a habit carried from another language, a one-character
 # slip, a forgotten piece — and is applied to every applicable site, one mutant
 # per site, in arena order, so a run is reproducible from the compiler alone.

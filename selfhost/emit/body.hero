@@ -1,6 +1,6 @@
 # A function's C body: the prologue, the blocks, and what is left out
 # (design.md §3.1; panels 020, 021, 029, 038). Port of
-# archive/bootstrap-rs/heroes/src/emit/body.rs.
+# heroes/src/emit/body.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # THE PROLOGUE, what it declares and what it zeroes, is `emit/prologue.hero`
 # (moved out on 2026-10-10 with defect 472, which writes it as one line).

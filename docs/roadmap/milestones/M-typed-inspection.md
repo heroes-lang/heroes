@@ -59,7 +59,7 @@ pointer-identity trick `runtime/parts/sort.c` already uses. A `name` field on
 **The first step is the instrument, because the claim has none.** `design.md:616` and
 this file at `:452` both assert that a golden runs lldb in batch mode and asserts a
 breakpoint on a `.hero` line is hit. That golden is
-`archive/bootstrap-rs/heroes-cli/tests/golden.rs`, nothing has built that tree since
+`heroes-cli/tests/golden.rs` in the Rust bootstrap at `m-bootstrap-archive`, nothing has built that tree since
 M-bootstrap-archive on 2026-08-19, `tests/harness/` has no lldb suite, and
 `.github/workflows/ci.yml` installs lldb on the Linux leg for a test it never runs.
 The suite comes back wider than it went away: the three guards the archived test

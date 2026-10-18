@@ -1,5 +1,5 @@
 # Fields, labels, cases and patterns — the messages about SHAPES.
-# Port of archive/bootstrap-rs/heroes/src/types/errors/data.rs.
+# Port of heroes/src/types/errors/data.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # The labels of a call, `needs_label`, `missing_label`, `wrong_label` and
 # `label_on_function_value`, moved to `label_errors.hero` on 2026-09-30 (lane

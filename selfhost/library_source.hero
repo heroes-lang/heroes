@@ -14,7 +14,7 @@
 # `tests/golden/emit/scalars.expected` and the same in all 441 emission traces,
 # for nothing a reader of a C file would want.
 #
-# Panel 028 R3 ruled this and `archive/bootstrap-rs/heroes/src/library/source.hero`
+# Panel 028 R3 ruled this and `heroes/src/library/source.hero` in the Rust bootstrap at `m-bootstrap-archive`
 # states the ruling in its own header: the library "is not on disk
 # beside the compiler: it is `include_str!`d into the binary, so there
 # is no discovery, no `$HEROES_LIBRARY`, and no decoy — clang cannot
@@ -276,7 +276,7 @@ function text() -> str
 
 # **THE BOOTSTRAP-EQUALITY TEST WAS RETIRED HERE ON 2026-08-24, BY ITS OWN
 # WRITTEN INSTRUCTION.** It compared this embedded text byte for byte against
-# `archive/bootstrap-rs/heroes/src/library/source.hero`, and it carried its own
+# `heroes/src/library/source.hero` in the Rust bootstrap at `m-bootstrap-archive`, and it carried its own
 # retirement notice: *"the day the library legitimately GROWS — a new built-in
 # written in Heroes — this test fails, and the right response is not to edit the
 # archive: it is to delete this test, because the bootstrap has stopped being an
@@ -285,7 +285,7 @@ function text() -> str
 # That day is this one. Panel 089 added `validated`, the first legitimate growth
 # of the library since the archive, so the test fired exactly as designed and
 # was deleted rather than worked around. Nothing was edited inside
-# `archive/bootstrap-rs/`, which is the outcome the notice existed to force.
+# the Rust bootstrap at `m-bootstrap-archive`, which is the outcome the notice existed to force.
 #
 # What still checks this text is not weaker for its going: the fixpoint compares
 # the emitted C byte for byte, the blessed emissions in `tests/emission/` carry

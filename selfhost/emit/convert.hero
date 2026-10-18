@@ -1,6 +1,6 @@
 # to_<width> as C: the one built-in that builds its own T? inline
 # (spec § 11 Built-ins; design.md §4.3; panels 042-045, 060). Port of
-# archive/bootstrap-rs/heroes/src/emit/convert.rs.
+# heroes/src/emit/convert.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # It sits apart from the other built-ins for the reason its own body
 # states: entry answers with the NAME of a C entry point, and a

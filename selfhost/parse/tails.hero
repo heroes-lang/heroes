@@ -1,8 +1,8 @@
 # What follows a declaration's NAME, and it is the same after an ordinary
 # head and after an `extern` group's member (design.md §4.1, §4.2, §4.19;
 # panels 036, 055, 060, 061).
-# Port of the tail half of `archive/bootstrap-rs/heroes/src/syntax/decl.rs`
-# and `archive/bootstrap-rs/heroes/src/syntax/data.rs`.
+# Port of the tail half of `heroes/src/syntax/decl.rs` in the Rust bootstrap at `m-bootstrap-archive`
+# and `heroes/src/syntax/data.rs` in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # A tail is everything a declaration has after its name: a constant's type
 # and value, a function's parameters, arrow and body, a record's fields and

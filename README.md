@@ -200,7 +200,7 @@ a timing means anything.
 Every capability is a subcommand or a flag of the one binary, never a second
 binary, never a script, never a Makefile; `heroes --help` prints the current
 surface. The Rust bootstrap that used to be the way in is
-`archive/bootstrap-rs/`, kept as a record and not maintained. The exception that
+the Rust bootstrap at `m-bootstrap-archive`, kept as a record and not maintained. The exception that
 let `cargo` build the compiler had an expiry date written into it, and it
 expired the day the compiler could build itself.
 

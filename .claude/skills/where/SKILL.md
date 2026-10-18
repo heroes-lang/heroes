@@ -48,7 +48,7 @@ sed -n '/^## The chain/,/^## The milestones/p' docs/ROADMAP.md   # what is next,
 cat docs/roadmap/milestones/<the open milestone>.md   # the reasoning the open work carries
 ./heroes run tests/harness/main.hero -- ./heroes 2>&1 | tail -2   # green or red, one line
                                   # (`cargo test` until M-bootstrap-archive; the
-                                  #  Rust it ran is archive/bootstrap-rs/ now)
+                                  #  Rust it ran is the Rust bootstrap at `m-bootstrap-archive` now)
 ```
 
 Determine: current milestone (from tags + commit messages), what the last

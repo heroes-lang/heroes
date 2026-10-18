@@ -1,7 +1,7 @@
 # M-witnessed-seed — the seed witnessed by a second implementation
 
 **Scheduled 2026-10-14, at row 68 (69 since 2026-10-18), by the author's instruction**, before
-`archive/bootstrap-rs/` leaves the tree. No warrant is claimed.
+the Rust bootstrap, `archive/bootstrap-rs/` until 2026-10-18, leaves the tree. No warrant is claimed.
 
 **Opened 2026-10-18**, by the author's instruction of the night before, given
 while M-readonly-lend was landing, meant as *if you finish this step, start the next
@@ -24,7 +24,7 @@ construction of the 1984 Turing Award lecture *Reflections on Trusting Trust*
 against a second implementation was made while one still ran: on 2026-08-18
 the Rust bootstrap and the self-hosted compiler emitted the same C for 127 of
 127 programs (`docs/records/journal/022-selfhost-fixpoint.md`), and
-`archive/bootstrap-rs/README.md` calls that agreement *the only reason anybody
+`README.md` in the Rust bootstrap at `m-bootstrap-archive` calls that agreement *the only reason anybody
 can trust the seed without reading 22 MB of C*. And "any C compiler" has been
 proved on one clang (`seed/README.md`), while the seed carries 66
 `#pragma clang` lines.
@@ -42,7 +42,7 @@ proved on one clang (`seed/README.md`), while the seed carries 66
 3. The chain walked from that root to today's seed through the sources of
    the milestones, in two stages where a link does not build alone, as
    background work that blocks no other row.
-4. Only then `archive/bootstrap-rs/` out of the tree, reachable at its tag,
+4. Only then `archive/bootstrap-rs/` out of the tree (2026-10-18), reachable at its tag,
    and the 186 living citations of it saying *ported from the Rust bootstrap,
    archived at `m-bootstrap-archive`*.
 

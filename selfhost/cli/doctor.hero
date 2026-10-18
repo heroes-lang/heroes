@@ -1,5 +1,5 @@
 # heroes doctor and heroes this — the two commands with no file
-# (panels 016, 080). Port of archive/bootstrap-rs/heroes-cli/src/commands/
+# (panels 016, 080). Port of heroes-cli/src/commands/ in the Rust bootstrap at `m-bootstrap-archive`
 # {doctor,this}.rs, one module because each is a page and both answer
 # without reading a program.
 #

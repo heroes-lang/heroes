@@ -1,6 +1,6 @@
 # The token cursor: the parser's only way to move, and the only place that
 # knows how to fail.
-# Port of archive/bootstrap-rs/heroes/src/syntax/cursor.rs.
+# Port of heroes/src/syntax/cursor.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # Three jobs, all of them invariants the grammar files then get to ignore:
 #
@@ -366,7 +366,7 @@ test "the caret underlines what a reader can see"
 
 ## Recovery — what to drop after a mistake
 
-# Port of archive/bootstrap-rs/heroes/src/syntax/recover.rs, an `impl Cursor`
+# Port of heroes/src/syntax/recover.rs in the Rust bootstrap at `m-bootstrap-archive`, an `impl Cursor`
 # in a second file on the Rust side; here the same record and file.
 #
 # Four moves, each with a landmark it trusts. The error is the deliverable

@@ -196,7 +196,7 @@ input differs (CL-023). Briefs keep every command short, grep design.md and
 its `docs/panel/` file, a decision issue and its own commit.
 
 ## 5. The Heroes subset of Rust, the Cyclone rule
-Spent at the fixpoint (CL-021): the Rust it governed is `archive/bootstrap-rs/`,
+Spent at the fixpoint (CL-021): the Rust it governed is the Rust bootstrap at `m-bootstrap-archive`,
 which nothing builds, and `selfhost/` is Heroes.
 
 ## 6. Nim: copy the surface, never the implementation

@@ -1,6 +1,6 @@
 # The classes where THE HEADER CONTRADICTS THE DECLARATION (design.md
 # §4.19; panels 036, 038, 042, 048). Port of
-# archive/bootstrap-rs/heroes/src/emit/ffi_declared.rs.
+# heroes/src/emit/ffi_declared.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # Three readers, one seam: whose statement the verdict is about. Two
 # read a _Static_assert this emitter wrote — a result type the header

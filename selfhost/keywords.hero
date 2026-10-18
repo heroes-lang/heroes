@@ -1,6 +1,6 @@
 # Heroes' own word tables: the keywords, which can never be identifiers, and
 # the contextual words, each read in one position and a name everywhere else.
-# Port of archive/bootstrap-rs/heroes/src/lexer/keywords.rs (M-selfhost-probe).
+# Port of heroes/src/lexer/keywords.rs in the Rust bootstrap at `m-bootstrap-archive` (M-selfhost-probe).
 #
 # `keyword` is the closed list from spec/reserved-words.md § keywords. The
 # registry's other half, the foreign words that fail loudly with the repair

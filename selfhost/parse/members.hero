@@ -1,7 +1,7 @@
 # What sits *inside* a signature: type parameters, value parameters (design.md
 # §4.2, §4.8, §4.12), and since 2026-09-25 the words after a parameter's or a
 # result's type, read in one loop (`read_marks`). Port of
-# archive/bootstrap-rs/heroes/src/syntax/members.rs. A record's fields and a
+# heroes/src/syntax/members.rs in the Rust bootstrap at `m-bootstrap-archive`. A record's fields and a
 # variant's cases, its other half, are `parse/member_lines.hero` since
 # 2026-09-30, when a member's line came to be judged at its end.
 #

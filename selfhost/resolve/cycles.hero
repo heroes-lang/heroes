@@ -1,5 +1,5 @@
 # Whether the constants' bodies are circular (design.md §4.2, §4.16; panel
-# 039). Port of archive/bootstrap-rs/heroes/src/resolve/cycles.rs; what a
+# 039). Port of heroes/src/resolve/cycles.rs in the Rust bootstrap at `m-bootstrap-archive`; what a
 # body may contain, constbody.rs, is `resolve/constant_body.hero`, out of this
 # module on 2026-10-05 (defect 363) with the helpers both ask, which is what
 # had held the two in one knot.

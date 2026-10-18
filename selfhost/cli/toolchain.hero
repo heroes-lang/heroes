@@ -1,7 +1,7 @@
 # Everything between the generated C and a running binary: where the
 # runtime is, what clang is invoked with, and what is cached where
 # (design.md §3.1; panels 020, 036, 055). Port of the toolchain half
-# of archive/bootstrap-rs/heroes-cli/src/commands/toolchain.rs.
+# of heroes-cli/src/commands/toolchain.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # THE CACHE KEY IS THE WHOLE CONFIGURATION, not the source. Measured
 # in the bootstrap: hero_print_int changed with runtime.o not

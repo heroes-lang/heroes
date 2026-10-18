@@ -1,6 +1,6 @@
 # What a constant's body may contain (design.md §4.2, §4.16; panel 039), and
 # which declaration an offset falls inside, which the cycle check asks too.
-# Port of archive/bootstrap-rs/heroes/src/resolve/constbody.rs. Out of
+# Port of heroes/src/resolve/constbody.rs in the Rust bootstrap at `m-bootstrap-archive`. Out of
 # `resolve/cycles.hero` on 2026-10-05 (defect 363), along the Rust side's own
 # seam, when the one sweep below took that module past its decided 331 lines:
 # what held the two in one knot was the helpers each called, which live here

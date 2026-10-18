@@ -1,5 +1,5 @@
 # heroes --help: the table, plus the contract (panel 016). Port of
-# archive/bootstrap-rs/heroes-cli/src/cli/help.rs. And heroes --version, the
+# heroes-cli/src/cli/help.rs in the Rust bootstrap at `m-bootstrap-archive`. And heroes --version, the
 # other answer the compiler gives without reading a program.
 #
 # The exit codes are printed because a wrapper script has nowhere else

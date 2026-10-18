@@ -75,7 +75,7 @@ is a full panel.
      place it kept failing. Six numbers across panels 155, 156 and 157 were
      carried: a ceiling that had moved (1708 against 1861), a count that was a
      third of the truth (17 against 50), a seam that was inside a `test` block,
-     a *provably* traced to `archive/bootstrap-rs/`, an `.expected` file that
+     a *provably* traced to the Rust bootstrap at `m-bootstrap-archive`, an `.expected` file that
      does not exist, and a platform marked unrun hours after the author powered
      the box. **Every one was caught by a seat and none by the coordinator**,
      which is the finding rather than the count: a brief is the one document in
@@ -108,7 +108,7 @@ is a full panel.
      careful*.
    - `compiler-engineer` ← the proposal + pointers into `selfhost/` and
      `runtime/` (it must cite files and line counts). **Never `crates/`** (archived 2026-08-19): that
-     tree is `archive/bootstrap-rs/`, nothing builds it, and a seat sent there
+     tree is the Rust bootstrap at `m-bootstrap-archive`, nothing builds it, and a seat sent there
      measures a compiler that no longer ships. Give it the cheap route in the
      brief too — the seed builds in 3.4 s (`clang -I runtime seed/heroes.c
      runtime/runtime.c -o heroes`), while rebuilding from `selfhost/` was ~20

@@ -1,6 +1,6 @@
 # The lowering walk over BODIES: statements, places and expressions
 # become instructions (design.md Part 10 step 6, §4.4, §4.7, §4.8,
-# §4.9). Port of `archive/bootstrap-rs/heroes/src/ir/stmts.rs` and its
+# §4.9). Port of `heroes/src/ir/stmts.rs` in the Rust bootstrap at `m-bootstrap-archive` and its
 # eight siblings in that directory — places, exprs, control, fallible,
 # calls, ufcs, asserts, matches — nine Rust files as one module. The
 # tenth, decls.rs, is `selfhost/ir/lower.hero` beside this one.

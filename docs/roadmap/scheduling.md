@@ -244,7 +244,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   28 temporaries) against the **247** in `syn/expr.hero::compared` that
   M-qbe-backend's own item already carries. **Two findings placed the row rather
   than the symptom list.** The promise has no instrument: the golden this file
-  cites at `:452` is `archive/bootstrap-rs/heroes-cli/tests/golden.rs:1012`,
+  cites at `:452` is `heroes-cli/tests/golden.rs:1012` in the Rust bootstrap at `m-bootstrap-archive`,
   nothing has built that tree since M-bootstrap-archive on 2026-08-19, and CI
   installs lldb on the Linux leg for a test it never runs. And design.md's own
   consolation is false — Part 2 (`design.md:594`) refuses typed inspection on the
@@ -422,7 +422,7 @@ not yet run again, a measured rehearsal of a history rewrite (measurement
   *Corrected the same evening*: 87% of what a clone receives, not 70%, and
   301 versions where the page read 1,222 (measurement 045 § 7).
 - **M-witnessed-seed** enters at 68: the fixpoint proves consistency and not
-  provenance, and `archive/bootstrap-rs/` is the only second implementation
+  provenance, and the Rust bootstrap at `m-bootstrap-archive` is the only second implementation
   the seed was ever compared with, so it leaves the tree only after that
   comparison is run again.
 - **M-thesis-harness** moves from 73 to 69, ahead of the packages: the

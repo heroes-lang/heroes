@@ -1183,7 +1183,7 @@ Three rules follow, and they bind every later edit:
   (2026-08-19). Both conditions this bullet named are met and were re-measured
   the day it was rewritten: `clang -I runtime seed/heroes.c runtime/runtime.c -o
   heroes` builds the compiler from a clean checkout with nothing but clang, and
-  `crates/` has been `archive/bootstrap-rs/` since 2026-08-19. What changed on the pages is the
+  `crates/` was `archive/bootstrap-rs/` from 2026-08-19 to 2026-10-18, now at `m-bootstrap-archive`. What changed on the pages is the
   facts — the build instructions, the counts, and `selfhost.html`'s closing
   section — **not** the label: calling the language *v1* in public is a release
   decision and it is the author's, so it waits for them rather than arriving as

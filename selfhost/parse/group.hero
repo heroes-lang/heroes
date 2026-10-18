@@ -1,7 +1,7 @@
 # The `extern` group: one head line, N members, and no trace of it
 # afterwards (design.md §4.19, spec § 13 FFI; panels 036, 060, 061, 074).
-# Port of `archive/bootstrap-rs/heroes/src/syntax/externs.rs` and
-# `archive/bootstrap-rs/heroes/src/syntax/extern_members.rs`.
+# Port of `heroes/src/syntax/externs.rs` in the Rust bootstrap at `m-bootstrap-archive` and
+# `heroes/src/syntax/extern_members.rs` in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # **The group is flattened here and only here** (§4.19, panel 036). One
 # `Decl` per signature, each carrying the head line's spans, because a

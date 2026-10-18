@@ -1,5 +1,5 @@
 # Mismatches, operators, and what a call will accept.
-# Port of archive/bootstrap-rs/heroes/src/types/errors/values.rs.
+# Port of heroes/src/types/errors/values.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # **The discard family moved out on 2026-09-16**, at M-check-completeness
 # step 3, when this file passed its DECIDED ceiling of 334 and the

@@ -110,7 +110,7 @@ in this shape and says why (`.claude/rules/records.md` § The issues).
   about `DECIDE.md`, and this is that story in the test suites.
 
   `cargo test` and `cargo clippy` were this line until the archive; the Rust they
-  ran is `archive/bootstrap-rs/` and nothing builds it. Naming a suite runs only
+  ran is the Rust bootstrap at `m-bootstrap-archive` and nothing builds it. Naming a suite runs only
   that one, which is what makes a fast loop possible: `-- <compiler> records`.
 
 ## 3. On failure

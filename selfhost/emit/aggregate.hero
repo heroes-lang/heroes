@@ -1,6 +1,6 @@
 # Records as C: construction, field reads, and the calls that keep a
 # counted field alive (design.md §4.9, §4.10; panels 021, 022, 060, 061).
-# Port of archive/bootstrap-rs/heroes/src/emit/aggregate.rs. A place with a
+# Port of heroes/src/emit/aggregate.rs in the Rust bootstrap at `m-bootstrap-archive`. A place with a
 # path, and the field it walks through, are `emit/places.hero`'s since panel
 # 196's R1 gave a place an element; `field` and `place` below are where the
 # rest of the emitter asks them.
