@@ -151,15 +151,21 @@ function header(f: containers.Function, c: state.Checked, s: source.Source, decl
 
             for slot_id in f.params
                 marker: str @= ""
+                lent: str @= ""
 
+                # A parameter lent read-only says `lent` where its source
+                # does, never the `@` of the pointer it is handed as (panel
+                # 217's R5).
                 match f.slots[slot_id].kind
                     .param_slot ps =>
-                        if ps.mutable
+                        if ps.read_only
+                            lent @ " lent"
+                        else if ps.mutable
                             marker @ "@"
                     .local_slot | .synthetic_slot | .return_slot => continue
 
                 params @ params.push(
-                    marker + f.slots[slot_id].name + ": " + render.render_ty(c.types, s, decls, f.slots[slot_id].ty, f.generics)
+                    marker + f.slots[slot_id].name + ": " + render.render_ty(c.types, s, decls, f.slots[slot_id].ty, f.generics) + lent
                 )
 
             result: str @= ""
@@ -354,7 +360,11 @@ function argument_list(f: containers.Function, run: ir.Run, c: state.Checked, s:
             # repeated at the call site: the mutation is visible on the
             # line.
 
-            .inout_arg io => rendered @ rendered.push("@" + written(f, io.place, c, s, decls))
+            .inout_arg io =>
+                if io.read_only
+                    rendered @ rendered.push(written(f, io.place, c, s, decls))
+                else
+                    rendered @ rendered.push("@" + written(f, io.place, c, s, decls))
 
     return rendered.join(", ")
 

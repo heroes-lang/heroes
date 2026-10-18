@@ -1,0 +1,31 @@
+# Panel 217's R4, ratified 2026-10-17 (M-readonly-lend). Where a function
+# takes a place with `@` and only reads it, `never_rebound`'s first fix takes
+# it read-only in place, `b: Box lent`, the one route a record holding a lock
+# leaves, and its second removes the `@`, a copy; a parameter that already
+# says `lent` is offered the second alone, which makes it read-only by
+# itself. And an `@` rooted at a parameter lent read-only, handed to a
+# function of C, is told the route a C function that only reads takes: its
+# own declaration's `lent`, the compiler-engineer's r01 at the sitting.
+
+extern "lent-is-named-where-an-at-parameter-only-reads.h"
+    record Pt tag pt
+        x: i64
+    function pt_value(@p: Pt) -> i64
+
+record Box
+    n: i64
+
+function doubled(@b: Box) -> i64  #~ never_rebound
+    return b.n * 2
+
+function tripled(@b: Box lent) -> i64  #~ never_rebound
+    return b.n * 3
+
+function peek(p: Pt lent) -> i64
+    return pt_value(@p)  #~ not_mutable
+
+function main()
+    b @= Box(n: 2)
+    b.n @ 3
+    print(doubled(@b), " ", tripled(@b))
+    print(peek(Pt(x: 4)))

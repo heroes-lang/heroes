@@ -1,0 +1,20 @@
+# Panel 217's R4, ratified 2026-10-17 (M-readonly-lend): a construction
+# stored into a place that holds a lock is a copy of a second lock into it,
+# refused as panel 215's R2 refuses every copy of one, and now told where the
+# record is built instead: where it lives, at its own declaration, changed
+# there field by field. Two readers of twenty in the sitting's arms wrote this
+# store, in a set-up helper taking the caller's place.
+
+extern "ffi-lock-copied.h"
+    record Box tag box partial
+        n: i64
+    function box_init(@b: Box) -> i32
+
+function reset(@b: Box)
+    b @ Box(n: 0, rest: zero)  #~ ffi_lock_copied
+
+function main()
+    m: Box @= Box(n: 7, rest: zero)
+    _ = box_init(@m)
+    reset(@m)
+    print(m.n)

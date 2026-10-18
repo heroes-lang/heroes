@@ -152,6 +152,24 @@ function handed_in_place(a: ast.Ast, r: resolved.Resolved, s: source.Source, dec
     at = position_of(a, call: call, value: value, first: callee.must().first)
     return at_position(a, s, decls, decl: callee.must().decl, at: at)
 
+# The C name the call at `at` calls, or "" for any other callee or none: an `@`
+# rooted at a parameter lent read-only and handed to a function of C is
+# told the route a C function that only reads takes (`errors.lent_written`).
+function c_callee(r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64?) -> str
+    if at.is_err()
+        return ""
+
+    match r.uses[at.must()]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl fd =>
+                    if fd.value.is_extern
+                        return source.span_text(s, decls[t.at].name)
+                .constant_decl | .record_decl | .variant_decl | .test_decl => return ""
+        .local | .builtin | .module | .unresolved => return ""
+
+    return ""
+
 # Whether a local is a parameter its function lends read-only, `c: T lent`
 # (panel 217's R1): its declaration says so, read by the name's position.
 function lent_param(decls: [ast.Decl], local: resolved.Local) -> bool

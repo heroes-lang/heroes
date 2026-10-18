@@ -408,7 +408,7 @@ test "a local or synthetic slot of a counted type is owed, a parameter or a numb
     f: containers.Function @= one_slot([], term: .return_term(value: fail(code: "none", msg: "no value")))
     f.slots @ [
         containers.Slot(name: "a", ty: text_ty, kind: .local_slot(mutable: false))
-        containers.Slot(name: "p", ty: text_ty, kind: .param_slot(mutable: false))
+        containers.Slot(name: "p", ty: text_ty, kind: .param_slot(mutable: false, read_only: false))
         containers.Slot(name: "$own2", ty: text_ty, kind: .synthetic_slot)
         containers.Slot(name: "n", ty: table.int_ty_id(c.types), kind: .local_slot(mutable: true))
         containers.Slot(name: "q", ty: text_ty, kind: .local_slot(mutable: true))

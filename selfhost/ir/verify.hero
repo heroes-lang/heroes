@@ -45,6 +45,7 @@ use ir/one_exit
 use ir/agree
 use ir/instances
 use ir/callees
+use ir/read_only
 
 # Whether this function's implementation is C's: an extern function's
 # code, or an extern constant's value (§4.19, panel 038). Both have no
@@ -95,6 +96,7 @@ function verify(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> [
             check_instructions(f, blk, at: at, problems: @problems)
             callees.check(p, f, blk, c, held: held, at: at, problems: @problems)
             check_copy_out(f, blk, at: at, problems: @problems)
+            read_only.check(f, blk, at: at, problems: @problems)
             check_return_type(f, blk, c, at: at, problems: @problems)
             phases.check(p, f, blk, c, known: known, label: at, problems: @problems)
             index @ index + 1
@@ -223,7 +225,8 @@ function check_instructions(f: containers.Function, blk: containers.Block, at: s
         index @ index + 1
 
 # §4.8: copy-out happens ALWAYS. Every block that returns must write
-# back every @ parameter — WHICH parameters, not how many: this check
+# back every @ parameter, one lent read-only owing none since nothing wrote
+# it (panel 217's R5) — WHICH parameters, not how many: this check
 # once counted, so two copy-outs of one parameter and none of the other
 # passed, which is precisely the wrong program §4.8 exists to refuse
 # (sweep 001 audit S8's class, one milestone apart).
@@ -239,11 +242,8 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
     owed: [i64] @= []
 
     for slot_id in f.params
-        match f.slots[slot_id].kind
-            .param_slot ps =>
-                if ps.mutable
-                    owed @ owed.push(slot_id)
-            .local_slot | .synthetic_slot | .return_slot => continue
+        if containers.owes_copy_out(f.slots[slot_id])
+            owed @ owed.push(slot_id)
 
     if owed.len() == 0
         return
@@ -398,8 +398,8 @@ test "an open block, a missing form and a wrong return are all named"
 test "a return block that skips one @ parameter is caught by identity"
     span = token.Span(start: 0, end: 1)
     slots: [containers.Slot] = [
-        containers.Slot(name: "a", ty: 2, kind: .param_slot(mutable: true))
-        containers.Slot(name: "b", ty: 2, kind: .param_slot(mutable: true))
+        containers.Slot(name: "a", ty: 2, kind: .param_slot(mutable: true, read_only: false))
+        containers.Slot(name: "b", ty: 2, kind: .param_slot(mutable: true, read_only: false))
     ]
 
     # Copies out s0 twice and s1 never: two writes for two parameters,
@@ -452,7 +452,7 @@ test "an element lent through @ by anything but a call is refused before the emi
     span = token.Span(start: 0, end: 1)
     slots: [containers.Slot] = [containers.Slot(name: "bs", ty: 2, kind: .local_slot(mutable: false))]
     steps: [ir.PathStep] = [.index_step(value: 0)]
-    arguments: [ir.Arg] = [.inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 1)))]
+    arguments: [ir.Arg] = [.inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 1)), read_only: false)]
     insts: [ir.Inst] = [
         ir.Inst(dest: fail(code: "none", msg: "void"), op: .construct(shape: .array_shape, arguments: ir.Run(start: 0, length: 1)), ty: 1, span: span)
     ]

@@ -199,12 +199,21 @@ function unused(name: str, kind: resolved.LocalKind, writes: i64, span: token.Sp
 # about it.
 # A write to a parameter lent read-only (panel 217's R2): the caller's own
 # place, which the signature promised to leave as it is.
-function lent_written(name: str, span: token.Span) -> diag.Diagnostic
-    return diag.new_diagnostic(
+function lent_written(name: str, span: token.Span, to_c: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "not_mutable",
         message: "`" + name + "` is lent read-only, the caller's own place, so it cannot be written — where the function changes it, take it `@" + name + "` in the signature and at every call site; where it changes a copy, bind one, `n @= " + name + "`",
         span: span
     )
+
+    # Handed with `@` to a function of C, the route a C function that only
+    # reads takes is its own declaration's (the compiler-engineer's r01 at
+    # panel 217, which the generic sentence above sent elsewhere).
+    if to_c != ""
+        d.notes @ d.notes.push(
+            "`" + to_c + "` is a function of C: where its header only reads what this argument lends, through a pointer to `const`, declare that parameter `lent` with no `@` in its group and hand it `" + name + "` unmarked; a C function that writes it needs the caller's place, `@" + name + "`, in this function's signature too"
+        )
+    return d
 
 function not_mutable(name: str, kind: resolved.LocalKind, span: token.Span) -> diag.Diagnostic
     message = match kind

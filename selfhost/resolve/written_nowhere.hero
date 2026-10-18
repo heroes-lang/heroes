@@ -97,17 +97,15 @@ function told(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Res
         message: "`" + name + "` is an `@` parameter and nothing writes it — every caller's place comes back exactly as it was lent: write `" + name + "` where the body meant to change it, or remove the `@` here and at every call",
         span: local.name
     )
-    typed = type_written(a, s, decls, out: out, at: at)
-
-    if typed != ""
-        d.notes @ d.notes.push(
-            "where the body only reads it, take it read-only in place, the caller's own cell and no copy: `" + name + ": " + typed + " lent`, with no `@` at the calls"
-        )
     back = written_back(a, s, decls, out: out, at: at)
 
     if !back.is_err()
         d.fixes @ d.fixes.push(back.must())
     marker = marker_before(s, local.name)
+    lent = lent_fix(a, s, decls, out: out, at: at, marker: marker)
+
+    if !lent.is_err()
+        d.fixes @ d.fixes.push(lent.must())
 
     if marker.end > marker.start
         d.fixes @ d.fixes.push(
@@ -115,16 +113,28 @@ function told(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Res
         )
     return d
 
-# The type the parameter at local `at` was written with, or "".
-function type_written(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Resolved, at: i64) -> str
+# The parameter taken read-only in place, `@c: T` rewritten `c: T lent`
+# (panel 217's R4): what a body that only reads it wants, and the one route a
+# record holding a lock leaves, where removing the `@` alone makes a copy the
+# build refuses. A guess, since each call's `@` goes too and no fix of the
+# declaration writes them; absent where the parameter already says `lent`,
+# which removing the `@` makes read-only by itself.
+function lent_fix(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Resolved, at: i64, marker: token.Span) -> diag.Fix?
+    if marker.end <= marker.start
+        return fail(code: "none", msg: "no `@` written")
+
     match decls[out.locals[at].owner].kind
         .function_decl fd =>
             for p in fd.value.params
-                if p.name.start == out.locals[at].name.start
-                    return source.span_text(s, a.types[p.ty].span)
-        .constant_decl | .record_decl | .variant_decl | .test_decl => return ""
+                if p.name.start == out.locals[at].name.start && !p.lent
+                    name = source.span_text(s, p.name)
+                    typed = source.span_text(s, a.types[p.ty].span)
+                    return ok(
+                        diag.Fix(title: "take it read-only in place, the caller's own cell and no copy: `" + name + ": " + typed + " lent`, with no `@` at the calls", replacement: name + ": " + typed + " lent", span: token.Span(start: marker.start, end: a.types[p.ty].span.end), certainty: .guess)
+                    )
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")
 
-    return ""
+    return fail(code: "none", msg: "no such parameter, or one already `lent`")
 
 # `l @ m` where the body bound a cell `m @= l` from the parameter itself: the
 # write a body that changes a copy forgot, written as the body's last

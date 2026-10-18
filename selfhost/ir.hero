@@ -51,13 +51,15 @@ variant PathStep
     index_step
         value: i64
 
-# One argument of a call. inout is `@l` at the call site: the callee
-# copies in and copies out, so the argument is a place, not a value.
+# One argument of a call. inout is the caller's place handed to the callee,
+# `@l` at the call site, or a value lent read-only, `read_only`, which the
+# callee reads and never writes (panel 217's R5): a place, not a value.
 variant Arg
     value_arg
         value: i64
     inout_arg
         place: Place
+        read_only: bool
 
 # What a call calls — the panel's most expensive finding. The resolver
 # decided this once; recording it here is what stops the emitter from

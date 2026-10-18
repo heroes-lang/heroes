@@ -283,7 +283,7 @@ function merged(c: state.Checked, first: [ir.Inst], second: ir.Term, closing: [i
     slots: [containers.Slot] = [
         containers.Slot(name: "s", ty: text_ty, kind: .local_slot(mutable: false))
         containers.Slot(name: "$ret0", ty: text_ty, kind: .return_slot)
-        containers.Slot(name: "p", ty: text_ty, kind: .param_slot(mutable: true))
+        containers.Slot(name: "p", ty: text_ty, kind: .param_slot(mutable: true, read_only: false))
     ]
     blocks: [containers.Block] = [
         containers.Block(preds: [], insts: first, term: .jump(to: 2), note: "a")

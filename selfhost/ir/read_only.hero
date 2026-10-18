@@ -1,0 +1,85 @@
+# A parameter lent read-only is never written in the IR (design.md §4.8;
+# panel 217's R5, M-readonly-lend). The lowering hands it the `@`
+# parameter's pointer, so its representation cannot say it is read only, and
+# its slot carries the mode (`containers.SlotKind.param_slot`'s `read_only`).
+# No `store` or `push_owned` lands through it, and no copy-out is written for
+# it, since nothing in the body changed it. The checker refuses every write a
+# program spells (`resolve/writes.hero`); this is the invariant a later pass
+# must keep, asked of the IR itself, so a pass that wrote through the slot
+# would stop the build here rather than reach C. Its own file beside
+# `ir/callees.hero`, the verifier's other question asked apart.
+
+use token
+use ir
+use ir/containers
+
+# Every instruction of `blk` that writes through a read-only parameter.
+function check(f: containers.Function, blk: containers.Block, at: str, @problems: [str])
+    for inst in blk.insts
+        match inst.op
+            .store st => written(f, root: st.place.root, what: "a store", at: at, problems: @problems)
+            .push_owned po => written(f, root: po.place.root, what: "a push", at: at, problems: @problems)
+            .copy_out co => written(f, root: co.param, what: "a copy-out", at: at, problems: @problems)
+            .lit | .load | .unary | .binary | .cast | .call | .construct => continue
+            .field | .index | .map_get | .len_of | .tag_of | .payload => continue
+            .func_ref | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+function written(f: containers.Function, root: i64, what: str, at: str, @problems: [str])
+    if root < 0 || root >= f.slots.len()
+        return
+
+    match f.slots[root].kind
+        .param_slot ps =>
+            if ps.read_only
+                problems @ problems.push(
+                    at + what + " through `" + f.slots[root].name + "`, a parameter lent read-only"
+                )
+        .local_slot | .synthetic_slot | .return_slot => return
+
+## Tests
+
+# Every verifier check has a test that makes it fire (LLVM's
+# `test/Verifier`): a store and a copy-out through the read-only slot are
+# each a problem, a load of it is none, and the same store through an `@`
+# parameter is none either.
+test "a write through a parameter lent read-only is a problem, and a read of it none"
+    span = token.Span(start: 0, end: 1)
+    void: i64? = fail(code: "none", msg: "void")
+    slots: [containers.Slot] = [
+        containers.Slot(name: "c", ty: 2, kind: .param_slot(mutable: true, read_only: true))
+        containers.Slot(name: "d", ty: 2, kind: .param_slot(mutable: true, read_only: false))
+    ]
+    whole = ir.Run(start: 0, length: 0)
+    insts: [ir.Inst] = [
+        ir.Inst(dest: ok(0), op: .load(place: ir.Place(root: 0, path: whole)), ty: 2, span: span)
+        ir.Inst(dest: void, op: .store(place: ir.Place(root: 0, path: whole), value: 0), ty: 1, span: span)
+        ir.Inst(dest: void, op: .copy_out(param: 0), ty: 1, span: span)
+        ir.Inst(dest: void, op: .store(place: ir.Place(root: 1, path: whole), value: 0), ty: 1, span: span)
+    ]
+    preds: [i64] = []
+    blk = containers.Block(
+        preds: preds,
+        insts: insts,
+        term: .return_term(value: fail(code: "none", msg: "no value")),
+        note: "t"
+    )
+    f = containers.Function(
+        name: "peek",
+        decl: 0,
+        kind: .function_kind,
+        generics: [],
+        params: [0, 1],
+        result: 1,
+        slots: slots,
+        blocks: [blk],
+        values: [0],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: span
+    )
+    problems: [str] @= []
+    check(f, blk, at: "peek: bb0: ", problems: @problems)
+    assert problems == ["peek: bb0: a store through `c`, a parameter lent read-only", "peek: bb0: a copy-out through `c`, a parameter lent read-only"]

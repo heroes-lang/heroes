@@ -31,8 +31,14 @@ variant FnKind
 # Where a slot came from. It decides one thing beyond the dump: whether
 # an exit edge owes a copy_out (§4.8).
 variant SlotKind
+    # `mutable` is how the parameter is handed, the caller's place by
+    # pointer, an `@` parameter's; `read_only` that the body never writes
+    # it, `c: T lent` (panel 217's R5): such a slot owes no copy-out, and
+    # `ir/read_only.hero` refuses a store or a copy-out through it, so a
+    # later pass cannot write what the program lent to be read.
     param_slot
         mutable: bool
+        read_only: bool
     # `x = 5` or `v: i64 @= 0` — the surface distinction is the
     # resolver's, and by here both are cells that hold a value. **The flag
     # rides along since panel 166** (2026-09-19): a `ptr` lend of a field
@@ -59,6 +65,17 @@ record Slot
     name: str
     ty: i64
     kind: SlotKind
+
+# Whether a slot owes a copy-out at every exit (§4.8): an `@` parameter,
+# handed by pointer and written, never one lent read-only, handed the same
+# way and never written (panel 217's R5). The one home of what the lowering,
+# the exit merge and the verifier each ask: two copies of it disagreed at the
+# landing, the merge waiting for a copy-out the lowering no longer wrote, and
+# the verifier refused the program, as it should.
+function owes_copy_out(slot: Slot) -> bool
+    return match slot.kind
+        .param_slot ps                               => ps.mutable && !ps.read_only
+        .local_slot | .synthetic_slot | .return_slot => false
 
 # Whether this is the return slot, the one slot that only borrows.
 function is_return_slot(slot: Slot) -> bool
@@ -241,7 +258,7 @@ test "a run slices its pool, and the phase only moves forward"
         slots: [],
         blocks: [],
         values: [7, 8, 9],
-        arguments: [.value_arg(value: 4), .value_arg(value: 5), .inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 0)))],
+        arguments: [.value_arg(value: 4), .value_arg(value: 5), .inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 0)), read_only: false)],
         steps: [],
         instance: [],
         call_instances: {},

@@ -45,7 +45,7 @@ use read_lend
 # write to the root for the same reason — with no aliasing anywhere
 # (§4.10), a write nobody reads back is unobservable. Go left this hole
 # open (golang/go#20802); Heroes closes it because it has no aliases.
-function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64, callee: i64?)
     span = a.exprs[id].span
     text = source.span_text(s, span)
     local = state.lookup_local(r, text)
@@ -54,7 +54,10 @@ function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [as
         at = local.must()
 
         if !r.out.locals[at].mutable && read_lend.lent_param(decls, r.out.locals[at])
-            state.push_diagnostic(@r, errors.lent_written(text, span))
+            state.push_diagnostic(
+                @r,
+                errors.lent_written(name: text, span: span, to_c: read_lend.c_callee(r.out, s, decls, at: callee))
+            )
             return
 
         if !r.out.locals[at].mutable
@@ -92,11 +95,11 @@ function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [as
 # parser guarantees the shape — `not_a_place` refuses anything but a name,
 # a field path or an index path after `@` — so every arm below that is not
 # one of those three is a tree the parser did not produce.
-function inout_root(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
+function inout_root(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64, callee: i64?)
     match a.exprs[id].kind
         .name =>
             match r.out.uses[id]
-                .local | .top | .builtin => write_root(@r, a, s, decls, id)
+                .local | .top | .builtin => write_root(@r, a, s, decls, id, callee: callee)
                 .module | .unresolved    => return
         .field_name => return
         .field f =>
@@ -108,8 +111,8 @@ function inout_root(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [as
                     errors.no_mutable_globals(name: source.span_text(s, f.name), what: "top-level declaration", span: f.name)
                 )
                 return
-            inout_root(@r, a, s, decls, f.base)
-        .index i => inout_root(@r, a, s, decls, i.base)
+            inout_root(@r, a, s, decls, f.base, callee: callee)
+        .index i => inout_root(@r, a, s, decls, i.base, callee: callee)
 
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return
         .hole | .unary | .binary | .call | .method | .variant_case                     => return

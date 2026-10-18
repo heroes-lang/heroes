@@ -168,10 +168,18 @@ function lower_function(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
         if !written.is_err()
             ty @ written.must()
 
-        # A parameter lent read-only is the `@` parameter's pointer, which
-        # only the checker tells apart (`read_lend.hero`).
-        by_place = param.mutable || read_lend.read_only(f, param, a, s)
-        slot = build.param(@b, name: source.span_text(s, param.name), ty: ty, mutable: by_place)
+        # A parameter lent read-only is handed as the `@` parameter's
+        # pointer and never written, which its slot says (`read_lend.hero`;
+        # panel 217's R5), so it owes no copy-out and the verifier refuses
+        # a write through it.
+        read_only = read_lend.read_only(f, param, a, s)
+        slot = build.param(
+            @b,
+            name: source.span_text(s, param.name),
+            ty: ty,
+            mutable: param.mutable || read_only,
+            read_only: read_only
+        )
         local = build.local_at(b, param.name)
 
         if !local.is_err()

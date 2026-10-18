@@ -261,8 +261,8 @@ function append_arg(@arguments: [ir.Arg], a: ir.Arg)
 
 ## Slots — the half of the state that holds a value
 
-function param(@b: Lowering, name: str, ty: i64, mutable: bool) -> i64
-    added = slot(@b, name: name, ty: ty, kind: .param_slot(mutable: mutable))
+function param(@b: Lowering, name: str, ty: i64, mutable: bool, read_only: bool) -> i64
+    added = slot(@b, name: name, ty: ty, kind: .param_slot(mutable: mutable, read_only: read_only))
     append_id(@b.building.params, added)
     return added
 
@@ -316,11 +316,8 @@ function mutable_params(b: Lowering) -> [i64]
     out: [i64] @= []
 
     for slot_id in b.building.params
-        match b.building.slots[slot_id].kind
-            .param_slot p =>
-                if p.mutable
-                    out @ out.push(slot_id)
-            .local_slot | .synthetic_slot | .return_slot => continue
+        if containers.owes_copy_out(b.building.slots[slot_id])
+            out @ out.push(slot_id)
 
     return out
 
@@ -410,7 +407,7 @@ test "defect 261: one edge per target a terminator names, every arm a predecesso
     assert b.building.blocks[other].preds == [0]
 
     # The tables grown in place hold what each call added, at the index it said.
-    p = param(@b, name: "p", ty: 3, mutable: true)
+    p = param(@b, name: "p", ty: 3, mutable: true, read_only: false)
     q = slot(@b, name: "q", ty: 4, kind: .synthetic_slot)
     assert b.building.params == [p]
     assert b.building.slots[p].name == "p" && b.building.slots[q].ty == 4

@@ -1,0 +1,21 @@
+error[never_rebound]: `b` is an `@` parameter and nothing writes it — every caller's place comes back exactly as it was lent: write `b` where the body meant to change it, or remove the `@` here and at every call
+  at tests/golden/full/lent-is-named-where-an-at-parameter-only-reads.hero:18:19
+     |
+  18 | function doubled(@b: Box) -> i64  #~ never_rebound
+     |                   ^
+  fix (guess): take it read-only in place, the caller's own cell and no copy: `b: Box lent`, with no `@` at the calls
+  fix (guess): remove the `@`: `b` is read, never written
+
+error[never_rebound]: `b` is an `@` parameter and nothing writes it — every caller's place comes back exactly as it was lent: write `b` where the body meant to change it, or remove the `@` here and at every call
+  at tests/golden/full/lent-is-named-where-an-at-parameter-only-reads.hero:21:19
+     |
+  21 | function tripled(@b: Box lent) -> i64  #~ never_rebound
+     |                   ^
+  fix (guess): remove the `@`: `b` is read, never written
+
+error[not_mutable]: `p` is lent read-only, the caller's own place, so it cannot be written — where the function changes it, take it `@p` in the signature and at every call site; where it changes a copy, bind one, `n @= p`
+  at tests/golden/full/lent-is-named-where-an-at-parameter-only-reads.hero:25:22
+     |
+  25 |     return pt_value(@p)  #~ not_mutable
+     |                      ^
+  note: `pt_value` is a function of C: where its header only reads what this argument lends, through a pointer to `const`, declare that parameter `lent` with no `@` in its group and hand it `p` unmarked; a C function that writes it needs the caller's place, `@p`, in this function's signature too

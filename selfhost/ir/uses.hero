@@ -154,7 +154,7 @@ function scaffold() -> containers.Function
         slots: [],
         blocks: [],
         values: [0, 1, 2, 3, 4],
-        arguments: [.value_arg(value: 3), .inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 1)))],
+        arguments: [.value_arg(value: 3), .inout_arg(place: ir.Place(root: 0, path: ir.Run(start: 0, length: 1)), read_only: false)],
         steps: [.index_step(value: 4)],
         instance: [],
         call_instances: {},

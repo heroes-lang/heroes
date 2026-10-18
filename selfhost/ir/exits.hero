@@ -148,11 +148,8 @@ function mutable_params(f: containers.Function) -> [i64]
     out: [i64] @= []
 
     for slot_id in f.params
-        match f.slots[slot_id].kind
-            .param_slot ps =>
-                if ps.mutable
-                    out @ out.push(slot_id)
-            .local_slot | .synthetic_slot | .return_slot => continue
+        if containers.owes_copy_out(f.slots[slot_id])
+            out @ out.push(slot_id)
 
     return out
 

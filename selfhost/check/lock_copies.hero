@@ -67,6 +67,8 @@ function copies(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.
 
                 if !held_by_value[at].is_err()
                     extra @ ELEMENT
+                else if fresh(a, r, at: at)
+                    extra @ FRESH
                 d.notes @ notes(extra: extra)
                 out @ out.push(d)
         at @ at + 1
@@ -77,6 +79,12 @@ function copies(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.
 # record can be built, so the way out is a place of its own for each.
 constant ELEMENT: str
     "an array or a map holds its elements by value, so each element is a copy: keep each record in a cell of its own, `c: T @= T(...)`, and lend it with `@`"
+
+# What a construction stored, passed or returned needs said (panel 217's R4,
+# the two readers of twenty who stored a fresh one into a place): the record
+# is copied wherever it lands, so it is built where it lives.
+constant FRESH: str
+    "a construction is copied into wherever it lands: build the record where it lives, at its own declaration, `c: T @= T(...)`, and change it there field by field, `c.n @ 0`"
 
 function notes(extra: str) -> [str]
     out: [str] @= [

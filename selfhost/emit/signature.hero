@@ -127,8 +127,8 @@ test "the signature spells the pair rule, and an instance carries its hash"
     names = ctype.new_names(s, parsed.decls)
     int_id = table.int_ty_id(c.types)
     slots: [containers.Slot] = [
-        containers.Slot(name: "a", ty: int_id, kind: .param_slot(mutable: false))
-        containers.Slot(name: "b", ty: int_id, kind: .param_slot(mutable: true))
+        containers.Slot(name: "a", ty: int_id, kind: .param_slot(mutable: false, read_only: false))
+        containers.Slot(name: "b", ty: int_id, kind: .param_slot(mutable: true, read_only: false))
     ]
     f = containers.Function(
         name: "dist",

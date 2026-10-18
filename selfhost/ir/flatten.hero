@@ -632,7 +632,7 @@ function lowered_from(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: s
 # path, else its value held in a slot of its own (`ir/inout.hero`).
 function lent_argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> ir.Arg
     if read_lend.in_place(a, r, id)
-        return .inout_arg(place: place(@b, a, r, c, s, decls, id: id))
+        return .inout_arg(place: place(@b, a, r, c, s, decls, id: id), read_only: true)
     return inout.held(@b, value: expr(@b, a, r, c, s, decls, id: id), ty: c.expr_types[id], span: a.exprs[id].span)
 
 # The UFCS shape: the receiver IS parameter zero, lowered before the written
