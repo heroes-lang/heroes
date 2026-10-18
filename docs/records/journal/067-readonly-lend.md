@@ -202,3 +202,23 @@ because the tree's archive was made by macOS's `tar` without
 entries ran as programs. `.claude/rules/platforms.md` has said so since
 2026-09-03, and the archive was made before that section was read. Remade, the
 run read as above, and that run alone is the one this journal cites.
+
+**The formatter's probe, ended** that evening, the same compiler. `selfhost`
+in both families and `tests` in `single` read exit 0, and nothing was refused
+by the guard or by the reader: `selfhost`, 674 seeds, `single` 665,409
+variants every one held, `bracket` 1,523,601 of which 1,163,256 parse and every
+one held; `tests`, 1,688 seeds and 484 files the parser refuses, `single`
+601,935 variants every one held. The paragraph above said *an hour of CPU
+each*, an estimate, and it was wrong: `selfhost`'s `bracket` took 14,034 s of
+CPU and `tests`' `single` 16,410 s, on a machine loaded beside them (`real`
+40,165 s and 43,104 s). **`tests` in `bracket` did not end, and cannot**,
+which is defect 2139 (https://github.com/heroes-lang/heroes/issues/2139): it
+read its first 373 files in its first minutes and spent the next 10 h 58 min
+inside `fixedbugs-259`, whose 84,027 variants cost more than 61 hours of CPU,
+and one variant in 1,000 over the whole of `tests` judged 898 of 897,033 in
+944.91 s of CPU, every one held, about 262 hours for the run. In its place, the
+74 `.hero` files this milestone added or changed, both families, no stride, one
+job each, two at a time: 148 jobs at exit 0, 322,966 variants, 268,072 of them
+parsing and every one held. These runs read the formatter as both milestones
+left it, so M-inferred-cell's debt is paid by them too, `tests` in `bracket`
+excepted.

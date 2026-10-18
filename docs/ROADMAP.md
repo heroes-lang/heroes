@@ -15,7 +15,7 @@ preamble and its items).
 | | |
 |---|---|
 | **Current milestone** | **M-witnessed-seed**, row 69, **OPEN** since 2026-10-18 ([its page](roadmap/milestones/M-witnessed-seed.md)): the seed witnessed by a second implementation, the archived Rust bootstrap rebuilt and compared first, in one lane |
-| **Next** | M-thesis-harness beside M-rechecked-issues in two lanes. The formatter's probe M-inferred-cell's and M-readonly-lend's changes to `selfhost/print/` still owe |
+| **Next** | M-thesis-harness beside M-rechecked-issues in two lanes. The formatter's probe over `tests` in the `bracket` family cannot end (defect 2139); every other run M-inferred-cell's and M-readonly-lend's changes to `selfhost/print/` owed read exit 0 ([067](records/journal/067-readonly-lend.md)) |
 | **Last closed** | **M-readonly-lend**, 2026-10-18 ([067](records/journal/067-readonly-lend.md)) — panel 217's read-only lend: `lent` on a parameter, the caller's place read and never written, a group's record crossing to C as a pointer to const, the IR carrying the mode with a verifier rule; and defect 2128, a value only the probe sees told beside the build's earlier refusal · before it **M-bounded-seed** ([066](records/journal/066-bounded-seed.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **68** of 91 · **68** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **175,346** lines of Heroes in **674** modules (`find selfhost -name '*.hero'`) · the seed **263,383** lines of C, 26,240,524 bytes, in panel 219's s4 shape (56,190 directives), refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
