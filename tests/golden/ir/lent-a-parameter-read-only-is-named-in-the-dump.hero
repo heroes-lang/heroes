@@ -1,0 +1,16 @@
+# Panel 217's R5, ratified 2026-10-17 (M-readonly-lend): a parameter lent
+# read-only is named `lent` in the dump, as its source names it, never the
+# `@` of the pointer it is handed as; no copy-out is written for it, nothing
+# having written it; and the call that lends it carries no `@`. An `@`
+# parameter beside it keeps its `@` and its copy-out.
+record Pt
+    x: i64
+
+function sum(p: Pt lent, @q: Pt) -> i64
+    q.x @ q.x + p.x
+    return p.x + q.x
+
+function main()
+    a = Pt(x: 1)
+    b @= Pt(x: 2)
+    print(sum(p: a, q: @b))

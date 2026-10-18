@@ -1,0 +1,24 @@
+function sum(p: Pt lent, @q: Pt) -> i64
+    bb0  entry
+        $t1: i64 = load q.x
+        $t2: i64 = load p.x
+        $t3: i64 = add! $t1, $t2
+        store q.x <- $t3
+        $t4: i64 = load p.x
+        $t5: i64 = load q.x
+        $t6: i64 = add! $t4, $t5
+        copyout q
+        return $t6
+
+function main()
+    slots  a: Pt · b: Pt
+    bb0  entry
+        $t1: i64 = const 1
+        $t2: Pt = construct Pt($t1)
+        store a <- $t2
+        $t3: i64 = const 2
+        $t4: Pt = construct Pt($t3)
+        store b <- $t4
+        $t5: i64 = call heroes sum(a, @b)
+        call builtin print($t5) variadic
+        return

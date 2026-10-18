@@ -1501,6 +1501,19 @@ test "fmt keeps `owned`, at both positions and beside the shapes that carry none
         s = source.new_source(name: "t.hero", text: text)
         assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
 
+# Panel 217's R1 (M-readonly-lend): `lent` after a parameter of a function of
+# the program, a record's and a generic array's, with an `@` parameter beside
+# them, and the group's own two shapes beside those, a record lent read-only
+# and an `@` cell C keeps nothing of. A formatter that dropped the word would
+# hand back a program that copies where it lent, or one a lock refuses, so the
+# test is the round trip, as `owned`'s is.
+test "fmt keeps `lent` on a parameter of the program's own and beside the group's shapes"
+    text = "extern \"c.h\"\n    record Pt tag pt\n        x: i64\n    function pt_value(p: Pt lent) -> i64\n    function grab(@out: cstr lent) -> i32\n\nrecord Box\n    n: i64\n\nfunction doubled(b: Box lent) -> i64\n    return b.n * 2\n\nfunction first_of<T>(xs: [T] lent, k: i64) -> T\n    return xs[k]\n\nfunction bump(@b: Box, by: Box lent)\n    b.n @ b.n + by.n\n\nfunction main()\n    b @= Box(n: 2)\n    bump(@b, by: Box(n: 1))\n    print(doubled(b), first_of([1, 2], k: 0))\n"
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
 # Defect 095. A group member written one parameter per line with a comment
 # between two of them: the joined form expelled the comment after the
 # declaration, where a following member took it as documentation (the tree

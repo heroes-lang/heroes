@@ -16,6 +16,7 @@ use resolved
 use parse
 use resolve
 use stable
+use read_lend
 
 # The library is part of every compilation and part of no dump: a
 # --dump-<stage> answers "what does the compiler know about THE FILE I
@@ -108,6 +109,12 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
 
             if local.mutable
                 marker @ " @"
+
+            # `p: Pt lent`, the caller's place read in place (panel 217's
+            # R1): a mode as `@` is, and without the word the dump would show
+            # the parameter a copy.
+            if read_lend.lent_param(decls, local)
+                marker @ marker + " lent"
             row = "  " + indent + kind_word(local.kind) + " " + source.span_text(s, local.name) + marker + " (reads " + local.reads.to_str() + ", writes " + local.writes.to_str() + ")\n"
             section @ section.push(row)
 
@@ -174,4 +181,13 @@ test "the table is alphabetical, the indentation is the scope structure"
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     got = dump_scopes(out, s, parsed.decls)
     expected = "file t.hero\nmodule t\nsymbols\n  function alpha (line 4)\n  function main (line 10)\n  function zeta (line 1)\nscopes\n  function alpha\n    param n (reads 1, writes 0)\n      cell total @ (reads 2, writes 1)\n        loop k (reads 1, writes 0)\n"
+    assert got == expected
+
+test "a parameter lent read-only says `lent` where an `@` one says `@`, and a copy says neither"
+    text = "record Pt\n    x: i64\n\nfunction sum(p: Pt lent, @q: Pt, r: Pt) -> i64\n    q.x @ q.x + p.x\n    return q.x + r.x\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    got = dump_scopes(out, s, parsed.decls)
+    expected = "file t.hero\nmodule t\nsymbols\n  record Pt (line 1)\n  function sum (line 4)\nscopes\n  function sum\n    param p lent (reads 1, writes 0)\n    param q @ (reads 2, writes 1)\n    param r (reads 1, writes 0)\n"
     assert got == expected

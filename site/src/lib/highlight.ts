@@ -334,6 +334,11 @@ export function tokenize(source: string): Token[] {
         /^ *(?:[,)#]|$)/.test(restOfLine(end))
       );
     }
+    // A parameter of the program's own function lent read-only, `c: T lent`
+    // (panel 217's R1): the parser reads the word after the parameter's type,
+    // before its `,` or `)`, on the line `function` opens; a parameter named
+    // `lent` is followed by `:` and stays a name.
+    if (word === 'lent' && lineHead === 'function') return /^ *[,)]/.test(restOfLine(end));
     return inExtern && lineHead === null && !/^ *:/.test(source.slice(end, end + 64));
   };
 

@@ -107,14 +107,19 @@
       }
     },
     "declaration": {
-      "comment": "`function dist2(…)` / `record Point` — the kind opens the line, the name follows (panel 018). Since 2026-10-12 the kind is painted here, before #keyword reaches it, and the name by its kind: a function, a type, a constant. The `extern` prefix this rule allowed is gone: an `extern` line opens a group and its members are indented declarations (spec § 13).",
+      "comment": "`function dist2(…)` / `record Point` — the kind opens the line, the name follows (panel 018). Since 2026-10-12 the kind is painted here, before #keyword reaches it, and the name by its kind: a function, a type, a constant. The `extern` prefix this rule allowed is gone: an `extern` line opens a group and its members are indented declarations (spec § 13). Since panel 217 (M-readonly-lend) a function's line runs to its end here, so `lent` after a parameter's type, the next character a `,` or a `)`, is painted the contextual word the parser reads there; a parameter named `lent` is followed by `:` and stays a name.",
       "patterns": [
         {
-          "match": "^\\s*(function)\\s+([A-Za-z_][A-Za-z0-9_]*)",
-          "captures": {
+          "begin": "^\\s*(function)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "beginCaptures": {
             "1": { "name": "storage.type.declaration.hero" },
             "2": { "name": "entity.name.function.hero" }
-          }
+          },
+          "end": "$",
+          "patterns": [
+            { "match": "\\b(lent)\\b(?=\\s*[,)])", "name": "keyword.other.contextual.hero" },
+            { "include": "$self" }
+          ]
         },
         {
           "match": "^\\s*(record|variant)\\s+([A-Za-z_][A-Za-z0-9_]*)",

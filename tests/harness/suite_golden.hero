@@ -121,6 +121,9 @@ function shape_check() -> Shape
         library_skip: false
     )
 
+# **`ir` 23 -> 29 in lane lane-readonly-lend, 2026-10-18**: M-readonly-lend's
+# `lent-a-parameter-read-only-is-named-in-the-dump` took the directory to 29
+# cases, past its floor of 23 by more than a quarter, and the suite asked for 29.
 function shape_ir() -> Shape
     return Shape(
         name: "ir",
@@ -129,7 +132,7 @@ function shape_ir() -> Shape
         flags: ["--dump-ir"],
         on_stderr: false,
         want_code: 0,
-        least: 23,
+        least: 29,
         watched: true,
         silent_stdout: false,
         library_skip: false
