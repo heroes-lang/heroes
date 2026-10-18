@@ -896,6 +896,28 @@ jobs:
             cmp /tmp/stage-2.c /tmp/stage-3.c
           fi
 
+      # THE SEED THROUGH A SECOND C COMPILER (M-witnessed-seed, task 2096). The
+      # step above proves the seed reproduces itself under one clang, not that
+      # what it means is C's rather than one clang's: gcc builds the same seed
+      # into a second stage 1, and the two must emit the same C for
+      # `selfhost/`, byte for byte, one half of diverse double-compiling
+      # (Wheeler, ACSAC 2005, https://dwheeler.com/trusting-trust/). The
+      # backend each of them drives is still clang, which is the compiler's
+      # contract (CLAUDE.md §7); what gcc judges is the seed. `-w` because the
+      # seed's warnings are clang's to judge and gcc's own, 362,707 lines in
+      # the Linux arm64 container with gcc 14.2.0 (2026-10-18), would bury the
+      # log; there, with `-w`, gcc built it in 29 s and its compiler emitted
+      # the same 26,591,884 bytes as clang's in 51 s.
+      - name: The seed compiled by gcc emits the C the seed compiled by clang emits
+        if: runner.os == 'Linux'
+        run: |
+          gcc --version | head -n 1
+          gcc -w -I runtime seed/heroes.c runtime/runtime.c -o heroes-from-gcc
+          ./heroes-from-gcc --version
+          ./heroes-from-seed build selfhost/main.hero --emit-c -o /tmp/stage-1-clang.c
+          ./heroes-from-gcc build selfhost/main.hero --emit-c -o /tmp/stage-1-gcc.c
+          cmp /tmp/stage-1-clang.c /tmp/stage-1-gcc.c
+
   # THE RELEASE, made by the machine after every leg agrees (CLAUDE.md §14,
   # release tags). What it publishes is the tag's own source archive, which
   # GitHub makes from the tag and which carries the seed inside it, where
