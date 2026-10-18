@@ -1,0 +1,27 @@
+# UNVERIFIED — pending debrief
+# Panel 217's R2, ratified 2026-10-17 (M-readonly-lend): a record holding a
+# lock lent read-only to a parameter whose type is a bare type parameter is
+# the copy it was by value. The generic body knows only a `T`, which holds no
+# lock it can see, and hands it on by value: the compiler-engineer's
+# `generic_copy_lent` built at exit 0 and printed `4`, a lock reaching C by
+# value, until the refusal held the lend to R2's copy. Told at the argument.
+
+extern "ffi-lock-copied.h"
+    record Box tag box partial
+        n: i64
+    function box_init(@b: Box) -> i32
+
+function count_of(b: Box lent) -> i64
+    return b.n
+
+function apply<T>(x: T lent, f: (function(T) -> i64)) -> i64
+    return f(x)
+
+function main()
+    m: Box @= Box(n: 4, rest: zero)
+    _ = box_init(@m)
+    print(count_of(m))
+    print(apply(m, f: peek))  #~ ffi_lock_copied
+
+function peek(b: Box) -> i64  #~ ffi_lock_copied
+    return b.n

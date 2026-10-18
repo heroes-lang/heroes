@@ -1,0 +1,37 @@
+# UNVERIFIED — pending debrief
+# Panel 217's R2, ratified 2026-10-17 (M-readonly-lend), Hylo's rule: a
+# value lent read-only is the caller's own place, so an `@` argument of the
+# same call that reaches it, the place whole or a field of it, is refused,
+# `aliased_mutable_arguments`, since the callee would read the write where a
+# copy would not; and so is an `@` written inside another argument, a call
+# that runs before this one. The compiler-engineer measured the nested one
+# printing `1` by value and `2` lent from one call's text. A field of
+# another value beside it builds: two places apart.
+
+record Pt
+    x: i64
+    y: i64
+
+function bump_and_read(@a: Pt, b: Pt lent) -> i64
+    a.x @ a.x + 1
+    return b.x
+
+function bump_y_and_read(@a: i64, b: Pt lent) -> i64
+    a @ a + 1
+    return b.x
+
+function bump(@p: Pt) -> i64
+    p.x @ p.x + 1
+    return 0
+
+function both(a: Pt lent, b: i64) -> i64
+    return a.x + b
+
+function main()
+    p @= Pt(x: 1, y: 5)
+    q @= Pt(x: 7, y: 0)
+    print(bump_and_read(a: @p, b: p))  #~ aliased_mutable_arguments
+    print(bump_y_and_read(a: @p.y, b: p))  #~ aliased_mutable_arguments
+    print(bump_y_and_read(a: @q.y, b: p))
+    print(both(p, b: bump(@p)))  #~ aliased_mutable_arguments
+    print(p.x + q.y)

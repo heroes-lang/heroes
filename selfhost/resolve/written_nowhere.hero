@@ -97,6 +97,12 @@ function told(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Res
         message: "`" + name + "` is an `@` parameter and nothing writes it — every caller's place comes back exactly as it was lent: write `" + name + "` where the body meant to change it, or remove the `@` here and at every call",
         span: local.name
     )
+    typed = type_written(a, s, decls, out: out, at: at)
+
+    if typed != ""
+        d.notes @ d.notes.push(
+            "where the body only reads it, take it read-only in place, the caller's own cell and no copy: `" + name + ": " + typed + " lent`, with no `@` at the calls"
+        )
     back = written_back(a, s, decls, out: out, at: at)
 
     if !back.is_err()
@@ -108,6 +114,17 @@ function told(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Res
             diag.Fix(title: "remove the `@`: `" + name + "` is read, never written", replacement: "", span: marker, certainty: .guess)
         )
     return d
+
+# The type the parameter at local `at` was written with, or "".
+function type_written(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Resolved, at: i64) -> str
+    match decls[out.locals[at].owner].kind
+        .function_decl fd =>
+            for p in fd.value.params
+                if p.name.start == out.locals[at].name.start
+                    return source.span_text(s, a.types[p.ty].span)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return ""
+
+    return ""
 
 # `l @ m` where the body bound a cell `m @= l` from the parameter itself: the
 # write a body that changes a copy forgot, written as the body's last

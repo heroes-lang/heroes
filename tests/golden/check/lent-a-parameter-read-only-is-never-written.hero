@@ -1,0 +1,36 @@
+# Panel 217's R2, ratified 2026-10-17 (M-readonly-lend): a parameter declared
+# `lent` is the caller's own place, read and never written, so the body may
+# not write it, through a field or whole, nor lend it onward with `@`; each
+# is `not_mutable`, saying it is lent read-only and how to take the place to
+# change it, or a copy. What it may do builds: read it, hand it on to another
+# `lent` parameter, and copy a copyable value out of it, which the place
+# written after the copy does not reach (§4.10).
+
+record Pt
+    x: i64
+
+function bump(@p: Pt)
+    p.x @ p.x + 1
+
+function peek(p: Pt lent) -> i64
+    return p.x
+
+function poke(p: Pt lent)
+    p.x @ p.x + 1  #~ not_mutable
+
+function replace(p: Pt lent)
+    p @ Pt(x: p.x + 1)  #~ not_mutable
+
+function lend_on(p: Pt lent)
+    bump(@p)  #~ not_mutable
+
+function read_on(p: Pt lent) -> i64
+    copy = p
+    return peek(p) + copy.x
+
+function main()
+    q = Pt(x: 1)
+    poke(q)
+    replace(q)
+    lend_on(q)
+    print(read_on(q))

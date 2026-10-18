@@ -1,0 +1,85 @@
+# Panel 217's R1, ratified 2026-10-17 (M-readonly-lend): a parameter
+# declared `lent` is the caller's own place, read and never written, and the
+# call is not marked. Read through a field; handed on to another lent
+# parameter, to itself recursively and through a dotted call; lent from a
+# cell, from a binding and from a cell's field; a temporary and an element
+# each lent from a slot of their own; a `str`, a `[i64]` and a `[T]` lent;
+# and a copy taken out of a lent parameter, which the place written after it
+# does not reach (§4.10). The compiler-engineer's `ok1_shapes`
+# (`docs/panel/217-reports/evidence.tar.xz`), its counter left to the case
+# beside this one, which needs C.
+
+record Pt
+    x: i64
+    name: str
+
+record Pair
+    first: Pt
+    second: Pt
+
+function label(p: Pt lent) -> str
+    return p.name + "=" + p.x.to_str()
+
+function via(p: Pt lent) -> str
+    return "via " + label(p)
+
+function depth(p: Pt lent, k: i64) -> i64
+    if k == 0
+        return p.x
+    return depth(p, k: k - 1) + 1
+
+function moved(@p: Pt) -> str
+    p.x @ p.x + 10
+    return label(p)
+
+function keep(p: Pt lent) -> Pt
+    return p
+
+function size(t: str lent) -> i64
+    return t.len()
+
+function total(xs: [i64] lent) -> i64
+    sum: i64 @= 0
+
+    for x in xs
+        sum @ sum + x
+
+    return sum
+
+function first_of<T>(xs: [T] lent) -> T
+    return xs[0]
+
+function make(n: i64) -> Pt
+    return Pt(x: n, name: "made")
+
+function main()
+    pair: Pair @= Pair(first: Pt(x: 3, name: "first"), second: Pt(x: 4, name: "second"))
+    print(label(pair.first))
+    print(pair.second.label())
+    print(via(pair.first))
+    print(depth(pair.second, k: 3))
+    print(moved(@pair.first))
+    print(label(pair.first))
+    fixed = Pt(x: 2, name: "fixed")
+    print(label(fixed))
+    print(label(make(5)))
+    pts = [Pt(x: 7, name: "a"), Pt(x: 8, name: "b")]
+    print(label(pts[1]))
+
+    for one in pts
+        print(label(one))
+
+    p: Pt @= Pt(x: 1, name: "p")
+    k = keep(p)
+    p.x @ 99
+    print(label(k))
+    print(label(p))
+    word = "hello" + "!"
+    print(size(word))
+    print(size("lit"))
+    print(size(f"{word}{word}"))
+    print(total([1, 2, 3]))
+    nums = [4, 5]
+    print(total(nums))
+    print(first_of(nums))
+    print(first_of(pts).name)

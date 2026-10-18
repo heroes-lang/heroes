@@ -55,6 +55,7 @@ use ir/owned_release
 use ir/interp
 use ir/in_place
 use inventory
+use read_lend
 
 ## Statements
 
@@ -602,9 +603,15 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 # and carries no further meaning. A parameter marked `owned <freer>` is
 # handed a cell instead, and its release is what `after` owes.
 function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg], callee: i64?) -> inout.Args
-    lowered_args: [ir.Arg] @= []
+    return lowered_from(@b, a, r, c, s, decls, first: [], given: given, callee: callee)
+
+# The written arguments after those already lowered, `first`, which is the
+# receiver of a dotted call or nothing: one loop for both shapes, so a mark
+# and a read-only lend are read at the parameter's own position in each.
+function lowered_from(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], first: [ir.Arg], given: [ast.Arg], callee: i64?) -> inout.Args
+    lowered_args: [ir.Arg] @= first
     after: [inout.WriteBack] @= []
-    at: i64 @= 0
+    at: i64 @= first.len()
 
     for arg in given
         if arg.mutable
@@ -612,6 +619,8 @@ function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
             lowered_args @ lowered_args.push(
                 inout.argument(@b, c, decls, span: a.exprs[arg.value].span, spot: spot, callee: callee, at: at, after: @after)
             )
+        else if read_lend.lent_at(a, s, decls, callee: callee, at: at)
+            lowered_args @ lowered_args.push(lent_argument(@b, a, r, c, s, decls, id: arg.value))
         else
             value = expr(@b, a, r, c, s, decls, id: arg.value)
             lowered_args @ lowered_args.push(.value_arg(value: value))
@@ -619,32 +628,23 @@ function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
 
     return inout.Args(run: build.args_run(@b, lowered_args), after: after)
 
-# The UFCS shape: the receiver becomes argument zero. §4.11 forbids
-# this where the first parameter is @, so the receiver is always a
-# value.
+# A read-only lend's argument: its own place where it is a name or a field
+# path, else its value held in a slot of its own (`ir/inout.hero`).
+function lent_argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> ir.Arg
+    if read_lend.in_place(a, r, id)
+        return .inout_arg(place: place(@b, a, r, c, s, decls, id: id))
+    return inout.held(@b, value: expr(@b, a, r, c, s, decls, id: id), ty: c.expr_types[id], span: a.exprs[id].span)
+
+# The UFCS shape: the receiver IS parameter zero, lowered before the written
+# arguments, each one to the right of its own index, a mark read at the
+# parameter's position. §4.11 forbids it where the first parameter is `@`, so
+# the receiver is a value, or a place read only where that parameter is `lent`.
 function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg], callee: i64?) -> inout.Args
-    first = expr(@b, a, r, c, s, decls, id: receiver)
-    lowered_args: [ir.Arg] @= [.value_arg(value: first)]
-    after: [inout.WriteBack] @= []
-
-    # The receiver IS parameter zero, so every written argument sits one to
-    # the right of its own index — and a mark is read at the parameter's
-    # position. UFCS cannot reach an `@` first parameter (§4.11), so the
-    # offset never has to describe the receiver itself.
-    at: i64 @= 1
-
-    for arg in given
-        if arg.mutable
-            spot = place(@b, a, r, c, s, decls, id: arg.value)
-            lowered_args @ lowered_args.push(
-                inout.argument(@b, c, decls, span: a.exprs[arg.value].span, spot: spot, callee: callee, at: at, after: @after)
-            )
-        else
-            value = expr(@b, a, r, c, s, decls, id: arg.value)
-            lowered_args @ lowered_args.push(.value_arg(value: value))
-        at @ at + 1
-
-    return inout.Args(run: build.args_run(@b, lowered_args), after: after)
+    head: ir.Arg = if read_lend.lent_at(a, s, decls, callee: callee, at: 0)
+        lent_argument(@b, a, r, c, s, decls, id: receiver)
+    else
+        .value_arg(value: expr(@b, a, r, c, s, decls, id: receiver))
+    return lowered_from(@b, a, r, c, s, decls, first: [head], given: given, callee: callee)
 
 ## `x.f(y)` — the three tokens with two meanings (§4.11, §4.13; panel 079)
 

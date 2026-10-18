@@ -29,6 +29,9 @@ use check/table
 use check/lending
 use check/leasing
 use emit/lock_screen
+use ir/layout
+use read_lend
+use token
 
 constant CODE: str
     "ffi_lock_copied"
@@ -39,7 +42,7 @@ function copies(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.
     if found.len() == 0
         return out
     why: {i64: str} @= {}
-    signatures(s, decls, c, found: found, @why, @out)
+    signatures(a, s, decls, c, found: found, @why, @out)
     into = lending.argument_of(a)
     written = leasing.written_roots(a)
     based = bases(a)
@@ -51,7 +54,7 @@ function copies(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.
         held = locked(s, decls, c, found: found, ty: c.expr_types[at], @why, depth: 0)
 
         if held.len() > 0 && written[at].is_err() && based[at].is_err()
-            lent = !into[at].is_err() && leasing.marked_in(a, call: into[at].must(), value: at)
+            lent = !into[at].is_err() && (leasing.marked_in(a, call: into[at].must(), value: at) || read_in_place(a, r, s, decls, c, call: into[at].must(), value: at))
             made = fresh(a, r, at: at) && (!starts[at].is_err() || constructs(a, r, decls, into: into, at: at))
 
             if !lent && !made
@@ -83,12 +86,12 @@ function notes(extra: str) -> [str]
     if extra.len() > 0
         out @ out.push(extra)
     out @ out.push(
-        "lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`"
+        "lend the place instead: a function taking `c: T lent` reads the caller's own cell and changes nothing, `f(c)`; one taking `@c` may change it, `f(@c)`; a field is read in place, `c.n`"
     )
     return out
 
-# A parameter that is not `@`, or a result, of a type holding a lock.
-function signatures(s: source.Source, decls: [ast.Decl], c: state.Checked, found: {i64: lock_screen.Found}, @why: {i64: str}, @out: [diag.Diagnostic])
+# A parameter neither `@` nor `lent`, or a result, of a type holding a lock.
+function signatures(a: ast.Ast, s: source.Source, decls: [ast.Decl], c: state.Checked, found: {i64: lock_screen.Found}, @why: {i64: str}, @out: [diag.Diagnostic])
     for d in decls
         match d.kind
             .function_decl fd =>
@@ -100,7 +103,7 @@ function signatures(s: source.Source, decls: [ast.Decl], c: state.Checked, found
                 for p in fd.value.params
                     ty = state.written_type(c, p.ty)
 
-                    if !p.mutable && !ty.is_err()
+                    if !p.mutable && !p.lent && !ty.is_err()
                         held = locked(s, decls, c, found: found, ty: ty.must(), @why, depth: 0)
 
                         if held.len() > 0
@@ -111,8 +114,10 @@ function signatures(s: source.Source, decls: [ast.Decl], c: state.Checked, found
                                 span: p.name
                             )
                             one.notes @ notes(extra: "")
+                            end = a.types[p.ty].span.end
                             one.fixes @ [
-                                diag.Fix(title: "take it by place, and lend it at each call with `@`", replacement: "@" + name, span: p.name, certainty: .guess)
+                                diag.Fix(title: "read it in place, the caller's own cell and no copy: `" + name + ": " + source.span_text(s, a.types[p.ty].span) + " lent`", replacement: " lent", span: token.Span(start: end, end: end), certainty: .guess)
+                                diag.Fix(title: "or, where the function changes it, take it by place and lend it at each call with `@`", replacement: "@" + name, span: p.name, certainty: .guess)
                             ]
                             out @ out.push(one)
 
@@ -269,3 +274,51 @@ function initialisers(r: resolved.Resolved) -> {i64: bool}
             out[local.value.must()] @ true
 
     return out
+
+# An argument lent read-only in place (panel 217's R1 and R2, `read_lend.hero`): the
+# lowering hands its place, so nothing is copied. A dotted call whose
+# receiver holds a function in a field of that name calls the field, as the
+# lowering does (panel 079), and lends nothing.
+function read_in_place(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], c: state.Checked, call: i64, value: i64) -> bool
+    if !read_lend.handed_in_place(a, r, s, decls, call: call, value: value) || to_a_letter(a, r, decls, c, call: call, value: value)
+        return false
+
+    match a.exprs[call].kind
+        .method m =>
+            field = layout.field_type(decls, c, s, owner: c.expr_types[m.receiver], name: m.name)
+            return field.is_err() || !table.is_function_ty(c.types, field.must())
+        .call | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return true
+        .field_name | .null_ptr | .hole | .unary | .binary | .field | .index               => return true
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error        => return true
+
+    return true
+
+# Whether the lent parameter is a bare type parameter, `x: T lent`: its body
+# may hand `x` on by value as a `T`, which this rule cannot see as the
+# record it is, so the record lent there stays a copy, as handed by value it
+# is (measured: `apply<T>(x: T lent, f: (function(T) -> i64))` returning
+# `f(x)` handed C a lock by value, exit 0).
+function to_a_letter(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], c: state.Checked, call: i64, value: i64) -> bool
+    callee = read_lend.callee_of(a, r, call: call)
+
+    if callee.is_err()
+        return false
+    at = read_lend.position_of(a, call: call, value: value, first: callee.must().first)
+
+    match decls[callee.must().decl].kind
+        .function_decl fd =>
+            if at < 0 || at >= fd.value.params.len()
+                return false
+            written = state.written_type(c, fd.value.params[at].ty)
+
+            if written.is_err()
+                return false
+
+            match table.get(c.types, written.must())
+                .generic                                                  => return true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+                .array | .fixed | .map | .fallible | .function_ty         => return false
+                .named | .case_ty | .failure | .error                     => return false
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false

@@ -1,0 +1,167 @@
+# A parameter lent read-only, `c: Counter lent` (design.md §4.8, §4.19;
+# panel 217's R1, ratified 2026-10-17): the caller's place handed by
+# address, read and never written.
+# The one home of which parameter is one and which argument is handed in
+# place, asked by the IR's lowering, the resolver's aliasing rule and R2's
+# copies, so the three cannot disagree.
+#
+# On a Heroes function every `lent` without `@` is one. On an `extern` it is
+# one on a type that is not `cstr` or `ptr`, where `lent` keeps panel 171's
+# meaning, a pointer crossing by value that C keeps nothing of; the checker
+# admits it there on a group's record that is no handle
+# (`check/lend_extent.hero`), the header's `const struct counter *`.
+#
+# The representation is the `@` parameter's (panel 196's R1): a pointer to
+# the caller's place, so the emitter, the guarded local and the pointee check
+# need nothing new. What differs is the checker's: the parameter is not
+# `mutable`, so every write to it is refused as a write to a parameter
+# without `@` is, and nothing marks the call.
+
+use ast
+use source
+use resolved
+
+function read_only(f: ast.FunctionDecl, p: ast.Param, a: ast.Ast, s: source.Source) -> bool
+    if !p.lent || p.mutable
+        return false
+
+    if !f.is_extern
+        return true
+    written = source.span_text(s, a.types[p.ty].span)
+    return written != "cstr" && written != "ptr"
+
+# Whether the parameter at `at` of the declaration `decl` is lent read-only.
+function at_position(a: ast.Ast, s: source.Source, decls: [ast.Decl], decl: i64, at: i64) -> bool
+    match decls[decl].kind
+        .function_decl fd =>
+            if at < 0 || at >= fd.value.params.len()
+                return false
+            return read_only(fd.value, fd.value.params[at], a, s)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# Whether an argument is handed as its own place: a name bound in the
+# function, or a field path down from one. Any other value, an element
+# among them, lands in a slot of its own first, and that slot is handed.
+function in_place(a: ast.Ast, r: resolved.Resolved, id: i64) -> bool
+    match a.exprs[id].kind
+        .name =>
+            match r.uses[id]
+                .local                                  => return true
+                .top | .builtin | .module | .unresolved => return false
+        .field f => return in_place(a, r, f.base)
+        .call | .method | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return false
+        .field_name | .null_ptr | .hole | .unary | .binary | .index => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
+
+    return false
+
+# The declaration a call names and where its written arguments begin among
+# its parameters, or absent where it names no declaration: a function value,
+# a built-in, a field holding a function. `call` is a `.call` or a `.method`
+# node; a dotted call's receiver is its first argument (spec § 9) unless the
+# receiver is a module.
+record Callee
+    decl: i64
+    first: i64
+
+function callee_of(a: ast.Ast, r: resolved.Resolved, call: i64) -> Callee?
+    match a.exprs[call].kind
+        .call cl =>
+            match r.uses[cl.callee]
+                .top t                                    => return ok(Callee(decl: t.at, first: 0))
+                .local | .builtin | .module | .unresolved => return fail(code: "none", msg: "no declaration")
+        .method m =>
+            first: i64 @= 1
+
+            match r.uses[m.receiver]
+                .module                                => first @ 0
+                .local | .top | .builtin | .unresolved => first @ 1
+
+            match r.uses[call]
+                .top t                                    => return ok(Callee(decl: t.at, first: first))
+                .local | .builtin | .module | .unresolved => return fail(code: "none", msg: "no declaration")
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+        .field_name | .null_ptr | .hole | .unary | .binary | .field | .index => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+
+    return fail(code: "none", msg: "unreached")
+
+# Where `value` stands among the parameters of the call `call` names, its
+# written arguments beginning at `first`; -1 where it is no argument of it.
+function position_of(a: ast.Ast, call: i64, value: i64, first: i64) -> i64
+    given: [ast.Arg] @= []
+
+    match a.exprs[call].kind
+        .call cl => given @ cl.args
+        .method m =>
+            if m.receiver == value
+                if first == 1
+                    return 0
+                return 0 - 1
+            given @ m.args
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => return 0 - 1
+        .field_name | .null_ptr | .hole | .unary | .binary | .field | .index        => return 0 - 1
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return 0 - 1
+
+    k: i64 @= first
+
+    for arg in given
+        if arg.value == value
+            return k
+        k @ k + 1
+
+    return 0 - 1
+
+# Whether `value`, an argument of `call` with no `@`, is lent read-only and
+# handed as its own place: what the lowering hands by address.
+function handed_in_place(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64, value: i64) -> bool
+    if !in_place(a, r, value)
+        return false
+    callee = callee_of(a, r, call)
+
+    if callee.is_err()
+        return false
+    at = position_of(a, call: call, value: value, first: callee.must().first)
+    return at_position(a, s, decls, decl: callee.must().decl, at: at)
+
+# Whether a local is a parameter its function lends read-only, `c: T lent`
+# (panel 217's R1): its declaration says so, read by the name's position.
+function lent_param(decls: [ast.Decl], local: resolved.Local) -> bool
+    if local.kind != .param || local.owner < 0 || local.owner >= decls.len()
+        return false
+
+    match decls[local.owner].kind
+        .function_decl fd =>
+            for p in fd.value.params
+                if p.name.start == local.name.start
+                    return p.lent
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# Whether the callee's parameter at `at` is lent read-only, absent a callee.
+function lent_at(a: ast.Ast, s: source.Source, decls: [ast.Decl], callee: i64?, at: i64) -> bool
+    return !callee.is_err() && at_position(a, s, decls, decl: callee.must(), at: at)
+
+# Whether any function of the program declares a parameter lent read-only.
+function any_declared(a: ast.Ast, s: source.Source, decls: [ast.Decl]) -> bool
+    for d in decls
+        match d.kind
+            .function_decl fd =>
+                for p in fd.value.params
+                    if read_only(fd.value, p, a, s)
+                        return true
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return false

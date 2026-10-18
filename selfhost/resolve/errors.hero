@@ -197,6 +197,15 @@ function unused(name: str, kind: resolved.LocalKind, writes: i64, span: token.Sp
 # is forbidden on variants: the Rust side hid the same fact under `_ =>`,
 # and here the unreachable case is at least named where a reader can ask
 # about it.
+# A write to a parameter lent read-only (panel 217's R2): the caller's own
+# place, which the signature promised to leave as it is.
+function lent_written(name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "not_mutable",
+        message: "`" + name + "` is lent read-only, the caller's own place, so it cannot be written — where the function changes it, take it `@" + name + "` in the signature and at every call site; where it changes a copy, bind one, `n @= " + name + "`",
+        span: span
+    )
+
 function not_mutable(name: str, kind: resolved.LocalKind, span: token.Span) -> diag.Diagnostic
     message = match kind
         .param => "`" + name + "` is a parameter without `@`, so it cannot be written — mark it `@" + name + "` in the signature and at every call site, and the function works on the caller's place itself"

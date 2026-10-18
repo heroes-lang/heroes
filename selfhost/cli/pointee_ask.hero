@@ -54,6 +54,15 @@ constant LENT: str
 constant AT: str
     "at"
 
+# A group's record lent read-only with no `@`, `c: Counter lent` (panel 217's
+# R3): the header's pointer must point at `const`, as a `cstr`'s must
+# (`emit/ffi_read_only.hero`), and the record must not stand past a header's
+# `...`, where nothing holds C to the `const` (R3(c),
+# `emit/ffi_past_prototype.hero`); a record is no byte and crosses with no
+# cast, so nothing else is asked of it.
+constant PLACE: str
+    "place"
+
 # How many parameters the declaration gives, in `index`, asked of every
 # function with one: its parameters stand for the header's only where the two
 # counts agree, and a header that gives the function no prototype is refused

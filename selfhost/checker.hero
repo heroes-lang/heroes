@@ -41,6 +41,7 @@ use check/contracts
 use check/moved
 use check/lending
 use check/leasing
+use check/read_lends
 use check/counted
 use check/freer_marks
 use check/endless
@@ -109,6 +110,10 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # for the same reason: a copy of the pointer anywhere but in its one cell
     # is a use-after-free the moment that cell is emptied (panel 125).
     leasing.leases_stay_in_their_cell(@c, a, r, s, decls)
+
+    # Panel 217's R2: a value lent read-only beside an `@` argument of one
+    # call that reaches it, refused as two `@` arguments are (panel 010).
+    read_lends.judged(@c, a, r, s, decls)
 
     # Panel 199 (defect 457): a function whose every path calls the function
     # itself before it returns or ends, told at the call; after the types,

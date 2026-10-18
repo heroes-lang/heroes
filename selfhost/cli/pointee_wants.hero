@@ -68,9 +68,14 @@ function pointees(p: containers.Program, c: state.Checked, s: source.Source, dec
                     pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: pointee_ask.LENT, file: found.file, line: found.line, depth: false)
                 )
 
-            if cell_param(slot, decls, f: f, index: index)
+            if cell_param(decls, f: f, index: index)
                 out @ out.push(
                     pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: pointee_ask.AT, file: found.file, line: found.line, depth: false)
+                )
+
+            if lent_record(c, slot, decls, f: f, index: index)
+                out @ out.push(
+                    pointee_ask.Pointee(name: name, param: slot.name, index: index, declared: pointee_ask.PLACE, file: found.file, line: found.line, depth: false)
                 )
             index @ index + 1
 
@@ -114,18 +119,32 @@ function lent_param(decls: [ast.Decl], f: containers.Function, index: i64) -> bo
 # Whether the parameter at `index` is `@` and counts nothing: the program's
 # own cell, which C writes through and which is held to the header's own type
 # where the header gives one, asked whether it stands past a header's `...`
-# (defect 2106). A counted one asks its unit instead.
-function cell_param(slot: containers.Slot, decls: [ast.Decl], f: containers.Function, index: i64) -> bool
-    mutable = match slot.kind
-        .param_slot ps                               => ps.mutable
-        .local_slot | .synthetic_slot | .return_slot => false
-
-    if !mutable
-        return false
-
+# (defect 2106). A counted one asks its unit instead. Read from the
+# declaration's `@`, never the slot's `mutable`: a record lent read-only has
+# the `@` parameter's slot too (`read_lend.hero`), and asked from the slot it
+# was told *an `@` parameter* past a `...` (panel 217's landing).
+function cell_param(decls: [ast.Decl], f: containers.Function, index: i64) -> bool
     return match decls[f.decl].kind
-        .function_decl fd => index < fd.value.params.len() && fd.value.params[index].counted_by.is_err()
+        .function_decl fd =>
+            index < fd.value.params.len() && fd.value.params[index].mutable && fd.value.params[index].counted_by.is_err()
         .constant_decl | .record_decl | .variant_decl | .test_decl => false
+
+# A group's record lent read-only, `c: Counter lent` (panel 217's R3): its
+# slot is the `@` parameter's pointer, so only its declaration says C may not
+# write it, and the header is asked whether its pointer points at `const`, as
+# a `cstr`'s is.
+function lent_record(c: state.Checked, slot: containers.Slot, decls: [ast.Decl], f: containers.Function, index: i64) -> bool
+    match decls[f.decl].kind
+        .function_decl fd =>
+            if index >= fd.value.params.len() || !fd.value.params[index].lent || fd.value.params[index].mutable
+                return false
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return match table.get(c.types, slot.ty)
+        .named                                                    => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .fallible | .function_ty         => false
+        .case_ty | .failure | .generic | .error                   => false
 
 # What a LEND asks of the header at this parameter (panel 194's R7, defects
 # 092 and 395), or absent. A parameter declared `counted_by` asks the UNIT

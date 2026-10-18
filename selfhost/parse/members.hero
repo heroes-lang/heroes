@@ -204,10 +204,12 @@ function first_of(slot: token.Span?, got: token.Span?) -> token.Span?
 # message, the parameter or the result.
 function read_marks(@c: cursor.Cursor, text: str, in_group: bool, on_result: bool, holder: str) -> Marks
     m: Marks @= no_marks()
-    reading: bool @= in_group
+    reading: bool @= true
 
     while reading
-        if !cursor.at(c, .ident)
+        # Outside a group a parameter carries one word, `lent`, its place
+        # read and never written (panel 217's R1, `read_lend.hero`).
+        if !cursor.at(c, .ident) || !in_group && cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_LENT
             reading @ false
             continue
         keyword = cursor.current_span(c)

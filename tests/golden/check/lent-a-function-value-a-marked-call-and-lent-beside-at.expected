@@ -1,0 +1,3 @@
+tests/golden/check/lent-a-function-value-a-marked-call-and-lent-beside-at.hero:15:16: error[lent_shape]: `lent` on `@p` of `bump` is a word nothing reads — `@` hands the caller's place to change it and `lent` hands it to read, so write one: `@p` where the function changes it, `p: … lent` where it only reads it
+tests/golden/check/lent-a-function-value-a-marked-call-and-lent-beside-at.hero:22:17: error[lent_parameter_as_value]: `doubled` reads its argument `p` in place through `lent`, and a function value cannot: no function type carries `lent` (§ 9), so `doubled` is only called by name
+tests/golden/check/lent-a-function-value-a-marked-call-and-lent-beside-at.hero:25:20: error[marker_mismatch]: `doubled` does not change this argument — the `@` says it does

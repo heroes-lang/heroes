@@ -1,0 +1,28 @@
+# Panel 217's task C and its R1 and R3, ratified 2026-10-17 (M-readonly-lend):
+# a record holding a lock, which no copy may hold (panel 215's R2), is read
+# by a function of the program with no `@` and no copy, `doubled(c: Counter
+# lent)` called `doubled(s.first)`, and handed on to C's `const struct
+# counter *` as `counter_value(c: Counter lent)`. Before the form a reader's
+# helper had two spellings, a copy refused and an `@` told it changes
+# nothing; the sitting's blind arms wrote this one, ten of ten.
+
+extern "lent-a-record-holding-a-lock.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_value(c: Counter lent) -> i64
+
+record Pair
+    first: Counter
+    second: Counter
+
+function doubled(c: Counter lent) -> i64
+    return counter_value(c) * 2
+
+function main()
+    s: Pair @= Pair(first: Counter(n: 0, rest: zero), second: Counter(n: 0, rest: zero))
+    _ = counter_init(@s.first)
+    _ = counter_init(@s.second)
+    s.first.n @ 3
+    s.second.n @ 2
+    print(doubled(s.first), " ", doubled(s.second), " ", s.first.n + s.second.n)

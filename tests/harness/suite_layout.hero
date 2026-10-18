@@ -536,9 +536,18 @@ constant DECIDED: [str]
 # measured by this suite narrowed to `parse/apart.hero` at the step's gate. A
 # surface form the panel adopted is read beside its neighbours, never moved
 # elsewhere to fit a count.
+#
+# **Raised 2026-10-18, 8735 -> 8737, for panel 217's R1 at M-readonly-lend.**
+# A parameter of a function of the program carries one word after its type,
+# `lent`, read by `parse/members.hero`'s `read_marks`, the reader of a group's
+# parameter words: the condition that lets `lent` alone through outside a
+# group adds no line, and the comment that says so is the two. The sitting's
+# compiler-engineer predicted this row and this +2, the row standing at its
+# budget; `ir/flatten.hero`'s `DECIDED` row, the other it predicted, did not
+# move, its two argument loops merged into one.
 constant BUDGETS: [str]
     [
-        "selfhost/parse/ 8735"
+        "selfhost/parse/ 8737"
     ]
 
 # The floor is the Rust's own idea —

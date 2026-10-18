@@ -185,6 +185,29 @@ function mutable_parameter_as_value(name: str, param: str, span: token.Span) -> 
     )
     return d
 
+# A function whose parameter is lent read-only, named as a value (panel
+# 217's R2): the parameter is handed its caller's place, which no function
+# type says.
+function lent_parameter_as_value(name: str, param: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "lent_parameter_as_value",
+        message: "`" + name + "` reads its argument `" + param + "` in place through `lent`, and a function value cannot: no function type carries `lent` (§ 9), so `" + name + "` is only called by name",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "to hand the work around as a value, write a function that takes `" + param + "` without `lent` and call the lending one inside it, where the value may be copied"
+    )
+    return d
+
+# `lent` beside `@` on a function of this program (panel 217's R1): the two
+# words hand the place two ways, and a parameter takes one.
+function lent_beside_at(parameter: str, function_name: str, span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "lent_shape",
+        message: "`lent` on `@" + parameter + "` of `" + function_name + "` is a word nothing reads — `@` hands the caller's place to change it and `lent` hands it to read, so write one: `@" + parameter + "` where the function changes it, `" + parameter + ": … lent` where it only reads it",
+        span: span
+    )
+
 # An `@` at a call through a function VALUE (defect 398, the shape beside it):
 # such a value never changes an argument, since its type cannot say it does.
 function marker_through_a_value(span: token.Span) -> diag.Diagnostic

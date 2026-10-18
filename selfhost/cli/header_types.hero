@@ -104,7 +104,7 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
             continue
 
         # A read-only lend's question and answer are `emit/ffi_read_only.hero`'s.
-        if asked.declared == pointee_ask.READ || asked.declared == pointee_ask.ARITY
+        if asked.declared == pointee_ask.READ || asked.declared == pointee_ask.PLACE || asked.declared == pointee_ask.ARITY
             lines @ lines.push(ffi_read_only.question(asked, header_type: header_type))
             continue
 
@@ -158,7 +158,7 @@ function answered(wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {st
     for one in wanted
         params = types[one.name]
 
-        if params.is_err() || one.declared == pointee_ask.READ || one.declared == pointee_ask.ARITY || one.declared == pointee_ask.LENT || one.declared == pointee_ask.AT
+        if params.is_err() || one.declared == pointee_ask.READ || one.declared == pointee_ask.PLACE || one.declared == pointee_ask.ARITY || one.declared == pointee_ask.LENT || one.declared == pointee_ask.AT
             continue
 
         if one.index >= params.must().len()

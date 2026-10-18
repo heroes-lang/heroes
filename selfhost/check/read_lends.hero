@@ -1,0 +1,223 @@
+# A read-only lend beside an `@` argument that reaches the same value, in one
+# call (design.md §4.8, §4.10; panel 217's R2, `read_lend.hero`; panel 010's
+# alias refusal one step on). `f(a: @p, b: p)` with `b` lent read-only hands the callee the place
+# twice, once to change and once to read, so the read sees each write as it
+# is made; with `b` by value it read a copy taken before the call. And
+# `f(p, g(@p))` writes the place in an argument evaluated before the call,
+# so the callee reads the written value where a copy would hold the old one:
+# measured, `1` by value and `2` lent from one call's text. Both readings
+# are defined and the call does not say which, so every `@` written inside
+# the call's text is held against each value it lends in place, with the
+# resolver's steps (`resolve/writes.hero`): a prefix overlaps, two field
+# names or two plain indices are apart.
+#
+# A sweep after the types rather than a question in the resolver's walk,
+# because which parameter is lent is the callee's declaration; a program
+# that lends nothing in place pays one pass over its expressions.
+
+use ast
+use token
+use source
+use resolved
+use diag
+use check/state
+use data_errors
+use read_lend
+use resolve/aliased_places
+use resolve/writes
+
+function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    declared(@c, s, decls)
+
+    # A program that declares no read-only parameter lends nothing in place,
+    # and pays one pass over its declarations rather than its expressions.
+    if !read_lend.any_declared(a, s, decls)
+        return
+    lending: [i64] @= []
+    at: i64 @= 0
+
+    while at < a.exprs.len()
+        if lends_in_place(a, r, s, decls, call: at)
+            lending @ lending.push(at)
+        at @ at + 1
+
+    if lending.len() == 0
+        return
+    marked = marked_arguments(a)
+
+    for call in lending
+        one_call(@c, a, r, s, decls, call: call, callee: read_lend.callee_of(a, r, call: call).must(), marked: marked)
+
+# `@c: T lent` on a function of this program: `@` hands the caller's place to
+# change it and `lent` hands it to read, so the word on an `@` is read by
+# nothing, which `lent_shape` refuses on an `extern` (panel 171).
+function declared(@c: state.Checker, s: source.Source, decls: [ast.Decl])
+    for d in decls
+        match d.kind
+            .function_decl fd =>
+                if !fd.value.is_extern
+                    for p in fd.value.params
+                        if p.lent && p.mutable
+                            state.push_diagnostic(
+                                @c,
+                                data_errors.lent_beside_at(parameter: source.span_text(s, p.name), function_name: source.span_text(s, d.name), span: p.name)
+                            )
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+# Whether a call hands some argument read-only in place.
+function lends_in_place(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64) -> bool
+    callee = read_lend.callee_of(a, r, call: call)
+
+    if callee.is_err()
+        return false
+    position: i64 @= 0 - 1
+
+    for arg in handed(a, call: call, first: callee.must().first)
+        position @ position + 1
+
+        if !arg.mutable && read_lend.in_place(a, r, arg.value) && read_lend.at_position(a, s, decls, decl: callee.must().decl, at: position)
+            return true
+
+    return false
+
+# Every argument written `@` in the file.
+function marked_arguments(a: ast.Ast) -> [ast.Arg]
+    out: [ast.Arg] @= []
+
+    for e in a.exprs
+        match e.kind
+            .call cl =>
+                for arg in cl.args
+                    if arg.mutable
+                        out @ out.push(arg)
+            .method m =>
+                for arg in m.args
+                    if arg.mutable
+                        out @ out.push(arg)
+            .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => continue
+            .field_name | .null_ptr | .hole | .unary | .binary | .field | .index        => continue
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => continue
+
+    return out
+
+# One call's arguments, the receiver first where the call is dotted.
+function handed(a: ast.Ast, call: i64, first: i64) -> [ast.Arg]
+    out: [ast.Arg] @= []
+
+    match a.exprs[call].kind
+        .call cl => out @ cl.args
+        .method m =>
+            if first == 1
+                out @ [ast.Arg(name: fail(code: "none", msg: "the receiver"), mutable: false, value: m.receiver)]
+
+            for arg in m.args
+                out @ out.push(arg)
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => return out
+        .field_name | .null_ptr | .hole | .unary | .binary | .field | .index        => return out
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return out
+
+    return out
+
+function one_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64, callee: read_lend.Callee, marked: [ast.Arg])
+    given = handed(a, call: call, first: callee.first)
+    inside = a.exprs[call].span
+    written: aliased_places.Places @= aliased_places.new_places()
+    labels: [str] @= []
+
+    for arg in marked
+        held = a.exprs[arg.value].span
+
+        if held.start >= inside.start && held.end <= inside.end
+            path = path_of(a, r, s, arg.value)
+
+            if !path.is_err()
+                aliased_places.keep(@written, path.must(), index: labels.len())
+                labels @ labels.push(
+                    label(s, arg, value: a.exprs[arg.value].span, direct: is_given(given, value: arg.value))
+                )
+
+    if labels.len() == 0
+        return
+    position: i64 @= 0 - 1
+
+    for arg in given
+        position @ position + 1
+
+        if arg.mutable || !read_lend.in_place(a, r, arg.value)
+            continue
+
+        if !read_lend.at_position(a, s, decls, decl: callee.decl, at: position)
+            continue
+        path = path_of(a, r, s, arg.value)
+
+        if path.is_err()
+            continue
+        clash = aliased_places.first_reached(written, path.must())
+
+        if clash >= 0
+            state.push_diagnostic(
+                @c,
+                beside(name: source.span_text(s, a.exprs[arg.value].span), other: labels[clash], span: a.exprs[arg.value].span)
+            )
+
+function label(s: source.Source, arg: ast.Arg, value: token.Span, direct: bool) -> str
+    written = "`@" + source.span_text(s, value) + "`"
+
+    if !direct
+        return written + ", in a call among this call's arguments that runs before it"
+
+    if arg.name.is_err()
+        return written + ", an argument of this call"
+    return "this call's `" + source.span_text(s, arg.name.must()) + "` argument, " + written
+
+function is_given(given: [ast.Arg], value: i64) -> bool
+    for arg in given
+        if arg.value == value
+            return true
+
+    return false
+
+# A place as steps from its root, root first, as the resolver's own rule
+# reads it (`writes.place_path`), from the resolver's answers.
+function path_of(a: ast.Ast, r: resolved.Resolved, s: source.Source, id: i64) -> [str]?
+    match a.exprs[id].kind
+        .name =>
+            match r.uses[id]
+                .local l                                => return ok(["#" + l.at.to_str()])
+                .top | .builtin | .module | .unresolved => return fail(code: "not_a_local", msg: "not a local")
+        .field f =>
+            base = path_of(a, r, s, f.base)?
+            return ok(base.push("." + source.span_text(s, f.name)))
+        .index i =>
+            base = path_of(a, r, s, i.base)?
+            return ok(base.push(writes.index_step(a, s, i.index)))
+        .call | .method | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return fail(
+            code: "not_a_place",
+            msg: "not a place"
+        )
+        .field_name | .null_ptr | .hole | .unary | .binary | .variant_case => return fail(
+            code: "not_a_place",
+            msg: "not a place"
+        )
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+            code: "not_a_place",
+            msg: "not a place"
+        )
+
+    return fail(code: "not_a_place", msg: "unreached")
+
+# Panel 010's code, since it is panel 010's rule: two arguments of one call
+# reach one value and one of them is written.
+function beside(name: str, other: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "aliased_mutable_arguments",
+        message: "`" + name + "` is lent read-only, the caller's own place, beside " + other + ", which writes the same value — the callee reads it after that write, where a copy would not",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a value lent with `lent` is the caller's own place, not a copy, so a write through an `@` argument of the same call is seen by the read; no aliasing exists among the values this language owns (panel 010)"
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "read what the call needs before it, `n = " + name + "`, and pass that; or make the two places different, distinct fields or distinct literal indices", replacement: "", span: span, certainty: .guess)
+    )
+    return d

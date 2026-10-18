@@ -34,6 +34,7 @@ use ir/emissions
 use ir/flatten
 use ir/owned_release
 use ir/exits
+use read_lend
 use parse
 use resolve
 use checker
@@ -166,7 +167,11 @@ function lower_function(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 
         if !written.is_err()
             ty @ written.must()
-        slot = build.param(@b, name: source.span_text(s, param.name), ty: ty, mutable: param.mutable)
+
+        # A parameter lent read-only is the `@` parameter's pointer, which
+        # only the checker tells apart (`read_lend.hero`).
+        by_place = param.mutable || read_lend.read_only(f, param, a, s)
+        slot = build.param(@b, name: source.span_text(s, param.name), ty: ty, mutable: by_place)
         local = build.local_at(b, param.name)
 
         if !local.is_err()

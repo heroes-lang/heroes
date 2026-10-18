@@ -1,0 +1,27 @@
+# Panel 217's R1 and R2, ratified 2026-10-17 (M-readonly-lend): three
+# spellings around a read-only lend that the language refuses. A function
+# with a `lent` parameter is no function value, since no function type
+# carries the mode, `lent_parameter_as_value`; a call marks no argument a
+# `lent` parameter takes, since nothing changes, `marker_mismatch`; and `@`
+# beside `lent` on a function of the program hands the place two ways, to
+# change it and to read it, so it is `lent_shape`: write one.
+
+record Pt
+    x: i64
+
+function doubled(p: Pt lent) -> i64
+    return p.x * 2
+
+function bump(@p: Pt lent)  #~ lent_shape
+    p.x @ p.x + 1
+
+function apply(f: (function(Pt) -> i64), p: Pt) -> i64
+    return f(p)
+
+function main()
+    print(apply(doubled, p: Pt(x: 2)))  #~ lent_parameter_as_value
+    q @= Pt(x: 2)
+    q.x @ 3
+    print(doubled(@q))  #~ marker_mismatch
+    bump(@q)
+    print(q.x)

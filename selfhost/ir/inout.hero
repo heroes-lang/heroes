@@ -106,6 +106,13 @@ function argument(@b: build.Lowering, c: state.Checked, decls: [ast.Decl], span:
         return .inout_arg(place: build.whole(cell))
     return .inout_arg(place: spot)
 
+# A value lent read-only that is no place of its own (panel 217's R1,
+# `read_lend.hero`): held in a slot for the call, whose place is handed.
+function held(@b: build.Lowering, value: i64, ty: i64, span: token.Span) -> ir.Arg
+    slot = build.synthetic(@b, prefix: "lent", ty: ty)
+    build.store_slot(@b, slot_id: slot, value: value, span: span)
+    return .inout_arg(place: build.whole(slot))
+
 # Whether an `@` argument of these runs through an index. Only a CALL may
 # hand one over, because the emitter writes the array's unshares at a call
 # and nowhere else (`emit/inst.hero`); a record construction or an abort

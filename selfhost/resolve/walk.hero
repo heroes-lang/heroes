@@ -243,7 +243,7 @@ function arguments(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
         # `f(@x)` reads x (copy in) AND writes it (copy out, §4.8), so its
         # root answers to the rule of the left of `@`.
         if arg.mutable
-            writes.inout_root(@r, a, s, arg.value)
+            writes.inout_root(@r, a, s, decls, arg.value)
 
     # Panel 010: two `@` arguments of one call may not share a root. Asked
     # after the loop, because it compares the roots the loop just resolved.
@@ -268,7 +268,7 @@ function bind_payload(@r: state.Resolver, s: source.Source, decls: [ast.Decl], b
 # implementable at all.
 function place(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], id: i64)
     match a.exprs[id].kind
-        .name => writes.write_root(@r, a, s, id)
+        .name => writes.write_root(@r, a, s, decls, id)
         # `grid.WALL @ 1` — a qualified constant, which is a top-level
         # declaration and so not a place at all (§4.2: there are no mutable
         # globals). Descending to the base would report `grid` as a name

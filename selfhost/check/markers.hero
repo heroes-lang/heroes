@@ -26,6 +26,7 @@ use resolved
 use data_errors
 use check/state
 use check/leasing
+use check/table
 
 # Why the argument cannot take the `@`, empty where it can. The words follow
 # `not_mutable`'s, the refusal the `@` alone would earn, one per binding; the
@@ -70,9 +71,28 @@ function refused_as_value(@c: state.Checker, s: source.Source, decls: [ast.Decl]
                         data_errors.mutable_parameter_as_value(name: source.span_text(s, span), param: source.span_text(s, p.name), span: span)
                     )
                     return true
+
+                # A parameter lent read-only is handed a place, which no
+                # function type carries either (panel 217's R2).
+                if p.lent && !p.mutable && (!fd.value.is_extern || !pointer_crossed(c, p))
+                    state.push_diagnostic(
+                        @c,
+                        data_errors.lent_parameter_as_value(name: source.span_text(s, span), param: source.span_text(s, p.name), span: span)
+                    )
+                    return true
         .constant_decl | .record_decl | .variant_decl | .test_decl => return false
 
     return false
+
+# A `cstr` or a `ptr`, whose `lent` on an `extern` is panel 171's: the
+# pointer crosses by value.
+function pointer_crossed(c: state.Checker, p: ast.Param) -> bool
+    written = state.written_type(c.out, p.ty)
+
+    if written.is_err()
+        return false
+    kind = table.get(c.out.types, written.must())
+    return kind == .cstr || kind == .ptr
 
 # §4.8: UFCS does not apply when the first parameter is `@` (spec § 9),
 # because `l.advance()` would hide the mutation the marker exists to show.

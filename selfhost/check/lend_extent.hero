@@ -202,18 +202,22 @@ function is_cstr(c: state.Checker, ty: i64) -> bool
 # compiler that built this one could parse the marks it writes on the
 # compiler's own bindings (`seed/README.md`'s chain; the one-commit landing was
 # run and broke at `selfhost/cli/process.hero:42:40` with no binary).
-function declared_lends(@c: state.Checker, s: source.Source, f: ast.FunctionDecl, declared_name: token.Span)
+function declared_lends(@c: state.Checker, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, declared_name: token.Span)
     for param in f.params
         if !param.lent
             continue
         param_name = source.span_text(s, param.name)
         why: str @= ""
 
-        if param.mutable
+        # A group's record with no `@` is lent read-only, its place handed to
+        # a `const` pointer (panel 217's R3, `read_lend.hero`).
+        if param.mutable || group_record(c, decls, param)
             continue
 
-        if !is_ptr(c, param.ty) && !is_cstr(c, param.ty)
-            why @ "`" + param_name + "` is not a `cstr` or a `ptr`, and only those two are ever lent"
+        if group_handle(c, decls, param)
+            why @ "`" + param_name + "` is a handle, the pointer itself, which C receives by value, so nothing is lent — only a `cstr`, a `ptr` or a group's record that is no handle is lent without `@`"
+        else if !is_ptr(c, param.ty) && !is_cstr(c, param.ty)
+            why @ "`" + param_name + "` is not a `cstr`, a `ptr` or a group's record, and only those are lent without `@`"
         else if is_ptr(c, param.ty) && param.counted_by.is_err()
             why @ "`" + param_name + "` is a `ptr` that declares no extent, and a `ptr` lend reaches only a parameter declared `counted_by` — nothing is ever lent here, so the word is dead text; write `counted_by <n> lent`"
 
@@ -226,9 +230,13 @@ function declared_lends(@c: state.Checker, s: source.Source, f: ast.FunctionDecl
 # A group's record lent whole: an `@` parameter whose type is a record of a
 # group and not a handle, which is a pointer already and lends nothing.
 function lent_whole(c: state.Checker, decls: [ast.Decl], param: ast.Param) -> bool
+    return param.mutable && group_record(c, decls, param)
+
+# Whether a parameter's type is a group's record that is no handle.
+function group_record(c: state.Checker, decls: [ast.Decl], param: ast.Param) -> bool
     written = state.written_type(c.out, param.ty)
 
-    if !param.mutable || written.is_err()
+    if written.is_err()
         return false
 
     match table.get(c.out.types, written.must())
@@ -236,6 +244,23 @@ function lent_whole(c: state.Checker, decls: [ast.Decl], param: ast.Param) -> bo
             match decls[n.decl].kind
                 .record_decl r => return !r.header.is_err() && !handles.is_handle(decls[n.decl])
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .fixed | .map | .fallible | .function_ty         => return false
+        .case_ty | .failure | .generic | .error                   => return false
+
+    return false
+
+# Whether a parameter's type is a group's handle, the record of a tag and no
+# fields that C's pointer is (spec § 13): lent nowhere, since it crosses as
+# the pointer itself, and told so rather than as a type that is no record.
+function group_handle(c: state.Checker, decls: [ast.Decl], param: ast.Param) -> bool
+    written = state.written_type(c.out, param.ty)
+
+    if written.is_err()
+        return false
+
+    match table.get(c.out.types, written.must())
+        .named n                                                  => return handles.is_handle(decls[n.decl])
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
         .array | .fixed | .map | .fallible | .function_ty         => return false
         .case_ty | .failure | .generic | .error                   => return false

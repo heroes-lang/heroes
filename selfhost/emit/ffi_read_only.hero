@@ -29,6 +29,7 @@ use source
 use token
 use diag
 use check/state
+use check/table
 use check/render
 use ir/containers
 use emit/ffi_lookup
@@ -90,16 +91,45 @@ function writable_pointee(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p:
             none: [str] = []
             declared = render.render_ty(c.types, s, decls, f.slots[slot_id].ty, none)
             spans = ffi_mutable.spans_of(s, decls, tree, decl: f.decl, param: parts[1])
+
+            if table.get(c.types, f.slots[slot_id].ty) != .cstr
+                return ok(
+                    lent_written(name: parts[0], param: parts[1], declared: declared, c_type: header_type, spans: spans, whole: decls[f.decl].span)
+                )
             return ok(
                 ffi_mutable.refusal(name: parts[0], param: parts[1], declared: declared, c_type: header_type, spans: spans, whole: decls[f.decl].span)
             )
 
     return fail(code: "none", msg: "no parameter of that name")
 
+# A group's record lent read-only to a header whose pointer may write it
+# (panel 217's R3(b)): the caller's place, which `lent` promised to leave as it
+# is. The repair is the binding's: `@` where C changes it.
+function lent_written(name: str, param: str, declared: str, c_type: str, spans: ffi_pointee.ParamSpans?, whole: token.Span) -> diag.Diagnostic
+    span: token.Span @= whole
+
+    if !spans.is_err()
+        span @ spans.must().name
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_writable_parameter",
+        message: "`" + param + "` of `" + name + "` is lent read-only as a `" + declared + "`, and the header says `" + c_type + "` — C does not promise to leave it alone",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "`lent` with no `@` hands C the caller's own place to read: a C write through it would change a value the program never handed over to change"
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "where C changes it, take it `@" + param + "` and lend it at each call with `@`", replacement: "@" + param, span: span, certainty: .guess)
+    )
+    return d
+
 # The line the check unit writes for one answered ask of this file's.
 function question(asked: pointee_ask.Pointee, header_type: str) -> str
     if asked.declared == pointee_ask.ARITY
         return prototype_assertion(asked)
+
+    if asked.declared == pointee_ask.PLACE
+        return const_assertion(asked, header_type: header_type)
     return read_only_assertion(asked, header_type: header_type)
 
 # The question, as the line the check unit writes for one parameter whose
@@ -117,7 +147,7 @@ function question(asked: pointee_ask.Pointee, header_type: str) -> str
 # through qualifiers and typedefs alike.
 function read_only_assertion(asked: pointee_ask.Pointee, header_type: str) -> str
     tail = asked.name + " " + asked.param + " " + header_type + "\");"
-    line = "_Static_assert(__builtin_types_compatible_p(" + header_type + ", __typeof__(*(" + header_type + ")0) const *), \"" + WRITABLE_MARKER + tail
+    line = const_assertion(asked, header_type: header_type)
 
     if !lend_type.casts(header_type)
         return line
@@ -128,6 +158,10 @@ function read_only_assertion(asked: pointee_ask.Pointee, header_type: str) -> st
         bytes @ bytes.push("__builtin_types_compatible_p(" + pointee + ", " + one + ")")
 
     return line + " _Static_assert(" + bytes.join(" || ") + ", \"" + BYTES_MARKER + tail
+
+# The first question alone: the header's pointer points at `const`.
+function const_assertion(asked: pointee_ask.Pointee, header_type: str) -> str
+    return "_Static_assert(__builtin_types_compatible_p(" + header_type + ", __typeof__(*(" + header_type + ")0) const *), \"" + WRITABLE_MARKER + asked.name + " " + asked.param + " " + header_type + "\");"
 
 # The bytes question's marker (defect 427).
 constant BYTES_MARKER: str
@@ -272,7 +306,7 @@ function lend_answers(out: [pointee_ask.Answered], wanted: [pointee_ask.Pointee]
                 kept @ kept.push(pointee_ask.Answered(asked: one, header_type: "", pointee: ""))
             continue
 
-        if one.declared != pointee_ask.READ
+        if one.declared != pointee_ask.READ && one.declared != pointee_ask.PLACE
             continue
         params = types[one.name]
         declared = counts[one.name]
