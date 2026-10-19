@@ -167,3 +167,60 @@ milestone `M-witnessed-seed`, for the author to close.
 
 **The chain entry**: row 69, `m-witnessed-seed`, closed 2026-10-18, this
 journal.
+
+## Tagged over a clean list, 2026-10-19
+
+**`m-witnessed-seed` is placed on the commit this section is written in**, over
+a list asked of GitHub before it was placed: no `blocking` or `systemic`
+defect open, and no open decision but panel 225's ratification
+(https://github.com/heroes-lang/heroes/issues/2148), the exception the
+contract names. What held it, and what closed it, in one batch on the lane
+`lane-witnessed-seed`:
+
+- **defects 2136 and 2137**, by panel 225
+  (`docs/panel/225-a-value-only-the-probe-sees-is-told-beside-a-refusal-read-from-the-programs-own-unit-preprocessed-whole-then-cut-at-marks-no-header-can-write.md`,
+  provisional, author ratification pending): a value only the probe sees is
+  told beside a refusal, read from a copy of the program's own unit
+  preprocessed whole and then cut at marks no header can write. The route is
+  the union of the sitting's two prototypes, which the critic named and the
+  compiler-engineer built in a third step; it was run on the Windows box
+  before the synthesis adopted it, and landed at `c03e81984`;
+- **defect 2145**, found by both seats beside the question: the landed
+  repair of 2128 wrote a refused constant's accessor inert before
+  preprocessing, and so told a value C defines undefined; retired by the
+  same landing;
+- **defect 2146**, found while the synthesis was written: the probe's
+  `-D main` word, which every header the unit includes read too (`bf75f3ff1`);
+- **defect 2147**, found by the compiler-engineer building the union: a kept
+  verdict of panel 216's probe and of panel 218's C2 blind to its header's
+  edit, a wrong value at exit 0 on a warm build (`295cd8433`);
+- **defects 2142 and 2144**, the two red legs of the close's push: six builds
+  of one cold program at once on Windows, measured and repaired on the box
+  (`aaedffa9d`, `4f81c0aeb`), and the bootstrap's parent directory on a
+  one-commit checkout (`df6e22223`).
+
+**What surprised.** The two prototypes the seats built were one route found
+twice, cut after the preprocessor rather than before it, and each answered
+programs the other did not; the critic's attack on both, a header writing the
+mark's own text, was answered by neither. A key alone did not close it: the
+compiler-engineer made a header learn the key through defect 2146's word, and
+only the count of the marks written held. And the sitting's question found
+two defects of the probe every build runs, neither of them the copy's.
+
+**The gate**, on this Mac, stage 2 built from the seed (`sources
+7792ecfe50a531e8`): stage 2 and stage 3 emit the compiler's 26,694,926 bytes
+alike, so the seed was not refreshed; the compiler's own tests 1738 and the
+net's own tests 411, all passed; the full net's 31 suites at 0 failed,
+`cache` 8 alone after the rest, `emission` 1315 once the two new `run/`
+cases' emissions were blessed; on Linux arm64, in its container with the
+same stage 2, `emission` failed those two alone and passed the two cases
+this Mac skips, so its bless was not owed (the gate's commit, `17aa3ec38`).
+
+**Carried**: defect 2143, `adjacent` and filed after `m-readonly-lend`, whose
+probe half the landing closed and whose other half, a second refused unit's
+own clang refusal told one build later, waits; defect 2139, the formatter's
+probe over `tests` in `bracket`; and panel 225's ratification. The census of
+`check` and panel 187's R2 are not owed: every change of the batch that moves
+a verdict is the build's value probe, which `heroes check` does not run (it
+exits 0 on a program binding `K_DIV` as `INT_MIN / -1`, which `build`
+refuses).
