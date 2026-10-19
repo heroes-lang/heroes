@@ -1,0 +1,18 @@
+# FIXED DEFECT 2146, 2026-10-19, lane lane-witnessed-seed.
+#
+# SYMPTOM: `K_M`, which the header defines `7` where `main` is not a macro,
+# was refused at exit 1 as a value C leaves undefined, while the program's
+# own unit reads `7`.
+#
+# CAUSE: panel 216's probe renamed `main` with a `-D` word on clang's command
+# line (`cli/value_run.hero`), and the header read that macro too.
+#
+# FIX: the probe renames the one `main` the emitter writes, in the unit's
+# text, after every header (`emit/value_probe.hero`'s `unit_text`), so the
+# header is read as the program reads it. This program builds and prints 7.
+
+extern "fixedbugs-2146-main-asked.h"
+    constant K_M: i64
+
+function main()
+    print(K_M)

@@ -1,0 +1,119 @@
+# The two `int main` shims a root unit ends with, and the line that opens
+# them (design.md §3.1; panels 020 and 034). Split from `emit/decls.hero` on
+# 2026-10-19 (defect 2146), when the value probe came to rename that line in
+# its copy of a unit (`emit/value_probe.hero`'s `unit_text`) where it had
+# defined `main` as a macro on clang's command line, which every header the
+# unit includes reads too, and `decls.hero` stood at the layout's threshold.
+#
+# A SHIM, NOT A MANGLER EXCEPTION: Heroes' main becomes h_<module>_main
+# like every other function, and a separate int main calls it (Vala
+# does exactly this; Zig's C backend once emitted void main, which
+# clang rejects). The only two functions whose name C chose, which is
+# why the runtime's bookkeeping lives there: hero_args_set on the way
+# in, hero_runtime_check_leaks on the way out — ASan's leak detector
+# does not exist on this platform, measured, a 999-block leak exiting 0
+# in silence.
+
+use source
+use bytes
+use check/state
+use ir/containers
+use emit/mangle
+use emit/writer
+use emit/provenance
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The line that opens a shim's C function called `name`: `main` in every
+# unit a build compiles, the probe's hidden name in its copy, so the
+# driver's `main` is the one that runs there. One spelling for both, so the
+# probe's rename can never miss the line the shims write.
+function opening(name: str) -> str
+    return "int " + name + "(int argc, char **argv) {"
+
+# One process per test: an assert is a panic, so a runner that called
+# tests in sequence would stop at the first failure and hide every
+# test after it. heroes test compiles once and executes once per test.
+# No title reaches the C: the index is the whole protocol. The switch
+# is the one place the test's POSITION (the protocol) and its
+# DECLARATION index (the unique name) meet.
+function test_shim(@w: writer.Writer, p: containers.Program, s: source.Source, sources: str)
+    writer.blank(@w)
+    writer.at_generated(@w)
+    provenance.write(@w, sources: sources)
+    writer.line(@w, text: opening("main"))
+    writer.line(@w, text: "    hero_args_set(argc, argv);")
+    writer.line(@w, text: "    int64_t which = hero_test_index(argc, argv);")
+    writer.line(@w, text: "    switch (which) {")
+    position: i64 @= 0
+
+    for f in p.functions
+        is_test: bool @= false
+
+        match f.kind
+            .test_kind                                     => is_test @ true
+            .function_kind | .constant_kind | .extern_kind => is_test @ is_test
+
+        if is_test && !source.is_library(s, f.span.start)
+            writer.line(@w, text: "    case " + position.to_str() + ":")
+            writer.line(
+                @w,
+                text: "        " + mangle.test_name(module: source.component_at(s, f.span.start), index: f.decl) + "();"
+            )
+            writer.line(@w, text: "        break;")
+            position @ position + 1
+
+    writer.line(@w, text: "    default:")
+    writer.line(@w, text: "        hero_panic(\"no test with that index — this is a compiler bug\");")
+    writer.line(@w, text: "    }")
+    writer.line(@w, text: "    hero_runtime_check_leaks();")
+    writer.line(@w, text: "    return 0;")
+    writer.line(@w, text: "}")
+
+# The program's shim. argc/argv ALWAYS, whether or not the program
+# calls args(): two shims chosen by reachability would be a condition
+# that can be wrong, and the parameters cost nothing.
+function shim(@w: writer.Writer, f: containers.Function, s: source.Source, sources: str)
+    writer.blank(@w)
+    writer.at_generated(@w)
+    provenance.write(@w, sources: sources)
+    writer.line(@w, text: opening("main"))
+    writer.line(@w, text: "    hero_args_set(argc, argv);")
+    writer.line(
+        @w,
+        text: "    " + mangle.function_name(module: source.component_at(s, f.span.start), name: f.name) + "();"
+    )
+    writer.line(@w, text: "    hero_runtime_check_leaks();")
+    writer.line(@w, text: "    return 0;")
+    writer.line(@w, text: "}")
+
+## Tests
+
+# Whether `needle` stands in `text`, by bytes: no slice is taken, so the em
+# dash of the runner's panic message is matched whole.
+function has(text: str, needle: str) -> bool
+    return !bytes.locate(text: text, needle: needle, from: 0).is_err()
+
+test "the shim calls the mangled main and gates leaks on the way out"
+    text = "function main()\n    print(1)\n\ntest \"one\"\n    assert 1 == 1\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    w: writer.Writer @= writer.new_writer("t")
+    shim(@w, low.program.functions[0], s, sources: "0123456789abcdef")
+    got = writer.finish(w)
+    assert has(text: got, needle: "int main(int argc, char **argv) {")
+    assert has(text: got, needle: "    hero_args_set(argc, argv);")
+    assert has(text: got, needle: "    h_t_main();")
+    assert has(text: got, needle: "    hero_runtime_check_leaks();")
+    tw: writer.Writer @= writer.new_writer("t")
+    test_shim(@tw, low.program, s, sources: "0123456789abcdef")
+    runner = writer.finish(tw)
+    assert has(text: runner, needle: "int main(int argc, char **argv) {")
+    assert has(text: runner, needle: "    case 0:")
+    assert has(text: runner, needle: "        h_t_test1();")
+    assert has(text: runner, needle: "        hero_panic(\"no test with that index — this is a compiler bug\");")

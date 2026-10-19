@@ -44,6 +44,8 @@ use ir/containers
 use emit/signature
 use emit/value_check
 use emit/extern_refs
+use emit/c_main
+use emit/writer
 use emit/externs as emit_externs
 use emit/record_constant
 use emit/ffi_lookup
@@ -129,8 +131,16 @@ function asked(p: containers.Program, c: state.Checked, s: source.Source, decls:
 
 # The unit as the probe compiles it: `hero_extern_refs` no longer `used`, so
 # nothing keeps a reference to a C library once dead-stripping runs (on
-# Darwin `used` marks a symbol never to be stripped).
+# Darwin `used` marks a symbol never to be stripped); and the shim's `main`
+# called `HIDDEN_MAIN`, so the driver's is the one that runs. The name is
+# changed in the text, on the line the shim opens with (`emit/c_main.hero`),
+# after every header the unit includes: as a `-D` word on clang's command
+# line it was a macro every header read, and a header asking `#ifdef main`
+# read one value in the probe and another in the program (defect 2146).
 function unit_text(tu_text: str) -> str
+    return main_hidden(unused_refs(tu_text))
+
+function unused_refs(tu_text: str) -> str
     head = extern_refs.HEAD
     at = bytes.locate(text: tu_text, needle: head, from: 0)
 
@@ -138,6 +148,26 @@ function unit_text(tu_text: str) -> str
         return tu_text
     rest = tu_text.slice(from: at.must() + head.len(), to: tu_text.len())
     return tu_text.slice(from: 0, to: at.must()) + extern_refs.UNUSED_HEAD + rest
+
+# Every whole line of `text` that opens a shim, written to open `HIDDEN_MAIN`
+# instead: a root unit holds one, any other unit none.
+function main_hidden(text: str) -> str
+    line = "\n" + c_main.opening("main") + "\n"
+    with = "\n" + c_main.opening(HIDDEN_MAIN) + "\n"
+    pieces: [str] @= []
+    from: i64 @= 0
+
+    while true
+        found = bytes.locate(text: text, needle: line, from: from)
+
+        if found.is_err()
+            break
+        pieces @ pieces.push(text.slice(from: from, to: found.must()))
+        pieces @ pieces.push(with)
+        from @ found.must() + line.len()
+
+    pieces @ pieces.push(text.slice(from: from, to: text.len()))
+    return pieces.join("")
 
 # What the probe appends to the unit's preprocessed text, so it is compiled by
 # the very words the accessors are and sees every type the header declares:
@@ -286,6 +316,28 @@ test "the unit loses its used reference table and nothing else"
     tu = "int x;\n" + extern_refs.HEAD + "\n    (void)0;\n}\nint y;\n"
     assert unit_text(tu) == "int x;\n" + extern_refs.UNUSED_HEAD + "\n    (void)0;\n}\nint y;\n"
     assert unit_text("int z;\n") == "int z;\n"
+
+test "the shim's main is named otherwise in the probe's text, and a header asking whether main is a macro reads as the program does (defect 2146)"
+    text = "function main()\n    print(1)\n\ntest \"one\"\n    assert 1 == 1\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    header = "#ifdef main\n#define K_M 1\n#endif\n"
+
+    # The program's shim and the test runner's, each as the emitter writes it.
+    w: writer.Writer @= writer.new_writer("t")
+    c_main.shim(@w, low.program.functions[0], s, sources: "0123456789abcdef")
+    tw: writer.Writer @= writer.new_writer("t")
+    c_main.test_shim(@tw, low.program, s, sources: "0123456789abcdef")
+
+    for shim in [writer.finish(w), writer.finish(tw)]
+        probe = unit_text(header + shim)
+        assert probe.slice(from: 0, to: header.len()) == header
+        assert !bytes.locate(text: probe, needle: c_main.opening(HIDDEN_MAIN), from: 0).is_err()
+        assert bytes.locate(text: probe, needle: c_main.opening("main"), from: 0).is_err()
+        assert probe.len() == header.len() + shim.len() + HIDDEN_MAIN.len() - "main".len()
 
 test "the dispatcher calls the canaries first and every accessor by index at its own type, and the driver says when it finished"
     one = Accessor(name: "h_m_K", decl: 0, result: 0)

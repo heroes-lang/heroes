@@ -68,9 +68,11 @@ record Unit
     defined: [i64]
     cut: bool
 
-# The unit's text preprocessed under its own words, `main` renamed, its
-# `#define`s kept only where `defines` asks: a probe compiles it without them,
-# since a kept one expands a second time (panel 218's critic, `K_W`).
+# The unit's text preprocessed under its own words and no other, its `main`
+# renamed in the text (`value_probe.unit_text`; a `-D main=` word here was
+# read by every header too, defect 2146), its `#define`s kept only where
+# `defines` asks: a probe compiles it without them, since a kept one expands
+# a second time (panel 218's critic, `K_W`).
 function preprocessed(dir: str, one: Unit, defines: bool) -> str?
     process.mkdir_all(dir)?
     unit = dir + "/" + one.module + ".c"
@@ -80,10 +82,7 @@ function preprocessed(dir: str, one: Unit, defines: bool) -> str?
 
     if defines
         head @ head.push("-dD")
-    first = response_file.carried(
-        line: strings.with_all(list: head.push("-D" + "main=" + value_probe.HIDDEN_MAIN), more: one.words),
-        dir: dir
-    )
+    first = response_file.carried(line: strings.with_all(list: head, more: one.words), dir: dir)
     errors = publish.private_name(dir + "/preprocess-errors.txt")
     ran = process.run(
         program: "clang",

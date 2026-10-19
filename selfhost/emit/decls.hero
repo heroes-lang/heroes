@@ -1,6 +1,7 @@
 # One translation unit's skeleton: the prelude, which functions reach
-# C, live strings, and the two int main shims (design.md §3.1, §4.18;
-# panels 020, 034, 038). Port of heroes/src/emit/{decls,main}.rs in the Rust bootstrap at `m-bootstrap-archive`.
+# C, and live strings (design.md §3.1, §4.18; panels 020, 034, 038); the
+# two int main shims are `emit/c_main.hero`'s since 2026-10-19 (defect
+# 2146). Port of heroes/src/emit/{decls,main}.rs in the Rust bootstrap at `m-bootstrap-archive`.
 #
 # DECLARATION ORDERING is the emitter's first obligation: Heroes' top
 # level is order-free with free mutual recursion, C's is not — so every
@@ -11,15 +12,6 @@
 # expected; with the stamp the same C is `use of undeclared identifier`.
 # What the stamp catches is version skew — a decoy that copies the
 # number passes, and the CACHE KEY is what guards contents (CLAUDE.md §7).
-#
-# A SHIM, NOT A MANGLER EXCEPTION: Heroes' main becomes h_<module>_main
-# like every other function, and a separate int main calls it (Vala
-# does exactly this; Zig's C backend once emitted void main, which
-# clang rejects). The only two functions whose name C chose, which is
-# why the runtime's bookkeeping lives there: hero_args_set on the way
-# in, hero_runtime_check_leaks on the way out — ASan's leak detector
-# does not exist on this platform, measured, a 999-block leak exiting 0
-# in silence.
 #
 # The prelude's extern block landed with the FFI crossing: headers
 # (angled, never quoted — panel 036's decoy measurement), the record
@@ -44,7 +36,6 @@ use emit/c_text
 use emit/macro_guard
 use emit/nodebug
 use emit/entry_stop
-use emit/provenance
 use parse
 use resolve
 use checker
@@ -256,64 +247,6 @@ function live_strings(p: containers.Program, target: BuildTarget, s: source.Sour
 
     return live
 
-## The two int main shims
-
-# One process per test: an assert is a panic, so a runner that called
-# tests in sequence would stop at the first failure and hide every
-# test after it. heroes test compiles once and executes once per test.
-# No title reaches the C: the index is the whole protocol. The switch
-# is the one place the test's POSITION (the protocol) and its
-# DECLARATION index (the unique name) meet.
-function test_shim(@w: writer.Writer, p: containers.Program, s: source.Source, sources: str)
-    writer.blank(@w)
-    writer.at_generated(@w)
-    provenance.write(@w, sources: sources)
-    writer.line(@w, text: "int main(int argc, char **argv) {")
-    writer.line(@w, text: "    hero_args_set(argc, argv);")
-    writer.line(@w, text: "    int64_t which = hero_test_index(argc, argv);")
-    writer.line(@w, text: "    switch (which) {")
-    position: i64 @= 0
-
-    for f in p.functions
-        is_test: bool @= false
-
-        match f.kind
-            .test_kind                                     => is_test @ true
-            .function_kind | .constant_kind | .extern_kind => is_test @ is_test
-
-        if is_test && !source.is_library(s, f.span.start)
-            writer.line(@w, text: "    case " + position.to_str() + ":")
-            writer.line(
-                @w,
-                text: "        " + mangle.test_name(module: source.component_at(s, f.span.start), index: f.decl) + "();"
-            )
-            writer.line(@w, text: "        break;")
-            position @ position + 1
-
-    writer.line(@w, text: "    default:")
-    writer.line(@w, text: "        hero_panic(\"no test with that index — this is a compiler bug\");")
-    writer.line(@w, text: "    }")
-    writer.line(@w, text: "    hero_runtime_check_leaks();")
-    writer.line(@w, text: "    return 0;")
-    writer.line(@w, text: "}")
-
-# The program's shim. argc/argv ALWAYS, whether or not the program
-# calls args(): two shims chosen by reachability would be a condition
-# that can be wrong, and the parameters cost nothing.
-function shim(@w: writer.Writer, f: containers.Function, s: source.Source, sources: str)
-    writer.blank(@w)
-    writer.at_generated(@w)
-    provenance.write(@w, sources: sources)
-    writer.line(@w, text: "int main(int argc, char **argv) {")
-    writer.line(@w, text: "    hero_args_set(argc, argv);")
-    writer.line(
-        @w,
-        text: "    " + mangle.function_name(module: source.component_at(s, f.span.start), name: f.name) + "();"
-    )
-    writer.line(@w, text: "    hero_runtime_check_leaks();")
-    writer.line(@w, text: "    return 0;")
-    writer.line(@w, text: "}")
-
 ## Tests
 
 # By CHARACTERS, not bytes: the emitted C carries an em-dash in one
@@ -396,24 +329,3 @@ test "the prelude stamps the ABI and emits only the strings a build reads"
     )
     test_text = writer.finish(tw)
     assert has(text: test_text, needle: "only tests")
-
-test "the shim calls the mangled main and gates leaks on the way out"
-    text = "function main()\n    print(1)\n\ntest \"one\"\n    assert 1 == 1\n"
-    parsed = parse.parse(text)
-    s = source.new_source(name: "t.hero", text: text)
-    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
-    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    w: writer.Writer @= writer.new_writer("t")
-    shim(@w, low.program.functions[0], s, sources: "0123456789abcdef")
-    got = writer.finish(w)
-    assert has(text: got, needle: "int main(int argc, char **argv) {")
-    assert has(text: got, needle: "    hero_args_set(argc, argv);")
-    assert has(text: got, needle: "    h_t_main();")
-    assert has(text: got, needle: "    hero_runtime_check_leaks();")
-    tw: writer.Writer @= writer.new_writer("t")
-    test_shim(@tw, low.program, s, sources: "0123456789abcdef")
-    runner = writer.finish(tw)
-    assert has(text: runner, needle: "    case 0:")
-    assert has(text: runner, needle: "        h_t_test1();")
-    assert has(text: runner, needle: "        hero_panic(\"no test with that index — this is a compiler bug\");")

@@ -1,0 +1,17 @@
+# FIXED DEFECT 2146, 2026-10-19, lane lane-witnessed-seed, the mirror of
+# its `run/` case.
+#
+# SYMPTOM: `K_N`, which the header defines `INT_MIN / -1` where `main` is not
+# a macro, built at exit 0, and the program printed what the machine held
+# (`6125380652` on this Mac).
+#
+# CAUSE: the probe read the header with `main` defined by a `-D` word, and
+# so read `7`.
+#
+# FIX: as the `run/` case's, the header read as the program reads it.
+
+extern "fixedbugs-2146-main-unasked.h"
+    constant K_N: i64  #~ ffi_constant_type
+
+function main()
+    print(K_N)

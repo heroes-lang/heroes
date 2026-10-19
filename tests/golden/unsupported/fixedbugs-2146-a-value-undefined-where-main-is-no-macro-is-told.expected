@@ -1,0 +1,7 @@
+error[ffi_constant_type]: `K_N` in `fixedbugs-2146-main-unasked.h` cannot be declared `i64`: clang refuses the header's value at line 4: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2146-a-value-undefined-where-main-is-no-macro-is-told.hero:14:5
+     |
+  14 |     constant K_N: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2146-main-unasked.h` line 4 reads `#define K_N ((-2147483647 - 1) / -1)`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `K_N` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines

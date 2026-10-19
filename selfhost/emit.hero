@@ -24,6 +24,7 @@ use emit/ctype
 use emit/synth
 use emit/writer
 use emit/decls as emit_decls
+use emit/c_main
 use emit/gate
 use emit/typeorder
 use emit/extern_probe
@@ -280,8 +281,8 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
             entry = entry_point(p)
 
             if !entry.is_err()
-                emit_decls.shim(@w, p.functions[entry.must()], s, sources: sources)
-        .tests_build => emit_decls.test_shim(@w, p, s, sources: sources)
+                c_main.shim(@w, p.functions[entry.must()], s, sources: sources)
+        .tests_build => c_main.test_shim(@w, p, s, sources: sources)
 
     return Emitted(
         c: writer.finish(w),

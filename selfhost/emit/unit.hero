@@ -59,6 +59,7 @@ use emit/members
 use emit/unit_plan
 use emit/writer
 use emit/decls as emit_decls
+use emit/c_main
 use emit/typeorder
 use emit/extern_probe
 use emit/extern_refs
@@ -216,7 +217,7 @@ function root_shim(@w: writer.Writer, plan: unit_plan.Plan, p: containers.Progra
             entry = emit.entry_point(p)
 
             if !entry.is_err()
-                emit_decls.shim(@w, p.functions[entry.must()], s, sources: sources)
+                c_main.shim(@w, p.functions[entry.must()], s, sources: sources)
         .tests_build =>
             for f in p.functions
                 match f.kind
@@ -225,4 +226,4 @@ function root_shim(@w: writer.Writer, plan: unit_plan.Plan, p: containers.Progra
                             signature.prototype(@w, f, c, names, s, decls)
                     .function_kind | .constant_kind | .extern_kind => continue
 
-            emit_decls.test_shim(@w, p, s, sources: sources)
+            c_main.test_shim(@w, p, s, sources: sources)
