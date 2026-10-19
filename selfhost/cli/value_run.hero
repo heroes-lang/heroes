@@ -60,13 +60,20 @@ constant CAP: i64
 # One unit a probe asks: its module, its text, the words it compiled under
 # and the function indices it defines; `cut` where the text is the copy of a
 # unit the build did not compile, whose marked lines leave once it is
-# preprocessed (`emit/probe_cut.hero`, panel 225).
+# preprocessed (`emit/probe_cut.hero`, panel 225); and `reads`, what names
+# the files its headers read and what each holds, which a kept verdict's key
+# names: a compiled unit's object, whose name carries the digest of every
+# file its compile read (`cli/units.hero`), and for a copy the rows of
+# `probing.reads_of`. The text names a header and does not hold it, so a
+# header edited between two builds was answered by the verdict the first one
+# kept (defect 2147).
 record Unit
     module: str
     text: str
     words: [str]
     defined: [i64]
     cut: bool
+    reads: str
 
 # The unit's text preprocessed under its own words and no other, its `main`
 # renamed in the text (`value_probe.unit_text`; a `-D main=` word here was

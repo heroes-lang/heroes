@@ -247,6 +247,23 @@ function holding(probings: [Probing], modules: [str]) -> [Probing]
 
     return out
 
+# What the headers of `module`'s group read, a `<digest> <path>` row per file
+# (`compiling.reads`): the group's probe's answer where it asked one, and
+# asked of clang here where it did not, as a group binding constants alone
+# never does otherwise. The value probe's copy of a unit keys its kept
+# verdict by it (defect 2147), since the copy's text names a header and does
+# not hold it; `unread` where the headers do not preprocess, whose unit and
+# copy then refuse as well.
+function reads_of(t: toolchain.Toolchain, probings: [Probing], module: str, @memo: {str: str}) -> str
+    for one in holding(probings, modules: [module])
+        if !one.probe.is_err()
+            return one.probe.must().read.default("unread")
+        return compiling.reads(t.build, words: compiling.probe_words(one.under), headers: one.headers, @memo).default(
+            "unread"
+        )
+
+    return ""
+
 # Every probe's digests of the headers it read, for a round's memo.
 function digests_of(probings: [Probing]) -> {str: str}
     out: {str: str} @= {}

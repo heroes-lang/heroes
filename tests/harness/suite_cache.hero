@@ -65,6 +65,13 @@
 #    refusing the C. Six `heroes run` of one program are started at once on
 #    six threads (`hero_thread_spawn`, the runtime's), and every one must
 #    exit 0 and print the program's answer.
+# 8. **A header edit reaches the value probes' kept verdicts** (defect
+#    2147). Panel 216's probe and panel 218's C2 keep what they found under
+#    a key that held the unit's text, which names a header and does not
+#    hold it: a header edited from a value C defines to one it leaves
+#    undefined built warm at exit 0, and the program printed what the
+#    machine held. One header gives each probe a value, edited four times,
+#    and every build must say what a cold one would.
 #
 # THE PROGRAM IS WRITTEN HERE rather than kept under
 # `tests/golden/surface-fixtures/`, and the header is why: the case is
@@ -165,6 +172,22 @@ constant NOISE_HEADER_SILENT: str
 constant NOISE_WORDS: str
     "noise_spare is unused"
 
+# The eighth direction's own program (defect 2147): a value each probe
+# reads, `CONF_VALUE` panel 216's, an expression the accessor computes, and
+# `CONF_INIT` panel 218's C2, the initialiser of an object it reads.
+constant VALUES_HOME: str
+    "cache-values"
+
+constant VALUES_BIND: str
+    "extern \"values.h\"\n    constant CONF_VALUE: i64\n    constant CONF_INIT: i32\n\nfunction value() -> i64\n    return CONF_VALUE\n\nfunction init() -> i32\n    return CONF_INIT\n"
+
+constant VALUES_CALLER: str
+    "use valuesbind\n\nfunction main()\n    print(valuesbind.value())\n    print(valuesbind.init())\n"
+
+# A value C leaves undefined, written where each probe reads it.
+constant UNDEFINED_VALUE: str
+    "(-2147483647 - 1) / -1"
+
 # Where `heroes build` keeps its objects: the `build/` of the directory the
 # harness runs in, the repository root.
 constant OBJECTS: str
@@ -178,6 +201,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     a_reordered_variant_is_not_served_warm(@r, scratch: scratch, compiler: compiler)
     a_warm_cache_never_turns_a_failure_into_a_pass(@r, scratch: scratch, compiler: compiler)
     a_warm_cache_never_replays_a_warning_that_was_repaired(@r, scratch: scratch, compiler: compiler)
+    a_header_edit_reaches_the_value_probes(@r, scratch: scratch, compiler: compiler)
     builds_started_together_all_succeed(@r, scratch: scratch, compiler: compiler)
     return ok(r)
 
@@ -334,6 +358,57 @@ function a_warm_cache_never_replays_a_warning_that_was_repaired(@r: report.Repor
             @r,
             label: label,
             detail: wrong.join("\n") + "\n  A warm object replays the warnings its compile produced, so that a warning is\n  not swallowed after the first hit. The saved file must therefore be written on\n  every compile INCLUDING a clean one: written only when clang speaks, a repair\n  leaves the old text in place and every later build replays a compile that no\n  longer exists. It is the mirror of the case above — that one turns a failure\n  into a pass, this one turns a pass into a failure, and the same instrument\n  catches both."
+        )
+    else
+        report.keep_pass(@r)
+
+# **A header edit reaches the value probes' kept verdicts** (defect 2147).
+# Four builds, the header edited before each: values C defines, values it
+# leaves undefined, defined again and undefined again, so a verdict kept from
+# any earlier build answers wrongly at one of them, in either direction.
+function a_header_edit_reaches_the_value_probes(@r: report.Report, scratch: str, compiler: str)
+    label = "cache/a header edit reaches the value probes' kept verdicts"
+    dir = scratch + "/" + VALUES_HOME
+    laid: ()? @= shell.remove_tree(dir)
+
+    if !laid.is_err()
+        laid @ shell.mkdir_all(dir)
+
+    if !laid.is_err()
+        laid @ write_file(path: dir + "/valuesbind.hero", text: VALUES_BIND)
+
+    if !laid.is_err()
+        laid @ write_file(path: dir + "/prog.hero", text: VALUES_CALLER)
+
+    if laid.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
+        return
+    wrong: [str] @= []
+
+    for value in ["7", UNDEFINED_VALUE, "7", UNDEFINED_VALUE]
+        header = "#define CONF_VALUE (" + value + ")\nstatic const int CONF_INIT = " + value + ";\n"
+
+        if write_file(path: dir + "/values.h", text: header).is_err()
+            report.keep_failure(@r, label: label, detail: "  cannot write the header")
+            return
+        said = shell.run_guarded(scratch: scratch, words: [compiler, "run", dir + "/prog.hero"])
+
+        if value == UNDEFINED_VALUE
+            refused = !said.is_err() && said.must().code == 1
+            named = refused && strings.contains(text: said.must().err, needle: "`CONF_VALUE`") && strings.contains(text: said.must().err, needle: "`CONF_INIT`")
+
+            if !named
+                wrong @ wrong.push(
+                    "    the header said " + value + " for both and `run prog.hero`: " + shell.ending(said) + ", where a cold build refuses both values"
+                )
+        else if said.is_err() || said.must().code != 0 || said.must().out != value + "\n" + value + "\n"
+            wrong @ wrong.push("    the header said " + value + " for both and `run prog.hero`: " + shell.ending(said))
+
+    if wrong.len() > 0
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: wrong.join("\n") + "\n  a probe's verdict is kept under a key, and the unit's text names the header without holding it: the key must name what the headers read and hold (`value_run.Unit.reads`), or a verdict kept from an older header answers for this one."
         )
     else
         report.keep_pass(@r)

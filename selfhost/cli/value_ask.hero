@@ -11,10 +11,14 @@
 # **Three clangs and a few runs on a cold build, none on a warm one**, per
 # unit that defines an asked accessor: the verdict is kept under
 # `build/value-<key>/`, the key naming the compiler, the unit's own text, its
-# words, its level, the runtime and what the probe appends and compiles it
-# with, so a header that changes is asked again with its unit, and a probe of
-# another shape never reads this one's. Measured by panel 216: about 0.3 s real
-# cold on this Mac, 0.07 s on Linux arm64, nothing warm.
+# words, its level, the runtime, what the probe appends and compiles it with,
+# and every file the unit's headers read with its digest (`Unit.reads`), so a
+# header that changes is asked again with its unit, and a probe of another
+# shape never reads this one's. The files were not in it until defect 2147:
+# the unit's text names a header and does not hold it, so a header edited to
+# a value C leaves undefined built warm at exit 0 and the program printed
+# what the machine held. Measured by panel 216: about 0.3 s real cold on this
+# Mac, 0.07 s on Linux arm64, nothing warm.
 
 use ast
 use source
@@ -119,7 +123,7 @@ record Verdict
 # with what the probe appends, linked with the runtime alone and run.
 function asked(t: toolchain.Toolchain, one: value_run.Unit, accessors: [value_probe.Accessor], level: str, @plain: str?) -> Verdict?
     key = digest.digest(
-        t.fingerprint + "|value|" + t.compiler_key + "|" + one.module + "|" + one.text + "|words:" + libraries.key_text(one.words) + "|" + level + "|" + t.runtime_key + "|" + t.target + "|probe:" + value_probe.appended(accessors) + "|" + value_run.checks().join(" ")
+        t.fingerprint + "|value|" + t.compiler_key + "|" + one.module + "|" + one.text + "|words:" + libraries.key_text(one.words) + "|" + level + "|" + t.runtime_key + "|" + t.target + "|probe:" + value_probe.appended(accessors) + "|" + value_run.checks().join(" ") + "|reads:" + one.reads
     )
     dir = t.build + "/value-" + key
     known = kept_answers.read(dir + "/verdict.txt")

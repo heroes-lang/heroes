@@ -62,10 +62,11 @@ function units(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
         kept: kept
     )
     root = module_names.module_of(s.name)
-    reads = value_beside.reads_of(probing.digests_of(planned.probings))
+    memo: {str: str} @= probing.digests_of(planned.probings)
 
     for index in asking
         plan = planned.plans[index]
+        reads = probing.reads_of(t, planned.probings, module: plan.module, @memo)
         text = unit.unit(
             plan: plan,
             p: art.program,
@@ -80,7 +81,7 @@ function units(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
             marked: true
         )
         out @ out.push(
-            value_run.Unit(module: plan.module, text: value_beside.keyed(copy: text, reads: reads), words: settled.probe_words(t, options, site, plan), defined: plan.mine.defined, cut: true)
+            value_run.Unit(module: plan.module, text: value_beside.keyed(copy: text, reads: reads), words: settled.probe_words(t, options, site, plan), defined: plan.mine.defined, cut: true, reads: reads)
         )
 
     return out

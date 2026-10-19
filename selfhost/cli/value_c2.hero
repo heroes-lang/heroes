@@ -14,7 +14,9 @@
 # preprocessed text (panel 220: a `;` inside a literal cut such a scan short,
 # `';' + HS_EA` built). A unit none of whose accessors reaches one runs no
 # probe, its canary read from the walk alone; the verdict is kept under
-# `build/init-<key>/`, so a warm build asks nothing.
+# `build/init-<key>/`, its key naming every file the unit's headers read as
+# panel 216's probe's does (defect 2147), so a warm build asks nothing and a
+# header edited since is asked again.
 
 use emit/value_probe
 use emit/ffi_lookup
@@ -50,7 +52,7 @@ constant CANARY: str
 function asked(t: toolchain.Toolchain, one: value_run.Unit, accessors: [value_probe.Accessor], level: str, @plain: str?) -> str?
     sample = value_init.Question(member: "m", leaf: false, text: "t", cast: "", begin: 0, readers: [])
     key = digest.digest(
-        t.fingerprint + "|init|" + t.compiler_key + "|" + one.module + "|" + one.text + "|words:" + libraries.key_text(one.words) + "|" + level + "|" + t.runtime_key + "|" + t.target + "|" + CANARY + "|" + value_init.function_of(sample, index: 0) + "|" + value_run.checks().join(" ")
+        t.fingerprint + "|init|" + t.compiler_key + "|" + one.module + "|" + one.text + "|words:" + libraries.key_text(one.words) + "|" + level + "|" + t.runtime_key + "|" + t.target + "|" + CANARY + "|" + value_init.function_of(sample, index: 0) + "|" + value_run.checks().join(" ") + "|reads:" + one.reads
     )
     dir = t.build + "/init-" + key
     known = kept_answers.read(dir + "/verdict.txt")

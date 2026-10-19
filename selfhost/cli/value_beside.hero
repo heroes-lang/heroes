@@ -129,28 +129,16 @@ function again(message: str, tu_text: str, plan: unit_plan.Plan, art: compile.Ar
         marked: true
     )
     return ok(
-        value_run.Unit(module: plan.module, text: keyed(copy: copy, reads: reads), words: words, defined: asked, cut: true)
+        value_run.Unit(module: plan.module, text: keyed(copy: copy, reads: reads), words: words, defined: asked, cut: true, reads: reads)
     )
 
 # A copy with its marks keyed (`emit/probe_cut.hero`, panel 225): the key is
 # the digest of the copy as the writer wrote it and of every file its headers
-# read (`reads_of`), the same on every build of one program, so a warm build
-# reads the copy's kept verdict, and a header holding it holds a digest of
-# itself.
+# read with what each holds (`probing.reads_of`), the same on every build of
+# one program, so a warm build reads the copy's kept verdict, and a header
+# holding it holds a digest of itself.
 function keyed(copy: str, reads: str) -> str
     return probe_cut.keyed(text: copy, key: digest.digest(copy + "|" + reads))
-
-# What the build's probes found its headers read (`probing.digests_of`), as a
-# key takes it: a `path=digest` line per file.
-function reads_of(digests: {str: str}) -> str
-    lines: [str] @= []
-
-    # ORDER: ascending path — the lines are a key's text, the same on every
-    # build of one program.
-    for path in sort(keys(digests))
-        lines @ lines.push(path + "=" + digests[path].must())
-
-    return lines.join("\n")
 
 # The accessors of the constants a unit defines, each found by its
 # signature's line in the unit's text, which stands alone there; absent

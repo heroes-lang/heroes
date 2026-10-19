@@ -115,6 +115,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     # `refusals` in the same order (panel 225; defect 2143).
     refused_at: [i64] @= []
     refused_texts: [str] @= []
+    refused_reads: [str] @= []
     at: i64 @= 0
 
     for plan in planned.plans
@@ -151,6 +152,10 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             refused_at @ refused_at.push(at)
             refused_texts @ refused_texts.push(tu_text)
 
+            # What its headers read, which the copy's kept verdict is keyed
+            # by, there being no object to name them (defect 2147).
+            refused_reads @ refused_reads.push(probing.reads_of(t, planned.probings, module: component, @memo))
+
             # The FIRST failure is the verdict, as before; the rest are kept
             # for what they may teach about a tag.
             if !stopped.is_err()
@@ -159,13 +164,12 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         else
             objects @ objects.push(made.must())
             asked @ asked.push(
-                value_run.Unit(module: component, text: tu_text, words: settled.probe_words(t, options, site, plan), defined: plan.mine.defined, cut: false)
+                value_run.Unit(module: component, text: tu_text, words: settled.probe_words(t, options, site, plan), defined: plan.mine.defined, cut: false, reads: made.must())
             )
         at @ at + 1
 
     if stopped.is_err()
         beside @ asked
-        reads = value_beside.reads_of(lent.digests)
         index: i64 @= 0
 
         while index < refused_at.len()
@@ -181,7 +185,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
                 sources: site.sources,
                 is_root: plan.module == root,
                 words: settled.probe_words(t, options, site, plan),
-                reads: reads
+                reads: refused_reads[index]
             )
 
             if !again.is_err()
