@@ -36,10 +36,16 @@
 # ones, and what it finds there is its first run's (unrun). The `_WIN32`
 # branches are read by neither.
 #
-# **The other four languages are the default setup's**, with no build and under
+# **The other three languages are the default setup's**, with no build and under
 # the same categories, `/language:<name>`, so the alerts the default setup
 # opened are the ones these analyses close or keep. That the alerts carry over
 # from one setup to the other is read at this workflow's first run (unrun).
+#
+# **Rust left the matrix on 2026-10-19** (defect 2149): the Rust bootstrap left
+# the tree with M-witnessed-seed's step 6, and CodeQL refuses a language the
+# repository holds no code of, *CodeQL detected code written in C/C++, HTML,
+# Python, JavaScript/TypeScript and GitHub Actions, but not any written in
+# Rust*, exit 32: the scheduled run of that morning was red on it alone.
 
 name: CodeQL
 
@@ -90,8 +96,6 @@ jobs:
           - language: javascript-typescript
             build-mode: none
           - language: python
-            build-mode: none
-          - language: rust
             build-mode: none
 
     steps:
