@@ -82,19 +82,6 @@ function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, n
 
     checks_raised.after_constant(@w, s, decls, f)
 
-# The accessor of a constant clang refused in this unit, as the value probe's
-# copy of the unit writes it beside that refusal (`cli/value_beside.hero`,
-# defect 2128): its signature at the constant's line, and a zero of its type
-# where the header's value stood, so the copy compiles and the probe asks the
-# unit's other constants. The refusal is told already; no build compiles this
-# copy, and a zero traps no check.
-function inert(@w: writer.Writer, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
-    writer.at_span(@w, s, offset: f.span.start)
-    writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
-    writer.at_generated(@w)
-    writer.line(@w, text: "    return (" + ctype.c_result(names, c: c, ty: f.result) + "){0};")
-    writer.line(@w, text: "}")
-
 ## Tests
 
 # A header's constant, a number's and a handle's alike, returns on its own
@@ -122,32 +109,3 @@ test "a header's constant returns on its own line, and closes on the generated f
     assert strings.holds(text: got, needle: "#line 3 \"t.hero\"\n    return NO_DB;\n#line ")
     assert strings.holds(text: got, needle: "#line 4 \"t.hero\"\n    return LIMIT;\n#line ")
     assert strings.holds(text: got, needle: " \"t.c\"\n}\n")
-
-# The probe's copy beside a refusal (defect 2128): a number's and a handle's
-# accessor return a zero of their own C type, and nothing of the header's
-# value stands in either, neither its name nor the checks around it.
-test "an accessor written inert returns a zero of its type and reads nothing of the header's"
-    text = "extern \"cinit.h\"\n    record Db tag sqlite3\n    constant NO_DB: Db\n    constant LIMIT: i64\n\nfunction main()\n    print(NO_DB == NO_DB)\n    print(LIMIT)\n"
-    parsed = parse.parse(text)
-    s = source.new_source(name: "t.hero", text: text)
-    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
-    assert c.diagnostics.len() == 0
-    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    names = ctype.new_names(s, parsed.decls)
-    written: [str] @= []
-
-    for f in low.program.functions
-        if emit_externs.is_extern_constant(parsed.decls, f)
-            w: writer.Writer @= writer.new_writer("t")
-            inert(@w, f, c, names, s, parsed.decls)
-            written @ written.push(writer.finish(w))
-
-    got = written.join("")
-    assert written.len() == 2
-    assert strings.holds(text: got, needle: "return (int64_t){0};")
-    assert strings.holds(text: got, needle: "return (sqlite3 *){0};")
-    assert !strings.holds(text: got, needle: "NO_DB;")
-    assert !strings.holds(text: got, needle: "LIMIT;")
-    assert !strings.holds(text: got, needle: "#pragma")
-    assert !strings.holds(text: got, needle: "_Static_assert")

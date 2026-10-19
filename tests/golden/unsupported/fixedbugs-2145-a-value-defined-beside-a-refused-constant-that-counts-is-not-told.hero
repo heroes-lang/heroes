@@ -1,0 +1,20 @@
+# FIXED DEFECT 2145, 2026-10-19, lane lane-witnessed-seed (panel 225's R1;
+# the ffi-pragmatist's `cnt`).
+#
+# SYMPTOM: `K_BAD`, refused at its accessor, was told with `K_CNT2`, told
+# undefined; declaring `K_BAD` `i32` built, and printed `-1073741821`, so
+# `K_CNT2` is a value C defines and the message was false.
+#
+# CAUSE: the probe's copy wrote the refused accessor inert before it was
+# preprocessed (`emit/constant_accessor.inert`), so `K_BAD`'s expansions of
+# `__COUNTER__` left the copy and `K_CNT2` read 2 where the program reads 5.
+#
+# FIX: the refused accessor is written as the program writes it, inside a
+# stretch the copy cuts after preprocessing, and the probe never asks it.
+
+extern "fixedbugs-2145-counted.h"
+    constant K_BAD: i8  #~ ffi_constant_type
+    constant K_CNT2: i64
+
+function main()
+    print(to_i64(K_BAD).must() + K_CNT2)

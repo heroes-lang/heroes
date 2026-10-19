@@ -1,0 +1,15 @@
+error[ffi_parameter_type]: `out` of `fill` is declared `i32`, and the header's `int64_t *` points at a different width or sign — clang read the header, and C writes back exactly the bytes the header expects
+  at tests/golden/unsupported/fixedbugs-2136-a-value-only-the-probe-sees-is-told-beside-a-pointee-wider-than-the-header-s.hero:14:20
+     |
+  14 |     function fill(@out: i32)  #~ ffi_parameter_type
+     |                    ^^^
+  note: §4.19: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`
+  fix (guess): declare `out` as `@out: i64`
+
+error[ffi_constant_type]: `K_DIV` in `fixedbugs-2128-values.h` cannot be declared `i64`: clang refuses the header's value at line 4: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs-2136-a-value-only-the-probe-sees-is-told-beside-a-pointee-wider-than-the-header-s.hero:17:5
+     |
+  17 |     constant K_DIV: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2128-values.h` line 4 reads `#define K_DIV ((-2147483647 - 1) / -1)`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `K_DIV` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines

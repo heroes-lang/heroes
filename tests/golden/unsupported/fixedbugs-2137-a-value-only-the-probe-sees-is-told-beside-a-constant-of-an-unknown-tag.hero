@@ -1,0 +1,20 @@
+# FIXED DEFECT 2137, 2026-10-19, lane lane-witnessed-seed (panel 225's R1),
+# the shape the critic's `twin` found: the refused constant's own type is
+# refused, so no inert form of its accessor can be written.
+#
+# SYMPTOM: the tag the header never declares was told alone at exit 1, and
+# `K_DIV` on the next build.
+#
+# FIX: a refused accessor is written as the program writes it, inside a
+# stretch the copy cuts, and the probe never asks it.
+
+extern "fixedbugs-2137-null-handle.h"
+    record Db tag nosuch  #~ ffi_unknown_name
+    constant NO_DB: Db
+
+extern "fixedbugs-2128-values.h"
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function main()
+    print(NO_DB == NO_DB)
+    print(K_DIV)

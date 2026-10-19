@@ -184,6 +184,9 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     # type name 'h_0fn_294870dd'` at exit 2 on a correct binding. Both
     # emitters now call extern_probes after typeorder.definitions, which
     # is the rule already written down rather than a new one.
+    # The value probe's copy cuts from here on, and only the accessors it
+    # asks close the cut (`emit/probe_cut.hero`, panel 225).
+    writer.cut_open(@w)
     extern_record.extern_record_assertions(@w, c, names, s, decls, records: records)
     extern_union.union_assertions(@w, p, c, names, s, decls)
     extern_assert.extern_assertions(@w, p, c, names, s, decls)

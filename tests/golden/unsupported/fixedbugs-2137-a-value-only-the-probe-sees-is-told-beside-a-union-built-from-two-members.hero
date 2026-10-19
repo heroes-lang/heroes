@@ -1,0 +1,22 @@
+# FIXED DEFECT 2137, 2026-10-19, lane lane-witnessed-seed (panel 225's R1),
+# the shape beside its reproducer that `-w` does not lift: the record's own
+# static assertion (the critic's U1).
+#
+# SYMPTOM: the union built from two members was told alone at exit 1, and
+# `K_DIV` on the next build.
+#
+# FIX: the copy cuts the record's assertion with every other stretch no
+# asked accessor needs, after preprocessing, so the probe reads `K_DIV`.
+
+extern "ffi-a-construction.h"
+    record UT
+        i: i32
+        f: f32
+    function ut_i(u: UT) -> i32
+
+extern "fixedbugs-2128-values.h"
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function main()
+    u = UT(i: 1, f: 1.5)  #~ ffi_union_field
+    print(to_i64(ut_i(u)).must() + K_DIV)

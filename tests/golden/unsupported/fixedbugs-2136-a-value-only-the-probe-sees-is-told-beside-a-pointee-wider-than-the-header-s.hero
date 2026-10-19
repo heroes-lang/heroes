@@ -1,0 +1,22 @@
+# FIXED DEFECT 2136, 2026-10-19, lane lane-witnessed-seed (panel 225's R1).
+#
+# SYMPTOM: `fill`'s lent `i32` against the header's `int64_t *` was told
+# alone at exit 1, and `K_DIV`, which only the probe sees, on the next build.
+#
+# CAUSE: the pointee check refuses before any unit is written
+# (`cli/rounds.hero`, `probing.check_all`), and the probe was asked only
+# beside a refusal made once the units were written.
+#
+# FIX: beside a refusal made before any unit, every module's unit is written
+# as the probe's copy and asked (`cli/value_early.hero`).
+
+extern "fixedbugs-2136-fill.h"
+    function fill(@out: i32)  #~ ffi_parameter_type
+
+extern "fixedbugs-2128-values.h"
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function main()
+    x: i32 @= 0
+    fill(@x)
+    print(to_i64(x).must() + K_DIV)

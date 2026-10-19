@@ -1,0 +1,208 @@
+# The value probe's copy of a unit clang refused, and what leaves it after
+# preprocessing (panel 225; defects 2137, 2136, 2143 and 2145; panel 216's
+# R1; design.md §4.19, §4.17). The probe reads a header constant's value from
+# the program's own unit, so a header reads as the program reads it
+# (`emit/value_probe.hero`). Beside a refusal that unit does not compile, and
+# a copy cut BEFORE the preprocessor runs reads another text: a `__COUNTER__`
+# behind a bound name, or behind a refused constant, counts the expansions
+# taken out with it, and the sitting measured a value told undefined that the
+# program as written defines.
+#
+# So the copy is the unit whole (`emit/unit.hero`, `marked`): from the
+# prelude's first assertion to its end every line stands between a `CUT` mark
+# and a `KEEP` mark but the accessors the probe asks. The preprocessor reads
+# all of it under the words every probe takes (`cli/value_run.preprocessed`),
+# and only then the marked lines leave, so clang never judges a binding's
+# check, a typedef, a body or `main`, and each accessor reads its header to
+# the token as the probe of a unit the build compiled reads it.
+#
+# **A mark no header can write** (the critic's G). One identifier carrying
+# the copy's key, `#pragma hero_probe_cut_<key>`: for an MSVC target clang's
+# `-E` expands the macros among an unknown pragma's tokens, and leaves a name
+# no macro holds as it stands (measured by the coordinator on the Windows box,
+# 2026-10-19). The key is the digest of the copy and of every file its headers
+# read (`cli/value_beside.keyed`). And **the marks matched**: the preprocessed
+# text must carry the key on exactly the lines the copy wrote, in their order,
+# or the cut refuses and the copy is silent. A header that writes a keyed
+# line, or rewrites one, can make the probe say nothing, never another thing.
+
+use bytes
+
+constant CUT_WORD: str
+    "#pragma hero_probe_cut_"
+
+constant KEEP_WORD: str
+    "#pragma hero_probe_keep_"
+
+# What the writer's marks carry until the copy is keyed.
+constant UNKEYED: str
+    "unkeyed"
+
+function cut_mark(key: str) -> str
+    return CUT_WORD + key
+
+function keep_mark(key: str) -> str
+    return KEEP_WORD + key
+
+# The copy with every mark the writer wrote carrying `key`, each a whole line,
+# so a name of the program that spells the same words stays as it stands.
+function keyed(text: str, key: str) -> str
+    once = rewritten(text: text, line: cut_mark(UNKEYED), with: cut_mark(key))
+    return rewritten(text: once, line: keep_mark(UNKEYED), with: keep_mark(key))
+
+# `text` with every line that is exactly `line` written `with`.
+function rewritten(text: str, line: str, with: str) -> str
+    pieces: [str] @= []
+    from: i64 @= 0
+
+    while true
+        found = line_at(text: text, line: line, from: from)
+
+        if found.is_err()
+            break
+        pieces @ pieces.push(text.slice(from: from, to: found.must()))
+        pieces @ pieces.push(with)
+        from @ found.must() + line.len()
+
+    pieces @ pieces.push(text.slice(from: from, to: text.len()))
+    return pieces.join("")
+
+# The preprocessed copy with every marked stretch cut, from a `CUT` mark's
+# line to the end of the next `KEEP` mark's line. Refused where the lines of
+# `preprocessed` that carry the copy's key are not the marks `copy` wrote, in
+# their order, one too many or one too few; and where `copy` wrote none.
+function cut(copy: str, preprocessed: str) -> str?
+    key = key_of(copy)?
+    wrote = carrying(text: copy, key: key)
+
+    for one in wrote
+        if one != cut_mark(key) && one != keep_mark(key)
+            return fail(code: "marks", msg: "the copy carries its key outside a mark")
+
+    if carrying(text: preprocessed, key: key) != wrote
+        return fail(code: "marks", msg: "the preprocessed copy's marks are not the ones it wrote")
+    pieces: [str] @= []
+    from: i64 @= 0
+
+    while true
+        open = line_at(text: preprocessed, line: cut_mark(key), from: from)
+
+        if open.is_err()
+            break
+        pieces @ pieces.push(preprocessed.slice(from: from, to: open.must()))
+        close = line_at(text: preprocessed, line: keep_mark(key), from: open.must())
+
+        if close.is_err()
+            return fail(code: "marks", msg: "a cut no mark closes")
+        end = bytes.locate(text: preprocessed, needle: "\n", from: close.must())
+
+        if end.is_err()
+            return ok(pieces.join(""))
+        from @ end.must() + 1
+
+    pieces @ pieces.push(preprocessed.slice(from: from, to: preprocessed.len()))
+    return ok(pieces.join(""))
+
+# The key the copy's first mark carries: the rest of the line that opens
+# with `CUT_WORD`, its carriage return left out.
+function key_of(copy: str) -> str?
+    at = bytes.locate(text: copy, needle: "\n" + CUT_WORD, from: 0)
+
+    if at.is_err()
+        return fail(code: "marks", msg: "the copy holds no mark")
+    begin = at.must() + 1 + CUT_WORD.len()
+    return ok(line_from(text: copy, begin: begin))
+
+# Every line of `text` holding `key`, in order, each without its carriage
+# return.
+function carrying(text: str, key: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    while true
+        found = bytes.locate(text: text, needle: key, from: from)
+
+        if found.is_err()
+            break
+        begin: i64 @= found.must()
+
+        while begin > 0 && text.slice(from: begin - 1, to: begin) != "\n"
+            begin @ begin - 1
+
+        whole = line_from(text: text, begin: begin)
+        out @ out.push(whole)
+        from @ begin + whole.len() + 1
+
+    return out
+
+# The line that begins at `begin`, without its newline or the carriage
+# return before it.
+function line_from(text: str, begin: i64) -> str
+    end = bytes.locate(text: text, needle: "\n", from: begin)
+    stop: i64 @= text.len()
+
+    if !end.is_err()
+        stop @ end.must()
+
+    if stop > begin && text.slice(from: stop - 1, to: stop) == "\r"
+        stop @ stop - 1
+    return text.slice(from: begin, to: stop)
+
+# Where a line that is exactly `line` begins, at `from` or after: it ends at a
+# newline, a carriage return before one, or the text's end.
+function line_at(text: str, line: str, from: i64) -> i64?
+    at: i64 @= from
+
+    while true
+        found = bytes.locate(text: text, needle: line, from: at)
+
+        if found.is_err()
+            return found
+        begins = found.must() == 0 || text.slice(from: found.must() - 1, to: found.must()) == "\n"
+        after = found.must() + line.len()
+        ends = after == text.len() || text.slice(from: after, to: after + 1) == "\n" || text.slice(from: after, to: after + 1) == "\r"
+
+        if begins && ends
+            return found
+        at @ found.must() + 1
+
+    return fail(code: "none", msg: "no such line")
+
+## Tests
+
+constant KEY: str
+    "0123abcd4567ef89"
+
+# A copy as the writer writes it, keyed: an opening, a cut, one kept accessor
+# and the closing keep.
+function sample() -> str
+    raw = "# 1 \"m.c\"\nint opening;\n" + cut_mark(UNKEYED) + "\nint check;\n" + keep_mark(UNKEYED) + "\nint kept(void) { return 1; }\n" + cut_mark(UNKEYED) + "\nint main_body;\n" + keep_mark(UNKEYED) + "\n"
+    return keyed(text: raw, key: KEY)
+
+test "a keyed copy loses its marked stretches after preprocessing, and keeps the opening and the accessor"
+    copy = sample()
+    assert carrying(text: copy, key: KEY) == [cut_mark(KEY), keep_mark(KEY), cut_mark(KEY), keep_mark(KEY)]
+    assert cut(copy: copy, preprocessed: copy).must() == "# 1 \"m.c\"\nint opening;\nint kept(void) { return 1; }\n"
+
+test "one keyed line too many, or one too few, and the copy is silent"
+    copy = sample()
+
+    # A header that wrote the copy's own mark: one keyed line more.
+    forged = "# 1 \"h.h\"\n" + cut_mark(KEY) + "\n" + copy
+    assert cut(copy: copy, preprocessed: forged).is_err()
+
+    # A mark a macro rewrote, as clang does for an MSVC target: one fewer.
+    lost = rewritten(text: copy, line: keep_mark(KEY), with: "#pragma 3")
+    assert cut(copy: copy, preprocessed: lost).is_err()
+
+    # The key inside a header's string is a line that carries it too.
+    quoted = copy + "const char *s = \"" + KEY + "\";\n"
+    assert cut(copy: copy, preprocessed: quoted).is_err()
+
+test "an unkeyed or other mark is no mark, and a carriage return ends a mark's line"
+    copy = sample()
+    other = "#pragma hero_probe_cut on\n#pragma heroes_probe cut\n" + cut_mark(UNKEYED) + "\n" + copy
+    assert cut(copy: copy, preprocessed: other).must() == "#pragma hero_probe_cut on\n#pragma heroes_probe cut\n" + cut_mark(UNKEYED) + "\n# 1 \"m.c\"\nint opening;\nint kept(void) { return 1; }\n"
+    crlf = rewritten(text: copy, line: cut_mark(KEY), with: cut_mark(KEY) + "\r")
+    assert cut(copy: copy, preprocessed: crlf).must() == "# 1 \"m.c\"\nint opening;\nint kept(void) { return 1; }\n"
+    assert cut(copy: "int x;\n", preprocessed: "int x;\n").is_err()

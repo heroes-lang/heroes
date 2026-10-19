@@ -1,0 +1,17 @@
+# FIXED DEFECT 2137, 2026-10-19, lane lane-witnessed-seed (panel 225's R1;
+# the compiler-engineer's `ctr`, the attack that sank routes B and C).
+#
+# What it guards: `narrow` is a macro whose every expansion counts, and the
+# program's own unit expands it in the extern probe, the reference table and
+# the prelude before `K_CTR`'s accessor, so `K_CTR` reads 3 or more and is 0.
+# A copy that left those lines out before preprocessing would read a smaller
+# count and tell `K_CTR` undefined, false of this program. Cut after
+# preprocessing, the copy reads it as the unit does: `narrow` and `K_DIV`.
+
+extern "fixedbugs-2137-counted-call.h"
+    function narrow(x: i64) -> i32  #~ ffi_parameter_type
+    constant K_CTR: i64
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function main()
+    print(to_i64(narrow(x: 3)).must() + K_CTR + K_DIV)

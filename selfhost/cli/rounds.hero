@@ -38,6 +38,7 @@ use cli/locks
 use emit/lend_type
 use cli/value_run
 use cli/value_beside
+use cli/value_early
 
 # What the rounds came back with: the verdict, the failure already told where
 # it is the author's (`whose.of_refusal`); where the binary landed; the tags
@@ -59,8 +60,9 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
     refused_in: [str] @= []
 
     # What the value probe asks beside the last round's refusal (defect
-    # 2128): the round's units that compiled, and the one it refused with the
-    # constants clang refused inert (`cli/value_beside.hero`).
+    # 2128, panel 225): the round's units that compiled, and every one it
+    # refused, or each module's before any unit (`cli/value_beside.hero`,
+    # `cli/value_early.hero`).
     beside: [value_run.Unit] @= []
 
     # A name a group binds whose meaning another group's header gives it, a
@@ -179,6 +181,19 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     checked = probing.check_all(t, art.program, art.checked, s, art.decls, planned.probings, answered: @answered)
 
     if checked.verdict.is_err()
+        # A value only the probe sees, asked beside it (panel 225,
+        # `cli/value_early.hero`) and told with it by `run`.
+        beside @ value_early.units(
+            t,
+            options,
+            art,
+            s,
+            site,
+            planned: planned,
+            struct_tags: struct_tags,
+            kept: kept,
+            answered: answered
+        )
         return assemble.Round(
             verdict: checked.verdict,
             refusals: assemble.messages_of(checked.verdict),
@@ -192,7 +207,10 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     copied = lock_told(t, art, s, planned.probings)
 
     if copied.len() > 0
-        _ = compile.stage(copied, s).is_err()
+        _ = compile.stage(
+            joined(first: copied, more: early(t, options, art, s, site, planned: planned, struct_tags: struct_tags, kept: kept, answered: answered)),
+            s
+        ).is_err()
         locked: ()? = fail(code: "diagnostics", msg: "a group record whose C struct holds a lock is copied")
         return assemble.Round(verdict: locked, refusals: [], binary: "", modules: [])
 
@@ -208,7 +226,10 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     )
 
     if disagreeing.len() > 0
-        _ = compile.stage(disagreeing, s).is_err()
+        _ = compile.stage(
+            joined(first: disagreeing, more: early(t, options, art, s, site, planned: planned, struct_tags: struct_tags, kept: kept, answered: answered)),
+            s
+        ).is_err()
         refused: ()? = fail(code: "diagnostics", msg: "two modules' headers disagree about a C name")
         return assemble.Round(verdict: refused, refusals: [], binary: "", modules: [])
 
@@ -237,6 +258,21 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
         lent: lent,
         told: @told,
         beside: @beside
+    )
+
+# What the probe finds beside a refusal made before any unit compiles
+# (`cli/value_early.hero`, panel 225).
+function early(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: settled.Site, planned: probing.Planned, struct_tags: {str: bool}, kept: {str: bool}, answered: [pointee_ask.Answered]) -> [diag.Diagnostic]
+    return value_early.told(
+        t,
+        options,
+        art,
+        s,
+        site,
+        planned: planned,
+        struct_tags: struct_tags,
+        kept: kept,
+        answered: answered
     )
 
 # Two lists of diagnostics as one.

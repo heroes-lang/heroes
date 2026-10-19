@@ -1,0 +1,109 @@
+# A header constant's value only the probe sees, asked beside a refusal made
+# before any unit compiles (panel 225; defect 2136; the probe is panel 216's
+# R1, `cli/value_ask.hero`). `cli/rounds.hero` refuses an out-parameter's
+# pointee, a group record's layout, a copy of a record holding a lock and a C
+# name two modules' headers disagree about before it writes any unit, so a
+# value C leaves undefined was told one build later. Here each module's unit
+# is written as the round would write it, marked as the copy beside a unit's
+# refusal is (`emit/probe_cut.hero`), and asked: preprocessed whole under the
+# words every probe takes, every stretch no accessor needs cut after, so what
+# the refusal is about, a call, a probe, an assertion, is cut and the header
+# reads as the probe of a unit the build compiled reads it.
+#
+# **Not asked beside two refusals of that stage**: a name a group binds whose
+# meaning another group's header gives it (`cli/bound_macro.hero`), and a name
+# the compiler writes that a header defines as a macro holding a pragma
+# (`cli/pragma_ask.hero`). Each says the unit's own reading of a name cannot
+# be trusted, and a value read through that unit could be told under a
+# meaning the author did not bind.
+#
+# Only a module whose unit defines an accessor the probe asks is written, so a
+# build refused there that binds no header value pays nothing; one that does
+# pays the probe, cold once, its verdict kept by its key.
+
+use source
+use diag
+use module/names as module_names
+use emit/unit
+use emit/members
+use emit/lend_local
+use emit/lend_type
+use emit/value_probe
+use cli/compile
+use cli/toolchain
+use cli/settled
+use cli/probing
+use cli/pointee_ask
+use cli/value_run
+use cli/value_beside
+
+# The units the probe asks: every module's whose unit defines an asked
+# accessor, written marked, under the words its unit would compile with.
+function units(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: settled.Site, planned: probing.Planned, struct_tags: {str: bool}, kept: {str: bool}, answered: [pointee_ask.Answered]) -> [value_run.Unit]
+    out: [value_run.Unit] @= []
+    asking: [i64] @= []
+    at: i64 @= 0
+
+    for plan in planned.plans
+        if value_probe.asked(art.program, art.checked, s, art.decls, defined: plan.mine.defined).len() > 0
+            asking @ asking.push(at)
+        at @ at + 1
+
+    if asking.len() == 0
+        return out
+    whole = members.retold(
+        planned.whole,
+        art.program,
+        c: art.checked,
+        s: s,
+        decls: art.decls,
+        struct_tags: struct_tags,
+        lend_units: lend_local.with_flows(lend_type.lend_units(answered), art.program, art.checked),
+        kept: kept
+    )
+    root = module_names.module_of(s.name)
+    reads = value_beside.reads_of(probing.digests_of(planned.probings))
+
+    for index in asking
+        plan = planned.plans[index]
+        text = unit.unit(
+            plan: plan,
+            p: art.program,
+            c: art.checked,
+            s: s,
+            decls: art.decls,
+            version: site.version,
+            sources: site.sources,
+            is_root: plan.module == root,
+            whole: whole,
+            cut: {},
+            marked: true
+        )
+        out @ out.push(
+            value_run.Unit(module: plan.module, text: value_beside.keyed(copy: text, reads: reads), words: settled.probe_words(t, options, site, plan), defined: plan.mine.defined, cut: true)
+        )
+
+    return out
+
+# What the probe finds in those units, told with the refusal in one list.
+function told(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: settled.Site, planned: probing.Planned, struct_tags: {str: bool}, kept: {str: bool}, answered: [pointee_ask.Answered]) -> [diag.Diagnostic]
+    asked = units(
+        t,
+        options,
+        art,
+        s,
+        site,
+        planned: planned,
+        struct_tags: struct_tags,
+        kept: kept,
+        answered: answered
+    )
+    return value_beside.told(
+        t,
+        units: asked,
+        level: options.level,
+        p: art.program,
+        c: art.checked,
+        s: s,
+        decls: art.decls
+    )

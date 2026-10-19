@@ -1,0 +1,17 @@
+# FIXED DEFECT 2137, 2026-10-19, lane lane-witnessed-seed (panel 225's R1),
+# the attack the critic ran on both prototypes (`forge2c`, `forge2p`,
+# `forge3c`, `forge3p`): a header that writes the text of a probe's mark, as
+# a line and through `_Pragma`, after a `pack` the guard resets.
+#
+# What it guards: the program's own unit reads `K_SZ` under `pack()` again,
+# `sizeof` 8 and `INT_MIN / 2`, a value C defines; a copy cut at a mark the
+# header wrote would read it under `pack(1)`, `sizeof` 5, and tell `K_SZ`
+# undefined, false of this program. The marks are one identifier carrying
+# the copy's own key, counted, so `narrow` is told alone.
+
+extern "fixedbugs-2137-forged-marks.h"
+    function narrow(x: i64) -> i32  #~ ffi_parameter_type
+    constant K_SZ: i64
+
+function main()
+    print(to_i64(narrow(x: 3)).must() + K_SZ)

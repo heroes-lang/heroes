@@ -8,6 +8,7 @@
 # question in the same order, which stood written twice there.
 
 use source
+use token
 use emit/ffi
 use emit/ffi_asked
 use cli/io
@@ -252,14 +253,26 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
 
 # What a refusal is told with, then what the value probe found beside it
 # (`cli/value_beside.hero`, defect 2128), as one list: one staging, so a
-# blank line stands between every two of them as between any two.
+# blank line stands between every two of them as between any two. A finding
+# at a span the refusal already tells is dropped, so one constant is told
+# once (panel 225, the ffi-pragmatist's): a constant clang refused at a place
+# `value_beside.holding` does not locate stays in the probe's copy.
 function with_beside(told: [diag.Diagnostic], beside: [diag.Diagnostic]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= told
 
     for d in beside
-        out @ out.push(d)
+        if !tells(told, d: d)
+            out @ out.push(d)
 
     return out
+
+# Whether `told` holds a diagnostic at `d`'s own span.
+function tells(told: [diag.Diagnostic], d: diag.Diagnostic) -> bool
+    for one in told
+        if one.span.start == d.span.start && one.span.end == d.span.end
+            return true
+
+    return false
 
 # The message of a failed `()?`.
 function failure_message(failed: ()?) -> str
@@ -273,3 +286,18 @@ function failure_code(failed: ()?) -> str
     match failed
         .ok    => return ""
         .err e => return e.code
+
+## Tests
+
+test "a probe's finding at a span the refusal tells is dropped, and one elsewhere follows the refusal"
+    at_k = token.Span(start: 40, end: 59)
+    elsewhere = token.Span(start: 80, end: 99)
+    told = [diag.new_diagnostic(code: "ffi_constant_type", message: "the refusal's words", span: at_k)]
+    beside = [
+        diag.new_diagnostic(code: "ffi_constant_type", message: "the probe's words", span: at_k)
+        diag.new_diagnostic(code: "ffi_constant_type", message: "another constant", span: elsewhere)
+    ]
+    out = with_beside(told: told, beside: beside)
+    assert out.len() == 2
+    assert out[0].message == "the refusal's words"
+    assert out[1].message == "another constant"

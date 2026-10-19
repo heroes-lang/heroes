@@ -1,0 +1,11 @@
+# FIXED DEFECT 2137, 2026-10-19, lane lane-witnessed-seed (panel 225's R1),
+# the critic's `forge1`: a correct program whose header holds the text of a
+# probe's mark. A cut applied to every probe's text refused it at exit 2,
+# the probe of a unit that compiled no longer compiling; the cut is applied
+# to a copy alone, and this program builds and prints `5`.
+
+extern "fixedbugs-2137-mark-text.h"
+    constant K_OK: i64
+
+function main()
+    print(K_OK)

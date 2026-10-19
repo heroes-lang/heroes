@@ -1,0 +1,7 @@
+error[ffi_constant_type]: `K_BAD` in `fixedbugs-2145-counted-shift.h` cannot be declared `i64`: clang refuses the header's value at line 5: shift count >= width of type
+  at tests/golden/unsupported/fixedbugs-2145-a-value-defined-beside-a-constant-the-region-refuses-is-not-told.hero:12:5
+     |
+  12 |     constant K_BAD: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2145-counted-shift.h` line 5 reads `#define K_BAD (__COUNTER__ * 0 + (1 << 40))`
+  note: C leaves this value undefined: a program reading `K_BAD` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines

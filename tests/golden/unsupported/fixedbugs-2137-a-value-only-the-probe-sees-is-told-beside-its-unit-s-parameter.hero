@@ -1,0 +1,22 @@
+# FIXED DEFECT 2137, 2026-10-19, lane lane-witnessed-seed (panel 225's R1).
+#
+# SYMPTOM: `narrow`'s parameter was told alone at exit 1, and `K_DIV`, which
+# only the probe sees, on the next build, once the parameter was declared
+# `i32`: both bindings are this module's, so the refused unit was its own.
+#
+# CAUSE: beside a refusal the probe asked the refused unit again only where
+# every error clang reported stood in a constant's accessor
+# (`cli/value_beside.hero`), and this one stands in the extern probe.
+#
+# FIX: the probe's copy is the program's own unit preprocessed whole and cut
+# after, under marks no header can write; only the opening and the asked
+# accessors are compiled, so no error outside them can stop it.
+
+extern "fixedbugs-2128-narrow.h"
+    function narrow(x: i64) -> i32  #~ ffi_parameter_type
+
+extern "fixedbugs-2128-values.h"
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function main()
+    print(to_i64(narrow(x: 3)).must() + K_DIV)

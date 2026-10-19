@@ -1,0 +1,16 @@
+# FIXED DEFECT 2145, 2026-10-19, lane lane-witnessed-seed (panel 225's R1;
+# the compiler-engineer's `inert`), the shape beside it: the refusal is the
+# value region's, at the constant's own accessor.
+#
+# SYMPTOM: `K_BAD` was told with `K_CTR`, told undefined; with `K_BAD`
+# bound to a value C defines the program built and printed `1048576`, so
+# `K_CTR` reads 0 there, and in the program as written.
+#
+# FIX: as its neighbour's, the refused accessor preprocessed with the rest.
+
+extern "fixedbugs-2145-counted-shift.h"
+    constant K_BAD: i64  #~ ffi_constant_type
+    constant K_CTR: i64
+
+function main()
+    print(K_BAD + K_CTR)

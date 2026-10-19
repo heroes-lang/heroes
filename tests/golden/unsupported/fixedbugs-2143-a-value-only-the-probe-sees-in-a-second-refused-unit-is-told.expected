@@ -1,0 +1,15 @@
+error[ffi_parameter_type]: `x` of `narrow` is declared wider than the header's `int` — clang read the header, and C would convert the value in silence
+  at tests/golden/unsupported/fixedbugs-2143-a-value-only-the-probe-sees-in-a-second-refused-unit-is-told.hero:17:5
+     |
+  17 |     function narrow(x: i64) -> i32  #~ ffi_parameter_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `i32`, and convert at the call where the value is known to fit
+  fix (guess): declare it `i32`
+
+error[ffi_constant_type]: `K_DIV` in `fixedbugs-2128-values.h` cannot be declared `i64`: clang refuses the header's value at line 4: its expression holds an operation C leaves undefined for the operands it is given, and the program's own unit, built with clang's checks for an overflow, a shift, a division by zero and a float out of an integer's range, traps where it reads it
+  at tests/golden/unsupported/fixedbugs2143/vals.hero:7:5
+    |
+  7 |     constant K_DIV: i64  #~ ffi_constant_type
+    |     ^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2128-values.h` line 4 reads `#define K_DIV ((-2147483647 - 1) / -1)`
+  note: an operation C leaves undefined gives no value: wherever C computes it, a program reading `K_DIV` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines

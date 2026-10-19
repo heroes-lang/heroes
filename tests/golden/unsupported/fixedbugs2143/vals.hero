@@ -1,0 +1,10 @@
+# A module of defect 2143's case (lane lane-witnessed-seed, 2026-10-19): a
+# name the header lacks, told one build later while defect 2143 is open, and
+# a value only the probe sees.
+
+extern "fixedbugs-2128-values.h"
+    constant K_NONE: i64
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function got() -> i64
+    return K_NONE + K_DIV

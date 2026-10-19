@@ -1,0 +1,23 @@
+# FIXED DEFECT 2137, 2026-10-19, lane lane-witnessed-seed (panel 225's R1),
+# the shape the critic's `tdef` found: the refusal stands in a typedef the
+# unit writes before any accessor.
+#
+# SYMPTOM: the tag that names a union was told alone at exit 1, and `K_DIV`
+# on the next build.
+#
+# FIX: the copy keeps the opening and the asked accessors alone, so a
+# refused typedef is cut with the rest.
+
+extern "fixedbugs-2137-union-tag.h"
+    record U tag u  #~ ffi_tag_is_a_union
+        a: i32
+
+record Holder
+    inner: U
+
+extern "fixedbugs-2128-values.h"
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function main()
+    h = Holder(inner: U(a: to_i32(1).must()))
+    print(to_i64(h.inner.a).must() + K_DIV)

@@ -1,0 +1,22 @@
+# FIXED DEFECT 2136, 2026-10-19, lane lane-witnessed-seed (panel 225's R1),
+# the shape beside its reproducer at panel 202's C1: one C function two
+# modules' groups bind and their headers declare two ways, told before any
+# unit compiles (defect 555's case, with `K_DIV` beside it).
+#
+# SYMPTOM: `twice` was told alone at exit 1, and `K_DIV` on the next build.
+#
+# FIX: as its neighbour's, the probe asked beside the two ways' refusal.
+use fixedbugs555/long_twice
+use fixedbugs555/defines
+
+extern "fixedbugs-555-double.h"
+    function twice(x: f64) -> f64  #~ ffi_declared_two_ways
+
+extern "fixedbugs-2128-values.h"
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function main()
+    print(long_twice.doubled(x: 3))
+    print(twice(x: 4.0))
+    print(defines.unit())
+    print(K_DIV)

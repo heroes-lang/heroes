@@ -1,0 +1,20 @@
+# FIXED IN PART, DEFECT 2143, 2026-10-19, lane lane-witnessed-seed (panel
+# 225's R1, route E; the critic's S1).
+#
+# SYMPTOM: `narrow`'s parameter was told alone at exit 1; `K_NONE` and
+# `K_DIV`, of `fixedbugs2143/vals`, whose unit clang refused too, on the
+# next build.
+#
+# CAUSE: beside a refusal the probe asked only the FIRST refused unit again
+# (`cli/assemble.hero`'s `per_module`).
+#
+# FIX: every refused unit is asked, one at a time, so `K_DIV` is told here.
+# `K_NONE`, the second unit's own refusal, still waits a build: defect
+# 2143's other half, open, which no probe tells.
+use fixedbugs2143/vals
+
+extern "fixedbugs-2128-narrow.h"
+    function narrow(x: i64) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(to_i64(narrow(x: 3)).must() + vals.got())

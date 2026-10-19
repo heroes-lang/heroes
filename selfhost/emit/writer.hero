@@ -56,6 +56,7 @@
 use source
 use emit/line_join
 use emit/line_name
+use emit/probe_cut
 
 # What clang believes the next output line is: which file, and which
 # line in it. `none` — nothing claimed yet, the file is its own truth.
@@ -112,6 +113,10 @@ record Writer
     # The line written last, held out of the chunk until the next one says
     # whether it joins (`emit/line_join`).
     held: line_join.Held
+    # Whether this is the value probe's copy of a unit, which marks what no
+    # constant's accessor needs (`emit/probe_cut.hero`, panel 225): false
+    # for every unit a build compiles, so their C carries no mark.
+    cuts: bool
 
 function new_writer(module: str) -> Writer
     generated = module + ".c"
@@ -126,8 +131,20 @@ function new_writer(module: str) -> Writer
         generated: generated,
         names: line_name.new_names(generated),
         copies_bytes: false,
-        held: line_join.nothing_held()
+        held: line_join.nothing_held(),
+        cuts: false
     )
+
+# A stretch of the probe's copy no asked accessor needs, opened and closed
+# (`emit/probe_cut.hero`): a line each, unkeyed until the copy is keyed,
+# written only where the writer marks.
+function cut_open(@w: Writer)
+    if w.cuts
+        line(@w, text: probe_cut.cut_mark(probe_cut.UNKEYED))
+
+function cut_close(@w: Writer)
+    if w.cuts
+        line(@w, text: probe_cut.keep_mark(probe_cut.UNKEYED))
 
 # One line of C. Everything goes through here, which is what keeps the
 # count honest. A claim on the generated file stays true for free under

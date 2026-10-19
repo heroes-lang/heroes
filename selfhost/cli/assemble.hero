@@ -110,10 +110,11 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     memo: {str: str} @= lent.digests
     asked: [value_run.Unit] @= []
 
-    # The first unit clang refused, its text and its words, which the probe
-    # asks again beside the refusal with the constants it refused inert.
-    first: i64 @= -1
-    first_text: str @= ""
+    # Every unit clang refused, its plan's index and its text, which the
+    # probe asks again beside the refusal under clang's words for it, kept in
+    # `refusals` in the same order (panel 225; defect 2143).
+    refused_at: [i64] @= []
+    refused_texts: [str] @= []
     at: i64 @= 0
 
     for plan in planned.plans
@@ -128,7 +129,8 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             sources: site.sources,
             is_root: component == root,
             whole: whole,
-            inert: {}
+            cut: {},
+            marked: false
         )
         made = units.tu_object(
             t,
@@ -146,29 +148,31 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
 
         if made.is_err()
             refusals @ refusals.push(failure_of(made))
+            refused_at @ refused_at.push(at)
+            refused_texts @ refused_texts.push(tu_text)
 
             # The FIRST failure is the verdict, as before; the rest are kept
             # for what they may teach about a tag.
             if !stopped.is_err()
                 stopped @ carry_failure(made)
                 stopped_in @ [component]
-                first @ at
-                first_text @ tu_text
         else
             objects @ objects.push(made.must())
             asked @ asked.push(
-                value_run.Unit(module: component, text: tu_text, words: settled.probe_words(t, options, site, plan), defined: plan.mine.defined)
+                value_run.Unit(module: component, text: tu_text, words: settled.probe_words(t, options, site, plan), defined: plan.mine.defined, cut: false)
             )
         at @ at + 1
 
     if stopped.is_err()
         beside @ asked
+        reads = value_beside.reads_of(lent.digests)
+        index: i64 @= 0
 
-        if first >= 0
-            plan = planned.plans[first]
+        while index < refused_at.len()
+            plan = planned.plans[refused_at[index]]
             again = value_beside.again(
-                message: failure_message(stopped),
-                tu_text: first_text,
+                message: refusals[index],
+                tu_text: refused_texts[index],
                 plan: plan,
                 art: art,
                 s: s,
@@ -176,11 +180,14 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
                 version: site.version,
                 sources: site.sources,
                 is_root: plan.module == root,
-                words: settled.probe_words(t, options, site, plan)
+                words: settled.probe_words(t, options, site, plan),
+                reads: reads
             )
 
             if !again.is_err()
                 beside @ beside.push(again.must())
+            index @ index + 1
+
         return Round(verdict: stopped, refusals: refusals, binary: "", modules: stopped_in)
     unread = unread_round(lent)
 

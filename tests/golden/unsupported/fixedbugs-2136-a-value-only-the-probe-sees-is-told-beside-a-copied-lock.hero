@@ -1,0 +1,19 @@
+# FIXED DEFECT 2136, 2026-10-19, lane lane-witnessed-seed (panel 225's R1),
+# the shape beside its reproducer the critic ran (L1): a group record whose
+# C struct holds a lock, copied, told before any unit compiles.
+#
+# SYMPTOM: the copied lock was told alone at exit 1, and `K_DIV` on the
+# next build.
+#
+# FIX: as its neighbour's, the probe asked beside the lock's refusal.
+
+extern "ffi-lock-copied.h"
+    record Box tag box partial
+        n: i64
+
+extern "fixedbugs-2128-values.h"
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function main()
+    boxes = [Box(n: 1, rest: zero)]  #~ ffi_lock_copied
+    print(boxes.len() + K_DIV)

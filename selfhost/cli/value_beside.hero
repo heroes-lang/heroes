@@ -9,14 +9,16 @@
 # four programs: each told the first refusal alone, at exit 1.
 #
 # **Beside a refusal the probe asks two kinds of unit.** Every unit that
-# compiled, as it would once the refusal was corrected; and the unit clang
-# refused, again, with each constant it refused written inert
-# (`emit/constant_accessor.inert`), where every error clang reported stands
-# in such a constant's accessor: at the constant's own line of its `.hero`
-# file, where the accessor's signature and its `return` are told, or at a
-# line of the unit's own C between the accessor's `{` and its `}`, where its
-# assertions stand. An error anywhere else, or with no place, and the copy
-# would not compile either, so the refused unit is not asked again.
+# compiled, as it would once the refusal was corrected; and every unit clang
+# refused, again (panel 225): its own text, written marked
+# (`emit/probe_cut.hero`), preprocessed whole under the words every probe
+# takes, then cut to what the accessors it asks need, so every expansion reads
+# as the probe of a unit the build compiled reads it, and nothing an author's
+# binding can make clang refuse is compiled. A constant clang refused is cut with the rest and not
+# asked: one whose accessor holds an error, at the constant's own line of its
+# `.hero` file, where the accessor's signature and its `return` are told, or
+# at a line of the unit's own C between the accessor's `{` and its `}`, where
+# its assertions stand.
 #
 # What the probe finds there is told with the refusal, in one list
 # (`cli/whose.hero`). Where the probe cannot answer, its own failure is not
@@ -43,6 +45,8 @@ use emit/members
 use emit/unit_plan
 use emit/writer
 use emit/constant_accessor
+use emit/probe_cut
+use cli/digest
 use parse
 use resolve
 use checker
@@ -58,40 +62,40 @@ record Accessor
     open: i64
     close: i64
 
-# The constants of a unit clang refused whose accessors hold every error it
-# reported, by declaration; empty where any error stands elsewhere or has no
-# place, or where an accessor is not found once in the unit's text.
-# `generated` is the name the unit's own C lines are told under.
-function refused(message: str, tu_text: str, generated: str, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], defined: [i64]) -> {i64: bool}
-    none: {i64: bool} = {}
+# The constants of a unit clang refused whose accessors hold an error it
+# reported, by declaration (panel 225): an error elsewhere, or with no place,
+# names no constant, and the copy the probe compiles is cut or compiled under
+# `-w` around it. Absent where an accessor is not found once in the unit's
+# text, so no error is read against a range nobody located. `generated` is
+# the name the unit's own C lines are told under.
+function refused(message: str, tu_text: str, generated: str, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], defined: [i64]) -> {i64: bool}?
     found = accessors(tu_text, p, c, names, s, decls, defined: defined)
 
     if found.is_err()
-        return none
+        return fail(code: "unlocated", msg: "an accessor is not found once in the unit's text")
     held: {i64: bool} @= {}
 
     for one in ffi_lookup.lines(text: message)
         kind = front_check.severity(one)
 
-        if kind != ": error: " && kind != ": fatal error: " && kind != "unplaced"
+        if kind != ": error: " && kind != ": fatal error: "
             continue
         at = clang_place.place(one)
 
-        if kind == "unplaced" || at.is_err()
-            return none
+        if at.is_err()
+            continue
         decl = holding(found.must(), at: at.must(), generated: generated)
 
-        if decl < 0
-            return none
-        held[decl] @ true
+        if decl >= 0
+            held[decl] @ true
 
-    return held
+    return ok(held)
 
-# The refused unit asked again: written with the constants clang refused
-# inert, where `refused` finds every error clang reported in their accessors;
-# absent where it finds none, the copy then compiling no better than the unit.
-function again(message: str, tu_text: str, plan: unit_plan.Plan, art: compile.Artifact, s: source.Source, whole: members.Whole, version: str, sources: str, is_root: bool, words: [str]) -> value_run.Unit?
-    inert = refused(
+# A refused unit asked again (panel 225): its own text marked, the accessors
+# that hold an error cut with the rest and left out of what the probe calls;
+# absent where the accessors cannot be located.
+function again(message: str, tu_text: str, plan: unit_plan.Plan, art: compile.Artifact, s: source.Source, whole: members.Whole, version: str, sources: str, is_root: bool, words: [str], reads: str) -> value_run.Unit?
+    held = refused(
         message: message,
         tu_text: tu_text,
         generated: writer.new_writer(plan.module).generated,
@@ -103,10 +107,14 @@ function again(message: str, tu_text: str, plan: unit_plan.Plan, art: compile.Ar
         defined: plan.mine.defined
     )
 
-    # ORDER: none — only how many constants were refused is asked, which no
-    # order of the keys changes.
-    if keys(inert).len() == 0
-        return fail(code: "none", msg: "no constant's accessor holds every error")
+    if held.is_err()
+        return fail(code: "none", msg: "the unit's accessors were not located")
+    asked: [i64] @= []
+
+    for at in plan.mine.defined
+        if held.must()[art.program.functions[at].decl].is_err()
+            asked @ asked.push(at)
+
     copy = unit.unit(
         plan: plan,
         p: art.program,
@@ -117,9 +125,32 @@ function again(message: str, tu_text: str, plan: unit_plan.Plan, art: compile.Ar
         sources: sources,
         is_root: is_root,
         whole: whole,
-        inert: inert
+        cut: held.must(),
+        marked: true
     )
-    return ok(value_run.Unit(module: plan.module, text: copy, words: words, defined: plan.mine.defined))
+    return ok(
+        value_run.Unit(module: plan.module, text: keyed(copy: copy, reads: reads), words: words, defined: asked, cut: true)
+    )
+
+# A copy with its marks keyed (`emit/probe_cut.hero`, panel 225): the key is
+# the digest of the copy as the writer wrote it and of every file its headers
+# read (`reads_of`), the same on every build of one program, so a warm build
+# reads the copy's kept verdict, and a header holding it holds a digest of
+# itself.
+function keyed(copy: str, reads: str) -> str
+    return probe_cut.keyed(text: copy, key: digest.digest(copy + "|" + reads))
+
+# What the build's probes found its headers read (`probing.digests_of`), as a
+# key takes it: a `path=digest` line per file.
+function reads_of(digests: {str: str}) -> str
+    lines: [str] @= []
+
+    # ORDER: ascending path — the lines are a key's text, the same on every
+    # build of one program.
+    for path in sort(keys(digests))
+        lines @ lines.push(path + "=" + digests[path].must())
+
+    return lines.join("\n")
 
 # The accessors of the constants a unit defines, each found by its
 # signature's line in the unit's text, which stands alone there; absent
@@ -180,10 +211,15 @@ function holding(located: [Accessor], at: clang_place.Place, generated: str) -> 
 # of the units it asked before one it could not answer included, and no word
 # of that failure, which the next build tells.
 function told(t: toolchain.Toolchain, units: [value_run.Unit], level: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
-    if units.len() == 0
-        none: [diag.Diagnostic] = []
-        return none
-    return value_ask.told(t, units: units, level: level, p: p, c: c, s: s, decls: decls).found
+    out: [diag.Diagnostic] @= []
+
+    # One unit at a time, so a copy the probe cannot answer leaves the
+    # units after it asked.
+    for one in units
+        for d in value_ask.told(t, units: [one], level: level, p: p, c: c, s: s, decls: decls).found
+            out @ out.push(d)
+
+    return out
 
 ## Tests
 
@@ -200,7 +236,7 @@ test "an error at a constant's line or inside its accessor's C names the constan
 
 # The accessor the emitter writes, found in a unit's text and read against
 # clang's words: an error in it names its constant, and an error outside any
-# accessor, or one with no place, leaves the refused unit unasked.
+# accessor, or one with no place, names none and keeps the others held.
 test "a refused unit's errors are read against the accessors its text holds"
     text = "extern \"cinit.h\"\n    constant LIMIT: i64\n\nfunction main()\n    print(LIMIT)\n"
     parsed = parse.parse(text)
@@ -240,9 +276,11 @@ test "a refused unit's errors are read against the accessors its text holds"
         s,
         parsed.decls,
         defined: defined
-    )
+    ).must()
     assert keys(held).len() == 1 && !held[one.decl].is_err()
     beyond = inside + "t.c:1:1: error: unknown type name 'x'\n"
-    assert keys(refused(message: beyond, tu_text: unit_text, generated: "t.c", low.program, c, names, s, parsed.decls, defined: defined)).len() == 0
+    assert keys(refused(message: beyond, tu_text: unit_text, generated: "t.c", low.program, c, names, s, parsed.decls, defined: defined).must()).len() == 1
     unplaced = inside + "fatal error: too many errors emitted, stopping now\n"
-    assert keys(refused(message: unplaced, tu_text: unit_text, generated: "t.c", low.program, c, names, s, parsed.decls, defined: defined)).len() == 0
+    assert keys(refused(message: unplaced, tu_text: unit_text, generated: "t.c", low.program, c, names, s, parsed.decls, defined: defined).must()).len() == 1
+    elsewhere = "t.c:1:1: error: unknown type name 'x'\n1 error generated.\n"
+    assert keys(refused(message: elsewhere, tu_text: unit_text, generated: "t.c", low.program, c, names, s, parsed.decls, defined: defined).must()).len() == 0

@@ -22,6 +22,7 @@
 # (panel 218's R2: it passed in silence).
 
 use emit/value_probe
+use emit/probe_cut
 use emit/ffi_lookup
 use cli/toolchain
 use cli/flags
@@ -57,12 +58,15 @@ constant CAP: i64
     1048576
 
 # One unit a probe asks: its module, its text, the words it compiled under
-# and the function indices it defines.
+# and the function indices it defines; `cut` where the text is the copy of a
+# unit the build did not compile, whose marked lines leave once it is
+# preprocessed (`emit/probe_cut.hero`, panel 225).
 record Unit
     module: str
     text: str
     words: [str]
     defined: [i64]
+    cut: bool
 
 # The unit's text preprocessed under its own words, `main` renamed, its
 # `#define`s kept only where `defines` asks: a probe compiles it without them,
@@ -97,7 +101,21 @@ function preprocessed(dir: str, one: Unit, defines: bool) -> str?
             code: "broken",
             msg: "internal error: module `" + one.module + "`'s unit did not preprocess for the probe of its header constants' values, where it compiled: " + value_told.first_error(said_by_clang)
         )
-    return text
+
+    if !one.cut
+        return text
+
+    # A copy asked beside a refusal is cut only now, preprocessed whole, and
+    # only where the lines that carry its key are the marks it wrote: a
+    # header that wrote one or rewrote one leaves the copy silent.
+    kept = probe_cut.cut(copy: one.text, preprocessed: text.must())
+
+    if kept.is_err()
+        return fail(
+            code: "broken",
+            msg: "internal error: the probe's copy of module `" + one.module + "` did not keep its own marks"
+        )
+    return kept
 
 # The words that compile and link a probe: every sanitizer of the build off,
 # the four checks on, each a trap, and the C standard's meaning of a signed
