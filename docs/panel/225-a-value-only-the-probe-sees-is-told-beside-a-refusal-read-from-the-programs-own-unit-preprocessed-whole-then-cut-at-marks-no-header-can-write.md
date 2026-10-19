@@ -248,3 +248,11 @@ its words, able to move the cut. The author can choose it.
 ## Author's verdict
 
 Pending. The decision issue is https://github.com/heroes-lang/heroes/issues/2148.
+
+**RATIFIED, 2026-10-19**, R1 to R4 as written above, its three predictions scored true, the
+author answering in conversation that evening, meant as *ratify*, on the coordinator's
+recommendation to ratify: the union of the two prototypes as landed at `c03e81984`, the copy
+preprocessed whole and cut after, a copy's alone, its marks keyed and counted; every refused unit
+asked, one at a time, and the probe asked beside the four refusals made before any unit; the
+program as written the standard of truth; and what conservative would have been recorded and not
+taken. Recorded as a reading (CLAUDE.md § 4). The author may overturn it.
