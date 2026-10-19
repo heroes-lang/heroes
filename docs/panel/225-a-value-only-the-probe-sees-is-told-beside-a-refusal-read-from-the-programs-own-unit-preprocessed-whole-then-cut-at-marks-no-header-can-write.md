@@ -224,6 +224,27 @@ its words, able to move the cut. The author can choose it.
   brief.
 - No historian sat; no prior art is claimed.
 
+## Scored, 2026-10-19
+
+- **The compiler-engineer's first prediction: true**, at the batch's gate
+  (`17aa3ec38`). `emission` moved no blessed file, its two failures being the
+  two new `run/` cases with nothing blessed, blessed apart; `emit` read 13 and
+  0; and each of the thirteen new `unsupported/` cases tells its value in the
+  same build as its refusal,
+  `fixedbugs-2137-a-call-behind-a-counting-macro-moves-no-value` (the seat's
+  `ctr`) telling no `K_CTR` and
+  `fixedbugs-2145-a-value-defined-beside-a-constant-the-region-refuses-is-not-told`
+  (its `inert`) telling `K_BAD` alone.
+- **The ffi-pragmatist's: true**, at the landing push's first CI run (39234988708,
+  at `9efed1a96`): the run read `unsupported` at 0 failed on all four legs, Darwin
+  arm64 367 passed, Linux x86-64 and Linux arm64 366, Windows x86-64 351, every
+  leg's passed and skipped summing to the same 369 and neither case skipped on
+  any of them; Windows skipped one case of the landing alone,
+  `fixedbugs-2136-a-value-only-the-probe-sees-is-told-beside-a-copied-lock`,
+  whose header includes `pthread.h`.
+- **The compiler-engineer's third step's: true**, before this file adopted the
+  union (§ What was measured).
+
 ## Author's verdict
 
 Pending. The decision issue is https://github.com/heroes-lang/heroes/issues/2148.
