@@ -60,7 +60,7 @@ function judged(t: toolchain.Toolchain, units: [value_run.Unit], level: str, p: 
         return fail(code: "failed", msg: "the probe of the constants' values is the compiler's own failure")
 
     if values.found.len() > 0
-        _ = compile.stage(values.found, s).is_err()
+        _ = compile.stage(values.found, s, permissive: false).is_err()
         return fail(code: "diagnostics", msg: "a header constant's value is one C leaves undefined")
     return ok()
 

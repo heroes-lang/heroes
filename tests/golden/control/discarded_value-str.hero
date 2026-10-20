@@ -1,0 +1,13 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `discarded_value`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a value computed on a line of its own falls.
+# The witness is the compiler-engineer's (w12-discarded_value-str), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function name() -> str
+    return "bowie"
+
+function main()
+    name()  #~ discarded_value
+    print(1)

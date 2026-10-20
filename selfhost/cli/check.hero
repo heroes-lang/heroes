@@ -51,7 +51,11 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
 
     if !stop_g.is_err()
         return stop_g.must()
-    out = rename_fit.judged(resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses), s, parsed)
+    out = rename_fit.judged(
+        resolve.resolve_as(parsed.tree, s, parsed.decls, parsed.uses, permissive: argv.has(inv, spelling: "--permissive")),
+        s,
+        parsed
+    )
     stop_r = report(out.diagnostics, s, inv, stage: 3)
 
     if !stop_r.is_err()
@@ -251,7 +255,11 @@ function said_at(s: source.Source, inv: argv.Invocation, stage: i64) -> [diag.Di
 
     if graph.len() > 0 || stage == 2
         return at_stage(said: graph, found: 2, stage: stage)
-    out = rename_fit.judged(resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses), s, parsed)
+    out = rename_fit.judged(
+        resolve.resolve_as(parsed.tree, s, parsed.decls, parsed.uses, permissive: argv.has(inv, spelling: "--permissive")),
+        s,
+        parsed
+    )
     names = kept_of(out.diagnostics, inv)
 
     if names.len() > 0 || stage == 3

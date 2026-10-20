@@ -1,0 +1,206 @@
+# tests/golden/control/ — Part 11's control arm RUNS (panel 226's R1,
+# 2026-10-20). Every program here is refused by `check` under one thesis rule
+# (its `#~` mark names it), accepted by `check --permissive`, built by
+# `build --permissive` and run, and its `.expected` is what the binary prints
+# and how it ends (`expectation.hero`'s convention, an abort's `!panic:`
+# included): the sentence the sitting's table of the 27 dropped rules pins for
+# that rule, which the case's header quotes. Until that day nothing had ever
+# built a permissive binary, and the control arm could judge a program and not
+# run it, so metrics 2 and 4 were not measurable in it; the 26 cases are the
+# compiler-engineer's witnesses, run before the resolution was written.
+#
+# Three configurations, `run/`'s minus Guard Malloc and `heroes test`:
+# `build --permissive -o` and the binary at `-O0`; `run --permissive` at
+# `-O2`; `run --permissive --sanitize`, where a sanitiser speaking under the
+# control arm is a defect of the lowering that the thesis would otherwise
+# credit as a silent error of the program's. And one question `run/` never
+# asks, first: the strict build MUST refuse the case, exit 1, or it is not a
+# control case and belongs in `run/`; and its `#~` marks must be the codes
+# `check --brief` names on those lines (CLAUDE.md § 9), held here because the
+# `annotations` suite reads a case's diagnostics from its `.expected`, which
+# under this form is what the program prints.
+
+use cases
+use expectation
+use freed_bytes
+use mark_readers
+use platform_skips
+use report
+use shell
+use strings
+
+constant CONTROL_DIR: str
+    "tests/golden/control"
+
+# Measured 2026-10-20: 26 cases, the 27 witnesses less the two that are no
+# running program (a parse error the control arm keeps, and a hole).
+constant LEAST: i64
+    26
+
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
+    found = cases.selected(found: cases.collect(scratch: scratch, dir: CONTROL_DIR)?, only: only)
+    r: report.Report @= report.empty()
+
+    if only == "" && found.len() < LEAST
+        report.keep_failure(
+            @r,
+            label: "control",
+            detail: "  " + CONTROL_DIR + " has " + found.len().to_str() + " cases and had " + LEAST.to_str() + " — a golden that stopped running is not a golden"
+        )
+    binaries = scratch + "/control-binaries"
+    shell.mkdir_all(binaries)?
+
+    for item in found
+        text = read_file(item.expected)
+
+        if text.is_err()
+            report.keep_failure(@r, label: "control/" + item.name, detail: "  cannot read " + item.expected)
+            continue
+        want = expectation.split(text.must())
+
+        if want.is_err()
+            report.keep_failure(
+                @r,
+                label: "control/" + item.name,
+                detail: "  " + item.expected + " is not a readable expectation — an ending must be `!panic: <message>` or `!exit: <code>`"
+            )
+            continue
+        one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: item, want: want.must(), r: @r)
+
+    return ok(r)
+
+# One case through the strict refusal and the three permissive configurations;
+# a failure is recorded on the spot and stops this case.
+function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, want: expectation.Expectation, @r: report.Report)
+    strict = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", "--brief", item.source])
+
+    if strict.is_err()
+        report.keep_failure(
+            @r,
+            label: "control/" + item.name,
+            detail: "  `check " + item.source + "`: " + shell.refusal(strict)
+        )
+        return
+
+    if strict.must().code != 1
+        report.keep_failure(
+            @r,
+            label: "control/" + item.name,
+            detail: "  the strict build must refuse a control case at exit 1, and `check " + item.source + "` exited " + strict.must().code.to_str() + ": a program `check` accepts belongs in run/"
+        )
+        return
+    source = cases.shown(item.source)
+
+    if source.is_err()
+        report.keep_failure(@r, label: "control/" + item.name, detail: "  cannot read " + item.source)
+        return
+    claimed = sort(mark_readers.claimed_by(source.must().text))
+    reported = sort(mark_readers.told_in(mark_readers.reported_by_file(strict.must().err), path: item.source))
+
+    if claimed != reported
+        report.keep_failure(
+            @r,
+            label: "control/" + item.name,
+            detail: "  " + item.source + ": the annotations and the strict build's diagnostics disagree\n    annotated: " + claimed.join(" ") + "\n    reported:  " + reported.join(" ")
+        )
+        return
+    binary = binaries + "/" + item.name + shell.exe_suffix()
+    built = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", item.source, "--permissive", "-o", binary]
+    )
+
+    if built.is_err()
+        report.keep_failure(
+            @r,
+            label: "control/" + item.name,
+            detail: "  `build --permissive " + item.source + "`: " + shell.refusal(built)
+        )
+        return
+
+    if built.must().code != 0
+        report.keep_failure(
+            @r,
+            label: "control/" + item.name,
+            detail: "  did not build under --permissive (exit " + built.must().code.to_str() + "):\n" + built.must().err
+        )
+        return
+
+    if judged(@r, item: item, level: "--permissive -O0", want: want, said: shell.run(scratch: scratch, program: binary, words: [binary]))
+        return
+
+    if judged(@r, item: item, level: "--permissive -O2", want: want, said: shell.run(scratch: scratch, program: compiler, words: [compiler, "run", item.source, "--permissive"]))
+        return
+    words = freed_bytes.filled([compiler, "run", item.source, "--permissive", "--sanitize"])
+    sanitised = shell.run(scratch: scratch, program: words[0], words: words)
+
+    if sanitised.is_err()
+        report.keep_failure(
+            @r,
+            label: "control/" + item.name + " at --permissive --sanitize",
+            detail: "  " + shell.refusal(sanitised)
+        )
+        return
+
+    # A case may declare that the sanitiser speaks (`!sanitizer:`, panel 173),
+    # as `run/`'s do for a stack exhausted: the report is then the artifact,
+    # held to its needle, and the runtime's own words stay judged at `-O0` and
+    # `-O2` above; on Windows the runtime tells a stack overflow under the
+    # sanitiser too (defect 641).
+    if !want.sanitizer.is_err()
+        if platform_skips.runtime_tells(want.sanitizer.must())
+            if judged(@r, item: item, level: "--permissive --sanitize", want: want, said: sanitised)
+                return
+            report.keep_pass(@r)
+            return
+        missing = expectation.sanitizer_unmet(want, err: sanitised.must().err)
+
+        if !missing.is_err()
+            report.keep_failure(
+                @r,
+                label: "control/" + item.name + " at --permissive --sanitize",
+                detail: "  " + item.source + " " + missing.must()
+            )
+            return
+        report.keep_pass(@r)
+        return
+
+    if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
+        report.keep_failure(
+            @r,
+            label: "control/" + item.name + " at --permissive --sanitize",
+            detail: "  tripped a sanitiser under the control arm, a defect of the lowering:\n" + sanitised.must().err
+        )
+        return
+
+    if judged(@r, item: item, level: "--permissive --sanitize", want: want, said: sanitised)
+        return
+    report.keep_pass(@r)
+
+# Whether the case FAILED at this level, the failure recorded.
+function judged(@r: report.Report, item: cases.Case, level: str, want: expectation.Expectation, said: shell.Run?) -> bool
+    if said.is_err()
+        report.keep_failure(@r, label: "control/" + item.name + " at " + level, detail: "  " + shell.refusal(said))
+        return true
+    wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
+
+    if wrong.is_err()
+        return false
+    report.keep_failure(
+        @r,
+        label: "control/" + item.name + " at " + level,
+        detail: "  " + item.source + " " + wrong.must()
+    )
+    return true
+
+test "the control cases are the 27 witnesses less two, each marked with the rule the strict build names"
+    scratch = shell.own_scratch()
+    found = cases.collect(scratch: scratch, dir: CONTROL_DIR).must()
+    assert found.len() >= LEAST
+
+    for item in found
+        text = read_file(item.source).must()
+        assert strings.contains(text: text, needle: "#~ ")
+        assert strings.contains(text: text, needle: "panel 226")
+        assert !expectation.split(read_file(item.expected).must()).is_err()

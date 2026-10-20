@@ -224,7 +224,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4936bc8255566c68", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6610657c4f07c70e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs314amapreleasedtwiceisnamed_main();

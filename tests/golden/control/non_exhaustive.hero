@@ -1,0 +1,22 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `non_exhaustive`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a `match` missing a case prints the arms it takes and aborts at the case no arm names, `panic: this match has no arm for .dot`, never *this is a compiler bug*.
+# The witness is the compiler-engineer's (w01-non_exhaustive), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+variant Shape
+    circle
+        r: i64
+    square
+        s: i64
+    dot
+
+function area(sh: Shape) -> i64
+    return match sh  #~ non_exhaustive
+        .circle c => c.r * c.r * 3
+        .square q => q.s * q.s
+
+function main()
+    print(area(.square(s: 2)))
+    print(area(.dot))

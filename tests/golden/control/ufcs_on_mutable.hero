@@ -1,0 +1,14 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `ufcs_on_mutable`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: `v.bump()` where `bump`'s first parameter is `@` lends `v`'s place, as `bump(@v)` does.
+# The witness is the compiler-engineer's (w05-ufcs_on_mutable), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function bump(@n: i64)
+    n @ n + 1
+
+function main()
+    v: i64 @= 1
+    v.bump()  #~ ufcs_on_mutable
+    print(v)

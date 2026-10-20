@@ -35,6 +35,10 @@ record LoopEdges
 
 record Lowering
     out: containers.Lowered
+    # Part 11's control arm (panel 226's R1): a `match` taken past every arm
+    # aborts naming the case; the strict build, which proved exhaustiveness,
+    # lowers what it always did. `ir/lower.lower_as` sets it.
+    permissive: bool
     # The function being built. One at a time: begin resets it, end_fn
     # files it.
     building: containers.Function
@@ -99,6 +103,7 @@ function new_lowering(r: resolved.Resolved, unit: i64) -> Lowering
     out = containers.Lowered(program: program, diagnostics: [])
     return Lowering(
         out: out,
+        permissive: false,
         building: empty_function(),
         current: 0,
         loops: [],

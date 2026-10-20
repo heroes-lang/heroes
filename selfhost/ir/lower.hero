@@ -44,12 +44,21 @@ use checker
 # be error in places this pass reads as fact. It is the caller that
 # declines to ask.
 function lower(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> containers.Lowered
+    return lower_as(a, r, c, s, decls, permissive: false)
+
+# The same as Part 11's control arm builds a program (panel 226's R1): a
+# `match` taken past every arm aborts naming the case or the value, where the
+# strict build, having proved exhaustiveness, lowers an unreachable block.
+# `cli/compile.hero` alone asks for this, under `--permissive`.
+function lower_as(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], permissive: bool) -> containers.Lowered
     b: build.Lowering @= build.new_lowering(r, unit: table.unit_ty(c.types))
+    b.permissive @ permissive
     b.validated @ owned_release.library_validated(decls, s)
     index: i64 @= 0
 
     while index < decls.len()
-        declaration(@b, a, r, c, s, decls, index)
+        if first_of_its_name(r, s, decls, index)
+            declaration(@b, a, r, c, s, decls, index)
         index @ index + 1
 
     # One exit where a function has two or more ways out (panel 190): a pass
@@ -61,6 +70,20 @@ function lower(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Sou
     # to one question.
     b.out.diagnostics @ resolve.by_position(b.out.diagnostics)
     return b.out
+
+# Whether this declaration is the one the resolver recorded under its name:
+# a second `function f` in one module is `declared_twice`, a thesis rule the
+# control arm drops (panel 226's R1), and `resolve/top.hero` keeps the first;
+# lowering the second too handed clang a redefinition at exit 2, so the first
+# wins here as it does there. A name the resolver recorded nowhere, a test's,
+# is lowered as it always was.
+function first_of_its_name(r: resolved.Resolved, s: source.Source, decls: [ast.Decl], index: i64) -> bool
+    recorded = resolved.top_in(
+        r,
+        module: source.module_at(s, decls[index].name.start),
+        name: source.span_text(s, decls[index].name)
+    )
+    return recorded.is_err() || recorded.must() == index
 
 ## One declaration at a time
 

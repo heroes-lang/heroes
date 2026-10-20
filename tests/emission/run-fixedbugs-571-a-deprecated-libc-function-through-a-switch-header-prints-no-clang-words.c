@@ -221,7 +221,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("490f8ad86fc34ca7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("65e933d26974a74d", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs571adeprecatedlibcfunctionthroughaswitchheaderprintsnoclangwords_main();

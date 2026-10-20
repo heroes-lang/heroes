@@ -133,7 +133,7 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     refusal = one_file.refused(t, under, art.program, s, art.decls, text: text, plans: planned.plans)
 
     if refusal.len() > 0
-        _ = compile.stage(refusal, s).is_err()
+        _ = compile.stage(refusal, s, permissive: false).is_err()
         return fail(code: "diagnostics", msg: "the one file would not mean the program the units build")
 
     if options.output.is_err()

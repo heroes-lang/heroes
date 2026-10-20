@@ -1,0 +1,15 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `declared_twice`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a second `function f` in one module is not lowered: the first wins, as the resolver keeps it.
+# The witness is the compiler-engineer's (w07-declared_twice), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function f() -> i64
+    return 1
+
+function f() -> i64  #~ declared_twice
+    return 2
+
+function main()
+    print(f())

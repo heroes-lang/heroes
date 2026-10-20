@@ -46,7 +46,8 @@ function run_build(path: str, s: source.Source, inv: argv.Invocation, t: toolcha
         sanitize: argv.has(inv, spelling: "--sanitize"),
         target: .program_build,
         headers_from: argv.values_of(inv, spelling: "--include"),
-        library: argv.values_of(inv, spelling: "--library")
+        library: argv.values_of(inv, spelling: "--library"),
+        permissive: argv.has(inv, spelling: "--permissive")
     )
     made = produce.produce(path: path, s: s, options: options, t: t, version: version)
 
@@ -71,7 +72,8 @@ function run_run(path: str, s: source.Source, inv: argv.Invocation, t: toolchain
         sanitize: argv.has(inv, spelling: "--sanitize"),
         target: .program_build,
         headers_from: argv.values_of(inv, spelling: "--include"),
-        library: argv.values_of(inv, spelling: "--library")
+        library: argv.values_of(inv, spelling: "--library"),
+        permissive: argv.has(inv, spelling: "--permissive")
     )
     made = produce.produce(path: path, s: s, options: options, t: t, version: version)
 
@@ -123,7 +125,8 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
         sanitize: argv.has(inv, spelling: "--sanitize"),
         target: .tests_build,
         headers_from: argv.values_of(inv, spelling: "--include"),
-        library: argv.values_of(inv, spelling: "--library")
+        library: argv.values_of(inv, spelling: "--library"),
+        permissive: argv.has(inv, spelling: "--permissive")
     )
     made = produce.produce(path: path, s: s, options: options, t: t, version: version)
 
@@ -243,7 +246,8 @@ test "an object zeroed, cut or replaced is compiled again, never linked, and a r
         sanitize: false,
         target: .program_build,
         headers_from: none,
-        library: none
+        library: none,
+        permissive: false
     )
     assert produce.produced_code(produce.produce(path: path, s: s, options: options, t: t, version: "0.0.0-port")) == ""
     objects = objects_under(t.build)

@@ -46,6 +46,37 @@ _Noreturn void hero_unreachable(void) {
     hero_panic("entered unreachable code — this is a compiler bug, please report it");
 }
 
+/* A `match` that reached a case no arm names, in a program built with
+ * `--permissive` (design.md Part 11's control arm; panel 226's R1). The strict
+ * build proves exhaustiveness, so the block that calls this exists only there,
+ * and the words are the program's own mistake, never the compiler's: `text`
+ * holds the variant's cases joined by `,` in tag order, `index` the case reached. */
+_Noreturn void hero_panic_unmatched_case(int64_t index, HeroStr text) {
+    const char *p = text.ptr ? text.ptr : "";
+    const char *start = p;
+    int64_t k = 0;
+    while (*p && k < index) {
+        if (*p == ',') {
+            k++;
+            start = p + 1;
+        }
+        p++;
+    }
+    const char *end = start;
+    while (*end && *end != ',') end++;
+    fflush(stdout);
+    fprintf(stderr, "panic: this match has no arm for .%.*s\n", (int)(end - start), start);
+    hero_abort();
+}
+
+/* The same for a `match` on an integer or a string: the value, rendered as
+ * `print` renders it. */
+_Noreturn void hero_panic_unmatched_value(HeroStr text) {
+    fflush(stdout);
+    fprintf(stderr, "panic: this match has no arm for %s\n", text.ptr ? text.ptr : "this value");
+    hero_abort();
+}
+
 void hero_print_int(int64_t v) { printf("%lld", (long long)v); }
 /* See `hero_uint_to_str`: `u64` above 2^63 prints negative through the signed one. */
 void hero_print_uint(uint64_t v) { printf("%llu", (unsigned long long)v); }

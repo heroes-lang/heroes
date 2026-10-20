@@ -1,0 +1,13 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `unreachable_statement`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a statement after a `return` is dead code, never run.
+# The witness is the compiler-engineer's (w10-unreachable_statement), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function f() -> i64
+    return 1
+    print(9)  #~ unreachable_statement
+
+function main()
+    print(f())

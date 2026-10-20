@@ -106,9 +106,21 @@ function lookup_local(r: Resolver, name: str) -> i64?
 function open_entry(r: Resolver, name: str) -> i64
     found = r.scopes.at[name]
 
-    if found.is_err() || found.must() >= r.scopes.top || r.scopes.entries[found.must()].name != name
-        return -1
-    return found.must()
+    if !found.is_err() && found.must() < r.scopes.top && r.scopes.entries[found.must()].name == name
+        return found.must()
+
+    # The map names the LAST entry bound under the name, and since a shadow is
+    # told and then bound (panel 226's R1) that entry may stand in a scope
+    # already closed while an outer one still binds the name: the scan the map
+    # exists to avoid, taken only then, innermost first.
+    k: i64 @= r.scopes.top - 1
+
+    while k >= 0
+        if r.scopes.entries[k].name == name
+            return k
+        k @ k - 1
+
+    return -1
 
 # Whether the INNERMOST scope already binds this name. One caller: two
 # patterns of one arm may not bind the same payload name.
@@ -148,6 +160,10 @@ record GenericParam
 record Resolver
     out: resolved.Resolved
     scopes: Scopes
+    # Part 11's control arm (panel 226's R1): a shadow is told and then bound,
+    # where the strict build tells it and binds nothing; `resolve.resolve_as`
+    # sets it, and every other reading of a program is strict.
+    permissive: bool
     # Type parameters of the function being resolved, IN POSITION ORDER —
     # an array and not a map, because the did-you-mean ranks candidates in
     # the order supplied and Rust's Vec order is positional, which a sorted
@@ -211,6 +227,7 @@ function new_resolver(expr_count: i64, type_count: i64) -> Resolver
     return Resolver(
         out: out,
         scopes: new_scopes(),
+        permissive: false,
         generics: generics,
         fields: name_rows.new_name_sets(),
         suggested: name_rows.new_name_sets(),
@@ -304,11 +321,18 @@ function declare(@r: Resolver, s: source.Source, decls: [ast.Decl], name: token.
         return fail(code: "wildcard", msg: "`_` never binds")
     previous = lookup_local(r, text)
 
+    # Told, and bound only under Part 11's control arm (panel 226's R1,
+    # 2026-10-20), which drops the words and reads the inner name as every
+    # permissive language does; left unbound there, the lines below read the
+    # OUTER one (measured, the witness printed `1` twice). The strict build
+    # binds nothing, as it always did: its later words stay the same.
     if !previous.is_err()
         at = r.out.locals[previous.must()].name
         bound_at = source.elsewhere(s, here: name.start, there: at.start)
         push_diagnostic(@r, errors.shadowed(name: text, bound_at: bound_at, span: name))
-        return fail(code: "refused", msg: "shadowing is a compile error")
+
+        if !r.permissive
+            return fail(code: "refused", msg: "shadowing is a compile error")
 
     # **A `use` binds its name for the whole file, so a local may not take it
     # either** — the mirror of `use_shadows_a_declaration` and the same rule,
@@ -422,6 +446,24 @@ test "a sibling scope's binding is invisible, a parent's shadows"
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "shadowed_binding"
     assert r.out.diagnostics[0].message == "`x` is already in scope, bound at line 1 — shadowing is an error here: a name means one thing for as long as it is visible"
+
+    # Under the control arm the same shadow is told and then bound (panel
+    # 226's R1): the inner lines read the inner x, and the outer x comes back
+    # when the block closes, through the scan `open_entry` falls back on.
+    r.permissive @ true
+    bound_x = declare(
+        @r,
+        s,
+        decls,
+        span_at(start: 4, end: 5),
+        resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)
+    )
+    assert !bound_x.is_err()
+    assert bound_x.must() != 0
+    assert lookup_local(r, "x").must() == bound_x.must()
+    assert r.out.diagnostics.len() == 2
+    close_scope(@r)
+    assert lookup_local(r, "x").must() == 0
 
 test "the wildcard never binds and a built-in is taken everywhere, told once"
     s = tiny()

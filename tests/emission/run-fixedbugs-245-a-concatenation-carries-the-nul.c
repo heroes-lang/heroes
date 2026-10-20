@@ -423,7 +423,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("50bb0d5578487aac", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d94b64f71f9d552", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs245aconcatenationcarriesthenul_main();

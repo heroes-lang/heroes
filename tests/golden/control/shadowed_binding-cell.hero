@@ -1,0 +1,13 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `shadowed_binding`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: `v = 2` shadowing a cell is the write `v @ 2`: the next read sees it.
+# The witness is the compiler-engineer's (w24-shadowed_binding-cell), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function main()
+    v: i64 @= 1
+
+    if true
+        v = 2  #~ shadowed_binding
+    print(v)

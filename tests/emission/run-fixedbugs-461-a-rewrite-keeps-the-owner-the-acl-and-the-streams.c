@@ -410,7 +410,7 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2efc8bda3b9fd9f8", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4bd634d43551349e", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs461arewritekeepstheownertheaclandthestreams_main();

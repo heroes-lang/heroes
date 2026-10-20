@@ -56,6 +56,7 @@ use ir/interp
 use ir/in_place
 use inventory
 use read_lend
+use check/leasing
 
 ## Statements
 
@@ -152,6 +153,19 @@ function returned(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
 function bind_stmt(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, value: i64, span: token.Span)
     produced = expr(@b, a, r, c, s, decls, id: value)
 
+    # Under Part 11's control arm alone (panel 226's R1; the strict build
+    # refused these before lowering): `v @= e` on a cell already declared, or
+    # `v = e` shadowing one, is the write the resolver recorded in `rebinds`,
+    # so the local's slot is stored and nothing is declared.
+    rebound = r.rebinds[name.start]
+
+    if !rebound.is_err()
+        slot_of = build.slot_of_local(b, rebound.must())
+
+        if !slot_of.is_err()
+            build.store_slot(@b, slot_id: slot_of.must(), value: produced, span: span)
+            return
+
     # `_ = f(x)` binds nothing (§4.7): the resolver made no local for
     # it, so the call happens and the value is dropped.
     local = build.local_at(b, name)
@@ -159,6 +173,12 @@ function bind_stmt(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: stat
     if local.is_err()
         return
     ty = c.local_types[local.must()]
+
+    # `x = f()` where `f` answers `()` (`bound_unit`, dropped by the control
+    # arm): a slot of `()` is one `mono` refuses, so the call ran and nothing
+    # is bound; a later read of `x` is a type error the control arm keeps.
+    if ty == table.unit_ty(c.types) || ty == table.error_ty(c.types)
+        return
     slot = build.slot(@b, name: source.span_text(s, name), ty: ty, kind: build.local_kind(r, local))
     build.bind_local(@b, local: local.must(), slot_id: slot)
     build.store_slot(@b, slot_id: slot, value: produced, span: span)
@@ -603,48 +623,105 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 # and carries no further meaning. A parameter marked `owned <freer>` is
 # handed a cell instead, and its release is what `after` owes.
 function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg], callee: i64?) -> inout.Args
-    return lowered_from(@b, a, r, c, s, decls, first: [], given: given, callee: callee)
+    return lowered_from(
+        @b,
+        a,
+        r,
+        c,
+        s,
+        decls,
+        receiver: fail(code: "none", msg: "no receiver"),
+        given: given,
+        callee: callee
+    )
 
-# The written arguments after those already lowered, `first`, which is the
-# receiver of a dotted call or nothing: one loop for both shapes, so a mark
-# and a read-only lend are read at the parameter's own position in each.
-function lowered_from(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], first: [ir.Arg], given: [ast.Arg], callee: i64?) -> inout.Args
-    lowered_args: [ir.Arg] @= first
+# The receiver of a dotted call, where there is one, then the written
+# arguments, left to right: one loop for both shapes, so a mark and a
+# read-only lend are read at the parameter's own position in each.
+function lowered_from(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64?, given: [ast.Arg], callee: i64?) -> inout.Args
+    lowered_args: [ir.Arg] @= []
     after: [inout.WriteBack] @= []
-    at: i64 @= first.len()
+    at: i64 @= 0
+
+    if !receiver.is_err()
+        lowered_args @ lowered_args.push(
+            one_argument(@b, a, r, c, s, decls, id: receiver.must(), marked: false, callee: callee, at: 0, after: @after)
+        )
+        at @ 1
 
     for arg in given
-        if arg.mutable
-            spot = place(@b, a, r, c, s, decls, id: arg.value)
-            lowered_args @ lowered_args.push(
-                inout.argument(@b, c, decls, span: a.exprs[arg.value].span, spot: spot, callee: callee, at: at, after: @after)
-            )
-        else if read_lend.lent_at(a, s, decls, callee: callee, at: at)
-            lowered_args @ lowered_args.push(lent_argument(@b, a, r, c, s, decls, id: arg.value))
-        else
-            value = expr(@b, a, r, c, s, decls, id: arg.value)
-            lowered_args @ lowered_args.push(.value_arg(value: value))
+        lowered_args @ lowered_args.push(
+            one_argument(@b, a, r, c, s, decls, id: arg.value, marked: arg.mutable, callee: callee, at: at, after: @after)
+        )
         at @ at + 1
 
     return inout.Args(run: build.args_run(@b, lowered_args), after: after)
+
+# One argument at parameter position `at`: a place where the site wrote `@`;
+# a place too, or a held temporary where it is no place, where the site wrote
+# none and the parameter is marked, which only Part 11's control arm lowers
+# (the strict build refused it; panel 226's R1, the declaration decides); a
+# read-only lend's place or held value; else its value.
+function one_argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64, marked: bool, callee: i64?, at: i64, @after: [inout.WriteBack]) -> ir.Arg
+    span = a.exprs[id].span
+
+    if marked && (callee.is_err() || read_lend.marked_at(decls, callee: callee, at: at))
+        return inout.argument(
+            @b,
+            c,
+            decls,
+            span: span,
+            spot: place(@b, a, r, c, s, decls, id: id),
+            callee: callee,
+            at: at,
+            after: @after
+        )
+
+    if read_lend.marked_at(decls, callee: callee, at: at)
+        if !leasing.place_root(a, at: id).is_err()
+            return inout.argument(
+                @b,
+                c,
+                decls,
+                span: span,
+                spot: place(@b, a, r, c, s, decls, id: id),
+                callee: callee,
+                at: at,
+                after: @after
+            )
+        return inout.held(
+            @b,
+            value: expr(@b, a, r, c, s, decls, id: id),
+            ty: c.expr_types[id],
+            span: span,
+            read_only: false
+        )
+
+    if read_lend.lent_at(a, s, decls, callee: callee, at: at)
+        return lent_argument(@b, a, r, c, s, decls, id: id)
+    return .value_arg(value: expr(@b, a, r, c, s, decls, id: id))
 
 # A read-only lend's argument: its own place where it is a name or a field
 # path, else its value held in a slot of its own (`ir/inout.hero`).
 function lent_argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> ir.Arg
     if read_lend.in_place(a, r, id)
         return .inout_arg(place: place(@b, a, r, c, s, decls, id: id), read_only: true)
-    return inout.held(@b, value: expr(@b, a, r, c, s, decls, id: id), ty: c.expr_types[id], span: a.exprs[id].span)
+    return inout.held(
+        @b,
+        value: expr(@b, a, r, c, s, decls, id: id),
+        ty: c.expr_types[id],
+        span: a.exprs[id].span,
+        read_only: true
+    )
 
 # The UFCS shape: the receiver IS parameter zero, lowered before the written
 # arguments, each one to the right of its own index, a mark read at the
 # parameter's position. §4.11 forbids it where the first parameter is `@`, so
-# the receiver is a value, or a place read only where that parameter is `lent`.
+# under the strict build the receiver is a value, or a place read only where
+# that parameter is `lent`; the control arm lends its place where the
+# parameter is `@` (`one_argument`).
 function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg], callee: i64?) -> inout.Args
-    head: ir.Arg = if read_lend.lent_at(a, s, decls, callee: callee, at: 0)
-        lent_argument(@b, a, r, c, s, decls, id: receiver)
-    else
-        .value_arg(value: expr(@b, a, r, c, s, decls, id: receiver))
-    return lowered_from(@b, a, r, c, s, decls, first: [head], given: given, callee: callee)
+    return lowered_from(@b, a, r, c, s, decls, receiver: ok(receiver), given: given, callee: callee)
 
 ## `x.f(y)` — the three tokens with two meanings (§4.11, §4.13; panel 079)
 
@@ -1034,8 +1111,25 @@ function tagged(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
 
     build.terminate(@b, .switch_term(tag: tag, cases: cases))
 
+    # Reached by a program built with `--permissive` alone (panel 226's R1):
+    # the strict build proved exhaustiveness, so the block never existed.
     if !orphan_block.is_err()
         build.switch_to(@b, target: orphan_block.must())
+
+        if b.permissive
+            spelled = build.emit(
+                @b,
+                op: .lit(value: .str_const(at: interning.intern(@b, names.join(",")))),
+                ty: table.str_ty(c.types),
+                span: plan.span
+            )
+            unmatched = build.args_run(@b, [.value_arg(value: tag), .value_arg(value: spelled)])
+            build.emit_void(
+                @b,
+                op: .abort_op(why: .unmatched_case_abort, arguments: unmatched),
+                ty: build.unit_ty(b),
+                span: plan.span
+            )
         build.terminate(@b, .unreachable)
 
     for one in bodies
@@ -1106,6 +1200,17 @@ function literals(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
                 .variant_case | .wildcard | .error => continue
 
     # Falling past every arm cannot happen: the checker required _.
+    # No arm took the value: a program built with `--permissive` alone reaches
+    # here (`needs_wildcard`, panel 226's R1), and says which value.
+    if b.permissive
+        taken = build.load_slot(@b, slot_id: plan.subject, span: plan.span)
+        unmatched = build.args_run(@b, [.value_arg(value: taken)])
+        build.emit_void(
+            @b,
+            op: .abort_op(why: .unmatched_value_abort, arguments: unmatched),
+            ty: build.unit_ty(b),
+            span: plan.span
+        )
     build.terminate(@b, .unreachable)
     walk: i64 @= 0
 

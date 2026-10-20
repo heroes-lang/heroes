@@ -74,7 +74,7 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
     kept = taken.kept
 
     if taken.diagnostics.len() > 0
-        _ = compile.stage(taken.diagnostics, s).is_err()
+        _ = compile.stage(taken.diagnostics, s, permissive: false).is_err()
         over: ()? = fail(
             code: "diagnostics",
             msg: "a name this program binds would mean what its header does not make it"
@@ -172,7 +172,7 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     pragmas = pragma_ask.told(t, planned.probings, s: s, decls: art.decls)
 
     if pragmas.len() > 0
-        _ = compile.stage(pragmas, s).is_err()
+        _ = compile.stage(pragmas, s, permissive: false).is_err()
         held: ()? = fail(
             code: "diagnostics",
             msg: "a group's header defines a name this program's C writes as a macro holding a pragma"
@@ -209,7 +209,8 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     if copied.len() > 0
         _ = compile.stage(
             joined(first: copied, more: early(t, options, art, s, site, planned: planned, struct_tags: struct_tags, kept: kept, answered: answered)),
-            s
+            s,
+            permissive: false
         ).is_err()
         locked: ()? = fail(code: "diagnostics", msg: "a group record whose C struct holds a lock is copied")
         return assemble.Round(verdict: locked, refusals: [], binary: "", modules: [])
@@ -228,7 +229,8 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     if disagreeing.len() > 0
         _ = compile.stage(
             joined(first: disagreeing, more: early(t, options, art, s, site, planned: planned, struct_tags: struct_tags, kept: kept, answered: answered)),
-            s
+            s,
+            permissive: false
         ).is_err()
         refused: ()? = fail(code: "diagnostics", msg: "two modules' headers disagree about a C name")
         return assemble.Round(verdict: refused, refusals: [], binary: "", modules: [])

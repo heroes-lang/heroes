@@ -226,6 +226,20 @@ function is_thesis_rule(d: Diagnostic) -> bool
 
     return false
 
+# What a stage says as Part 11's control arm keeps it: every diagnostic where
+# the build is not permissive, and without the rules that exist for the thesis
+# where it is (panel 226's R1, 2026-10-20: the control arm builds and runs).
+function kept(diagnostics: [Diagnostic], permissive: bool) -> [Diagnostic]
+    if !permissive
+        return diagnostics
+    out: [Diagnostic] @= []
+
+    for d in diagnostics
+        if !is_thesis_rule(d)
+            out @ out.push(d)
+
+    return out
+
 # `file:line:col: <kind>[code]: message` — the one-line form the
 # golden tests pin and a terminal scans; the file and line are the
 # ones the reader can open, which is locate's whole job. A control

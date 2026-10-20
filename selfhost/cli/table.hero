@@ -96,6 +96,7 @@ function commands() -> [Command]
         plain(spelling: "--in-place", what: "with --apply, rewrite the file instead of printing it; with --json as well, the document is printed all the same; given a directory, rewrite each file every program under it agrees on, so name the trees a migration means, never one holding records or cases wrong on purpose")
     ]
     build_flags: [Flag] = [
+        plain(spelling: "--permissive", what: "drop the diagnostics that exist for the thesis and build what is left: the control arm of Part 11's measurement, which runs (panel 226)")
         plain(spelling: "--dump-ir", what: "print the lowered three-address IR and stop")
         plain(spelling: "--emit-c", what: "print the generated C11 and stop, instead of compiling it")
         valued(spelling: "-o", what: "write the artifact here instead of under build/")
@@ -106,6 +107,7 @@ function commands() -> [Command]
         plain(spelling: "-O2", what: "compile at -O2")
     ]
     run_flags: [Flag] = [
+        plain(spelling: "--permissive", what: "drop the diagnostics that exist for the thesis and build what is left: the control arm of Part 11's measurement, which runs (panel 226)")
         valued(spelling: "-o", what: "keep the binary here as well as running it")
         search_path(spelling: "--include", what: "search this directory for an `extern` group's header; may repeat")
         search_path(spelling: "--library", what: "search this directory for a `link` library; may repeat")
@@ -114,6 +116,7 @@ function commands() -> [Command]
         plain(spelling: "-O2", what: "compile at -O2 (the default here)")
     ]
     test_flags: [Flag] = [
+        plain(spelling: "--permissive", what: "drop the diagnostics that exist for the thesis and build what is left: the control arm of Part 11's measurement, which runs (panel 226)")
         search_path(spelling: "--include", what: "search this directory for an `extern` group's header; may repeat")
         search_path(spelling: "--library", what: "search this directory for a `link` library; may repeat")
         plain(spelling: "--sanitize", what: "compile with -fsanitize=address,undefined")

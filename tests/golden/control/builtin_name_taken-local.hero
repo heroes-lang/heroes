@@ -1,0 +1,10 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `builtin_name_taken`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a local named like a built-in wins inside its scope: the local answers.
+# The witness is the compiler-engineer's (w26-builtin_name_taken-local), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function main()
+    range = 3  #~ builtin_name_taken
+    print(range)

@@ -1,0 +1,12 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `builtin_name_taken`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a top-level function named like a built-in loses: the built-in answers the call.
+# The witness is the compiler-engineer's (w08-builtin_name_taken-top), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function print(n: i64) -> i64  #~ builtin_name_taken
+    return n
+
+function main()
+    print(5)

@@ -1,0 +1,13 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `marker_mismatch`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: an `@` written before an argument to a parameter without one says nothing: the value is passed.
+# The witness is the compiler-engineer's (w04-marker_mismatch-extra-at), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function show(n: i64) -> i64
+    return n + 1
+
+function main()
+    v: i64 @= 1
+    print(show(@v))  #~ marker_mismatch

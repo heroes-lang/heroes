@@ -326,6 +326,8 @@
 #pragma push_macro("hero_panic_assert_sides")
 #pragma push_macro("hero_panic_must")
 #pragma push_macro("hero_panic_overflow")
+#pragma push_macro("hero_panic_unmatched_case")
+#pragma push_macro("hero_panic_unmatched_value")
 #pragma push_macro("hero_print_bool")
 #pragma push_macro("hero_print_end")
 #pragma push_macro("hero_print_f32")

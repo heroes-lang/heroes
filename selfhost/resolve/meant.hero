@@ -168,6 +168,7 @@ function shadows_a_mutable(@r: state.Resolver, s: source.Source, name: token.Spa
         )
     state.push_diagnostic(@r, d)
     r.out.locals[at].writes @ r.out.locals[at].writes + 1
+    r.out.rebinds[name.start] @ at
     return true
 
 # `_ @= e` or `_: T @= e` (the old `_: T @ e` is the parser's to tell,

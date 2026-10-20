@@ -117,6 +117,14 @@ variant AbortWhy
     # `assert e` failed (§4.18). Carries the source text of e, and both
     # sides when e is a comparison — the spec promises both.
     assert_abort
+    # A `match` reached a case no arm names, which only a program built
+    # with `--permissive` can (`non_exhaustive`, `needs_wildcard`; panel
+    # 226's R1): the tag and the cases' names joined by `,`, so the panic
+    # says `.dot` rather than *this is a compiler bug*.
+    unmatched_case_abort
+    # The same for a `match` on a value, an integer or a string, no case: the
+    # value itself, rendered as `print` would.
+    unmatched_value_abort
 
 # A literal that survived from the source. The integer carrier is the
 # same LitValue the checker used: sign and magnitude, because after

@@ -1,0 +1,15 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `needs_wildcard`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a `match` on an integer with no `_` aborts at a value no arm takes, `panic: this match has no arm for 7`.
+# The witness is the compiler-engineer's (w11-needs_wildcard), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function say(n: i64) -> str
+    return match n  #~ non_exhaustive
+        0 => "zero"
+        1 => "one"
+
+function main()
+    print(say(0))
+    print(say(7))

@@ -54,6 +54,10 @@ record Options
     target: emit_decls.BuildTarget
     headers_from: [str]
     library: [str]
+    # Part 11's control arm (panel 226's R1): the thesis rules dropped from
+    # every stage, the parse the control reads (`parse.ParseOutput.control`),
+    # and what is left built and run.
+    permissive: bool
 
 # The optimisation level this invocation asked for, or the verb's
 # default. TWO LEVELS AND NO OTHERS (§10's stopping rule on a flag:
@@ -87,11 +91,13 @@ function search_key(headers_from: [str], library: [str]) -> str
 # question about how a diagnostic prints. Absent means silence, carry
 # on. A diagnostic pointing into the library is the COMPILER wrong at
 # exit 2 (panel 028 R5).
-function stage(diagnostics: [diag.Diagnostic], s: source.Source) -> cli_table.Exit?
-    if diagnostics.len() == 0
+function stage(diagnostics: [diag.Diagnostic], s: source.Source, permissive: bool) -> cli_table.Exit?
+    kept = diag.kept(diagnostics, permissive: permissive)
+
+    if kept.len() == 0
         return fail(code: "none", msg: "silence, carry on")
 
-    for d in diagnostics
+    for d in kept
         if source.is_library(s, d.span.start)
             io.eprint(
                 text: "internal error: a diagnostic landed inside the Heroes library, at its line " + source.file_line_of(s, d.span.start).to_str() + ": [" + d.code + "] " + d.message
@@ -100,7 +106,7 @@ function stage(diagnostics: [diag.Diagnostic], s: source.Source) -> cli_table.Ex
 
     rendered: [str] @= []
 
-    for d in diagnostics
+    for d in kept
         rendered @ rendered.push(diag_render.render(d, s))
 
     io.eprint_raw(text: rendered.join("\n"))
@@ -159,26 +165,34 @@ function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: container
 # exit: "diagnostics" is 1, "failed" is 2 — the caller maps e.code.
 function to_unit(s: source.Source, options: Options, version: str, sources: str) -> Artifact?
     parsed = parse.parse_source(s)
-    stop = stage(parsed.diagnostics, s)
+    said: [diag.Diagnostic] @= parsed.diagnostics
+
+    if options.permissive
+        said @ parsed.control
+    stop = stage(said, s, permissive: options.permissive)
 
     if !stop.is_err()
         return leave(stop.must(), stage_name: "parsing")
-    stop_g = stage(modules.errors(s, parsed.uses), s)
+    stop_g = stage(modules.errors(s, parsed.uses), s, permissive: options.permissive)
 
     if !stop_g.is_err()
         return leave(stop_g.must(), stage_name: "the module graph")
-    out = rename_fit.judged(resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses), s, parsed)
-    stop_r = stage(out.diagnostics, s)
+    out = rename_fit.judged(
+        resolve.resolve_as(parsed.tree, s, parsed.decls, parsed.uses, permissive: options.permissive),
+        s,
+        parsed
+    )
+    stop_r = stage(out.diagnostics, s, permissive: options.permissive)
 
     if !stop_r.is_err()
         return leave(stop_r.must(), stage_name: "name resolution")
     c: state.Checked @= checker.check(parsed.tree, out, s, parsed.decls)
-    stop_c = stage(c.diagnostics, s)
+    stop_c = stage(c.diagnostics, s, permissive: options.permissive)
 
     if !stop_c.is_err()
         return leave(stop_c.must(), stage_name: "type checking")
-    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    stop_l = stage(low.diagnostics, s)
+    low = lower.lower_as(parsed.tree, out, c, s, parsed.decls, permissive: options.permissive)
+    stop_l = stage(low.diagnostics, s, permissive: options.permissive)
 
     if !stop_l.is_err()
         return leave(stop_l.must(), stage_name: "lowering")
@@ -194,7 +208,7 @@ function to_unit(s: source.Source, options: Options, version: str, sources: str)
     # the verifier cannot catch it because released_on_return asks the
     # same predicate.
     mono_problems = mono.run(@p, @c, s, parsed.decls)
-    stop_m = stage(mono_problems, s)
+    stop_m = stage(mono_problems, s, permissive: options.permissive)
 
     if !stop_m.is_err()
         return leave(stop_m.must(), stage_name: "monomorphisation")
@@ -267,7 +281,7 @@ function to_unit(s: source.Source, options: Options, version: str, sources: str)
         text: wants_text,
         struct_tags: no_tags
     )
-    stop_e = stage(emitted.diagnostics, s)
+    stop_e = stage(emitted.diagnostics, s, permissive: options.permissive)
 
     if !stop_e.is_err()
         return leave(stop_e.must(), stage_name: "the FFI check")
@@ -308,7 +322,7 @@ function to_unit(s: source.Source, options: Options, version: str, sources: str)
 
     if needs_main && emit.entry_point(p).is_err()
         one: [diag.Diagnostic] = [no_entry.told(s)]
-        stop_n = stage(one, s)
+        stop_n = stage(one, s, permissive: options.permissive)
 
         if !stop_n.is_err()
             return leave(stop_n.must(), stage_name: "the C emission")
@@ -347,7 +361,8 @@ test "the two stops, the hole refusal, and the missing main"
         sanitize: false,
         target: .program_build,
         headers_from: no_flags,
-        library: no_flags
+        library: no_flags,
+        permissive: false
     )
     s = source.new_source(name: "t.hero", text: "function main()\n    print(1)\n")
     got = to_unit(s, options, version: "0.0.0-test", sources: "0123456789abcdef")
@@ -377,7 +392,8 @@ test "the two stops, the hole refusal, and the missing main"
         sanitize: false,
         target: .program_build,
         headers_from: no_flags,
-        library: no_flags
+        library: no_flags,
+        permissive: false
     )
     holed = to_unit(hs, hopt, version: "0.0.0-test", sources: "0123456789abcdef")
 
@@ -402,7 +418,8 @@ test "the two stops, the hole refusal, and the missing main"
         sanitize: false,
         target: .tests_build,
         headers_from: no_flags,
-        library: no_flags
+        library: no_flags,
+        permissive: false
     )
     ts = source.new_source(
         name: "t.hero",

@@ -120,6 +120,7 @@ use suite_special
 use suite_surface
 use suite_units
 use suite_warnings
+use suite_control
 use suite_run
 use suite_unseen
 use strings
@@ -254,6 +255,20 @@ function main()
             exit(2)
         print(
             "  " + shown(name: "run", pick: pick) + ": " + report.counted(got.must())
+        )
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
+    # `control/` is `run/`'s question asked of Part 11's control arm: a program
+    # the strict build refuses, built with `--permissive` and run (panel 226).
+    if only == "" || only == "control"
+        got = suite_control.run_all(scratch: scratch, compiler: compiler, only: pick)
+
+        if got.is_err()
+            print("harness: the control/ suite could not run" + why(got))
+            exit(2)
+        print(
+            "  " + shown(name: "control", pick: pick) + ": " + report.counted(got.must())
         )
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
@@ -582,7 +597,7 @@ function main()
 # asked by the same hook about one issue file or one file the code cites a
 # defect in (`credit.hero`).
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "fixes", "annotations", "lldb", "layout", "records"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "fixes", "annotations", "lldb", "layout", "records"]
         if name == suite
             return true
 
@@ -592,7 +607,7 @@ function takes_cases(suite: str) -> bool
 # golden forms, `run` (defect 537) and `lldb`. `annotations`, `fixes` and `layout`
 # take a filter and no shard, `main` says why.
 function takes_shards(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "lldb"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "lldb"]
         if name == suite
             return true
 
@@ -811,6 +826,7 @@ test "the third word binds the suites that walk cases, records narrowed to a pat
     assert takes_cases("permissive")
     assert takes_cases("full")
     assert takes_cases("run")
+    assert takes_cases("control")
     assert takes_cases("fixes")
     assert takes_cases("layout")
     assert takes_cases("lldb")
@@ -830,7 +846,7 @@ test "a narrowed suite says so on its line"
     assert shown(name: "run", pick: "2/6") == "run (shard 2 of 6, its floor and skip ratio left to the whole suite)"
 
 test "a shard binds the suites whose cases are one list, and says why a word names none"
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "lldb"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "control", "lldb"]
         assert takes_shards(name)
         assert takes_cases(name)
 

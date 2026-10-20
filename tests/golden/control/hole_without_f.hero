@@ -1,0 +1,10 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `hole_without_f`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a string holding `{n}` without `f` prints its braces as text.
+# The witness is the compiler-engineer's (w16-hole_without_f), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function main()
+    n = 4
+    print("n is {n}")  #~ hole_without_f

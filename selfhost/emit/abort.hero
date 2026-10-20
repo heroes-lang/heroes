@@ -42,6 +42,52 @@ function must_stop(@w: writer.Writer, f: containers.Function, run: ir.Run)
             return
     writer.line(@w, text: "    hero_unreachable(); /* a must with no failure */")
 
+# A `match` that reached a case no arm names, in a program built with
+# `--permissive` (panel 226's R1): the tag and the cases' names, so the
+# runtime says `panic: this match has no arm for .dot` and never
+# `hero_unreachable`'s *this is a compiler bug*, which is false of a
+# program's own mistake.
+function unmatched_case_stop(@w: writer.Writer, f: containers.Function, run: ir.Run)
+    writer.at_generated(@w)
+    given = containers.args_of(f, run)
+    tag: str @= ""
+    names: str @= ""
+
+    if given.len() == 2
+        match given[0]
+            .value_arg v => tag @ mangle.value(v.value)
+            .inout_arg   => tag @ tag
+
+        match given[1]
+            .value_arg v => names @ mangle.value(v.value)
+            .inout_arg   => names @ names
+
+    if tag == "" || names == ""
+        writer.line(@w, text: "    hero_unreachable(); /* an unmatched case with no tag */")
+        return
+    writer.line(@w, text: "    hero_panic_unmatched_case(" + tag + ", " + names + ");")
+
+# The same for a `match` on an integer or a string that no arm took: the
+# value rendered as `print` renders it.
+function unmatched_value_stop(@w: writer.Writer, c: state.Checked, f: containers.Function, run: ir.Run)
+    writer.at_generated(@w)
+    given = containers.args_of(f, run)
+    shown: str @= ""
+
+    if given.len() == 1
+        match given[0]
+            .value_arg v =>
+                entry = builtins.to_str_entry(table.get(c.types, containers.value_type(f, v.value)))
+
+                if !entry.is_err()
+                    shown @ entry.must() + "(" + mangle.value(v.value) + ")"
+            .inout_arg => shown @ shown
+
+    if shown == ""
+        writer.line(@w, text: "    hero_unreachable(); /* an unmatched value with no rendering */")
+        return
+    writer.line(@w, text: "    hero_panic_unmatched_value(" + shown + ");")
+
 # assert (§4.18, spec § 12 Tests and holes: "shows the source expression and both
 # sides"). The IR carries three operands where the asserted expression
 # is a comparison and one where it is not, and each side is rendered

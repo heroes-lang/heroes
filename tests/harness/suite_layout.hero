@@ -474,11 +474,32 @@ constant CEILING: i64
 # `spread`, `opened`, `shut`, `one_line`, `part` and `element` calling
 # `spread` again), which Heroes refuses to cut into two modules (lane
 # b14-text, `a5fdcd0f`).
+# `selfhost/ir/flatten.hero` 1150 -> **1250** (panel 226's R1, 2026-10-20,
+# measured 1243 by `ceiling.code_lines`): Part 11's control arm builds and
+# runs, so the lowering gives the thesis rules the strict build refuses a
+# runtime meaning: a cell's re-declaration and shadow store the local
+# (`bind_stmt`, reading `rebinds`), a `()` binding binds nothing, and an
+# argument at an `@` parameter whose site wrote no `@` is lowered by the
+# declaration, a place or a held temporary, through one `one_argument` for
+# the five shapes an argument takes (the receiver's included), and a `match`
+# taken past every arm aborts naming the case or the value. The helpers
+# call `place` and `expr`, which this module alone holds, and a module of
+# their own would call back into it, the cycle Heroes refuses.
+# `selfhost/ir.hero` 315 -> **325** (measured 323) and
+# `selfhost/resolve/state.hero` 330 -> **350** (measured 349), and two new rows,
+# `selfhost/ir/build.hero` at **305** (measured 301) and `selfhost/cli/compile.hero`
+# at **305** (measured 302), each one field or one flag over the plain ceiling:
+# `permissive` on the resolver, the lowering and the compile options (panel
+# 226's R1, 2026-10-20):
+# two abort kinds for a `match` that a program built with `--permissive` takes
+# past every arm, and the scan `open_entry` falls back on once a shadow is told
+# and then bound, since the map names the last entry under a name and that
+# entry may stand in a closed scope while an outer one still binds it.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
         "selfhost/print/fmt.hero 1175"
-        "selfhost/ir/flatten.hero 1150"
+        "selfhost/ir/flatten.hero 1250"
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 550"
@@ -489,9 +510,11 @@ constant DECIDED: [str]
         "selfhost/emit/structural.hero 335"
         "selfhost/emit/gate.hero 365"
         "selfhost/resolve/cycles.hero 331"
-        "selfhost/resolve/state.hero 330"
+        "selfhost/resolve/state.hero 350"
+        "selfhost/ir/build.hero 305"
+        "selfhost/cli/compile.hero 305"
         "selfhost/emit/inst.hero 350"
-        "selfhost/ir.hero 315"
+        "selfhost/ir.hero 325"
         "selfhost/modules.hero 320"
         "selfhost/parse/use_line.hero 310"
         "selfhost/print/brackets.hero 315"
@@ -1152,7 +1175,7 @@ test "the ceiling is per file, and a decided file keeps its own"
     # **18 -> 19 on 2026-10-07**, batch 14: `print/brackets.hero` arrives for
     # defect 333's `shut`, an ADDITION, a knot the module doc maps. The reason
     # is above DECIDED.
-    assert DECIDED.len() == 19
+    assert DECIDED.len() == 21
 
 # DEFECT 209, held as a test (2026-10-04): a narrowed walk that selects no
 # module records nothing, where it read one pass, and one that selects a module

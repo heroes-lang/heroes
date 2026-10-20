@@ -197,3 +197,8 @@ test "the exempt directories are named nowhere in the walk"
         assert dir != "tests/golden/unsupported"
         assert dir != "tests/golden/permissive"
         assert dir != "tests/golden/full"
+
+        # and tests/golden/control since 2026-10-20 (panel 226): programs the
+        # strict build refuses, run by the control arm, three of them refused
+        # at parse, which `fmt` cannot read.
+        assert dir != "tests/golden/control"

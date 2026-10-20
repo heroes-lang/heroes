@@ -137,7 +137,8 @@ test "a refused round's question is asked of the real header (defect 152)"
         sanitize: false,
         target: .program_build,
         headers_from: none,
-        library: none
+        library: none,
+        permissive: false
     )
     art = compile.to_unit(s, options, version: "0.0.0-port", sources: "0123456789abcdef").must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
@@ -182,7 +183,8 @@ test "a refused round's questions are asked under the build's level and sanitize
         sanitize: false,
         target: .program_build,
         headers_from: none,
-        library: none
+        library: none,
+        permissive: false
     )
     art = compile.to_unit(s, options, version: "0.0.0-port", sources: "0123456789abcdef").must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
@@ -239,7 +241,8 @@ test "a refused round's question names the type the header gives a result and a 
         sanitize: false,
         target: .program_build,
         headers_from: none,
-        library: none
+        library: none,
+        permissive: false
     )
     art = compile.to_unit(s, options, version: "0.0.0-port", sources: "0123456789abcdef").must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()

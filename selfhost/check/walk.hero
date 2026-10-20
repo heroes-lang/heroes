@@ -1471,9 +1471,11 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             # §4.8: UFCS does not apply when the first parameter is @; and a
             # consuming parameter asks of the receiver what it asks of a
             # named argument (defect 629).
+            # Told and then typed all the same (panel 226's R1): the strict
+            # build stops at this stage's words, and the control arm, which
+            # drops them, lowers the call with its receiver lent as `@`.
             if markers.ufcs_hides_the_marker(decls, decl: t.at)
                 state.push_diagnostic(@c, data_errors.ufcs_on_mutable(name, called))
-                return state.error_ty_of(c)
             consuming.refuse_borrowed_dotted(@c, a, r, s, decl: decls[t.at], receiver: receiver, given: given)
             return user_call(
                 @c,

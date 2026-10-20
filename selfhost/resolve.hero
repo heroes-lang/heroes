@@ -43,12 +43,24 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
     asking: asked.Asking @= asked.new_asking()
     return resolve_asking(a, s, decls, uses, @asking)
 
+# The same as Part 11's control arm reads a program (panel 226's R1): a shadow
+# told and then bound. Every other reading, the compiler's own included, is
+# the strict one above; `cli/compile.hero` and `cli/check.hero` alone ask for
+# this, under `--permissive`.
+function resolve_as(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use], permissive: bool) -> resolved.Resolved
+    asking: asked.Asking @= asked.new_asking()
+    return resolve_within(a, s, decls, uses, @asking, permissive: permissive)
+
 # The same, the did-you-mean answering from `asking` and keeping its new
 # answers there, so a reading after this one asks no question this one
 # asked: `rename_fit.fits` reads each trial so (defect 386). The resolver
 # holds the one reference while it works, so the answers grow in place.
 function resolve_asking(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use], @asking: asked.Asking) -> resolved.Resolved
+    return resolve_within(a, s, decls, uses, @asking, permissive: false)
+
+function resolve_within(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use], @asking: asked.Asking, permissive: bool) -> resolved.Resolved
     r: state.Resolver @= state.new_resolver(expr_count: a.exprs.len(), type_count: a.types.len())
+    r.permissive @ permissive
     r.asking @ asking
     asking @ asked.new_asking()
 

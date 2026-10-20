@@ -417,7 +417,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ff70a8c02ddddcc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3cd0b3867c8f3871", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_ffiacarraymember_main();

@@ -1,0 +1,12 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `endless_recursion`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a function that always calls itself runs until the stack is exhausted and aborts loudly, `panic: stack exhausted`.
+# The witness is the compiler-engineer's (w17-endless_recursion), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function down(n: i64) -> i64
+    return down(n - 1)  #~ endless_recursion
+
+function main()
+    print(down(3))

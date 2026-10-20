@@ -1,0 +1,13 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `spaced_minus_element`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: `- 2` on a line of a list is a negative element, not a subtraction.
+# The witness is the compiler-engineer's (w15-spaced_minus_element), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function main()
+    xs = [
+        3
+        - 2  #~ spaced_minus_element
+    ]
+    print(xs.len())

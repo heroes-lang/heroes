@@ -1,0 +1,14 @@
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the
+# strict build refuses it under `shadowed_binding`, a thesis rule, and the control arm,
+# `build --permissive`, gives the dropped rule the meaning the sitting's
+# table pins: a binding shadowed in a block reads as the inner one inside the block and as the outer one after it (inner wins, as every permissive language reads it).
+# The witness is the compiler-engineer's (w09-shadowed_binding-immutable), one of 27 it ran before the
+# resolution was written (`docs/panel/226-reports/compiler-engineer.md`).
+
+function main()
+    x = 1
+
+    if true
+        x = 2  #~ shadowed_binding
+        print(x)
+    print(x)

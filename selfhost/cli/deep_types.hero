@@ -269,7 +269,8 @@ test "the debug information meets a type chain past the emitter's depth from its
         sanitize: false,
         target: .program_build,
         headers_from: none,
-        library: none
+        library: none,
+        permissive: false
     )
     unit = compile.to_unit(
         source.new_source(name: "t.hero", text: parts.join("\n")),

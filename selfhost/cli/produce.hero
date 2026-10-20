@@ -335,7 +335,8 @@ test "a failure that is not clang's refusal is not worded as one (defect 134)"
             sanitize: false,
             target: .program_build,
             headers_from: none,
-            library: none
+            library: none,
+            permissive: false
         )
         made = produce(path: "build/selftest_words.hero", s: s, options: options, t: t, version: "0.0.0-port")
         said = produced_failure(made)
@@ -394,7 +395,8 @@ test "kept texts a power cut zeroed are asked again, and the author's mistake is
         sanitize: false,
         target: .program_build,
         headers_from: none,
-        library: none
+        library: none,
+        permissive: false
     )
 
     # Each program its own `build/`, so what one zeroes the next does not.

@@ -189,6 +189,21 @@ function lent_param(decls: [ast.Decl], local: resolved.Local) -> bool
 function lent_at(a: ast.Ast, s: source.Source, decls: [ast.Decl], callee: i64?, at: i64) -> bool
     return !callee.is_err() && at_position(a, s, decls, decl: callee.must(), at: at)
 
+# Whether the parameter at `at` of `callee` is marked `@`. Read by the
+# lowering where a call site wrote no `@` and the parameter has one, which the
+# strict build refuses (`marker_mismatch`, `ufcs_on_mutable`) and Part 11's
+# control arm lowers as the declaration says (panel 226's R1: the parameter
+# decides, as C++'s `T&` and Pascal's `var` do).
+function marked_at(decls: [ast.Decl], callee: i64?, at: i64) -> bool
+    if callee.is_err()
+        return false
+
+    match decls[callee.must()].kind
+        .function_decl fd => return at >= 0 && at < fd.value.params.len() && fd.value.params[at].mutable
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false
+
 # Whether any function of the program declares a parameter lent read-only.
 function any_declared(a: ast.Ast, s: source.Source, decls: [ast.Decl]) -> bool
     for d in decls

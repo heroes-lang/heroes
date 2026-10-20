@@ -469,6 +469,12 @@ _Noreturn void hero_panic_must(HeroFailure f);
  * a side has no rendering (a record, an array). */
 _Noreturn void hero_panic_assert(HeroStr text);
 _Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right);
+/* A `match` built with `--permissive` that reached a case no arm names (panel 226):
+ * the case's index and the variant's cases joined by `,`, or the value as `print`
+ * renders it. The parameters are named with words the guard already keeps, so a
+ * group's macro named `tag` reaches no prototype here and no program's guard grows. */
+_Noreturn void hero_panic_unmatched_case(int64_t index, HeroStr text);
+_Noreturn void hero_panic_unmatched_value(HeroStr text);
 
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *
