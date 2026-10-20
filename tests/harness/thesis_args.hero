@@ -11,13 +11,14 @@
 # `--compiler <path>`. The run's flags: `--model <id>` (one or more), `--arm
 # strict|brief|control|all`, `--context spec|none|<path>` (one or more),
 # `--samples <n>`, `--turns <k>`, `--effort <e>`, `--max-tokens <n>`, `--layout
-# single|cached`, `--dialect anthropic|openai`, `--base <url>`, `--out <dir>`,
-# `--max-requests <n>`.
+# single|cached`, `--dialect anthropic|openai`, `--transport api|claude` (the
+# `claude -p` harness of `thesis_harness.hero`, in Anthropic's dialect alone),
+# `--base <url>`, `--out <dir>`, `--max-requests <n>`.
 
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--base url] [--out dir] | run <folder> ... --live [--max-requests n] | report <out> [--seed n] [--primary <sentence>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
+    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude] [--base url] [--out dir] | run <folder> ... --live [--max-requests n] | report <out> [--seed n] [--primary <sentence>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
 
 # The words of this program.
 constant WORDS: [str]
@@ -56,6 +57,7 @@ record Asked
     max_tokens: i64
     layout: str
     dialect: str
+    transport: str
     base: str
     out: str
     live: bool
@@ -110,7 +112,7 @@ function valued(flag: str, word: str) -> bool
     if flag == "--model" || flag == "--effort" || flag == "--max-tokens" || flag == "--dialect" || flag == "--base" || flag == "--out"
         return running || word == "canary-probe"
 
-    if flag == "--context" || flag == "--samples" || flag == "--turns" || flag == "--layout"
+    if flag == "--context" || flag == "--samples" || flag == "--turns" || flag == "--layout" || flag == "--transport"
         return running
 
     if flag == "--max-requests"
@@ -182,6 +184,12 @@ function parsed(word: str, words: [str]) -> Asked
     if (word == "plan" || word == "run" || word == "canary-probe") && a.models.len() == 0
         return wrong(word: word, why: "`" + word + "` takes at least one `--model <id>`")
 
+    if a.transport == "claude" && a.dialect != "anthropic"
+        return wrong(
+            word: word,
+            why: "`--transport claude` reads and answers in Anthropic's dialect; `--dialect openai` goes through the API"
+        )
+
     if word == "plan"
         a.live @ false
 
@@ -245,6 +253,10 @@ function took(@a: Asked, flag: str, value: str) -> str
         if value != "anthropic" && value != "openai"
             return "`--dialect` is `anthropic` or `openai`, not `" + value + "`"
         a.dialect @ value
+    else if flag == "--transport"
+        if value != "api" && value != "claude"
+            return "`--transport` is `api` or `claude`, not `" + value + "`"
+        a.transport @ value
     else if flag == "--base"
         a.base @ value
     else
@@ -277,6 +289,7 @@ function blank(word: str) -> Asked
         max_tokens: 32000,
         layout: "cached",
         dialect: "anthropic",
+        transport: "api",
         base: "",
         out: "",
         live: false,
@@ -465,4 +478,21 @@ test "canary-probe takes one folder and at least one model, sends nothing withou
     assert strings.contains(
         text: parsed(word: "canary-probe", words: ["tests/thesis", "--model", "m", "--turns", "3"]).wrong,
         needle: "no flag of `canary-probe`"
+    )
+
+test "`--transport claude` speaks Anthropic's dialect alone, and `api` is the default"
+    assert parsed(word: "run", words: ["tests/thesis", "--model", "m"]).transport == "api"
+    assert parsed(word: "run", words: ["tests/thesis", "--model", "m", "--transport", "claude"]).transport == "claude"
+    assert parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--transport", "claude"]).wrong == ""
+    assert strings.contains(
+        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--transport", "codex"]).wrong,
+        needle: "`--transport` is `api` or `claude`, not `codex`"
+    )
+    assert strings.contains(
+        text: parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--transport", "claude", "--dialect", "openai"]).wrong,
+        needle: "Anthropic's dialect"
+    )
+    assert strings.contains(
+        text: parsed(word: "dry", words: ["tests/thesis", "--transport", "claude"]).wrong,
+        needle: "`--transport` is no flag of `dry`"
     )

@@ -56,6 +56,7 @@ use strings
 use thesis_args
 use thesis_canary
 use thesis_grade
+use thesis_harness
 use thesis_mutants
 use thesis_prompt
 use thesis_report
@@ -336,12 +337,19 @@ function plan_word(scratch: str, asked: thesis_args.Asked) -> i64
 
     transport: issue_wire.Transport @= issue_wire.scripted()
 
+    world_scratch: str @= scratch
+
     if plan.live
-        if plan.dialect == "openai"
+        if plan.transport == "claude"
+            # The harness's sessions live beside the run's verdicts, so a run
+            # that stops and resumes continues the conversations it began.
+            transport @ thesis_harness.claude()
+            world_scratch @ plan.out + "/harness"
+        else if plan.dialect == "openai"
             transport @ thesis_wire.openai()
         else
             transport @ thesis_wire.anthropic()
-    world = issue_wire.world_of(scratch: scratch, script: [])
+    world = issue_wire.world_of(scratch: world_scratch, script: [])
     got = thesis_run.run(plan: plan, transport: transport, world: world, scratch: scratch, compiler: compiler.must())
 
     match got
@@ -382,12 +390,28 @@ function plan_of(asked: thesis_args.Asked, suite_sha: str, compiler: str, scratc
                 )
 
     base = base_of(asked)
+    harness: str @= ""
+
+    if asked.transport == "claude"
+        answered = shell.run(scratch: scratch, program: "claude", words: ["claude", "--version"])
+
+        if answered.is_err() || answered.must().code != 0
+            if asked.live
+                return fail(
+                    code: "no_harness",
+                    msg: "`--transport claude` runs `claude`, and `claude --version` did not answer on this machine"
+                )
+        else
+            harness @ strings.trimmed(answered.must().out)
     out: str @= asked.out
 
     if out == ""
         out @ "build/thesis-runs/" + suite_sha.slice(from: 0, to: 8)
+
+        if asked.transport == "claude"
+            out @ out + "-claude"
     return ok(
-        thesis_run.Plan(suite_dir: asked.paths[0], models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, base: base, out: out, live: asked.live, max_requests: asked.max_requests, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
+        thesis_run.Plan(suite_dir: asked.paths[0], models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, transport: asked.transport, harness: harness, base: base, out: out, live: asked.live, max_requests: asked.max_requests, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
     )
 
 # A plan with nothing in it, the cell `plan_word` fills from `plan_of`.
@@ -404,6 +428,8 @@ function blank_plan() -> thesis_run.Plan
         max_tokens: 0,
         layout: "",
         dialect: "",
+        transport: "",
+        harness: "",
         base: "",
         out: "",
         live: false,
@@ -594,3 +620,23 @@ function report_word(scratch: str, asked: thesis_args.Asked) -> i64
         .err e =>
             hero_write_err(text: "thesis: " + e.msg + "\n")
             return 2
+
+test "a plan through the harness names it and keeps its rows in a folder of their own"
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    api = plan_of(
+        asked: thesis_args.parsed(word: "plan", words: ["tests/thesis", "--model", "m"]),
+        suite_sha: "0123456789abcdef",
+        compiler: compiler,
+        scratch: scratch
+    ).must()
+    assert api.transport == "api"
+    assert api.out == "build/thesis-runs/01234567"
+    harness = plan_of(
+        asked: thesis_args.parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--transport", "claude"]),
+        suite_sha: "0123456789abcdef",
+        compiler: compiler,
+        scratch: scratch
+    ).must()
+    assert harness.transport == "claude"
+    assert harness.out == "build/thesis-runs/01234567-claude"

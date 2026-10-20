@@ -45,6 +45,10 @@ record Plan
     max_tokens: i64
     layout: str
     dialect: str
+    # `api`, or `claude` for the harness of `thesis_harness.hero`, and what
+    # `claude --version` said of it, "" for the API.
+    transport: str
+    harness: str
     base: str
     out: str
     live: bool
@@ -558,7 +562,7 @@ function provenance_json(plan: Plan, suite: thesis_tasks.Suite, template: thesis
         )
 
     return thesis_json.object(
-        [thesis_json.number(key: "schema", value: 1), thesis_json.member(key: "date", value: plan.date), thesis_json.member(key: "head", value: plan.head), thesis_json.member(key: "compiler", value: plan.compiler), thesis_json.member(key: "sources", value: plan.sources), thesis_json.member(key: "template", value: template.path), thesis_json.member(key: "template_sha", value: template.sha), thesis_json.member(key: "layout", value: plan.layout), thesis_json.member(key: "layout_sha", value: layout_sha), thesis_json.member(key: "dialect", value: plan.dialect), thesis_json.member(key: "base", value: plan.base), thesis_json.member(key: "suite", value: plan.suite_dir), thesis_json.member(key: "suite_sha", value: suite.sha), thesis_json.member(key: "suite_label", value: suite.label), thesis_json.raw(key: "contexts", json: thesis_json.list(named)), thesis_json.strings(key: "models", items: plan.models), thesis_json.member(key: "effort", value: plan.effort), thesis_json.number(key: "max_tokens", value: plan.max_tokens), thesis_json.strings(key: "arms", items: plan.arms), thesis_json.number(key: "samples", value: plan.samples), thesis_json.number(key: "turns", value: plan.turns), thesis_json.number(key: "case_seconds", value: plan.seconds), thesis_json.number(key: "case_bytes", value: plan.bytes)]
+        [thesis_json.number(key: "schema", value: 1), thesis_json.member(key: "date", value: plan.date), thesis_json.member(key: "head", value: plan.head), thesis_json.member(key: "compiler", value: plan.compiler), thesis_json.member(key: "sources", value: plan.sources), thesis_json.member(key: "template", value: template.path), thesis_json.member(key: "template_sha", value: template.sha), thesis_json.member(key: "layout", value: plan.layout), thesis_json.member(key: "layout_sha", value: layout_sha), thesis_json.member(key: "dialect", value: plan.dialect), thesis_json.member(key: "transport", value: plan.transport), thesis_json.member(key: "harness", value: plan.harness), thesis_json.member(key: "base", value: plan.base), thesis_json.member(key: "suite", value: plan.suite_dir), thesis_json.member(key: "suite_sha", value: suite.sha), thesis_json.member(key: "suite_label", value: suite.label), thesis_json.raw(key: "contexts", json: thesis_json.list(named)), thesis_json.strings(key: "models", items: plan.models), thesis_json.member(key: "effort", value: plan.effort), thesis_json.number(key: "max_tokens", value: plan.max_tokens), thesis_json.strings(key: "arms", items: plan.arms), thesis_json.number(key: "samples", value: plan.samples), thesis_json.number(key: "turns", value: plan.turns), thesis_json.number(key: "case_seconds", value: plan.seconds), thesis_json.number(key: "case_bytes", value: plan.bytes)]
     )
 
 test "the feedback is the template's block for the bucket, the compiler's words on a refusal, the example's where it compiled and failed it, and nothing past the example"
@@ -600,6 +604,8 @@ test "a dry run over the assistant's suite counts one request per generation and
         max_tokens: 32000,
         layout: "cached",
         dialect: "anthropic",
+        transport: "api",
+        harness: "",
         base: "https://api.anthropic.com",
         out: scratch + "/out",
         live: false,
@@ -651,6 +657,8 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
         max_tokens: 32000,
         layout: "cached",
         dialect: "anthropic",
+        transport: "api",
+        harness: "",
         base: "https://api.example",
         out: scratch + "/out",
         live: true,
@@ -710,6 +718,8 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
         max_tokens: 32000,
         layout: "cached",
         dialect: "anthropic",
+        transport: "api",
+        harness: "",
         base: "https://api.example",
         out: scratch + "/capped",
         live: true,
@@ -768,6 +778,8 @@ test "a run's provenance names the template and the layout apart, the suite, the
         max_tokens: 32000,
         layout: "cached",
         dialect: "anthropic",
+        transport: "api",
+        harness: "",
         base: "https://api.anthropic.com",
         out: "unused",
         live: true,
@@ -796,6 +808,8 @@ test "a run's provenance names the template and the layout apart, the suite, the
     assert json_fields.text_at(of: read, name: "sources").default("") == "7792ecfe50a531e8"
     assert strings.contains(text: text, needle: "\"models\":[\"claude-sonnet-5-5\"]")
     assert strings.contains(text: text, needle: "\"arms\":[\"strict\",\"control\"]")
+    assert json_fields.text_at(of: read, name: "transport").default("") == "api"
+    assert json_fields.text_at(of: read, name: "harness").default("x") == ""
     assert strings.contains(text: text, needle: "\"sha\":\"" + spec.spec_sha + "\"")
 
 # A plan of the tests below: one model, the `none` context, the folder given.
@@ -811,6 +825,8 @@ function test_plan(dir: str, out: str, arms: [str]) -> Plan
         max_tokens: 32000,
         layout: "cached",
         dialect: "anthropic",
+        transport: "api",
+        harness: "",
         base: "https://api.example",
         out: out,
         live: true,

@@ -29,6 +29,9 @@
 # report names the pre-registered primary and calls every other row
 # exploratory, so no number is picked after the fact.
 
+use json_fields
+use json_read
+use shell
 use strings
 use thesis_stats
 use thesis_verdict
@@ -55,13 +58,33 @@ function report(scratch: str, out: str, seed: i64, primary: str) -> str?
         verdicts @ verdicts.push(thesis_verdict.read_verdict(text)?)
 
     write_file(path: out + "/verdicts.jsonl", text: texts.join("\n") + "\n")?
-    return ok(rendered(verdicts: verdicts, seed: seed, primary: primary))
+    return ok(rendered(verdicts: verdicts, seed: seed, primary: primary, through: asked_through(out)))
 
-function rendered(verdicts: [thesis_verdict.Verdict], seed: i64, primary: str) -> str
+# What the rows were asked through, as the run's `provenance.json` names it:
+# a harness's rows are a table of their own and never pooled with the API's
+# (panel 226's R9), so the report says which it is before its first table.
+function asked_through(out: str) -> str
+    held = read_file(path: out + "/provenance.json")
+
+    if held.is_err()
+        return "Asked through a transport no `provenance.json` names."
+    doc = json_read.read_json(held.must())
+
+    if doc.is_err()
+        return "Asked through a transport `provenance.json` does not say: it does not read as JSON."
+    transport = json_fields.text_at(of: doc.must(), name: "transport").default("api")
+
+    if transport == "claude"
+        return "Asked through the `claude -p` harness (" + json_fields.text_at(of: doc.must(), name: "harness").default("") + "), panel 226's route C: a table of its own, never pooled with the API's rows."
+    return "Asked through the API."
+
+function rendered(verdicts: [thesis_verdict.Verdict], seed: i64, primary: str, through: str) -> str
     lines: [str] @= [
         "## What the run read"
         ""
         verdicts.len().to_str() + " verdicts under `samples/`, joined into `verdicts.jsonl`; the bootstrap's seed is " + seed.to_str() + ", " + ROUNDS.to_str() + " resamples over the tasks."
+        ""
+        through
         ""
     ]
     groups = grouped(verdicts)
@@ -433,7 +456,8 @@ test "the report groups verdicts, counts greens by turn and buckets, and pairs t
     text = rendered(
         verdicts: verdicts,
         seed: 7,
-        primary: "strict minus control on claude-haiku-5-5 in the spec context"
+        primary: "strict minus control on claude-haiku-5-5 in the spec context",
+        through: "Asked through the API."
     )
     assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 6 | 4 | 4 | 4 | 4 |")
     assert strings.contains(text: text, needle: "| claude-haiku-5-5 | control | 21226405 | 6 | 0 | 2 | 2 | 2 |")
@@ -489,7 +513,8 @@ test "the excluded leave n and the pairs, silence is read by turn 3, and the mes
         verdict_turns(task: "task3aaaaaaaaaa", arm: "brief", outcomes: ["compiled_wrong"])
         verdict_turns(task: "task3aaaaaaaaaa", arm: "control", outcomes: ["abort"])
     ]
-    text = rendered(verdicts: verdicts, seed: 7, primary: "the test's")
+    text = rendered(verdicts: verdicts, seed: 7, primary: "the test's", through: "Asked through the API.")
+    assert strings.contains(text: text, needle: "resamples over the tasks.\n\nAsked through the API.\n\n")
 
     # The strict arm: four samples, one lost, so n is three and two are green.
     assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 3 | 1 | 2 | 2 | 2 |")
@@ -546,7 +571,7 @@ test "the flow counts every sample once by how far its last turn got, a build re
         verdict_turns(task: "task8aaaaaaaaaa", arm: "strict", outcomes: ["compile_error", "cases_pass"])
         verdict_turns(task: "task9aaaaaaaaaa", arm: "strict", outcomes: ["something_else"])
     ]
-    text = rendered(verdicts: verdicts, seed: 7, primary: "the test's")
+    text = rendered(verdicts: verdicts, seed: 7, primary: "the test's", through: "Asked through the API.")
 
     # Ten attempted; seven answered (two left out, one unnamed); six extracted
     # (no program); four compiled (a refusal, a build refused); three ran to an
@@ -562,5 +587,25 @@ test "the flow counts every sample once by how far its last turn got, a build re
     assert stage_of("something_else") == -1
     assert stage_of("cases_pass") == 5
 
-    clean = rendered(verdicts: [verdicts[8]], seed: 7, primary: "the test's")
+    clean = rendered(verdicts: [verdicts[8]], seed: 7, primary: "the test's", through: "Asked through the API.")
     assert strings.contains(text: clean, needle: "None: no program `check` accepted was refused by `build`")
+
+test "the report says what its rows were asked through, from the run's provenance, and says so where none names it"
+    scratch = shell.own_scratch()
+    assert asked_through(scratch) == "Asked through a transport no `provenance.json` names."
+    write_file(
+        path: scratch + "/provenance.json",
+        text: "{\"transport\":\"claude\",\"harness\":\"2.1.292 (Claude Code)\"}"
+    ).must()
+    assert strings.contains(
+        text: asked_through(scratch),
+        needle: "the `claude -p` harness (2.1.292 (Claude Code)), panel 226's route C"
+    )
+    write_file(path: scratch + "/provenance.json", text: "{\"transport\":\"api\"}").must()
+    assert asked_through(scratch) == "Asked through the API."
+
+    # A run's provenance from before the field was written was the API's, the one transport there was.
+    write_file(path: scratch + "/provenance.json", text: "{\"schema\":1}").must()
+    assert asked_through(scratch) == "Asked through the API."
+    write_file(path: scratch + "/provenance.json", text: "not json").must()
+    assert strings.contains(text: asked_through(scratch), needle: "does not read as JSON")

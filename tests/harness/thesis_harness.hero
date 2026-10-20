@@ -1,0 +1,498 @@
+# THE HARNESS TRANSPORT: a model asked through its maker's command-line
+# harness, `claude -p`, rather than through its API (M-thesis-harness,
+# 2026-10-20; panel 226's R9, issue 2161).
+#
+# A value of `issue_wire.Transport` like the API's, so `thesis_run` drives it
+# unchanged: it reads the Anthropic request the run would send and answers
+# with a body in the API's shape, which `thesis_answer.read_anthropic` reads.
+# What the child is given, and how, each one of the sitting's conditions:
+#
+# - **the prompt on stdin, from a file**, so its end is certain: on the first
+#   turn the request's system text and its user message, a blank line
+#   between, the bytes the API's row sends; the harness's own system prompt
+#   stays, since it is what a harness row measures;
+# - **`--bare`**, so no hook, plugin, MCP server, memory or `CLAUDE.md` of
+#   the machine is read, and the one credential is `ANTHROPIC_API_KEY`: a
+#   `claude -p` row is R9's route C, on the API's terms and paid like the
+#   API's rows (`claude --help`, version 2.1.292, and the headless page, both
+#   read 2026-10-20);
+# - **`--tools ""`**, which disables every tool, `--bare` leaving Bash and
+#   the file tools on;
+# - **`--output-format json`**, one result object (`SDKResultMessage`);
+# - **spawned by `run_bounded`** with `HARNESS_SECONDS` of its own, through
+#   `sh -c 'cd "$1" && HOME="$2" ...'`, so the child is one process in an
+#   empty folder with a home of its own;
+# - **refused before any child** where the key is not set, or where `command
+#   -v heroes` answers in the child's PATH.
+#
+# **A later turn resumes the session of the turn before it, forked**
+# (`--resume <id> --fork-session`), with the new message alone on stdin, so
+# two arms whose history is the same bytes start from one session and never
+# see each other's turns. The session a turn answered is filed under the
+# digest of the history it closes, the system text and every message's role
+# and text, each written with its length; the next turn's request
+# reproduces it from its own messages. The sessions live under the world's
+# scratch, which a live harness run places under its `--out`, so a run that
+# stops and resumes finds them.
+#
+# What the harness does not take: a token ceiling, which none of its flags
+# sets, and session persistence's refusal, `--no-session-persistence`, since
+# a later turn resumes a saved session. The model it answers with is read
+# from `modelUsage` where it names one, else the request's.
+
+use issue_wire
+use json_fields
+use json_read
+use shell
+use strings
+use thesis_answer
+use thesis_grade
+use thesis_json
+use thesis_sha256
+use thesis_wire
+
+constant CLAUDE: str
+    "claude"
+
+# Seconds a harness child may run: the watchdog's own, the most `run_bounded`
+# grants any spawn of this harness.
+constant HARNESS_SECONDS: i64
+    600
+
+# Bytes a harness child may write: one result object, an answer and its
+# accounting, far below this.
+constant HARNESS_BYTES: i64
+    4194304
+
+# The child's start, R9's own words: one process in the folder `$1` with the
+# home `$2`, the harness's words after them.
+constant SPAWN: str
+    "cd \"$1\" && HOME=\"$2\" && export HOME && shift 2 && exec \"$@\""
+
+# One message of a request: who said it, and its text.
+record Said
+    role: str
+    text: str
+
+# What a harness is asked: the model and the effort the request names, its
+# system text, and its messages.
+record Asked
+    model: str
+    effort: str
+    system: str
+    said: [Said]
+
+function claude() -> issue_wire.Transport
+    return issue_wire.Transport(send: claude_sent, pause: issue_wire.slept)
+
+function claude_sent(world: issue_wire.World, request: issue_wire.Request) -> issue_wire.Answered
+    why = refused(key_set: thesis_wire.key_present(thesis_wire.ANTHROPIC_KEY), guard: path_guard(world.scratch))
+
+    if why != ""
+        return issue_wire.Answered(world: world, reply: issue_wire.failed(why: why, sent: false))
+    return harness_sent(world: world, request: request, program: CLAUDE)
+
+# Why no child may start, or "": the key first, then the child's PATH.
+function refused(key_set: bool, guard: str) -> str
+    if !key_set
+        return thesis_wire.ANTHROPIC_KEY + " is not set in the environment, and `claude -p --bare` reads no other credential"
+    return guard
+
+# "" where `heroes` is on no folder of the PATH a child inherits, else why the
+# run stops: a harness with a tool could run the compiler, and a guard that
+# cannot ask refuses as one that found it.
+function path_guard(scratch: str) -> str
+    asked = shell.run(scratch: scratch, program: "sh", words: ["sh", "-c", "command -v heroes"])
+
+    match asked
+        .ok r =>
+            if r.code == 0
+                return "`command -v heroes` answers " + strings.trimmed(r.out) + " in the PATH a harness child inherits; run it from a shell whose PATH holds no compiler"
+            return ""
+        .err e => return "the PATH a harness child inherits could not be asked for `heroes`: " + e.msg
+
+# The request a run would send the API, read: its model, its effort, its
+# system text, and its messages, the last of which is the user's.
+function asked_of(body: str) -> Asked?
+    doc = json_read.read_json(body)?
+    model = json_fields.text_at(of: doc, name: "model")?
+    system: str @= ""
+    held = json_fields.field(of: doc, name: "system")
+
+    if !held.is_err()
+        system @ text_of(held.must())?
+    effort: str @= ""
+    config = json_fields.field(of: doc, name: "output_config")
+
+    if !config.is_err()
+        effort @ json_fields.text_at(of: config.must(), name: "effort").default("")
+    said: [Said] @= []
+
+    for one in json_fields.items_of(json_fields.field(of: doc, name: "messages")?)?
+        said @ said.push(
+            Said(role: json_fields.text_at(of: one, name: "role")?, text: text_of(json_fields.field(of: one, name: "content")?)?)
+        )
+
+    if said.len() == 0 || said[said.len() - 1].role != "user"
+        return fail(code: "bad_request", msg: "a harness is asked a request whose last message is the user's")
+    return ok(Asked(model: model, effort: effort, system: system, said: said))
+
+# A content's text: a string as it is, or the text blocks of an array joined.
+function text_of(content: json_read.Json) -> str?
+    match content
+        .text t => return ok(t.v)
+        .items l =>
+            texts: [str] @= []
+
+            for block in l.all
+                if json_fields.text_at(of: block, name: "type")? == "text"
+                    texts @ texts.push(json_fields.text_at(of: block, name: "text")?)
+
+            return ok(texts.join(""))
+        .null_value | .truth _ | .number _ | .fields _ => return fail(
+            code: "bad_request",
+            msg: "a content is a string or an array of blocks"
+        )
+
+# What the child reads on stdin: on the first turn the system text and the
+# user's message, a blank line between; on a later one the new message alone,
+# the resumed session holding the rest.
+function prompt_of(asked: Asked) -> str
+    last = asked.said[asked.said.len() - 1].text
+
+    if asked.said.len() > 1 || asked.system == ""
+        return last
+    return asked.system + "\n\n" + last
+
+# The digest a session is filed under: the system text and every message's
+# role and text, each written with its length so no two histories meet.
+function history_key(system: str, said: [Said]) -> str
+    parts: [str] @= [framed(system)]
+
+    for one in said
+        parts @ parts.push(framed(one.role)).push(framed(one.text))
+
+    return thesis_sha256.of(parts.join(""))
+
+function framed(text: str) -> str
+    return text.len().to_str() + ":" + text
+
+# The harness's words: print mode, nothing of the machine, no tool, one JSON
+# result, the model the request names, its effort where it names one, and on
+# a later turn the session it continues, forked.
+function claude_words(program: str, model: str, effort: str, resume: str) -> [str]
+    words: [str] @= [program, "-p", "--bare", "--tools", "", "--output-format", "json", "--model", model]
+
+    if effort != ""
+        words @ words.push("--effort").push(effort)
+
+    if resume != ""
+        words @ words.push("--resume").push(resume).push("--fork-session")
+    return words
+
+function sessions_of(scratch: str) -> str
+    return scratch + "/harness-sessions"
+
+# One request through the harness `program`: the session it continues found,
+# the child spawned with the prompt on stdin, and its result read back in
+# the API's shape. `claude_sent` names the real program; the tests a
+# stand-in that prints a recorded result.
+function harness_sent(world: issue_wire.World, request: issue_wire.Request, program: str) -> issue_wire.Answered
+    w: issue_wire.World @= world
+    w.requests @ w.requests.push(request)
+    read = asked_of(request.body)
+
+    if read.is_err()
+        return issue_wire.Answered(world: w, reply: issue_wire.failed(why: refusal_of(read), sent: false))
+    asked = read.must()
+    resume: str @= ""
+
+    if asked.said.len() > 1
+        key = history_key(system: asked.system, said: asked.said.slice(from: 0, to: asked.said.len() - 1))
+        found = read_file(path: sessions_of(w.scratch) + "/" + key)
+
+        if found.is_err()
+            return issue_wire.Answered(
+                world: w,
+                reply: issue_wire.failed(why: "no harness session answered the history this turn continues (" + key.slice(from: 0, to: 12) + ")", sent: false)
+            )
+        resume @ strings.trimmed(found.must())
+    ran = spawned(scratch: w.scratch, program: program, asked: asked, resume: resume, n: w.requests.len())
+
+    match ran
+        .ok r  => return issue_wire.Answered(world: w, reply: replied(scratch: w.scratch, asked: asked, ran: r))
+        .err e => return issue_wire.Answered(world: w, reply: issue_wire.failed(why: e.msg, sent: false))
+
+function refusal_of(read: Asked?) -> str
+    return match read
+        .ok _  => ""
+        .err e => e.msg
+
+# The child run: its folder and its home made under the scratch, absolute,
+# the prompt written to a file it reads on stdin and removed after.
+function spawned(scratch: str, program: str, asked: Asked, resume: str, n: i64) -> shell.Run?
+    cwd = thesis_grade.absolute(scratch: scratch, path: scratch + "/harness-cwd")?
+    home = thesis_grade.absolute(scratch: scratch, path: scratch + "/harness-home")?
+    shell.mkdir_all(cwd)?
+    shell.mkdir_all(home)?
+    prompt_path = scratch + "/harness-prompt-" + shell.pid().to_str() + "-" + n.to_str() + ".txt"
+    write_file(path: prompt_path, text: prompt_of(asked))?
+    words: [str] @= ["sh", "-c", SPAWN, "sh", cwd, home]
+
+    for word in claude_words(program: program, model: asked.model, effort: asked.effort, resume: resume)
+        words @ words.push(word)
+
+    ran = shell.run_bounded(
+        scratch: scratch,
+        program: "sh",
+        words: words,
+        seconds: HARNESS_SECONDS,
+        bytes: HARNESS_BYTES,
+        stdin_path: prompt_path
+    )
+    _ = shell.remove_tree(prompt_path).is_err()
+    return ran
+
+# The child's result read: an answer in the API's shape, its session filed
+# under the history it closes, or a failure that may have been sent and paid.
+function replied(scratch: str, asked: Asked, ran: shell.Run) -> issue_wire.Reply
+    doc = json_read.read_json(strings.trimmed(ran.out))
+
+    if doc.is_err()
+        return issue_wire.failed(
+            why: "the harness exited " + ran.code.to_str() + " with no result object" + shell.said_on_stderr(ran.err),
+            sent: true
+        )
+    result = doc.must()
+    kind = json_fields.text_at(of: result, name: "subtype").default("")
+    text = json_fields.text_at(of: result, name: "result").default("")
+
+    if ran.code != 0 || kind != "success" || flagged(of: result, name: "is_error")
+        return issue_wire.failed(
+            why: "the harness answered `" + kind + "`, exit " + ran.code.to_str() + ": " + said_of(result),
+            sent: true
+        )
+    session = json_fields.text_at(of: result, name: "session_id").default("")
+
+    if session == ""
+        return issue_wire.failed(why: "the harness's result names no session", sent: true)
+    turns: [Said] @= asked.said
+    turns @ turns.push(Said(role: "assistant", text: text))
+    filed = filed_session(scratch: scratch, key: history_key(system: asked.system, said: turns), session: session)
+
+    if filed != ""
+        return issue_wire.failed(why: filed, sent: true)
+    none: {str: str} = {}
+    return issue_wire.Reply(
+        status: 200,
+        headers: none,
+        body: api_body(asked: asked, result: result, text: text, session: session),
+        failure: "",
+        sent: true
+    )
+
+function filed_session(scratch: str, key: str, session: str) -> str
+    made = shell.mkdir_all(sessions_of(scratch))
+
+    if made.is_err()
+        return "the sessions' folder " + sessions_of(scratch) + " cannot be made"
+    put = write_file(path: sessions_of(scratch) + "/" + key, text: session + "\n")
+
+    if put.is_err()
+        return "the session " + session + " could not be filed"
+    return ""
+
+function flagged(of: json_read.Json, name: str) -> bool
+    match json_fields.field(of: of, name: name)
+        .ok held =>
+            match held
+                .truth t                                                 => return t.v
+                .null_value | .number _ | .text _ | .items _ | .fields _ => return false
+        .err _ => return false
+
+# What a failed result says: its `errors`, else its `result`, else nothing.
+function said_of(result: json_read.Json) -> str
+    listed = json_fields.field(of: result, name: "errors")
+
+    if !listed.is_err()
+        items = json_fields.items_of(listed.must())
+
+        if !items.is_err()
+            told: [str] @= []
+
+            for one in items.must()
+                match one
+                    .text t                                                   => told @ told.push(t.v)
+                    .null_value | .truth _ | .number _ | .items _ | .fields _ => _ = 0
+
+            if told.len() > 0
+                return told.join("; ")
+    return json_fields.text_at(of: result, name: "result").default("(nothing said)")
+
+# The answer as the API would have written it: the session as its id, the
+# model `modelUsage` names or the one asked, the text as one block, the stop
+# reason, and the usage's four counts.
+function api_body(asked: Asked, result: json_read.Json, text: str, session: str) -> str
+    usage = json_fields.field(of: result, name: "usage").default(.null_value)
+    stop: str @= json_fields.text_at(of: result, name: "stop_reason").default("")
+
+    if stop == ""
+        stop @ "end_turn"
+    block = thesis_json.object(
+        [thesis_json.member(key: "type", value: "text"), thesis_json.member(key: "text", value: text)]
+    )
+    counts = thesis_json.object(
+        [thesis_json.number(key: "input_tokens", value: count(of: usage, name: "input_tokens")), thesis_json.number(key: "output_tokens", value: count(of: usage, name: "output_tokens")), thesis_json.number(key: "cache_read_input_tokens", value: count(of: usage, name: "cache_read_input_tokens")), thesis_json.number(key: "cache_creation_input_tokens", value: count(of: usage, name: "cache_creation_input_tokens"))]
+    )
+    return thesis_json.object(
+        [thesis_json.member(key: "id", value: session), thesis_json.member(key: "model", value: answering(result: result, asked: asked.model)), thesis_json.raw(key: "content", json: thesis_json.list([block])), thesis_json.member(key: "stop_reason", value: stop), thesis_json.raw(key: "usage", json: counts)]
+    )
+
+function count(of: json_read.Json, name: str) -> i64
+    return json_fields.whole_at(of: of, name: name).default(0)
+
+# The model that answered: the first `modelUsage` names, else the one asked.
+function answering(result: json_read.Json, asked: str) -> str
+    match json_fields.field(of: result, name: "modelUsage")
+        .ok held =>
+            match held
+                .fields f =>
+                    if f.names.len() > 0
+                        return f.names[0]
+                    return asked
+                .null_value | .truth _ | .number _ | .text _ | .items _ => return asked
+        .err _ => return asked
+
+test "the harness's words: print mode, nothing of the machine, no tool, one JSON result, and a later turn's session forked"
+    first = claude_words(program: "claude", model: "claude-haiku-5-5", effort: "", resume: "")
+    assert first == ["claude", "-p", "--bare", "--tools", "", "--output-format", "json", "--model", "claude-haiku-5-5"]
+    later = claude_words(program: "claude", model: "m", effort: "high", resume: "s1")
+    assert strings.contains(text: later.join(" "), needle: "--effort high --resume s1 --fork-session")
+    assert !strings.contains(text: later.join(" "), needle: "--no-session-persistence")
+
+    for word in later
+        assert !strings.contains(text: word, needle: "sk-")
+
+test "a request is read back to its model, effort, system text and messages, and the prompt is a first turn whole or a later turn's message"
+    asked = asked_of(request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK")]).body).must()
+    assert asked.model == "m"
+    assert asked.effort == "low"
+    assert asked.system == "SPEC"
+    assert asked.said.len() == 1
+    assert prompt_of(asked) == "SPEC\n\nTASK"
+    turn = "{\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"x\"},{\"type\":\"text\",\"text\":\"ANSWER\"}]}"
+    later = asked_of(
+        request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK"), turn, thesis_answer.user_turn("FEEDBACK")]).body
+    ).must()
+    assert later.said[1].text == "ANSWER"
+    assert prompt_of(later) == "FEEDBACK"
+    assert prompt_of(asked_of(request_of(system: "", messages: [thesis_answer.user_turn("TASK")]).body).must()) == "TASK"
+    assert asked_of(request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK"), turn]).body).is_err()
+
+test "a history's digest moves with any part and frames each part by its length"
+    a = [Said(role: "user", text: "ab"), Said(role: "assistant", text: "c")]
+    b = [Said(role: "user", text: "a"), Said(role: "assistant", text: "bc")]
+    assert history_key(system: "S", said: a) == history_key(system: "S", said: a)
+    assert history_key(system: "S", said: a) != history_key(system: "S", said: b)
+    assert history_key(system: "S", said: a) != history_key(system: "", said: a)
+    assert history_key(system: "S", said: a).len() == 64
+
+test "a harness run is refused for a missing key first, then for a compiler on the child's PATH"
+    assert strings.contains(text: refused(key_set: false, guard: ""), needle: "ANTHROPIC_API_KEY is not set")
+    assert refused(key_set: false, guard: "found") == refused(key_set: false, guard: "")
+    assert refused(key_set: true, guard: "") == ""
+    assert refused(key_set: true, guard: "found") == "found"
+
+test "a stand-in harness answers two arms over three turns: the first from the prompt, each later one forked from its history's session"
+    if !shell.can_run_scripts()
+        print("SKIP thesis_harness: this machine runs no /bin/sh script")
+        return
+
+    scratch = shell.own_scratch()
+    here = thesis_grade.absolute(scratch: scratch, path: scratch).must()
+    state = here + "/state"
+    shell.mkdir_all(state).must()
+    program = here + "/claude"
+    write_file(path: program, text: stand_in(state)).must()
+    assert shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", program]).must().code == 0
+    first = harness_sent(
+        world: issue_wire.world_at(here + "/out"),
+        request: request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK")]),
+        program: program
+    )
+    assert first.reply.status == 200
+    one = thesis_answer.read_anthropic(first.reply.body).must()
+    assert one.text == "answer 1"
+    assert one.id == "s1"
+    assert one.model == "claude-haiku-5-5-20261001"
+    assert one.input == 10
+    assert one.cache_read == 2
+    assert read_file(path: state + "/stdin-1").must() == "SPEC\n\nTASK"
+    assert strings.contains(
+        text: read_file(path: state + "/args-1").must(),
+        needle: "-p\n--bare\n--tools\n\n--output-format\njson\n--model\nm\n--effort\nlow\n"
+    )
+    assert !strings.contains(text: read_file(path: state + "/args-1").must(), needle: "--resume")
+    assert strings.trimmed(read_file(path: state + "/pwd-1").must()) == here + "/out/harness-cwd"
+    assert strings.trimmed(read_file(path: state + "/home-1").must()) == here + "/out/harness-home"
+
+    # Two arms continue one history: each resumes the first session, forked.
+    a = harness_sent(
+        world: first.world,
+        request: request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK"), one.turn, thesis_answer.user_turn("FEEDBACK A")]),
+        program: program
+    )
+    b = harness_sent(
+        world: a.world,
+        request: request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK"), one.turn, thesis_answer.user_turn("FEEDBACK B")]),
+        program: program
+    )
+    assert read_file(path: state + "/stdin-2").must() == "FEEDBACK A"
+    assert strings.contains(text: read_file(path: state + "/args-2").must(), needle: "--resume\ns1\n--fork-session\n")
+    assert strings.contains(text: read_file(path: state + "/args-3").must(), needle: "--resume\ns1\n--fork-session\n")
+    two = thesis_answer.read_anthropic(a.reply.body).must()
+
+    # The first arm's third turn resumes its own second session.
+    c = harness_sent(
+        world: b.world,
+        request: request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK"), one.turn, thesis_answer.user_turn("FEEDBACK A"), two.turn, thesis_answer.user_turn("AGAIN")]),
+        program: program
+    )
+    assert c.reply.status == 200
+    assert strings.contains(text: read_file(path: state + "/args-4").must(), needle: "--resume\ns2\n--fork-session\n")
+
+    # A history no session answered spawns nothing and sends nothing.
+    never = "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"never said\"}]}"
+    lost = harness_sent(
+        world: c.world,
+        request: request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK"), never, thesis_answer.user_turn("X")]),
+        program: program
+    )
+    assert lost.reply.status == 0
+    assert !lost.reply.sent
+    assert strings.trimmed(read_file(path: state + "/count").must()) == "4"
+
+    # A failed result may have been paid, and says why.
+    write_file(path: state + "/fail", text: "").must()
+    failed = harness_sent(
+        world: lost.world,
+        request: request_of(system: "SPEC", messages: [thesis_answer.user_turn("OTHER")]),
+        program: program
+    )
+    assert failed.reply.status == 0
+    assert failed.reply.sent
+    assert strings.contains(text: failed.reply.failure, needle: "the API answered 529")
+
+function request_of(system: str, messages: [str]) -> issue_wire.Request
+    return issue_wire.Request(
+        method: "POST",
+        path: "harness",
+        accept: "",
+        body: thesis_answer.anthropic_request(model: "m", max_tokens: 32000, effort: "low", system: system, messages: messages)
+    )
+
+# A `claude` that counts its calls, keeps each one's arguments, folder, home
+# and stdin under `state`, and prints a result in the documented shape, or a
+# failed one where `state/fail` exists.
+function stand_in(state: str) -> str
+    return ["#!/bin/sh", "state='" + state + "'", "n=$(( $(cat \"$state/count\" 2>/dev/null || echo 0) + 1 ))", "echo \"$n\" > \"$state/count\"", "printf '%s\\n' \"$@\" > \"$state/args-$n\"", "pwd > \"$state/pwd-$n\"", "printf '%s\\n' \"$HOME\" > \"$state/home-$n\"", "cat > \"$state/stdin-$n\"", "if [ -f \"$state/fail\" ]; then printf '%s' '{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true,\"session_id\":\"x\",\"errors\":[\"the API answered 529\"],\"usage\":{}}'; exit 1; fi", "printf '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"answer %s\",\"session_id\":\"s%s\",\"stop_reason\":\"end_turn\",\"num_turns\":1,\"total_cost_usd\":0.01,\"usage\":{\"input_tokens\":10,\"output_tokens\":5,\"cache_read_input_tokens\":2,\"cache_creation_input_tokens\":0},\"modelUsage\":{\"claude-haiku-5-5-20261001\":{\"inputTokens\":10}}}' \"$n\" \"$n\""].join("\n") + "\n"
