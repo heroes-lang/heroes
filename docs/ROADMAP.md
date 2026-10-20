@@ -14,8 +14,8 @@ preamble and its items).
 
 | | |
 |---|---|
-| **Current milestone** | none **OPEN** since M-witnessed-seed's close, 2026-10-18. Rows 70 and 71, **M-thesis-harness** and **M-rechecked-issues**, stay `scheduled` |
-| **Next** | M-thesis-harness beside M-rechecked-issues in two lanes. The formatter's probe over `tests` in the `bracket` family cannot end (defect 2139); every other run M-inferred-cell's and M-readonly-lend's changes to `selfhost/print/` owed read exit 0 ([067](records/journal/067-readonly-lend.md)) |
+| **Current milestone** | **M-thesis-harness**, row 70, **OPEN** since 2026-10-20 ([its page](roadmap/milestones/M-thesis-harness.md)): design.md Part 11's metrics 2 and 4 run for the first time, by a program of the harness, in one lane; row 71, **M-rechecked-issues**, stays `scheduled` for the lane beside it |
+| **Next** | M-rechecked-issues in a lane beside M-thesis-harness. The formatter's probe over `tests` in the `bracket` family cannot end (defect 2139); every other run M-inferred-cell's and M-readonly-lend's changes to `selfhost/print/` owed read exit 0 ([067](records/journal/067-readonly-lend.md)) |
 | **Last closed** | **M-witnessed-seed**, 2026-10-18 ([068](records/journal/068-witnessed-seed.md)) — the seed witnessed by a second implementation: the Rust bootstrap, rebuilt from its archive, emitted the first seed again byte for byte and every seed since was rebuilt from the one before it, 39 of 39; gcc builds the seed beside clang; every refresh since names in a `Seed-link:` trailer the route by which the seed before it rebuilds it, and the CI takes it; and the bootstrap left the tree, kept at `m-bootstrap-archive`, its citations followed there · before it **M-readonly-lend** ([067](records/journal/067-readonly-lend.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **69** of 91 · **69** tags matching `m*`, the legacy `m0`-`m8` included; `m-witnessed-seed` placed 2026-10-19 over a clean list, once panel 225's landing closed defects 2136 and 2137 ([068](records/journal/068-witnessed-seed.md)) |
 | The compiler | **176,098** lines of Heroes in **678** modules (`find selfhost -name '*.hero'`) · the seed **263,383** lines of C, 26,240,524 bytes, in panel 219's s4 shape (56,190 directives), refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
@@ -41,8 +41,8 @@ moved runs after the push, beside the CI, as § The optimistic chain says since
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–68
-are done, in the order they closed, row 69 is open, and rows 70–91 are
+One table, one row per milestone, **closed first and scheduled after**: rows 1–69
+are done, in the order they closed, row 70 is open, and rows 71–91 are
 what is next, in the order they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -102,7 +102,9 @@ moved one down: the table is 91 long by a count over it. Then 1–67 and 68–91
 until later that day, when M-readonly-lend opened at 68, opening no other row. Then
 1–67 done and 68 open until it closed that night, opening no other row, and
 1–68 done and 69–91 until M-witnessed-seed opened at 69 the next morning,
-opening no other row. `warrant` is why a milestone exists: **v1** (the self-hosting
+opening no other row; then 1–68 done, 69 open and 70–91 until it closed that
+night, opening no other row, and 1–69 done and 70–91 until M-thesis-harness
+opened at 70 on 2026-10-20, opening no other row. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -180,7 +182,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 67 | **M-bounded-seed** | done 2026-10-17 | `m-bounded-seed` | [066](records/journal/066-bounded-seed.md) | the seed bounded in shape and in rhythm: its re-anchoring `#line`s joined to their anchors, refreshed only when the two-stage build needs it and at each release, every program carrying the key of what it was compiled from, and kept in the history at every tag, the history rewritten once and announced · scheduled, no warrant |
 | 68 | **M-readonly-lend** | done 2026-10-18 | `m-readonly-lend` | [067](records/journal/067-readonly-lend.md) | a function reads the caller's place without claiming to change it: `lent` on a parameter, C's `const T *` bound read-only, and beside it an `@` of the same place and a read-only lend past a variadic prototype refused · **§1.1**, **§1.11** |
 | 69 | **M-witnessed-seed** | done 2026-10-18 | `m-witnessed-seed` | [068](records/journal/068-witnessed-seed.md) | the seed witnessed by a second implementation: the archived Rust bootstrap rebuilt and agreeing with the seed at its tag, a gcc leg beside clang, every seed since the archive rebuilt from the one before it, 39 of 39, and every refresh since naming its route for the CI; then the bootstrap out of the tree, kept at its tag · scheduled, no warrant |
-| 70 | **M-thesis-harness** | scheduled | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
+| 70 | **M-thesis-harness** | **OPEN** | — | — | Part 11's metrics 2 and 4 run for the first time, as a Heroes program · **§1.1** |
 | 71 | **M-rechecked-issues** | scheduled | — | — | every open issue re-checked against the tree: closed with the commit that settled it, closed with the reason it no longer applies, repaired, or re-homed on a row still to come · scheduled, no warrant |
 | 72 | **M-panic-location** | scheduled | — | — | a panic names the `.hero` file, line and function · **§1.12** |
 | 73 | **M-generated-programs** | scheduled | — | — | programs nobody wrote: a generator that composes valid Heroes and knows the answer before the compiler is asked · **§1.12** |

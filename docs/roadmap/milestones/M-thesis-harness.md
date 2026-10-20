@@ -69,3 +69,96 @@ conditions, the message with its fix, the code and line alone, and nothing, so
 that the message is measured rather than the program's readability. A mistake
 models make for real becomes a candidate rule only if it repeats across two
 model families or tiers and on held-out tasks, and then goes to a sitting.
+
+**Opened 2026-10-20, at row 70, in the lane `thesis`**, the author's instruction
+of the night before meant as *start the loop and run until the step is done*,
+the session left unattended. The decisions the author took on 2026-10-19,
+in the session that planned the opening, and what the opening found, so that
+the sitting and the steps start from them:
+
+- **The instrument is a program of the harness**, `tests/harness/thesis.hero`, not yet written on 2026-10-20, run as `heroes run tests/harness/thesis.hero -- <word> ...` from that day's steps on: panel 212's
+  reading of CLAUDE.md § 10 for `issues.hero`, extended here by the author.
+  Nothing enters the seed, the help, the command table or the site.
+- **The held-out tasks live in this repository, sealed**: a `tar` of the
+  tasks encrypted with `openssl enc -aes-256-cbc -pbkdf2 -a`, the key read by
+  name from the environment (`-pass env:`), base64 so the `unseen` suite reads
+  it as clean text, decrypted only into the lane's scratch under `build/` and
+  removed when the run ends; the ciphertext's sha256 beside it, since CBC does
+  not authenticate. The author's idea, against the private repository the
+  plan had proposed: one history, the archive's sha is the suite's sha, and the
+  commit that carries it is the date the suite was frozen. Three archives and
+  three keys, the suite, the reserve and the runs' transcripts, so one leak
+  burns one. **What the author asked for in return is transparency**, so that
+  nobody reads a sealed blob as a closed piece: a README beside it naming what
+  it holds, its licence (the project's), the two ways to read it (the key from
+  the author on request, never republished; the date it opens, when the key is
+  committed), a canary string with a probing protocol, and a CI job that
+  decrypts in the runner and prints counts and hashes alone. **When it opens,
+  and whether the key also stands in a GitHub Actions secret, the author left
+  to the sitting.**
+- **Three transports**: the Anthropic Messages API, an OpenAI-compatible API
+  (a commercial key or a local server), and a `harness`, `claude -p` and
+  `codex exec`, the author's idea, since a ChatGPT subscription gives no API
+  key but Codex's non-interactive mode runs on the plan's included usage.
+  **Which number is the thesis measured, the API's with the harness rows in
+  a table of their own (the coordinator's recommendation) or the harness's
+  alone, the author left to the sitting.** A held-out task never travels on a
+  consumer transport until its terms document that prompts do not train.
+- **The order of the ceremony**: the open questions decided first, the
+  sitting after, free to overturn (the author, 2026-10-19). The session being
+  unattended, each question took its recommended answer (CL-002; the list and
+  the direction each went are in the shared brief of the sitting this opening
+  convenes), and the author's verdict is a reading of the sitting.
+
+**Three facts of the tree, measured at the opening, that change the protocol.**
+`--permissive` is a flag of `check` alone (`selfhost/cli/table.hero:94`, in
+`check_flags`): nothing has ever built or run a permissive binary, so the
+control arm can judge a program and cannot run its hidden cases, and the primary
+outcome is not measurable there today; the route taken is `build --permissive`
+(and `run`, `test`) with a runtime meaning pinned for each of the 27 codes
+`is_thesis_rule` lists, each row motivated by what the most common permissive
+language does, for the held-out run, and the judge-only control, declared
+biased, for the trial. `check` speaks one stage at a time
+(`selfhost/cli/check.hero:266-275`), so a program with a parse slip and a type
+slip costs two turns in every arm: the stages spoken are recorded per sample
+and never subtracted. And no hidden-case format exists (the run goldens hold
+stdout and one ending line, `tests/harness/expectation.hero:12-17`), and the
+harness's watchdog is fixed at 600 s (`tests/harness/shell.hero:262`, `:751`),
+so the grader needs a `run_bounded` of its own.
+
+**What a blind reading of the plan found** (an LLM-evaluation reader given the
+plan alone, 2026-10-19), and the protocol now carries: the result is decided by
+whoever writes the control's definition, so the control reproduces what the
+user of a permissive language actually sees, a run-time panic included, and
+the feedback loop is symmetric in every arm (the compiler's message on a
+refusal; the visible example run and its observed-against-expected returned on
+a program that compiles; the hidden cases never); failures come in three
+classes, refused at compile time, failed loudly at run time, silent at exit 0
+with a wrong output, and the thesis is measured on the third; there is one
+pre-registered primary, `green@3` strict-full minus control on Sonnet 5.5 with a
+cluster bootstrap over tasks and McNemar on the discordant pairs, named so
+because Chen et al. 2021's pass@k is another quantity, everything else
+exploratory, and three outcomes named before the freeze, confirmed, falsified,
+inconclusive; the sample size comes from the trial's measured discordance and
+intra-task correlation, never from the width of a single proportion's interval;
+contamination has two layers, the language (the spec is public since
+2026-09-08, each model's declared cutoff goes in the provenance) and the tasks
+(the canary, the transports' terms); and the model's program runs in a sandbox,
+never as the author's user.
+
+**What the author owes, and when**: the 40 held-out tasks and 20 in reserve,
+written on their own clock after the trial, read blind by a second reader,
+checked against the difficulty target the trial sets; the three keys; a
+spending cap on the console and an API key dedicated to the milestone before
+the first paid run; `codex` installed and signed in if its row is wanted; the
+sitting's ratification. **Every paid run is asked for, every time**, with the
+request count and the token estimate the program's `plan` word prints in front
+of the question; the program sends nothing without `--live`.
+
+**The run order, each a gate on the next**: a dry run at no cost over the
+reference solutions and hand-written mutants; the trial on the assistant's ten
+tasks, with the harness rows beside it; the canary probe and the `none` context
+on the same tasks; the freeze, one commit carrying the archives, the hashes,
+the prediction with its numbers, the compiler's and the prompt's and the
+grader's digests; the first held-out run; then issue 2080's three-condition
+experiment on the recovery plan's planted mistakes.
