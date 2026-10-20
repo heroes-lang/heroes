@@ -188,3 +188,21 @@ trial, a mistake the strict arm names that the control arm runs to a wrong
 output at exit 0, and it did not move green@3, because the visible example
 showed it: the primary can move only where such a mistake passes the visible
 example and fails a hidden case.
+
+## Added underneath, 2026-10-20, later the same evening: the `none` context asked again, its prompt repaired
+
+Defect 2169 repaired at `dca2b6267` (the `none` prompt now opens *You are given
+one programming task in a small programming language called Heroes* and makes
+no promise of a specification), the `none` context was asked again at turn 1
+from that commit: `build/thesis-runs/00fb571c-none2`, 90 requests from 22:53:43
+to 23:02:23, 0 lost, $1.20 by the instrument's count under a cap of $10, so
+the trial's two contexts and five turns spent $14.12 against the author's $40.
+**Every one of the 90 answers held a fenced block, and none was a Heroes
+program**: 270 verdicts `format_slip`, no block holding `function main`, and no
+block holding `@=`, `???`, `.must()` or `fail(code:`. The entry points the
+models wrote instead, by the block's first one: `func main` 31 (Haiku 5.5 9,
+Sonnet 5.5 10, Opus 5.5 12), `fn main` 21, `int main` 3, an `import` or a
+bare `main` heading most of the rest; the median answer was 1,130 to 1,225
+output tokens. So with the contradiction gone the models no longer decline,
+and they guess a language they know: this is § 4's reading without its
+confound, and it agrees with the June 2026 cutoff the provider declares.
