@@ -118,6 +118,71 @@ record Sandbox
 function profile(scratch: str, binary: str) -> str
     return "(version 1)\n(deny default)\n(allow process-exec (literal \"" + binary + "\"))\n(allow process-info*)\n(allow signal (target self))\n(allow sysctl-read)\n(allow file-read* file-read-metadata file-map-executable)\n(deny file-read* (subpath \"/Users\") (subpath \"/Volumes\") (subpath \"/private/tmp\") (subpath \"/tmp\") (subpath \"/private/var/tmp\") (subpath \"/private/var/folders\") (subpath \"/Library/Keychains\") (subpath \"/Library/Preferences\"))\n(allow file-read* file-write* (subpath \"" + scratch + "\"))\n(allow file-read* (literal \"" + binary + "\"))\n(allow file-write* file-ioctl (subpath \"/dev\"))\n(deny network*)\n"
 
+# The limits a program runs under, one `ulimit` a call joined by `&&`, so a
+# limit the shell refuses stops the program rather than letting it run
+# without one: dash, Debian's and Ubuntu's `/bin/sh`, refuses two limits in
+# one call, and with a `;` the program ran unbounded (defect 2167). macOS sets
+# no address-space limit, which its kernel does not keep.
+function limited(limits: [str]) -> str
+    parts: [str] @= []
+
+    for one in limits
+        parts @ parts.push("ulimit " + one)
+
+    return parts.join(" && ") + " && exec "
+
+# macOS: the file limit, then `sandbox-exec` with the profile in an empty
+# environment.
+function darwin_words(profile_path: str, binary: str) -> [str]
+    return [
+        "/bin/sh"
+        "-c"
+        limited(["-f " + FILE_BLOCKS.to_str()]) + "/usr/bin/env -i PATH=/usr/bin:/bin " + DARWIN_TOOL + " -f \"$0\" \"$@\""
+        profile_path
+        binary
+    ]
+
+# Linux: the system read-only, the scratch the one place written, every
+# namespace new, no environment, then the file and address-space limits.
+function linux_words(scratch: str, binary: str) -> [str]
+    return [
+        LINUX_TOOL
+        "--ro-bind"
+        "/usr"
+        "/usr"
+        "--ro-bind-try"
+        "/lib"
+        "/lib"
+        "--ro-bind-try"
+        "/lib64"
+        "/lib64"
+        "--ro-bind-try"
+        "/bin"
+        "/bin"
+        "--ro-bind-try"
+        "/etc"
+        "/etc"
+        "--bind"
+        scratch
+        scratch
+        "--dev"
+        "/dev"
+        "--proc"
+        "/proc"
+        "--unshare-all"
+        "--die-with-parent"
+        "--clearenv"
+        "--setenv"
+        "PATH"
+        "/usr/bin:/bin"
+        "--chdir"
+        scratch
+        "/bin/sh"
+        "-c"
+        limited(["-f " + FILE_BLOCKS.to_str(), "-v " + ADDRESS_KIB.to_str()]) + "\"$0\" \"$@\""
+        binary
+    ]
+
 # The sandbox for `binary` run with its working files in `scratch`, which must
 # be an absolute path (the profile names it, and the program's own `{dir}`
 # arguments do too); the profile is written into the scratch.
@@ -140,13 +205,11 @@ function prepared(scratch: str, binary: str) -> Sandbox?
         path = scratch + "/sandbox.sb"
         write_file(path: path, text: profile(scratch: scratch, binary: binary))?
         return ok(
-            Sandbox(program: "/bin/sh", words: ["/bin/sh", "-c", "ulimit -f " + FILE_BLOCKS.to_str() + "; exec /usr/bin/env -i PATH=/usr/bin:/bin " + DARWIN_TOOL + " -f \"$0\" \"$@\"", path, binary], tool: DARWIN_TOOL)
+            Sandbox(program: "/bin/sh", words: darwin_words(profile_path: path, binary: binary), tool: DARWIN_TOOL)
         )
 
     if shell.exists(LINUX_TOOL)
-        return ok(
-            Sandbox(program: LINUX_TOOL, words: [LINUX_TOOL, "--ro-bind", "/usr", "/usr", "--ro-bind-try", "/lib", "/lib", "--ro-bind-try", "/lib64", "/lib64", "--ro-bind-try", "/bin", "/bin", "--ro-bind-try", "/etc", "/etc", "--bind", scratch, scratch, "--dev", "/dev", "--proc", "/proc", "--unshare-all", "--die-with-parent", "--clearenv", "--setenv", "PATH", "/usr/bin:/bin", "--chdir", scratch, "/bin/sh", "-c", "ulimit -f " + FILE_BLOCKS.to_str() + " -v " + ADDRESS_KIB.to_str() + "; exec \"$0\" \"$@\"", binary], tool: LINUX_TOOL)
-        )
+        return ok(Sandbox(program: LINUX_TOOL, words: linux_words(scratch: scratch, binary: binary), tool: LINUX_TOOL))
     return fail(
         code: "no_sandbox",
         msg: "neither " + DARWIN_TOOL + " nor " + LINUX_TOOL + " is on this machine, and a model's program is run inside one or not at all"
@@ -245,3 +308,18 @@ test "a machine with neither sandbox tool cannot run a model's program, and says
     write_file(path: tool, text: "").must()
     assert unrunnable_with(darwin: tool, linux: "/no/such/bwrap") == ""
     assert unrunnable_with(darwin: "/no/such/sandbox-exec", linux: tool) == ""
+
+test "every limit is set by a `ulimit` of its own, joined so a refused one stops the program (defect 2167)"
+    linux = linux_words(scratch: "/s", binary: "/s/answer")
+    script = linux[linux.len() - 2]
+    assert script == "ulimit -f " + FILE_BLOCKS.to_str() + " && ulimit -v " + ADDRESS_KIB.to_str() + " && exec \"$0\" \"$@\""
+    assert linux[linux.len() - 1] == "/s/answer"
+    darwin = darwin_words(profile_path: "/s/sandbox.sb", binary: "/s/answer")
+    assert strings.starts_with(
+        text: darwin[2],
+        prefix: "ulimit -f " + FILE_BLOCKS.to_str() + " && exec /usr/bin/env -i "
+    )
+
+    for words in [linux, darwin]
+        for word in words
+            assert !strings.contains(text: word, needle: "; exec")
