@@ -204,7 +204,7 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
                         if over != ""
                             tally.stopped @ over
                             return ok(tally)
-                        asked = asked_once(plan: plan, transport: transport, world: w, system: prompt.system, messages: [thesis_answer.user_turn(prompt.user)])?
+                        asked = asked_once(plan: plan, model: model, transport: transport, world: w, system: prompt.system, messages: [thesis_answer.user_turn(prompt.user)])?
                         w @ asked.world
                         tally.attempts @ tally.attempts + asked.attempts
                         tally.spent @ tally.spent + charged(tally: tally, model: model, exchange: asked.exchange)?
@@ -294,15 +294,17 @@ record Asked
     # (`thesis_pace.Exchanged.attempts`).
     attempts: i64
 
-# One request to the model, in the plan's dialect, paced; a status other than
-# 200 is the run's failure, named with the body's first line.
-function asked_once(plan: Plan, transport: issue_wire.Transport, world: issue_wire.World, system: str, messages: [str]) -> Asked?
+# One request to `model`, in the plan's dialect, paced; a status other than
+# 200 is the run's failure, named with the body's first line. The model is
+# handed here by name and never read from the plan (defect 2176: turn 1 handed
+# the whole plan, and every request named its first model).
+function asked_once(plan: Plan, model: str, transport: issue_wire.Transport, world: issue_wire.World, system: str, messages: [str]) -> Asked?
     body: str @= ""
     url: str @= ""
 
     if plan.dialect == "openai"
         body @ thesis_answer.openai_request(
-            model: plan_model(plan),
+            model: model,
             max_tokens: plan.max_tokens,
             system: system,
             messages: messages
@@ -310,7 +312,7 @@ function asked_once(plan: Plan, transport: issue_wire.Transport, world: issue_wi
         url @ thesis_answer.openai_url(base: plan.base)
     else
         body @ thesis_answer.anthropic_request(
-            model: plan_model(plan),
+            model: model,
             max_tokens: plan.max_tokens,
             effort: plan.effort,
             system: system,
@@ -489,11 +491,6 @@ function as_generation(key: str, generation: thesis_verdict.Generation, exchange
         turn: exchange.turn
     )
 
-# The model a request names: the plan's current one, carried in `models[0]`
-# by the caller that walks them (a plan handed here holds one).
-function plan_model(plan: Plan) -> str
-    return plan.models[0]
-
 function first_line(text: str) -> str
     rows = strings.lines(text: text)
 
@@ -545,8 +542,6 @@ function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_
     )
     green: i64 @= 0
     turn_no: i64 @= 1
-    one_plan: Plan @= plan
-    one_plan.models @ [generation.model]
 
     while true
         graded = thesis_grade.graded(scratch: scratch + "/t" + turn_no.to_str(), compiler: compiler, arm: arm, answer: text, task: task, seconds: plan.seconds, bytes: plan.bytes)?
@@ -599,7 +594,7 @@ function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_
             if over != ""
                 t.stopped @ over
                 break
-            asked = asked_once(plan: one_plan, transport: transport, world: w, system: system, messages: messages)?
+            asked = asked_once(plan: plan, model: generation.model, transport: transport, world: w, system: system, messages: messages)?
             w @ asked.world
             t.attempts @ t.attempts + asked.attempts
             t.spent @ t.spent + charged(tally: t, model: generation.model, exchange: asked.exchange)?
@@ -1257,3 +1252,67 @@ test "a run answered by another model than the one it asked stops at that answer
     assert tally.verdicts == 1
     assert strings.contains(text: tally.stopped, needle: "answered by `claude-haiku-4-5-20251001`")
     assert thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/generations").must().len() == 1
+
+# The script's reply as the model the request names: `{{MODEL}}` in its body
+# becomes the request's `model`, so a request naming the wrong model is
+# answered by it, and defect 2173's rule stops the run (defect 2176).
+function echoed_sent(world: issue_wire.World, request: issue_wire.Request) -> issue_wire.Answered
+    got = issue_wire.script_sent(world: world, request: request)
+    named = json_read.read_json(request.body)
+    model: str @= ""
+
+    if !named.is_err()
+        model @ json_fields.text_at(of: named.must(), name: "model").default("")
+    reply: issue_wire.Reply @= got.reply
+    reply.body @ strings.split_text(text: reply.body, separator: "{{MODEL}}").join(model)
+    return issue_wire.Answered(world: got.world, reply: reply)
+
+test "every model of a run is asked by its own name at turn 1 and at a later turn, and answers as itself"
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_run: " + thesis_sandbox.unrunnable())
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    suite = suite_of(scratch: scratch, numbers: ["01"]).must()
+    green = answered_json(
+        text: thesis_grade.as_answer(read_file(path: suite + "/01/reference.hero").must()),
+        output: 50,
+        model: "{{MODEL}}"
+    )
+    refused = answered_json(
+        text: "```\nfunction main()\n    unused = 3\n    print(2)\n```\n",
+        output: 50,
+        model: "{{MODEL}}"
+    )
+    two: Plan @= test_plan(dir: suite, out: scratch + "/out", arms: ["strict"])
+    two.models @ ["claude-haiku-5-5", "claude-sonnet-5-5"]
+
+    # Haiku green at once; Sonnet refused at turn 1, green at turn 2.
+    script = [
+        issue_wire.answer(status: 200, headers: [], body: green)
+        issue_wire.answer(status: 200, headers: [], body: refused)
+        issue_wire.answer(status: 200, headers: [], body: green)
+    ]
+    tally = run(
+        plan: two,
+        transport: issue_wire.Transport(send: echoed_sent, pause: issue_wire.noted),
+        world: issue_wire.world_of(scratch: scratch, script: script),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert tally.stopped == ""
+    assert tally.generations == 2
+    assert tally.requests == 3
+    asked: [str] @= []
+
+    for text in thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/generations").must()
+        g = thesis_verdict.read_generation(text).must()
+        assert g.answered_by == g.model
+        asked @ asked.push(g.model)
+
+    assert asked.len() == 2
+    assert asked[0] != asked[1]
+
+    for text in thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/turns").must()
+        assert thesis_verdict.read_generation(text).must().answered_by == "claude-sonnet-5-5"
