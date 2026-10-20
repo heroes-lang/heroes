@@ -6,7 +6,7 @@
 #     heroes run tests/harness/thesis.hero -- dry <folder> [--arm strict|brief|control] [--mute]
 #     heroes run tests/harness/thesis.hero -- grade <answer.hero> --task <folder/NN> [--arm ...]
 #     heroes run tests/harness/thesis.hero -- plan <folder> --model <id>... [--arm ...] [--context ...]...
-#     heroes run tests/harness/thesis.hero -- run <folder> --model <id>... --live [--max-requests n]
+#     heroes run tests/harness/thesis.hero -- run <folder> --model <id>... --live --max-dollars n [--max-requests n]
 #     heroes run tests/harness/thesis.hero -- preregister <folder> --model <id>... [plan's flags]
 #     heroes run tests/harness/thesis.hero -- report <out> [--seed n] [--primary <sentence>] [--labels <dir>]
 #     heroes run tests/harness/thesis.hero -- seal <folder> -o <file> [--key VAR]
@@ -59,6 +59,7 @@ use thesis_canary
 use thesis_grade
 use thesis_harness
 use thesis_mutants
+use thesis_price
 use thesis_prompt
 use thesis_report
 use thesis_run
@@ -420,6 +421,15 @@ function plan_of(asked: thesis_args.Asked, suite_sha: str, compiler: str, scratc
                     msg: "a live run records its provenance, and this tree gives none: " + e.msg
                 )
 
+    # A live run billed to the API key, Anthropic's API or `claude -p --bare`
+    # which reads that key alone, is capped in dollars (the author's cap of
+    # 2026-10-20 on the trial): the run stops before the request whose bound
+    # would pass it (`thesis_price.hero`).
+    if asked.live && asked.max_dollars == 0 && (asked.transport == "claude" || asked.transport == "api" && asked.dialect == "anthropic")
+        return fail(
+            code: "no_cap",
+            msg: "a live run billed to the API key is capped in dollars: give `--max-dollars <n>`"
+        )
     base = base_of(asked)
     harness: str @= ""
 
@@ -442,7 +452,7 @@ function plan_of(asked: thesis_args.Asked, suite_sha: str, compiler: str, scratc
         if asked.transport != "api"
             out @ out + "-" + asked.transport
     return ok(
-        thesis_run.Plan(suite_dir: asked.paths[0], models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, transport: asked.transport, harness: harness, instrument: thesis_prompt.instrument_digest(scratch: scratch, dir: "tests/harness").default(""), base: base, out: out, live: asked.live, max_requests: asked.max_requests, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
+        thesis_run.Plan(suite_dir: asked.paths[0], models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, transport: asked.transport, harness: harness, instrument: thesis_prompt.instrument_digest(scratch: scratch, dir: "tests/harness").default(""), base: base, out: out, live: asked.live, max_requests: asked.max_requests, max_dollars: asked.max_dollars, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
     )
 
 # A plan with nothing in it, the cell `plan_word` fills from `plan_of`.
@@ -466,6 +476,7 @@ function blank_plan() -> thesis_run.Plan
         out: "",
         live: false,
         max_requests: 0,
+        max_dollars: 0,
         seconds: 0,
         bytes: 0,
         date: "",
@@ -483,8 +494,15 @@ function told_tally(plan: thesis_run.Plan, suite_sha: str, tally: thesis_run.Tal
     line = head + " " + suite_sha + " template=" + tally.template_sha.slice(from: 0, to: 8) + " layout=" + plan.layout + "/" + tally.layout_sha.slice(from: 0, to: 8) + " models=" + plan.models.join(",") + " arms=" + plan.arms.join(",") + " contexts=" + plan.contexts.join(",") + " samples=" + plan.samples.to_str() + " turns=" + plan.turns.to_str() + " dialect=" + plan.dialect + " requests=" + tally.requests.to_str()
 
     if !plan.live
-        return line + " estimated_input_tokens=" + tally.estimated_tokens.to_str() + " (an estimate, bytes over four; a model's own count is count_tokens')"
-    tail = " generations=" + tally.generations.to_str() + " verdicts=" + tally.verdicts.to_str() + " skipped=" + tally.skipped.to_str() + " shared=" + tally.shared.to_str() + " lost=" + tally.lost.to_str() + " out=" + plan.out
+        dry = line + " estimated_input_tokens=" + tally.estimated_tokens.to_str() + " (an estimate, bytes over four; a model's own count is count_tokens')"
+
+        if tally.priced
+            return dry + " turn1_bound=$" + thesis_price.dollars(tally.bound) + " (every answer at max_tokens, every prompt byte a token written to cache)"
+        return dry
+    tail: str @= " generations=" + tally.generations.to_str() + " verdicts=" + tally.verdicts.to_str() + " skipped=" + tally.skipped.to_str() + " shared=" + tally.shared.to_str() + " lost=" + tally.lost.to_str() + " out=" + plan.out
+
+    if tally.priced
+        tail @ tail + " spent=$" + thesis_price.dollars(tally.spent)
 
     if tally.stopped != ""
         return line + tail + " stopped: " + tally.stopped

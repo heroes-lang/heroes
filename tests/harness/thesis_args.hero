@@ -13,12 +13,12 @@
 # `--samples <n>`, `--turns <k>`, `--effort <e>`, `--max-tokens <n>`, `--layout
 # single|cached`, `--dialect anthropic|openai`, `--transport api|claude|codex`
 # (the harnesses of `thesis_harness.hero`, in Anthropic's dialect alone),
-# `--base <url>`, `--out <dir>`, `--max-requests <n>`.
+# `--base <url>`, `--out <dir>`, `--max-requests <n>`, `--max-dollars <n>`.
 
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live [--max-requests n] | preregister <folder> --model <id>... [plan's flags] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
+    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live --max-dollars n [--max-requests n] | preregister <folder> --model <id>... [plan's flags] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
 
 # The words of this program.
 constant WORDS: [str]
@@ -62,6 +62,7 @@ record Asked
     out: str
     live: bool
     max_requests: i64
+    max_dollars: i64
     seed: i64
     primary: str
     key: str
@@ -116,7 +117,7 @@ function valued(flag: str, word: str) -> bool
     if flag == "--context" || flag == "--samples" || flag == "--turns" || flag == "--layout" || flag == "--transport"
         return running
 
-    if flag == "--max-requests"
+    if flag == "--max-requests" || flag == "--max-dollars"
         return word == "run"
 
     if flag == "--seed" || flag == "--primary" || flag == "--labels"
@@ -222,7 +223,7 @@ function took(@a: Asked, flag: str, value: str) -> str
         a.models @ a.models.push(value)
     else if flag == "--context"
         a.contexts @ a.contexts.push(value)
-    else if flag == "--samples" || flag == "--turns" || flag == "--max-tokens" || flag == "--max-requests" || flag == "--seed"
+    else if flag == "--samples" || flag == "--turns" || flag == "--max-tokens" || flag == "--max-requests" || flag == "--max-dollars" || flag == "--seed"
         n = strings.to_number(text: value)
 
         if n.is_err() || n.must() < 0
@@ -236,6 +237,8 @@ function took(@a: Asked, flag: str, value: str) -> str
             a.max_tokens @ n.must()
         else if flag == "--seed"
             a.seed @ n.must()
+        else if flag == "--max-dollars"
+            a.max_dollars @ n.must()
         else
             a.max_requests @ n.must()
     else if flag == "--primary"
@@ -297,6 +300,7 @@ function blank(word: str) -> Asked
         out: "",
         live: false,
         max_requests: 0,
+        max_dollars: 0,
         seed: 1,
         primary: PRIMARY,
         key: "HEROES_TASKS_KEY",
@@ -385,6 +389,12 @@ test "a run's flags are read with their defaults, plan never goes live, and a wr
     assert live.live
     assert live.arms == ["control"]
     assert live.max_requests == 10
+    assert live.max_dollars == 0
+    assert parsed(word: "run", words: ["tests/thesis", "--model", "m", "--live", "--max-dollars", "20"]).max_dollars == 20
+    assert strings.contains(
+        text: parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--max-dollars", "20"]).wrong,
+        needle: "--max-dollars"
+    )
     assert live.dialect == "openai"
     assert live.base == "http://127.0.0.1:8080"
     assert live.out == "build/x"

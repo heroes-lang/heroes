@@ -16,8 +16,12 @@
 #
 # A dry run (`live` false) renders every turn-1 request, counts them and
 # estimates their tokens, bytes over four, and sends nothing: the number the
-# author is asked with. `max_requests` stops a live run cleanly, saying how
-# many samples are left; a rerun takes them up from the files on disk.
+# author is asked with, and the bound of their cost where every model has a
+# price. `max_requests` stops a live run cleanly, saying how many samples are
+# left; a rerun takes them up from the files on disk. `max_dollars` stops it
+# before the request whose bound, added to what the answers kept under `out`
+# already cost, would pass the cap (`thesis_price.hero`), so a rerun under the
+# same cap counts what the stopped one spent.
 
 use issue_wire
 use json_fields
@@ -28,6 +32,7 @@ use thesis_answer
 use thesis_json
 use thesis_grade
 use thesis_pace
+use thesis_price
 use thesis_prompt
 use thesis_sandbox
 use thesis_sha256
@@ -56,6 +61,8 @@ record Plan
     out: str
     live: bool
     max_requests: i64
+    # The cap in whole dollars, 0 for none.
+    max_dollars: i64
     seconds: i64
     bytes: i64
     # What the tree and the compiler said when the run was planned
@@ -86,6 +93,12 @@ record Tally
     lost_in_a_row: i64
     template_sha: str
     layout_sha: str
+    # Whether every model of the plan has a price; then, in nano-dollars, what
+    # the answers under `out` cost, theirs and this run's (`spent`), and the
+    # bound of every turn-1 request a dry plan counted (`bound`).
+    priced: bool
+    spent: i64
+    bound: i64
 
 # What a model is told after a turn that was not green, and whether the
 # conversation goes on.
@@ -115,9 +128,21 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
         lost: 0,
         lost_in_a_row: 0,
         template_sha: template.sha,
-        layout_sha: layout_sha
+        layout_sha: layout_sha,
+        priced: priced_all(plan.models),
+        spent: 0,
+        bound: 0
     )
     contexts: [thesis_prompt.Context] @= []
+
+    # A cap names a price for every model before anything is asked, and a
+    # model with none refuses the run rather than counting as free.
+    if plan.max_dollars > 0
+        for model in plan.models
+            _ = thesis_price.price_of(model: model, prompt_tokens: 0)?
+
+    if plan.live && tally.priced
+        tally.spent @ spent_under(scratch: scratch, out: plan.out)?
 
     for name in plan.contexts
         contexts @ contexts.push(thesis_prompt.context_of(name: name)?)
@@ -163,13 +188,21 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
                         tally.estimated_tokens @ tally.estimated_tokens + thesis_prompt.estimated_tokens(prompt.system + prompt.user)
 
                         if !plan.live
+                            if tally.priced
+                                tally.bound @ tally.bound + thesis_price.worst(model: model, prompt_bytes: prompt.system.len() + prompt.user.len(), max_tokens: plan.max_tokens)?
                             continue
 
                         if plan.max_requests > 0 && tally.requests > plan.max_requests
                             tally.stopped @ "the request cap of " + plan.max_requests.to_str() + " was reached"
                             return ok(tally)
+                        over = cap_reached(plan: plan, tally: tally, model: model, prompt_bytes: prompt.system.len() + prompt.user.len())?
+
+                        if over != ""
+                            tally.stopped @ over
+                            return ok(tally)
                         asked = asked_once(plan: plan, transport: transport, world: w, system: prompt.system, messages: [thesis_answer.user_turn(prompt.user)])?
                         w @ asked.world
+                        tally.spent @ tally.spent + charged(tally: tally, model: model, exchange: asked.exchange)?
 
                         # A generation lost past its retries is every arm's
                         # `transport_error`, counted and never resampled in
@@ -345,6 +378,50 @@ function every_arm_kept(plan: Plan, task_sha: str, model: str, context_sha: str,
 
     return true
 
+# Whether every model has a price, so what the run spends can be counted.
+function priced_all(models: [str]) -> bool
+    for model in models
+        if thesis_price.price_of(model: model, prompt_tokens: 0).is_err()
+            return false
+
+    return true
+
+# What the answers already kept under `out` cost: every turn 1 under
+# `generations/` and every later turn under `turns/`, each priced by the model
+# it names. A kept answer that cannot be read fails the run, since a cap that
+# cannot count what was spent cannot be kept.
+function spent_under(scratch: str, out: str) -> i64?
+    total: i64 @= 0
+
+    for dir in [out + "/generations", out + "/turns"]
+        for text in thesis_verdict.all_kept(scratch: scratch, dir: dir)?
+            g = thesis_verdict.read_generation(text)?
+            total @ total + thesis_price.cost(model: g.model, input: g.input, output: g.output, cache_read: g.cache_read, cache_write: g.cache_write)?
+
+    return ok(total)
+
+# What `exchange` cost on `model`, from the usage the API reported; 0 where
+# the plan's models have no price, and for a request lost past its retries,
+# which reports none.
+function charged(tally: Tally, model: str, exchange: thesis_answer.Exchange) -> i64?
+    if !tally.priced
+        return ok(0)
+    return thesis_price.cost(
+        model: model,
+        input: exchange.input,
+        output: exchange.output,
+        cache_read: exchange.cache_read,
+        cache_write: exchange.cache_write
+    )
+
+# Why the next request, of `prompt_bytes` bytes on `model`, may not be sent
+# under the plan's cap, or "".
+function cap_reached(plan: Plan, tally: Tally, model: str, prompt_bytes: i64) -> str?
+    if !tally.priced || plan.max_dollars <= 0
+        return ok("")
+    bound = thesis_price.worst(model: model, prompt_bytes: prompt_bytes, max_tokens: plan.max_tokens)?
+    return ok(thesis_price.over_cap(spent: tally.spent, next: bound, max_dollars: plan.max_dollars))
+
 # A turn kept under `turns/` by the arm that asked it, for another arm whose
 # history is the same bytes.
 function shared_turn(dir: str, key: str) -> thesis_verdict.Generation?
@@ -475,8 +552,14 @@ function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_
             if plan.max_requests > 0 && t.requests > plan.max_requests
                 t.stopped @ "the request cap of " + plan.max_requests.to_str() + " was reached"
                 break
+            over = cap_reached(plan: plan, tally: t, model: generation.model, prompt_bytes: system.len() + messages.join("\n").len())?
+
+            if over != ""
+                t.stopped @ over
+                break
             asked = asked_once(plan: one_plan, transport: transport, world: w, system: system, messages: messages)?
             w @ asked.world
+            t.spent @ t.spent + charged(tally: t, model: generation.model, exchange: asked.exchange)?
             next_turn @ as_generation(key: turn_key, generation: generation, exchange: asked.exchange)
 
             if asked.exchange.stop == "transport_error"
@@ -633,6 +716,7 @@ test "a dry run over the assistant's suite counts one request per generation and
         out: scratch + "/out",
         live: false,
         max_requests: 0,
+        max_dollars: 0,
         seconds: 10,
         bytes: 1048576,
         date: "",
@@ -652,6 +736,12 @@ test "a dry run over the assistant's suite counts one request per generation and
     # Half the requests carry the spec, about 6,650 tokens by bytes over four, and half the canary's sentence alone.
     assert tally.estimated_tokens > tasks * 2 * 3 * 6000
     assert tally.estimated_tokens < tasks * 2 * 2 * 3 * 8000
+
+    # Both models have a price, so every request's bound is counted: at least
+    # its answer at 32,000 tokens, $0.50 a million on Haiku and $10 on Sonnet.
+    assert tally.priced
+    assert tally.bound >= tally.requests / 2 * (32000 * 500 + 32000 * 10000)
+    assert tally.spent == 0
     assert tally.generations == 0
     assert tally.verdicts == 0
     assert tally.stopped == ""
@@ -687,6 +777,7 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
         out: scratch + "/out",
         live: true,
         max_requests: 0,
+        max_dollars: 0,
         seconds: 10,
         bytes: 1048576,
         date: "",
@@ -757,6 +848,7 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
         out: scratch + "/capped",
         live: true,
         max_requests: 1,
+        max_dollars: 0,
         seconds: 10,
         bytes: 1048576,
         date: "",
@@ -777,7 +869,11 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
 
 # An Anthropic answer holding `text`, as a script records one.
 function answer_json(text: str) -> str
-    return "{\"id\":\"msg_t\",\"model\":\"claude-haiku-5-5\",\"content\":[{\"type\":\"text\",\"text\":" + quoted_json(text) + "}],\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":100,\"output_tokens\":50,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0}}"
+    return answer_costing(text: text, output: 50)
+
+# The same answer with `output` tokens out, which a capped run is charged for.
+function answer_costing(text: str, output: i64) -> str
+    return "{\"id\":\"msg_t\",\"model\":\"claude-haiku-5-5\",\"content\":[{\"type\":\"text\",\"text\":" + quoted_json(text) + "}],\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":100,\"output_tokens\":" + output.to_str() + ",\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0}}"
 
 function quoted_json(text: str) -> str
     out: [str] @= ["\""]
@@ -818,6 +914,7 @@ test "a run's provenance names the template and the layout apart, the suite, the
         out: "unused",
         live: true,
         max_requests: 0,
+        max_dollars: 0,
         seconds: 10,
         bytes: 1048576,
         date: "2026-10-20",
@@ -866,6 +963,7 @@ function test_plan(dir: str, out: str, arms: [str]) -> Plan
         out: out,
         live: true,
         max_requests: 0,
+        max_dollars: 0,
         seconds: 10,
         bytes: 1048576,
         date: "",
@@ -993,3 +1091,75 @@ test "two arms whose history is the same bytes share their second turn: one requ
         v = thesis_verdict.read_verdict(text).must()
         assert v.green_turn == 2
         assert v.turns[0].outcome == "compiled_wrong"
+
+test "a capped run stops before the request whose bound would pass the cap, and a rerun counts what the stopped one spent"
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_run: " + thesis_sandbox.unrunnable())
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    suite = suite_of(scratch: scratch, numbers: ["01", "02", "03"]).must()
+
+    # A million tokens out on Haiku is $0.50, and 100 in is a hundred-thousandth of a dollar.
+    dear: [str] @= []
+
+    for number in ["01", "02", "03"]
+        dear @ dear.push(
+            answer_costing(text: thesis_grade.as_answer(read_file(path: suite + "/" + number + "/reference.hero").must()), output: 1000000)
+        )
+
+    one: Plan @= test_plan(dir: suite, out: scratch + "/out", arms: ["strict"])
+    one.max_dollars @ 1
+    first = run(
+        plan: one,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: [issue_wire.answer(status: 200, headers: [], body: dear[0]), issue_wire.answer(status: 200, headers: [], body: dear[1]), issue_wire.answer(status: 200, headers: [], body: dear[2])]),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert first.generations == 2
+    assert first.verdicts == 2
+    assert first.spent == 2 * (100 * 100 + 1000000 * 500)
+    assert strings.starts_with(
+        text: first.stopped,
+        prefix: "the cap of $1 would be passed: $1.01 spent, and the next request may cost up to $0."
+    )
+
+    # Under the same cap the rerun asks nothing; under $2 it counts the dollar
+    # the answers on disk cost and asks the third task alone.
+    held = run(
+        plan: one,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: []),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert held.generations == 0
+    assert held.spent == first.spent
+    assert held.stopped != ""
+    one.max_dollars @ 2
+    rest = run(
+        plan: one,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: [issue_wire.answer(status: 200, headers: [], body: dear[2])]),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert rest.generations == 1
+    assert rest.stopped == ""
+    assert rest.spent == 3 * (100 * 100 + 1000000 * 500)
+
+    # A cap on a model with no price refuses the run before anything is asked.
+    unpriced: Plan @= test_plan(dir: suite, out: scratch + "/unpriced", arms: ["strict"])
+    unpriced.models @ ["gpt-5"]
+    unpriced.max_dollars @ 1
+    refused = run(
+        plan: unpriced,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: []),
+        scratch: scratch,
+        compiler: compiler
+    )
+    assert refused.is_err()
+    assert !shell.is_directory(scratch + "/unpriced")
