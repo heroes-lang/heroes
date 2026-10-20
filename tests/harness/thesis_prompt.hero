@@ -38,7 +38,17 @@ constant SPEC: str
 # The sentence that stands where the specification would in the `none`
 # context: the canary's whole knowledge of the language.
 constant NONE_SENTENCE: str
-    "No specification is given. The language is called Heroes; write the program in it from what you know."
+    "No specification of the language is given; write the program from what you know of it."
+
+# The template's opening, which promises the specification, and what stands in
+# its place in the `none` context, which gives none (defect 2169: the `none`
+# prompt kept the promise and then said no specification was given, and two of
+# the trial's three models asked for the document it had promised).
+constant OPENING: str
+    "You are given the complete specification of a small programming language\ncalled Heroes, followed by one programming task."
+
+constant NONE_OPENING: str
+    "You are given one programming task in a small programming language called\nHeroes."
 
 constant CUT: str
     "</specification>"
@@ -144,6 +154,14 @@ function rendered(template: Template, context: Context, task: str, layout: str) 
     filled: str @= template.text
 
     if context.name == "none"
+        # The promise goes with the document: a template whose opening is not
+        # the one replaced here is refused rather than rendered still making it.
+        if strings.index_of(text: filled, needle: OPENING).is_err()
+            return fail(
+                code: "bad_template",
+                msg: template.path + "'s prompt does not open with the sentence the `none` context replaces, so its promise of a specification would stand in a prompt that gives none"
+            )
+        filled @ replaced(text: filled, needle: OPENING, by: NONE_OPENING)
         filled @ replaced(text: filled, needle: "<specification>\n{{SPEC}}\n</specification>", by: NONE_SENTENCE)
     else
         filled @ replaced(text: filled, needle: "{{SPEC}}", by: context.spec)
@@ -310,6 +328,31 @@ test "the canary context holds no specification, and a layout or a context nobod
     assert strings.contains(text: canary.user, needle: NONE_SENTENCE)
     assert !strings.contains(text: canary.user, needle: "## 1. Files")
     assert !strings.contains(text: canary.user, needle: "<specification>")
+
+    # No promise of a document the prompt does not give (defect 2169), and the
+    # `spec` context keeps the template's opening whole.
+    assert strings.contains(text: canary.user, needle: NONE_OPENING)
+    assert !strings.contains(text: canary.user, needle: "specification of a small")
+    assert !strings.contains(text: canary.user, needle: "complete specification")
+    given = rendered(
+        template: template,
+        context: context_of(name: "spec").must(),
+        task: "Print `hello`.",
+        layout: "single"
+    ).must()
+    assert strings.contains(text: given.user, needle: OPENING)
+
+    # A template that opens otherwise is refused for `none`, never rendered with its promise.
+    moved = Template(
+        path: "moved.md",
+        text: "You are given a specification.\n\n<specification>\n{{SPEC}}\n</specification>\n\n<task>\n{{TASK}}\n</task>\n",
+        sha: "",
+        feedback: template.feedback
+    )
+
+    match rendered(template: moved, context: none, task: "x", layout: "single")
+        .ok _  => assert false
+        .err e => assert e.code == "bad_template"
 
     match rendered(template: template, context: none, task: "x", layout: "verbose")
         .ok _  => assert false
