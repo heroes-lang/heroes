@@ -123,7 +123,12 @@ function split(text: str) -> Expectation?
             kept @ kept.slice(from: 0, to: kept.len() - 1)
     out: str @= kept.join("\n")
 
-    if out.len() > 0
+    # Every line kept ends with a line feed, the empty one included: a file
+    # holding one line feed is a program that prints one empty line, and an
+    # empty file one that prints nothing. Until 2026-10-20 the feed was added
+    # where the joined text was not empty, so one empty line read as no
+    # output and no case could say it.
+    if kept.len() > 0
         out @ out + "\n"
     return ok(Expectation(stdout: out, ending: ending, sanitizer: sanitizer))
 
@@ -257,3 +262,11 @@ test "the sanitiser verdict asks for the text and says nothing about the code"
 
     # A case that declares nothing is not judged this way at all.
     assert sanitizer_unmet(split("1\n").must(), err: "anything").is_err()
+
+test "an expectation says one empty line, no output, a line and an ending apart"
+    assert split("\n").must().stdout == "\n"
+    assert split("").must().stdout == ""
+    assert split("a\n").must().stdout == "a\n"
+    assert split("\n\n").must().stdout == "\n\n"
+    assert split("!exit: 2\n").must().stdout == ""
+    assert split("\n!exit: 1\n").must().stdout == "\n"

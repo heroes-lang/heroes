@@ -55,7 +55,9 @@ A task's digest is the sha256 of `task.md` and its cases in order; its prose dig
 - **One program**, `main.hero` with `main()`, no `use`, no `extern` (a program binding C would run
   as the grader's user; `refused_extern` is its bucket). Inputs arrive by `args()` and by at most
   three files whose paths are among the arguments; there is no stdin. Output is exact stdout and an
-  exit code; stdout is compared byte for byte with the final newline normalised; stderr is ignored.
+  exit code; stdout is compared byte for byte, `print` ending every line it writes with a line feed,
+  and an output may be nothing, one empty line or any lines (`tests/harness/expectation.hero`);
+  stderr is ignored.
 - **4 to 8 hidden cases**: one empty, one malformed with the exit code the prose names, one large,
   sized so the reference runs in under a second; deterministic (a map's `keys` has no order, so a
   task that prints a map sorts it or says the order).
