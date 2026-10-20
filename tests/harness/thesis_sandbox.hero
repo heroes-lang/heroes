@@ -236,4 +236,12 @@ test "a machine with neither sandbox tool cannot run a model's program, and says
 
     told = unrunnable_with(darwin: "/no/such/sandbox-exec", linux: "/no/such/bwrap")
     assert strings.contains(text: told, needle: "neither /no/such/sandbox-exec nor /no/such/bwrap")
-    assert unrunnable_with(darwin: "/bin/sh", linux: "/no/such/bwrap") == ""
+
+    # A tool that exists answers nothing, whichever of the two it is: the test
+    # makes the file it names, since a path the machine is supposed to hold,
+    # `/bin/sh` until defect 2166, is missing on the CI's Windows leg.
+    scratch = shell.own_scratch()
+    tool = scratch + "/tool"
+    write_file(path: tool, text: "").must()
+    assert unrunnable_with(darwin: tool, linux: "/no/such/bwrap") == ""
+    assert unrunnable_with(darwin: "/no/such/sandbox-exec", linux: tool) == ""
