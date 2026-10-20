@@ -625,10 +625,8 @@ test "a dry run over the assistant's suite counts one request per generation and
     assert !shell.is_directory(scratch + "/out/generations")
 
 test "a live run on the scripted transport goes green at turn 1, repairs at turn 2 from the compiler's message, resumes without asking again, and stops at the cap"
-    if thesis_sandbox.key_held() != ""
-        print(
-            "SKIP thesis_run: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
-        )
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_run: " + thesis_sandbox.unrunnable())
         return
 
     scratch = shell.own_scratch()
@@ -831,10 +829,8 @@ function overloaded() -> [issue_wire.Reply]
     return out
 
 test "a generation lost past its retries is every arm's transport_error and the run goes on; three in a row stop it before the third is written"
-    if thesis_sandbox.key_held() != ""
-        print(
-            "SKIP thesis_run: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
-        )
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_run: " + thesis_sandbox.unrunnable())
         return
 
     scratch = shell.own_scratch()
@@ -886,10 +882,8 @@ test "a generation lost past its retries is every arm's transport_error and the 
     assert thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/down/samples").must().len() == 2
 
 test "two arms whose history is the same bytes share their second turn: one request, two verdicts"
-    if thesis_sandbox.key_held() != ""
-        print(
-            "SKIP thesis_run: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
-        )
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_run: " + thesis_sandbox.unrunnable())
         return
 
     scratch = shell.own_scratch()

@@ -36,13 +36,18 @@
 # ON LINUX (the CI's `thesis-attest` and any Linux leg), `bwrap`: the system
 # bound read-only, the scratch bound read-write, `--unshare-all` (no network,
 # own pid space), `--die-with-parent`, `--clearenv`, and `ulimit -f` and
-# `ulimit -v` inside it, where RLIMIT_AS is enforced. **Unrun on this Mac**:
-# the Linux words are what the CI runs, and the leg is their judge
-# (`.claude/rules/platforms.md`).
+# `ulimit -v` inside it, where RLIMIT_AS is enforced. **Unrun on this Mac,
+# and on every CI leg until issue 2162**: the legs that run the net's own
+# tests install no bubblewrap, and `thesis-attest`, which does, grades only
+# once a sealed suite exists (`.claude/rules/platforms.md`).
 #
 # Where neither tool exists the words are refused with `no_sandbox`, and
 # `thesis_grade` runs no case: a measurement taken outside the sandbox would be
-# one a model's program could have forged.
+# one a model's program could have forged. **So a test that runs a model's
+# program asks `unrunnable()` first and says `SKIP` with its answer**: on the
+# CI's Windows leg neither tool exists, and its Linux legs install no
+# bubblewrap (the `thesis-attest` job alone does), so the Linux words are
+# judged where bubblewrap is installed and nowhere else (issue 2162).
 
 use shell
 use strings
@@ -69,6 +74,23 @@ constant ADDRESS_KIB: i64
 # the tests' own, and no model's program ever runs under it.
 constant KEYS: [str]
     ["HEROES_TASKS_KEY", "HEROES_RESERVE_KEY", "HEROES_RUNS_KEY"]
+
+# Why a model's program cannot run on this machine now, or "" where it can: a
+# seal's key in this process's environment, or neither sandbox tool present.
+# Every test that runs one asks it first and says `SKIP` with the answer, so a
+# suite's verdict never depends on what the machine or the shell held.
+function unrunnable() -> str
+    return unrunnable_with(darwin: DARWIN_TOOL, linux: LINUX_TOOL)
+
+function unrunnable_with(darwin: str, linux: str) -> str
+    held = key_held()
+
+    if held != ""
+        return held + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
+
+    if !shell.exists(darwin) && !shell.exists(linux)
+        return "neither " + darwin + " nor " + linux + " is on this machine, and a model's program runs inside one or not at all"
+    return ""
 
 # The first of `KEYS` this process's environment holds, or "" where it holds
 # none: `prepared` refuses to run a model's program while one is set, and a
@@ -154,7 +176,9 @@ test "the profile denies by default, allows the scratch alone for writing, and d
 
 test "a program run inside the sandbox writes in its scratch, is refused outside it and in the home, and reads neither"
     if !shell.exists(DARWIN_TOOL)
-        print("SKIP thesis_sandbox: no " + DARWIN_TOOL + " here; the Linux words are the CI's to judge")
+        print(
+            "SKIP thesis_sandbox: no " + DARWIN_TOOL + " here; the Linux words wait for a leg that installs bubblewrap (issue 2162)"
+        )
         return
 
     if key_held() != ""
@@ -204,3 +228,12 @@ test "a program run inside the sandbox writes in its scratch, is refused outside
     assert strings.contains(text: ran.out, needle: "read true")
     assert shell.exists(inside + "/inside.txt")
     assert !shell.exists(outside + "/leak.txt")
+
+test "a machine with neither sandbox tool cannot run a model's program, and says which two it looked for"
+    if key_held() != ""
+        print("SKIP thesis_sandbox: " + key_held() + " is set, so the answer would name the key")
+        return
+
+    told = unrunnable_with(darwin: "/no/such/sandbox-exec", linux: "/no/such/bwrap")
+    assert strings.contains(text: told, needle: "neither /no/such/sandbox-exec nor /no/such/bwrap")
+    assert unrunnable_with(darwin: "/bin/sh", linux: "/no/such/bwrap") == ""

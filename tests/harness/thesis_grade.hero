@@ -293,10 +293,8 @@ test "the codes of a check --json answer are read from stderr's first brace, sor
     assert codes_of("nothing") == []
 
 test "an answer is graded end to end against a task of the tree: wrong output, a refusal with its code, a loop under the bound, no program"
-    if thesis_sandbox.key_held() != ""
-        print(
-            "SKIP thesis_grade: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
-        )
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_grade: " + thesis_sandbox.unrunnable())
         return
 
     scratch = shell.own_scratch()
@@ -379,10 +377,8 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
     assert green.passed == task.cases.len()
 
 test "the control arm builds what the strict build refuses and runs it: a dropped rule's program is judged by its output, a match missing a case aborts loudly"
-    if thesis_sandbox.key_held() != ""
-        print(
-            "SKIP thesis_grade: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
-        )
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_grade: " + thesis_sandbox.unrunnable())
         return
 
     scratch = shell.own_scratch()
