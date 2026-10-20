@@ -1,0 +1,7 @@
+error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
+  at main.hero:4:9
+    |
+  4 |         totl @ total + x
+    |         ^^^^
+  note: `totl @ …` changes a cell that already exists; a new cell is declared `totl @= <value>`, and a value bound once with `totl = <value>`
+  fix (certain): rename to `total`

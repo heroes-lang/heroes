@@ -1,0 +1,1 @@
+main.hero:4:9: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?

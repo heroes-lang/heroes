@@ -1,0 +1,5 @@
+function main()
+    n @= 0
+    b: u8 = 255
+    n @ b
+    print(n)

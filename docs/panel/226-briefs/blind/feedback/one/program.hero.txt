@@ -1,0 +1,8 @@
+function total_of(xs: [i64]) -> i64
+    total: i64 @= 0
+    for x in xs
+        totl @ total + x
+    return total
+
+function main()
+    print(total_of([1, 2, 3]))
