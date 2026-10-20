@@ -206,3 +206,38 @@ bare `main` heading most of the rest; the median answer was 1,130 to 1,225
 output tokens. So with the contradiction gone the models no longer decline,
 and they guess a language they know: this is § 4's reading without its
 confound, and it agrees with the June 2026 cutoff the provider declares.
+
+## Corrected underneath, 2026-10-21: every turn-1 answer above was Haiku 5.5's
+
+**Defect 2176.** The instrument sent every turn-1 request with the plan's first
+model, `claude-haiku-5-5`, whatever model the run was asking for; a later
+turn named the right one. Read back from each answer's `answered_by`: all 180
+turn-1 generations of § 1 to § 3, and all 90 of the `none` context asked
+again, were answered by `claude-haiku-5-5`, 60 and 30 of them kept under
+`claude-sonnet-5-5` and `claude-opus-5-5`; the 154 later turns were answered
+by the model each names (Haiku 5.5 59, Sonnet 5.5 46, Opus 5.5 49). The
+defect came to light when the `harness` rows were asked again and stopped at
+their first Sonnet 5.5 request under defect 2173's rule, *asked
+`claude-sonnet-5-5`, answered by `claude-haiku-5-5`*. So, section by section:
+
+- **§ 2** is 90 samples of Haiku 5.5 at turn 1, in three groups of 30 that
+  differ by draw and not by model: the 4 discordant pairs, the codes and the
+  "-10.0pp" named for Sonnet 5.5 are Haiku 5.5's.
+- **§ 3**'s rows named Sonnet 5.5 and Opus 5.5 are those models repairing a
+  first answer Haiku 5.5 wrote; their green@3 of 30 of 30 is reached from that
+  start, and none of their own first tries was asked.
+- **§ 4 and its addition** are Haiku 5.5's alone: Sonnet 5.5 and Opus 5.5
+  were never asked without the specification.
+- **§ 5**: the output tokens at turn 1, the cache read across models and the
+  equal prompt counts are Haiku 5.5's, and the two questions they raised are
+  this defect, answered.
+- **§ 1's cost** priced Haiku 5.5's answers at the rates of the model named.
+  At the rates of the model that answered, the instrument's own table, turn 1
+  cost $0.43 (not $8.85), the `none` context asked again $0.06 (not $1.20),
+  turns 2 to 5 $4.06 as written, and the trial's API rows $4.56 in all; the
+  two answers Haiku 4.5 gave the first `harness` rows (defect 2173) have no
+  price in that table.
+- **§ 7's reading** holds for Sonnet 5.5 and Opus 5.5 repairing Haiku 5.5's
+  first answers and is not a reading of their own first tries. The trial is
+  asked again with every model named in its request, its measurement the next
+  number.
