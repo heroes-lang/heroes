@@ -62,6 +62,12 @@ record Group
 # their texts, one a line, by key; the report's Markdown returned.
 function report(scratch: str, out: str, seed: i64, primary: str, labels: str) -> str?
     texts = thesis_verdict.all_kept(scratch: scratch, dir: out + "/samples")?
+
+    # A folder with no verdict is told by the count, and nothing is written
+    # (defect 2170: the word looked for `0 verdicts under` in the text, which
+    # 540 verdicts write too).
+    if texts.len() == 0
+        return fail(code: "no_verdicts", msg: "no verdict under " + out + "/samples")
     verdicts: [thesis_verdict.Verdict] @= []
 
     for text in texts
@@ -762,6 +768,28 @@ function verdict_of(task: str, arm: str, green: i64, last: str) -> thesis_verdic
         green_turn: green,
         converged: green > 0
     )
+
+test "a folder of ten verdicts is reported, and a folder of none fails by its code, never by a phrase of the text"
+    scratch = shell.own_scratch()
+    out = scratch + "/ten"
+
+    for i in range(from: 0, to: 5)
+        for arm in ["strict", "control"]
+            v = verdict_of(task: "task" + i.to_str() + "0000000000", arm: arm, green: 1, last: "cases_pass")
+            thesis_verdict.keep(dir: out + "/samples", key: v.key, text: thesis_verdict.written_verdict(v)).must()
+
+    text = report(scratch: scratch, out: out, seed: 1, primary: "strict minus control", labels: "").must()
+    assert strings.contains(text: text, needle: "10 verdicts under")
+    assert !read_file(path: out + "/verdicts.jsonl").is_err()
+    empty = report(scratch: scratch, out: scratch + "/none", seed: 1, primary: "", labels: "")
+
+    match empty
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "no_verdicts"
+            assert e.msg == "no verdict under " + scratch + "/none/samples"
+
+    assert read_file(path: scratch + "/none/verdicts.jsonl").is_err()
 
 test "the excluded leave n and the pairs, silence is read by turn 3, and the message's value is read over the pairs a message reached"
     verdicts: [thesis_verdict.Verdict] = [

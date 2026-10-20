@@ -658,10 +658,6 @@ function report_word(scratch: str, asked: thesis_args.Asked) -> i64
 
     match thesis_report.report(scratch: scratch, out: out, seed: asked.seed, primary: asked.primary, labels: asked.labels)
         .ok text =>
-            if strings.contains(text: text, needle: "0 verdicts under")
-                hero_write_err(text: "thesis: no verdict under " + out + "/samples\n")
-                return 1
-
             if write_file(path: out + "/report.md", text: text).is_err()
                 hero_write_err(text: "thesis: cannot write " + out + "/report.md\n")
                 return 2
@@ -669,6 +665,9 @@ function report_word(scratch: str, asked: thesis_args.Asked) -> i64
             return 0
         .err e =>
             hero_write_err(text: "thesis: " + e.msg + "\n")
+
+            if e.code == "no_verdicts"
+                return 1
             return 2
 
 test "a plan through the harness names it and keeps its rows in a folder of their own"
