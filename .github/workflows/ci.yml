@@ -993,6 +993,68 @@ jobs:
             cd "$repo"
           done
 
+  # THE SEALED HELD-OUT SUITE, ATTESTED WITHOUT BEING SHOWN (panel 226's R10,
+  # 2026-10-20, provisional pending the author's reading; M-thesis-harness
+  # step 4b; `tests/thesis/held-out/README.md`). The tasks design.md Part 11's
+  # metrics 2 and 4 are measured on live in this public repository as
+  # encrypted text, so that a crawl cannot read them and a stranger can still
+  # see that the archive holds what its README says: this job decrypts it
+  # inside the runner, under a key held as a secret of the `thesis-attest`
+  # environment (the author adds a required reviewer there, since anyone who
+  # can change this file could otherwise print the clear text), and prints
+  # **counts and digests alone**: the tasks' digests against `hashes.txt`, and
+  # `dry --mute`, which on a failure names a task's digest and never its text.
+  # Where the archive does not exist yet (before the freeze) or the key is not
+  # in this environment (a fork, or the secret unset) it says so and passes:
+  # nothing attested, nothing failed. The key reaches openssl through the
+  # environment (`-pass env:`), never a command line, as the instrument's own
+  # `thesis_seal.hero` says.
+  thesis-attest:
+    name: The sealed held-out suite holds what its README says
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: thesis-attest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Counts and digests of what the archives hold, and nothing of their text
+        shell: bash
+        env:
+          HEROES_TASKS_KEY: ${{ secrets.HEROES_TASKS_KEY }}
+          HEROES_RESERVE_KEY: ${{ secrets.HEROES_RESERVE_KEY }}
+        run: |
+          set -euo pipefail
+          here=tests/thesis/held-out
+          if [ ! -f "$here/suite.enc" ]; then
+            echo "no sealed suite yet: $here holds its README alone until the freeze; nothing attested, nothing failed"
+            exit 0
+          fi
+          if [ -z "${HEROES_TASKS_KEY:-}" ]; then
+            echo "HEROES_TASKS_KEY is not in this environment (a fork, or the secret unset); nothing attested, nothing failed"
+            exit 0
+          fi
+          # bubblewrap is the sandbox the grader runs a program in on Linux
+          # (`tests/harness/thesis_sandbox.hero`); without it `dry` refuses to run a case.
+          sudo apt-get update && sudo apt-get install -y clang bubblewrap
+          clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+          ./heroes build selfhost/main.hero -o heroes-next
+          ./heroes-next run tests/harness/thesis.hero -- tasks --sealed "$here/suite.enc" --compiler ./heroes-next > "$RUNNER_TEMP/suite.txt"
+          grep -v '^archive ' "$RUNNER_TEMP/suite.txt" | diff - "$here/hashes.txt" \
+            || { echo "::error::the opened suite's digests are not those of hashes.txt"; exit 1; }
+          # Opened by one invocation that exits, graded by another with no key in its
+          # environment: a program inside the sandbox can read another process's
+          # environment (panel 226, the ffi-pragmatist), and the grader refuses to run
+          # while a HEROES_*_KEY is set.
+          ./heroes-next run tests/harness/thesis.hero -- unseal --sealed "$here/suite.enc" --into "$RUNNER_TEMP/opened" --compiler ./heroes-next
+          env -u HEROES_TASKS_KEY -u HEROES_RESERVE_KEY ./heroes-next run tests/harness/thesis.hero -- dry "$RUNNER_TEMP/opened" --mute --compiler ./heroes-next
+          env -u HEROES_TASKS_KEY -u HEROES_RESERVE_KEY ./heroes-next run tests/harness/thesis.hero -- dry "$RUNNER_TEMP/opened" --mute --arm control --compiler ./heroes-next
+          if [ -f "$here/reserve.enc" ] && [ -n "${HEROES_RESERVE_KEY:-}" ]; then
+            ./heroes-next run tests/harness/thesis.hero -- tasks --sealed "$here/reserve.enc" --key HEROES_RESERVE_KEY --compiler ./heroes-next \
+              | grep -v '^archive ' | diff - "$here/hashes-reserve.txt" \
+              || { echo "::error::the opened reserve's digests are not those of hashes-reserve.txt"; exit 1; }
+          fi
+          echo "attested: $(grep -cE '^[0-9a-f]{64} [0-9a-f]{64} ' "$RUNNER_TEMP/suite.txt") tasks, their digests those of hashes.txt, every reference solution green in the strict arm and in the control arm"
+
   # THE RELEASE, made by the machine after every leg agrees (CLAUDE.md §14,
   # release tags). What it publishes is the tag's own source archive, which
   # GitHub makes from the tag and which carries the seed inside it, where

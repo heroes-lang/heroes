@@ -162,3 +162,25 @@ on the same tasks; the freeze, one commit carrying the archives, the hashes,
 the prediction with its numbers, the compiler's and the prompt's and the
 grader's digests; the first held-out run; then issue 2080's three-condition
 experiment on the recovery plan's planted mistakes.
+
+**What the sitting and the first build changed, 2026-10-20** (panel 226,
+`docs/panel/226-metrics-2-and-4-measured-by-one-instrument-three-arms-forked-from-one-generation-the-control-arm-built-and-run-and-the-held-out-tasks-sealed-in-the-tree.md`,
+provisional pending the author's reading). Three facts moved the plan. **The
+control arm could judge and not run**: `--permissive` was a flag of `check`
+alone, and the compiler-engineer measured that a filter answers 17 of the 27
+dropped rules and not the other 7, six of whose programs died at `build` with
+exit 2 and three ran with a meaning their own message denied; so `build`, `run`
+and `test` take the flag, and the resolver and the lowering give those seven a
+runtime meaning under a `permissive` flag the strict build never sets, the 26
+witnesses that run being the cases of the new `control` golden form. **The
+primary's test is McNemar's mid-p**, not the exact conditional, on the
+historian's precedent; **the prompt's identity is two shas**, the template's
+and the request layout's, on the spec-warden's measurement that the two
+layouts count the same tokens; and the blind reader's 25 choice points became
+the checklist a task's prose must pin. The thesis measured is the API's number
+(route A); the archive opens within 30 days of the first `v*` release after
+the held-out run, its key meanwhile in a reviewed CI secret for a job that
+prints counts and digests alone. The sandbox was measured rather than
+designed: `sandbox-exec` denies the home and the network and keeps the scratch,
+`ulimit -f` bites, and no memory ceiling is settable on this Mac, so memory is
+the wall clock's to bound here and RLIMIT_AS's under `bwrap` on Linux.
