@@ -291,8 +291,10 @@ a model's reading. **Two rules come with it, and they are what make it a thermos
 thermometer** (panel 024's warden, below): the rows from M-buildable-structs to
 M-compatibility-promise, the consolidation block, spend at most **1,500** real tokens before the
 thesis harness has run, and an addition past them waits for it; and the next raise rests on what
-that harness measures a token of specification to buy, an ablation by section, never on the
-document having approached the ceiling. It is **16 × 1024**, for the site's reason above. **Raised
+that harness measures a token of specification to buy, never on the document having approached the
+ceiling: **the ablation the harness makes is of the productions** (the spec without its grammar
+rules as one of Part 11's variant contexts, panel 133's prediction 3; panel 226 amended this
+sentence on 2026-10-20, which until then promised *an ablation by section* that no run makes). It is **16 × 1024**, for the site's reason above. **Raised
 before that to 8192 by author decision 2026-09-12**, to make room inside this document for the grammar's
 productions (panel 133, which found that every free-standing grammar in the survey has been
 archived and that the one arrangement still alive is Wirth's, the productions beside the prose they
@@ -4365,6 +4367,14 @@ and the one spelling of a character by its code, are refused under `--permissive
 `drop-case` reading 133 of 133 killed under `--permissive` as under `check` (measurement 024, and
 again on 2026-10-16 over the same 120 programs); from that day the control arm reads such a `match`
 as a language without the rule does, and `drop-case`'s control-arm column is the thesis's own.
+**And the control arm builds and runs** (panel 226, 2026-10-20, provisional pending the author's
+reading): `build --permissive`, `run --permissive` and `test --permissive` take the flag
+`check` alone took until that day, and every one of the 27 dropped rules has a runtime meaning the
+binary performs, pinned row by row in `tests/golden/control/`'s running cases, or a refusal the
+table names; a `match` reaching a case no arm names aborts with `panic: this match has no arm for
+<case>`, never with the runtime's *this is a compiler bug*. Until then nothing had ever built a
+permissive binary, and the control arm could judge a program and not run it, so metrics 2 and 4
+were not measurable in it.
 
 1. **Token counting.** With **two vendored BPE tokenisers** (Anthropic's legacy `claude.json` and
    `cl100k_base`), pinned by sha256 and read offline — no API key, no network. The **maximum over
@@ -4376,16 +4386,62 @@ as a language without the rule does, and `drop-case`'s control-arm column is the
    this document (panel 011). **Count declarations separately from uses** (verifies §1.5's
    asymmetry) and **punctuation separately from the rest** (settles whether braces/parens are 3%
    or 15%). The §1.6 budget is checked against the spec.
-2. **First-try rate.** Spec → model → programs → count. Two gradings, both reported: *compile* rate
-   (from the type checker's arrival) and *tests-pass* rate (from `test`'s arrival — §4.18:
-   compiling is not working). 20 frozen tasks × 5 samples, Wilson intervals; frozen, hashed prompt
-   templates; API-only, single-turn, **spec-only context** — the measured model co-designed this
-   language, so it never sees this document or the repo. One non-Anthropic model as robustness.
+2. **First-try rate and 4. Turns-to-green, one instrument** (panel 226, 2026-10-20, provisional
+   pending the author's reading; `tests/harness/thesis.hero`). Spec → model → program → graded by
+   black-box hidden cases (arguments and input files in, stdout and exit code out). One generation
+   per (task, sample), judged by three arms: **strict** (`check`, the full message), **strict-brief**
+   (`check --brief`) and **control** (`check --permissive`, built and run with `build --permissive`,
+   each of the 27 dropped rules given a runtime meaning pinned in a table, above). From turn 2 the
+   conversations fork from that generation, append-only, with the same feedback in every arm: the
+   compiler's message on a refusal; the visible example's observed-against-expected on a program
+   that compiles; the hidden cases never. Capped at 5 turns; non-convergence counted. Three failure
+   classes: refused at compile time, failed loudly at run time (a `panic:`), **silent** (exit 0,
+   wrong output); the thesis is measured on the third. **One primary, pre-registered at the
+   freeze**: `green@3`(strict) − `green@3`(control) on Sonnet 5.5 in the `spec` context, a cluster
+   bootstrap over tasks for the interval and McNemar's mid-p over the discordant pairs (the exact
+   conditional p beside it, never the primary), three outcomes named before the run (confirmed,
+   falsified, inconclusive); everything else exploratory. `green@k` is *solved by turn k*, not Chen
+   et al.'s pass@k, which is reported apart on the turn-1 samples, and Olausson's pass@t beside it
+   from the usage recorded. n from the trial's measured discordance and intra-task correlation; 40
+   author-written held-out tasks plus 20 in reserve, 3 samples each, 10 assistant-written tasks in
+   clear for the trial; a task's prose pins, or a hidden case covers, every choice point a blind
+   reader found (the argument count, an unreadable input, the trailing newline, CRLF, a name's
+   characters, signs and leading zeros, overflow, the order of ties, every malformed input's exit
+   code). Contexts: `spec`; `none` (the task alone, read against each model's declared cutoff,
+   June 2026 for the four listed, before the repository's publication on 2026-09-08); variants by
+   path. Models: Haiku 5.5, Sonnet 5.5, Opus 5.5, Fable 5.1 as ceiling, the provider's default
+   effort each, pinned ids with `created_at` and declared cutoff; a non-Anthropic model through its
+   API when a key exists; `claude -p` and `codex exec` as a `harness` transport in a table of their
+   own, every tool denied, on the assistant's tasks alone until a provider page documents that the
+   transport's prompts do not train and that unattended use on that plan is permitted. **The thesis
+   measured is the API's number.** The held-out tasks live in this repository sealed (`openssl enc
+   -aes-256-cbc -pbkdf2`, three archives, three keys), with a README naming the licence, the
+   delivery register and the opening trigger (within 30 days of the first `v*` release tagged after
+   the held-out run, or of the suite's being declared burned), a suite GUID and a per-task GUID as
+   canaries with a probing protocol, and a CI job that decrypts under a reviewed secret and prints
+   counts and digests alone. Provenance per run: spec sha, compiler sha and `sources` key, the
+   template's sha and the request layout's sha (two, since a `system` block and a user turn count
+   the same tokens and are not the same prompt), suite sha, model, effort, parameters, cutoff,
+   harness versions, per request the id, timestamp and usage; §1.2's *program tokens* read by
+   `count_tokens` on the extracted program, never from `usage.output_tokens`, which holds the
+   thinking.
+
+   **Until 2026-10-20 this item read**: *Spec → model → programs → count. Two gradings, both
+   reported: compile rate (from the type checker's arrival) and tests-pass rate (from `test`'s
+   arrival; §4.18: compiling is not working). 20 frozen tasks × 5 samples, Wilson intervals;
+   frozen, hashed prompt templates; API-only, single-turn, spec-only context: the measured model
+   co-designed this language, so it never sees this document or the repo. One non-Anthropic model
+   as robustness.* The two gradings stay as the turn-1 columns, the Wilson interval stays on every
+   per-arm column, and the single-turn spec-only context is the turn-1 row of every conversation.
 3. **Silent-error rate.** Mutation operators as *data* (swap same-typed args, drop a variant case,
    forget `@`, mutate an undeclared name, typo an identifier), applied mechanically to the golden
    corpus; per-operator kill rate. Deterministic, free, no API needed.
-4. **Turns-to-green.** Given a broken program, how many exchanges to make it compile — capped at 5,
-   non-convergence counted separately. Measures the rich errors, otherwise unfalsifiable.
+4. **Turns-to-green**: measured by item 2's instrument since 2026-10-20 (panel 226), as the turn
+   at which a sample's hidden cases first pass, capped at 5 with non-convergence counted apart, and
+   as tokens-to-green beside it. **Until that day this item read**: *Given a broken program, how
+   many exchanges to make it compile; capped at 5, non-convergence counted separately. Measures the
+   rich errors, otherwise unfalsifiable.* The rich errors are what the strict-against-brief arm now
+   measures.
 
    **Corrected 2026-09-09, and this clause is the root cause rather than a symptom** (panel 123).
    The offline commitment above stands and is right: no gate here ever touches the network. What was
