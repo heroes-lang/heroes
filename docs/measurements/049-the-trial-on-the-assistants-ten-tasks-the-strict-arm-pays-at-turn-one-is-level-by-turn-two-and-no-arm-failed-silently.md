@@ -168,3 +168,23 @@ decision for the sitting whose resolution these numbers inform (panel 226,
 issue 2159), not a finding of this run. What the run does show: the strict
 arm's turn-1 price on these models is a refusal for form that one message
 repairs, 4 pairs of 90 and none left by turn 3.
+
+## Corrected underneath, 2026-10-20, the same evening
+
+**§ 7's *the control arm let no program through that failed silently on Sonnet
+5.5 or Opus 5.5* holds at turn 3 and not at every turn**, read before the
+decision issue it would have rested on was filed. Every turn of the 270
+verdicts listed by outcome, one turn of Sonnet 5.5 was `compiled_wrong` beside
+Haiku 5.5's task 02: task 02, sample 3, the control arm, turn 2. Its turn 1,
+the generation every arm shares, was refused by the strict arm for
+`shadowed_binding` alone and by the control arm, which drops that rule, for
+the type stage's `bad_operand` and `builtin_shape` three times. The control
+arm's turn-2 program, graded again by `grade --task tests/thesis/02` in each
+arm: **the strict arm refuses it, `shadowed_binding`; the control arm builds it
+and it prints a wrong output on all 9 cases**, the visible example among them.
+The model was shown that example's output, and its turn 3 passed every case,
+as the strict arm's turn 3 did. So the thesis's mechanism ran once in the
+trial, a mistake the strict arm names that the control arm runs to a wrong
+output at exit 0, and it did not move green@3, because the visible example
+showed it: the primary can move only where such a mistake passes the visible
+example and fails a hidden case.
