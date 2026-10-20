@@ -614,11 +614,15 @@ test "a dry run over the assistant's suite counts one request per generation and
     )
     world = issue_wire.world_of(scratch: scratch, script: [])
     tally = run(plan: plan, transport: issue_wire.scripted(), world: world, scratch: scratch, compiler: compiler).must()
-    assert tally.requests == 3 * 2 * 2 * 3
+
+    # One request per task, model, context and sample, over every task the suite holds.
+    tasks = thesis_tasks.read_suite(scratch: scratch, dir: "tests/thesis").must().tasks.len()
+    assert tasks >= 3
+    assert tally.requests == tasks * 2 * 2 * 3
 
     # Half the requests carry the spec, about 6,650 tokens by bytes over four, and half the canary's sentence alone.
-    assert tally.estimated_tokens > 18 * 6000
-    assert tally.estimated_tokens < 36 * 8000
+    assert tally.estimated_tokens > tasks * 2 * 3 * 6000
+    assert tally.estimated_tokens < tasks * 2 * 2 * 3 * 8000
     assert tally.generations == 0
     assert tally.verdicts == 0
     assert tally.stopped == ""
@@ -631,12 +635,13 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
 
     scratch = shell.own_scratch()
     compiler = shell.some_compiler().must()
-    first = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/01/reference.hero").must()))
-    second = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/02/reference.hero").must()))
-    third = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/03/reference.hero").must()))
+    suite = suite_of(scratch: scratch, numbers: ["01", "02", "03"]).must()
+    first = answer_json(text: thesis_grade.as_answer(read_file(path: suite + "/01/reference.hero").must()))
+    second = answer_json(text: thesis_grade.as_answer(read_file(path: suite + "/02/reference.hero").must()))
+    third = answer_json(text: thesis_grade.as_answer(read_file(path: suite + "/03/reference.hero").must()))
     refused = answer_json(text: "```\nfunction main()\n    unused = 3\n    print(2)\n```\n")
     one = Plan(
-        suite_dir: "tests/thesis",
+        suite_dir: suite,
         models: ["claude-haiku-5-5"],
         arms: ["strict"],
         contexts: ["none"],
@@ -695,7 +700,7 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
     assert again.skipped == 6
 
     capped = Plan(
-        suite_dir: "tests/thesis",
+        suite_dir: suite,
         models: ["claude-haiku-5-5"],
         arms: ["strict"],
         contexts: ["none"],
@@ -819,6 +824,22 @@ function test_plan(dir: str, out: str, arms: [str]) -> Plan
         quiet: true
     )
 
+# The assistant's tasks numbered, copied into a suite of the test's own: a
+# script answers its tasks in order, so it reads those tasks and no others,
+# however many `tests/thesis/` grows to hold.
+function suite_of(scratch: str, numbers: [str]) -> str?
+    dir = scratch + "/suite"
+    shell.mkdir_all(dir)?
+
+    for number in numbers
+        copied = shell.run(scratch: scratch, program: "cp", words: ["cp", "-R", "tests/thesis/" + number, dir + "/" + number])?
+
+        if copied.code != 0
+            return fail(code: "copy", msg: "cp -R tests/thesis/" + number + " exited " + copied.code.to_str())
+
+    write_file(path: dir + "/LABEL", text: "assistant\n")?
+    return ok(dir)
+
 # Five 529s: one request asked past every try.
 function overloaded() -> [issue_wire.Reply]
     out: [issue_wire.Reply] @= []
@@ -835,14 +856,15 @@ test "a generation lost past its retries is every arm's transport_error and the 
 
     scratch = shell.own_scratch()
     compiler = shell.some_compiler().must()
-    second = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/02/reference.hero").must()))
-    third = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/03/reference.hero").must()))
+    suite = suite_of(scratch: scratch, numbers: ["01", "02", "03"]).must()
+    second = answer_json(text: thesis_grade.as_answer(read_file(path: suite + "/02/reference.hero").must()))
+    third = answer_json(text: thesis_grade.as_answer(read_file(path: suite + "/03/reference.hero").must()))
     script: [issue_wire.Reply] @= overloaded()
     script @ script.push(issue_wire.answer(status: 200, headers: [], body: second)).push(
         issue_wire.answer(status: 200, headers: [], body: third)
     )
     tally = run(
-        plan: test_plan(dir: "tests/thesis", out: scratch + "/out", arms: ["strict", "control"]),
+        plan: test_plan(dir: suite, out: scratch + "/out", arms: ["strict", "control"]),
         transport: issue_wire.scripted(),
         world: issue_wire.world_of(scratch: scratch, script: script),
         scratch: scratch,
@@ -870,7 +892,7 @@ test "a generation lost past its retries is every arm's transport_error and the 
             down @ down.push(one)
 
     stopped = run(
-        plan: test_plan(dir: "tests/thesis", out: scratch + "/down", arms: ["strict"]),
+        plan: test_plan(dir: suite, out: scratch + "/down", arms: ["strict"]),
         transport: issue_wire.scripted(),
         world: issue_wire.world_of(scratch: scratch, script: down),
         scratch: scratch,
