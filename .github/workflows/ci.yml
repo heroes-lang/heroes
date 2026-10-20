@@ -771,6 +771,31 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: ./heroes${{ matrix.exe }} run tests/harness/main.hero -- ./heroes${{ matrix.exe }}
 
+      # BUBBLEWRAP, THE SANDBOX A MODEL'S PROGRAM RUNS IN ON LINUX (issue 2162).
+      # Installed here so the thesis instrument's tests that run a program,
+      # its confinement test among them, run on both Linux legs instead of
+      # saying SKIP. Asked once, bare, whether it can make its namespaces:
+      # measured 2026-10-20 in this Mac's Docker, it could not under the
+      # default seccomp profile and the masked system paths, and with both
+      # lifted the instrument's 121 tests passed there as a plain user. A
+      # runner is a machine, not a container, where Ubuntu's AppArmor may
+      # restrict unprivileged user namespaces instead: where the probe is
+      # refused, the step says what the setting read, lifts it for this job
+      # alone and asks again, and a second refusal stops the leg by name.
+      - name: Bubblewrap, the sandbox a model's program runs in on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y bubblewrap
+          bwrap --version
+          probe() { bwrap --ro-bind /usr /usr --ro-bind-try /lib /lib --ro-bind-try /lib64 /lib64 --ro-bind-try /bin /bin --dev /dev --proc /proc --unshare-all --die-with-parent /bin/true; }
+          if probe; then
+            echo "bwrap makes its namespaces on this runner"
+          else
+            echo "bwrap is refused its namespaces; kernel.apparmor_restrict_unprivileged_userns reads $(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 'nothing'), lifted for this job"
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+            probe
+          fi
+
       # THE NET'S OWN TESTS — 81 blocks that nothing ran until 2026-08-25
       # (author decision, `/decide` answer `a`). The two steps above drive the
       # compiler; neither asks whether the thing driving it is right, and while
@@ -1036,6 +1061,15 @@ jobs:
           # bubblewrap is the sandbox the grader runs a program in on Linux
           # (`tests/harness/thesis_sandbox.hero`); without it `dry` refuses to run a case.
           sudo apt-get update && sudo apt-get install -y clang bubblewrap
+          # The same question the Linux legs ask, before a program is graded
+          # (issue 2162): a sandbox refused its namespaces lifts Ubuntu's
+          # AppArmor setting for this job alone, or stops it by name.
+          probe() { bwrap --ro-bind /usr /usr --ro-bind-try /lib /lib --ro-bind-try /lib64 /lib64 --ro-bind-try /bin /bin --dev /dev --proc /proc --unshare-all --die-with-parent /bin/true; }
+          if ! probe; then
+            echo "bwrap is refused its namespaces; kernel.apparmor_restrict_unprivileged_userns reads $(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 'nothing'), lifted for this job"
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+            probe
+          fi
           clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
           ./heroes build selfhost/main.hero -o heroes-next
           ./heroes-next run tests/harness/thesis.hero -- tasks --sealed "$here/suite.enc" --compiler ./heroes-next > "$RUNNER_TEMP/suite.txt"

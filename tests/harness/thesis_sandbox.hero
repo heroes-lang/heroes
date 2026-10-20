@@ -238,16 +238,11 @@ test "the profile denies by default, allows the scratch alone for writing, and d
         .err e => assert e.code == "relative_path"
 
 test "a program run inside the sandbox writes in its scratch, is refused outside it and in the home, and reads neither"
-    if !shell.exists(DARWIN_TOOL)
-        print(
-            "SKIP thesis_sandbox: no " + DARWIN_TOOL + " here; the Linux words wait for a leg that installs bubblewrap (issue 2162)"
-        )
-        return
-
-    if key_held() != ""
-        print(
-            "SKIP thesis_sandbox: " + key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
-        )
+    # Wherever either tool stands: `sandbox-exec`'s profile on macOS, and on
+    # Linux `bwrap`, which mounts the scratch alone, so the folder beside it is
+    # not there to be written or read (issue 2162).
+    if unrunnable() != ""
+        print("SKIP thesis_sandbox: " + unrunnable())
         return
 
     compiler = shell.some_compiler()
@@ -276,7 +271,11 @@ test "a program run inside the sandbox writes in its scratch, is refused outside
     ).must()
     assert built.code == 0
     sandbox = prepared(scratch: inside, binary: inside + "/probe").must()
-    assert sandbox.tool == DARWIN_TOOL
+
+    if shell.exists(DARWIN_TOOL)
+        assert sandbox.tool == DARWIN_TOOL
+    else
+        assert sandbox.tool == LINUX_TOOL
     ran = shell.run_bounded(
         scratch: scratch,
         program: sandbox.program,
