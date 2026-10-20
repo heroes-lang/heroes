@@ -1,0 +1,216 @@
+# WHAT A RUN WRITES AND READS BACK: the generation of turn 1, shared by the
+# arms, and one verdict per (task, model, context, sample, arm)
+# (M-thesis-harness, 2026-10-20).
+#
+# One file per record, written once when complete, never appended: the harness
+# has no append (`write_file` truncates), and a run killed between two files
+# leaves whole files behind, which is what a rerun reads to skip what is done.
+# A **generation** is turn 1's answer, asked once and judged by every arm, so
+# the arms are paired exactly at turn 1 (the sitting's R2); its key carries no
+# arm. A **verdict** carries the turns the arm took from that generation,
+# each with its outcome, its codes and its token counts, the turn at which the
+# hidden cases all passed (0 for none), and whether it converged inside the
+# cap. Neither holds a task's text: the task's digest stands for it, so a
+# verdict of a held-out task is committable in clear.
+
+use json_fields
+use json_read
+use shell
+use strings
+use thesis_json
+
+record Generation
+    key: str
+    task_sha: str
+    model: str
+    context_sha: str
+    sample: i64
+    text: str
+    stop: str
+    answered_by: str
+    id: str
+    input: i64
+    output: i64
+    cache_read: i64
+    cache_write: i64
+    turn: str
+
+record Turn
+    outcome: str
+    codes: [str]
+    stop: str
+    input: i64
+    output: i64
+    cache_read: i64
+    cache_write: i64
+
+record Verdict
+    key: str
+    task_sha: str
+    model: str
+    arm: str
+    context_sha: str
+    sample: i64
+    turns: [Turn]
+    green_turn: i64
+    converged: bool
+
+# The key of a generation: the task's and the context's first eight hex
+# digits, the model, the sample. A verdict's adds the arm.
+function generation_key(task_sha: str, model: str, context_sha: str, sample: i64) -> str
+    return task_sha.slice(from: 0, to: 8) + "." + model + "." + short(context_sha) + ".s" + sample.to_str()
+
+function verdict_key(task_sha: str, model: str, context_sha: str, sample: i64, arm: str) -> str
+    return generation_key(task_sha: task_sha, model: model, context_sha: context_sha, sample: sample) + "." + arm
+
+# The first eight digits of a digest, or `none` for the canary's empty one.
+function short(sha: str) -> str
+    if sha.len() < 8
+        return "none"
+    return sha.slice(from: 0, to: 8)
+
+function written_generation(g: Generation) -> str
+    return thesis_json.object(
+        [thesis_json.member(key: "key", value: g.key), thesis_json.member(key: "task_sha", value: g.task_sha), thesis_json.member(key: "model", value: g.model), thesis_json.member(key: "context_sha", value: g.context_sha), thesis_json.number(key: "sample", value: g.sample), thesis_json.member(key: "text", value: g.text), thesis_json.member(key: "stop", value: g.stop), thesis_json.member(key: "answered_by", value: g.answered_by), thesis_json.member(key: "id", value: g.id), thesis_json.number(key: "input", value: g.input), thesis_json.number(key: "output", value: g.output), thesis_json.number(key: "cache_read", value: g.cache_read), thesis_json.number(key: "cache_write", value: g.cache_write), thesis_json.raw(key: "turn", json: g.turn)]
+    )
+
+function read_generation(text: str) -> Generation?
+    doc = json_read.read_json(text)?
+    turn = json_fields.field(of: doc, name: "turn")?
+    return ok(
+        Generation(key: json_fields.text_at(of: doc, name: "key")?, task_sha: json_fields.text_at(of: doc, name: "task_sha")?, model: json_fields.text_at(of: doc, name: "model")?, context_sha: json_fields.text_at(of: doc, name: "context_sha")?, sample: json_fields.whole_at(of: doc, name: "sample")?, text: json_fields.text_at(of: doc, name: "text")?, stop: json_fields.text_at(of: doc, name: "stop")?, answered_by: json_fields.text_at(of: doc, name: "answered_by")?, id: json_fields.text_at(of: doc, name: "id")?, input: json_fields.whole_at(of: doc, name: "input")?, output: json_fields.whole_at(of: doc, name: "output")?, cache_read: json_fields.whole_at(of: doc, name: "cache_read")?, cache_write: json_fields.whole_at(of: doc, name: "cache_write")?, turn: thesis_json.written(turn))
+    )
+
+function written_turn(t: Turn) -> str
+    return thesis_json.object(
+        [thesis_json.member(key: "outcome", value: t.outcome), thesis_json.strings(key: "codes", items: t.codes), thesis_json.member(key: "stop", value: t.stop), thesis_json.number(key: "input", value: t.input), thesis_json.number(key: "output", value: t.output), thesis_json.number(key: "cache_read", value: t.cache_read), thesis_json.number(key: "cache_write", value: t.cache_write)]
+    )
+
+function written_verdict(v: Verdict) -> str
+    turns: [str] @= []
+
+    for t in v.turns
+        turns @ turns.push(written_turn(t))
+
+    return thesis_json.object(
+        [thesis_json.member(key: "key", value: v.key), thesis_json.member(key: "task_sha", value: v.task_sha), thesis_json.member(key: "model", value: v.model), thesis_json.member(key: "arm", value: v.arm), thesis_json.member(key: "context_sha", value: v.context_sha), thesis_json.number(key: "sample", value: v.sample), thesis_json.raw(key: "turns", json: thesis_json.list(turns)), thesis_json.number(key: "green_turn", value: v.green_turn), thesis_json.flag(key: "converged", value: v.converged)]
+    )
+
+function read_verdict(text: str) -> Verdict?
+    doc = json_read.read_json(text)?
+    key = json_fields.text_at(of: doc, name: "key")?
+    turns: [Turn] @= []
+
+    for item in json_fields.items_of(json_fields.field(of: doc, name: "turns")?)?
+        codes: [str] @= []
+
+        for code in json_fields.items_of(json_fields.field(of: item, name: "codes")?)?
+            match code
+                .text c => codes @ codes.push(c.v)
+                .null_value | .truth _ | .number _ | .items _ | .fields _ => return fail(
+                    code: "bad_verdict",
+                    msg: "a code is not a string"
+                )
+
+        turns @ turns.push(
+            Turn(outcome: json_fields.text_at(of: item, name: "outcome")?, codes: codes, stop: json_fields.text_at(of: item, name: "stop")?, input: json_fields.whole_at(of: item, name: "input")?, output: json_fields.whole_at(of: item, name: "output")?, cache_read: json_fields.whole_at(of: item, name: "cache_read")?, cache_write: json_fields.whole_at(of: item, name: "cache_write")?)
+        )
+
+    # Every reader of a verdict reads its last turn, so a verdict with none is
+    # refused here, by its key, and never read as an index past the end.
+    if turns.len() == 0
+        return fail(code: "bad_verdict", msg: "the verdict " + key + " holds no turn")
+    converged = json_fields.field(of: doc, name: "converged")?
+    is_green: bool @= false
+
+    match converged
+        .truth b => is_green @ b.v
+        .null_value | .number _ | .text _ | .items _ | .fields _ => return fail(
+            code: "bad_verdict",
+            msg: "`converged` is not a boolean"
+        )
+
+    return ok(
+        Verdict(key: key, task_sha: json_fields.text_at(of: doc, name: "task_sha")?, model: json_fields.text_at(of: doc, name: "model")?, arm: json_fields.text_at(of: doc, name: "arm")?, context_sha: json_fields.text_at(of: doc, name: "context_sha")?, sample: json_fields.whole_at(of: doc, name: "sample")?, turns: turns, green_turn: json_fields.whole_at(of: doc, name: "green_turn")?, converged: is_green)
+    )
+
+# A record kept under `dir` by its key; `kept` reads one back, or nothing
+# where none stands or the file does not parse (a run killed mid-write).
+function keep(dir: str, key: str, text: str) -> ()?
+    shell.mkdir_all(dir)?
+    return write_file(path: dir + "/" + key + ".json", text: text)
+
+function kept(dir: str, key: str) -> str?
+    return read_file(path: dir + "/" + key + ".json")
+
+# Every record under `dir`, read as text, by key order.
+function all_kept(scratch: str, dir: str) -> [str]?
+    out: [str] @= []
+
+    if !shell.is_directory(dir)
+        return ok(out)
+
+    for path in shell.list_entries(scratch: scratch, dir: dir)?
+        if strings.ends_with(text: path, suffix: ".json")
+            text = read_file(path: path)
+
+            if !text.is_err()
+                out @ out.push(text.must())
+
+    return ok(out)
+
+test "a generation and a verdict are written and read back whole, the assistant's turn byte for byte"
+    turn = "{\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"s\"},{\"type\":\"text\",\"text\":\"```\\nfunction main()\\n    print(1)\\n```\"}]}"
+    g = Generation(
+        key: generation_key(task_sha: "6fa17d8ce4c184d1", model: "claude-haiku-5-5", context_sha: "212264059c985c2e", sample: 2),
+        task_sha: "6fa17d8ce4c184d1",
+        model: "claude-haiku-5-5",
+        context_sha: "212264059c985c2e",
+        sample: 2,
+        text: "```\nfunction main()\n    print(1)\n```",
+        stop: "end_turn",
+        answered_by: "claude-haiku-5-5",
+        id: "msg_1",
+        input: 10400,
+        output: 120,
+        cache_read: 10294,
+        cache_write: 0,
+        turn: turn
+    )
+    assert g.key == "6fa17d8c.claude-haiku-5-5.21226405.s2"
+    back = read_generation(written_generation(g)).must()
+    assert back.key == g.key
+    assert back.text == g.text
+    assert back.turn == turn
+    assert back.cache_read == 10294
+
+    v = Verdict(
+        key: verdict_key(task_sha: "6fa17d8ce4c184d1", model: "claude-haiku-5-5", context_sha: "", sample: 1, arm: "strict"),
+        task_sha: "6fa17d8ce4c184d1",
+        model: "claude-haiku-5-5",
+        arm: "strict",
+        context_sha: "",
+        sample: 1,
+        turns: [Turn(outcome: "compile_error", codes: ["unused_binding"], stop: "end_turn", input: 300, output: 100, cache_read: 0, cache_write: 0), Turn(outcome: "cases_pass", codes: [], stop: "end_turn", input: 900, output: 110, cache_read: 0, cache_write: 0)],
+        green_turn: 2,
+        converged: true
+    )
+    assert v.key == "6fa17d8c.claude-haiku-5-5.none.s1.strict"
+    again = read_verdict(written_verdict(v)).must()
+    assert again.turns.len() == 2
+    assert again.turns[0].codes == ["unused_binding"]
+    assert again.green_turn == 2
+    assert again.converged
+
+    match read_verdict(written_verdict(Verdict(key: "k.none", task_sha: "t", model: "m", arm: "strict", context_sha: "", sample: 1, turns: [], green_turn: 0, converged: false)))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "bad_verdict"
+            assert strings.contains(text: e.msg, needle: "k.none")
+
+    scratch = shell.own_scratch()
+    keep(dir: scratch + "/samples", key: v.key, text: written_verdict(v)).must()
+    assert read_verdict(kept(dir: scratch + "/samples", key: v.key).must()).must().arm == "strict"
+    assert kept(dir: scratch + "/samples", key: "nobody").is_err()
+    assert all_kept(scratch: scratch, dir: scratch + "/samples").must().len() == 1
+    assert all_kept(scratch: scratch, dir: scratch + "/nowhere").must().len() == 0

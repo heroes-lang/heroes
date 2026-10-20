@@ -1,0 +1,437 @@
+# A MODEL'S ANSWER, GRADED OFFLINE: the program taken out of it, checked in
+# an arm, built, run against a task's hidden cases under a bound, and told as
+# one outcome (M-thesis-harness, 2026-10-20; design.md Part 11, metric 2's two
+# gradings and metric 4's turns).
+#
+# **The outcomes, three classes of failure and the rest.** Refused at compile
+# time: `compile_error`, with the codes `check --json` names. Failed loudly at
+# run time: `abort`, status 134 with `panic:` on stderr, what the user of a
+# permissive language reads when the program runs; `crash`, any other status
+# of 128 and above; `timeout`, the bound reached, 124. **Silent**: `compiled_wrong`,
+# exit 0 with another output than the case's, the bucket issue 35 asked for by
+# name, and the one the thesis is measured on. And the rest, outside the
+# denominator and counted: `no_program`, no fenced block in the answer;
+# `format_slip`, blocks and none holding `function main`; `refused_extern`, a
+# program binding C, which would run as the author's user; `hole`, a `???`
+# `check` accepts and `build` makes no binary of; `build_failed`, clang refusing
+# what `check` accepted, a compiler defect to file; `cases_pass`, every case met.
+#
+# **The arms.** `strict` runs `check` and keeps its full message, `brief` runs
+# `check --brief`, `control` runs `check --permissive` and builds with `build
+# --permissive` (the thesis rules dropped, each performing the runtime meaning
+# panel 226's R1 pinned, design.md Part 11 § The control arm), so a control
+# verdict past `check` is the program's own under the control arm, a `match`
+# taken past every arm aborting `panic: this match has no arm for .<case>`.
+# Until 2026-10-20 the control arm judged and could not build: a program it
+# accepted was built strict, and one the strict build refused ended
+# `build_failed`, the very programs the thesis is measured on.
+#
+# **The extraction rule, pre-registered**: the LAST fenced block, ``` or ~~~,
+# that holds `function main`, whatever its info string; CR dropped. A block's
+# text is written as `answer.hero` in the sample's scratch and nothing else is
+# read of the answer.
+
+use expectation
+use json_fields
+use json_read
+use shell
+use strings
+use thesis_sandbox
+use thesis_tasks
+
+# The mark in a case's argument that stands for the case's own folder. A
+# constant, since a literal holding `{dir}` where a `dir` is in scope is
+# refused as a hole without its `f` (spec § 2), which is the rule at work.
+constant DIR_MARK: str
+    "{dir}"
+
+record Graded
+    outcome: str
+    codes: [str]
+    message: str
+    passed: i64
+    total: i64
+
+# The program a model's answer holds, by the rule above.
+function extracted(answer: str) -> str?
+    blocks: [str] @= []
+    inside: bool @= false
+    fence: str @= ""
+    held: [str] @= []
+
+    for raw in strings.lines(text: answer)
+        line = without_cr(raw)
+        bare = strings.trimmed(text: line)
+
+        if !inside
+            if strings.starts_with(text: bare, prefix: "```") || strings.starts_with(text: bare, prefix: "~~~")
+                inside @ true
+                fence @ bare.slice(from: 0, to: 3)
+                held @ []
+        else if strings.starts_with(text: bare, prefix: fence)
+            inside @ false
+            blocks @ blocks.push(held.join("\n") + "\n")
+        else
+            held @ held.push(line)
+
+    if blocks.len() == 0
+        return fail(code: "no_program", msg: "the answer holds no fenced code block")
+
+    for i in range(from: 0, to: blocks.len())
+        block = blocks[blocks.len() - 1 - i]
+
+        if strings.contains(text: block, needle: "function main")
+            return ok(block)
+
+    return fail(
+        code: "format_slip",
+        msg: "the answer holds " + blocks.len().to_str() + " fenced block(s) and none holds `function main`"
+    )
+
+function without_cr(line: str) -> str
+    if line.len() > 0 && line[line.len() - 1] == 13
+        return line.slice(from: 0, to: line.len() - 1)
+    return line
+
+# A program that binds C: a top-level line opening `extern `.
+function binds_c(program: str) -> bool
+    for line in strings.lines(text: program)
+        if strings.starts_with(text: line, prefix: "extern ")
+            return true
+
+    return false
+
+# The words `check` takes in `arm`, before the file.
+function check_words(compiler: str, arm: str, json: bool) -> [str]
+    words: [str] @= [compiler, "check"]
+
+    if arm == "control"
+        words @ words.push("--permissive")
+
+    if arm == "brief" && !json
+        words @ words.push("--brief")
+
+    if json
+        words @ words.push("--json")
+    return words
+
+# The words `build` takes in `arm`: the control arm's binary performs the
+# meanings of the rules it drops, every other arm's is the strict build's.
+function build_words(compiler: str, arm: str, path: str, binary: str) -> [str]
+    if arm == "control"
+        return [compiler, "build", path, "--permissive", "-o", binary]
+    return [compiler, "build", path, "-o", binary]
+
+# `answer` graded for `task` in `arm`, every child under `scratch`, the cases
+# under `seconds` and `bytes` each.
+function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis_tasks.Task, seconds: i64, bytes: i64) -> Graded?
+    if arm != "strict" && arm != "brief" && arm != "control"
+        return fail(code: "bad_arm", msg: "an arm is `strict`, `brief` or `control`, not `" + arm + "`")
+    shell.mkdir_all(scratch)?
+    program = extracted(answer)
+
+    if program.is_err()
+        return match program
+            .ok _  => fail(code: "unreachable", msg: "an error has no program")
+            .err e => ok(Graded(outcome: e.code, codes: [], message: e.msg, passed: 0, total: task.cases.len()))
+    text = program.must()
+
+    if binds_c(text)
+        return ok(
+            Graded(outcome: "refused_extern", codes: [], message: "the program binds C with `extern`, which the grader never runs", passed: 0, total: task.cases.len())
+        )
+
+    path = scratch + "/answer.hero"
+    write_file(path: path, text: text)?
+    checked = shell.run(scratch: scratch, program: compiler, words: check_words(compiler: compiler, arm: arm, json: true).push(path))?
+
+    if checked.code == 2
+        return fail(code: "grader_failed", msg: compiler + " check could not run on the answer: " + checked.err)
+
+    if checked.code != 0
+        told = shell.run(scratch: scratch, program: compiler, words: check_words(compiler: compiler, arm: arm, json: false).push(path))?
+        return ok(
+            Graded(outcome: "compile_error", codes: codes_of(checked.err), message: told.err, passed: 0, total: task.cases.len())
+        )
+
+    # The sandbox names its paths absolutely, so the binary and every case's
+    # folder are made under the scratch's absolute path (panel 226's R11).
+    here = absolute(scratch: scratch, path: scratch)?
+    binary = here + "/answer" + shell.exe_suffix()
+    built = shell.run_bounded(scratch: scratch, program: compiler, words: build_words(compiler: compiler, arm: arm, path: path, binary: binary), seconds: 120, bytes: 0, stdin_path: "")?
+
+    if built.code != 0
+        if strings.contains(text: built.err, needle: "no binary:") && strings.contains(text: built.err, needle: "hole")
+            return ok(Graded(outcome: "hole", codes: [], message: built.err, passed: 0, total: task.cases.len()))
+        return ok(Graded(outcome: "build_failed", codes: [], message: built.err, passed: 0, total: task.cases.len()))
+
+    sandbox = thesis_sandbox.prepared(scratch: here, binary: binary)?
+    passed: i64 @= 0
+
+    for one in task.cases
+        verdict = run_case(scratch: here, sandbox: sandbox, task: task, one: one, seconds: seconds, bytes: bytes)?
+
+        if verdict.outcome != "cases_pass"
+            return ok(
+                Graded(outcome: verdict.outcome, codes: [], message: "case " + one.name + ": " + verdict.message, passed: passed, total: task.cases.len())
+            )
+        passed @ passed + 1
+
+    return ok(Graded(outcome: "cases_pass", codes: [], message: "", passed: passed, total: task.cases.len()))
+
+# The codes a `check --json` answer names, sorted, read from stderr's first
+# `{` as `selfhost/mutate/judged.hero` reads it.
+function codes_of(err: str) -> [str]
+    at = strings.index_of(text: err, needle: "{")
+
+    if at.is_err()
+        return []
+    document = json_read.read_json(err.slice(from: at.must(), to: err.len()))
+
+    if document.is_err()
+        return []
+    listed = json_fields.field(of: document.must(), name: "diagnostics")
+
+    if listed.is_err()
+        return []
+    items = json_fields.items_of(listed.must())
+
+    if items.is_err()
+        return []
+    codes: [str] @= []
+
+    for item in items.must()
+        code = json_fields.text_at(of: item, name: "code")
+
+        if !code.is_err()
+            codes @ codes.push(code.must())
+
+    return sort(codes)
+
+# One hidden case run: its files copied into a folder of its own, `{dir}` in
+# its arguments standing for that folder, the binary under the bound.
+# `path` as an absolute path: itself where it already is one, else under the
+# working directory `pwd` names.
+function absolute(scratch: str, path: str) -> str?
+    if strings.starts_with(text: path, prefix: "/")
+        return ok(path)
+    here = shell.run(scratch: scratch, program: "pwd", words: ["pwd"])?
+
+    if here.code != 0
+        return fail(code: "no_pwd", msg: "pwd did not answer, and the sandbox names absolute paths")
+    return ok(strings.trimmed(text: here.out) + "/" + path)
+
+# One case, the binary run inside the sandbox with the case's files copied
+# into a folder of its own under the (absolute) scratch.
+function run_case(scratch: str, sandbox: thesis_sandbox.Sandbox, task: thesis_tasks.Task, one: thesis_tasks.Case, seconds: i64, bytes: i64) -> Graded?
+    dir = scratch + "/case-" + one.name
+    shell.mkdir_all(dir)?
+
+    for name in one.files
+        content = read_file(path: task.dir + "/cases/" + one.name + ".files/" + name)?
+        write_file(path: dir + "/" + name, text: content)?
+
+    arguments: [str] @= []
+
+    for arg in one.args
+        arguments @ arguments.push(strings.split_text(text: arg, separator: DIR_MARK).join(dir))
+
+    ran = shell.run_bounded(scratch: scratch, program: sandbox.program, words: thesis_sandbox.words_with(sandbox: sandbox, arguments: arguments), seconds: seconds, bytes: bytes, stdin_path: "")?
+
+    if ran.code == 124
+        return ok(
+            Graded(outcome: "timeout", codes: [], message: "ran past " + seconds.to_str() + " seconds", passed: 0, total: 0)
+        )
+
+    if ran.code >= 128
+        if strings.contains(text: ran.err, needle: "panic:")
+            return ok(Graded(outcome: "abort", codes: [], message: strings.trimmed(text: ran.err), passed: 0, total: 0))
+        return ok(
+            Graded(outcome: "crash", codes: [], message: "ended with status " + ran.code.to_str() + "\n" + ran.err, passed: 0, total: 0)
+        )
+    want = expectation.split(one.expected)?
+
+    match expectation.unmet(want, out: ran.out, err: ran.err, code: ran.code)
+        .ok why => return ok(Graded(outcome: "compiled_wrong", codes: [], message: why, passed: 0, total: 0))
+        .err _  => return ok(Graded(outcome: "cases_pass", codes: [], message: "", passed: 1, total: 1))
+
+# The sentence a refusal of a suite or a task is told with.
+function unreadable(failed: bool, of: str) -> str
+    if failed
+        return of + " could not be read as a task suite; `tasks` on it says why"
+    return of + " read"
+
+# The answer the suite writer's own solution would be, for `dry`.
+function as_answer(program: str) -> str
+    return "Here is the program.\n\n```hero\n" + program + "```\n"
+
+test "the extraction rule takes the last block holding `function main`, drops CR, and names the two ways an answer has none"
+    two = "First a helper:\n\n```\nfunction helper() -> i64\n    return 1\n```\n\nThen the program:\n\n~~~heroes\r\nfunction main()\r\n    print(helper())\r\n~~~\r\n"
+    got = extracted(two).must()
+    assert got == "function main()\n    print(helper())\n"
+
+    match extracted("No code here.")
+        .ok _  => assert false
+        .err e => assert e.code == "no_program"
+
+    match extracted("```\nfunction helper() -> i64\n    return 1\n```\n")
+        .ok _  => assert false
+        .err e => assert e.code == "format_slip"
+
+    assert binds_c("extern \"math.h\" link \"m\"\n    function sqrt(x: f64) -> f64\n\nfunction main()\n    print(1)\n")
+    assert !binds_c("function main()\n    print(\"extern \")\n")
+    assert check_words(compiler: "h", arm: "control", json: true) == ["h", "check", "--permissive", "--json"]
+    assert check_words(compiler: "h", arm: "brief", json: false) == ["h", "check", "--brief"]
+    assert check_words(compiler: "h", arm: "brief", json: true) == ["h", "check", "--json"]
+    assert build_words(compiler: "h", arm: "control", path: "a.hero", binary: "b") == ["h", "build", "a.hero", "--permissive", "-o", "b"]
+    assert build_words(compiler: "h", arm: "strict", path: "a.hero", binary: "b") == ["h", "build", "a.hero", "-o", "b"]
+    assert build_words(compiler: "h", arm: "brief", path: "a.hero", binary: "b") == ["h", "build", "a.hero", "-o", "b"]
+
+test "the codes of a check --json answer are read from stderr's first brace, sorted"
+    err = "noise before\n{\"schema\": 2, \"kind\": \"diagnostics\", \"diagnostics\": [{\"code\": \"unused_binding\"}, {\"code\": \"non_exhaustive\"}]}\n"
+    assert codes_of(err) == ["non_exhaustive", "unused_binding"]
+    assert codes_of("nothing") == []
+
+test "an answer is graded end to end against a task of the tree: wrong output, a refusal with its code, a loop under the bound, no program"
+    if thesis_sandbox.key_held() != ""
+        print(
+            "SKIP thesis_grade: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
+        )
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    task = thesis_tasks.read_task(scratch: scratch, dir: "tests/thesis/03", number: "03").must()
+
+    wrong = graded(
+        scratch: scratch + "/wrong",
+        compiler: compiler,
+        arm: "strict",
+        answer: "```\nfunction main()\n    print(\"2\")\n```\n",
+        task: task,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert wrong.outcome == "compiled_wrong"
+    assert wrong.passed == 1
+    assert wrong.total == task.cases.len()
+    assert strings.contains(text: wrong.message, needle: "printed something else")
+
+    refused = graded(
+        scratch: scratch + "/refused",
+        compiler: compiler,
+        arm: "strict",
+        answer: "```\nfunction main()\n    unused = 3\n    print(2)\n```\n",
+        task: task,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert refused.outcome == "compile_error"
+    assert refused.codes == ["unused_binding"]
+    assert strings.contains(text: refused.message, needle: "error[unused_binding]")
+
+    brief = graded(
+        scratch: scratch + "/brief",
+        compiler: compiler,
+        arm: "brief",
+        answer: "```\nfunction main()\n    unused = 3\n    print(2)\n```\n",
+        task: task,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert brief.outcome == "compile_error"
+    assert strings.lines(text: brief.message).len() == 1
+
+    looping = graded(
+        scratch: scratch + "/loop",
+        compiler: compiler,
+        arm: "strict",
+        answer: "```\nfunction main()\n    n: i64 @= 0\n    while true\n        n @ n + 1\n        if n < 0\n            print(n)\n```\n",
+        task: task,
+        seconds: 1,
+        bytes: 1048576
+    ).must()
+    assert looping.outcome == "timeout"
+
+    none = graded(
+        scratch: scratch + "/none",
+        compiler: compiler,
+        arm: "strict",
+        answer: "No program, only prose.",
+        task: task,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert none.outcome == "no_program"
+    assert none.total == task.cases.len()
+
+    reference = read_file(path: "tests/thesis/03/reference.hero").must()
+    green = graded(
+        scratch: scratch + "/green",
+        compiler: compiler,
+        arm: "control",
+        answer: as_answer(reference),
+        task: task,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert green.outcome == "cases_pass"
+    assert green.passed == task.cases.len()
+
+test "the control arm builds what the strict build refuses and runs it: a dropped rule's program is judged by its output, a match missing a case aborts loudly"
+    if thesis_sandbox.key_held() != ""
+        print(
+            "SKIP thesis_grade: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
+        )
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    task = thesis_tasks.read_task(scratch: scratch, dir: "tests/thesis/03", number: "03").must()
+    dropped = "```\nfunction main()\n    unused = 3\n    print(\"2\")\n```\n"
+    strict = graded(
+        scratch: scratch + "/c-strict",
+        compiler: compiler,
+        arm: "strict",
+        answer: dropped,
+        task: task,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert strict.outcome == "compile_error"
+    assert strict.codes == ["unused_binding"]
+    silent = graded(
+        scratch: scratch + "/c-silent",
+        compiler: compiler,
+        arm: "control",
+        answer: dropped,
+        task: task,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert silent.outcome == "compiled_wrong"
+    assert silent.passed == 1
+    unmatched = "```\nvariant Seen\n    empty\n    full\n        n: i64\n\nfunction told(s: Seen) -> i64\n    return match s\n        .full f => f.n\n\nfunction main()\n    print(told(.empty))\n```\n"
+    refused = graded(
+        scratch: scratch + "/c-refused",
+        compiler: compiler,
+        arm: "strict",
+        answer: unmatched,
+        task: task,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert refused.outcome == "compile_error"
+    assert refused.codes == ["non_exhaustive"]
+    loud = graded(
+        scratch: scratch + "/c-loud",
+        compiler: compiler,
+        arm: "control",
+        answer: unmatched,
+        task: task,
+        seconds: 5,
+        bytes: 1048576
+    ).must()
+    assert loud.outcome == "abort"
+    assert loud.passed == 0
+    assert strings.contains(text: loud.message, needle: "panic: this match has no arm for .empty")

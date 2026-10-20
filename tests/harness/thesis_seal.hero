@@ -1,0 +1,310 @@
+# THE SEAL ON A HELD-OUT SUITE: a folder of tasks made one encrypted text file
+# this public repository can hold, and opened again into a scratch folder the
+# instrument alone reads (M-thesis-harness step 4, 2026-10-20; panel 226's
+# R10, the author's decision of 2026-10-19).
+#
+# `tar` makes the folder one file and `openssl enc -aes-256-cbc -pbkdf2 -iter
+# <ITER> -a` makes it text: base64 lines, so the tree holds no binary and the
+# `unseen` check reads it as it reads a document. **The key is never on a
+# command line and never in this program**: `-pass env:<VAR>` has openssl read
+# it from the variable the caller exported (`.env`, which git ignores, or a
+# CI secret), and this module asks only whether the variable is set, by name.
+# CBC does not authenticate, so the ciphertext's sha256 is written beside the
+# archive (`<file>.sha256`) and checked before a decrypt: an archive that
+# moved is refused as moved, never read as a wrong key. The three archives
+# (`HEROES_TASKS_KEY` the suite, `HEROES_RESERVE_KEY` the reserve,
+# `HEROES_RUNS_KEY` the runs' transcripts) differ only in the variable named.
+#
+# THE CANARY (panel 226's R6, BIG-bench's shape): `seal` writes, where it is
+# missing, a suite GUID as `LABEL`'s second line and a per-task GUID as the
+# last line of every `task.md`, each from `openssl rand`; the per-task one
+# exists in one sealed file and nowhere else, so a model completing it has
+# seen the task. Neither is part of what a model receives: the instrument
+# strips a task's canary line from the prose it renders
+# (`thesis_tasks.without_canary`; the critic of panel 226: a GUID in every
+# prompt is an eval-awareness cue), and both stay in the files a leak carries.
+# **A canary moves its task's digest and the suite's**, so `seal` prints the
+# digests of the suite as sealed, its canaries written (`frozen`): those lines
+# are `hashes.txt`, never what `tasks` printed before the canaries were in.
+#
+# The tests seal and open a small suite of their own under a key named
+# `HEROES_SEAL_TEST_KEY`; **where that variable is not set they say `SKIP`**,
+# as `issue_git`'s do without a token, since this process cannot set one for
+# itself and a key written into a command line is what this module refuses.
+
+use shell
+use strings
+use thesis_sha256
+use thesis_tasks
+
+# PBKDF2's iteration count, written here and in the README, since a decrypt
+# must name the same one.
+constant ITER: i64
+    600000
+
+constant TASKS_KEY: str
+    "HEROES_TASKS_KEY"
+
+constant TEST_KEY: str
+    "HEROES_SEAL_TEST_KEY"
+
+constant SUITE_CANARY: str
+    "canary heroes-suite:"
+
+constant TASK_CANARY: str
+    "canary heroes-task:"
+
+record Sealed
+    file: str
+    sha: str
+
+record Frozen
+    sealed: Sealed
+    # How many canaries were written, the suite's and the tasks'.
+    written: i64
+    # What `tasks` prints for the suite as sealed: the lines of `hashes.txt`.
+    told: str
+
+# Whether the variable a seal needs is set, by name; its value is never read
+# into this program.
+function key_present(name: str) -> bool
+    got = shell.env(name)
+    return !got.is_err() && got.must() != ""
+
+# The words openssl is run with; the key's variable is named, never its value.
+function openssl_words(decrypt: bool, in_path: str, out_path: str, key_name: str) -> [str]
+    words: [str] @= ["openssl", "enc"]
+
+    if decrypt
+        words @ words.push("-d")
+    return words.push("-aes-256-cbc").push("-pbkdf2").push("-iter").push(ITER.to_str()).push("-a").push("-in").push(in_path).push("-out").push(out_path).push("-pass").push(
+        "env:" + key_name
+    )
+
+# The folder above `path`, "" where it has none.
+function parent_of(path: str) -> str
+    trimmed = strings.without_suffix(text: path, suffix: "/")
+    at: i64 @= trimmed.len() - 1
+
+    while at >= 0
+        if trimmed[at] == '/'
+            return trimmed.slice(from: 0, to: at)
+        at @ at - 1
+
+    return "."
+
+# `folder` sealed into `out` under the key `key_name` names, and `out + ".sha256"`
+# written beside it; nothing is written where the variable is unset.
+function sealed(scratch: str, folder: str, out: str, key_name: str) -> Sealed?
+    if !key_present(key_name)
+        return fail(
+            code: "no_key",
+            msg: key_name + " is not set in the environment, and a seal is made under it; export it from `.env` and try again"
+        )
+    work = scratch + "/sealing"
+    shell.mkdir_all(work)?
+    tar = work + "/suite.tar"
+    base = strings.base_name(path: strings.without_suffix(text: folder, suffix: "/"))
+    packed = shell.run(scratch: scratch, program: "tar", words: ["tar", "-C", parent_of(folder), "-cf", tar, base])?
+
+    if packed.code != 0
+        return fail(code: "tar_failed", msg: "tar could not pack " + folder + shell.said_on_stderr(packed.err))
+    enc = shell.run(scratch: scratch, program: "openssl", words: openssl_words(decrypt: false, in_path: tar, out_path: out, key_name: key_name))?
+
+    if enc.code != 0
+        return fail(code: "openssl_failed", msg: "openssl could not seal " + folder + shell.said_on_stderr(enc.err))
+    cipher = read_file(path: out)
+
+    if cipher.is_err()
+        return fail(code: "openssl_failed", msg: "openssl wrote no " + out)
+    sha = thesis_sha256.of(cipher.must())
+    write_file(path: out + ".sha256", text: sha + "  " + strings.base_name(path: out) + "\n")?
+    shell.remove_tree(work)?
+    return ok(Sealed(file: out, sha: sha))
+
+# What `seal` does: `folder`'s canaries written where missing, the folder read
+# again and sealed into `out`, answered with the digests of the suite as it was
+# sealed. Nothing is written where the key's variable is unset.
+function frozen(scratch: str, folder: str, out: str, key_name: str) -> Frozen?
+    if !key_present(key_name)
+        return fail(
+            code: "no_key",
+            msg: key_name + " is not set in the environment, and a seal is made under it; export it from `.env` and try again"
+        )
+    written = canaried(scratch: scratch, folder: folder)?
+    suite = thesis_tasks.read_suite(scratch: scratch, dir: folder)?
+    made = sealed(scratch: scratch, folder: folder, out: out, key_name: key_name)?
+    return ok(Frozen(sealed: made, written: written, told: thesis_tasks.told(suite)))
+
+# `file` opened under the key `key_name` names into a folder of the scratch, whose
+# path is answered; the digest beside the archive is checked first.
+function unsealed(scratch: str, file: str, key_name: str) -> str?
+    if !key_present(key_name)
+        return fail(
+            code: "no_key",
+            msg: key_name + " is not set in the environment, and " + file + " opens under it; ask the author for the key, or wait for the opening the README names"
+        )
+    cipher = read_file(path: file)
+
+    if cipher.is_err()
+        return fail(code: "no_archive", msg: file + " cannot be read")
+    recorded = read_file(path: file + ".sha256")
+
+    if !recorded.is_err()
+        want = strings.trimmed(text: recorded.must())
+
+        if want.len() >= 64 && want.slice(from: 0, to: 64) != thesis_sha256.of(cipher.must())
+            return fail(
+                code: "moved",
+                msg: file + " does not match the digest beside it: the archive moved since it was sealed, and it is not opened"
+            )
+    work = scratch + "/unsealing"
+    shell.mkdir_all(work)?
+    tar = work + "/suite.tar"
+    dec = shell.run(scratch: scratch, program: "openssl", words: openssl_words(decrypt: true, in_path: file, out_path: tar, key_name: key_name))?
+
+    if dec.code != 0
+        return fail(
+            code: "bad_key",
+            msg: "openssl could not open " + file + ": the key " + key_name + " holds is not the one it was sealed with" + shell.said_on_stderr(dec.err)
+        )
+    into = work + "/opened"
+    shell.mkdir_all(into)?
+    unpacked = shell.run(scratch: scratch, program: "tar", words: ["tar", "-C", into, "-xf", tar])?
+
+    if unpacked.code != 0
+        return fail(code: "tar_failed", msg: "tar could not unpack " + file + shell.said_on_stderr(unpacked.err))
+    dirs = shell.list_directories(scratch: scratch, dir: into)?
+
+    if dirs.len() != 1
+        return fail(
+            code: "bad_archive",
+            msg: file + " holds " + dirs.len().to_str() + " folders, and a sealed suite is one"
+        )
+    return ok(dirs[0])
+
+# Thirty-two hexadecimal digits from `openssl rand`.
+function fresh_guid(scratch: str) -> str?
+    ran = shell.run(scratch: scratch, program: "openssl", words: ["openssl", "rand", "-hex", "16"])?
+
+    if ran.code != 0 || strings.trimmed(text: ran.out).len() != 32
+        return fail(code: "no_random", msg: "openssl rand gave no 32 hexadecimal digits")
+    return ok(strings.trimmed(text: ran.out))
+
+# A canary written into `LABEL`'s second line and into every `task.md` that
+# lacks one; how many were written is answered.
+function canaried(scratch: str, folder: str) -> i64?
+    written: i64 @= 0
+    label_path = folder + "/LABEL"
+    label = read_file(path: label_path)
+
+    if label.is_err()
+        return fail(code: "no_label", msg: folder + " holds no LABEL file")
+
+    if !has_line(text: label.must(), prefix: SUITE_CANARY)
+        write_file(path: label_path, text: strings.without_suffix(text: label.must(), suffix: "\n") + "\n" + SUITE_CANARY + fresh_guid(scratch)? + "\n")?
+        written @ written + 1
+
+    for dir in shell.list_directories(scratch: scratch, dir: folder)?
+        path = dir + "/task.md"
+        prose = read_file(path: path)
+
+        if prose.is_err()
+            continue
+
+        if !has_line(text: prose.must(), prefix: TASK_CANARY)
+            write_file(path: path, text: strings.without_suffix(text: prose.must(), suffix: "\n") + "\n\n" + TASK_CANARY + fresh_guid(scratch)? + "\n")?
+            written @ written + 1
+
+    return ok(written)
+
+function has_line(text: str, prefix: str) -> bool
+    for line in strings.lines(text: text)
+        if strings.starts_with(text: line, prefix: prefix)
+            return true
+
+    return false
+
+test "openssl is asked for PBKDF2, base64 and the key by its variable's name, never its value"
+    words = openssl_words(decrypt: false, in_path: "a.tar", out_path: "a.enc", key_name: "HEROES_TASKS_KEY")
+    assert words == ["openssl", "enc", "-aes-256-cbc", "-pbkdf2", "-iter", "600000", "-a", "-in", "a.tar", "-out", "a.enc", "-pass", "env:HEROES_TASKS_KEY"]
+    assert openssl_words(decrypt: true, in_path: "a.enc", out_path: "a.tar", key_name: "K")[2] == "-d"
+    assert parent_of("tests/thesis") == "tests"
+    assert parent_of("tests/thesis/") == "tests"
+    assert parent_of("thesis") == "."
+
+test "a seal under a variable nobody set writes nothing and names the variable"
+    scratch = shell.own_scratch()
+    _ = shell.mkdir_all(scratch).is_err()
+
+    match sealed(scratch: scratch, folder: "tests/thesis", out: scratch + "/never.enc", key_name: "HEROES_NO_SUCH_KEY_7f3a")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "no_key"
+            assert strings.contains(text: e.msg, needle: "HEROES_NO_SUCH_KEY_7f3a")
+
+    assert !shell.exists(scratch + "/never.enc")
+
+    match unsealed(scratch: scratch, file: scratch + "/never.enc", key_name: "HEROES_NO_SUCH_KEY_7f3a")
+        .ok _  => assert false
+        .err e => assert e.code == "no_key"
+
+    # `seal` refuses before it writes a canary into the folder.
+    bare = scratch + "/bare"
+    _ = shell.mkdir_all(bare + "/01").is_err()
+    write_file(path: bare + "/LABEL", text: "assistant\n").must()
+
+    match frozen(scratch: scratch, folder: bare, out: scratch + "/never.enc", key_name: "HEROES_NO_SUCH_KEY_7f3a")
+        .ok _  => assert false
+        .err e => assert e.code == "no_key"
+
+    assert read_file(path: bare + "/LABEL").must() == "assistant\n"
+
+test "a small suite, canaried, sealed and opened, reads the same bytes and the digests seal printed, and a moved archive is refused"
+    if !key_present(TEST_KEY)
+        print(
+            "SKIP thesis_seal: " + TEST_KEY + " is not set, so no archive is sealed; export a throwaway key to run this test"
+        )
+        return
+
+    scratch = shell.own_scratch()
+    _ = shell.mkdir_all(scratch).is_err()
+    suite = scratch + "/suite"
+    _ = shell.mkdir_all(suite + "/01/cases").is_err()
+    write_file(path: suite + "/LABEL", text: "assistant\n").must()
+    write_file(path: suite + "/01/task.md", text: "# Task 1: echo\n\nThe program prints its one argument.\n").must()
+    write_file(path: suite + "/01/cases/0.args", text: "hi\n").must()
+    write_file(path: suite + "/01/cases/0.expected", text: "hi\n").must()
+    write_file(path: suite + "/01/reference.hero", text: "function main()\n    print(args()[0])\n").must()
+
+    before = thesis_tasks.told(thesis_tasks.read_suite(scratch: scratch, dir: suite).must())
+    made = frozen(scratch: scratch, folder: suite, out: scratch + "/suite.enc", key_name: TEST_KEY).must()
+
+    # The canary: one for the suite, one per task, written once.
+    assert made.written == 2
+    assert canaried(scratch: scratch, folder: suite).must() == 0
+    label = read_file(path: suite + "/LABEL").must()
+    assert has_line(text: label, prefix: SUITE_CANARY)
+    prose = read_file(path: suite + "/01/task.md").must()
+    assert has_line(text: prose, prefix: TASK_CANARY)
+
+    # What `seal` prints is the suite as sealed, canaries and all, and never
+    # what `tasks` printed before them (the critic's measurable, panel 226).
+    assert made.told != before
+    assert made.told == thesis_tasks.told(thesis_tasks.read_suite(scratch: scratch, dir: suite).must())
+    cipher = read_file(path: scratch + "/suite.enc").must()
+    assert strings.starts_with(text: cipher, prefix: "U2FsdGVkX1")
+    assert made.sealed.sha == thesis_sha256.of(cipher)
+    assert strings.starts_with(text: read_file(path: scratch + "/suite.enc.sha256").must(), prefix: made.sealed.sha)
+
+    opened = unsealed(scratch: scratch, file: scratch + "/suite.enc", key_name: TEST_KEY).must()
+    assert thesis_tasks.told(thesis_tasks.read_suite(scratch: scratch, dir: opened).must()) == made.told
+    assert read_file(path: opened + "/LABEL").must() == label
+    assert read_file(path: opened + "/01/task.md").must() == prose
+    assert read_file(path: opened + "/01/cases/0.expected").must() == "hi\n"
+
+    write_file(path: scratch + "/suite.enc", text: cipher + "A\n").must()
+
+    match unsealed(scratch: scratch, file: scratch + "/suite.enc", key_name: TEST_KEY)
+        .ok _  => assert false
+        .err e => assert e.code == "moved"

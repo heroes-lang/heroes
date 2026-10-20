@@ -1,0 +1,206 @@
+# THE SANDBOX A MODEL'S PROGRAM RUNS IN (M-thesis-harness step 6, 2026-10-20;
+# panel 226's R11). A Heroes program with no `extern` can still write any file
+# its user can, read the author's home, fill the disk and allocate without a
+# ceiling (spec § 11: `read_file`, `write_file`); a program a model wrote is
+# run as untrusted, and **the grader refuses to run one outside a sandbox**.
+#
+# ON THIS MAC, `/usr/bin/sandbox-exec` with a profile measured on 2026-10-20
+# (the coordinator's probe, panel 226's synthesis § What was measured): `deny
+# default`; the process may exec, read its own information and signal itself;
+# `sysctl-read` stays, since without it the runtime dies sealing a guard page
+# (*the system refused to seal the page after it*); reads are allowed where
+# the system's libraries live and denied under `/Users`, `/Volumes` and every
+# temporary folder, so the author's files and another sample's scratch are
+# unreadable; reads and writes are allowed in the sample's scratch alone, and
+# writes on `/dev` for the terminal; the network is denied. Measured: the
+# probe wrote inside, was refused outside and in the author's home, read
+# neither, and ran the same with its stdout on a pipe. In front of it,
+# `/bin/sh -c 'ulimit -f <blocks>; exec env -i PATH=… sandbox-exec …'`: a
+# file written past the cap kills the program with SIGXFSZ (exit 153, measured
+# on a 10 MB write under `-f 1024`), and `env -i` hands it an empty
+# environment. **No memory ceiling exists here**: `ulimit -v`, `-d` and `-m`
+# answer *Invalid argument* on this Mac (measured), and the runtime has no
+# allocation cap, so memory is bounded by the case's wall-clock bound alone.
+#
+# NARROWED ON THE FFI-PRAGMATIST'S MEASUREMENTS (panel 226 § 3): `process-exec`
+# is allowed for the binary alone (`literal`), which runs it and refuses
+# `/bin/sleep`; fork is denied by the absence of `process-fork` (a fork bomb is
+# impossible, measured); `/Library/Keychains` and `/Library/Preferences` are
+# denied beside the home. **What no profile hides is another process's
+# environment**: a C program calling `sysctl(KERN_PROCARGS2)` inside it reads
+# the grader's, with `sysctl-read` and `process-info*` denied too (measured,
+# `hits=1`), so a seal's key is never in the environment of a process that runs
+# a model's program (`KEYS`, `prepared`), and the secrecy rests on that rule
+# and on `refused_extern`, never on this profile.
+#
+# ON LINUX (the CI's `thesis-attest` and any Linux leg), `bwrap`: the system
+# bound read-only, the scratch bound read-write, `--unshare-all` (no network,
+# own pid space), `--die-with-parent`, `--clearenv`, and `ulimit -f` and
+# `ulimit -v` inside it, where RLIMIT_AS is enforced. **Unrun on this Mac**:
+# the Linux words are what the CI runs, and the leg is their judge
+# (`.claude/rules/platforms.md`).
+#
+# Where neither tool exists the words are refused with `no_sandbox`, and
+# `thesis_grade` runs no case: a measurement taken outside the sandbox would be
+# one a model's program could have forged.
+
+use shell
+use strings
+
+constant DARWIN_TOOL: str
+    "/usr/bin/sandbox-exec"
+
+constant LINUX_TOOL: str
+    "/usr/bin/bwrap"
+
+# `ulimit -f` counts 512-byte blocks: 4096 blocks are 2 MiB per file written.
+constant FILE_BLOCKS: i64
+    4096
+
+# `ulimit -v` counts KiB: 1 GiB of address space, where the platform enforces it.
+constant ADDRESS_KIB: i64
+    1048576
+
+# The variables that hold a seal's key (`thesis_seal.hero`): a process with one
+# of them set runs no model's program, since the profile cannot hide one
+# process's environment from another (the ffi-pragmatist's measurement, panel
+# 226 § 3: `sysctl(KERN_PROCARGS2)` reads it with `sysctl-read` denied too).
+# The throwaway `HEROES_SEAL_TEST_KEY` is not among them: it seals a suite of
+# the tests' own, and no model's program ever runs under it.
+constant KEYS: [str]
+    ["HEROES_TASKS_KEY", "HEROES_RESERVE_KEY", "HEROES_RUNS_KEY"]
+
+# The first of `KEYS` this process's environment holds, or "" where it holds
+# none: `prepared` refuses to run a model's program while one is set, and a
+# test that grades says `SKIP` naming it, so that a suite's verdict never
+# depends on what the shell it ran in had exported.
+function key_held() -> str
+    for name in KEYS
+        got = shell.env(name)
+
+        if !got.is_err() && got.must() != ""
+            return name
+
+    return ""
+
+# How a program is run inside the sandbox: the program spawned and the words
+# before the program's own, which the caller appends its arguments to.
+record Sandbox
+    program: str
+    words: [str]
+    tool: str
+
+# The profile `sandbox-exec` is given: the sample's scratch and the binary
+# quoted as SBPL asks (a double-quoted string; neither path holds a quote,
+# since both are the instrument's own under `build/`).
+function profile(scratch: str, binary: str) -> str
+    return "(version 1)\n(deny default)\n(allow process-exec (literal \"" + binary + "\"))\n(allow process-info*)\n(allow signal (target self))\n(allow sysctl-read)\n(allow file-read* file-read-metadata file-map-executable)\n(deny file-read* (subpath \"/Users\") (subpath \"/Volumes\") (subpath \"/private/tmp\") (subpath \"/tmp\") (subpath \"/private/var/tmp\") (subpath \"/private/var/folders\") (subpath \"/Library/Keychains\") (subpath \"/Library/Preferences\"))\n(allow file-read* file-write* (subpath \"" + scratch + "\"))\n(allow file-read* (literal \"" + binary + "\"))\n(allow file-write* file-ioctl (subpath \"/dev\"))\n(deny network*)\n"
+
+# The sandbox for `binary` run with its working files in `scratch`, which must
+# be an absolute path (the profile names it, and the program's own `{dir}`
+# arguments do too); the profile is written into the scratch.
+function prepared(scratch: str, binary: str) -> Sandbox?
+    if !strings.starts_with(text: scratch, prefix: "/") || !strings.starts_with(text: binary, prefix: "/")
+        return fail(
+            code: "relative_path",
+            msg: "a sandbox names its scratch and its binary by absolute paths; given " + scratch + " and " + binary
+        )
+
+    held = key_held()
+
+    if held != ""
+        return fail(
+            code: "key_in_environment",
+            msg: held + " is set in this process's environment, and no process holding a seal's key runs a model's program: a program inside the sandbox reads another process's environment through `sysctl(KERN_PROCARGS2)` (panel 226, the ffi-pragmatist). Open the archive first, `unseal --sealed <file> --into <dir>`, then grade the folder in a shell where the key is not set"
+        )
+
+    if shell.exists(DARWIN_TOOL)
+        path = scratch + "/sandbox.sb"
+        write_file(path: path, text: profile(scratch: scratch, binary: binary))?
+        return ok(
+            Sandbox(program: "/bin/sh", words: ["/bin/sh", "-c", "ulimit -f " + FILE_BLOCKS.to_str() + "; exec /usr/bin/env -i PATH=/usr/bin:/bin " + DARWIN_TOOL + " -f \"$0\" \"$@\"", path, binary], tool: DARWIN_TOOL)
+        )
+
+    if shell.exists(LINUX_TOOL)
+        return ok(
+            Sandbox(program: LINUX_TOOL, words: [LINUX_TOOL, "--ro-bind", "/usr", "/usr", "--ro-bind-try", "/lib", "/lib", "--ro-bind-try", "/lib64", "/lib64", "--ro-bind-try", "/bin", "/bin", "--ro-bind-try", "/etc", "/etc", "--bind", scratch, scratch, "--dev", "/dev", "--proc", "/proc", "--unshare-all", "--die-with-parent", "--clearenv", "--setenv", "PATH", "/usr/bin:/bin", "--chdir", scratch, "/bin/sh", "-c", "ulimit -f " + FILE_BLOCKS.to_str() + " -v " + ADDRESS_KIB.to_str() + "; exec \"$0\" \"$@\"", binary], tool: LINUX_TOOL)
+        )
+    return fail(
+        code: "no_sandbox",
+        msg: "neither " + DARWIN_TOOL + " nor " + LINUX_TOOL + " is on this machine, and a model's program is run inside one or not at all"
+    )
+
+# The words to spawn: the sandbox's, then the program's own arguments.
+function words_with(sandbox: Sandbox, arguments: [str]) -> [str]
+    out: [str] @= sandbox.words
+
+    for a in arguments
+        out @ out.push(a)
+
+    return out
+
+test "the profile denies by default, allows the scratch alone for writing, and denies the home and the network"
+    text = profile(scratch: "/x/scratch", binary: "/x/scratch/main")
+    assert strings.starts_with(text: text, prefix: "(version 1)\n(deny default)\n")
+    assert strings.contains(text: text, needle: "(allow file-read* file-write* (subpath \"/x/scratch\"))")
+    assert strings.contains(text: text, needle: "(deny file-read* (subpath \"/Users\")")
+    assert strings.contains(text: text, needle: "(deny network*)")
+    assert strings.contains(text: text, needle: "(allow sysctl-read)")
+    assert !strings.contains(text: text, needle: "allow default")
+
+    match prepared(scratch: "relative", binary: "/x/main")
+        .ok _  => assert false
+        .err e => assert e.code == "relative_path"
+
+test "a program run inside the sandbox writes in its scratch, is refused outside it and in the home, and reads neither"
+    if !shell.exists(DARWIN_TOOL)
+        print("SKIP thesis_sandbox: no " + DARWIN_TOOL + " here; the Linux words are the CI's to judge")
+        return
+
+    if key_held() != ""
+        print(
+            "SKIP thesis_sandbox: " + key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
+        )
+        return
+
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        print("SKIP thesis_sandbox: no compiler to build the probe with")
+        return
+
+    scratch = shell.own_scratch()
+    _ = shell.mkdir_all(scratch).is_err()
+    absolute = shell.run(scratch: scratch, program: "pwd", words: ["pwd"]).must()
+    root = strings.trimmed(text: absolute.out)
+    inside = root + "/" + scratch + "/inside"
+    outside = root + "/" + scratch + "/outside"
+    _ = shell.mkdir_all(inside).is_err()
+    _ = shell.mkdir_all(outside).is_err()
+    write_file(path: outside + "/secret.txt", text: "top secret\n").must()
+    write_file(
+        path: scratch + "/probe.hero",
+        text: "function main()\n    given = args()\n    print(\"in \" + write_file(path: given[0] + \"/inside.txt\", text: \"ok\\n\").is_err().to_str())\n    print(\"out \" + write_file(path: given[1] + \"/leak.txt\", text: \"leak\\n\").is_err().to_str())\n    print(\"read \" + read_file(path: given[2]).is_err().to_str())\n"
+    ).must()
+    built = shell.run(
+        scratch: scratch,
+        program: compiler.must(),
+        words: [compiler.must(), "build", scratch + "/probe.hero", "-o", inside + "/probe"]
+    ).must()
+    assert built.code == 0
+    sandbox = prepared(scratch: inside, binary: inside + "/probe").must()
+    assert sandbox.tool == DARWIN_TOOL
+    ran = shell.run_bounded(
+        scratch: scratch,
+        program: sandbox.program,
+        words: words_with(sandbox: sandbox, arguments: [inside, outside, outside + "/secret.txt"]),
+        seconds: 10,
+        bytes: 65536,
+        stdin_path: ""
+    ).must()
+    assert ran.code == 0
+    assert strings.contains(text: ran.out, needle: "in false")
+    assert strings.contains(text: ran.out, needle: "out true")
+    assert strings.contains(text: ran.out, needle: "read true")
+    assert shell.exists(inside + "/inside.txt")
+    assert !shell.exists(outside + "/leak.txt")

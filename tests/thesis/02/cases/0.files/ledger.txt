@@ -1,0 +1,3 @@
+anna 120
+bob -45
+anna 30

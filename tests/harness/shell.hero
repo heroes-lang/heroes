@@ -143,13 +143,13 @@ record Run
 # Windows arm, where the inherited handle already had a probe around it.
 function run_fed(scratch: str, program: str, words: [str], stdin_path: str) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: 0)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: 0, seconds: WATCHDOG_SECONDS)?,
         program: program
     )
 
 function run(scratch: str, program: str, words: [str]) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0, seconds: WATCHDOG_SECONDS)?,
         program: program
     )
 
@@ -161,7 +161,49 @@ function run(scratch: str, program: str, words: [str]) -> Run?
 # says so first and the caller runs nothing.
 function run_limited(scratch: str, program: str, words: [str], bytes: i64) -> Run?
     return insisted(
-        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: bytes)?,
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: bytes, seconds: WATCHDOG_SECONDS)?,
+        program: program
+    )
+
+# **The same call under the caller's own seconds, bytes and standard input**,
+# for a child whose running is itself the question: the program a model wrote,
+# which `thesis.hero` builds and runs against a task's hidden cases
+# (M-thesis-harness, 2026-10-20). The watchdog above is sized for the compiler
+# and clang, ten minutes, and a model's program that loops forever would hold
+# a sample for all of them; this call ends it when the caller says, the
+# runtime killing the child's whole process group and answering 124
+# (`runtime/parts/run.c`, `hero_run_limit`). The bound is the caller's and
+# never zero: a zero would ask the runtime for no limit at all, which is the
+# one thing no spawn of this harness may do; nor over the watchdog's, or the
+# constant would stop being the ceiling it is asserted to be. **A child may
+# outlive the bound by the runtime's grace**, five seconds between its SIGTERM
+# and its SIGKILL (`HERO_RUN_WATCHDOG_GRACE_MS`, `runtime/parts/run.c`), so a
+# caller budgeting wall time adds them (panel 226, the compiler-engineer's
+# reading). And a byte cap is POSIX's alone: where the platform has none
+# (`can_limit_writes`), a call asking for one is refused rather than run with
+# a bound it cannot keep, so a grader on Windows stops before a model's
+# program runs unbounded.
+function run_bounded(scratch: str, program: str, words: [str], seconds: i64, bytes: i64, stdin_path: str) -> Run?
+    if seconds <= 0
+        return fail(
+            code: "unbounded",
+            msg: program + " was asked to run under " + seconds.to_str() + " seconds, and a bound is at least one"
+        )
+
+    if seconds > WATCHDOG_SECONDS
+        return fail(
+            code: "unbounded",
+            msg: program + " was asked to run under " + seconds.to_str() + " seconds, over the watchdog's " + WATCHDOG_SECONDS.to_str() + ", the ceiling of every spawn of this harness"
+        )
+
+    if bytes > 0 && !can_limit_writes()
+        return fail(
+            code: "unlimitable",
+            msg: program + " was asked to write at most " + bytes.to_str() + " bytes, and this platform cannot hold a child to a ceiling on what it writes"
+        )
+
+    return insisted(
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds)?,
         program: program
     )
 
@@ -181,7 +223,14 @@ function can_limit_writes() -> bool
 # machine's answer has to say so at the call, which is where a reader of
 # the case will look for it.
 function attempted(scratch: str, program: str, words: [str]) -> Run?
-    return spawned(scratch: scratch, program: program, words: words, in_path: "", write_limit: 0)
+    return spawned(
+        scratch: scratch,
+        program: program,
+        words: words,
+        in_path: "",
+        write_limit: 0,
+        seconds: WATCHDOG_SECONDS
+    )
 
 # Why a `run` came back with no program verdict, for a caller about to print
 # one. "" where it came back with one.
@@ -236,7 +285,7 @@ function insisted(ran: Run, program: str) -> Run?
         msg: program + " could not be started, so it has no exit code; the operating system's own reason is " + ran.why.to_str()
     )
 
-function spawned(scratch: str, program: str, words: [str], in_path: str, write_limit: i64) -> Run?
+function spawned(scratch: str, program: str, words: [str], in_path: str, write_limit: i64, seconds: i64) -> Run?
     # **The scratch directory is this function's to make, not its caller's.**
     # The two streams are files opened under it, so a missing directory makes
     # the child fail to start — and `started: false` then means "the program is
@@ -278,11 +327,12 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
     err_path = scratch + "/stderr-" + serial
     hero_run_reset()
 
-    # **Every call is guarded, and there is no way to ask for less.** The old
+    # **Every call is guarded, and there is no way to ask for none.** The old
     # shape had `run` and `run_guarded`, the second prefixing coreutils'
     # `timeout 120`. Nothing this harness runs should be allowed to hang
-    # forever, so the limit is not a parameter: it is what `run` means.
-    hero_run_limit(seconds: WATCHDOG_SECONDS)
+    # forever, so every public call passes a bound: `run` and its siblings the
+    # watchdog's, `run_bounded` the caller's own, shorter, since 2026-10-20.
+    hero_run_limit(seconds: seconds)
 
     # Taken by the one `hero_run_go` below and cleared there, so it never
     # reaches another child; 0 asks for none.
@@ -1292,6 +1342,69 @@ test "fixedbugs: the watchdog is a runtime limit, because no probe could name th
     assert !quick.is_err()
     assert quick.must().started
     assert quick.must().code == 1
+
+test "a child that outlives the caller's own bound is ended inside it and answers 124"
+    # M-thesis-harness, 2026-10-20: the program a model wrote may loop for
+    # ever, and the grader holds it to seconds of its own rather than the
+    # watchdog's ten minutes. The runtime kills the child's process group and
+    # answers 124 (`runtime/parts/run.c`, `hero_run_limit`); a bound of zero is
+    # refused before anything runs, since zero would ask for no limit.
+    if !can_run_scripts()
+        print("SKIP shell: this machine runs no /bin/sh script")
+        return
+
+    scratch = own_scratch()
+    slow = run_bounded(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "sleep 30"],
+        seconds: 1,
+        bytes: 0,
+        stdin_path: ""
+    )
+    assert !slow.is_err()
+    assert slow.must().started
+    assert slow.must().code == 124
+
+    none = run_bounded(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exit 0"],
+        seconds: 0,
+        bytes: 0,
+        stdin_path: ""
+    )
+    assert none.is_err()
+
+    match none
+        .ok _  => assert false
+        .err e => assert e.code == "unbounded"
+
+    over = run_bounded(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exit 0"],
+        seconds: WATCHDOG_SECONDS + 1,
+        bytes: 0,
+        stdin_path: ""
+    )
+
+    match over
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "unbounded"
+            assert strings.contains(text: e.msg, needle: "over the watchdog's")
+
+    fed = run_bounded(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exit 0"],
+        seconds: 5,
+        bytes: 0,
+        stdin_path: ""
+    )
+    assert !fed.is_err()
+    assert fed.must().code == 0
 
 # The runtime's shown answer (`runtime/hero_os.h`): two marks for each U+FFFD
 # of the text, the byte it replaced in hexadecimal, or `--` for one the bytes

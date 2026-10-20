@@ -1,0 +1,468 @@
+# THE WORDS `thesis.hero` IS RUN WITH, read: its first word, and the folders,
+# files and flags after it (M-thesis-harness, 2026-10-20; the shape of
+# `issue_args.hero`).
+#
+# Each word takes its own flags and no other, so a flag given to the wrong
+# word is refused by name rather than ignored. `tasks <folder>` reads a task
+# suite and prints its digests; `dry <folder>` grades every reference solution;
+# `grade <answer> --task <folder/NN>` grades one answer; `plan <folder>` renders
+# a run's requests and counts them, sending nothing; `run <folder> --live` is
+# the paid run, and without `--live` it is `plan`. Every word takes
+# `--compiler <path>`. The run's flags: `--model <id>` (one or more), `--arm
+# strict|brief|control|all`, `--context spec|none|<path>` (one or more),
+# `--samples <n>`, `--turns <k>`, `--effort <e>`, `--max-tokens <n>`, `--layout
+# single|cached`, `--dialect anthropic|openai`, `--base <url>`, `--out <dir>`,
+# `--max-requests <n>`.
+
+use strings
+
+constant USAGE: str
+    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--base url] [--out dir] | run <folder> ... --live [--max-requests n] | report <out> [--seed n] [--primary <sentence>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
+
+# The words of this program.
+constant WORDS: [str]
+    ["tasks", "dry", "grade", "plan", "run", "report", "seal", "canary", "unseal", "canary-probe"]
+
+# The labels a suite may carry: the assistant's tasks, in clear, which the
+# instrument is tried on; the author's, held out (design.md Part 11).
+constant LABELS: [str]
+    ["assistant", "held-out"]
+
+# The pre-registered primary contrast, as proposed to panel 226 (design.md
+# Part 11, issue 2079): `report` prints it over its contrast table.
+constant PRIMARY: str
+    "green@3, strict minus control, on claude-sonnet-5-5 in the `spec` context, with the cluster bootstrap's interval over tasks"
+
+# The arms a grading word takes (`thesis_grade.hero`), and `all` for the run.
+constant ARMS: [str]
+    ["strict", "brief", "control"]
+
+# What the words after the first asked for, or why they cannot be taken.
+record Asked
+    word: str
+    paths: [str]
+    label: str
+    sealed: str
+    compiler: str
+    arm: str
+    arms: [str]
+    task: str
+    mute: bool
+    models: [str]
+    contexts: [str]
+    samples: i64
+    turns: i64
+    effort: str
+    max_tokens: i64
+    layout: str
+    dialect: str
+    base: str
+    out: str
+    live: bool
+    max_requests: i64
+    seed: i64
+    primary: str
+    key: str
+    into: str
+    wrong: str
+
+# Why the first word is not one this program takes.
+function refusal(given: [str]) -> str
+    if given.len() == 0
+        return "no word given: " + USAGE
+    return "`" + given[0] + "` is no word of this program: " + USAGE
+
+function among(word: str, words: [str]) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+# Whether `flag` is one `word` takes with a value.
+function valued(flag: str, word: str) -> bool
+    running = word == "plan" || word == "run"
+
+    if flag == "--compiler"
+        return true
+
+    if flag == "--label"
+        return word == "tasks"
+
+    if flag == "--sealed"
+        return word == "tasks" || word == "dry" || word == "unseal"
+
+    if flag == "--key"
+        return word == "tasks" || word == "dry" || word == "seal" || word == "unseal"
+
+    if flag == "--into"
+        return word == "unseal"
+
+    if flag == "-o"
+        return word == "seal"
+
+    if flag == "--arm"
+        return word != "tasks"
+
+    if flag == "--task"
+        return word == "grade"
+
+    if flag == "--model" || flag == "--effort" || flag == "--max-tokens" || flag == "--dialect" || flag == "--base" || flag == "--out"
+        return running || word == "canary-probe"
+
+    if flag == "--context" || flag == "--samples" || flag == "--turns" || flag == "--layout"
+        return running
+
+    if flag == "--max-requests"
+        return word == "run"
+
+    if flag == "--seed" || flag == "--primary"
+        return word == "report"
+    return false
+
+function parsed(word: str, words: [str]) -> Asked
+    a: Asked @= blank(word)
+    at: i64 @= 0
+
+    while at < words.len()
+        one = words[at]
+        at @ at + 1
+
+        if one == "--mute" && word == "dry"
+            a.mute @ true
+        else if one == "--live" && (word == "run" || word == "canary-probe")
+            a.live @ true
+        else if valued(flag: one, word: word)
+            if at == words.len()
+                return wrong(word: word, why: "`" + one + "` takes a value")
+            value = words[at]
+            at @ at + 1
+            taken = took(@a, flag: one, value: value)
+
+            if taken != ""
+                return wrong(word: word, why: taken)
+        else if strings.starts_with(text: one, prefix: "--")
+            return wrong(word: word, why: "`" + one + "` is no flag of `" + word + "`")
+        else
+            a.paths @ a.paths.push(one)
+
+    if word == "tasks" && a.paths.len() != 1 && a.sealed == ""
+        return wrong(word: word, why: "`tasks` takes one folder, or `--sealed <file>`")
+
+    if word == "dry" && a.sealed != ""
+        return wrong(
+            word: word,
+            why: "`dry --sealed` is refused: no process holding a seal's key runs a program; open the archive first, `unseal --sealed <file> --into <dir>`, then `dry <dir>` in a shell where the key is not set"
+        )
+
+    if word == "dry" && a.paths.len() != 1
+        return wrong(word: word, why: "`dry` takes one folder")
+
+    if word == "unseal" && (a.sealed == "" || a.into == "" || a.paths.len() != 0)
+        return wrong(word: word, why: "`unseal` takes `--sealed <file>` and `--into <dir>`, and no folder")
+
+    if (word == "tasks" || word == "dry") && a.paths.len() == 1 && a.sealed != ""
+        return wrong(word: word, why: "`" + word + "` takes a folder or `--sealed <file>`, not both")
+
+    if (word == "plan" || word == "run" || word == "canary-probe") && a.paths.len() != 1
+        return wrong(word: word, why: "`" + word + "` takes one folder")
+
+    if word == "seal" && (a.paths.len() != 1 || a.out == "")
+        return wrong(word: word, why: "`seal` takes one folder and `-o <file>`")
+
+    if word == "canary" && a.paths.len() != 1
+        return wrong(word: word, why: "`canary` takes one folder")
+
+    if word == "report" && a.paths.len() != 1
+        return wrong(word: word, why: "`report` takes one run folder, the `--out` of a run")
+
+    if word == "grade" && (a.paths.len() != 1 || a.task == "")
+        return wrong(word: word, why: "`grade` takes one answer file and `--task <folder/NN>`")
+
+    if (word == "plan" || word == "run" || word == "canary-probe") && a.models.len() == 0
+        return wrong(word: word, why: "`" + word + "` takes at least one `--model <id>`")
+
+    if word == "plan"
+        a.live @ false
+
+    if a.contexts.len() == 0
+        a.contexts @ ["spec"]
+    return a
+
+# A valued flag taken into `a`; "" where it was, else why it was not.
+function took(@a: Asked, flag: str, value: str) -> str
+    if flag == "--compiler"
+        a.compiler @ value
+    else if flag == "--label"
+        if !among(word: value, words: LABELS)
+            return "`--label` is `assistant` or `held-out`, not `" + value + "`"
+        a.label @ value
+    else if flag == "--sealed"
+        a.sealed @ value
+    else if flag == "--arm"
+        if value == "all"
+            a.arms @ ARMS
+        else if !among(word: value, words: ARMS)
+            return "`--arm` is `strict`, `brief`, `control` or `all`, not `" + value + "`"
+        else
+            a.arm @ value
+            a.arms @ [value]
+    else if flag == "--task"
+        a.task @ value
+    else if flag == "--model"
+        a.models @ a.models.push(value)
+    else if flag == "--context"
+        a.contexts @ a.contexts.push(value)
+    else if flag == "--samples" || flag == "--turns" || flag == "--max-tokens" || flag == "--max-requests" || flag == "--seed"
+        n = strings.to_number(text: value)
+
+        if n.is_err() || n.must() < 0
+            return "`" + flag + "` takes a whole number, not `" + value + "`"
+
+        if flag == "--samples"
+            a.samples @ n.must()
+        else if flag == "--turns"
+            a.turns @ n.must()
+        else if flag == "--max-tokens"
+            a.max_tokens @ n.must()
+        else if flag == "--seed"
+            a.seed @ n.must()
+        else
+            a.max_requests @ n.must()
+    else if flag == "--primary"
+        a.primary @ value
+    else if flag == "--key"
+        a.key @ value
+    else if flag == "--into"
+        a.into @ value
+    else if flag == "--effort"
+        a.effort @ value
+    else if flag == "--layout"
+        if value != "single" && value != "cached"
+            return "`--layout` is `single` or `cached`, not `" + value + "`"
+        a.layout @ value
+    else if flag == "--dialect"
+        if value != "anthropic" && value != "openai"
+            return "`--dialect` is `anthropic` or `openai`, not `" + value + "`"
+        a.dialect @ value
+    else if flag == "--base"
+        a.base @ value
+    else
+        # `--out` and `-o` alike
+        a.out @ value
+    return ""
+
+# The defaults every word starts from: one sample, five turns, the cached
+# layout, Anthropic's API, every arm, the `spec` context, 32,000 output tokens;
+# for `report`, seed 1 and the primary contrast as the proposal to panel 226
+# words it, which the sitting's resolution may reword; for a seal, the suite's
+# key variable, `HEROES_TASKS_KEY`.
+function blank(word: str) -> Asked
+    none: [str] = []
+    return Asked(
+        word: word,
+        paths: none,
+        label: "",
+        sealed: "",
+        compiler: "",
+        arm: "strict",
+        arms: ARMS,
+        task: "",
+        mute: false,
+        models: none,
+        contexts: none,
+        samples: 1,
+        turns: 5,
+        effort: "",
+        max_tokens: 32000,
+        layout: "cached",
+        dialect: "anthropic",
+        base: "",
+        out: "",
+        live: false,
+        max_requests: 0,
+        seed: 1,
+        primary: PRIMARY,
+        key: "HEROES_TASKS_KEY",
+        into: "",
+        wrong: ""
+    )
+
+function wrong(word: str, why: str) -> Asked
+    a: Asked @= blank(word)
+    a.wrong @ why + ": " + USAGE
+    return a
+
+test "the words are read with their own flags, and a wrong flag is refused by name"
+    plain = parsed(word: "tasks", words: ["tests/thesis"])
+    assert plain.wrong == ""
+    assert plain.paths == ["tests/thesis"]
+    assert plain.label == ""
+
+    labelled = parsed(word: "tasks", words: ["tests/thesis", "--label", "assistant", "--compiler", "./heroes"])
+    assert labelled.wrong == ""
+    assert labelled.label == "assistant"
+    assert labelled.compiler == "./heroes"
+
+    assert strings.contains(
+        text: parsed(word: "tasks", words: ["tests/thesis", "--label", "mine"]).wrong,
+        needle: "`--label` is `assistant` or `held-out`"
+    )
+    assert strings.contains(
+        text: parsed(word: "tasks", words: ["tests/thesis", "--label"]).wrong,
+        needle: "takes a value"
+    )
+    assert strings.contains(
+        text: parsed(word: "tasks", words: ["tests/thesis", "--json"]).wrong,
+        needle: "no flag of `tasks`"
+    )
+    assert strings.contains(text: parsed(word: "tasks", words: []).wrong, needle: "one folder")
+    assert strings.contains(
+        text: parsed(word: "tasks", words: ["tests/thesis", "--arm", "brief"]).wrong,
+        needle: "no flag of `tasks`"
+    )
+    dry = parsed(word: "dry", words: ["tests/thesis", "--arm", "control", "--mute"])
+    assert dry.wrong == ""
+    assert dry.arm == "control"
+    assert dry.mute
+    assert parsed(word: "dry", words: ["tests/thesis"]).arm == "strict"
+    assert strings.contains(
+        text: parsed(word: "dry", words: ["tests/thesis", "--arm", "loose"]).wrong,
+        needle: "`--arm` is `strict`, `brief`, `control` or `all`"
+    )
+    graded = parsed(word: "grade", words: ["answer.hero", "--task", "tests/thesis/01"])
+    assert graded.wrong == ""
+    assert graded.task == "tests/thesis/01"
+    assert strings.contains(text: parsed(word: "grade", words: ["answer.hero"]).wrong, needle: "`--task <folder/NN>`")
+    assert strings.contains(text: refusal(given: ["render"]), needle: "no word of this program")
+    assert strings.contains(text: refusal(given: []), needle: "no word given")
+
+test "a run's flags are read with their defaults, plan never goes live, and a wrong value is refused by name"
+    plan = parsed(
+        word: "plan",
+        words: ["tests/thesis", "--model", "claude-haiku-5-5", "--model", "claude-sonnet-5-5", "--context", "spec", "--context", "none", "--samples", "3", "--turns", "3", "--effort", "medium", "--live"]
+    )
+    assert strings.contains(text: plan.wrong, needle: "no flag of `plan`")
+    plan2 = parsed(
+        word: "plan",
+        words: ["tests/thesis", "--model", "claude-haiku-5-5", "--model", "claude-sonnet-5-5", "--context", "spec", "--context", "none", "--samples", "3", "--turns", "3", "--effort", "medium"]
+    )
+    assert plan2.wrong == ""
+    assert plan2.models == ["claude-haiku-5-5", "claude-sonnet-5-5"]
+    assert plan2.contexts == ["spec", "none"]
+    assert parsed(word: "plan", words: ["tests/thesis", "--model", "m"]).contexts == ["spec"]
+    assert plan2.samples == 3
+    assert plan2.turns == 3
+    assert plan2.effort == "medium"
+    assert plan2.arms == ARMS
+    assert plan2.layout == "cached"
+    assert plan2.dialect == "anthropic"
+    assert plan2.max_tokens == 32000
+    assert !plan2.live
+
+    live = parsed(
+        word: "run",
+        words: ["tests/thesis", "--model", "m", "--arm", "control", "--live", "--max-requests", "10", "--dialect", "openai", "--base", "http://127.0.0.1:8080", "--out", "build/x", "--layout", "single", "--max-tokens", "4000"]
+    )
+    assert live.wrong == ""
+    assert live.live
+    assert live.arms == ["control"]
+    assert live.max_requests == 10
+    assert live.dialect == "openai"
+    assert live.base == "http://127.0.0.1:8080"
+    assert live.out == "build/x"
+    assert live.layout == "single"
+    assert live.max_tokens == 4000
+    assert parsed(word: "run", words: ["tests/thesis", "--model", "m", "--arm", "all"]).arms == ARMS
+    assert strings.contains(
+        text: parsed(word: "run", words: ["tests/thesis"]).wrong,
+        needle: "at least one `--model <id>`"
+    )
+    assert strings.contains(
+        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--samples", "three"]).wrong,
+        needle: "whole number"
+    )
+    assert strings.contains(
+        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--layout", "flat"]).wrong,
+        needle: "`--layout` is `single` or `cached`"
+    )
+    assert strings.contains(
+        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--dialect", "gemini"]).wrong,
+        needle: "`--dialect` is `anthropic` or `openai`"
+    )
+    assert strings.contains(
+        text: parsed(word: "dry", words: ["tests/thesis", "--model", "m"]).wrong,
+        needle: "no flag of `dry`"
+    )
+
+test "report takes one run folder, a seed and the primary's sentence, and refuses a run's flags"
+    plain = parsed(word: "report", words: ["build/thesis-runs/abc"])
+    assert plain.paths == ["build/thesis-runs/abc"]
+    assert plain.seed == 1
+    assert plain.primary == PRIMARY
+    seeded = parsed(word: "report", words: ["out", "--seed", "42", "--primary", "green@1 alone"])
+    assert seeded.seed == 42
+    assert seeded.primary == "green@1 alone"
+    assert strings.contains(text: parsed(word: "report", words: []).wrong, needle: "one run folder")
+    assert strings.contains(
+        text: parsed(word: "report", words: ["out", "--model", "m"]).wrong,
+        needle: "no flag of `report`"
+    )
+    assert strings.contains(text: parsed(word: "report", words: ["out", "--seed", "x"]).wrong, needle: "whole number")
+    assert strings.contains(
+        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--seed", "3"]).wrong,
+        needle: "no flag of `run`"
+    )
+
+test "seal takes one folder and -o, tasks and dry take --sealed in place of a folder, and --key names the variable"
+    made = parsed(word: "seal", words: ["tests/thesis/held-out/suite", "-o", "tests/thesis/held-out/suite.enc"])
+    assert made.paths == ["tests/thesis/held-out/suite"]
+    assert made.out == "tests/thesis/held-out/suite.enc"
+    assert made.key == "HEROES_TASKS_KEY"
+    assert parsed(word: "seal", words: ["x", "-o", "y", "--key", "HEROES_RESERVE_KEY"]).key == "HEROES_RESERVE_KEY"
+    assert strings.contains(text: parsed(word: "seal", words: ["x"]).wrong, needle: "`-o <file>`")
+    assert strings.contains(
+        text: parsed(word: "dry", words: ["--sealed", "suite.enc"]).wrong,
+        needle: "`dry --sealed` is refused"
+    )
+    assert strings.contains(text: parsed(word: "dry", words: []).wrong, needle: "one folder")
+    opened = parsed(
+        word: "unseal",
+        words: ["--sealed", "suite.enc", "--into", "build/thesis-open", "--key", "HEROES_RESERVE_KEY"]
+    )
+    assert opened.sealed == "suite.enc"
+    assert opened.into == "build/thesis-open"
+    assert opened.key == "HEROES_RESERVE_KEY"
+    assert strings.contains(text: parsed(word: "unseal", words: ["--sealed", "s.enc"]).wrong, needle: "`--into <dir>`")
+    assert strings.contains(
+        text: parsed(word: "unseal", words: ["x", "--sealed", "s.enc", "--into", "d"]).wrong,
+        needle: "no folder"
+    )
+    assert strings.contains(
+        text: parsed(word: "tasks", words: ["tests/thesis", "--sealed", "s.enc"]).wrong,
+        needle: "not both"
+    )
+    assert strings.contains(
+        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--sealed", "s"]).wrong,
+        needle: "no flag of `run`"
+    )
+
+test "canary takes one folder and no flag of a run"
+    assert parsed(word: "canary", words: ["tests/thesis"]).paths == ["tests/thesis"]
+    assert strings.contains(text: parsed(word: "canary", words: []).wrong, needle: "one folder")
+    assert strings.contains(
+        text: parsed(word: "canary", words: ["tests/thesis", "--model", "m"]).wrong,
+        needle: "no flag of `canary`"
+    )
+
+test "canary-probe takes one folder and at least one model, sends nothing without --live, and refuses a run's own flags"
+    dry = parsed(word: "canary-probe", words: ["tests/thesis", "--model", "m1", "--model", "m2"])
+    assert dry.wrong == ""
+    assert dry.models == ["m1", "m2"]
+    assert !dry.live
+    assert parsed(word: "canary-probe", words: ["tests/thesis", "--model", "m", "--live"]).live
+    assert strings.contains(text: parsed(word: "canary-probe", words: ["tests/thesis"]).wrong, needle: "`--model <id>`")
+    assert strings.contains(
+        text: parsed(word: "canary-probe", words: ["tests/thesis", "--model", "m", "--turns", "3"]).wrong,
+        needle: "no flag of `canary-probe`"
+    )

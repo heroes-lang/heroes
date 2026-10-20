@@ -1,0 +1,158 @@
+# THE WIRE TO A MODEL'S API: one request out through `curl`, one answer back,
+# the key never in argv and never in a file (M-thesis-harness, 2026-10-20).
+#
+# The transports are values of `issue_wire.Transport`, so the logic that asks
+# a model is tested with `issue_wire.scripted()` and no network, as the issue
+# program's is. The real ones spawn `curl`, as `selfhost/cli/refresh.hero` does
+# for the token count: `--variable %NAME` reads the key from the environment
+# and `--expand-header` writes the header inside curl, so the key stands in no
+# process list and no file; `--include` puts the status line and the headers
+# in front of the body, which `issue_wire.reply_of` reads; `-H "Expect:"` so no
+# `100 Continue` precedes the status line on a large body; `--max-time` so a
+# hung connection ends. The body goes in a file under the world's scratch,
+# removed once the answer is read. Which endpoint and which auth header is the
+# dialect's: `anthropic()` sends `x-api-key` and `anthropic-version` to the
+# URL the request names; `openai()` sends `Authorization: Bearer` with a default
+# of `none`, so a local server with no key is reached the same way.
+#
+# **Nothing here is reached without `--live`**: the words of `thesis.hero`
+# render and count requests with the scripted transport, and only `run --live`
+# hands these transports to the logic. **A key's absence is told before any
+# request**, by name alone.
+#
+# `curl`'s own exit codes are read where no status line came back: 6 and 7
+# (no resolve, no connect) sent nothing; 28 (timeout), 52, 55 and 56 (the
+# connection broke) may have reached the server, which the pacing reads as a
+# retry that may be paid twice and counts.
+
+use issue_wire
+use shell
+use strings
+
+constant ANTHROPIC_KEY: str
+    "ANTHROPIC_API_KEY"
+
+constant OPENAI_KEY: str
+    "OPENAI_API_KEY"
+
+constant VERSION_HEADER: str
+    "anthropic-version: 2023-06-01"
+
+# Seconds `curl` waits for the whole exchange before it gives up: above the
+# longest answer a model takes with thinking on, which the trial measures.
+constant MAX_TIME: i64
+    900
+
+function anthropic() -> issue_wire.Transport
+    return issue_wire.Transport(send: anthropic_sent, pause: issue_wire.slept)
+
+function openai() -> issue_wire.Transport
+    return issue_wire.Transport(send: openai_sent, pause: issue_wire.slept)
+
+# Whether the key a dialect needs is set, by name; its value is never read
+# into this program.
+function key_present(name: str) -> bool
+    got = shell.env(name)
+    return !got.is_err() && got.must() != ""
+
+function anthropic_sent(world: issue_wire.World, request: issue_wire.Request) -> issue_wire.Answered
+    if !key_present(ANTHROPIC_KEY)
+        return issue_wire.Answered(
+            world: world,
+            reply: issue_wire.failed(why: ANTHROPIC_KEY + " is not set in the environment", sent: false)
+        )
+    return curl_sent(
+        world: world,
+        request: request,
+        auth: ["--variable", "%" + ANTHROPIC_KEY, "--expand-header", "x-api-key: {{" + ANTHROPIC_KEY + "}}", "--header", VERSION_HEADER]
+    )
+
+function openai_sent(world: issue_wire.World, request: issue_wire.Request) -> issue_wire.Answered
+    return curl_sent(
+        world: world,
+        request: request,
+        auth: ["--variable", "%" + OPENAI_KEY + "=none", "--expand-header", "Authorization: Bearer {{" + OPENAI_KEY + "}}"]
+    )
+
+# The words `curl` runs with: the auth words of the dialect, then the shape
+# every request shares.
+function curl_words(auth: [str], body_path: str, url: str) -> [str]
+    words: [str] @= ["curl", "--silent", "--show-error", "--include", "-H", "Expect:", "--max-time", MAX_TIME.to_str()]
+
+    for word in auth
+        words @ words.push(word)
+
+    return words.push("--header").push("content-type: application/json").push("--data-binary").push("@" + body_path).push(
+        url
+    )
+
+function curl_sent(world: issue_wire.World, request: issue_wire.Request, auth: [str]) -> issue_wire.Answered
+    w: issue_wire.World @= world
+    w.requests @ w.requests.push(request)
+    body_path = w.scratch + "/request-" + shell.pid().to_str() + "-" + w.requests.len().to_str() + ".json"
+    made = shell.mkdir_all(w.scratch)
+
+    if made.is_err()
+        return issue_wire.Answered(
+            world: w,
+            reply: issue_wire.failed(why: "the scratch " + w.scratch + " cannot be made", sent: false)
+        )
+    put = write_file(path: body_path, text: request.body)
+
+    if put.is_err()
+        return issue_wire.Answered(
+            world: w,
+            reply: issue_wire.failed(why: "the request's body could not be written to " + body_path, sent: false)
+        )
+
+    ran = shell.run(
+        scratch: w.scratch,
+        program: "curl",
+        words: curl_words(auth: auth, body_path: body_path, url: request.path)
+    )
+    _ = shell.remove_tree(body_path).is_err()
+
+    match ran
+        .ok r =>
+            got = issue_wire.reply_of(r.out)
+
+            if got.status > 0
+                return issue_wire.Answered(world: w, reply: got)
+            return issue_wire.Answered(
+                world: w,
+                reply: issue_wire.failed(why: "curl exited " + r.code.to_str() + " with no HTTP answer" + shell.said_on_stderr(r.err), sent: may_have_reached(r.code))
+            )
+        .err e =>
+            return issue_wire.Answered(world: w, reply: issue_wire.failed(why: e.msg, sent: false))
+
+# Whether a `curl` that ended with `code` and no status line may have delivered
+# the request: a timeout or a broken connection after the send, yes; no
+# resolve, no connect, no.
+function may_have_reached(code: i64) -> bool
+    return code == 28 || code == 52 || code == 55 || code == 56
+
+test "the curl words keep the key out of argv, name the dialect's headers and the body's file"
+    words = curl_words(
+        auth: ["--variable", "%ANTHROPIC_API_KEY", "--expand-header", "x-api-key: {{ANTHROPIC_API_KEY}}", "--header", VERSION_HEADER],
+        body_path: "build/x/request-1.json",
+        url: "https://api.anthropic.com/v1/messages"
+    )
+    assert words[0] == "curl"
+    assert strings.contains(
+        text: words.join(" "),
+        needle: "--variable %ANTHROPIC_API_KEY --expand-header x-api-key: {{ANTHROPIC_API_KEY}}"
+    )
+    assert strings.contains(
+        text: words.join(" "),
+        needle: "--data-binary @build/x/request-1.json https://api.anthropic.com/v1/messages"
+    )
+    assert strings.contains(text: words.join(" "), needle: "-H Expect: --max-time 900")
+
+    for word in words
+        assert !strings.contains(text: word, needle: "sk-")
+
+    assert may_have_reached(28)
+    assert may_have_reached(56)
+    assert !may_have_reached(6)
+    assert !may_have_reached(7)
+    assert !may_have_reached(0)

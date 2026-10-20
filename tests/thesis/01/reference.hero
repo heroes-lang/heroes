@@ -1,0 +1,60 @@
+# Task 1, word counts: the assistant's reference solution (M-thesis-harness,
+# 2026-10-20, labelled `assistant`, never held out). Read by `dry` alone.
+constant ALPHABET: str
+    "abcdefghijklmnopqrstuvwxyz"
+
+function main()
+    given = args()
+
+    if given.len() != 1
+        exit(code: 2)
+
+    match read_file(path: given[0])
+        .ok text => report(text)
+        .err _   => exit(code: 2)
+
+# The lower-case letter `b` is, or "" where it is no ASCII letter.
+function lowered(b: u8) -> str
+    if b >= 'a' && b <= 'z'
+        at = to_i64(b - 'a').must()
+        return ALPHABET.slice(from: at, to: at + 1)
+
+    if b >= 'A' && b <= 'Z'
+        at = to_i64(b - 'A').must()
+        return ALPHABET.slice(from: at, to: at + 1)
+    return ""
+
+# `n` written with ten digits, zeros in front, so that strings sort as numbers.
+function padded(n: i64) -> str
+    digits: str @= n.to_str()
+
+    while digits.len() < 10
+        digits @ "0" + digits
+
+    return digits
+
+function report(text: str)
+    counts: {str: i64} @= {}
+    word: str @= ""
+
+    for i in range(from: 0, to: text.len())
+        letter = lowered(text[i])
+
+        if letter == ""
+            if word != ""
+                counts[word] @ counts[word].default(0) + 1
+                word @ ""
+        else
+            word @ word + letter
+
+    if word != ""
+        counts[word] @ counts[word].default(0) + 1
+
+    keyed: [str] @= []
+
+    for w in keys(counts)
+        keyed @ keyed.push(padded(1000000000 - counts[w].must()) + " " + w)
+
+    for line in sort(keyed)
+        w = line.slice(from: 11, to: line.len())
+        print(w, " ", counts[w].must())

@@ -1,0 +1,928 @@
+# THE SAMPLE LOOP: every (context, task, model, sample) asked once, judged by
+# every arm, each arm's conversation taken up to the cap, and nothing sent
+# unless the run is live (M-thesis-harness, 2026-10-20; design.md Part 11).
+#
+# Turn 1 is one generation per (task, model, context, sample), kept under
+# `generations/` and shared by the arms, so the arms are paired exactly there.
+# From turn 2 each arm's conversation forks from it, append-only: the
+# assistant's turn goes back byte for byte, then the feedback a user of that
+# arm would have. **The feedback is symmetric across the arms** (the sitting's
+# R5): on a refusal the compiler's message of the arm; where the program
+# compiles, the task's visible example run and what it did, panic included;
+# the hidden cases never, so a program that passes the example and fails a
+# hidden case ends its conversation there. A sample ends green when every case
+# passes, or at the cap, or where the answer held no program twice, or on a
+# refusal or a truncation by the API.
+#
+# A dry run (`live` false) renders every turn-1 request, counts them and
+# estimates their tokens, bytes over four, and sends nothing: the number the
+# author is asked with. `max_requests` stops a live run cleanly, saying how
+# many samples are left; a rerun takes them up from the files on disk.
+
+use issue_wire
+use json_fields
+use json_read
+use shell
+use strings
+use thesis_answer
+use thesis_json
+use thesis_grade
+use thesis_pace
+use thesis_prompt
+use thesis_sandbox
+use thesis_sha256
+use thesis_tasks
+use thesis_verdict
+
+record Plan
+    suite_dir: str
+    models: [str]
+    arms: [str]
+    contexts: [str]
+    samples: i64
+    turns: i64
+    effort: str
+    max_tokens: i64
+    layout: str
+    dialect: str
+    base: str
+    out: str
+    live: bool
+    max_requests: i64
+    seconds: i64
+    bytes: i64
+    # What the tree and the compiler said when the run was planned
+    # (`thesis_prompt.provenance`), written into `<out>/provenance.json`; a
+    # scripted run under test carries them empty.
+    date: str
+    head: str
+    sources: str
+    compiler: str
+    # Whether the run says nothing of its progress: the tests' runs, whose
+    # lines would read as strays in the net's own output; a live run says
+    # each verdict as it lands.
+    quiet: bool
+
+record Tally
+    requests: i64
+    estimated_tokens: i64
+    generations: i64
+    verdicts: i64
+    skipped: i64
+    stopped: str
+    # Turns one arm took from another whose history was byte for byte the
+    # same (the fork at the first turn whose prompt differs; panel 226's R5).
+    shared: i64
+    # Requests lost past their retries, each a `transport_error` verdict, and
+    # how many in a row the last ones were.
+    lost: i64
+    lost_in_a_row: i64
+    template_sha: str
+    layout_sha: str
+
+# What a model is told after a turn that was not green, and whether the
+# conversation goes on.
+record Feedback
+    text: str
+    go_on: bool
+
+# Three requests lost in a row mean the API or the wire is down: the run stops
+# and resumes from the sample it stopped at, rather than turning the rest of a
+# suite into exclusions.
+constant LOST_LIMIT: i64
+    3
+
+function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.World, scratch: str, compiler: str) -> Tally?
+    suite = thesis_tasks.read_suite(scratch: scratch, dir: plan.suite_dir)?
+    template = thesis_prompt.template_at(path: thesis_prompt.TEMPLATE)?
+    layout_sha = thesis_answer.layout_sha(dialect: plan.dialect, layout: plan.layout)
+    w: issue_wire.World @= world
+    tally: Tally @= Tally(
+        requests: 0,
+        estimated_tokens: 0,
+        generations: 0,
+        verdicts: 0,
+        skipped: 0,
+        stopped: "",
+        shared: 0,
+        lost: 0,
+        lost_in_a_row: 0,
+        template_sha: template.sha,
+        layout_sha: layout_sha
+    )
+    contexts: [thesis_prompt.Context] @= []
+
+    for name in plan.contexts
+        contexts @ contexts.push(thesis_prompt.context_of(name: name)?)
+
+    if plan.live
+        shell.mkdir_all(plan.out)?
+        write_file(path: plan.out + "/provenance.json", text: provenance_json(plan: plan, suite: suite, template: template, layout_sha: layout_sha, contexts: contexts))?
+
+    for context in contexts
+        for task in suite.tasks
+            prompt = thesis_prompt.rendered(template: template, context: context, task: task.prose, layout: plan.layout)?
+
+            for model in plan.models
+                for sample in range(from: 1, to: plan.samples + 1)
+                    gkey = thesis_verdict.generation_key(
+                        task_sha: task.sha,
+                        model: model,
+                        context_sha: context.spec_sha,
+                        sample: sample
+                    )
+
+                    if every_arm_kept(plan: plan, task_sha: task.sha, model: model, context_sha: context.spec_sha, sample: sample)
+                        tally.skipped @ tally.skipped + 1 + plan.arms.len()
+                        continue
+                    kept = thesis_verdict.kept(dir: plan.out + "/generations", key: gkey)
+                    have: bool @= false
+                    generation: thesis_verdict.Generation @= empty_generation(key: gkey)
+
+                    if !kept.is_err()
+                        read = thesis_verdict.read_generation(kept.must())
+
+                        if !read.is_err()
+                            generation @ read.must()
+                            have @ true
+                            tally.skipped @ tally.skipped + 1
+
+                    if !have
+                        tally.requests @ tally.requests + 1
+                        tally.estimated_tokens @ tally.estimated_tokens + thesis_prompt.estimated_tokens(prompt.system + prompt.user)
+
+                        if !plan.live
+                            continue
+
+                        if plan.max_requests > 0 && tally.requests > plan.max_requests
+                            tally.stopped @ "the request cap of " + plan.max_requests.to_str() + " was reached"
+                            return ok(tally)
+                        asked = asked_once(plan: plan, transport: transport, world: w, system: prompt.system, messages: [thesis_answer.user_turn(prompt.user)])?
+                        w @ asked.world
+
+                        # A generation lost past its retries is every arm's
+                        # `transport_error`, counted and never resampled in
+                        # silence (deleting its verdicts resamples it on
+                        # purpose); three in a row stop the run here.
+                        if asked.exchange.stop == "transport_error"
+                            tally.lost @ tally.lost + 1
+                            tally.lost_in_a_row @ tally.lost_in_a_row + 1
+
+                            if tally.lost_in_a_row >= LOST_LIMIT
+                                tally.stopped @ LOST_LIMIT.to_str() + " requests in a row were lost past their retries: the API or the wire is down, so the run stops here and resumes from this sample"
+                                return ok(tally)
+
+                            for lost_arm in plan.arms
+                                lost_key = thesis_verdict.verdict_key(
+                                    task_sha: task.sha,
+                                    model: model,
+                                    context_sha: context.spec_sha,
+                                    sample: sample,
+                                    arm: lost_arm
+                                )
+
+                                if thesis_verdict.kept(dir: plan.out + "/samples", key: lost_key).is_err()
+                                    thesis_verdict.keep(dir: plan.out + "/samples", key: lost_key, text: thesis_verdict.written_verdict(lost_verdict(task_sha: task.sha, model: model, context_sha: context.spec_sha, sample: sample, arm: lost_arm)))?
+                                    tally.verdicts @ tally.verdicts + 1
+
+                            continue
+                        tally.lost_in_a_row @ 0
+                        generation @ thesis_verdict.Generation(
+                            key: gkey,
+                            task_sha: task.sha,
+                            model: model,
+                            context_sha: context.spec_sha,
+                            sample: sample,
+                            text: asked.exchange.text,
+                            stop: asked.exchange.stop,
+                            answered_by: asked.exchange.model,
+                            id: asked.exchange.id,
+                            input: asked.exchange.input,
+                            output: asked.exchange.output,
+                            cache_read: asked.exchange.cache_read,
+                            cache_write: asked.exchange.cache_write,
+                            turn: asked.exchange.turn
+                        )
+                        thesis_verdict.keep(dir: plan.out + "/generations", key: gkey, text: thesis_verdict.written_generation(generation))?
+                        tally.generations @ tally.generations + 1
+
+                    for arm in plan.arms
+                        vkey = thesis_verdict.verdict_key(
+                            task_sha: task.sha,
+                            model: model,
+                            context_sha: context.spec_sha,
+                            sample: sample,
+                            arm: arm
+                        )
+                        done = thesis_verdict.kept(dir: plan.out + "/samples", key: vkey)
+
+                        if !done.is_err() && !thesis_verdict.read_verdict(done.must()).is_err()
+                            tally.skipped @ tally.skipped + 1
+                            continue
+                        followed = conversation(plan: plan, transport: transport, world: w, tally: tally, compiler: compiler, scratch: scratch + "/" + vkey, task: task, arm: arm, generation: generation, user: prompt.user, system: prompt.system, template: template)?
+                        w @ followed.world
+                        tally @ followed.tally
+
+                        if tally.stopped != ""
+                            return ok(tally)
+
+                        if !plan.quiet
+                            print(
+                                vkey + " " + followed.verdict.turns[followed.verdict.turns.len() - 1].outcome + " green@" + followed.verdict.green_turn.to_str()
+                            )
+
+    return ok(tally)
+
+record Asked
+    world: issue_wire.World
+    exchange: thesis_answer.Exchange
+
+# One request to the model, in the plan's dialect, paced; a status other than
+# 200 is the run's failure, named with the body's first line.
+function asked_once(plan: Plan, transport: issue_wire.Transport, world: issue_wire.World, system: str, messages: [str]) -> Asked?
+    body: str @= ""
+    url: str @= ""
+
+    if plan.dialect == "openai"
+        body @ thesis_answer.openai_request(
+            model: plan_model(plan),
+            max_tokens: plan.max_tokens,
+            system: system,
+            messages: messages
+        )
+        url @ thesis_answer.openai_url(base: plan.base)
+    else
+        body @ thesis_answer.anthropic_request(
+            model: plan_model(plan),
+            max_tokens: plan.max_tokens,
+            effort: plan.effort,
+            system: system,
+            messages: messages
+        )
+        url @ thesis_answer.anthropic_url(base: plan.base)
+    got = thesis_pace.exchange(transport: transport, world: world, request: issue_wire.Request(method: "POST", path: url, accept: "", body: body))?
+
+    if got.lost != ""
+        if !plan.quiet
+            print("lost: " + got.lost)
+        return ok(Asked(world: got.world, exchange: lost_exchange()))
+
+    if got.reply.status != 200
+        return fail(
+            code: "api",
+            msg: url + " answered " + got.reply.status.to_str() + ": " + first_line(got.reply.body)
+        )
+    exchange: thesis_answer.Exchange? @= thesis_answer.read_anthropic(got.reply.body)
+
+    if plan.dialect == "openai"
+        exchange @ thesis_answer.read_openai(got.reply.body)
+    return ok(Asked(world: got.world, exchange: exchange?))
+
+# What a request lost past its retries answers: no text, and a stop the
+# conversation reads as `transport_error`.
+function lost_exchange() -> thesis_answer.Exchange
+    return thesis_answer.Exchange(
+        text: "",
+        stop: "transport_error",
+        model: "",
+        id: "",
+        input: 0,
+        output: 0,
+        cache_read: 0,
+        cache_write: 0,
+        turn: ""
+    )
+
+# Every arm of a lost generation: one turn, `transport_error`, never green.
+function lost_verdict(task_sha: str, model: str, context_sha: str, sample: i64, arm: str) -> thesis_verdict.Verdict
+    one = thesis_verdict.Turn(
+        outcome: "transport_error",
+        codes: [],
+        stop: "transport_error",
+        input: 0,
+        output: 0,
+        cache_read: 0,
+        cache_write: 0
+    )
+    return thesis_verdict.Verdict(
+        key: thesis_verdict.verdict_key(task_sha: task_sha, model: model, context_sha: context_sha, sample: sample, arm: arm),
+        task_sha: task_sha,
+        model: model,
+        arm: arm,
+        context_sha: context_sha,
+        sample: sample,
+        turns: [one],
+        green_turn: 0,
+        converged: false
+    )
+
+# Whether every arm of a sample already has its verdict kept: a resumed run
+# skips the sample whole and asks nothing, its generation included.
+function every_arm_kept(plan: Plan, task_sha: str, model: str, context_sha: str, sample: i64) -> bool
+    for arm in plan.arms
+        key = thesis_verdict.verdict_key(
+            task_sha: task_sha,
+            model: model,
+            context_sha: context_sha,
+            sample: sample,
+            arm: arm
+        )
+        done = thesis_verdict.kept(dir: plan.out + "/samples", key: key)
+
+        if done.is_err() || thesis_verdict.read_verdict(done.must()).is_err()
+            return false
+
+    return true
+
+# A turn kept under `turns/` by the arm that asked it, for another arm whose
+# history is the same bytes.
+function shared_turn(dir: str, key: str) -> thesis_verdict.Generation?
+    text = thesis_verdict.kept(dir: dir, key: key)?
+    return thesis_verdict.read_generation(text)
+
+# A turn's answer kept as a generation's record, under the turn's own key.
+function as_generation(key: str, generation: thesis_verdict.Generation, exchange: thesis_answer.Exchange) -> thesis_verdict.Generation
+    return thesis_verdict.Generation(
+        key: key,
+        task_sha: generation.task_sha,
+        model: generation.model,
+        context_sha: generation.context_sha,
+        sample: generation.sample,
+        text: exchange.text,
+        stop: exchange.stop,
+        answered_by: exchange.model,
+        id: exchange.id,
+        input: exchange.input,
+        output: exchange.output,
+        cache_read: exchange.cache_read,
+        cache_write: exchange.cache_write,
+        turn: exchange.turn
+    )
+
+# The model a request names: the plan's current one, carried in `models[0]`
+# by the caller that walks them (a plan handed here holds one).
+function plan_model(plan: Plan) -> str
+    return plan.models[0]
+
+function first_line(text: str) -> str
+    rows = strings.lines(text: text)
+
+    if rows.len() == 0
+        return ""
+    return rows[0]
+
+function empty_generation(key: str) -> thesis_verdict.Generation
+    return thesis_verdict.Generation(
+        key: key,
+        task_sha: "",
+        model: "",
+        context_sha: "",
+        sample: 0,
+        text: "",
+        stop: "",
+        answered_by: "",
+        id: "",
+        input: 0,
+        output: 0,
+        cache_read: 0,
+        cache_write: 0,
+        turn: ""
+    )
+
+record Followed
+    world: issue_wire.World
+    tally: Tally
+    verdict: thesis_verdict.Verdict
+
+# One arm's conversation from the generation to green, the cap or a dead end,
+# its verdict kept under `samples/`.
+function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_wire.World, tally: Tally, compiler: str, scratch: str, task: thesis_tasks.Task, arm: str, generation: thesis_verdict.Generation, user: str, system: str, template: thesis_prompt.Template) -> Followed?
+    w: issue_wire.World @= world
+    t: Tally @= tally
+    messages: [str] @= [thesis_answer.user_turn(user)]
+    turns: [thesis_verdict.Turn] @= []
+    text: str @= generation.text
+    stop: str @= generation.stop
+    assistant: str @= generation.turn
+    usage: thesis_verdict.Turn @= thesis_verdict.Turn(
+        outcome: "",
+        codes: [],
+        stop: stop,
+        input: generation.input,
+        output: generation.output,
+        cache_read: generation.cache_read,
+        cache_write: generation.cache_write
+    )
+    green: i64 @= 0
+    turn_no: i64 @= 1
+    one_plan: Plan @= plan
+    one_plan.models @ [generation.model]
+
+    while true
+        graded = thesis_grade.graded(scratch: scratch + "/t" + turn_no.to_str(), compiler: compiler, arm: arm, answer: text, task: task, seconds: plan.seconds, bytes: plan.bytes)?
+        outcome: str @= graded.outcome
+
+        if stop == "refusal"
+            outcome @ "api_refusal"
+        else if stop == "transport_error"
+            outcome @ "transport_error"
+        else if stop == "max_tokens" || stop == "length"
+            outcome @ "truncated"
+        turns @ turns.push(
+            thesis_verdict.Turn(outcome: outcome, codes: graded.codes, stop: stop, input: usage.input, output: usage.output, cache_read: usage.cache_read, cache_write: usage.cache_write)
+        )
+
+        if outcome == "cases_pass"
+            green @ turn_no
+            break
+
+        if turn_no >= plan.turns
+            break
+        said = feedback(template: template, outcome: outcome, message: graded.message)?
+
+        if !said.go_on
+            break
+
+        if !plan.live
+            break
+        messages @ messages.push(assistant).push(thesis_answer.user_turn(said.text))
+
+        # The fork at the first turn whose prompt differs (panel 226's R5, the
+        # critic): a turn is kept under the generation's key, its number and the
+        # digest of everything sent, and an arm whose history is the same bytes
+        # takes it rather than asking again.
+        turn_key = generation.key + ".t" + (turn_no + 1).to_str() + "." + thesis_sha256.of(system + "\n" + messages.join("\n")).slice(from: 0, to: 16)
+        reused = shared_turn(dir: plan.out + "/turns", key: turn_key)
+        next_turn: thesis_verdict.Generation @= generation
+
+        if !reused.is_err()
+            next_turn @ reused.must()
+            t.shared @ t.shared + 1
+        else
+            t.requests @ t.requests + 1
+
+            if plan.max_requests > 0 && t.requests > plan.max_requests
+                t.stopped @ "the request cap of " + plan.max_requests.to_str() + " was reached"
+                break
+            asked = asked_once(plan: one_plan, transport: transport, world: w, system: system, messages: messages)?
+            w @ asked.world
+            next_turn @ as_generation(key: turn_key, generation: generation, exchange: asked.exchange)
+
+            if asked.exchange.stop == "transport_error"
+                t.lost @ t.lost + 1
+                t.lost_in_a_row @ t.lost_in_a_row + 1
+
+                if t.lost_in_a_row >= LOST_LIMIT
+                    t.stopped @ LOST_LIMIT.to_str() + " requests in a row were lost past their retries: the API or the wire is down, so the run stops here and resumes from this sample"
+            else
+                t.lost_in_a_row @ 0
+                thesis_verdict.keep(dir: plan.out + "/turns", key: turn_key, text: thesis_verdict.written_generation(next_turn))?
+        text @ next_turn.text
+        stop @ next_turn.stop
+        assistant @ next_turn.turn
+        usage @ thesis_verdict.Turn(
+            outcome: "",
+            codes: [],
+            stop: stop,
+            input: next_turn.input,
+            output: next_turn.output,
+            cache_read: next_turn.cache_read,
+            cache_write: next_turn.cache_write
+        )
+        turn_no @ turn_no + 1
+
+    verdict = thesis_verdict.Verdict(
+        key: thesis_verdict.verdict_key(task_sha: task.sha, model: generation.model, context_sha: generation.context_sha, sample: generation.sample, arm: arm),
+        task_sha: task.sha,
+        model: generation.model,
+        arm: arm,
+        context_sha: generation.context_sha,
+        sample: generation.sample,
+        turns: turns,
+        green_turn: green,
+        converged: green > 0
+    )
+
+    if t.stopped == ""
+        thesis_verdict.keep(dir: plan.out + "/samples", key: verdict.key, text: thesis_verdict.written_verdict(verdict))?
+        t.verdicts @ t.verdicts + 1
+    return ok(Followed(world: w, tally: t, verdict: verdict))
+
+# What goes back to the model after `outcome`, and whether anything does: the
+# compiler's message on a refusal, the visible example's observed behaviour
+# where the program compiled and the example failed, nothing where a hidden
+# case failed or the API itself refused or cut the answer.
+# The feedback a model is told after a turn that was not green: the template's
+# block of the bucket's kind (panel 226's R5, the same words in every arm), the
+# arm's compiler message in `refused`, what the program did on the visible
+# example in `example`; nothing, and the conversation ends, past the example.
+function feedback(template: thesis_prompt.Template, outcome: str, message: str) -> Feedback?
+    if outcome == "compile_error" || outcome == "hole"
+        return ok(
+            Feedback(text: thesis_prompt.feedback_text(template: template, kind: "refused", filled: message)?, go_on: true)
+        )
+
+    if outcome == "no_program" || outcome == "format_slip"
+        return ok(
+            Feedback(text: thesis_prompt.feedback_text(template: template, kind: "no_program", filled: "")?, go_on: true)
+        )
+
+    if outcome == "refused_extern"
+        return ok(
+            Feedback(text: thesis_prompt.feedback_text(template: template, kind: "extern", filled: "")?, go_on: true)
+        )
+
+    if outcome == "truncated"
+        return ok(
+            Feedback(text: thesis_prompt.feedback_text(template: template, kind: "truncated", filled: "")?, go_on: true)
+        )
+
+    if outcome == "compiled_wrong" || outcome == "abort" || outcome == "crash" || outcome == "timeout"
+        if strings.starts_with(text: message, prefix: "case 0:")
+            observed = strings.without_prefix(text: message, prefix: "case 0: ")
+            return ok(
+                Feedback(text: thesis_prompt.feedback_text(template: template, kind: "example", filled: observed)?, go_on: true)
+            )
+        return ok(Feedback(text: "", go_on: false))
+    return ok(Feedback(text: "", go_on: false))
+
+# `<out>/provenance.json`: what the run was, written before its first request
+# (design.md Part 11: *every measurement records provenance*; panel 226's R12,
+# the template's sha and the layout's apart).
+function provenance_json(plan: Plan, suite: thesis_tasks.Suite, template: thesis_prompt.Template, layout_sha: str, contexts: [thesis_prompt.Context]) -> str
+    named: [str] @= []
+
+    for c in contexts
+        named @ named.push(
+            thesis_json.object([thesis_json.member(key: "name", value: c.name), thesis_json.member(key: "path", value: c.path), thesis_json.member(key: "sha", value: c.spec_sha)])
+        )
+
+    return thesis_json.object(
+        [thesis_json.number(key: "schema", value: 1), thesis_json.member(key: "date", value: plan.date), thesis_json.member(key: "head", value: plan.head), thesis_json.member(key: "compiler", value: plan.compiler), thesis_json.member(key: "sources", value: plan.sources), thesis_json.member(key: "template", value: template.path), thesis_json.member(key: "template_sha", value: template.sha), thesis_json.member(key: "layout", value: plan.layout), thesis_json.member(key: "layout_sha", value: layout_sha), thesis_json.member(key: "dialect", value: plan.dialect), thesis_json.member(key: "base", value: plan.base), thesis_json.member(key: "suite", value: plan.suite_dir), thesis_json.member(key: "suite_sha", value: suite.sha), thesis_json.member(key: "suite_label", value: suite.label), thesis_json.raw(key: "contexts", json: thesis_json.list(named)), thesis_json.strings(key: "models", items: plan.models), thesis_json.member(key: "effort", value: plan.effort), thesis_json.number(key: "max_tokens", value: plan.max_tokens), thesis_json.strings(key: "arms", items: plan.arms), thesis_json.number(key: "samples", value: plan.samples), thesis_json.number(key: "turns", value: plan.turns), thesis_json.number(key: "case_seconds", value: plan.seconds), thesis_json.number(key: "case_bytes", value: plan.bytes)]
+    )
+
+test "the feedback is the template's block for the bucket, the compiler's words on a refusal, the example's where it compiled and failed it, and nothing past the example"
+    template = thesis_prompt.template_at(path: thesis_prompt.TEMPLATE).must()
+    refused = feedback(template: template, outcome: "compile_error", message: "error[unused_binding]: x").must()
+    assert refused.go_on
+    assert strings.contains(text: refused.text, needle: "error[unused_binding]")
+    assert strings.ends_with(text: refused.text, suffix: "one fenced code block and nothing else.")
+    visible = feedback(
+        template: template,
+        outcome: "compiled_wrong",
+        message: "case 0: printed something else\n--- expected ---\n2\n"
+    ).must()
+    assert visible.go_on
+    assert strings.contains(text: visible.text, needle: "printed something else")
+    assert !strings.contains(text: visible.text, needle: "case 0:")
+    hidden = feedback(template: template, outcome: "compiled_wrong", message: "case 3: printed something else").must()
+    assert !hidden.go_on
+    assert hidden.text == ""
+    assert !feedback(template: template, outcome: "api_refusal", message: "").must().go_on
+    cut = feedback(template: template, outcome: "truncated", message: "").must()
+    assert cut.go_on
+    assert strings.contains(text: cut.text, needle: "cut off")
+    assert !feedback(template: template, outcome: "transport_error", message: "").must().go_on
+    assert feedback(template: template, outcome: "no_program", message: "").must().go_on
+    assert feedback(template: template, outcome: "refused_extern", message: "").must().go_on
+
+test "a dry run over the assistant's suite counts one request per generation and sends nothing"
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    plan = Plan(
+        suite_dir: "tests/thesis",
+        models: ["claude-haiku-5-5", "claude-sonnet-5-5"],
+        arms: ["strict", "control"],
+        contexts: ["spec", "none"],
+        samples: 3,
+        turns: 5,
+        effort: "",
+        max_tokens: 32000,
+        layout: "cached",
+        dialect: "anthropic",
+        base: "https://api.anthropic.com",
+        out: scratch + "/out",
+        live: false,
+        max_requests: 0,
+        seconds: 10,
+        bytes: 1048576,
+        date: "",
+        head: "",
+        sources: "",
+        compiler: "",
+        quiet: true
+    )
+    world = issue_wire.world_of(scratch: scratch, script: [])
+    tally = run(plan: plan, transport: issue_wire.scripted(), world: world, scratch: scratch, compiler: compiler).must()
+    assert tally.requests == 3 * 2 * 2 * 3
+
+    # Half the requests carry the spec, about 6,650 tokens by bytes over four, and half the canary's sentence alone.
+    assert tally.estimated_tokens > 18 * 6000
+    assert tally.estimated_tokens < 36 * 8000
+    assert tally.generations == 0
+    assert tally.verdicts == 0
+    assert tally.stopped == ""
+    assert !shell.is_directory(scratch + "/out/generations")
+
+test "a live run on the scripted transport goes green at turn 1, repairs at turn 2 from the compiler's message, resumes without asking again, and stops at the cap"
+    if thesis_sandbox.key_held() != ""
+        print(
+            "SKIP thesis_run: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
+        )
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    first = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/01/reference.hero").must()))
+    second = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/02/reference.hero").must()))
+    third = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/03/reference.hero").must()))
+    refused = answer_json(text: "```\nfunction main()\n    unused = 3\n    print(2)\n```\n")
+    one = Plan(
+        suite_dir: "tests/thesis",
+        models: ["claude-haiku-5-5"],
+        arms: ["strict"],
+        contexts: ["none"],
+        samples: 1,
+        turns: 3,
+        effort: "low",
+        max_tokens: 32000,
+        layout: "cached",
+        dialect: "anthropic",
+        base: "https://api.example",
+        out: scratch + "/out",
+        live: true,
+        max_requests: 0,
+        seconds: 10,
+        bytes: 1048576,
+        date: "",
+        head: "",
+        sources: "",
+        compiler: "",
+        quiet: true
+    )
+    world = issue_wire.world_of(
+        scratch: scratch,
+        # The tasks are walked in order: 01 green at once, 02 refused then repaired, 03 green at once.
+        script: [issue_wire.answer(status: 200, headers: [], body: first), issue_wire.answer(status: 200, headers: [], body: refused), issue_wire.answer(status: 200, headers: [], body: second), issue_wire.answer(status: 200, headers: [], body: third)]
+    )
+    tally = run(plan: one, transport: issue_wire.scripted(), world: world, scratch: scratch, compiler: compiler).must()
+    assert tally.generations == 3
+    assert tally.verdicts == 3
+    assert tally.requests == 4
+
+    kept = thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/samples").must()
+    assert kept.len() == 3
+    repaired: i64 @= 0
+
+    for text in kept
+        v = thesis_verdict.read_verdict(text).must()
+        assert v.converged
+
+        if v.green_turn == 2
+            repaired @ repaired + 1
+            assert v.turns[0].outcome == "compile_error"
+            assert v.turns[0].codes == ["unused_binding"]
+            assert v.turns[1].outcome == "cases_pass"
+
+    assert repaired == 1
+
+    again = run(
+        plan: one,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: []),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert again.requests == 0
+    assert again.skipped == 6
+
+    capped = Plan(
+        suite_dir: "tests/thesis",
+        models: ["claude-haiku-5-5"],
+        arms: ["strict"],
+        contexts: ["none"],
+        samples: 1,
+        turns: 3,
+        effort: "",
+        max_tokens: 32000,
+        layout: "cached",
+        dialect: "anthropic",
+        base: "https://api.example",
+        out: scratch + "/capped",
+        live: true,
+        max_requests: 1,
+        seconds: 10,
+        bytes: 1048576,
+        date: "",
+        head: "",
+        sources: "",
+        compiler: "",
+        quiet: true
+    )
+    stopped = run(
+        plan: capped,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: [issue_wire.answer(status: 200, headers: [], body: first), issue_wire.answer(status: 200, headers: [], body: second)]),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert stopped.stopped != ""
+    assert stopped.generations == 1
+
+# An Anthropic answer holding `text`, as a script records one.
+function answer_json(text: str) -> str
+    return "{\"id\":\"msg_t\",\"model\":\"claude-haiku-5-5\",\"content\":[{\"type\":\"text\",\"text\":" + quoted_json(text) + "}],\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":100,\"output_tokens\":50,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0}}"
+
+function quoted_json(text: str) -> str
+    out: [str] @= ["\""]
+
+    for i in range(from: 0, to: text.len())
+        b = text[i]
+
+        if b == '"'
+            out @ out.push("\\\"")
+        else if b == '\\'
+            out @ out.push("\\\\")
+        else if b == '\n'
+            out @ out.push("\\n")
+        else
+            out @ out.push(text.slice(from: i, to: i + 1))
+
+    return out.push("\"").join("")
+
+test "a run's provenance names the template and the layout apart, the suite, the contexts and every parameter"
+    template = thesis_prompt.template_at(path: thesis_prompt.TEMPLATE).must()
+    none_tasks: [thesis_tasks.Task] = []
+    suite = thesis_tasks.Suite(dir: "tests/thesis", label: "assistant", canary: "", tasks: none_tasks, sha: "1d6a524d")
+    plan = Plan(
+        suite_dir: "tests/thesis",
+        models: ["claude-sonnet-5-5"],
+        arms: ["strict", "control"],
+        contexts: ["spec"],
+        samples: 3,
+        turns: 5,
+        effort: "",
+        max_tokens: 32000,
+        layout: "cached",
+        dialect: "anthropic",
+        base: "https://api.anthropic.com",
+        out: "unused",
+        live: true,
+        max_requests: 0,
+        seconds: 10,
+        bytes: 1048576,
+        date: "2026-10-20",
+        head: "a0a8d1249",
+        sources: "7792ecfe50a531e8",
+        compiler: "./heroes-next",
+        quiet: true
+    )
+    spec = thesis_prompt.context_of(name: "spec").must()
+    text = provenance_json(
+        plan: plan,
+        suite: suite,
+        template: template,
+        layout_sha: thesis_answer.layout_sha(dialect: "anthropic", layout: "cached"),
+        contexts: [spec]
+    )
+    read = json_read.read_json(text).must()
+    assert json_fields.text_at(of: read, name: "template_sha").default("") == template.sha
+    assert json_fields.text_at(of: read, name: "layout_sha").default("") == thesis_answer.layout_sha(dialect: "anthropic", layout: "cached")
+    assert json_fields.text_at(of: read, name: "layout_sha").default("") != template.sha
+    assert json_fields.text_at(of: read, name: "suite_sha").default("") == "1d6a524d"
+    assert json_fields.text_at(of: read, name: "sources").default("") == "7792ecfe50a531e8"
+    assert strings.contains(text: text, needle: "\"models\":[\"claude-sonnet-5-5\"]")
+    assert strings.contains(text: text, needle: "\"arms\":[\"strict\",\"control\"]")
+    assert strings.contains(text: text, needle: "\"sha\":\"" + spec.spec_sha + "\"")
+
+# A plan of the tests below: one model, the `none` context, the folder given.
+function test_plan(dir: str, out: str, arms: [str]) -> Plan
+    return Plan(
+        suite_dir: dir,
+        models: ["claude-haiku-5-5"],
+        arms: arms,
+        contexts: ["none"],
+        samples: 1,
+        turns: 3,
+        effort: "low",
+        max_tokens: 32000,
+        layout: "cached",
+        dialect: "anthropic",
+        base: "https://api.example",
+        out: out,
+        live: true,
+        max_requests: 0,
+        seconds: 10,
+        bytes: 1048576,
+        date: "",
+        head: "",
+        sources: "",
+        compiler: "",
+        quiet: true
+    )
+
+# Five 529s: one request asked past every try.
+function overloaded() -> [issue_wire.Reply]
+    out: [issue_wire.Reply] @= []
+
+    for _ in range(from: 0, to: 5)
+        out @ out.push(issue_wire.answer(status: 529, headers: [], body: ""))
+
+    return out
+
+test "a generation lost past its retries is every arm's transport_error and the run goes on; three in a row stop it before the third is written"
+    if thesis_sandbox.key_held() != ""
+        print(
+            "SKIP thesis_run: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
+        )
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    second = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/02/reference.hero").must()))
+    third = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/03/reference.hero").must()))
+    script: [issue_wire.Reply] @= overloaded()
+    script @ script.push(issue_wire.answer(status: 200, headers: [], body: second)).push(
+        issue_wire.answer(status: 200, headers: [], body: third)
+    )
+    tally = run(
+        plan: test_plan(dir: "tests/thesis", out: scratch + "/out", arms: ["strict", "control"]),
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: script),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert tally.lost == 1
+    assert tally.stopped == ""
+    assert tally.generations == 2
+    assert tally.verdicts == 6
+    lost: i64 @= 0
+
+    for text in thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/samples").must()
+        v = thesis_verdict.read_verdict(text).must()
+
+        if v.turns[0].outcome == "transport_error"
+            lost @ lost + 1
+            assert !v.converged
+
+    assert lost == 2
+
+    down: [issue_wire.Reply] @= []
+
+    for _ in range(from: 0, to: 3)
+        for one in overloaded()
+            down @ down.push(one)
+
+    stopped = run(
+        plan: test_plan(dir: "tests/thesis", out: scratch + "/down", arms: ["strict"]),
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: down),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert stopped.lost == 3
+    assert strings.contains(text: stopped.stopped, needle: "3 requests in a row were lost")
+    assert stopped.verdicts == 2
+    assert thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/down/samples").must().len() == 2
+
+test "two arms whose history is the same bytes share their second turn: one request, two verdicts"
+    if thesis_sandbox.key_held() != ""
+        print(
+            "SKIP thesis_run: " + thesis_sandbox.key_held() + " is set, and no process holding a seal's key runs a program; run the tests in a shell where it is not"
+        )
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    _ = shell.mkdir_all(scratch + "/one").is_err()
+    copied = shell.run(
+        scratch: scratch,
+        program: "cp",
+        words: ["cp", "-R", "tests/thesis/03", scratch + "/one/01"]
+    ).must()
+    assert copied.code == 0
+    write_file(path: scratch + "/one/LABEL", text: "assistant\n").must()
+
+    # Compiles in both strict arms and fails the visible example the same way,
+    # so the feedback, and the whole history, is the same in both.
+    wrong = answer_json(text: thesis_grade.as_answer("function main()\n    print(0)\n"))
+    right = answer_json(text: thesis_grade.as_answer(read_file(path: "tests/thesis/03/reference.hero").must()))
+    script = [
+        issue_wire.answer(status: 200, headers: [], body: wrong)
+        issue_wire.answer(status: 200, headers: [], body: right)
+    ]
+    tally = run(
+        plan: test_plan(dir: scratch + "/one", out: scratch + "/out", arms: ["strict", "brief"]),
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: script),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert tally.requests == 2
+    assert tally.shared == 1
+    assert tally.verdicts == 2
+
+    for text in thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/samples").must()
+        v = thesis_verdict.read_verdict(text).must()
+        assert v.green_turn == 2
+        assert v.turns[0].outcome == "compiled_wrong"

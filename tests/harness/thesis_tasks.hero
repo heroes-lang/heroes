@@ -1,0 +1,297 @@
+# THE TASK SUITE OF THE THESIS INSTRUMENT, read from disk and digested
+# (M-thesis-harness, 2026-10-20; design.md Part 11).
+#
+# A suite is a folder: `LABEL`, one line, `assistant` or `held-out`; then one
+# folder per task named by digits, `01`, `02`, ..., each holding `task.md`,
+# the prose and nothing else the model sees, and `cases/`, the hidden cases:
+# `K.args`, one argument per line, where `{dir}` stands for the folder the
+# case's files are copied into; `K.files/`, the input files, if any;
+# `K.expected`, the program's stdout and its ending in the shape of
+# `expectation.hero` (`!exit: <code>`, `!panic: <text>`, or neither for exit
+# 0 with a silent stderr). Case `0` is the task's visible example, the one
+# the prose shows. A `reference.hero` beside them is the suite writer's own
+# solution, which `dry` grades and no other word reads.
+#
+# Every task has a digest, sha256 over its prose and its cases in order, and
+# a prose digest over `task.md` alone, what the model sees; the suite's digest
+# is sha256 over the tasks' digests, one a line. They are what a measurement
+# records as the suite it ran, and what a frozen held-out suite commits in
+# clear while its text stays sealed (`.claude/rules/records.md` § The issues
+# says nothing of this: the milestone page does).
+
+use shell
+use strings
+use thesis_sha256
+
+record Case
+    name: str
+    args: [str]
+    files: [str]
+    expected: str
+    material: str
+
+record Task
+    number: str
+    dir: str
+    prose: str
+    cases: [Case]
+    prose_sha: str
+    sha: str
+    # The task's canary, its `task.md` line after `canary ` (`heroes-task:`
+    # and thirty-two hexadecimal digits), or "" where `seal` wrote none yet.
+    canary: str
+
+record Suite
+    dir: str
+    label: str
+    # The suite's canary GUID, `LABEL`'s second line after `canary `, or ""
+    # where the suite has none yet (`seal` writes one; panel 226's R6).
+    canary: str
+    tasks: [Task]
+    sha: str
+
+function read_suite(scratch: str, dir: str) -> Suite?
+    raw = read_file(path: dir + "/LABEL")
+
+    if raw.is_err()
+        return fail(code: "no_label", msg: dir + " holds no LABEL file, one line saying `assistant` or `held-out`")
+    rows = strings.lines(text: strings.trimmed(text: raw.must()))
+    label = strings.trimmed(text: rows[0])
+
+    if label != "assistant" && label != "held-out"
+        return fail(
+            code: "bad_label",
+            msg: dir + "/LABEL says `" + label + "`, and a label is `assistant` or `held-out`"
+        )
+    canary: str @= ""
+
+    for row in rows.slice(from: 1, to: rows.len())
+        line = strings.trimmed(text: row)
+
+        if line == ""
+            continue
+
+        if !strings.starts_with(text: line, prefix: "canary ")
+            return fail(
+                code: "bad_label",
+                msg: dir + "/LABEL's line `" + line + "` is neither the label nor `canary <guid>`"
+            )
+        canary @ strings.without_prefix(text: line, prefix: "canary ")
+
+    tasks: [Task] @= []
+
+    for one in shell.list_directories(scratch: scratch, dir: dir)?
+        number = strings.base_name(path: one)
+
+        if all_digits(number)
+            tasks @ tasks.push(read_task(scratch: scratch, dir: one, number: number)?)
+
+    if tasks.len() == 0
+        return fail(code: "no_tasks", msg: dir + " holds no task folder named by digits")
+
+    shas: [str] @= []
+
+    for task in tasks
+        shas @ shas.push(task.sha)
+
+    return ok(
+        Suite(dir: dir, label: label, canary: canary, tasks: tasks, sha: thesis_sha256.of(shas.join("\n") + "\n"))
+    )
+
+function all_digits(text: str) -> bool
+    if text.len() == 0
+        return false
+
+    for i in range(from: 0, to: text.len())
+        if text[i] < '0' || text[i] > '9'
+            return false
+
+    return true
+
+function read_task(scratch: str, dir: str, number: str) -> Task?
+    raw = read_file(path: dir + "/task.md")
+
+    if raw.is_err()
+        return fail(code: "no_prose", msg: dir + " holds no task.md")
+    prose = without_canary(raw.must())
+
+    entries = shell.list_entries(scratch: scratch, dir: dir + "/cases")
+
+    if entries.is_err()
+        return fail(code: "no_cases", msg: dir + " holds no cases folder")
+
+    cases: [Case] @= []
+
+    for entry in entries.must()
+        name = strings.base_name(path: entry)
+
+        if strings.ends_with(text: name, suffix: ".args")
+            cases @ cases.push(
+                read_case(scratch: scratch, dir: dir + "/cases", name: strings.without_suffix(text: name, suffix: ".args"))?
+            )
+
+    if cases.len() == 0
+        return fail(code: "no_cases", msg: dir + "/cases holds no `K.args`")
+
+    parts: [str] @= ["task.md\n" + raw.must() + "\n"]
+
+    for one in cases
+        parts @ parts.push(one.material)
+
+    return ok(
+        Task(number: number, dir: dir, prose: prose, cases: cases, prose_sha: thesis_sha256.of(prose), sha: thesis_sha256.of(parts.join("")), canary: canary_of(raw.must()))
+    )
+
+# The prose a model reads: `task.md` without its canary line (`canary
+# heroes-task:` and its GUID, which `seal` writes). The line stays in the file a
+# leak would carry and in the task's digest, which is over the file's bytes,
+# and out of every prompt, where it would cue a model that it is being
+# measured (panel 226's R6, the critic's second pass). The prose digest is
+# over what the model reads.
+# The canary a task's file holds, after `canary `, or "".
+function canary_of(text: str) -> str
+    for line in strings.lines(text: text)
+        if strings.starts_with(text: line, prefix: "canary heroes-task:")
+            return strings.trimmed(text: strings.without_prefix(text: line, prefix: "canary "))
+
+    return ""
+
+function without_canary(text: str) -> str
+    kept: [str] @= []
+
+    for line in strings.lines(text: text)
+        if !strings.starts_with(text: line, prefix: "canary heroes-task:")
+            kept @ kept.push(line)
+
+    return strings.trimmed(text: kept.join("\n")) + "\n"
+
+function read_case(scratch: str, dir: str, name: str) -> Case?
+    args_text = read_file(path: dir + "/" + name + ".args")?
+    expected = read_file(path: dir + "/" + name + ".expected")
+
+    if expected.is_err()
+        return fail(code: "no_expected", msg: dir + "/" + name + ".args has no " + name + ".expected beside it")
+
+    files: [str] @= []
+    material: [str] @= ["case " + name + "\n" + args_text + "\nexpected\n" + expected.must() + "\n"]
+    folder = dir + "/" + name + ".files"
+
+    if shell.is_directory(folder)
+        for path in shell.list_entries(scratch: scratch, dir: folder)?
+            file_name = strings.base_name(path: path)
+            content = read_file(path: path)
+
+            if content.is_err()
+                return fail(code: "not_text", msg: path + " cannot be read as text, and an input file is text")
+            files @ files.push(file_name)
+            material @ material.push("file " + file_name + "\n" + content.must() + "\n")
+    return ok(
+        Case(name: name, args: strings.lines(text: args_text), files: files, expected: expected.must(), material: material.join(""))
+    )
+
+# One line per task, `<sha> <prose sha> <number> <cases>`, then the suite's.
+function told(suite: Suite) -> str
+    lines: [str] @= []
+
+    for task in suite.tasks
+        lines @ lines.push(task.sha + " " + task.prose_sha + " " + task.number + " " + task.cases.len().to_str())
+
+    canary: str @= "no-canary"
+
+    if suite.canary != ""
+        canary @ "canary"
+    lines @ lines.push("suite " + suite.sha + " " + suite.label + " " + suite.tasks.len().to_str() + " " + canary)
+    return lines.join("\n")
+
+test "the assistant's suite in the tree reads whole, and its digests are stable"
+    scratch = shell.own_scratch()
+    suite = read_suite(scratch: scratch, dir: "tests/thesis").must()
+    assert suite.label == "assistant"
+    assert suite.tasks.len() >= 3
+    assert suite.sha.len() == 64
+
+    total: i64 @= 0
+
+    for task in suite.tasks
+        assert task.cases.len() >= 5
+        assert task.prose_sha == thesis_sha256.of(task.prose)
+        assert task.sha.len() == 64
+        total @ total + task.cases.len()
+
+    assert total >= 25
+
+    again = read_suite(scratch: scratch, dir: "tests/thesis").must()
+    assert again.sha == suite.sha
+    assert strings.lines(text: told(suite)).len() == suite.tasks.len() + 1
+
+test "a case's arguments are read one a line, `{dir}` left for the grader, and an empty file is no argument"
+    scratch = shell.own_scratch()
+    suite = read_suite(scratch: scratch, dir: "tests/thesis").must()
+    first = suite.tasks[0]
+    assert first.number == "01"
+    assert first.cases[0].name == "0"
+    assert first.cases[0].args == ["{dir}/input.txt"]
+    assert first.cases[0].files == ["input.txt"]
+    assert strings.contains(text: first.cases[0].expected, needle: "the 2\n")
+
+    none: i64 @= -1
+
+    for i in range(from: 0, to: first.cases.len())
+        if first.cases[i].name == "6"
+            none @ i
+
+    assert none >= 0
+    assert first.cases[none].args.len() == 0
+
+test "a folder with no LABEL, a task with no case and a case with no expectation are refused by name"
+    scratch = shell.own_scratch()
+    bare = scratch + "/bare"
+    shell.mkdir_all(bare + "/01/cases").must()
+
+    match read_suite(scratch: scratch, dir: bare)
+        .ok _  => assert false
+        .err e => assert e.code == "no_label"
+
+    write_file(path: bare + "/LABEL", text: "assistant\n").must()
+    write_file(path: bare + "/01/task.md", text: "Print nothing.\n").must()
+
+    match read_suite(scratch: scratch, dir: bare)
+        .ok _  => assert false
+        .err e => assert e.code == "no_cases"
+
+    write_file(path: bare + "/01/cases/0.args", text: "").must()
+
+    match read_suite(scratch: scratch, dir: bare)
+        .ok _  => assert false
+        .err e => assert e.code == "no_expected"
+
+    write_file(path: bare + "/01/cases/0.expected", text: "").must()
+    suite = read_suite(scratch: scratch, dir: bare).must()
+    assert suite.tasks.len() == 1
+    assert suite.tasks[0].cases[0].args.len() == 0
+
+test "a task's canary line is in its digest and out of the prose a model reads"
+    scratch = shell.own_scratch()
+    _ = shell.mkdir_all(scratch + "/plain/cases").is_err()
+    _ = shell.mkdir_all(scratch + "/marked/cases").is_err()
+
+    for dir in [scratch + "/plain", scratch + "/marked"]
+        write_file(path: dir + "/cases/0.args", text: "hi\n").must()
+        write_file(path: dir + "/cases/0.expected", text: "hi\n").must()
+
+    write_file(
+        path: scratch + "/plain/task.md",
+        text: "# Task 1: echo\n\nThe program prints its one argument.\n"
+    ).must()
+    write_file(
+        path: scratch + "/marked/task.md",
+        text: "# Task 1: echo\n\nThe program prints its one argument.\n\ncanary heroes-task:0123456789abcdef0123456789abcdef\n"
+    ).must()
+    plain = read_task(scratch: scratch, dir: scratch + "/plain", number: "01").must()
+    marked = read_task(scratch: scratch, dir: scratch + "/marked", number: "01").must()
+    assert marked.prose == plain.prose
+    assert !strings.contains(text: marked.prose, needle: "canary")
+    assert marked.prose_sha == plain.prose_sha
+    assert marked.sha != plain.sha
+    assert marked.canary == "heroes-task:0123456789abcdef0123456789abcdef"
+    assert plain.canary == ""

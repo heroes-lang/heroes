@@ -1,0 +1,525 @@
+# THE THESIS INSTRUMENT, a third root of the harness: design.md Part 11's
+# metrics 2 and 4, run for the first time (M-thesis-harness, opened
+# 2026-10-20):
+#
+#     heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out]
+#     heroes run tests/harness/thesis.hero -- dry <folder> [--arm strict|brief|control] [--mute]
+#     heroes run tests/harness/thesis.hero -- grade <answer.hero> --task <folder/NN> [--arm ...]
+#     heroes run tests/harness/thesis.hero -- plan <folder> --model <id>... [--arm ...] [--context ...]...
+#     heroes run tests/harness/thesis.hero -- run <folder> --model <id>... --live [--max-requests n]
+#     heroes run tests/harness/thesis.hero -- report <out> [--seed n] [--primary <sentence>]
+#     heroes run tests/harness/thesis.hero -- seal <folder> -o <file> [--key VAR]
+#     heroes run tests/harness/thesis.hero -- canary <folder>
+#     heroes run tests/harness/thesis.hero -- unseal --sealed <file> --into <dir> [--key VAR]
+#     heroes run tests/harness/thesis.hero -- canary-probe <folder> --model <id>... [--live]
+#
+# from the repository's root, always. A program of the harness and no verb of
+# `heroes`, by the author's decision of 2026-10-19 (panel 212's reading of
+# CLAUDE.md § 10 for `issues.hero`, extended here): nothing of it enters the
+# seed, the help, the command table or the site, and a program that would
+# spend money and send a specification to a third party stays out of the
+# compiler's binary. The words arrive with the milestone's steps; `tasks`
+# reads a suite and prints its digests (`thesis_tasks.hero`); `dry` grades
+# every task's `reference.hero` as if a model had answered it, so the grader
+# and the cases are proven before a model is asked, `--mute` saying on a
+# failure the task's digest alone (the CI's form, where a log is public);
+# `grade` grades one answer file for one task (`thesis_grade.hero`); `plan`
+# renders every turn-1 request of a run, counts them and estimates their
+# tokens, sending nothing, which is the number the author is asked with; `run
+# --live` sends them, paced, and keeps a generation and a verdict per sample
+# under its `--out` (`thesis_run.hero`); `report` joins the verdicts under an
+# `--out` into `verdicts.jsonl` and writes `report.md` beside them, the
+# per-arm table and the paired contrast with its interval and McNemar's p
+# (`thesis_report.hero`, `thesis_stats.hero`); `seal` makes a folder of tasks
+# one encrypted text file under the key a variable holds; `tasks` takes
+# `--sealed <file>` to read such a file, opened into the scratch alone, and
+# `unseal` opens one into a folder and exits, since **no process holding a
+# seal's key runs a program** (a program inside the sandbox reads another
+# process's environment; panel 226, the ffi-pragmatist): `dry` and `run` read
+# the folder in a shell where the key is not set, and refuse to grade while a
+# key is set; `canary-probe` asks each model to complete the start of every
+# canary line a suite holds, burning a task whose GUID comes back whole
+# (`thesis_canary.hero`); and `canary` writes a suite GUID and a per-task GUID where a folder
+# lacks them, which `seal` does too before sealing (`thesis_seal.hero`;
+# panel 226's R6). **Nothing is ever sent to a model
+# without `--live`**: `run` without it is `plan`, and no other word reaches a
+# transport that spawns `curl`.
+#
+# Exit 0 clean; 1 where the input refuses (a folder that is no suite); 2 where
+# the program could not run (no word, a wrong flag).
+
+use issue_wire
+use shell
+use strings
+use thesis_args
+use thesis_canary
+use thesis_grade
+use thesis_prompt
+use thesis_report
+use thesis_run
+use thesis_seal
+use thesis_sha256
+use thesis_tasks
+use thesis_verdict
+use thesis_wire
+
+extern "hero_os.h"
+    function hero_write_err(text: str)
+
+function main()
+    given = args()
+
+    if given.len() == 0 || !thesis_args.among(word: given[0], words: thesis_args.WORDS)
+        hero_write_err(text: "thesis: " + thesis_args.refusal(given: given) + "\n")
+        exit(code: 2)
+
+    asked = thesis_args.parsed(word: given[0], words: given.slice(from: 1, to: given.len()))
+
+    if asked.wrong != ""
+        hero_write_err(text: "thesis: " + asked.wrong + "\n")
+        exit(code: 2)
+
+    scratch = "build/thesis-" + shell.pid().to_str()
+
+    code = match asked.word
+        "tasks"        => tasks_word(scratch: scratch, asked: asked)
+        "dry"          => dry_word(scratch: scratch, asked: asked)
+        "grade"        => grade_word(scratch: scratch, asked: asked)
+        "plan"         => plan_word(scratch: scratch, asked: asked)
+        "run"          => plan_word(scratch: scratch, asked: asked)
+        "report"       => report_word(scratch: scratch, asked: asked)
+        "seal"         => seal_word(scratch: scratch, asked: asked)
+        "canary"       => canary_word(scratch: scratch, asked: asked)
+        "unseal"       => unseal_word(scratch: scratch, asked: asked)
+        "canary-probe" => canary_probe_word(scratch: scratch, asked: asked)
+        _              => 2
+
+    _ = shell.remove_tree(scratch).is_err()
+    exit(code: code)
+
+# The folder a grading word reads: the one named, or the sealed archive
+# opened into the scratch under the key `--key` names.
+function suite_dir(scratch: str, asked: thesis_args.Asked) -> str?
+    if asked.sealed == ""
+        return ok(asked.paths[0])
+    return thesis_seal.unsealed(scratch: scratch, file: asked.sealed, key_name: asked.key)
+
+# `tasks`: the suite's digests, one task a line and the suite's last; for a
+# sealed archive, the archive's digest first.
+function tasks_word(scratch: str, asked: thesis_args.Asked) -> i64
+    dir: str @= ""
+
+    match suite_dir(scratch: scratch, asked: asked)
+        .ok d => dir @ d
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+    if asked.sealed != ""
+        cipher = read_file(path: asked.sealed)
+
+        if !cipher.is_err()
+            print("archive " + thesis_sha256.of(cipher.must()) + " " + asked.sealed)
+
+    match thesis_tasks.read_suite(scratch: scratch, dir: dir)
+        .ok suite =>
+            if asked.label != "" && asked.label != suite.label
+                hero_write_err(
+                    text: "thesis: " + suite.dir + " is labelled `" + suite.label + "`, not `" + asked.label + "`\n"
+                )
+                return 1
+            print(thesis_tasks.told(suite))
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 1
+
+# The compiler a grading word spawns: `--compiler`, else the one the harness
+# finds as the net does.
+function compiler_of(asked: thesis_args.Asked) -> str?
+    if asked.compiler != ""
+        return ok(asked.compiler)
+    return shell.some_compiler()
+
+# `dry`: every task's reference solution graded in the arm; exit 0 where every
+# one passes every case, 1 where one does not, 2 where the grader could not
+# run. The bound per case is the grader's own: ten seconds and a mebibyte.
+function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
+    compiler = compiler_of(asked)
+
+    if compiler.is_err()
+        hero_write_err(text: "thesis: no compiler to grade with; give --compiler <path>\n")
+        return 2
+    suite = thesis_tasks.read_suite(scratch: scratch, dir: asked.paths[0])
+
+    if suite.is_err()
+        hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: suite.is_err(), of: "the suite") + "\n")
+        return 1
+    red: i64 @= 0
+
+    for task in suite.must().tasks
+        reference = read_file(path: task.dir + "/reference.hero")
+
+        if reference.is_err()
+            print(said(task: task, outcome: "no_reference", detail: "", mute: asked.mute))
+            red @ red + 1
+            continue
+        got = thesis_grade.graded(
+            scratch: scratch + "/" + task.number,
+            compiler: compiler.must(),
+            arm: asked.arm,
+            answer: thesis_grade.as_answer(reference.must()),
+            task: task,
+            seconds: 10,
+            bytes: 1048576
+        )
+
+        match got
+            .ok g =>
+                print(
+                    said(task: task, outcome: g.outcome + " " + g.passed.to_str() + "/" + g.total.to_str(), detail: g.message, mute: asked.mute)
+                )
+
+                if g.outcome != "cases_pass"
+                    red @ red + 1
+            .err e =>
+                hero_write_err(text: "thesis: " + e.msg + "\n")
+                return 2
+
+    print(
+        "dry " + suite.must().sha + " " + asked.arm + " " + suite.must().tasks.len().to_str() + " tasks, " + red.to_str() + " red"
+    )
+
+    if red > 0
+        return 1
+    return 0
+
+# One task's line of `dry`: its digest and outcome, and the detail unless muted.
+function said(task: thesis_tasks.Task, outcome: str, detail: str, mute: bool) -> str
+    line = task.sha + " " + task.number + " " + outcome
+
+    if mute || detail == ""
+        return line
+    return line + "\n  " + strings.lines(text: detail).join("\n  ")
+
+# `grade`: one answer file for one task, the outcome and its detail printed.
+function grade_word(scratch: str, asked: thesis_args.Asked) -> i64
+    compiler = compiler_of(asked)
+
+    if compiler.is_err()
+        hero_write_err(text: "thesis: no compiler to grade with; give --compiler <path>\n")
+        return 2
+    answer = read_file(path: asked.paths[0])
+
+    if answer.is_err()
+        hero_write_err(text: "thesis: cannot read the answer " + asked.paths[0] + "\n")
+        return 2
+    task = thesis_tasks.read_task(scratch: scratch, dir: asked.task, number: strings.base_name(path: asked.task))
+
+    if task.is_err()
+        hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: task.is_err(), of: asked.task) + "\n")
+        return 1
+    got = thesis_grade.graded(
+        scratch: scratch,
+        compiler: compiler.must(),
+        arm: asked.arm,
+        answer: answer.must(),
+        task: task.must(),
+        seconds: 10,
+        bytes: 1048576
+    )
+
+    match got
+        .ok g =>
+            print(g.outcome + " " + g.passed.to_str() + "/" + g.total.to_str() + " " + g.codes.join(","))
+
+            if g.message != ""
+                print(g.message)
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+# `plan` and `run`: the run's plan from the flags, the live transports only
+# under `--live`, the tally printed last. Exit 0 with the tally; 1 where the
+# suite refuses; 2 where the wire or the API did.
+function plan_word(scratch: str, asked: thesis_args.Asked) -> i64
+    compiler = compiler_of(asked)
+
+    if compiler.is_err()
+        hero_write_err(text: "thesis: no compiler to grade with; give --compiler <path>\n")
+        return 2
+    suite = thesis_tasks.read_suite(scratch: scratch, dir: asked.paths[0])
+
+    if suite.is_err()
+        hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: suite.is_err(), of: "the suite") + "\n")
+        return 1
+    planned = plan_of(asked: asked, suite_sha: suite.must().sha, compiler: compiler.must(), scratch: scratch)
+    plan: thesis_run.Plan @= blank_plan()
+
+    match planned
+        .ok p => plan @ p
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+    transport: issue_wire.Transport @= issue_wire.scripted()
+
+    if plan.live
+        if plan.dialect == "openai"
+            transport @ thesis_wire.openai()
+        else
+            transport @ thesis_wire.anthropic()
+    world = issue_wire.world_of(scratch: scratch, script: [])
+    got = thesis_run.run(plan: plan, transport: transport, world: world, scratch: scratch, compiler: compiler.must())
+
+    match got
+        .ok tally =>
+            print(told_tally(plan: plan, suite_sha: suite.must().sha, tally: tally))
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+# The plan the flags describe: the dialect's base URL where none was given,
+# the output folder under `build/thesis-runs/` named by the suite's digest,
+# and what the tree and the compiler say of themselves. **A live run refuses a
+# tree git cannot describe and a dirty one**: its provenance would name a
+# commit the programs were not compiled from (design.md Part 11, *never diff
+# runs with different compiler shas*); a dry plan records what it can.
+function plan_of(asked: thesis_args.Asked, suite_sha: str, compiler: str, scratch: str) -> thesis_run.Plan?
+    told = thesis_prompt.provenance(scratch: scratch, compiler: compiler)
+    date: str @= ""
+    head: str @= ""
+    sources: str @= ""
+
+    match told
+        .ok p =>
+            if asked.live && p.dirty
+                return fail(
+                    code: "dirty_tree",
+                    msg: "a live run is made from a clean tree, and `git status --porcelain` is not empty"
+                )
+            date @ p.date
+            head @ p.head
+            sources @ p.sources
+        .err e =>
+            if asked.live
+                return fail(
+                    code: "no_provenance",
+                    msg: "a live run records its provenance, and this tree gives none: " + e.msg
+                )
+
+    base = base_of(asked)
+    out: str @= asked.out
+
+    if out == ""
+        out @ "build/thesis-runs/" + suite_sha.slice(from: 0, to: 8)
+    return ok(
+        thesis_run.Plan(suite_dir: asked.paths[0], models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, base: base, out: out, live: asked.live, max_requests: asked.max_requests, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
+    )
+
+# A plan with nothing in it, the cell `plan_word` fills from `plan_of`.
+function blank_plan() -> thesis_run.Plan
+    none: [str] = []
+    return thesis_run.Plan(
+        suite_dir: "",
+        models: none,
+        arms: none,
+        contexts: none,
+        samples: 0,
+        turns: 0,
+        effort: "",
+        max_tokens: 0,
+        layout: "",
+        dialect: "",
+        base: "",
+        out: "",
+        live: false,
+        max_requests: 0,
+        seconds: 0,
+        bytes: 0,
+        date: "",
+        head: "",
+        sources: "",
+        compiler: "",
+        quiet: true
+    )
+
+function told_tally(plan: thesis_run.Plan, suite_sha: str, tally: thesis_run.Tally) -> str
+    head: str @= "plan"
+
+    if plan.live
+        head @ "run"
+    line = head + " " + suite_sha + " template=" + tally.template_sha.slice(from: 0, to: 8) + " layout=" + plan.layout + "/" + tally.layout_sha.slice(from: 0, to: 8) + " models=" + plan.models.join(",") + " arms=" + plan.arms.join(",") + " contexts=" + plan.contexts.join(",") + " samples=" + plan.samples.to_str() + " turns=" + plan.turns.to_str() + " dialect=" + plan.dialect + " requests=" + tally.requests.to_str()
+
+    if !plan.live
+        return line + " estimated_input_tokens=" + tally.estimated_tokens.to_str() + " (an estimate, bytes over four; a model's own count is count_tokens')"
+    tail = " generations=" + tally.generations.to_str() + " verdicts=" + tally.verdicts.to_str() + " skipped=" + tally.skipped.to_str() + " shared=" + tally.shared.to_str() + " lost=" + tally.lost.to_str() + " out=" + plan.out
+
+    if tally.stopped != ""
+        return line + tail + " stopped: " + tally.stopped
+    return line + tail
+
+# `seal`: the folder's canaries written where missing, then the folder sealed
+# into `-o <file>` under the key `--key` names, the archive's digest beside it.
+# Exit 0 with the suite's digests as sealed printed, the lines `hashes.txt`
+# holds, then the archive's; 2 where the variable is unset (nothing written)
+# or a tool failed; 1 where the folder is no suite.
+function seal_word(scratch: str, asked: thesis_args.Asked) -> i64
+    folder = asked.paths[0]
+    suite = thesis_tasks.read_suite(scratch: scratch, dir: folder)
+
+    if suite.is_err()
+        hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: suite.is_err(), of: folder) + "\n")
+        return 1
+
+    # The digests printed are the suite's as sealed, its canaries written:
+    # `hashes.txt` is these lines, and never what `tasks` printed before.
+    match thesis_seal.frozen(scratch: scratch, folder: folder, out: asked.out, key_name: asked.key)
+        .ok made =>
+            print("canaries written " + made.written.to_str())
+            print(made.told)
+            print("sealed " + made.sealed.sha + " " + made.sealed.file + " under " + asked.key)
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+# `canary`: the folder's canaries written where missing; exit 0 with the count,
+# 1 where the folder is no suite, 2 where openssl gave no random digits.
+function canary_word(scratch: str, asked: thesis_args.Asked) -> i64
+    folder = asked.paths[0]
+
+    if thesis_tasks.read_suite(scratch: scratch, dir: folder).is_err()
+        hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: true, of: folder) + "\n")
+        return 1
+
+    match thesis_seal.canaried(scratch: scratch, folder: folder)
+        .ok n =>
+            print("canaries written " + n.to_str() + " in " + folder)
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+# `unseal`: the archive opened under the key `--key` names into `--into`, a
+# folder this process makes and leaves, and nothing else run: the key is in
+# this process's environment and in no process that grades (panel 226's R10,
+# the ffi-pragmatist's condition). Exit 0 with the folder printed, 2 where the
+# key is unset or the archive moved.
+function unseal_word(scratch: str, asked: thesis_args.Asked) -> i64
+    match thesis_seal.unsealed(scratch: scratch, file: asked.sealed, key_name: asked.key)
+        .ok opened =>
+            if shell.mkdir_all(asked.into).is_err()
+                hero_write_err(text: "thesis: cannot make " + asked.into + "\n")
+                return 2
+            moved = shell.run(scratch: scratch, program: "cp", words: ["cp", "-R", opened + "/.", asked.into])
+
+            if moved.is_err() || moved.must().code != 0
+                hero_write_err(text: "thesis: cannot copy the opened suite into " + asked.into + "\n")
+                return 2
+            print(
+                "unsealed " + asked.sealed + " into " + asked.into + " (the key stays in this shell: grade the folder in another, where it is not set)"
+            )
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+# The base URL of the dialect's API: `--base`, else `OPENAI_BASE_URL` for the
+# OpenAI dialect, else the provider's own.
+function base_of(asked: thesis_args.Asked) -> str
+    if asked.base != ""
+        return asked.base
+
+    if asked.dialect == "openai"
+        named = shell.env("OPENAI_BASE_URL").default("")
+
+        if named != ""
+            return named
+        return "https://api.openai.com"
+    return "https://api.anthropic.com"
+
+# `canary-probe`: every canary of the suite asked of every model; without
+# `--live` the probes are counted and nothing is sent. Each answer is kept
+# under `<out>/canary/`. Exit 0 where no GUID came back whole, 1 where one did
+# (a task's burns that task, the suite's stops a run for the author to read),
+# 2 where the wire or the API failed.
+function canary_probe_word(scratch: str, asked: thesis_args.Asked) -> i64
+    suite = thesis_tasks.read_suite(scratch: scratch, dir: asked.paths[0])
+
+    if suite.is_err()
+        hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: true, of: asked.paths[0]) + "\n")
+        return 1
+    count = thesis_canary.probes(suite.must()).len()
+
+    if count == 0
+        hero_write_err(text: "thesis: " + asked.paths[0] + " holds no canary; `canary <folder>` writes them\n")
+        return 1
+
+    if !asked.live
+        print(
+            "canary-probe " + suite.must().sha + " models=" + asked.models.join(",") + " probes=" + (count * asked.models.len()).to_str() + " (nothing is sent without --live)"
+        )
+        return 0
+    transport: issue_wire.Transport @= thesis_wire.anthropic()
+
+    if asked.dialect == "openai"
+        transport @ thesis_wire.openai()
+    out: str @= asked.out
+
+    if out == ""
+        out @ "build/thesis-runs/" + suite.must().sha.slice(from: 0, to: 8)
+
+    match thesis_canary.sweep(transport: transport, world: issue_wire.world_of(scratch: scratch, script: []), models: asked.models, suite: suite.must(), dialect: asked.dialect, base: base_of(asked), max_tokens: asked.max_tokens, effort: asked.effort)
+        .ok swept =>
+            burned: i64 @= 0
+            lost: i64 @= 0
+
+            for r in swept.results
+                state: str @= "not completed"
+
+                if r.lost
+                    state @ "lost"
+                    lost @ lost + 1
+                else if r.completed
+                    state @ "COMPLETED"
+                    burned @ burned + 1
+
+                if thesis_verdict.keep(dir: out + "/canary", key: r.model + "." + r.of, text: thesis_canary.written_probed(r)).is_err()
+                    hero_write_err(text: "thesis: cannot keep the probe of " + r.of + " under " + out + "/canary\n")
+                    return 2
+                print("canary-probe " + r.model + " " + r.of + " " + state)
+
+            print(
+                "canary-probe " + suite.must().sha + " probes=" + swept.results.len().to_str() + " completed=" + burned.to_str() + " lost=" + lost.to_str() + " out=" + out + "/canary"
+            )
+
+            if burned > 0
+                return 1
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+# `report`: the verdicts under `<out>/samples/` joined and read into
+# `<out>/report.md` and `<out>/verdicts.jsonl`; exit 0 with the two paths
+# printed, 1 where the folder holds no verdict, 2 where one could not be read.
+function report_word(scratch: str, asked: thesis_args.Asked) -> i64
+    out = asked.paths[0]
+
+    match thesis_report.report(scratch: scratch, out: out, seed: asked.seed, primary: asked.primary)
+        .ok text =>
+            if strings.contains(text: text, needle: "0 verdicts under")
+                hero_write_err(text: "thesis: no verdict under " + out + "/samples\n")
+                return 1
+
+            if write_file(path: out + "/report.md", text: text).is_err()
+                hero_write_err(text: "thesis: cannot write " + out + "/report.md\n")
+                return 2
+            print("report " + out + "/report.md " + out + "/verdicts.jsonl")
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2

@@ -1,0 +1,156 @@
+# ONE REQUEST TO A MODEL, PACED: sent, waited for where the API says to wait,
+# retried where the failure is the wire's and never where it is the request's
+# (M-thesis-harness, 2026-10-20).
+#
+# `issue_pace.hero` is GitHub's: a 403 read as a limit, a 5xx retried on a read
+# alone, `issues:` in its warnings. A model's API is another world: 429 is the
+# rate limit, with `retry-after` in seconds; 529 is Anthropic's overload and
+# 500 to 503 a server's own trouble, retried on a POST too, since a request
+# that was not answered was not paid; a `curl` that timed out or whose
+# connection broke (`Reply.sent`) may have been paid, so it is retried, and
+# **every attempt is written down**, so a cost reconciled with the console sees
+# the attempts and not the samples. A 4xx other than 429 is the request's own
+# fault and comes back at once, as does a 200.
+#
+# **A request that is still unanswered past its tries is LOST, not the run's
+# failure** (panel 226's R5): it comes back with the world it changed and
+# `lost` saying why, and the caller records its sample as a `transport_error`,
+# counted and outside every denominator. A wire that sent nothing (no key, no
+# `curl`, a name that does not resolve) is the run's failure at once, since the
+# next request would fail the same way and a network down must stop a run, not
+# turn its samples into exclusions.
+
+use issue_wire
+
+# How many times one request is asked before the run gives it up.
+constant TRIES: i64
+    5
+
+# The waits, in seconds, where the API names none: growing, never above the
+# harness's watchdog.
+constant WAITS: [i64]
+    [5, 15, 45, 120, 300]
+
+record Exchanged
+    world: issue_wire.World
+    reply: issue_wire.Reply
+    attempts: i64
+    # "" where the request was answered; else why it was lost past its tries.
+    lost: str
+
+# `request` asked through `transport` until it is answered or the tries run
+# out; the world carries every attempt and every wait.
+function exchange(transport: issue_wire.Transport, world: issue_wire.World, request: issue_wire.Request) -> Exchanged?
+    w: issue_wire.World @= world
+    attempts: i64 @= 0
+    send = transport.send
+    pause = transport.pause
+
+    while attempts < TRIES
+        got = send(world: w, request: request)
+        w @ got.world
+        attempts @ attempts + 1
+        reply = got.reply
+
+        if reply.failure != "" && !reply.sent
+            return fail(code: "transport", msg: "POST " + request.path + ": " + reply.failure)
+
+        if reply.failure == "" && !retried(reply.status)
+            return ok(Exchanged(world: w, reply: reply, attempts: attempts, lost: ""))
+
+        if attempts >= TRIES
+            lost_why: str @= "POST " + request.path + " answered " + reply.status.to_str() + " at every one of " + attempts.to_str() + " tries"
+
+            if reply.failure != ""
+                lost_why @ "POST " + request.path + " was tried " + attempts.to_str() + " times and the wire failed each time: " + reply.failure
+            return ok(Exchanged(world: w, reply: reply, attempts: attempts, lost: lost_why))
+        paused = pause(world: w, seconds: wait_for(reply: reply, attempt: attempts))
+        w @ paused.world
+
+        if paused.failure != ""
+            return fail(code: "pause", msg: paused.failure)
+
+    return fail(code: "limited", msg: "POST " + request.path + " was not answered")
+
+# Whether a status is the wire's or the server's trouble, worth another try.
+function retried(status: i64) -> bool
+    return status == 429 || status == 529 || status >= 500 && status <= 503
+
+# The seconds to wait before attempt `attempt + 1`: what `retry-after` says,
+# else the table.
+function wait_for(reply: issue_wire.Reply, attempt: i64) -> i64
+    said = issue_wire.header(reply: reply, name: "retry-after")
+
+    if said != ""
+        parsed = seconds_of(said)
+
+        if parsed > 0
+            return parsed
+    at: i64 @= attempt - 1
+
+    if at >= WAITS.len()
+        at @ WAITS.len() - 1
+
+    if at < 0
+        at @ 0
+    return WAITS[at]
+
+# A `retry-after` of whole seconds; 0 where it is a date or not a number.
+function seconds_of(text: str) -> i64
+    value: i64 @= 0
+
+    if text.len() == 0 || text.len() > 6
+        return 0
+
+    for i in range(from: 0, to: text.len())
+        b = text[i]
+
+        if b < '0' || b > '9'
+            return 0
+        value @ value * 10 + to_i64(b - '0').must()
+
+    return value
+
+test "a 429 waits what retry-after says and asks again; a 200 ends it; five limits give up; a wire that sent nothing fails at once"
+    t = issue_wire.scripted()
+    request = issue_wire.Request(method: "POST", path: "https://api.example/v1/messages", accept: "", body: "{}")
+    w = issue_wire.world_of(
+        scratch: "unused",
+        script: [issue_wire.answer(status: 429, headers: ["retry-after: 7"], body: ""), issue_wire.answer(status: 200, headers: [], body: "{\"ok\":true}")]
+    )
+    got = exchange(transport: t, world: w, request: request).must()
+    assert got.attempts == 2
+    assert got.reply.status == 200
+    assert got.world.waits == [7]
+    assert got.world.requests.len() == 2
+
+    busy = issue_wire.world_of(
+        scratch: "unused",
+        script: [issue_wire.answer(status: 529, headers: [], body: ""), issue_wire.answer(status: 529, headers: [], body: ""), issue_wire.answer(status: 529, headers: [], body: ""), issue_wire.answer(status: 529, headers: [], body: ""), issue_wire.answer(status: 529, headers: [], body: "")]
+    )
+
+    gone = exchange(transport: t, world: busy, request: request).must()
+    assert gone.attempts == 5
+    assert gone.lost != ""
+    assert gone.world.requests.len() == 5
+    assert gone.world.waits == [5, 15, 45, 120]
+
+    bad = issue_wire.world_of(
+        scratch: "unused",
+        script: [issue_wire.answer(status: 400, headers: [], body: "{\"error\":\"bad\"}")]
+    )
+    at_once = exchange(transport: t, world: bad, request: request).must()
+    assert at_once.attempts == 1
+    assert at_once.reply.status == 400
+    assert at_once.lost == ""
+
+    none = issue_wire.world_of(scratch: "unused", script: [issue_wire.failed(why: "curl exited 7", sent: false)])
+
+    match exchange(transport: t, world: none, request: request)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "transport"
+
+    assert wait_for(reply: issue_wire.answer(status: 500, headers: [], body: ""), attempt: 1) == 5
+    assert wait_for(reply: issue_wire.answer(status: 500, headers: [], body: ""), attempt: 9) == 300
+    assert wait_for(reply: issue_wire.answer(status: 429, headers: ["retry-after: Wed, 21 Oct 2026 07:28:00 GMT"], body: ""), attempt: 2) == 15

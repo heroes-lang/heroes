@@ -1,0 +1,136 @@
+# JSON WRITTEN BY THE THESIS INSTRUMENT: a request body for a model's API, a
+# sample's verdict, a run's provenance (M-thesis-harness, 2026-10-20).
+#
+# The three functions `escaped`, `quoted` and `member` are `issue_json.hero`'s,
+# copied and not `use`d: that module `use`s `issue_render`, which reaches eight
+# modules of the issue program, and a writer of a dozen lines does not carry
+# them. A string is escaped as JSON asks and no further: a quote and a
+# backslash, a newline as `\n`, every other control byte as `\u00XX`; a byte
+# above ASCII passes through, the transport being UTF-8. What is written here
+# is read back by `json_read.hero`, the harness's reader, which is the witness
+# `thesis_verdict.hero`'s tests ask. `written` is the other direction: a value
+# `json_read` read, written again, so that a model's answer is appended to the
+# next request's messages verbatim (an assistant turn with its thinking blocks,
+# which the API refuses to see rebuilt from text).
+
+use json_read
+
+# `text` as the inside of a JSON string.
+function escaped(text: str) -> str
+    parts: [str] @= []
+    plain: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+        one: str @= ""
+
+        if b == '"'
+            one @ "\\\""
+        else if b == '\\'
+            one @ "\\\\"
+        else if b == '\n'
+            one @ "\\n"
+        else if b < 32 || b == 127
+            one @ "\\u00" + nibble(to_i64(b / 16).must()) + nibble(to_i64(b % 16).must())
+
+        if one != ""
+            # The byte is ASCII, so both cuts stand between characters.
+            parts @ parts.push(text.slice(from: plain, to: at))
+            parts @ parts.push(one)
+            plain @ at + 1
+        at @ at + 1
+
+    if plain == 0
+        return text
+    parts @ parts.push(text.slice(from: plain, to: text.len()))
+    return parts.join("")
+
+function nibble(value: i64) -> str
+    return "0123456789abcdef".slice(from: value, to: value + 1)
+
+function quoted(text: str) -> str
+    return "\"" + escaped(text) + "\""
+
+# `"key":"value"`.
+function member(key: str, value: str) -> str
+    return quoted(key) + ":" + quoted(value)
+
+# `"key":123`.
+function number(key: str, value: i64) -> str
+    return quoted(key) + ":" + value.to_str()
+
+# `"key":true`.
+function flag(key: str, value: bool) -> str
+    if value
+        return quoted(key) + ":true"
+    return quoted(key) + ":false"
+
+# `"key":<raw>`, for a value already written as JSON: an object, a list.
+function raw(key: str, json: str) -> str
+    return quoted(key) + ":" + json
+
+# `{m1,m2,...}` from members already written.
+function object(members: [str]) -> str
+    return "{" + members.join(",") + "}"
+
+# `[v1,v2,...]` from values already written.
+function list(values: [str]) -> str
+    return "[" + values.join(",") + "]"
+
+# `"key":["a","b"]` from plain strings.
+function strings(key: str, items: [str]) -> str
+    each: [str] @= []
+
+    for item in items
+        each @ each.push(quoted(item))
+
+    return raw(key: key, json: list(each))
+
+test "a string is escaped as JSON asks and no further"
+    assert quoted("plain") == "\"plain\""
+    assert quoted("a \"q\" and a \\ slash") == "\"a \\\"q\\\" and a \\\\ slash\""
+    assert quoted("two\nlines") == "\"two\\nlines\""
+    assert quoted("tab\there") == "\"tab\\u0009here\""
+    assert quoted("caffè") == "\"caffè\""
+
+test "members, numbers, flags, lists and objects compose into one document"
+    doc = object(
+        [member(key: "model", value: "claude-sonnet-5-5"), number(key: "turn", value: 3), flag(key: "green", value: true), strings(key: "codes", items: ["unused_binding", "non_exhaustive"]), raw(key: "usage", json: object([number(key: "input", value: 10294)]))]
+    )
+    assert doc == "{\"model\":\"claude-sonnet-5-5\",\"turn\":3,\"green\":true,\"codes\":[\"unused_binding\",\"non_exhaustive\"],\"usage\":{\"input\":10294}}"
+    assert list([]) == "[]"
+    assert object([]) == "{}"
+
+# A value `json_read` read, written as JSON again: a number as it was written,
+# a string escaped as above, an object's names in the order they came.
+function written(j: json_read.Json) -> str
+    match j
+        .null_value => return "null"
+        .truth b =>
+            if b.v
+                return "true"
+            return "false"
+        .number n => return n.written
+        .text s   => return quoted(s.v)
+        .items l =>
+            parts: [str] @= []
+
+            for one in l.all
+                parts @ parts.push(written(one))
+
+            return list(parts)
+        .fields f =>
+            members: [str] @= []
+
+            for i in range(from: 0, to: f.names.len())
+                members @ members.push(raw(key: f.names[i], json: written(f.values[i])))
+
+            return object(members)
+
+test "a value read is written again as it stood, and reads the same"
+    text = "{\"model\":\"m\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"abc\"},{\"type\":\"text\",\"text\":\"two\\nlines\"}],\"n\":-12.5e3,\"ok\":true,\"none\":null}"
+    once = json_read.read_json(text).must()
+    again = written(once)
+    assert again == text
+    assert written(json_read.read_json(again).must()) == text

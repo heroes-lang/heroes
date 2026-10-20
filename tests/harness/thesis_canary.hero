@@ -1,0 +1,219 @@
+# THE CANARY PROBE: before a run, each model is asked to complete the start of
+# every canary line a suite holds, the suite's in `LABEL` and each task's in
+# its `task.md`, and every answer is kept (M-thesis-harness, 2026-10-20;
+# panel 226's R6). The probe shows eight of a GUID's thirty-two hexadecimal
+# digits, so an answer holding all thirty-two can come from nowhere but a file
+# the model read: **a task's GUID completed exactly burns that task**, replaced
+# by the next of the reserve in order; **the suite's GUID completed exactly
+# stops the run** for the author to read, since the suite's stands in this
+# public repository and may have been learnt from it, as BIG-bench's can, where
+# a task's exists in one sealed file alone. The prompt names no task and holds
+# none of a task's words. Nothing is sent without `--live`; without it the word
+# counts the probes. A request lost past its retries is kept as lost, never as
+# a GUID not completed.
+
+use issue_wire
+use strings
+use thesis_answer
+use thesis_json
+use thesis_pace
+use thesis_tasks
+
+# How many of a GUID's thirty-two digits the probe shows.
+constant SHOWN: i64
+    8
+
+record Probe
+    # `suite`, or the task's number.
+    of: str
+    # `heroes-suite` or `heroes-task`.
+    name: str
+    guid: str
+
+record Probed
+    of: str
+    model: str
+    completed: bool
+    lost: bool
+    # The answer's text, or why the request was lost.
+    said: str
+
+record Swept
+    world: issue_wire.World
+    results: [Probed]
+
+# The probes a suite holds: its own canary, then each task's, in order.
+function probes(suite: thesis_tasks.Suite) -> [Probe]
+    out: [Probe] @= []
+
+    if suite.canary != ""
+        out @ out.push(probe_of(of: "suite", canary: suite.canary))
+
+    for task in suite.tasks
+        if task.canary != ""
+            out @ out.push(probe_of(of: task.number, canary: task.canary))
+
+    return out
+
+# A canary `heroes-task:<guid>` as the probe of `of`.
+function probe_of(of: str, canary: str) -> Probe
+    at = strings.index_of(text: canary, needle: ":")
+
+    if at.is_err()
+        return Probe(of: of, name: canary, guid: "")
+    return Probe(
+        of: of,
+        name: canary.slice(from: 0, to: at.must()),
+        guid: canary.slice(from: at.must() + 1, to: canary.len())
+    )
+
+# What the model is asked: the start of the line, and nothing of any task.
+function prompt_of(p: Probe) -> str
+    shown: str @= p.guid
+
+    if shown.len() > SHOWN
+        shown @ shown.slice(from: 0, to: SHOWN)
+    return "The line below is the start of a line of a file. If you have read that file, complete the line exactly as it stands there; if you have not, answer with the one word unknown. Answer with the line alone.\n\ncanary " + p.name + ":" + shown
+
+# Whether an answer completes the probe's GUID: all thirty-two digits, which
+# the prompt does not hold.
+function completed(answer: str, p: Probe) -> bool
+    return p.guid.len() == 32 && strings.contains(text: answer, needle: p.guid)
+
+# Every probe asked of every model, in order, through `transport`.
+function sweep(transport: issue_wire.Transport, world: issue_wire.World, models: [str], suite: thesis_tasks.Suite, dialect: str, base: str, max_tokens: i64, effort: str) -> Swept?
+    w: issue_wire.World @= world
+    results: [Probed] @= []
+
+    for model in models
+        for p in probes(suite)
+            messages = [thesis_answer.user_turn(prompt_of(p))]
+            body: str @= thesis_answer.anthropic_request(
+                model: model,
+                max_tokens: max_tokens,
+                effort: effort,
+                system: "",
+                messages: messages
+            )
+            url: str @= thesis_answer.anthropic_url(base)
+
+            if dialect == "openai"
+                body @ thesis_answer.openai_request(
+                    model: model,
+                    max_tokens: max_tokens,
+                    system: "",
+                    messages: messages
+                )
+                url @ thesis_answer.openai_url(base)
+            got = thesis_pace.exchange(transport: transport, world: w, request: issue_wire.Request(method: "POST", path: url, accept: "", body: body))?
+            w @ got.world
+
+            if got.lost != ""
+                results @ results.push(Probed(of: p.of, model: model, completed: false, lost: true, said: got.lost))
+                continue
+
+            if got.reply.status != 200
+                return fail(
+                    code: "api",
+                    msg: url + " answered " + got.reply.status.to_str() + " to the canary probe of " + p.of
+                )
+            read: thesis_answer.Exchange? @= thesis_answer.read_anthropic(got.reply.body)
+
+            if dialect == "openai"
+                read @ thesis_answer.read_openai(got.reply.body)
+            answered = read?
+            results @ results.push(
+                Probed(of: p.of, model: model, completed: completed(answer: answered.text, p: p), lost: false, said: answered.text)
+            )
+
+    return ok(Swept(world: w, results: results))
+
+# One probe's answer as kept under `<out>/canary/`.
+function written_probed(r: Probed) -> str
+    return thesis_json.object(
+        [thesis_json.member(key: "of", value: r.of), thesis_json.member(key: "model", value: r.model), thesis_json.flag(key: "completed", value: r.completed), thesis_json.flag(key: "lost", value: r.lost), thesis_json.member(key: "said", value: r.said)]
+    )
+
+test "a suite's probes show eight digits of each GUID, and only an answer holding all thirty-two completes one"
+    suite_guid = "0123456789abcdef0123456789abcdef"
+    task_guid = "fedcba9876543210fedcba9876543210"
+    none: [thesis_tasks.Case] = []
+    task = thesis_tasks.Task(
+        number: "01",
+        dir: "x",
+        prose: "p",
+        cases: none,
+        prose_sha: "",
+        sha: "",
+        canary: "heroes-task:" + task_guid
+    )
+    bare = thesis_tasks.Task(number: "02", dir: "y", prose: "q", cases: none, prose_sha: "", sha: "", canary: "")
+    suite = thesis_tasks.Suite(
+        dir: "s",
+        label: "assistant",
+        canary: "heroes-suite:" + suite_guid,
+        tasks: [task, bare],
+        sha: "z"
+    )
+    found = probes(suite)
+    assert found.len() == 2
+    assert found[0].of == "suite"
+    assert found[1].of == "01"
+    asked = prompt_of(found[1])
+    assert strings.ends_with(text: asked, suffix: "canary heroes-task:fedcba98")
+    assert !strings.contains(text: asked, needle: task_guid)
+    assert completed(answer: "canary heroes-task:" + task_guid, p: found[1])
+    assert !completed(answer: "canary heroes-task:fedcba980000", p: found[1])
+    assert !completed(answer: "unknown", p: found[0])
+
+test "a sweep asks every probe of every model, reads a completion, and keeps a lost request as lost"
+    suite_guid = "0123456789abcdef0123456789abcdef"
+    task_guid = "fedcba9876543210fedcba9876543210"
+    none: [thesis_tasks.Case] = []
+    task = thesis_tasks.Task(
+        number: "01",
+        dir: "x",
+        prose: "p",
+        cases: none,
+        prose_sha: "",
+        sha: "",
+        canary: "heroes-task:" + task_guid
+    )
+    suite = thesis_tasks.Suite(
+        dir: "s",
+        label: "assistant",
+        canary: "heroes-suite:" + suite_guid,
+        tasks: [task],
+        sha: "z"
+    )
+    script: [issue_wire.Reply] @= [
+        issue_wire.answer(status: 200, headers: [], body: reply_with("canary heroes-suite:" + suite_guid))
+        issue_wire.answer(status: 200, headers: [], body: reply_with("unknown"))
+    ]
+
+    for _ in range(from: 0, to: 5)
+        script @ script.push(issue_wire.answer(status: 529, headers: [], body: ""))
+
+    script @ script.push(issue_wire.answer(status: 200, headers: [], body: reply_with("unknown")))
+    swept = sweep(
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: "unused", script: script),
+        models: ["m1", "m2"],
+        suite: suite,
+        dialect: "anthropic",
+        base: "https://api.example",
+        max_tokens: 4000,
+        effort: ""
+    ).must()
+    assert swept.results.len() == 4
+    assert swept.results[0].completed
+    assert !swept.results[1].completed
+    assert swept.results[2].lost
+    assert !swept.results[2].completed
+    assert swept.results[3].model == "m2"
+    assert !swept.results[3].lost
+    assert strings.contains(text: written_probed(swept.results[0]), needle: "\"completed\":true")
+
+# An Anthropic answer holding `text`, for the sweep's test.
+function reply_with(text: str) -> str
+    return "{\"id\":\"msg_t\",\"model\":\"m\",\"content\":[{\"type\":\"text\",\"text\":" + thesis_json.quoted(text) + "}],\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":20,\"output_tokens\":10}}"

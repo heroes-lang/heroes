@@ -660,6 +660,12 @@ function shown(name: str, pick: str) -> str
 constant ISSUE_PROGRAM: str
     "tests/harness/issues.hero"
 
+# **AND THE THIRD ROOT, the thesis instrument** (M-thesis-harness, 2026-10-20):
+# `thesis.hero` and the `thesis_*` modules only it reaches, tested the same
+# way, by the same test shape, one test per root so a red names its root.
+constant THESIS_PROGRAM: str
+    "tests/harness/thesis.hero"
+
 # Every module the root `root` reaches through its `use` lines, the root among
 # them, each a file of `dir`, in the order they are found. A `use` of any
 # other shape, or one naming no file there, is a failure rather than a module
@@ -811,6 +817,36 @@ test "the issue program's own tests run with the net's own, every block its modu
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "issues").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "issues").must()
+    said: [str] @= []
+
+    # The runner's verdict is the one line `<n> tests, ...`.
+    for line in strings.lines(ran.out)
+        if counts(strings.words(line))
+            said @ said.push(line)
+
+    assert said == [held.to_str() + " tests, all passed"]
+    assert !shell.remove_tree(scratch).is_err()
+
+test "the thesis instrument's own tests run with the net's own, every block its modules hold and all passed"
+    compiler = shell.some_compiler().must()
+    scratch = shell.own_scratch()
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", THESIS_PROGRAM]).must()
+    failed: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if strings.starts_with(text: line, prefix: "FAIL \"")
+            failed @ failed.push(line)
+
+    # A test the instrument's run stepped aside is said here too, with its
+    # reason, as the issue program's are.
+    for line in skips_in(ran.out)
+        print(THESIS_PROGRAM + ": " + line)
+
+    # The failing tests by name, then the whole verdict, then any stray line.
+    assert failed.join("\n") == ""
+    assert ran.code == 0
+    assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "thesis").must()).join("\n") == ""
+    held = blocks(dir: "tests/harness", root: "thesis").must()
     said: [str] @= []
 
     # The runner's verdict is the one line `<n> tests, ...`.

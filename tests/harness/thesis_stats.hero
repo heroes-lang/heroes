@@ -1,0 +1,250 @@
+# THE STATISTICS OF A RUN: Wilson's interval for one proportion, McNemar's
+# exact test for the paired contrast, a cluster bootstrap over tasks for its
+# interval, each with a hand-computed witness (M-thesis-harness, 2026-10-20;
+# design.md Part 11, *Wilson intervals*; the sitting's R2).
+#
+# **Wilson** (1927; Brown, Cai and DasGupta 2001 for why not Wald): for k of
+# n at z = 1.96, centre (p + z^2/2n) / (1 + z^2/n), half-width z / (1 + z^2/n)
+# times the root of p(1-p)/n + z^2/4n^2, clipped to [0, 1]. **McNemar**
+# (1947), exact two-sided: with b pairs where the first arm alone passed and c
+# where the second alone did, the p-value is twice the binomial tail of
+# min(b, c) out of b + c at one half, capped at one; the probabilities are
+# built iteratively in f64, P(0) = 0.5^n and P(k+1) = P(k) (n-k)/(k+1), which
+# never overflows for the n a run has. **The cluster bootstrap**: the tasks are
+# the clusters (a task's samples are correlated), so B resamples of the task
+# list with replacement, each yielding the paired difference of rates, give
+# the 2.5th and 97.5th percentiles as the interval. Its random numbers come
+# from a Park-Miller generator, x = 16807 x mod (2^31 - 1), whose product fits
+# an i64 and so never meets the language's overflow abort (spec § 7); its seed
+# is written in the provenance, so a report is reproduced to the digit.
+
+extern "math.h" link "m"
+    function sqrt(x: f64) -> f64
+
+constant Z: f64
+    1.96
+
+constant MODULUS: i64
+    2147483647
+
+constant MULTIPLIER: i64
+    16807
+
+record Interval
+    low: f64
+    high: f64
+
+# One task's paired counts: how many of its samples went green in each arm.
+record Cell
+    task: str
+    first: i64
+    second: i64
+    n: i64
+
+function wilson(k: i64, n: i64) -> Interval
+    if n <= 0
+        return Interval(low: 0.0, high: 0.0)
+    p = to_f64(k) / to_f64(n)
+    nf = to_f64(n)
+    z2 = Z * Z
+    centre = (p + z2 / (2.0 * nf)) / (1.0 + z2 / nf)
+    half = Z / (1.0 + z2 / nf) * sqrt(p * (1.0 - p) / nf + z2 / (4.0 * nf * nf))
+    return Interval(low: clipped(centre - half), high: clipped(centre + half))
+
+function clipped(x: f64) -> f64
+    if x < 0.0
+        return 0.0
+
+    if x > 1.0
+        return 1.0
+    return x
+
+# McNemar's exact conditional two-sided p-value for `b` against `c` discordant
+# pairs: twice the binomial tail at one half up to the smaller count; 1.0 where
+# there is no discordant pair, which a report says in words. Reported beside
+# the mid-p and never as the primary (panel 226's R2, on Fagerland, Lydersen
+# and Laake 2013: at these counts the exact conditional test's type I error
+# runs at half the nominal level and its power is poor).
+function mcnemar(b: i64, c: i64) -> f64
+    return two_sided(b: b, c: c, half_of_point: false)
+
+# McNemar's mid-p two-sided p-value: the tail below the smaller count plus HALF
+# the probability of the smaller count itself, doubled. The pre-registered test
+# of the primary contrast (panel 226's R2).
+function mcnemar_midp(b: i64, c: i64) -> f64
+    return two_sided(b: b, c: c, half_of_point: true)
+
+function two_sided(b: i64, c: i64, half_of_point: bool) -> f64
+    n = b + c
+
+    if n == 0
+        return 1.0
+    smaller: i64 @= b
+
+    if c < b
+        smaller @ c
+    probability: f64 @= 1.0
+
+    for _ in range(from: 0, to: n)
+        probability @ probability * 0.5
+
+    tail: f64 @= 0.0
+
+    for k in range(from: 0, to: n + 1)
+        if k < smaller
+            tail @ tail + probability
+        else if k == smaller
+            if half_of_point
+                tail @ tail + probability / 2.0
+            else
+                tail @ tail + probability
+        probability @ probability * to_f64(n - k) / to_f64(k + 1)
+
+    p = 2.0 * tail
+
+    if p > 1.0
+        return 1.0
+    return p
+
+# The next number of the generator, in 1 to 2^31 - 2, and the state after it.
+function next(state: i64) -> i64
+    return MULTIPLIER * state % MODULUS
+
+# A seed the generator accepts: never 0, never the modulus.
+function seeded(seed: i64) -> i64
+    s = seed % MODULUS
+
+    if s <= 0
+        return s + MODULUS - 1
+    return s
+
+# The paired difference of rates, second minus first, over `cells` weighted by
+# their samples.
+function difference(cells: [Cell]) -> f64
+    first: i64 @= 0
+    second: i64 @= 0
+    n: i64 @= 0
+
+    for cell in cells
+        first @ first + cell.first
+        second @ second + cell.second
+        n @ n + cell.n
+
+    if n == 0
+        return 0.0
+    return (to_f64(second) - to_f64(first)) / to_f64(n)
+
+# The bootstrap interval of the paired difference, `rounds` resamples of the
+# tasks with replacement from `seed`.
+function bootstrap(cells: [Cell], rounds: i64, seed: i64) -> Interval
+    if cells.len() == 0 || rounds <= 0
+        return Interval(low: 0.0, high: 0.0)
+    state: i64 @= seeded(seed)
+    differences: [f64] @= []
+
+    for _ in range(from: 0, to: rounds)
+        drawn: [Cell] @= []
+
+        for _ in range(from: 0, to: cells.len())
+            state @ next(state)
+            drawn @ drawn.push(cells[state % cells.len()])
+
+        differences @ differences.push(difference(drawn))
+
+    ordered = sort(differences)
+    return Interval(
+        low: ordered[index_of_quantile(count: ordered.len(), permille: 25)],
+        high: ordered[index_of_quantile(count: ordered.len(), permille: 975)]
+    )
+
+# The index of the `permille`-th quantile in a sorted list of `count`.
+function index_of_quantile(count: i64, permille: i64) -> i64
+    at = (count - 1) * permille / 1000
+
+    if at < 0
+        return 0
+
+    if at >= count
+        return count - 1
+    return at
+
+# A fraction as a percentage with one decimal, `NN.N`.
+function percent(x: f64) -> str
+    tenths = to_i64(x * 1000.0 + 0.5).must()
+    whole = tenths / 10
+    rest = tenths % 10
+    return whole.to_str() + "." + rest.to_str()
+
+# A p-value with three decimals, or `<0.001`.
+function p_written(p: f64) -> str
+    if p < 0.001
+        return "<0.001"
+    thousandths = to_i64(p * 1000.0 + 0.5).must()
+    whole = thousandths / 1000
+    rest = thousandths % 1000
+    digits: str @= rest.to_str()
+
+    while digits.len() < 3
+        digits @ "0" + digits
+
+    return whole.to_str() + "." + digits
+
+test "Wilson's interval agrees with three hand-computed witnesses and clips at the ends"
+    empty = wilson(k: 0, n: 20)
+    assert empty.low == 0.0
+    assert percent(empty.high) == "16.1"
+    full = wilson(k: 20, n: 20)
+    assert percent(full.low) == "83.9"
+    assert full.high == 1.0
+    middle = wilson(k: 7, n: 15)
+
+    # centre (7/15 + 3.8416/30) / 1.25611 = 0.4735, half-width 0.2254
+    assert percent(middle.low) == "24.8"
+    assert percent(middle.high) == "69.9"
+    assert wilson(k: 0, n: 0).high == 0.0
+
+test "McNemar's exact test agrees with the critic's two witnesses and says one where nothing is discordant"
+    assert p_written(mcnemar(b: 10, c: 2)) == "0.039"
+    assert p_written(mcnemar(b: 18, c: 6)) == "0.023"
+    assert p_written(mcnemar(b: 24, c: 12)) == "0.065"
+    assert mcnemar(b: 0, c: 0) == 1.0
+    assert mcnemar(b: 3, c: 3) == 1.0
+    assert p_written(mcnemar(b: 30, c: 0)) == "<0.001"
+
+    # mid-p by hand: 10 against 2 is 2 × (13 + 33) / 4096; 18 against 6 is
+    # 2 × (55455 + 67298) / 16777216; 3 against 3 is 2 × (22 + 10) / 64 = 1.
+    assert p_written(mcnemar_midp(b: 10, c: 2)) == "0.022"
+    assert p_written(mcnemar_midp(b: 18, c: 6)) == "0.015"
+    assert mcnemar_midp(b: 3, c: 3) == 1.0
+    assert mcnemar_midp(b: 0, c: 0) == 1.0
+    assert p_written(mcnemar_midp(b: 2, c: 0)) == "0.250"
+    assert mcnemar_midp(b: 10, c: 2) < mcnemar(b: 10, c: 2)
+
+test "the generator is Park-Miller's, deterministic, and the bootstrap's interval holds the difference"
+    assert next(1) == 16807
+    assert next(16807) == 282475249
+    assert seeded(0) == MODULUS - 1
+    assert seeded(-5) == MODULUS - 6
+    cells: [Cell] @= []
+
+    for i in range(from: 0, to: 20)
+        cells @ cells.push(Cell(task: "t" + i.to_str(), first: i % 3, second: 2 + i % 2, n: 3))
+
+    d = difference(cells)
+
+    # first 19 of 60, second 50 of 60: 31/60
+    assert percent(d) == "51.7"
+    once = bootstrap(cells: cells, rounds: 400, seed: 2026)
+    twice = bootstrap(cells: cells, rounds: 400, seed: 2026)
+    assert once.low == twice.low
+    assert once.high == twice.high
+    assert once.low < d
+    assert once.high > d
+    assert once.low > 0.3
+    assert once.high < 0.7
+    assert bootstrap(cells: [], rounds: 10, seed: 1).high == 0.0
+    assert index_of_quantile(count: 400, permille: 25) == 9
+    assert index_of_quantile(count: 400, permille: 975) == 389
+    assert percent(0.0) == "0.0"
+    assert percent(1.0) == "100.0"
+    assert percent(0.12345) == "12.3"

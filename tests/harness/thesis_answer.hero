@@ -1,0 +1,233 @@
+# A REQUEST TO A MODEL AND ITS ANSWER, in the two dialects the instrument
+# speaks (M-thesis-harness, 2026-10-20).
+#
+# **Anthropic's Messages API**: `POST <base>/v1/messages` with the model, the
+# token ceiling, an optional `system` block holding the specification with
+# `cache_control: {"type": "ephemeral"}` (the same bytes in every request of a
+# run, read from the cache from the second one), the messages, and the effort
+# in `output_config`; the answer's `content` is an array of blocks, the text
+# ones read here and the whole array written back as the assistant's turn on
+# the next request, thinking blocks included, since the API refuses a turn
+# rebuilt from text (the skill's note on preserved thinking). `stop_reason` is
+# `end_turn`, `max_tokens` or `refusal`; `usage` carries the input, output,
+# cache-read and cache-creation tokens. **OpenAI-compatible**: `POST
+# <base>/v1/chat/completions`, the system text as a `system` message, the
+# answer in `choices[0].message.content`, `finish_reason` `stop`, `length` or
+# `content_filter`, `usage.prompt_tokens` and `completion_tokens`; a local
+# server (llama.cpp, Ollama, vLLM) speaks the same. The parameter each model
+# accepts (`max_tokens` against `max_completion_tokens`, a temperature or
+# none) is the sitting's table; today both dialects send `max_tokens` and no
+# temperature, and record the defaults as defaults.
+#
+# A message is carried as JSON text already written, so a turn the API
+# answered goes back byte for byte (`thesis_json.written`).
+
+use json_fields
+use json_read
+use thesis_json
+use thesis_sha256
+
+# What one request to a model answered, in either dialect: the text, how it
+# stopped, the model that answered and the answer's id, the token counts, and
+# the assistant's turn as the next request appends it.
+record Exchange
+    text: str
+    stop: str
+    model: str
+    id: str
+    input: i64
+    output: i64
+    cache_read: i64
+    cache_write: i64
+    turn: str
+
+function anthropic_url(base: str) -> str
+    return base + "/v1/messages"
+
+function openai_url(base: str) -> str
+    return base + "/v1/chat/completions"
+
+# `{"role":"user","content":"<text>"}`, the shape both dialects take.
+function user_turn(text: str) -> str
+    return thesis_json.object(
+        [thesis_json.member(key: "role", value: "user"), thesis_json.member(key: "content", value: text)]
+    )
+
+# The body of an Anthropic request; `system` "" sends no system block.
+function anthropic_request(model: str, max_tokens: i64, effort: str, system: str, messages: [str]) -> str
+    members: [str] @= [
+        thesis_json.member(key: "model", value: model)
+        thesis_json.number(key: "max_tokens", value: max_tokens)
+    ]
+
+    if system != ""
+        block = thesis_json.object(
+            [thesis_json.member(key: "type", value: "text"), thesis_json.member(key: "text", value: system), thesis_json.raw(key: "cache_control", json: thesis_json.object([thesis_json.member(key: "type", value: "ephemeral")]))]
+        )
+        members @ members.push(thesis_json.raw(key: "system", json: thesis_json.list([block])))
+    members @ members.push(thesis_json.raw(key: "messages", json: thesis_json.list(messages)))
+
+    if effort != ""
+        members @ members.push(
+            thesis_json.raw(key: "output_config", json: thesis_json.object([thesis_json.member(key: "effort", value: effort)]))
+        )
+    return thesis_json.object(members)
+
+# The body of an OpenAI-compatible request; `system` "" sends no system message.
+function openai_request(model: str, max_tokens: i64, system: str, messages: [str]) -> str
+    every: [str] @= []
+
+    if system != ""
+        every @ every.push(
+            thesis_json.object([thesis_json.member(key: "role", value: "system"), thesis_json.member(key: "content", value: system)])
+        )
+
+    for one in messages
+        every @ every.push(one)
+
+    return thesis_json.object(
+        [thesis_json.member(key: "model", value: model), thesis_json.number(key: "max_tokens", value: max_tokens), thesis_json.raw(key: "messages", json: thesis_json.list(every))]
+    )
+
+# The request body's shape as a digest: the body a run would send with every
+# value a placeholder (`{{MODEL}}`, `{{SYSTEM}}`, `{{USER}}`, `{{EFFORT}}`, a
+# zero ceiling), so that two runs whose words are the same and whose shape is
+# not (a `system` block against one user message, Anthropic's dialect against
+# OpenAI's) carry different shas and are never one series (panel 226's R12,
+# the spec-warden: the two layouts count the same tokens).
+function layout_sha(dialect: str, layout: str) -> str
+    system: str @= ""
+
+    if layout == "cached"
+        system @ "{{SYSTEM}}"
+    body: str @= ""
+
+    if dialect == "openai"
+        body @ openai_request(model: "{{MODEL}}", max_tokens: 0, system: system, messages: [user_turn("{{USER}}")])
+    else
+        body @ anthropic_request(
+            model: "{{MODEL}}",
+            max_tokens: 0,
+            effort: "{{EFFORT}}",
+            system: system,
+            messages: [user_turn("{{USER}}")]
+        )
+    return thesis_sha256.of(body)
+
+test "the layout sha tells the two layouts and the two dialects apart and is the same twice"
+    assert layout_sha(dialect: "anthropic", layout: "cached") == layout_sha(dialect: "anthropic", layout: "cached")
+    assert layout_sha(dialect: "anthropic", layout: "cached") != layout_sha(dialect: "anthropic", layout: "single")
+    assert layout_sha(dialect: "anthropic", layout: "cached") != layout_sha(dialect: "openai", layout: "cached")
+    assert layout_sha(dialect: "openai", layout: "single").len() == 64
+
+# An Anthropic answer read: its text blocks joined, and its `content` array
+# written back whole as the assistant's turn.
+function read_anthropic(body: str) -> Exchange?
+    doc = json_read.read_json(body)?
+    content = json_fields.field(of: doc, name: "content")?
+    blocks = json_fields.items_of(content)?
+    texts: [str] @= []
+
+    for block in blocks
+        kind = json_fields.text_at(of: block, name: "type")?
+
+        if kind == "text"
+            texts @ texts.push(json_fields.text_at(of: block, name: "text")?)
+
+    usage = json_fields.field(of: doc, name: "usage")?
+    turn = thesis_json.object(
+        [thesis_json.member(key: "role", value: "assistant"), thesis_json.raw(key: "content", json: thesis_json.written(content))]
+    )
+    return ok(
+        Exchange(text: texts.join(""), stop: json_fields.text_at(of: doc, name: "stop_reason")?, model: json_fields.text_at(of: doc, name: "model")?, id: json_fields.text_at(of: doc, name: "id")?, input: whole_or_zero(of: usage, name: "input_tokens"), output: whole_or_zero(of: usage, name: "output_tokens"), cache_read: whole_or_zero(of: usage, name: "cache_read_input_tokens"), cache_write: whole_or_zero(of: usage, name: "cache_creation_input_tokens"), turn: turn)
+    )
+
+# An OpenAI-compatible answer read: the first choice's message.
+function read_openai(body: str) -> Exchange?
+    doc = json_read.read_json(body)?
+    choices = json_fields.items_of(json_fields.field(of: doc, name: "choices")?)?
+
+    if choices.len() == 0
+        return fail(code: "no_choice", msg: "the answer holds no choices")
+    first = choices[0]
+    message = json_fields.field(of: first, name: "message")?
+    text = json_fields.text_at(of: message, name: "content")?
+    usage = json_fields.field(of: doc, name: "usage")?
+    turn = thesis_json.object(
+        [thesis_json.member(key: "role", value: "assistant"), thesis_json.member(key: "content", value: text)]
+    )
+    return ok(
+        Exchange(text: text, stop: json_fields.text_at(of: first, name: "finish_reason")?, model: json_fields.text_at(of: doc, name: "model")?, id: json_fields.text_at(of: doc, name: "id")?, input: whole_or_zero(of: usage, name: "prompt_tokens"), output: whole_or_zero(of: usage, name: "completion_tokens"), cache_read: 0, cache_write: 0, turn: turn)
+    )
+
+# A count an answer may leave out, read as zero where it does.
+function whole_or_zero(of: json_read.Json, name: str) -> i64
+    got = json_fields.whole_at(of: of, name: name)
+
+    if got.is_err()
+        return 0
+    return got.must()
+
+test "an Anthropic request carries the cached system block, the messages and the effort, and parses as JSON"
+    body = anthropic_request(
+        model: "claude-sonnet-5-5",
+        max_tokens: 32000,
+        effort: "high",
+        system: "SPEC",
+        messages: [user_turn("TASK")]
+    )
+    doc = json_read.read_json(body).must()
+    assert json_fields.text_at(of: doc, name: "model").must() == "claude-sonnet-5-5"
+    assert json_fields.whole_at(of: doc, name: "max_tokens").must() == 32000
+    system = json_fields.items_of(json_fields.field(of: doc, name: "system").must()).must()
+    assert system.len() == 1
+    assert json_fields.text_at(of: system[0], name: "text").must() == "SPEC"
+    assert json_fields.text_at(of: json_fields.field(of: system[0], name: "cache_control").must(), name: "type").must() == "ephemeral"
+    messages = json_fields.items_of(json_fields.field(of: doc, name: "messages").must()).must()
+    assert messages.len() == 1
+    assert json_fields.text_at(of: messages[0], name: "content").must() == "TASK"
+    assert json_fields.text_at(of: json_fields.field(of: doc, name: "output_config").must(), name: "effort").must() == "high"
+    bare = json_read.read_json(
+        anthropic_request(model: "m", max_tokens: 10, effort: "", system: "", messages: [user_turn("x")])
+    ).must()
+    assert json_fields.field(of: bare, name: "system").is_err()
+    assert json_fields.field(of: bare, name: "output_config").is_err()
+
+test "an Anthropic answer is read, its thinking block kept whole in the turn that goes back"
+    body = "{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-sonnet-5-5\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"sig\"},{\"type\":\"text\",\"text\":\"```\\nfunction main()\\n    print(1)\\n```\"}],\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":10400,\"output_tokens\":120,\"cache_read_input_tokens\":10294,\"cache_creation_input_tokens\":0}}"
+    got = read_anthropic(body).must()
+    assert got.text == "```\nfunction main()\n    print(1)\n```"
+    assert got.stop == "end_turn"
+    assert got.model == "claude-sonnet-5-5"
+    assert got.input == 10400
+    assert got.output == 120
+    assert got.cache_read == 10294
+    assert got.cache_write == 0
+    turn = json_read.read_json(got.turn).must()
+    assert json_fields.text_at(of: turn, name: "role").must() == "assistant"
+    content = json_fields.items_of(json_fields.field(of: turn, name: "content").must()).must()
+    assert content.len() == 2
+    assert json_fields.text_at(of: content[0], name: "signature").must() == "sig"
+    refused = read_anthropic(
+        "{\"id\":\"m\",\"model\":\"x\",\"content\":[],\"stop_reason\":\"refusal\",\"usage\":{}}"
+    ).must()
+    assert refused.stop == "refusal"
+    assert refused.text == ""
+    assert refused.input == 0
+
+test "an OpenAI-compatible request and answer round the same shape"
+    body = openai_request(model: "gpt-x", max_tokens: 4000, system: "SPEC", messages: [user_turn("TASK")])
+    doc = json_read.read_json(body).must()
+    messages = json_fields.items_of(json_fields.field(of: doc, name: "messages").must()).must()
+    assert messages.len() == 2
+    assert json_fields.text_at(of: messages[0], name: "role").must() == "system"
+    assert json_fields.text_at(of: messages[1], name: "content").must() == "TASK"
+    answer = "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion\",\"model\":\"gpt-x\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"```\\nfunction main()\\n    print(2)\\n```\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":10500,\"completion_tokens\":90}}"
+    got = read_openai(answer).must()
+    assert got.text == "```\nfunction main()\n    print(2)\n```"
+    assert got.stop == "stop"
+    assert got.input == 10500
+    assert got.output == 90
+    assert json_fields.text_at(of: json_read.read_json(got.turn).must(), name: "content").must() == got.text
+    assert anthropic_url("https://api.anthropic.com") == "https://api.anthropic.com/v1/messages"
+    assert openai_url("http://127.0.0.1:8080") == "http://127.0.0.1:8080/v1/chat/completions"

@@ -1,0 +1,566 @@
+# THE REPORT OF A RUN: the verdicts under `samples/` joined into one JSON Lines
+# file and read into the tables a measurement prints (M-thesis-harness,
+# 2026-10-20; the shape of `docs/measurements/024-the-corpus-at-one-hundred-and-twenty-files.md`).
+#
+# One table per (model, arm, context): the samples, how many were green by
+# turn 1, 2, 3 and the cap, Wilson's interval on green by turn 3, the buckets
+# at the last turn (the three failure classes and the rest), the mean turns to
+# green over the converged, the tokens, and the samples left out. **A sample
+# the API refused (`api_refusal`), the transport lost past its retries
+# (`transport_error`), or whose program `check` accepted and `build` refused
+# (`build_failed`, a compiler defect) is outside every denominator**, counted in
+# a column of its own and never resampled in silence (panel 226's R5 and its
+# adjudication), and a pair either of whose verdicts is out leaves the paired
+# contrasts (R8). Then **the flow**, how far each sample's last turn got,
+# attempted, answered, extracted, compiled, ran, green, as `docs/metrics/tasks.md`
+# names them, so every exclusion and
+# every loss is a difference between two columns, an outcome the grader does
+# not name counted apart rather than read as a stage; and **the `build_failed`
+# samples by key**, each one refiled as a compiler defect, a table R1 expects
+# empty.
+#
+# Then three paired contrasts per (model, context), each over a verdict of two
+# arms of one generation matched by the key without its arm, with the cluster
+# bootstrap's interval over tasks and McNemar's mid-p over the discordant
+# pairs, the exact conditional p beside it (R2): **the primary**, green by turn
+# 3, strict minus control; **the first secondary**, silent by turn 3, control
+# minus strict; and **the message's value**, green by turn 3, strict (the full
+# message) minus brief, over the pairs where either arm saw a refusal (R4). The
+# report names the pre-registered primary and calls every other row
+# exploratory, so no number is picked after the fact.
+
+use strings
+use thesis_stats
+use thesis_verdict
+
+constant TURNS_SHOWN: [i64]
+    [1, 2, 3, 5]
+
+constant ROUNDS: i64
+    2000
+
+record Group
+    model: str
+    arm: str
+    context_sha: str
+    verdicts: [thesis_verdict.Verdict]
+
+# The verdicts under `out/samples/`, read; `out/verdicts.jsonl` written from
+# their texts, one a line, by key; the report's Markdown returned.
+function report(scratch: str, out: str, seed: i64, primary: str) -> str?
+    texts = thesis_verdict.all_kept(scratch: scratch, dir: out + "/samples")?
+    verdicts: [thesis_verdict.Verdict] @= []
+
+    for text in texts
+        verdicts @ verdicts.push(thesis_verdict.read_verdict(text)?)
+
+    write_file(path: out + "/verdicts.jsonl", text: texts.join("\n") + "\n")?
+    return ok(rendered(verdicts: verdicts, seed: seed, primary: primary))
+
+function rendered(verdicts: [thesis_verdict.Verdict], seed: i64, primary: str) -> str
+    lines: [str] @= [
+        "## What the run read"
+        ""
+        verdicts.len().to_str() + " verdicts under `samples/`, joined into `verdicts.jsonl`; the bootstrap's seed is " + seed.to_str() + ", " + ROUNDS.to_str() + " resamples over the tasks."
+        ""
+    ]
+    groups = grouped(verdicts)
+    lines @ lines.push(
+        "| model | arm | context | n | green@1 | green@2 | green@3 | green@cap | Wilson 95% on green@3 | converged | mean turns to green | compile_error | abort | silent | other | out: refusal / transport / build | tokens in | tokens out |"
+    )
+    lines @ lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+
+    for g in groups
+        lines @ lines.push(row_of(g))
+
+    for line in flow_lines(groups)
+        lines @ lines.push(line)
+
+    for line in build_failed_lines(groups)
+        lines @ lines.push(line)
+
+    for line in contrast_lines(groups: groups, title: "## The primary: green@3, strict minus control", note: "The primary is " + primary + "; every other row is exploratory.", first_arm: "control", second_arm: "strict", measure: "green", refused_only: false, seed: seed)
+        lines @ lines.push(line)
+
+    for line in contrast_lines(groups: groups, title: "## The first secondary: silent@3, control minus strict", note: "Silent is a program that ran to exit 0 with the wrong output at turn 3, or at the turn its conversation ended before it (R3); exploratory, read beside the primary.", first_arm: "strict", second_arm: "control", measure: "silent", refused_only: false, seed: seed)
+        lines @ lines.push(line)
+
+    for line in contrast_lines(groups: groups, title: "## The message's value: green@3, strict minus brief, over the pairs where either arm saw a refusal", note: "The full message against the one-line form (design.md §4.17), over the pairs a message could reach (R4); exploratory.", first_arm: "brief", second_arm: "strict", measure: "green", refused_only: true, seed: seed)
+        lines @ lines.push(line)
+
+    return lines.join("\n") + "\n"
+
+# One contrast's table: a row per (model, context) where both arms ran.
+function contrast_lines(groups: [Group], title: str, note: str, first_arm: str, second_arm: str, measure: str, refused_only: bool, seed: i64) -> [str]
+    out: [str] @= [
+        ""
+        title
+        ""
+        note
+        ""
+        "| model | context | pairs | " + second_arm + " " + measure + "@3 | " + first_arm + " " + measure + "@3 | difference | bootstrap 95% | discordant (" + second_arm + " only / " + first_arm + " only) | McNemar mid-p (exact beside) |"
+        "|---|---|---|---|---|---|---|---|---|"
+    ]
+
+    for g in groups
+        if g.arm == second_arm
+            other = group_of(groups: groups, model: g.model, arm: first_arm, context_sha: g.context_sha)
+
+            if other.len() > 0
+                out @ out.push(
+                    paired_row(first: other[0], second: g, measure: measure, refused_only: refused_only, seed: seed)
+                )
+
+    return out
+
+function grouped(verdicts: [thesis_verdict.Verdict]) -> [Group]
+    groups: [Group] @= []
+
+    for v in verdicts
+        placed: bool @= false
+
+        for i in range(from: 0, to: groups.len())
+            if groups[i].model == v.model && groups[i].arm == v.arm && groups[i].context_sha == v.context_sha
+                groups[i].verdicts @ groups[i].verdicts.push(v)
+                placed @ true
+
+        if !placed
+            groups @ groups.push(Group(model: v.model, arm: v.arm, context_sha: v.context_sha, verdicts: [v]))
+
+    return groups
+
+function group_of(groups: [Group], model: str, arm: str, context_sha: str) -> [Group]
+    found: [Group] @= []
+
+    for g in groups
+        if g.model == model && g.arm == arm && g.context_sha == context_sha
+            found @ found.push(g)
+
+    return found
+
+# Whether a verdict was green by turn `k`.
+function green_by(v: thesis_verdict.Verdict, k: i64) -> bool
+    return v.green_turn > 0 && v.green_turn <= k
+
+function greens_by(g: Group, k: i64) -> i64
+    count: i64 @= 0
+
+    for v in g.verdicts
+        if !excluded(v) && green_by(v: v, k: k)
+            count @ count + 1
+
+    return count
+
+# Whether a verdict is outside every denominator: the API refused the answer,
+# the transport lost the request past its retries (R5), or `build` refused what
+# `check` accepted, a compiler defect and never the program's (the adjudication).
+function excluded(v: thesis_verdict.Verdict) -> bool
+    if v.turns.len() == 0
+        return false
+    last = v.turns[v.turns.len() - 1].outcome
+    return last == "api_refusal" || last == "transport_error" || last == "build_failed"
+
+# How far a last turn got: 0 attempted and not answered, 1 answered and no program
+# taken, 2 a program the arm refused, 3 compiled and not run to an end, 4 run to
+# an end and wrong, 5 green; -1 an outcome the grader does not name.
+function stage_of(outcome: str) -> i64
+    if outcome == "api_refusal" || outcome == "transport_error"
+        return 0
+
+    if outcome == "no_program" || outcome == "format_slip" || outcome == "truncated"
+        return 1
+
+    if outcome == "compile_error" || outcome == "refused_extern" || outcome == "hole" || outcome == "build_failed"
+        return 2
+
+    if outcome == "timeout" || outcome == "crash"
+        return 3
+
+    if outcome == "compiled_wrong" || outcome == "abort"
+        return 4
+
+    if outcome == "cases_pass"
+        return 5
+    return -1
+
+# The flow, one row per (model, arm, context): how many samples reached each
+# stage at their last turn.
+function flow_lines(groups: [Group]) -> [str]
+    lines: [str] @= [
+        ""
+        "## The flow: how far each sample's last turn got"
+        ""
+        "Every sample is counted once, by its last turn. A stage's count holds the samples that reached it, so a sample left out (`api_refusal`, `transport_error`, `build_failed`) and a sample lost to a failure are the difference between two columns; an outcome the grader does not name is counted in the last column and in no stage."
+        ""
+        "| model | arm | context | attempted | answered | extracted | compiled | ran | green | unnamed outcome |"
+        "|---|---|---|---|---|---|---|---|---|---|"
+    ]
+
+    for g in groups
+        lines @ lines.push(flow_row(g))
+
+    return lines
+
+function flow_row(g: Group) -> str
+    reached: [i64] @= [0, 0, 0, 0, 0, 0]
+    unnamed: i64 @= 0
+
+    for v in g.verdicts
+        stage = stage_of(v.turns[v.turns.len() - 1].outcome)
+
+        if stage < 0
+            unnamed @ unnamed + 1
+        else
+            for k in range(from: 0, to: stage + 1)
+                reached[k] @ reached[k] + 1
+
+    return "| " + g.model + " | " + g.arm + " | " + context_name(g.context_sha) + " | " + g.verdicts.len().to_str() + " | " + reached[1].to_str() + " | " + reached[2].to_str() + " | " + reached[3].to_str() + " | " + reached[4].to_str() + " | " + reached[5].to_str() + " | " + unnamed.to_str() + " |"
+
+# The samples `build` refused after `check` accepted them, by key: each is
+# refiled as a compiler defect, and R1 expects none.
+function build_failed_lines(groups: [Group]) -> [str]
+    lines: [str] @= [
+        ""
+        "## `build_failed`: refiled as compiler defects"
+        ""
+    ]
+    found: [str] @= []
+
+    for g in groups
+        for v in g.verdicts
+            if v.turns[v.turns.len() - 1].outcome == "build_failed"
+                found @ found.push("| " + v.key + " | " + v.turns.len().to_str() + " |")
+
+    if found.len() == 0
+        lines @ lines.push("None: no program `check` accepted was refused by `build`, which panel 226's R1 expects.")
+        return lines
+    lines @ lines.push(
+        found.len().to_str() + " samples, outside every denominator; each is a compiler defect to file with its program."
+    )
+    lines @ lines.push("")
+    lines @ lines.push("| key | turn |")
+    lines @ lines.push("|---|---|")
+
+    for row in found
+        lines @ lines.push(row)
+
+    return lines
+
+# Whether a verdict was silent by turn `k`: not green, and the turn it stood
+# at, `k` or the last before it, ran to exit 0 with the wrong output (R3).
+function silent_by(v: thesis_verdict.Verdict, k: i64) -> bool
+    if green_by(v: v, k: k)
+        return false
+    at: i64 @= k
+
+    if v.turns.len() < at
+        at @ v.turns.len()
+
+    if at == 0
+        return false
+    return v.turns[at - 1].outcome == "compiled_wrong"
+
+# Whether any turn of a verdict was refused by the compiler: a message reached it.
+function saw_refusal(v: thesis_verdict.Verdict) -> bool
+    for t in v.turns
+        if t.outcome == "compile_error" || t.outcome == "hole"
+            return true
+
+    return false
+
+function measured(v: thesis_verdict.Verdict, measure: str) -> bool
+    if measure == "silent"
+        return silent_by(v: v, k: 3)
+    return green_by(v: v, k: 3)
+
+function row_of(g: Group) -> str
+    n: i64 @= 0
+    refused: i64 @= 0
+    lost: i64 @= 0
+    broken: i64 @= 0
+    compile_errors: i64 @= 0
+    aborts: i64 @= 0
+    silent: i64 @= 0
+    other: i64 @= 0
+    converged: i64 @= 0
+    turns_sum: i64 @= 0
+    tokens_in: i64 @= 0
+    tokens_out: i64 @= 0
+
+    for v in g.verdicts
+        last = v.turns[v.turns.len() - 1].outcome
+
+        for t in v.turns
+            tokens_in @ tokens_in + t.input
+            tokens_out @ tokens_out + t.output
+
+        if last == "api_refusal"
+            refused @ refused + 1
+            continue
+
+        if last == "transport_error"
+            lost @ lost + 1
+            continue
+
+        if last == "build_failed"
+            broken @ broken + 1
+            continue
+        n @ n + 1
+
+        if v.converged
+            converged @ converged + 1
+            turns_sum @ turns_sum + v.green_turn
+        else if last == "compile_error" || last == "hole"
+            compile_errors @ compile_errors + 1
+        else if last == "abort" || last == "crash" || last == "timeout"
+            aborts @ aborts + 1
+        else if last == "compiled_wrong"
+            silent @ silent + 1
+        else
+            other @ other + 1
+
+    interval = thesis_stats.wilson(k: greens_by(g: g, k: 3), n: n)
+    mean: str @= "n/a"
+
+    if converged > 0
+        mean @ tenths(numerator: turns_sum * 10, denominator: converged)
+    return "| " + g.model + " | " + g.arm + " | " + context_name(g.context_sha) + " | " + n.to_str() + " | " + greens_by(g: g, k: 1).to_str() + " | " + greens_by(g: g, k: 2).to_str() + " | " + greens_by(g: g, k: 3).to_str() + " | " + converged.to_str() + " | " + thesis_stats.percent(interval.low) + " to " + thesis_stats.percent(interval.high) + " | " + converged.to_str() + " | " + mean + " | " + compile_errors.to_str() + " | " + aborts.to_str() + " | " + silent.to_str() + " | " + other.to_str() + " | " + refused.to_str() + " / " + lost.to_str() + " / " + broken.to_str() + " | " + tokens_in.to_str() + " | " + tokens_out.to_str() + " |"
+
+# `numerator / denominator` with one decimal, the numerator already times ten.
+function tenths(numerator: i64, denominator: i64) -> str
+    scaled = (numerator + denominator / 2) / denominator
+    return (scaled / 10).to_str() + "." + (scaled % 10).to_str()
+
+function context_name(sha: str) -> str
+    if sha == ""
+        return "none"
+    return sha.slice(from: 0, to: 8)
+
+# One paired contrast between two arms of one (model, context): a verdict of
+# each arm of one generation, matched by the key without its arm; `measure` is
+# `green` or `silent` by turn 3, and the difference is `second` minus `first`.
+# A pair either of whose verdicts is excluded is left out (R8), and
+# `refused_only` keeps the pairs where either arm saw a refusal (R4).
+function paired_row(first: Group, second: Group, measure: str, refused_only: bool, seed: i64) -> str
+    b: i64 @= 0
+    c: i64 @= 0
+    pairs: i64 @= 0
+    second_count: i64 @= 0
+    first_count: i64 @= 0
+    cells: [thesis_stats.Cell] @= []
+
+    for s in second.verdicts
+        base = strings.without_suffix(text: s.key, suffix: "." + second.arm)
+
+        for w in first.verdicts
+            if strings.without_suffix(text: w.key, suffix: "." + first.arm) != base
+                continue
+
+            if excluded(s) || excluded(w)
+                continue
+
+            if refused_only && !saw_refusal(s) && !saw_refusal(w)
+                continue
+            pairs @ pairs + 1
+            in_second = measured(v: s, measure: measure)
+            in_first = measured(v: w, measure: measure)
+
+            if in_second
+                second_count @ second_count + 1
+
+            if in_first
+                first_count @ first_count + 1
+
+            if in_second && !in_first
+                b @ b + 1
+
+            if in_first && !in_second
+                c @ c + 1
+            cells @ added(cells: cells, task: s.task_sha, first: in_first, second: in_second)
+
+    if pairs == 0
+        return "| " + second.model + " | " + context_name(second.context_sha) + " | 0 | | | | | | |"
+    difference = thesis_stats.difference(cells)
+    interval = thesis_stats.bootstrap(cells: cells, rounds: ROUNDS, seed: seed)
+    p: str @= thesis_stats.p_written(thesis_stats.mcnemar_midp(b: b, c: c)) + " (exact " + thesis_stats.p_written(thesis_stats.mcnemar(b: b, c: c)) + ")"
+
+    if b + c == 0
+        p @ "no discordant pair"
+    return "| " + second.model + " | " + context_name(second.context_sha) + " | " + pairs.to_str() + " | " + second_count.to_str() + " | " + first_count.to_str() + " | " + signed_percent(difference) + " | " + signed_percent(interval.low) + " to " + signed_percent(interval.high) + " | " + b.to_str() + " / " + c.to_str() + " | " + p + " |"
+
+function added(cells: [thesis_stats.Cell], task: str, first: bool, second: bool) -> [thesis_stats.Cell]
+    out: [thesis_stats.Cell] @= cells
+    one: i64 @= 0
+    two: i64 @= 0
+
+    if first
+        one @ 1
+
+    if second
+        two @ 1
+
+    for i in range(from: 0, to: out.len())
+        if out[i].task == task
+            out[i].first @ out[i].first + one
+            out[i].second @ out[i].second + two
+            out[i].n @ out[i].n + 1
+            return out
+
+    return out.push(thesis_stats.Cell(task: task, first: one, second: two, n: 1))
+
+# A difference of rates as signed percentage points.
+function signed_percent(x: f64) -> str
+    if x < 0.0
+        return "-" + thesis_stats.percent(0.0 - x) + "pp"
+    return "+" + thesis_stats.percent(x) + "pp"
+
+test "the report groups verdicts, counts greens by turn and buckets, and pairs the arms for the contrast"
+    verdicts: [thesis_verdict.Verdict] @= []
+
+    for i in range(from: 0, to: 6)
+        task = "task" + i.to_str() + "0000000000"
+        s_green: i64 @= 1
+        c_green: i64 @= 0
+
+        if i >= 4
+            s_green @ 0
+
+        if i % 3 == 0
+            c_green @ 2
+        verdicts @ verdicts.push(verdict_of(task: task, arm: "strict", green: s_green, last: "cases_pass"))
+        verdicts @ verdicts.push(verdict_of(task: task, arm: "control", green: c_green, last: "compiled_wrong"))
+
+    text = rendered(
+        verdicts: verdicts,
+        seed: 7,
+        primary: "strict minus control on claude-haiku-5-5 in the spec context"
+    )
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 6 | 4 | 4 | 4 | 4 |")
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | control | 21226405 | 6 | 0 | 2 | 2 | 2 |")
+    assert strings.contains(text: text, needle: "| 6 | 4 | 2 | +33.3pp |")
+    assert strings.contains(text: text, needle: "| 2 / 0 | 0.250 (exact 0.500) |")
+    assert strings.contains(text: text, needle: "The primary is strict minus control")
+    assert tenths(numerator: 70, denominator: 4) == "1.8"
+    assert signed_percent(-0.125) == "-12.5pp"
+    assert signed_percent(0.5) == "+50.0pp"
+
+function verdict_of(task: str, arm: str, green: i64, last: str) -> thesis_verdict.Verdict
+    turns: [thesis_verdict.Turn] @= []
+    count: i64 @= green
+
+    if count == 0
+        count @ 1
+
+    for t in range(from: 0, to: count)
+        outcome: str @= last
+
+        if green > 0 && t == count - 1
+            outcome @ "cases_pass"
+        else if green > 0
+            outcome @ "compile_error"
+        turns @ turns.push(
+            thesis_verdict.Turn(outcome: outcome, codes: [], stop: "end_turn", input: 100, output: 50, cache_read: 0, cache_write: 0)
+        )
+
+    return thesis_verdict.Verdict(
+        key: thesis_verdict.verdict_key(task_sha: task, model: "claude-haiku-5-5", context_sha: "212264059c985c2e", sample: 1, arm: arm),
+        task_sha: task,
+        model: "claude-haiku-5-5",
+        arm: arm,
+        context_sha: "212264059c985c2e",
+        sample: 1,
+        turns: turns,
+        green_turn: green,
+        converged: green > 0
+    )
+
+test "the excluded leave n and the pairs, silence is read by turn 3, and the message's value is read over the pairs a message reached"
+    verdicts: [thesis_verdict.Verdict] = [
+        verdict_turns(task: "task0aaaaaaaaaa", arm: "strict", outcomes: ["cases_pass"])
+        verdict_turns(task: "task0aaaaaaaaaa", arm: "brief", outcomes: ["compile_error", "cases_pass"])
+        verdict_turns(task: "task0aaaaaaaaaa", arm: "control", outcomes: ["compiled_wrong"])
+        verdict_turns(task: "task1aaaaaaaaaa", arm: "strict", outcomes: ["compile_error", "cases_pass"])
+        verdict_turns(task: "task1aaaaaaaaaa", arm: "brief", outcomes: ["compile_error", "compile_error", "compile_error"])
+        verdict_turns(task: "task1aaaaaaaaaa", arm: "control", outcomes: ["cases_pass"])
+        verdict_turns(task: "task2aaaaaaaaaa", arm: "strict", outcomes: ["transport_error"])
+        verdict_turns(task: "task2aaaaaaaaaa", arm: "brief", outcomes: ["cases_pass"])
+        verdict_turns(task: "task2aaaaaaaaaa", arm: "control", outcomes: ["compiled_wrong"])
+        verdict_turns(task: "task3aaaaaaaaaa", arm: "strict", outcomes: ["compiled_wrong"])
+        verdict_turns(task: "task3aaaaaaaaaa", arm: "brief", outcomes: ["compiled_wrong"])
+        verdict_turns(task: "task3aaaaaaaaaa", arm: "control", outcomes: ["abort"])
+    ]
+    text = rendered(verdicts: verdicts, seed: 7, primary: "the test's")
+
+    # The strict arm: four samples, one lost, so n is three and two are green.
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 3 | 1 | 2 | 2 | 2 |")
+    assert strings.contains(text: text, needle: "| 0 / 1 / 0 | ")
+
+    # The primary over the three pairs left: strict 2, control 1, one discordant.
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 3 | 2 | 1 | +33.3pp |")
+    assert strings.contains(text: text, needle: "| 1 / 0 | 0.500 (exact 1.000) |")
+
+    # Silence: control silent on task0, strict on task3; no difference.
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 3 | 1 | 1 | +0.0pp |")
+
+    # The message's value: task0 and task1 saw a refusal, task2 is out, task3 saw none.
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 2 | 2 | 1 | +50.0pp |")
+    assert excluded(verdicts[6])
+    assert !excluded(verdicts[0])
+    assert silent_by(v: verdicts[2], k: 3)
+    assert !silent_by(v: verdicts[3], k: 3)
+
+function verdict_turns(task: str, arm: str, outcomes: [str]) -> thesis_verdict.Verdict
+    turns: [thesis_verdict.Turn] @= []
+    green: i64 @= 0
+
+    for i in range(from: 0, to: outcomes.len())
+        turns @ turns.push(
+            thesis_verdict.Turn(outcome: outcomes[i], codes: [], stop: "end_turn", input: 100, output: 50, cache_read: 0, cache_write: 0)
+        )
+
+        if outcomes[i] == "cases_pass" && green == 0
+            green @ i + 1
+
+    return thesis_verdict.Verdict(
+        key: thesis_verdict.verdict_key(task_sha: task, model: "claude-haiku-5-5", context_sha: "212264059c985c2e", sample: 1, arm: arm),
+        task_sha: task,
+        model: "claude-haiku-5-5",
+        arm: arm,
+        context_sha: "212264059c985c2e",
+        sample: 1,
+        turns: turns,
+        green_turn: green,
+        converged: green > 0
+    )
+
+test "the flow counts every sample once by how far its last turn got, a build refused after check is left out and listed, and an outcome nobody names is counted apart"
+    verdicts: [thesis_verdict.Verdict] = [
+        verdict_turns(task: "task0aaaaaaaaaa", arm: "strict", outcomes: ["api_refusal"])
+        verdict_turns(task: "task1aaaaaaaaaa", arm: "strict", outcomes: ["transport_error"])
+        verdict_turns(task: "task2aaaaaaaaaa", arm: "strict", outcomes: ["no_program"])
+        verdict_turns(task: "task3aaaaaaaaaa", arm: "strict", outcomes: ["compile_error"])
+        verdict_turns(task: "task4aaaaaaaaaa", arm: "strict", outcomes: ["compile_error", "build_failed"])
+        verdict_turns(task: "task5aaaaaaaaaa", arm: "strict", outcomes: ["timeout"])
+        verdict_turns(task: "task6aaaaaaaaaa", arm: "strict", outcomes: ["abort"])
+        verdict_turns(task: "task7aaaaaaaaaa", arm: "strict", outcomes: ["compiled_wrong"])
+        verdict_turns(task: "task8aaaaaaaaaa", arm: "strict", outcomes: ["compile_error", "cases_pass"])
+        verdict_turns(task: "task9aaaaaaaaaa", arm: "strict", outcomes: ["something_else"])
+    ]
+    text = rendered(verdicts: verdicts, seed: 7, primary: "the test's")
+
+    # Ten attempted; seven answered (two left out, one unnamed); six extracted
+    # (no program); four compiled (a refusal, a build refused); three ran to an
+    # end (a timeout); one green.
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 10 | 7 | 6 | 4 | 3 | 1 | 1 |")
+
+    # The build refused after check is outside n, which is the ten less three.
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | strict | 21226405 | 7 | 0 | 1 | 1 | 1 |")
+    assert strings.contains(text: text, needle: "| 1 / 1 / 1 | ")
+    assert strings.contains(text: text, needle: "1 samples, outside every denominator")
+    assert strings.contains(text: text, needle: "| " + verdicts[4].key + " | 2 |")
+    assert excluded(verdicts[4])
+    assert stage_of("something_else") == -1
+    assert stage_of("cases_pass") == 5
+
+    clean = rendered(verdicts: [verdicts[8]], seed: 7, primary: "the test's")
+    assert strings.contains(text: clean, needle: "None: no program `check` accepted was refused by `build`")

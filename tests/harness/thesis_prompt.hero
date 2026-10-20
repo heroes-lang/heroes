@@ -1,0 +1,315 @@
+# WHAT A MODEL IS GIVEN, rendered from the frozen template, and the digests
+# and provenance a run records (M-thesis-harness, 2026-10-20; design.md Part
+# 11: *every measurement records provenance: spec sha, compiler sha, model id,
+# prompt sha, suite sha*).
+#
+# The template is `docs/metrics/first-try.md`: a header the model never sees,
+# a line of three dashes, the turn-1 prompt with `{{SPEC}}` and `{{TASK}}` where
+# the specification and the task go, a second line of three dashes, and the
+# four fixed feedback blocks every arm receives from turn 2 (`<feedback
+# kind="...">`, panel 226's R5 and R12), `{{MESSAGE}}` and `{{OBSERVED}}`
+# filled by the run. It is rendered in one of two layouts. In
+# `single` the whole prompt is one user message, as the template's own words
+# say. In `cached` the prompt is cut after `</specification>`: what comes
+# before is a `system` block the API caches, the same bytes in every request
+# of a run, and what comes after is the user message holding the task; the
+# words are the same, the shape is not, and which layout a run used is in its
+# provenance. The template's digest is over its bytes with the placeholders in,
+# so one template is one series whatever it is rendered with; the spec's and
+# the suite's digests stand beside it.
+#
+# A context is what stands in `{{SPEC}}`: `spec`, the specification at
+# `spec/heroes-spec.md`; a variant by path, another file (the spec without its
+# productions, the spec with one worked diagnostic); or `none`, the canary,
+# where the specification block is replaced by one sentence saying there is
+# none and the language is Heroes, so that what a model knows of the language
+# without the document shows.
+
+use shell
+use strings
+use thesis_sha256
+
+constant TEMPLATE: str
+    "docs/metrics/first-try.md"
+
+constant SPEC: str
+    "spec/heroes-spec.md"
+
+# The sentence that stands where the specification would in the `none`
+# context: the canary's whole knowledge of the language.
+constant NONE_SENTENCE: str
+    "No specification is given. The language is called Heroes; write the program in it from what you know."
+
+constant CUT: str
+    "</specification>"
+
+record Context
+    name: str
+    path: str
+    spec: str
+    spec_sha: str
+
+record Template
+    path: str
+    text: str
+    sha: str
+    feedback: {str: str}
+
+# The feedback blocks a template must hold, by kind.
+constant FEEDBACK_KINDS: [str]
+    ["refused", "no_program", "extern", "example", "truncated"]
+
+record Rendered
+    system: str
+    user: str
+    layout: str
+
+# `name` is `spec`, `none`, or the path of a variant specification.
+function context_of(name: str) -> Context?
+    if name == "none"
+        return ok(Context(name: name, path: "", spec: "", spec_sha: ""))
+    path: str @= name
+
+    if name == "spec"
+        path @ SPEC
+    text = read_file(path: path)
+
+    if text.is_err()
+        return fail(code: "no_spec", msg: "the context `" + name + "` names " + path + ", which cannot be read")
+    return ok(Context(name: name, path: path, spec: text.must(), spec_sha: thesis_sha256.of(text.must())))
+
+# The template's turn-1 prompt, between its two lines of three dashes, its
+# feedback blocks after the second, and its digest over the whole file.
+function template_at(path: str) -> Template?
+    whole = read_file(path: path)
+
+    if whole.is_err()
+        return fail(code: "no_template", msg: "the prompt template " + path + " cannot be read")
+    pieces = strings.split_text(text: whole.must(), separator: "\n---\n")
+
+    if pieces.len() < 3
+        return fail(
+            code: "bad_template",
+            msg: path + " has not the two lines of three dashes, one before its prompt and one before its feedback blocks"
+        )
+    prompt = strings.trimmed(text: pieces[1])
+
+    if !strings.contains(text: prompt, needle: "{{SPEC}}") || !strings.contains(text: prompt, needle: "{{TASK}}")
+        return fail(code: "bad_template", msg: path + "'s prompt lacks `{{SPEC}}` or `{{TASK}}`")
+    blocks = feedback_blocks(pieces.slice(from: 2, to: pieces.len()).join("\n---\n"))
+
+    for kind in FEEDBACK_KINDS
+        if blocks[kind].is_err()
+            return fail(code: "bad_template", msg: path + " has no `<feedback kind=\"" + kind + "\">` block")
+
+    return ok(Template(path: path, text: prompt, sha: thesis_sha256.of(whole.must()), feedback: blocks))
+
+# The `<feedback kind="...">` blocks of `text`, by kind, each trimmed.
+function feedback_blocks(text: str) -> {str: str}
+    out: {str: str} @= {}
+    rest: str @= text
+
+    while true
+        open = strings.index_of(text: rest, needle: "<feedback kind=\"")
+
+        if open.is_err()
+            return out
+        from = open.must() + "<feedback kind=\"".len()
+        quote = strings.index_of(text: rest.slice(from: from, to: rest.len()), needle: "\">")
+
+        if quote.is_err()
+            return out
+        kind = rest.slice(from: from, to: from + quote.must())
+        body_from = from + quote.must() + 2
+        close = strings.index_of(text: rest.slice(from: body_from, to: rest.len()), needle: "</feedback>")
+
+        if close.is_err()
+            return out
+        out[kind] @ strings.trimmed(text: rest.slice(from: body_from, to: body_from + close.must()))
+        rest @ rest.slice(from: body_from + close.must() + "</feedback>".len(), to: rest.len())
+
+# The feedback of `kind` with `filled` where its placeholder stands; a kind
+# the template lacks is refused, since `template_at` asked for the four.
+function feedback_text(template: Template, kind: str, filled: str) -> str?
+    block = template.feedback[kind]
+
+    if block.is_err()
+        return fail(code: "no_feedback", msg: template.path + " has no feedback block of kind `" + kind + "`")
+    text: str @= replaced(text: block.must(), needle: "{{MESSAGE}}", by: filled)
+    text @ replaced(text: text, needle: "{{OBSERVED}}", by: filled)
+    return ok(text)
+
+# The prompt with the context and the task in, in `layout`.
+function rendered(template: Template, context: Context, task: str, layout: str) -> Rendered?
+    filled: str @= template.text
+
+    if context.name == "none"
+        filled @ replaced(text: filled, needle: "<specification>\n{{SPEC}}\n</specification>", by: NONE_SENTENCE)
+    else
+        filled @ replaced(text: filled, needle: "{{SPEC}}", by: context.spec)
+    filled @ replaced(text: filled, needle: "{{TASK}}", by: task)
+
+    if layout == "single"
+        return ok(Rendered(system: "", user: filled, layout: layout))
+
+    if layout != "cached"
+        return fail(code: "bad_layout", msg: "a layout is `single` or `cached`, not `" + layout + "`")
+
+    if context.name == "none"
+        # Nothing worth caching stands before the task: one user message.
+        return ok(Rendered(system: "", user: filled, layout: layout))
+    at = strings.index_of(text: filled, needle: CUT)
+
+    if at.is_err()
+        return fail(
+            code: "bad_template",
+            msg: template.path + "'s prompt has no `" + CUT + "` to cut the cached block at"
+        )
+    end = at.must() + CUT.len()
+    return ok(
+        Rendered(system: filled.slice(from: 0, to: end), user: strings.trimmed(text: filled.slice(from: end, to: filled.len())), layout: layout)
+    )
+
+# `text` with the first `needle` replaced by `by`; the needle is ASCII and
+# the text is cut at its bytes, which are character boundaries.
+function replaced(text: str, needle: str, by: str) -> str
+    at = strings.index_of(text: text, needle: needle)
+
+    if at.is_err()
+        return text
+    return text.slice(from: 0, to: at.must()) + by + text.slice(from: at.must() + needle.len(), to: text.len())
+
+record Provenance
+    date: str
+    head: str
+    dirty: bool
+    compiler: str
+    sources: str
+
+# What this machine says of the tree and the compiler, each by a command
+# spawned now: the tree has no clock and no git of its own.
+function provenance(scratch: str, compiler: str) -> Provenance?
+    today = shell.run(scratch: scratch, program: "date", words: ["date", "+%Y-%m-%d"])?
+    head = shell.run(scratch: scratch, program: "git", words: ["git", "rev-parse", "HEAD"])?
+    status = shell.run(scratch: scratch, program: "git", words: ["git", "status", "--porcelain"])?
+    version = shell.run(scratch: scratch, program: compiler, words: [compiler, "--version"])?
+
+    if today.code != 0 || head.code != 0 || status.code != 0 || version.code != 0
+        return fail(code: "no_provenance", msg: "date, git or " + compiler + " --version did not answer")
+    lines = strings.lines(text: version.out)
+    sources: str @= ""
+
+    for line in lines
+        if strings.starts_with(text: line, prefix: "sources ")
+            sources @ strings.without_prefix(text: line, prefix: "sources ")
+
+    if sources == ""
+        return fail(code: "no_provenance", msg: compiler + " --version names no `sources` key")
+    return ok(
+        Provenance(date: strings.trimmed(text: today.out), head: strings.trimmed(text: head.out), dirty: strings.trimmed(text: status.out) != "", compiler: compiler, sources: sources)
+    )
+
+# A token estimate for a text with no model asked: its bytes over four, said
+# as an estimate by every caller that prints it.
+function estimated_tokens(text: str) -> i64
+    return (text.len() + 3) / 4
+
+test "the frozen template renders in both layouts, and the digests are the files' own"
+    template = template_at(path: TEMPLATE).must()
+    assert template.sha.len() == 64
+    assert strings.contains(text: template.text, needle: "<specification>")
+    spec = context_of(name: "spec").must()
+    assert spec.spec_sha.len() == 64
+    assert spec.spec.len() > 1000
+
+    single = rendered(template: template, context: spec, task: "Print `hello`.", layout: "single").must()
+    assert single.system == ""
+    assert strings.contains(text: single.user, needle: "## 1. Files and layout")
+    assert strings.contains(text: single.user, needle: "<task>\nPrint `hello`.\n</task>")
+
+    # The spec itself writes `{{` (its § 2), so the placeholders are what must be gone.
+    assert !strings.contains(text: single.user, needle: "{{SPEC}}")
+    assert !strings.contains(text: single.user, needle: "{{TASK}}")
+
+    cached = rendered(template: template, context: spec, task: "Print `hello`.", layout: "cached").must()
+    assert strings.ends_with(text: cached.system, suffix: "</specification>")
+    assert strings.contains(text: cached.system, needle: "## 1. Files and layout")
+    assert strings.starts_with(text: cached.user, prefix: "<task>")
+    assert !strings.contains(text: cached.user, needle: "## 1. Files")
+    assert cached.system + "\n\n" + cached.user == single.user
+
+test "the feedback blocks are the template's four, filled where their placeholder stands, and a template missing one is refused"
+    template = template_at(path: TEMPLATE).must()
+    refused = feedback_text(template: template, kind: "refused", filled: "error[unused_binding]: x").must()
+    assert strings.starts_with(text: refused, prefix: "The compiler refused the program:")
+    assert strings.contains(text: refused, needle: "error[unused_binding]: x")
+    assert strings.ends_with(text: refused, suffix: "one fenced code block and nothing else.")
+    assert !strings.contains(text: refused, needle: "{{")
+    example = feedback_text(template: template, kind: "example", filled: "printed 3\n--- expected ---\n2").must()
+    assert strings.contains(text: example, needle: "printed 3\n--- expected ---\n2")
+    assert !strings.contains(text: template.text, needle: "<feedback")
+
+    for kind in FEEDBACK_KINDS
+        assert !template.feedback[kind].is_err()
+
+    match feedback_text(template: template, kind: "shrug", filled: "")
+        .ok _  => assert false
+        .err e => assert e.code == "no_feedback"
+
+    scratch = shell.own_scratch()
+    _ = shell.mkdir_all(scratch).is_err()
+    short = scratch + "/short.md"
+    write_file(
+        path: short,
+        text: "# h\n\n---\n\n<specification>\n{{SPEC}}\n</specification>\n<task>\n{{TASK}}\n</task>\n\n---\n\n<feedback kind=\"refused\">\nx {{MESSAGE}}\n</feedback>\n"
+    ).must()
+
+    match template_at(path: short)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "bad_template"
+            assert strings.contains(text: e.msg, needle: "no_program")
+
+    old = scratch + "/old.md"
+    write_file(
+        path: old,
+        text: "# h\n\n---\n\n<specification>\n{{SPEC}}\n</specification>\n<task>\n{{TASK}}\n</task>\n"
+    ).must()
+
+    match template_at(path: old)
+        .ok _  => assert false
+        .err e => assert e.code == "bad_template"
+
+test "the canary context holds no specification, and a layout or a context nobody named is refused"
+    template = template_at(path: TEMPLATE).must()
+    none = context_of(name: "none").must()
+    assert none.spec == ""
+    canary = rendered(template: template, context: none, task: "Print `hello`.", layout: "cached").must()
+    assert canary.system == ""
+    assert strings.contains(text: canary.user, needle: NONE_SENTENCE)
+    assert !strings.contains(text: canary.user, needle: "## 1. Files")
+    assert !strings.contains(text: canary.user, needle: "<specification>")
+
+    match rendered(template: template, context: none, task: "x", layout: "verbose")
+        .ok _  => assert false
+        .err e => assert e.code == "bad_layout"
+
+    match context_of(name: "docs/metrics/no-such-spec.md")
+        .ok _  => assert false
+        .err e => assert e.code == "no_spec"
+
+test "a run's provenance is what date, git and the compiler say"
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    here = shell.attempted(scratch: scratch, program: "git", words: ["git", "rev-parse", "HEAD"])
+
+    if here.is_err() || !here.must().started || here.must().code != 0
+        print("SKIP thesis_prompt: this directory is no git tree, so a run's head cannot be asked")
+        return
+
+    got = provenance(scratch: scratch, compiler: compiler).must()
+    assert got.date.len() == 10
+    assert got.date[4] == '-'
+    assert got.sources.len() == 16
+    assert got.compiler == compiler
+    assert estimated_tokens("abcdefgh") == 2
