@@ -76,6 +76,9 @@ function asked_through(out: str) -> str
 
     if transport == "claude"
         return "Asked through the `claude -p` harness (" + json_fields.text_at(of: doc.must(), name: "harness").default("") + "), panel 226's route C: a table of its own, never pooled with the API's rows."
+
+    if transport == "codex"
+        return "Asked through the `codex exec` harness (" + json_fields.text_at(of: doc.must(), name: "harness").default("") + "), a ChatGPT plan's, on the assistant's tasks alone: a table of its own, never pooled with the API's rows."
     return "Asked through the API."
 
 function rendered(verdicts: [thesis_verdict.Verdict], seed: i64, primary: str, through: str) -> str
@@ -600,6 +603,14 @@ test "the report says what its rows were asked through, from the run's provenanc
     assert strings.contains(
         text: asked_through(scratch),
         needle: "the `claude -p` harness (2.1.292 (Claude Code)), panel 226's route C"
+    )
+    write_file(
+        path: scratch + "/provenance.json",
+        text: "{\"transport\":\"codex\",\"harness\":\"codex-cli 0.163.0\"}"
+    ).must()
+    assert strings.contains(
+        text: asked_through(scratch),
+        needle: "the `codex exec` harness (codex-cli 0.163.0), a ChatGPT plan's, on the assistant's tasks alone"
     )
     write_file(path: scratch + "/provenance.json", text: "{\"transport\":\"api\"}").must()
     assert asked_through(scratch) == "Asked through the API."

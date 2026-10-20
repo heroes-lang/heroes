@@ -326,6 +326,12 @@ function plan_word(scratch: str, asked: thesis_args.Asked) -> i64
     if suite.is_err()
         hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: suite.is_err(), of: "the suite") + "\n")
         return 1
+
+    barred = held_out_barred(transport: asked.transport, label: suite.must().label, folder: asked.paths[0])
+
+    if barred != ""
+        hero_write_err(text: "thesis: " + barred + "\n")
+        return 2
     planned = plan_of(asked: asked, suite_sha: suite.must().sha, compiler: compiler.must(), scratch: scratch)
     plan: thesis_run.Plan @= blank_plan()
 
@@ -345,6 +351,9 @@ function plan_word(scratch: str, asked: thesis_args.Asked) -> i64
             # that stops and resumes continues the conversations it began.
             transport @ thesis_harness.claude()
             world_scratch @ plan.out + "/harness"
+        else if plan.transport == "codex"
+            transport @ thesis_harness.codex()
+            world_scratch @ plan.out + "/harness"
         else if plan.dialect == "openai"
             transport @ thesis_wire.openai()
         else
@@ -359,6 +368,16 @@ function plan_word(scratch: str, asked: thesis_args.Asked) -> i64
         .err e =>
             hero_write_err(text: "thesis: " + e.msg + "\n")
             return 2
+
+# Why a run may not ask this suite through this transport, or "": a `codex`
+# row is a ChatGPT plan's, whose prompts no page documents to stay out of
+# training and whose unattended use no page documents as permitted, so it
+# runs on the assistant's tasks alone (panel 226's R9); `claude` is route C,
+# on the API's terms, and the API's rows are the thesis.
+function held_out_barred(transport: str, label: str, folder: str) -> str
+    if transport == "codex" && label == "held-out"
+        return "a `codex` row runs on the assistant's tasks alone, and " + folder + " is labelled held-out (panel 226's R9)"
+    return ""
 
 # The plan the flags describe: the dialect's base URL where none was given,
 # the output folder under `build/thesis-runs/` named by the suite's digest,
@@ -392,14 +411,14 @@ function plan_of(asked: thesis_args.Asked, suite_sha: str, compiler: str, scratc
     base = base_of(asked)
     harness: str @= ""
 
-    if asked.transport == "claude"
-        answered = shell.run(scratch: scratch, program: "claude", words: ["claude", "--version"])
+    if asked.transport != "api"
+        answered = shell.run(scratch: scratch, program: asked.transport, words: [asked.transport, "--version"])
 
         if answered.is_err() || answered.must().code != 0
             if asked.live
                 return fail(
                     code: "no_harness",
-                    msg: "`--transport claude` runs `claude`, and `claude --version` did not answer on this machine"
+                    msg: "`--transport " + asked.transport + "` runs `" + asked.transport + "`, and `" + asked.transport + " --version` did not answer on this machine"
                 )
         else
             harness @ strings.trimmed(answered.must().out)
@@ -408,8 +427,8 @@ function plan_of(asked: thesis_args.Asked, suite_sha: str, compiler: str, scratc
     if out == ""
         out @ "build/thesis-runs/" + suite_sha.slice(from: 0, to: 8)
 
-        if asked.transport == "claude"
-            out @ out + "-claude"
+        if asked.transport != "api"
+            out @ out + "-" + asked.transport
     return ok(
         thesis_run.Plan(suite_dir: asked.paths[0], models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, transport: asked.transport, harness: harness, base: base, out: out, live: asked.live, max_requests: asked.max_requests, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
     )
@@ -640,3 +659,20 @@ test "a plan through the harness names it and keeps its rows in a folder of thei
     ).must()
     assert harness.transport == "claude"
     assert harness.out == "build/thesis-runs/01234567-claude"
+    codex = plan_of(
+        asked: thesis_args.parsed(word: "plan", words: ["tests/thesis", "--model", "m", "--transport", "codex"]),
+        suite_sha: "0123456789abcdef",
+        compiler: compiler,
+        scratch: scratch
+    ).must()
+    assert codex.transport == "codex"
+    assert codex.out == "build/thesis-runs/01234567-codex"
+
+test "a codex row is barred from a held-out suite, and nothing else is"
+    assert strings.contains(
+        text: held_out_barred(transport: "codex", label: "held-out", folder: "x"),
+        needle: "assistant's tasks alone"
+    )
+    assert held_out_barred(transport: "codex", label: "assistant", folder: "x") == ""
+    assert held_out_barred(transport: "claude", label: "held-out", folder: "x") == ""
+    assert held_out_barred(transport: "api", label: "held-out", folder: "x") == ""
