@@ -1,8 +1,8 @@
 # THE LABELS A REPORT IS STRATIFIED BY: which tasks tempt a plausible mistake
 # on purpose, and which construct classes each task exercises, written beside
-# a suite by task number (M-thesis-harness, 2026-10-20; `docs/metrics/tasks.md`
-# § The rules a task is written by, issue 2160), and the digests a run's tasks
-# went by, which tie a verdict to its number.
+# a suite by task number (M-thesis-harness, 2026-10-20; issue 2160;
+# `docs/metrics/tasks.md` § The rules a task is written by), and the digests a
+# run's tasks went by, which tie a verdict to its number.
 #
 # `traps.txt`: one task number a line. `constructs.txt`: one line a task, its
 # number then its classes, each one of `CLASSES`. In both a `#` begins a
