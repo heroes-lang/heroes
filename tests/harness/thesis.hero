@@ -150,8 +150,9 @@ function compiler_of(asked: thesis_args.Asked) -> str?
 
 # `dry`: every task's reference solution and hand mutants graded in the arm;
 # exit 0 where every reference passes every case and every mutant ends as it
-# says, 1 where one does not, a task has no mutant or its reference is not 25
-# to 80 lines of code, 2 where the grader could not run. The bound per case
+# says, 1 where one does not, a task has no mutant, a held-out task has no
+# trap (decision 2172, `thesis_mutants.trap_refusal`) or its reference is not
+# 25 to 80 lines of code, 2 where the grader could not run. The bound per case
 # is the grader's own: ten seconds and a mebibyte.
 function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
     compiler = compiler_of(asked)
@@ -225,6 +226,14 @@ function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
                         red @ red + 1
 
                 mutants @ mutants + lines.len()
+                read = thesis_mutants.mutants_of(scratch: scratch, task: task)
+
+                if !read.is_err()
+                    short = thesis_mutants.trap_refusal(label: suite.must().label, mutants: read.must())
+
+                    if short != ""
+                        print(said(task: task, outcome: "no_trap", detail: short, mute: asked.mute))
+                        red @ red + 1
             .err e =>
                 if e.code != "bad_mutant"
                     hero_write_err(text: "thesis: " + e.msg + "\n")
@@ -499,7 +508,7 @@ function told_tally(plan: thesis_run.Plan, suite_sha: str, tally: thesis_run.Tal
         if tally.priced
             return dry + " turn1_bound=$" + thesis_price.dollars(tally.bound) + " (every answer at max_tokens, every prompt byte a token written to cache)"
         return dry
-    tail: str @= " generations=" + tally.generations.to_str() + " verdicts=" + tally.verdicts.to_str() + " skipped=" + tally.skipped.to_str() + " shared=" + tally.shared.to_str() + " lost=" + tally.lost.to_str() + " out=" + plan.out
+    tail: str @= " attempts=" + tally.attempts.to_str() + " generations=" + tally.generations.to_str() + " verdicts=" + tally.verdicts.to_str() + " skipped=" + tally.skipped.to_str() + " shared=" + tally.shared.to_str() + " lost=" + tally.lost.to_str() + " out=" + plan.out
 
     if tally.priced
         tail @ tail + " spent=$" + thesis_price.dollars(tally.spent)

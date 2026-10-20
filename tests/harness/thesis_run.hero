@@ -93,6 +93,9 @@ record Tally
     lost_in_a_row: i64
     template_sha: str
     layout_sha: str
+    # Every time a request of the run was sent: `requests` and the retries
+    # beside them, the retry rate the trial is asked for (issue 2155).
+    attempts: i64
     # Whether every model of the plan has a price; then, in nano-dollars, what
     # the answers under `out` cost, theirs and this run's (`spent`), and the
     # bound of every turn-1 request a dry plan counted (`bound`).
@@ -129,6 +132,7 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
         lost_in_a_row: 0,
         template_sha: template.sha,
         layout_sha: layout_sha,
+        attempts: 0,
         priced: priced_all(plan.models),
         spent: 0,
         bound: 0
@@ -202,6 +206,7 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
                             return ok(tally)
                         asked = asked_once(plan: plan, transport: transport, world: w, system: prompt.system, messages: [thesis_answer.user_turn(prompt.user)])?
                         w @ asked.world
+                        tally.attempts @ tally.attempts + asked.attempts
                         tally.spent @ tally.spent + charged(tally: tally, model: model, exchange: asked.exchange)?
 
                         # A generation lost past its retries is every arm's
@@ -285,6 +290,9 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
 record Asked
     world: issue_wire.World
     exchange: thesis_answer.Exchange
+    # Every time the request was sent, retries and the lost included
+    # (`thesis_pace.Exchanged.attempts`).
+    attempts: i64
 
 # One request to the model, in the plan's dialect, paced; a status other than
 # 200 is the run's failure, named with the body's first line.
@@ -314,7 +322,7 @@ function asked_once(plan: Plan, transport: issue_wire.Transport, world: issue_wi
     if got.lost != ""
         if !plan.quiet
             print("lost: " + got.lost)
-        return ok(Asked(world: got.world, exchange: lost_exchange()))
+        return ok(Asked(world: got.world, exchange: lost_exchange(), attempts: got.attempts))
 
     if got.reply.status != 200
         return fail(
@@ -325,7 +333,7 @@ function asked_once(plan: Plan, transport: issue_wire.Transport, world: issue_wi
 
     if plan.dialect == "openai"
         exchange @ thesis_answer.read_openai(got.reply.body)
-    return ok(Asked(world: got.world, exchange: exchange?))
+    return ok(Asked(world: got.world, exchange: exchange?, attempts: got.attempts))
 
 # What a request lost past its retries answers: no text, and a stop the
 # conversation reads as `transport_error`.
@@ -593,6 +601,7 @@ function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_
                 break
             asked = asked_once(plan: one_plan, transport: transport, world: w, system: system, messages: messages)?
             w @ asked.world
+            t.attempts @ t.attempts + asked.attempts
             t.spent @ t.spent + charged(tally: t, model: generation.model, exchange: asked.exchange)?
 
             if asked.exchange.stop != "transport_error"
@@ -836,6 +845,7 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
     assert tally.generations == 3
     assert tally.verdicts == 3
     assert tally.requests == 4
+    assert tally.attempts == 4
 
     # The provenance written is the one `preregister` prints for the plan.
     assert read_file(path: scratch + "/out/provenance.json").must() == planned_provenance(plan: one, scratch: scratch).must()
@@ -1067,6 +1077,9 @@ test "a generation lost past its retries is every arm's transport_error and the 
     assert tally.lost == 1
     assert tally.stopped == ""
     assert tally.generations == 2
+
+    # The lost request was sent five times, the two answered once each.
+    assert tally.attempts == 7
     assert tally.verdicts == 6
     lost: i64 @= 0
 

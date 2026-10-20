@@ -23,6 +23,16 @@
 #
 # A mutant is the suite writer's, as the reference is: no digest covers it,
 # and the grader never reads it while grading a model.
+#
+# **A held-out task is a trap** (decision 2172, the author's of 2026-10-21):
+# one of its mutants at least says `# strict: compile_error <code>` and
+# `# control: compiled_wrong case K`, `K` not `0`, a mistake the strict arm
+# refuses and the control arm runs to a wrong output on a hidden case after
+# passing the visible one; `trap_refusal` says so of a task that has none.
+# The trial's ten tasks had one such mutant in forty, and six that the strict
+# arm refuses and the visible example shows in the control arm, which is what
+# a model met there: a mistake the example shows costs the control arm a turn
+# and never green@3 (measurement 049).
 
 use shell
 use strings
@@ -121,6 +131,21 @@ function ends_at_case(outcome: str) -> bool
             return true
 
     return false
+
+# Why a task of a suite labelled `label` falls short of decision 2172's rule,
+# or "": a held-out task holds at least one mutant the strict arm refuses and
+# the control arm runs to a wrong output on a hidden case; the assistant's
+# tasks are not bound by it. It reads what each mutant says, which `dry` holds
+# it to in each arm.
+function trap_refusal(label: str, mutants: [Mutant]) -> str
+    if label != "held-out"
+        return ""
+
+    for m in mutants
+        if m.strict.outcome == "compile_error" && m.control.outcome == "compiled_wrong" && m.control.detail != "0"
+            return ""
+
+    return "a held-out task tempts at least one mistake the strict arm refuses and the control arm runs to a wrong output on a hidden case, a mutant saying `# strict: compile_error <code>` and `# control: compiled_wrong case K`, K not 0 (decision 2172, `docs/metrics/tasks.md`)"
 
 # The line an arm is judged by: the `brief` arm's is the `strict` one, the
 # two refusing the same programs and differing in the words alone.
@@ -339,3 +364,23 @@ function refusal_of(read: [Mutant]?) -> str
     return match read
         .ok _  => ""
         .err e => e.msg
+
+test "a held-out task without a mutant the strict arm refuses and the control arm gets wrong on a hidden case falls short, and the assistant's tasks are not held to it"
+    scratch = shell.own_scratch()
+    trapped = mutants_of(
+        scratch: scratch,
+        task: thesis_tasks.read_task(scratch: scratch, dir: "tests/thesis/09", number: "09").must()
+    ).must()
+    exposed = mutants_of(
+        scratch: scratch,
+        task: thesis_tasks.read_task(scratch: scratch, dir: "tests/thesis/03", number: "03").must()
+    ).must()
+
+    # 09's `catch-all-area-zero` is refused for `wildcard_on_variant` and wrong on case 3 in the control arm.
+    assert trap_refusal(label: "held-out", mutants: trapped) == ""
+
+    # 03's refused mistake, `shadowed_binding`, is shown by the visible example in the control arm, case 0.
+    assert strings.contains(text: trap_refusal(label: "held-out", mutants: exposed), needle: "decision 2172")
+    assert trap_refusal(label: "assistant", mutants: exposed) == ""
+    none: [Mutant] = []
+    assert trap_refusal(label: "held-out", mutants: none) != ""

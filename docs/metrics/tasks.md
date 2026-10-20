@@ -81,12 +81,21 @@ A task's digest is the sha256 of `task.md` and its cases in order; its prose dig
   `cases_pass` for a mistake that changes no output, which the strict arm refuses and the control
   arm runs as written. `dry` grades every mutant in its arm, the `brief` arm by the `strict` line,
   and is red where one ends otherwise or a task has none (`tests/harness/thesis_mutants.hero`).
+- **Every held-out task is a trap** (decision 2172, the author's of 2026-10-21, on measurement
+  049): it tempts at least one mistake that the strict arm refuses and that the control arm runs to
+  a wrong output at exit 0 on a hidden case while it passes the visible one, shown by a hand mutant
+  saying `# strict: compile_error <code>` and `# control: compiled_wrong case K`, `K` not `0`;
+  `dry` is red on a held-out task that has none (`thesis_mutants.trap_refusal`). A mistake the
+  visible example shows is caught in the control arm by the example and costs it a turn, never
+  green@3: on the trial's ten tasks the one silent failure of a control arm was such a mistake, and
+  of their forty mutants one had this shape and six were refused by the strict arm and shown by the
+  example. The assistant's tasks are not held to it.
 - **Spread over the surface**, counted over the held-out suite before the freeze: records in at
   least 6 tasks, a `variant` with at least 4 cases in at least 8, `T?` with propagation in at least
   8, `@` parameters in at least 5, maps in at least 6, a generic built-in taking a function value in
-  at least 4; and at least 5 (ten is better) that tempt the plausible mistakes the mutation
-  operators encode, listed by number in `traps.txt` beside the suite and **reported stratified**,
-  trap and not; and each task's classes, one line a task in `constructs.txt` beside it, its number
+  at least 4; the tasks that tempt the plausible mistakes the mutation operators encode, every
+  held-out task since decision 2172 (above), listed by number in `traps.txt` beside the suite and
+  **reported stratified**, trap and not; and each task's classes, one line a task in `constructs.txt` beside it, its number
   then any of `record`, `variant`, `propagation`, `at-parameter`, `map` and `function-value`, so
   the primary is reported per class and class-weighted beside the flat aggregate (panel 009's
   spec-warden). Both by number and never by a telling name, as `hashes.txt` is; the run lists the
@@ -125,6 +134,10 @@ listed models declare a training cutoff of June 2026, before this repository was
   attempted → answered → extracted → compiled → ran → green, per arm.
 
 ## History
+
+Until 2026-10-21 the spread asked at least 5 trap tasks of the 40 (ten better); decision 2172 made
+every held-out task one, after the trial read green@3 at 30 of 30 in every arm for Sonnet 5.5 and
+Opus 5.5 on tasks that tempted no mistake the visible example would not show (measurement 049).
 
 Until 2026-10-20 this page said: target 20 frozen tasks, author-confirmed, one file per task held
 outside this repository; 0 tasks, the 5 unreviewed assistant drafts pruned 2026-08-03; up to 5
