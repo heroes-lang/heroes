@@ -28,12 +28,21 @@
 # message) minus brief, over the pairs where either arm saw a refusal (R4). The
 # report names the pre-registered primary and calls every other row
 # exploratory, so no number is picked after the fact.
+#
+# **Then the strata** the labels beside the suite name (`thesis_strata.hero`,
+# issue 2160): the primary in the tasks `traps.txt` names and in the rest,
+# and by the construct classes of `constructs.txt`, each class over its own
+# tasks, then the class-weighted difference, every class weighing alike,
+# beside the flat one, each with its bootstrap interval; a label that is not
+# there is said so, and a verdict the run's `tasks.txt` does not list is
+# counted and stands in no stratum.
 
 use json_fields
 use json_read
 use shell
 use strings
 use thesis_stats
+use thesis_strata
 use thesis_verdict
 
 constant TURNS_SHOWN: [i64]
@@ -50,7 +59,7 @@ record Group
 
 # The verdicts under `out/samples/`, read; `out/verdicts.jsonl` written from
 # their texts, one a line, by key; the report's Markdown returned.
-function report(scratch: str, out: str, seed: i64, primary: str) -> str?
+function report(scratch: str, out: str, seed: i64, primary: str, labels: str) -> str?
     texts = thesis_verdict.all_kept(scratch: scratch, dir: out + "/samples")?
     verdicts: [thesis_verdict.Verdict] @= []
 
@@ -58,7 +67,141 @@ function report(scratch: str, out: str, seed: i64, primary: str) -> str?
         verdicts @ verdicts.push(thesis_verdict.read_verdict(text)?)
 
     write_file(path: out + "/verdicts.jsonl", text: texts.join("\n") + "\n")?
-    return ok(rendered(verdicts: verdicts, seed: seed, primary: primary, through: asked_through(out)))
+    dir: str @= labels
+
+    if dir == ""
+        dir @ suite_of(out)
+    strata: [str] @= []
+    numbers = thesis_strata.numbers_of(out)
+
+    match numbers
+        .ok n  => strata @ strata_lines(
+            verdicts: verdicts,
+            labels: thesis_strata.labels_at(dir)?,
+            dir: dir,
+            numbers: n,
+            seed: seed
+        )
+        .err e => strata @ ["", "## The strata", "", e.msg + "; the strata are not written."]
+
+    return ok(
+        rendered(verdicts: verdicts, seed: seed, primary: primary, through: asked_through(out)) + strata.join("\n") + "\n"
+    )
+
+# The suite folder the run's provenance names, "" where it names none.
+function suite_of(out: str) -> str
+    held = read_file(path: out + "/provenance.json")
+
+    if held.is_err()
+        return ""
+    doc = json_read.read_json(held.must())
+
+    if doc.is_err()
+        return ""
+    return json_fields.text_at(of: doc.must(), name: "suite").default("")
+
+# The strata the labels beside the suite name (`thesis_strata.hero`): the
+# primary in the trap tasks and in the rest, and by construct class with the
+# class-weighted difference beside the flat one, or a sentence naming the
+# label that is missing; a verdict the run's `tasks.txt` does not list is
+# counted and stands in no stratum.
+function strata_lines(verdicts: [thesis_verdict.Verdict], labels: thesis_strata.Labels, dir: str, numbers: {str: str}, seed: i64) -> [str]
+    out: [str] @= []
+    unnumbered: i64 @= 0
+
+    for v in verdicts
+        if numbers[v.task_sha].is_err()
+            unnumbered @ unnumbered + 1
+
+    if unnumbered > 0
+        out @ out.push("").push(
+            unnumbered.to_str() + " verdicts name a task the run's `tasks.txt` does not list, and stand in no stratum."
+        )
+    out @ out.push("").push("## The primary by stratum, trap and not").push("")
+
+    if !labels.has_traps
+        out @ out.push("No `traps.txt` beside " + dir + ", so the primary is not stratified.")
+    else
+        trapped: [thesis_verdict.Verdict] @= []
+        rest: [thesis_verdict.Verdict] @= []
+
+        for v in verdicts
+            number = numbers[v.task_sha].default("")
+
+            if number == ""
+                continue
+
+            if thesis_strata.among(word: number, words: labels.traps)
+                trapped @ trapped.push(v)
+            else
+                rest @ rest.push(v)
+
+        for line in contrast_lines(groups: grouped(trapped), title: "### In the trap tasks", note: "The tasks `traps.txt` names, which tempt a plausible mistake on purpose.", first_arm: "control", second_arm: "strict", measure: "green", refused_only: false, seed: seed)
+            out @ out.push(line)
+
+        for line in contrast_lines(groups: grouped(rest), title: "### In the other tasks", note: "Every task `traps.txt` does not name.", first_arm: "control", second_arm: "strict", measure: "green", refused_only: false, seed: seed)
+            out @ out.push(line)
+    out @ out.push("").push("## The primary by construct class").push("")
+
+    if !labels.has_constructs
+        out @ out.push("No `constructs.txt` beside " + dir + ", so the primary is not weighed by class.")
+        return out
+    out @ out.push("Each class over its own tasks, a task of two classes standing in both; then every class weighing alike (panel 009's spec-warden), beside the flat difference, where every pair weighs alike.").push(
+        ""
+    )
+    out @ out.push("| model | context | class | tasks | pairs | strict green@3 | control green@3 | difference | bootstrap 95% |").push(
+        "|---|---|---|---|---|---|---|---|---|"
+    )
+    groups = grouped(verdicts)
+
+    for g in groups
+        if g.arm == "strict"
+            other = group_of(groups: groups, model: g.model, arm: "control", context_sha: g.context_sha)
+
+            if other.len() > 0
+                made = paired(first: other[0], second: g, measure: "green", refused_only: false)
+
+                for line in class_rows(made: made, labels: labels, numbers: numbers, g: g, seed: seed)
+                    out @ out.push(line)
+
+    return out
+
+# One (model, context)'s rows: each class its tasks hold, the class-weighted
+# difference, and the flat one.
+function class_rows(made: Paired, labels: thesis_strata.Labels, numbers: {str: str}, g: Group, seed: i64) -> [str]
+    classes: [[str]] @= []
+
+    for cell in made.cells
+        classes @ classes.push(thesis_strata.classes_of(labels: labels, number: numbers[cell.task].default("")))
+
+    lead = "| " + g.model + " | " + context_name(g.context_sha) + " | "
+    rows: [str] @= []
+
+    for name in thesis_strata.CLASSES
+        sub = thesis_stats.in_class(cells: made.cells, classes: classes, name: name)
+
+        if sub.len() > 0
+            rows @ rows.push(lead + name + " | " + cell_row(cells: sub, seed: seed))
+
+    weighted = thesis_stats.bootstrap_weighted(cells: made.cells, classes: classes, rounds: ROUNDS, seed: seed)
+    rows @ rows.push(
+        lead + "class-weighted | " + made.cells.len().to_str() + " | " + made.pairs.to_str() + " | | | " + signed_percent(thesis_stats.class_weighted(cells: made.cells, classes: classes)) + " | " + signed_percent(weighted.low) + " to " + signed_percent(weighted.high) + " |"
+    )
+    return rows.push(lead + "flat | " + cell_row(cells: made.cells, seed: seed))
+
+# Tasks, pairs, the two arms' greens, the difference and its interval.
+function cell_row(cells: [thesis_stats.Cell], seed: i64) -> str
+    pairs: i64 @= 0
+    seconds: i64 @= 0
+    firsts: i64 @= 0
+
+    for cell in cells
+        pairs @ pairs + cell.n
+        seconds @ seconds + cell.second
+        firsts @ firsts + cell.first
+
+    interval = thesis_stats.bootstrap(cells: cells, rounds: ROUNDS, seed: seed)
+    return cells.len().to_str() + " | " + pairs.to_str() + " | " + seconds.to_str() + " | " + firsts.to_str() + " | " + signed_percent(thesis_stats.difference(cells)) + " | " + signed_percent(interval.low) + " to " + signed_percent(interval.high) + " |"
 
 # What the rows were asked through, as the run's `provenance.json` names it:
 # a harness's rows are a table of their own and never pooled with the API's
@@ -367,7 +510,17 @@ function context_name(sha: str) -> str
 # `green` or `silent` by turn 3, and the difference is `second` minus `first`.
 # A pair either of whose verdicts is excluded is left out (R8), and
 # `refused_only` keeps the pairs where either arm saw a refusal (R4).
-function paired_row(first: Group, second: Group, measure: str, refused_only: bool, seed: i64) -> str
+# The pairs two arms' verdicts make, one generation each: how many, how many
+# of each arm the measure holds, the discordant both ways, and a cell a task.
+record Paired
+    pairs: i64
+    b: i64
+    c: i64
+    second_count: i64
+    first_count: i64
+    cells: [thesis_stats.Cell]
+
+function paired(first: Group, second: Group, measure: str, refused_only: bool) -> Paired
     b: i64 @= 0
     c: i64 @= 0
     pairs: i64 @= 0
@@ -403,6 +556,17 @@ function paired_row(first: Group, second: Group, measure: str, refused_only: boo
             if in_first && !in_second
                 c @ c + 1
             cells @ added(cells: cells, task: s.task_sha, first: in_first, second: in_second)
+
+    return Paired(pairs: pairs, b: b, c: c, second_count: second_count, first_count: first_count, cells: cells)
+
+function paired_row(first: Group, second: Group, measure: str, refused_only: bool, seed: i64) -> str
+    made = paired(first: first, second: second, measure: measure, refused_only: refused_only)
+    pairs = made.pairs
+    b = made.b
+    c = made.c
+    second_count = made.second_count
+    first_count = made.first_count
+    cells = made.cells
 
     if pairs == 0
         return "| " + second.model + " | " + context_name(second.context_sha) + " | 0 | | | | | | |"
@@ -620,3 +784,79 @@ test "the report says what its rows were asked through, from the run's provenanc
     assert asked_through(scratch) == "Asked through the API."
     write_file(path: scratch + "/provenance.json", text: "not json").must()
     assert strings.contains(text: asked_through(scratch), needle: "does not read as JSON")
+
+test "the primary is stratified by traps.txt and weighed by constructs.txt, on hand-computed numbers"
+    verdicts: [thesis_verdict.Verdict] @= []
+
+    # A, a record task: strict green in all three samples, control in none.
+    for s in range(from: 1, to: 4)
+        verdicts @ verdicts.push(sampled(task: "taskAaaaaaaaaaa", arm: "strict", sample: s, green: true)).push(
+            sampled(task: "taskAaaaaaaaaaa", arm: "control", sample: s, green: false)
+        )
+
+    # B, a map task: each arm green in the first of two samples.
+    verdicts @ verdicts.push(sampled(task: "taskBaaaaaaaaaa", arm: "strict", sample: 1, green: true)).push(
+        sampled(task: "taskBaaaaaaaaaa", arm: "control", sample: 1, green: true)
+    )
+    verdicts @ verdicts.push(sampled(task: "taskBaaaaaaaaaa", arm: "strict", sample: 2, green: false)).push(
+        sampled(task: "taskBaaaaaaaaaa", arm: "control", sample: 2, green: false)
+    )
+
+    # C, both classes: every sample green in both arms.
+    for s in range(from: 1, to: 3)
+        verdicts @ verdicts.push(sampled(task: "taskCaaaaaaaaaa", arm: "strict", sample: s, green: true)).push(
+            sampled(task: "taskCaaaaaaaaaa", arm: "control", sample: s, green: true)
+        )
+
+    numbers: {str: str} = {"taskAaaaaaaaaaa": "01", "taskBaaaaaaaaaa": "02", "taskCaaaaaaaaaa": "03"}
+    labels = thesis_strata.Labels(
+        has_traps: true,
+        traps: ["01"],
+        has_constructs: true,
+        numbers: ["01", "02", "03"],
+        classes: [["record"], ["map"], ["record", "map"]]
+    )
+    text = strata_lines(verdicts: verdicts, labels: labels, dir: "tests/thesis", numbers: numbers, seed: 7).join("\n")
+
+    # The trap task A alone: strict 3 of 3, control 0. The others, B and C: 3 and 3 of 4.
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 3 | 3 | 0 | +100.0pp |")
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | 4 | 3 | 3 | +0.0pp |")
+
+    # Records over A and C, (5 - 2) / 5; maps over B and C, (3 - 3) / 4; their
+    # mean 0.3; the flat (6 - 3) / 7.
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | record | 2 | 5 | 5 | 2 | +60.0pp |")
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | map | 2 | 4 | 3 | 3 | +0.0pp |")
+    assert strings.contains(
+        text: text,
+        needle: "| claude-haiku-5-5 | 21226405 | class-weighted | 3 | 7 | | | +30.0pp |"
+    )
+    assert strings.contains(text: text, needle: "| claude-haiku-5-5 | 21226405 | flat | 3 | 7 | 6 | 3 | +42.9pp |")
+    none: [str] = []
+    no_classes: [[str]] = []
+    bare = strata_lines(verdicts: verdicts, labels: thesis_strata.Labels(has_traps: false, traps: none, has_constructs: false, numbers: none, classes: no_classes), dir: "x", numbers: numbers, seed: 7).join(
+        "\n"
+    )
+    assert strings.contains(text: bare, needle: "No `traps.txt` beside x")
+    assert strings.contains(text: bare, needle: "No `constructs.txt` beside x")
+    only_a: {str: str} = {"taskAaaaaaaaaaa": "01"}
+    unlisted = strata_lines(verdicts: verdicts, labels: labels, dir: "x", numbers: only_a, seed: 7).join("\n")
+    assert strings.contains(text: unlisted, needle: "8 verdicts name a task the run's `tasks.txt` does not list")
+
+function sampled(task: str, arm: str, sample: i64, green: bool) -> thesis_verdict.Verdict
+    outcome: str @= "compiled_wrong"
+    turn: i64 @= 0
+
+    if green
+        outcome @ "cases_pass"
+        turn @ 1
+    return thesis_verdict.Verdict(
+        key: thesis_verdict.verdict_key(task_sha: task, model: "claude-haiku-5-5", context_sha: "212264059c985c2e", sample: sample, arm: arm),
+        task_sha: task,
+        model: "claude-haiku-5-5",
+        arm: arm,
+        context_sha: "212264059c985c2e",
+        sample: sample,
+        turns: [thesis_verdict.Turn(outcome: outcome, codes: [], stop: "end_turn", input: 100, output: 50, cache_read: 0, cache_write: 0)],
+        green_turn: turn,
+        converged: green
+    )

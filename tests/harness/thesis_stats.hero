@@ -157,6 +157,71 @@ function bootstrap(cells: [Cell], rounds: i64, seed: i64) -> Interval
         high: ordered[index_of_quantile(count: ordered.len(), permille: 975)]
     )
 
+# The class-weighted difference (panel 009's spec-warden: a change moves its
+# own task classes more than the flat aggregate, so each class weighs alike):
+# the paired difference over the tasks of each construct class, `classes[i]`
+# being the classes of `cells[i]`'s task, a task counted in every class it
+# holds, then the mean over the classes some task holds. No class, 0.
+function class_weighted(cells: [Cell], classes: [[str]]) -> f64
+    names: [str] @= []
+
+    for held in classes
+        for one in held
+            if !among(word: one, words: names)
+                names @ names.push(one)
+
+    if names.len() == 0
+        return 0.0
+    total: f64 @= 0.0
+
+    for name in names
+        total @ total + difference(in_class(cells: cells, classes: classes, name: name))
+
+    return total / to_f64(names.len())
+
+function in_class(cells: [Cell], classes: [[str]], name: str) -> [Cell]
+    out: [Cell] @= []
+
+    for i in range(from: 0, to: cells.len())
+        if among(word: name, words: classes[i])
+            out @ out.push(cells[i])
+
+    return out
+
+function among(word: str, words: [str]) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+# The bootstrap interval of the class-weighted difference: the tasks
+# resampled with replacement, each carrying its classes, and the weighting
+# taken again over the classes a resample holds.
+function bootstrap_weighted(cells: [Cell], classes: [[str]], rounds: i64, seed: i64) -> Interval
+    if cells.len() == 0 || rounds <= 0
+        return Interval(low: 0.0, high: 0.0)
+    state: i64 @= seeded(seed)
+    estimates: [f64] @= []
+
+    for _ in range(from: 0, to: rounds)
+        drawn: [Cell] @= []
+        drawn_classes: [[str]] @= []
+
+        for _ in range(from: 0, to: cells.len())
+            state @ next(state)
+            at = state % cells.len()
+            drawn @ drawn.push(cells[at])
+            drawn_classes @ drawn_classes.push(classes[at])
+
+        estimates @ estimates.push(class_weighted(cells: drawn, classes: drawn_classes))
+
+    ordered = sort(estimates)
+    return Interval(
+        low: ordered[index_of_quantile(count: ordered.len(), permille: 25)],
+        high: ordered[index_of_quantile(count: ordered.len(), permille: 975)]
+    )
+
 # The index of the `permille`-th quantile in a sorted list of `count`.
 function index_of_quantile(count: i64, permille: i64) -> i64
     at = (count - 1) * permille / 1000
@@ -248,3 +313,27 @@ test "the generator is Park-Miller's, deterministic, and the bootstrap's interva
     assert percent(0.0) == "0.0"
     assert percent(1.0) == "100.0"
     assert percent(0.12345) == "12.3"
+
+test "the class-weighted difference agrees with a hand-computed witness, and its bootstrap is the same twice"
+    # A is a record task, 0 then 3 of 3; B a map task, 1 then 1 of 2; C both,
+    # 2 then 2 of 2. Records: (5 - 2) / 5 = 0.6; maps: (3 - 3) / 4 = 0; the
+    # class-weighted mean 0.3, where the flat difference is (6 - 3) / 7.
+    cells = [
+        Cell(task: "A", first: 0, second: 3, n: 3)
+        Cell(task: "B", first: 1, second: 1, n: 2)
+        Cell(task: "C", first: 2, second: 2, n: 2)
+    ]
+    classes = [["record"], ["map"], ["record", "map"]]
+    weighted = class_weighted(cells: cells, classes: classes)
+    assert weighted - 0.3 < 0.000000001
+    assert 0.3 - weighted < 0.000000001
+    assert percent(difference(cells)) == "42.9"
+    none: [[str]] = [[], [], []]
+    assert class_weighted(cells: cells, classes: none) == 0.0
+    once = bootstrap_weighted(cells: cells, classes: classes, rounds: 400, seed: 7)
+    again = bootstrap_weighted(cells: cells, classes: classes, rounds: 400, seed: 7)
+    assert once.low == again.low
+    assert once.high == again.high
+    assert once.low <= once.high
+    assert once.low >= -1.0
+    assert once.high <= 1.0

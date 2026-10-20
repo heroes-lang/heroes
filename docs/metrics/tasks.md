@@ -85,7 +85,13 @@ A task's digest is the sha256 of `task.md` and its cases in order; its prose dig
   least 6 tasks, a `variant` with at least 4 cases in at least 8, `T?` with propagation in at least
   8, `@` parameters in at least 5, maps in at least 6, a generic built-in taking a function value in
   at least 4; and at least 5 (ten is better) that tempt the plausible mistakes the mutation
-  operators encode, labelled `trap` in `hashes.txt` and **reported stratified**, trap and not.
+  operators encode, listed by number in `traps.txt` beside the suite and **reported stratified**,
+  trap and not; and each task's classes, one line a task in `constructs.txt` beside it, its number
+  then any of `record`, `variant`, `propagation`, `at-parameter`, `map` and `function-value`, so
+  the primary is reported per class and class-weighted beside the flat aggregate (panel 009's
+  spec-warden). Both by number and never by a telling name, as `hashes.txt` is; the run lists the
+  tasks it ran in `<out>/tasks.txt`, which ties each verdict to its number
+  (`tests/harness/thesis_strata.hero`).
 - **A difficulty target** from the trial: `green@1` in the strict arm on Sonnet 5.5 between 0.3
   and 0.7 for the median task; the held-out suite's distribution compared with it before the
   freeze, by the reference solutions' shape and the trial's rates, never by running a model on a

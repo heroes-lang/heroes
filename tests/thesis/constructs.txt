@@ -1,0 +1,16 @@
+# The construct classes each of the assistant's tasks exercises, by number
+# (`tests/harness/thesis_strata.hero`), read from the reference solutions on
+# 2026-10-20: a map, a record, a variant, a `T?` propagated with `?`, an `@`
+# parameter, and a function value given to a generic built-in. No `traps.txt`
+# stands beside it: these tasks were not written around a trap, so the
+# report says the primary is not stratified rather than invent the labels.
+01 map
+02 map at-parameter
+03
+04 propagation
+05 variant at-parameter
+06 at-parameter
+07 map
+08 record map at-parameter function-value
+09 variant propagation
+10 record map propagation function-value

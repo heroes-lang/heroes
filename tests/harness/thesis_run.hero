@@ -123,6 +123,10 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
         shell.mkdir_all(plan.out)?
         write_file(path: plan.out + "/provenance.json", text: provenance_json(plan: plan, suite: suite, template: template, layout_sha: layout_sha, contexts: contexts))?
 
+        # The tasks as they ran, digest and number, which the report ties
+        # each verdict to its stratum by (`thesis_strata.numbers_of`).
+        write_file(path: plan.out + "/tasks.txt", text: thesis_tasks.told(suite) + "\n")?
+
     for context in contexts
         for task in suite.tasks
             prompt = thesis_prompt.rendered(template: template, context: context, task: task.prose, layout: plan.layout)?
@@ -680,6 +684,11 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
     assert tally.generations == 3
     assert tally.verdicts == 3
     assert tally.requests == 4
+
+    # The tasks as they ran, one line each and the suite's, beside the verdicts.
+    listed = read_file(path: scratch + "/out/tasks.txt").must()
+    assert strings.contains(text: listed, needle: " 01 9\n")
+    assert strings.contains(text: listed, needle: "\nsuite ")
 
     kept = thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/samples").must()
     assert kept.len() == 3

@@ -18,7 +18,7 @@
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live [--max-requests n] | report <out> [--seed n] [--primary <sentence>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
+    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live [--max-requests n] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
 
 # The words of this program.
 constant WORDS: [str]
@@ -66,6 +66,7 @@ record Asked
     primary: str
     key: str
     into: str
+    labels: str
     wrong: str
 
 # Why the first word is not one this program takes.
@@ -118,7 +119,7 @@ function valued(flag: str, word: str) -> bool
     if flag == "--max-requests"
         return word == "run"
 
-    if flag == "--seed" || flag == "--primary"
+    if flag == "--seed" || flag == "--primary" || flag == "--labels"
         return word == "report"
     return false
 
@@ -241,6 +242,8 @@ function took(@a: Asked, flag: str, value: str) -> str
         a.primary @ value
     else if flag == "--key"
         a.key @ value
+    else if flag == "--labels"
+        a.labels @ value
     else if flag == "--into"
         a.into @ value
     else if flag == "--effort"
@@ -298,6 +301,7 @@ function blank(word: str) -> Asked
         primary: PRIMARY,
         key: "HEROES_TASKS_KEY",
         into: "",
+        labels: "",
         wrong: ""
     )
 
@@ -496,4 +500,12 @@ test "a harness transport speaks Anthropic's dialect alone, and `api` is the def
     assert strings.contains(
         text: parsed(word: "dry", words: ["tests/thesis", "--transport", "claude"]).wrong,
         needle: "`--transport` is no flag of `dry`"
+    )
+
+test "`report` takes the folder its labels stand in, and no other word does"
+    assert parsed(word: "report", words: ["build/thesis-runs/x", "--labels", "tests/thesis/held-out"]).labels == "tests/thesis/held-out"
+    assert parsed(word: "report", words: ["build/thesis-runs/x"]).labels == ""
+    assert strings.contains(
+        text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--labels", "x"]).wrong,
+        needle: "`--labels` is no flag of `run`"
     )

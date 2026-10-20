@@ -1,0 +1,243 @@
+# THE LABELS A REPORT IS STRATIFIED BY: which tasks tempt a plausible mistake
+# on purpose, and which construct classes each task exercises, written beside
+# a suite by task number (M-thesis-harness, 2026-10-20; `docs/metrics/tasks.md`
+# § The rules a task is written by, issue 2160), and the digests a run's tasks
+# went by, which tie a verdict to its number.
+#
+# `traps.txt`: one task number a line. `constructs.txt`: one line a task, its
+# number then its classes, each one of `CLASSES`. In both a `#` begins a
+# comment and a blank line is nothing. A file that is not there is a suite
+# with no such labels, which the report says rather than guessing; a file that
+# is there and cannot be read, a line that is not a number, a class that is
+# not one of the six, and a number named twice are refused by their line. By
+# number and never by a telling name, as `hashes.txt` is, so the labels of a
+# sealed suite stand in clear beside it.
+#
+# A verdict names its task by digest: the run writes `<out>/tasks.txt`, the
+# `tasks` word's lines of the suite as it ran (`thesis_tasks.told`), and
+# `numbers_of` reads each digest's number back from it, so a suite edited
+# after its run cannot move the report.
+
+use shell
+use strings
+
+# The construct classes `docs/metrics/tasks.md`'s spread counts.
+constant CLASSES: [str]
+    ["record", "variant", "propagation", "at-parameter", "map", "function-value"]
+
+record Labels
+    has_traps: bool
+    traps: [str]
+    has_constructs: bool
+    numbers: [str]
+    classes: [[str]]
+
+# The labels beside `dir`: none where a file is not there.
+function labels_at(dir: str) -> Labels?
+    none: [str] = []
+    no_classes: [[str]] = []
+    labels: Labels @= Labels(has_traps: false, traps: none, has_constructs: false, numbers: none, classes: no_classes)
+    traps = held(path: dir + "/traps.txt")?
+
+    if traps != ""
+        labels.has_traps @ true
+        labels.traps @ traps_of(text: traps, path: dir + "/traps.txt")?
+    constructs = held(path: dir + "/constructs.txt")?
+
+    if constructs != ""
+        labels.has_constructs @ true
+        read = constructs_of(text: constructs, path: dir + "/constructs.txt")?
+        labels.numbers @ read.numbers
+        labels.classes @ read.classes
+    return ok(labels)
+
+# A label file's text, "" where it is not there; any other failure refused.
+function held(path: str) -> str?
+    match read_file(path: path)
+        .ok text => return ok(text)
+        .err e =>
+            if e.code == "file_not_found"
+                return ok("")
+            return fail(code: "bad_labels", msg: path + " cannot be read: " + e.msg)
+
+# A line with its comment taken off and its spaces trimmed.
+function content(line: str) -> str
+    at = strings.index_of(text: line, needle: "#")
+
+    if at.is_err()
+        return strings.trimmed(text: line)
+    return strings.trimmed(text: line.slice(from: 0, to: at.must()))
+
+function traps_of(text: str, path: str) -> [str]?
+    out: [str] @= []
+    lines = strings.lines(text: text)
+
+    for i in range(from: 0, to: lines.len())
+        one = content(lines[i])
+
+        if one == ""
+            continue
+
+        if !all_digits(one)
+            return fail(
+                code: "bad_labels",
+                msg: path + " line " + (i + 1).to_str() + ": `" + one + "` is no task number"
+            )
+
+        if among(word: one, words: out)
+            return fail(
+                code: "bad_labels",
+                msg: path + " line " + (i + 1).to_str() + ": task " + one + " is named twice"
+            )
+        out @ out.push(one)
+
+    return ok(out)
+
+function constructs_of(text: str, path: str) -> Labels?
+    none: [str] = []
+    numbers: [str] @= []
+    classes: [[str]] @= []
+    lines = strings.lines(text: text)
+
+    for i in range(from: 0, to: lines.len())
+        one = content(lines[i])
+
+        if one == ""
+            continue
+        said = strings.words(text: one)
+        where = path + " line " + (i + 1).to_str()
+
+        if !all_digits(said[0])
+            return fail(code: "bad_labels", msg: where + ": `" + said[0] + "` is no task number")
+
+        if among(word: said[0], words: numbers)
+            return fail(code: "bad_labels", msg: where + ": task " + said[0] + " is named twice")
+        held_classes: [str] @= []
+
+        for k in range(from: 1, to: said.len())
+            if !among(word: said[k], words: CLASSES)
+                return fail(
+                    code: "bad_labels",
+                    msg: where + ": `" + said[k] + "` is no class; a class is one of " + CLASSES.join(", ")
+                )
+
+            if !among(word: said[k], words: held_classes)
+                held_classes @ held_classes.push(said[k])
+
+        numbers @ numbers.push(said[0])
+        classes @ classes.push(held_classes)
+
+    return ok(Labels(has_traps: false, traps: none, has_constructs: true, numbers: numbers, classes: classes))
+
+# The classes `labels` gives the task `number`, none where it names none.
+function classes_of(labels: Labels, number: str) -> [str]
+    for i in range(from: 0, to: labels.numbers.len())
+        if labels.numbers[i] == number
+            return labels.classes[i]
+
+    none: [str] = []
+    return none
+
+# Each task digest of a run with its number, from `<out>/tasks.txt`.
+function numbers_of(out: str) -> {str: str}?
+    text = read_file(path: out + "/tasks.txt")
+
+    if text.is_err()
+        return fail(
+            code: "no_tasks_listed",
+            msg: out + " holds no tasks.txt, the run's list of its tasks, so no verdict can be tied to its task's number"
+        )
+    numbers: {str: str} @= {}
+
+    for line in strings.lines(text: text.must())
+        said = strings.words(text: line)
+
+        if said.len() == 4 && said[0] != "suite"
+            numbers[said[0]] @ said[2]
+
+    return ok(numbers)
+
+function all_digits(text: str) -> bool
+    if text.len() == 0
+        return false
+
+    for i in range(from: 0, to: text.len())
+        if text[i] < '0' || text[i] > '9'
+            return false
+
+    return true
+
+function among(word: str, words: [str]) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+test "traps and constructs are read by number, comments and blanks are nothing, and every wrong line is refused by its line"
+    traps = traps_of(text: "# the traps\n03\n\n05  # a variant\n", path: "traps.txt").must()
+    assert traps == ["03", "05"]
+    assert strings.contains(
+        text: refusal(traps_of(text: "03\nthree\n", path: "traps.txt")),
+        needle: "traps.txt line 2: `three` is no task number"
+    )
+    assert strings.contains(
+        text: refusal(traps_of(text: "03\n03\n", path: "traps.txt")),
+        needle: "task 03 is named twice"
+    )
+    read = constructs_of(text: "01 map\n02 record map  # two\n# none\n03\n", path: "constructs.txt").must()
+    assert read.numbers == ["01", "02", "03"]
+    assert classes_of(labels: read, number: "02") == ["record", "map"]
+    assert classes_of(labels: read, number: "03").len() == 0
+    assert classes_of(labels: read, number: "09").len() == 0
+    assert strings.contains(
+        text: refusal_labels(constructs_of(text: "01 maps\n", path: "constructs.txt")),
+        needle: "constructs.txt line 1: `maps` is no class"
+    )
+    assert strings.contains(
+        text: refusal_labels(constructs_of(text: "x1 map\n", path: "constructs.txt")),
+        needle: "is no task number"
+    )
+
+test "a run's tasks.txt ties each digest to its number, labels absent are none, and a run with no list is refused by name"
+    scratch = shell.own_scratch()
+    assert strings.contains(text: refusal_of(numbers_of(scratch)), needle: "holds no tasks.txt")
+    write_file(path: scratch + "/tasks.txt", text: "aaa bbb 01 9\nccc ddd 02 7\nsuite eee assistant 2 canary\n").must()
+    numbers = numbers_of(scratch).must()
+    assert numbers["aaa"].must() == "01"
+    assert numbers["ccc"].must() == "02"
+    assert numbers["suite"].is_err()
+    labels = labels_at(scratch).must()
+    assert !labels.has_traps
+    assert !labels.has_constructs
+    write_file(path: scratch + "/traps.txt", text: "02\n").must()
+    write_file(path: scratch + "/constructs.txt", text: "01 record\n02 map variant\n").must()
+    beside = labels_at(scratch).must()
+    assert beside.traps == ["02"]
+    assert classes_of(labels: beside, number: "02") == ["map", "variant"]
+    write_file(path: scratch + "/constructs.txt", text: "01 record\n01 map\n").must()
+    assert strings.contains(text: refusal_labels(labels_at(scratch)), needle: "task 01 is named twice")
+
+function refusal(read: [str]?) -> str
+    return match read
+        .ok _  => ""
+        .err e => e.msg
+
+function refusal_labels(read: Labels?) -> str
+    return match read
+        .ok _  => ""
+        .err e => e.msg
+
+function refusal_of(read: {str: str}?) -> str
+    return match read
+        .ok _  => ""
+        .err e => e.msg
+
+test "the assistant's suite carries its construct classes and no traps, every number it names a task folder"
+    labels = labels_at("tests/thesis").must()
+    assert !labels.has_traps
+    assert labels.has_constructs
+    assert labels.numbers.len() >= 10
+
+    for number in labels.numbers
+        assert shell.exists("tests/thesis/" + number + "/task.md")

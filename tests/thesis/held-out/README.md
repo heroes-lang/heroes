@@ -25,7 +25,9 @@ is panel 226 (2026-10-20; `docs/panel/`, the file opening `226-`), on the author
   (its digest over prose and cases, its prose digest, its number, its case count) and the suite's
   line, by task number and never by a telling name, so a measurement names the suite it ran and
   the CI checks the opened archive against it byte for byte. `traps.txt` lists by number the tasks
-  that tempt a plausible mistake on purpose, since the results are reported stratified.
+  that tempt a plausible mistake on purpose, since the results are reported stratified, and
+  `constructs.txt` each task's construct classes by number, since they are reported per class and
+  class-weighted; `report <out> --labels tests/thesis/held-out` reads both.
 - `prediction.md`: the pre-registration, written in the freeze's commit before any model saw a
   task: the primary contrast, its three outcomes and the rule for the inconclusive one, the expected
   numbers, n, the adjudication, and the digests of the compiler, the template, the grader and the

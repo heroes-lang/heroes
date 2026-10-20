@@ -7,7 +7,7 @@
 #     heroes run tests/harness/thesis.hero -- grade <answer.hero> --task <folder/NN> [--arm ...]
 #     heroes run tests/harness/thesis.hero -- plan <folder> --model <id>... [--arm ...] [--context ...]...
 #     heroes run tests/harness/thesis.hero -- run <folder> --model <id>... --live [--max-requests n]
-#     heroes run tests/harness/thesis.hero -- report <out> [--seed n] [--primary <sentence>]
+#     heroes run tests/harness/thesis.hero -- report <out> [--seed n] [--primary <sentence>] [--labels <dir>]
 #     heroes run tests/harness/thesis.hero -- seal <folder> -o <file> [--key VAR]
 #     heroes run tests/harness/thesis.hero -- canary <folder>
 #     heroes run tests/harness/thesis.hero -- unseal --sealed <file> --into <dir> [--key VAR]
@@ -625,7 +625,7 @@ function canary_probe_word(scratch: str, asked: thesis_args.Asked) -> i64
 function report_word(scratch: str, asked: thesis_args.Asked) -> i64
     out = asked.paths[0]
 
-    match thesis_report.report(scratch: scratch, out: out, seed: asked.seed, primary: asked.primary)
+    match thesis_report.report(scratch: scratch, out: out, seed: asked.seed, primary: asked.primary, labels: asked.labels)
         .ok text =>
             if strings.contains(text: text, needle: "0 verdicts under")
                 hero_write_err(text: "thesis: no verdict under " + out + "/samples\n")
