@@ -231,6 +231,11 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
 
                             continue
                         tally.lost_in_a_row @ 0
+                        other = substituted(asked: model, answered: asked.exchange.model)
+
+                        if other != ""
+                            tally.stopped @ other
+                            return ok(tally)
                         generation @ thesis_verdict.Generation(
                             key: gkey,
                             task_sha: task.sha,
@@ -374,6 +379,35 @@ function every_arm_kept(plan: Plan, task_sha: str, model: str, context_sha: str,
         done = thesis_verdict.kept(dir: plan.out + "/samples", key: key)
 
         if done.is_err() || thesis_verdict.read_verdict(done.must()).is_err()
+            return false
+
+    return true
+
+# Why an answer is not the asked model's, or "": the model an answer names is
+# the id asked or that id dated, `-` and eight digits (`claude-haiku-4-5` is
+# answered by `claude-haiku-4-5-20251001`), and anything else is another
+# model's, which a row named for the asked one would misreport and the cap
+# would misprice; an answer that names no model cannot be told the asked
+# one's (defect 2173: `claude -p` 2.1.292 did not know `claude-haiku-5-5` and
+# answered with Haiku 4.5). The run stops there and keeps nothing of it.
+function substituted(asked: str, answered: str) -> str
+    if answered == asked
+        return ""
+    lead = asked + "-"
+
+    if strings.starts_with(text: answered, prefix: lead)
+        rest = strings.without_prefix(text: answered, prefix: lead)
+
+        if rest.len() == 8 && all_digits(rest)
+            return ""
+
+    if answered == ""
+        return "asked `" + asked + "`, and the answer names no model, so it cannot be told the asked one's: the run stops before keeping it"
+    return "asked `" + asked + "`, answered by `" + answered + "`: a row is the asked model's or none, so the run stops before keeping it"
+
+function all_digits(text: str) -> bool
+    for i in range(from: 0, to: text.len())
+        if text[i] < '0' || text[i] > '9'
             return false
 
     return true
@@ -560,6 +594,13 @@ function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_
             asked = asked_once(plan: one_plan, transport: transport, world: w, system: system, messages: messages)?
             w @ asked.world
             t.spent @ t.spent + charged(tally: t, model: generation.model, exchange: asked.exchange)?
+
+            if asked.exchange.stop != "transport_error"
+                other = substituted(asked: generation.model, answered: asked.exchange.model)
+
+                if other != ""
+                    t.stopped @ other
+                    break
             next_turn @ as_generation(key: turn_key, generation: generation, exchange: asked.exchange)
 
             if asked.exchange.stop == "transport_error"
@@ -873,7 +914,11 @@ function answer_json(text: str) -> str
 
 # The same answer with `output` tokens out, which a capped run is charged for.
 function answer_costing(text: str, output: i64) -> str
-    return "{\"id\":\"msg_t\",\"model\":\"claude-haiku-5-5\",\"content\":[{\"type\":\"text\",\"text\":" + quoted_json(text) + "}],\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":100,\"output_tokens\":" + output.to_str() + ",\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0}}"
+    return answered_json(text: text, output: output, model: "claude-haiku-5-5")
+
+# The answer as `model` names itself in it.
+function answered_json(text: str, output: i64, model: str) -> str
+    return "{\"id\":\"msg_t\",\"model\":\"" + model + "\",\"content\":[{\"type\":\"text\",\"text\":" + quoted_json(text) + "}],\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":100,\"output_tokens\":" + output.to_str() + ",\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0}}"
 
 function quoted_json(text: str) -> str
     out: [str] @= ["\""]
@@ -1163,3 +1208,39 @@ test "a capped run stops before the request whose bound would pass the cap, and 
     )
     assert refused.is_err()
     assert !shell.is_directory(scratch + "/unpriced")
+
+test "an answer is the asked model's when it names that id or that id dated, and anything else, nothing included, is another's"
+    assert substituted(asked: "claude-haiku-5-5", answered: "claude-haiku-5-5") == ""
+    assert substituted(asked: "claude-haiku-4-5", answered: "claude-haiku-4-5-20251001") == ""
+    assert substituted(asked: "claude-haiku-5-5", answered: "claude-haiku-4-5-20251001") == "asked `claude-haiku-5-5`, answered by `claude-haiku-4-5-20251001`: a row is the asked model's or none, so the run stops before keeping it"
+
+    # A longer id that opens with the asked one is a different model, not a dated one.
+    assert substituted(asked: "claude-sonnet-5", answered: "claude-sonnet-5-5") != ""
+    assert substituted(asked: "claude-sonnet-5", answered: "claude-sonnet-5-2026101") != ""
+    assert strings.contains(text: substituted(asked: "m", answered: ""), needle: "names no model")
+
+test "a run answered by another model than the one it asked stops at that answer and keeps nothing of it"
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_run: " + thesis_sandbox.unrunnable())
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    suite = suite_of(scratch: scratch, numbers: ["01", "02"]).must()
+    first = answer_json(text: thesis_grade.as_answer(read_file(path: suite + "/01/reference.hero").must()))
+    other = answered_json(
+        text: thesis_grade.as_answer(read_file(path: suite + "/02/reference.hero").must()),
+        output: 50,
+        model: "claude-haiku-4-5-20251001"
+    )
+    tally = run(
+        plan: test_plan(dir: suite, out: scratch + "/out", arms: ["strict"]),
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: [issue_wire.answer(status: 200, headers: [], body: first), issue_wire.answer(status: 200, headers: [], body: other)]),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert tally.generations == 1
+    assert tally.verdicts == 1
+    assert strings.contains(text: tally.stopped, needle: "answered by `claude-haiku-4-5-20251001`")
+    assert thesis_verdict.all_kept(scratch: scratch, dir: scratch + "/out/generations").must().len() == 1

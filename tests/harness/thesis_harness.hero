@@ -51,7 +51,9 @@
 # What the harness does not take: a token ceiling, which none of its flags
 # sets, and session persistence's refusal, `--no-session-persistence`, since
 # a later turn resumes a saved session. The model it answers with is read
-# from `modelUsage` where it names one, else the request's.
+# from `modelUsage`, and where that names none it is left unnamed, never
+# filled with the one asked: `claude -p` 2.1.292 answered a model it did not
+# know with another (defect 2173), and only the name it gives can show it.
 
 use issue_wire
 use json_fields
@@ -378,7 +380,7 @@ function spawned(scratch: str, harness: Harness, asked: Asked, resume: str, n: i
 # The child's output read: an answer in the API's shape, its session filed
 # under the history it closes, or a failure that may have been sent and paid.
 function replied(scratch: str, asked: Asked, ran: shell.Run, harness: Harness) -> issue_wire.Reply
-    match heard_of(harness: harness, ran: ran, model: asked.model)
+    match heard_of(harness: harness, ran: ran)
         .err e => return issue_wire.failed(why: e.msg, sent: true)
         .ok h =>
             turns: [Said] @= asked.said
@@ -394,14 +396,14 @@ function replied(scratch: str, asked: Asked, ran: shell.Run, harness: Harness) -
             none: {str: str} = {}
             return issue_wire.Reply(status: 200, headers: none, body: api_body(h), failure: "", sent: true)
 
-function heard_of(harness: Harness, ran: shell.Run, model: str) -> Heard?
+function heard_of(harness: Harness, ran: shell.Run) -> Heard?
     if harness.kind == "codex"
-        return heard_codex(ran: ran, model: model)
-    return heard_claude(ran: ran, model: model)
+        return heard_codex(ran: ran)
+    return heard_claude(ran: ran)
 
 # `claude -p`'s one result object read (`SDKResultMessage`): a success with
 # its answer and its session, or why not.
-function heard_claude(ran: shell.Run, model: str) -> Heard?
+function heard_claude(ran: shell.Run) -> Heard?
     doc = json_read.read_json(strings.trimmed(ran.out))
 
     if doc.is_err()
@@ -427,7 +429,7 @@ function heard_claude(ran: shell.Run, model: str) -> Heard?
     if stop == ""
         stop @ "end_turn"
     return ok(
-        Heard(text: json_fields.text_at(of: result, name: "result").default(""), session: session, model: answering(result: result, asked: model), stop: stop, input: count(of: usage, name: "input_tokens"), output: count(of: usage, name: "output_tokens"), cache_read: count(of: usage, name: "cache_read_input_tokens"), cache_write: count(of: usage, name: "cache_creation_input_tokens"))
+        Heard(text: json_fields.text_at(of: result, name: "result").default(""), session: session, model: answering(result), stop: stop, input: count(of: usage, name: "input_tokens"), output: count(of: usage, name: "output_tokens"), cache_read: count(of: usage, name: "cache_read_input_tokens"), cache_write: count(of: usage, name: "cache_creation_input_tokens"))
     )
 
 # `codex exec --json`'s events read: the thread it started, its last agent
@@ -436,7 +438,7 @@ function heard_claude(ran: shell.Run, model: str) -> Heard?
 # 24,448 cached of 24,763), so the API's uncached input is the one less the
 # other; its `output_tokens` is kept as codex counts it, whether that holds the
 # `reasoning_output_tokens` beside it being unread.
-function heard_codex(ran: shell.Run, model: str) -> Heard?
+function heard_codex(ran: shell.Run) -> Heard?
     session: str @= ""
     text: str @= ""
     usage: json_read.Json @= .null_value
@@ -483,7 +485,7 @@ function heard_codex(ran: shell.Run, model: str) -> Heard?
     if uncached < 0
         uncached @ 0
     return ok(
-        Heard(text: text, session: session, model: model, stop: "end_turn", input: uncached, output: count(of: usage, name: "output_tokens"), cache_read: cached, cache_write: 0)
+        Heard(text: text, session: session, model: "", stop: "end_turn", input: uncached, output: count(of: usage, name: "output_tokens"), cache_read: cached, cache_write: 0)
     )
 
 # What a failure event says: its `message`, else its error's, else its kind.
@@ -556,17 +558,17 @@ function api_body(h: Heard) -> str
 function count(of: json_read.Json, name: str) -> i64
     return json_fields.whole_at(of: of, name: name).default(0)
 
-# The model that answered: the first `modelUsage` names, else the one asked.
-function answering(result: json_read.Json, asked: str) -> str
+# The model that answered: the first `modelUsage` names, else none (defect 2173).
+function answering(result: json_read.Json) -> str
     match json_fields.field(of: result, name: "modelUsage")
         .ok held =>
             match held
                 .fields f =>
                     if f.names.len() > 0
                         return f.names[0]
-                    return asked
-                .null_value | .truth _ | .number _ | .text _ | .items _ => return asked
-        .err _ => return asked
+                    return ""
+                .null_value | .truth _ | .number _ | .text _ | .items _ => return ""
+        .err _ => return ""
 
 test "the harness's words: print mode, nothing of the machine, no tool, one JSON result, and a later turn's session forked"
     first = claude_words(program: "claude", model: "claude-haiku-5-5", effort: "", resume: "")
@@ -712,26 +714,25 @@ test "codex's events are read to their thread, last message and usage, its uncac
         "{\"type\":\"item.completed\",\"item\":{\"id\":\"item_3\",\"type\":\"agent_message\",\"text\":\"Repo contains docs, sdk, and examples directories.\"}}"
         "{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":24763,\"cached_input_tokens\":24448,\"output_tokens\":122,\"reasoning_output_tokens\":0}}"
     ]
-    heard = heard_codex(
-        ran: shell.Run(code: 0, out: events.join("\n") + "\n", err: "", started: true, why: 0),
-        model: "gpt-5.5"
-    ).must()
+    heard = heard_codex(ran: shell.Run(code: 0, out: events.join("\n") + "\n", err: "", started: true, why: 0)).must()
     assert heard.session == "0199a213-81c0-7800-8aa1-bbab2a035a53"
+
+    # codex's events name no model, so none is named for it (defect 2173).
+    assert heard.model == ""
     assert heard.text == "Repo contains docs, sdk, and examples directories."
     assert heard.input == 315
     assert heard.cache_read == 24448
     assert heard.output == 122
     failed = heard_codex(
-        ran: shell.Run(code: 1, out: "{\"type\":\"thread.started\",\"thread_id\":\"t\"}\n{\"type\":\"turn.failed\",\"error\":{\"message\":\"usage limit reached\"}}\n", err: "", started: true, why: 0),
-        model: "m"
+        ran: shell.Run(code: 1, out: "{\"type\":\"thread.started\",\"thread_id\":\"t\"}\n{\"type\":\"turn.failed\",\"error\":{\"message\":\"usage limit reached\"}}\n", err: "", started: true, why: 0)
     )
     assert strings.contains(text: refusal_said(failed), needle: "usage limit reached")
     assert strings.contains(
-        text: refusal_said(heard_codex(ran: shell.Run(code: 0, out: "not json\n", err: "", started: true, why: 0), model: "m")),
+        text: refusal_said(heard_codex(ran: shell.Run(code: 0, out: "not json\n", err: "", started: true, why: 0))),
         needle: "no JSON"
     )
     assert strings.contains(
-        text: refusal_said(heard_codex(ran: shell.Run(code: 0, out: "{\"type\":\"turn.started\"}\n", err: "", started: true, why: 0), model: "m")),
+        text: refusal_said(heard_codex(ran: shell.Run(code: 0, out: "{\"type\":\"turn.started\"}\n", err: "", started: true, why: 0))),
         needle: "name no thread"
     )
 
