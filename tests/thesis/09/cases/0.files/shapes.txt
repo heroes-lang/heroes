@@ -1,0 +1,4 @@
+rect 2 3
+tri 3 3
+square 4
+tri 1 1

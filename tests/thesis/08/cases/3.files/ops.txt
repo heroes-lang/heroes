@@ -1,0 +1,2 @@
+open a 1
+deposit b 1

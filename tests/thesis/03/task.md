@@ -6,7 +6,8 @@ closed by a bracket of the same kind, in the right order, and nothing is left op
 
 If the brackets are balanced, print the greatest nesting depth reached, as a number, and exit with
 status 0; a string with no bracket prints `0`. If they are not balanced, print `unbalanced` and exit
-with status 1.
+with status 1. If the program does not receive exactly one argument, print nothing and exit with
+status 2.
 
 Example. The argument `a(b[c]{d})` prints `2`; the argument `(]` prints `unbalanced`.
 

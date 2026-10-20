@@ -1,0 +1,2 @@
+open a 5
+transfer a a 1

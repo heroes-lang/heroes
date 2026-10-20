@@ -1,0 +1,4 @@
+open a 10
+open b 0
+transfer a b 10
+withdraw a 1

@@ -70,6 +70,11 @@ function added(@totals: {str: i64}, line: str) -> bool
     if space <= 0
         return false
     name = line.slice(from: 0, to: space)
+
+    for i in range(from: 0, to: name.len())
+        if !letter(name[i])
+            return false
+
     amount = parsed(line.slice(from: space + 1, to: line.len()))
 
     match amount
@@ -77,3 +82,7 @@ function added(@totals: {str: i64}, line: str) -> bool
         .err _ => return false
 
     return true
+
+# Whether `b` is an ASCII letter, the one class a name is made of.
+function letter(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'

@@ -1,0 +1,2 @@
+diamond 2 2
+square 1

@@ -1,0 +1,3 @@
+push 4
+print
+PUSH 5

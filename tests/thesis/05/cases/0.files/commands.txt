@@ -1,0 +1,7 @@
+push 10
+push 3
+sub
+print
+push 7
+mul
+print

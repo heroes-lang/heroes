@@ -1,0 +1,5 @@
+open ann 100
+open bob 5
+transfer ann bob 30
+withdraw bob 50
+deposit bob 1
