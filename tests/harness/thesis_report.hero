@@ -41,6 +41,7 @@ use json_fields
 use json_read
 use shell
 use strings
+use thesis_json
 use thesis_stats
 use thesis_strata
 use thesis_verdict
@@ -84,9 +85,106 @@ function report(scratch: str, out: str, seed: i64, primary: str, labels: str) ->
         )
         .err e => strata @ ["", "## The strata", "", e.msg + "; the strata are not written."]
 
+    for line in deviation_lines(out: out, dir: dir)
+        strata @ strata.push(line)
+
     return ok(
         rendered(verdicts: verdicts, seed: seed, primary: primary, through: asked_through(out)) + strata.join("\n") + "\n"
     )
+
+# The fields of a run's provenance that are its protocol, each of which a
+# run must hold as the pre-registration did; its date, its commit and the
+# compiler's path move by construction and are not among them.
+constant PROTOCOL: [str]
+    [
+        "template_sha"
+        "layout"
+        "layout_sha"
+        "dialect"
+        "transport"
+        "harness"
+        "base"
+        "suite_sha"
+        "suite_label"
+        "contexts"
+        "models"
+        "effort"
+        "max_tokens"
+        "arms"
+        "samples"
+        "turns"
+        "case_seconds"
+        "case_bytes"
+        "sources"
+        "instrument"
+    ]
+
+# The run set against the pre-registration beside the suite: the block of
+# `prediction.md` the `preregister` word printed, field by protocol field
+# against `<out>/provenance.json`, a row for every field that differs.
+function deviation_lines(out: str, dir: str) -> [str]
+    lines: [str] @= ["", "## Deviations from the pre-registration", ""]
+    held = read_file(path: dir + "/prediction.md")
+
+    if held.is_err()
+        return lines.push("No `prediction.md` beside " + dir + ", so the run is set against no pre-registration.")
+    block = registered_block(held.must())
+
+    if block == ""
+        return lines.push(
+            "`prediction.md` beside " + dir + " holds no `preregistered` block, the `preregister` word's output, so nothing is set against the run."
+        )
+    registered = json_read.read_json(block)
+    ran = read_file(path: out + "/provenance.json")
+
+    if registered.is_err() || ran.is_err()
+        return lines.push(
+            "The pre-registration's block or the run's `provenance.json` does not read as JSON, so nothing is set against the run."
+        )
+    run_doc = json_read.read_json(ran.must())
+
+    if run_doc.is_err()
+        return lines.push("The run's `provenance.json` does not read as JSON, so nothing is set against the run.")
+    rows: [str] @= []
+
+    for name in PROTOCOL
+        was = field_written(of: registered.must(), name: name)
+        is_now = field_written(of: run_doc.must(), name: name)
+
+        if was != is_now
+            rows @ rows.push("| `" + name + "` | " + was + " | " + is_now + " |")
+
+    if rows.len() == 0
+        return lines.push(
+            "None: the run holds every one of the " + PROTOCOL.len().to_str() + " protocol fields as the pre-registration did."
+        )
+    lines @ lines.push("| field | pre-registered | ran |").push("|---|---|---|")
+
+    for row in rows
+        lines @ lines.push(row)
+
+    return lines
+
+# The block between a line `` ```preregistered `` and the next fence, or "".
+function registered_block(text: str) -> str
+    kept: [str] @= []
+    inside: bool @= false
+
+    for line in strings.lines(text: text)
+        if !inside && strings.trimmed(text: line) == "```preregistered"
+            inside @ true
+        else if inside && strings.trimmed(text: line) == "```"
+            return kept.join("\n")
+        else if inside
+            kept @ kept.push(line)
+
+    return ""
+
+# A field's JSON as written, `(absent)` where the document holds none.
+function field_written(of: json_read.Json, name: str) -> str
+    match json_fields.field(of: of, name: name)
+        .ok held => return thesis_json.written(held)
+        .err _   => return "(absent)"
 
 # The suite folder the run's provenance names, "" where it names none.
 function suite_of(out: str) -> str
@@ -860,3 +958,36 @@ function sampled(task: str, arm: str, sample: i64, green: bool) -> thesis_verdic
         green_turn: turn,
         converged: green
     )
+
+test "a run is set against its pre-registration field by protocol field, and a missing one or a missing block is said"
+    scratch = shell.own_scratch()
+    assert strings.contains(
+        text: deviation_lines(out: scratch, dir: scratch).join("\n"),
+        needle: "No `prediction.md` beside"
+    )
+    write_file(path: scratch + "/prediction.md", text: "# The prediction\n\nno block here\n").must()
+    assert strings.contains(
+        text: deviation_lines(out: scratch, dir: scratch).join("\n"),
+        needle: "holds no `preregistered` block"
+    )
+    registered = "{\"date\":\"2026-10-20\",\"head\":\"aaa\",\"samples\":3,\"models\":[\"claude-sonnet-5-5\"],\"instrument\":\"i1\"}"
+    write_file(
+        path: scratch + "/prediction.md",
+        text: "# The prediction\n\n```preregistered\n" + registered + "\n```\n"
+    ).must()
+    write_file(
+        path: scratch + "/provenance.json",
+        text: "{\"date\":\"2026-11-02\",\"head\":\"bbb\",\"samples\":3,\"models\":[\"claude-sonnet-5-5\"],\"instrument\":\"i1\"}"
+    ).must()
+    same = deviation_lines(out: scratch, dir: scratch).join("\n")
+    assert strings.contains(text: same, needle: "None: the run holds every one of the 20 protocol fields")
+    write_file(
+        path: scratch + "/provenance.json",
+        text: "{\"date\":\"2026-11-02\",\"head\":\"bbb\",\"samples\":1,\"models\":[\"claude-sonnet-5-5\"],\"instrument\":\"i2\",\"turns\":5}"
+    ).must()
+    moved = deviation_lines(out: scratch, dir: scratch).join("\n")
+    assert strings.contains(text: moved, needle: "| `samples` | 3 | 1 |")
+    assert strings.contains(text: moved, needle: "| `instrument` | \"i1\" | \"i2\" |")
+    assert strings.contains(text: moved, needle: "| `turns` | (absent) | 5 |")
+    assert !strings.contains(text: moved, needle: "`date`")
+    assert !strings.contains(text: moved, needle: "`head`")

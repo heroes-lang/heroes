@@ -209,6 +209,27 @@ function provenance(scratch: str, compiler: str) -> Provenance?
         Provenance(date: strings.trimmed(text: today.out), head: strings.trimmed(text: head.out), dirty: strings.trimmed(text: status.out) != "", compiler: compiler, sources: sources)
     )
 
+# The instrument's own digest: sha256 over the name, the length and the bytes
+# of every module that grades, runs and reports, `tests/harness/thesis*.hero`,
+# and of `expectation.hero`, the comparison a case is judged by, in name
+# order. A pre-registration records it, so a grader or a statistic changed
+# after the freeze reads as a deviation (`tests/thesis/held-out/README.md`);
+# the helpers the whole net shares, `shell` and `strings` among them, are not
+# in it, or every edit of the net would read as one.
+function instrument_digest(scratch: str, dir: str) -> str?
+    parts: [str] @= []
+
+    for path in shell.list_entries(scratch: scratch, dir: dir)?
+        name = strings.base_name(path: path)
+
+        if strings.starts_with(text: name, prefix: "thesis") && strings.ends_with(text: name, suffix: ".hero") || name == "expectation.hero"
+            text = read_file(path: path)?
+            parts @ parts.push(name + "\n" + text.len().to_str() + "\n" + text)
+
+    if parts.len() == 0
+        return fail(code: "no_instrument", msg: dir + " holds no `thesis*.hero` and no `expectation.hero`")
+    return ok(thesis_sha256.of(parts.join("")))
+
 # A token estimate for a text with no model asked: its bytes over four, said
 # as an estimate by every caller that prints it.
 function estimated_tokens(text: str) -> i64
@@ -313,3 +334,23 @@ test "a run's provenance is what date, git and the compiler say"
     assert got.sources.len() == 16
     assert got.compiler == compiler
     assert estimated_tokens("abcdefgh") == 2
+
+test "the instrument's digest is the same twice, moves with a thesis module or the expectation's, and with no other file"
+    scratch = shell.own_scratch()
+    write_file(path: scratch + "/thesis_grade.hero", text: "a\n").must()
+    write_file(path: scratch + "/expectation.hero", text: "b\n").must()
+    write_file(path: scratch + "/suite_records.hero", text: "c\n").must()
+    first = instrument_digest(scratch: scratch, dir: scratch).must()
+    assert first.len() == 64
+    assert instrument_digest(scratch: scratch, dir: scratch).must() == first
+    write_file(path: scratch + "/suite_records.hero", text: "c changed\n").must()
+    assert instrument_digest(scratch: scratch, dir: scratch).must() == first
+    write_file(path: scratch + "/thesis_grade.hero", text: "a changed\n").must()
+    graded = instrument_digest(scratch: scratch, dir: scratch).must()
+    assert graded != first
+    write_file(path: scratch + "/expectation.hero", text: "b changed\n").must()
+    assert instrument_digest(scratch: scratch, dir: scratch).must() != graded
+    empty = scratch + "/empty"
+    shell.mkdir_all(empty).must()
+    assert instrument_digest(scratch: scratch, dir: empty).is_err()
+    assert instrument_digest(scratch: scratch, dir: "tests/harness").must().len() == 64

@@ -49,6 +49,9 @@ record Plan
     # `claude --version` said of it, "" for the API.
     transport: str
     harness: str
+    # `thesis_prompt.instrument_digest` of the modules the run grades and
+    # reports with, "" where a dry plan could not ask.
+    instrument: str
     base: str
     out: str
     live: bool
@@ -121,7 +124,7 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
 
     if plan.live
         shell.mkdir_all(plan.out)?
-        write_file(path: plan.out + "/provenance.json", text: provenance_json(plan: plan, suite: suite, template: template, layout_sha: layout_sha, contexts: contexts))?
+        write_file(path: plan.out + "/provenance.json", text: planned_provenance(plan: plan, scratch: scratch)?)?
 
         # The tasks as they ran, digest and number, which the report ties
         # each verdict to its stratum by (`thesis_strata.numbers_of`).
@@ -557,6 +560,21 @@ function feedback(template: thesis_prompt.Template, outcome: str, message: str) 
 # `<out>/provenance.json`: what the run was, written before its first request
 # (design.md Part 11: *every measurement records provenance*; panel 226's R12,
 # the template's sha and the layout's apart).
+# The provenance a run of `plan` writes into `<out>/provenance.json`, which
+# the `preregister` word prints for the freeze's `prediction.md`: one
+# function, so the report sets the two side by side byte for byte.
+function planned_provenance(plan: Plan, scratch: str) -> str?
+    suite = thesis_tasks.read_suite(scratch: scratch, dir: plan.suite_dir)?
+    template = thesis_prompt.template_at(path: thesis_prompt.TEMPLATE)?
+    contexts: [thesis_prompt.Context] @= []
+
+    for name in plan.contexts
+        contexts @ contexts.push(thesis_prompt.context_of(name: name)?)
+
+    return ok(
+        provenance_json(plan: plan, suite: suite, template: template, layout_sha: thesis_answer.layout_sha(dialect: plan.dialect, layout: plan.layout), contexts: contexts)
+    )
+
 function provenance_json(plan: Plan, suite: thesis_tasks.Suite, template: thesis_prompt.Template, layout_sha: str, contexts: [thesis_prompt.Context]) -> str
     named: [str] @= []
 
@@ -566,7 +584,7 @@ function provenance_json(plan: Plan, suite: thesis_tasks.Suite, template: thesis
         )
 
     return thesis_json.object(
-        [thesis_json.number(key: "schema", value: 1), thesis_json.member(key: "date", value: plan.date), thesis_json.member(key: "head", value: plan.head), thesis_json.member(key: "compiler", value: plan.compiler), thesis_json.member(key: "sources", value: plan.sources), thesis_json.member(key: "template", value: template.path), thesis_json.member(key: "template_sha", value: template.sha), thesis_json.member(key: "layout", value: plan.layout), thesis_json.member(key: "layout_sha", value: layout_sha), thesis_json.member(key: "dialect", value: plan.dialect), thesis_json.member(key: "transport", value: plan.transport), thesis_json.member(key: "harness", value: plan.harness), thesis_json.member(key: "base", value: plan.base), thesis_json.member(key: "suite", value: plan.suite_dir), thesis_json.member(key: "suite_sha", value: suite.sha), thesis_json.member(key: "suite_label", value: suite.label), thesis_json.raw(key: "contexts", json: thesis_json.list(named)), thesis_json.strings(key: "models", items: plan.models), thesis_json.member(key: "effort", value: plan.effort), thesis_json.number(key: "max_tokens", value: plan.max_tokens), thesis_json.strings(key: "arms", items: plan.arms), thesis_json.number(key: "samples", value: plan.samples), thesis_json.number(key: "turns", value: plan.turns), thesis_json.number(key: "case_seconds", value: plan.seconds), thesis_json.number(key: "case_bytes", value: plan.bytes)]
+        [thesis_json.number(key: "schema", value: 1), thesis_json.member(key: "date", value: plan.date), thesis_json.member(key: "head", value: plan.head), thesis_json.member(key: "compiler", value: plan.compiler), thesis_json.member(key: "sources", value: plan.sources), thesis_json.member(key: "template", value: template.path), thesis_json.member(key: "template_sha", value: template.sha), thesis_json.member(key: "layout", value: plan.layout), thesis_json.member(key: "layout_sha", value: layout_sha), thesis_json.member(key: "dialect", value: plan.dialect), thesis_json.member(key: "transport", value: plan.transport), thesis_json.member(key: "harness", value: plan.harness), thesis_json.member(key: "instrument", value: plan.instrument), thesis_json.member(key: "base", value: plan.base), thesis_json.member(key: "suite", value: plan.suite_dir), thesis_json.member(key: "suite_sha", value: suite.sha), thesis_json.member(key: "suite_label", value: suite.label), thesis_json.raw(key: "contexts", json: thesis_json.list(named)), thesis_json.strings(key: "models", items: plan.models), thesis_json.member(key: "effort", value: plan.effort), thesis_json.number(key: "max_tokens", value: plan.max_tokens), thesis_json.strings(key: "arms", items: plan.arms), thesis_json.number(key: "samples", value: plan.samples), thesis_json.number(key: "turns", value: plan.turns), thesis_json.number(key: "case_seconds", value: plan.seconds), thesis_json.number(key: "case_bytes", value: plan.bytes)]
     )
 
 test "the feedback is the template's block for the bucket, the compiler's words on a refusal, the example's where it compiled and failed it, and nothing past the example"
@@ -610,6 +628,7 @@ test "a dry run over the assistant's suite counts one request per generation and
         dialect: "anthropic",
         transport: "api",
         harness: "",
+        instrument: "",
         base: "https://api.anthropic.com",
         out: scratch + "/out",
         live: false,
@@ -663,6 +682,7 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
         dialect: "anthropic",
         transport: "api",
         harness: "",
+        instrument: "",
         base: "https://api.example",
         out: scratch + "/out",
         live: true,
@@ -684,6 +704,9 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
     assert tally.generations == 3
     assert tally.verdicts == 3
     assert tally.requests == 4
+
+    # The provenance written is the one `preregister` prints for the plan.
+    assert read_file(path: scratch + "/out/provenance.json").must() == planned_provenance(plan: one, scratch: scratch).must()
 
     # The tasks as they ran, one line each and the suite's, beside the verdicts.
     listed = read_file(path: scratch + "/out/tasks.txt").must()
@@ -729,6 +752,7 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
         dialect: "anthropic",
         transport: "api",
         harness: "",
+        instrument: "",
         base: "https://api.example",
         out: scratch + "/capped",
         live: true,
@@ -789,6 +813,7 @@ test "a run's provenance names the template and the layout apart, the suite, the
         dialect: "anthropic",
         transport: "api",
         harness: "",
+        instrument: "",
         base: "https://api.anthropic.com",
         out: "unused",
         live: true,
@@ -836,6 +861,7 @@ function test_plan(dir: str, out: str, arms: [str]) -> Plan
         dialect: "anthropic",
         transport: "api",
         harness: "",
+        instrument: "",
         base: "https://api.example",
         out: out,
         live: true,

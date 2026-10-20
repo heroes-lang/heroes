@@ -31,7 +31,10 @@ is panel 226 (2026-10-20; `docs/panel/`, the file opening `226-`), on the author
 - `prediction.md`: the pre-registration, written in the freeze's commit before any model saw a
   task: the primary contrast, its three outcomes and the rule for the inconclusive one, the expected
   numbers, n, the adjudication, and the digests of the compiler, the template, the grader and the
-  statistics code the run will use.
+  statistics code the run will use. The digests and the run's protocol stand in one fenced
+  `preregistered` block, what `preregister <folder>` prints for the run's flags, which `report`
+  sets against each run's `provenance.json` field by field, every difference a row of its
+  deviations.
 - `runs/`: the transcripts of the held-out runs, each sealed under its own key, since a transcript
   holds the task's prose.
 

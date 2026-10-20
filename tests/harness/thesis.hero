@@ -7,6 +7,7 @@
 #     heroes run tests/harness/thesis.hero -- grade <answer.hero> --task <folder/NN> [--arm ...]
 #     heroes run tests/harness/thesis.hero -- plan <folder> --model <id>... [--arm ...] [--context ...]...
 #     heroes run tests/harness/thesis.hero -- run <folder> --model <id>... --live [--max-requests n]
+#     heroes run tests/harness/thesis.hero -- preregister <folder> --model <id>... [plan's flags]
 #     heroes run tests/harness/thesis.hero -- report <out> [--seed n] [--primary <sentence>] [--labels <dir>]
 #     heroes run tests/harness/thesis.hero -- seal <folder> -o <file> [--key VAR]
 #     heroes run tests/harness/thesis.hero -- canary <folder>
@@ -91,6 +92,7 @@ function main()
         "grade"        => grade_word(scratch: scratch, asked: asked)
         "plan"         => plan_word(scratch: scratch, asked: asked)
         "run"          => plan_word(scratch: scratch, asked: asked)
+        "preregister"  => plan_word(scratch: scratch, asked: asked)
         "report"       => report_word(scratch: scratch, asked: asked)
         "seal"         => seal_word(scratch: scratch, asked: asked)
         "canary"       => canary_word(scratch: scratch, asked: asked)
@@ -341,6 +343,16 @@ function plan_word(scratch: str, asked: thesis_args.Asked) -> i64
             hero_write_err(text: "thesis: " + e.msg + "\n")
             return 2
 
+    # `preregister`: the provenance a run of these flags would write, in the
+    # block the freeze's `prediction.md` holds, and nothing run.
+    if asked.word == "preregister"
+        match thesis_run.planned_provenance(plan: plan, scratch: scratch)
+            .ok text =>
+                print("```preregistered\n" + text + "\n```")
+                return 0
+            .err e =>
+                hero_write_err(text: "thesis: " + e.msg + "\n")
+                return 2
     transport: issue_wire.Transport @= issue_wire.scripted()
 
     world_scratch: str @= scratch
@@ -430,7 +442,7 @@ function plan_of(asked: thesis_args.Asked, suite_sha: str, compiler: str, scratc
         if asked.transport != "api"
             out @ out + "-" + asked.transport
     return ok(
-        thesis_run.Plan(suite_dir: asked.paths[0], models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, transport: asked.transport, harness: harness, base: base, out: out, live: asked.live, max_requests: asked.max_requests, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
+        thesis_run.Plan(suite_dir: asked.paths[0], models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, transport: asked.transport, harness: harness, instrument: thesis_prompt.instrument_digest(scratch: scratch, dir: "tests/harness").default(""), base: base, out: out, live: asked.live, max_requests: asked.max_requests, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
     )
 
 # A plan with nothing in it, the cell `plan_word` fills from `plan_of`.
@@ -449,6 +461,7 @@ function blank_plan() -> thesis_run.Plan
         dialect: "",
         transport: "",
         harness: "",
+        instrument: "",
         base: "",
         out: "",
         live: false,

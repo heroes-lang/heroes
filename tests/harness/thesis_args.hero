@@ -18,11 +18,11 @@
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live [--max-requests n] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
+    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live [--max-requests n] | preregister <folder> --model <id>... [plan's flags] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
 
 # The words of this program.
 constant WORDS: [str]
-    ["tasks", "dry", "grade", "plan", "run", "report", "seal", "canary", "unseal", "canary-probe"]
+    ["tasks", "dry", "grade", "plan", "run", "preregister", "report", "seal", "canary", "unseal", "canary-probe"]
 
 # The labels a suite may carry: the assistant's tasks, in clear, which the
 # instrument is tried on; the author's, held out (design.md Part 11).
@@ -84,7 +84,7 @@ function among(word: str, words: [str]) -> bool
 
 # Whether `flag` is one `word` takes with a value.
 function valued(flag: str, word: str) -> bool
-    running = word == "plan" || word == "run"
+    running = word == "plan" || word == "run" || word == "preregister"
 
     if flag == "--compiler"
         return true
@@ -167,7 +167,7 @@ function parsed(word: str, words: [str]) -> Asked
     if (word == "tasks" || word == "dry") && a.paths.len() == 1 && a.sealed != ""
         return wrong(word: word, why: "`" + word + "` takes a folder or `--sealed <file>`, not both")
 
-    if (word == "plan" || word == "run" || word == "canary-probe") && a.paths.len() != 1
+    if (word == "plan" || word == "run" || word == "preregister" || word == "canary-probe") && a.paths.len() != 1
         return wrong(word: word, why: "`" + word + "` takes one folder")
 
     if word == "seal" && (a.paths.len() != 1 || a.out == "")
@@ -182,7 +182,7 @@ function parsed(word: str, words: [str]) -> Asked
     if word == "grade" && (a.paths.len() != 1 || a.task == "")
         return wrong(word: word, why: "`grade` takes one answer file and `--task <folder/NN>`")
 
-    if (word == "plan" || word == "run" || word == "canary-probe") && a.models.len() == 0
+    if (word == "plan" || word == "run" || word == "preregister" || word == "canary-probe") && a.models.len() == 0
         return wrong(word: word, why: "`" + word + "` takes at least one `--model <id>`")
 
     if a.transport != "api" && a.dialect != "anthropic"
@@ -508,4 +508,20 @@ test "`report` takes the folder its labels stand in, and no other word does"
     assert strings.contains(
         text: parsed(word: "run", words: ["tests/thesis", "--model", "m", "--labels", "x"]).wrong,
         needle: "`--labels` is no flag of `run`"
+    )
+
+test "`preregister` takes a plan's flags, one folder and a model, and never `--live`"
+    asked = parsed(
+        word: "preregister",
+        words: ["tests/thesis", "--model", "claude-sonnet-5-5", "--samples", "3", "--context", "spec"]
+    )
+    assert asked.wrong == ""
+    assert asked.samples == 3
+    assert strings.contains(
+        text: parsed(word: "preregister", words: ["tests/thesis"]).wrong,
+        needle: "at least one `--model <id>`"
+    )
+    assert strings.contains(
+        text: parsed(word: "preregister", words: ["tests/thesis", "--model", "m", "--live"]).wrong,
+        needle: "`--live` is no flag of `preregister`"
     )
