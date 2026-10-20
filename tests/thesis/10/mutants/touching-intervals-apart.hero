@@ -1,0 +1,91 @@
+# mistake: intervals that only touch are left apart
+# strict: compiled_wrong case 0
+# control: compiled_wrong case 0
+record Span
+    low: i64
+    high: i64
+
+function main()
+    given = args()
+
+    if given.len() != 1
+        exit(code: 2)
+    text = read_file(path: given[0])
+
+    if text.is_err()
+        exit(code: 2)
+    lines = cut(text.must(), at: '\n')
+    last: i64 @= lines.len()
+
+    if lines[last - 1] == ""
+        last @ last - 1
+    widest: {i64: i64} @= {}
+
+    for i in range(from: 0, to: last)
+        match parsed(cut(lines[i], at: ' '))
+            .ok span =>
+                if span.high >= widest[span.low].default(span.high)
+                    widest[span.low] @ span.high
+            .err _ =>
+                print("bad line ", i + 1)
+                exit(code: 1)
+
+    merged: [Span] @= []
+
+    for low in sort(keys(widest))
+        high = widest[low].must()
+        n = merged.len()
+
+        if n > 0 && low <= merged[n - 1].high
+            if high > merged[n - 1].high
+                merged[n - 1] @ Span(low: merged[n - 1].low, high: high)
+        else
+            merged @ merged.push(Span(low: low, high: high))
+
+    for line in merged.map(shown)
+        print(line)
+
+function shown(span: Span) -> str
+    return span.low.to_str() + " " + span.high.to_str()
+
+function parsed(words: [str]) -> Span?
+    if words.len() != 2
+        return fail(code: "bad_line", msg: "two numbers")
+    low = whole(words[0])?
+    high = whole(words[1])?
+
+    if low > high
+        return fail(code: "bad_line", msg: "A greater than B")
+    return ok(Span(low: low, high: high))
+
+# An optional `-` and one or more decimal digits.
+function whole(text: str) -> i64?
+    sign: i64 @= 1
+    at: i64 @= 0
+
+    if text.len() > 0 && text[0] == '-'
+        sign @ -1
+        at @ 1
+
+    if at == text.len()
+        return fail(code: "bad_number", msg: "no digits")
+    value: i64 @= 0
+
+    for i in range(from: at, to: text.len())
+        if text[i] < '0' || text[i] > '9'
+            return fail(code: "bad_number", msg: "not a digit")
+        value @ value * 10 + to_i64(text[i] - '0').must() * sign
+
+    return ok(value)
+
+# The pieces between the bytes `at`, an empty one where two meet.
+function cut(text: str, at: u8) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == at
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+
+    return out.push(text.slice(from: start, to: text.len()))

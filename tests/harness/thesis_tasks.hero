@@ -10,7 +10,9 @@
 # `expectation.hero` (`!exit: <code>`, `!panic: <text>`, or neither for exit
 # 0 with a silent stderr). Case `0` is the task's visible example, the one
 # the prose shows. A `reference.hero` beside them is the suite writer's own
-# solution, which `dry` grades and no other word reads.
+# solution, and `mutants/` a program for each mistake the task tempts
+# (`thesis_mutants.hero`); `dry` grades both and no other word reads them, so
+# no digest covers them.
 #
 # Every task has a digest, sha256 over its prose and its cases in order, and
 # a prose digest over `task.md` alone, what the model sees; the suite's digest
@@ -97,6 +99,21 @@ function read_suite(scratch: str, dir: str) -> Suite?
     return ok(
         Suite(dir: dir, label: label, canary: canary, tasks: tasks, sha: thesis_sha256.of(shas.join("\n") + "\n"))
     )
+
+# The lines of a program that hold code: a blank line and a line whose first
+# character past its indentation is `#` are not counted, the blank lines being
+# the formatter's and the comments the writer's (`docs/metrics/tasks.md`'s
+# 25 to 80 lines of a reference).
+function code_lines(text: str) -> i64
+    count: i64 @= 0
+
+    for line in strings.lines(text: text)
+        kept = strings.trimmed(text: line)
+
+        if kept != "" && !strings.starts_with(text: kept, prefix: "#")
+            count @ count + 1
+
+    return count
 
 function all_digits(text: str) -> bool
     if text.len() == 0
@@ -223,6 +240,11 @@ test "the assistant's suite in the tree reads whole, and its digests are stable"
     again = read_suite(scratch: scratch, dir: "tests/thesis").must()
     assert again.sha == suite.sha
     assert strings.lines(text: told(suite)).len() == suite.tasks.len() + 1
+
+test "a reference's lines of code leave out blank lines and comments, an indented one too"
+    assert code_lines("") == 0
+    assert code_lines("# Task 1\n\nfunction main()\n    # why\n    print(1)  # said\n\n") == 2
+    assert code_lines("function main()\n    print(\"#\")\n") == 2
 
 test "a case's arguments are read one a line, `{dir}` left for the grader, and an empty file is no argument"
     scratch = shell.own_scratch()

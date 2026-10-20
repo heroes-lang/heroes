@@ -51,6 +51,9 @@ record Graded
     message: str
     passed: i64
     total: i64
+    # The case the grading stopped at, the first in order the program
+    # failed, or "" where it stopped before the cases or passed them all.
+    at_case: str
 
 # The program a model's answer holds, by the rule above.
 function extracted(answer: str) -> str?
@@ -132,13 +135,15 @@ function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis
 
     if program.is_err()
         return match program
-            .ok _  => fail(code: "unreachable", msg: "an error has no program")
-            .err e => ok(Graded(outcome: e.code, codes: [], message: e.msg, passed: 0, total: task.cases.len()))
+            .ok _ => fail(code: "unreachable", msg: "an error has no program")
+            .err e => ok(
+                Graded(outcome: e.code, codes: [], message: e.msg, passed: 0, total: task.cases.len(), at_case: "")
+            )
     text = program.must()
 
     if binds_c(text)
         return ok(
-            Graded(outcome: "refused_extern", codes: [], message: "the program binds C with `extern`, which the grader never runs", passed: 0, total: task.cases.len())
+            Graded(outcome: "refused_extern", codes: [], message: "the program binds C with `extern`, which the grader never runs", passed: 0, total: task.cases.len(), at_case: "")
         )
 
     path = scratch + "/answer.hero"
@@ -151,7 +156,7 @@ function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis
     if checked.code != 0
         told = shell.run(scratch: scratch, program: compiler, words: check_words(compiler: compiler, arm: arm, json: false).push(path))?
         return ok(
-            Graded(outcome: "compile_error", codes: codes_of(checked.err), message: told.err, passed: 0, total: task.cases.len())
+            Graded(outcome: "compile_error", codes: codes_of(checked.err), message: told.err, passed: 0, total: task.cases.len(), at_case: "")
         )
 
     # The sandbox names its paths absolutely, so the binary and every case's
@@ -162,8 +167,12 @@ function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis
 
     if built.code != 0
         if strings.contains(text: built.err, needle: "no binary:") && strings.contains(text: built.err, needle: "hole")
-            return ok(Graded(outcome: "hole", codes: [], message: built.err, passed: 0, total: task.cases.len()))
-        return ok(Graded(outcome: "build_failed", codes: [], message: built.err, passed: 0, total: task.cases.len()))
+            return ok(
+                Graded(outcome: "hole", codes: [], message: built.err, passed: 0, total: task.cases.len(), at_case: "")
+            )
+        return ok(
+            Graded(outcome: "build_failed", codes: [], message: built.err, passed: 0, total: task.cases.len(), at_case: "")
+        )
 
     sandbox = thesis_sandbox.prepared(scratch: here, binary: binary)?
     passed: i64 @= 0
@@ -173,11 +182,13 @@ function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis
 
         if verdict.outcome != "cases_pass"
             return ok(
-                Graded(outcome: verdict.outcome, codes: [], message: "case " + one.name + ": " + verdict.message, passed: passed, total: task.cases.len())
+                Graded(outcome: verdict.outcome, codes: [], message: "case " + one.name + ": " + verdict.message, passed: passed, total: task.cases.len(), at_case: one.name)
             )
         passed @ passed + 1
 
-    return ok(Graded(outcome: "cases_pass", codes: [], message: "", passed: passed, total: task.cases.len()))
+    return ok(
+        Graded(outcome: "cases_pass", codes: [], message: "", passed: passed, total: task.cases.len(), at_case: "")
+    )
 
 # The codes a `check --json` answer names, sorted, read from stderr's first
 # `{` as `selfhost/mutate/judged.hero` reads it.
@@ -240,20 +251,24 @@ function run_case(scratch: str, sandbox: thesis_sandbox.Sandbox, task: thesis_ta
 
     if ran.code == 124
         return ok(
-            Graded(outcome: "timeout", codes: [], message: "ran past " + seconds.to_str() + " seconds", passed: 0, total: 0)
+            Graded(outcome: "timeout", codes: [], message: "ran past " + seconds.to_str() + " seconds", passed: 0, total: 0, at_case: "")
         )
 
     if ran.code >= 128
         if strings.contains(text: ran.err, needle: "panic:")
-            return ok(Graded(outcome: "abort", codes: [], message: strings.trimmed(text: ran.err), passed: 0, total: 0))
+            return ok(
+                Graded(outcome: "abort", codes: [], message: strings.trimmed(text: ran.err), passed: 0, total: 0, at_case: "")
+            )
         return ok(
-            Graded(outcome: "crash", codes: [], message: "ended with status " + ran.code.to_str() + "\n" + ran.err, passed: 0, total: 0)
+            Graded(outcome: "crash", codes: [], message: "ended with status " + ran.code.to_str() + "\n" + ran.err, passed: 0, total: 0, at_case: "")
         )
     want = expectation.split(one.expected)?
 
     match expectation.unmet(want, out: ran.out, err: ran.err, code: ran.code)
-        .ok why => return ok(Graded(outcome: "compiled_wrong", codes: [], message: why, passed: 0, total: 0))
-        .err _  => return ok(Graded(outcome: "cases_pass", codes: [], message: "", passed: 1, total: 1))
+        .ok why => return ok(
+            Graded(outcome: "compiled_wrong", codes: [], message: why, passed: 0, total: 0, at_case: "")
+        )
+        .err _ => return ok(Graded(outcome: "cases_pass", codes: [], message: "", passed: 1, total: 1, at_case: ""))
 
 # The sentence a refusal of a suite or a task is told with.
 function unreadable(failed: bool, of: str) -> str

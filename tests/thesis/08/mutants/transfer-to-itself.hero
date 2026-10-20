@@ -1,0 +1,103 @@
+# mistake: a transfer whose two accounts are one is run
+# strict: compiled_wrong case 5
+# control: compiled_wrong case 5
+record Ledger
+    balances: {str: i64}
+    rejected: i64
+
+function main()
+    given = args()
+
+    if given.len() != 1
+        exit(code: 2)
+    text = read_file(path: given[0])
+
+    if text.is_err()
+        exit(code: 2)
+    book: Ledger @= Ledger(balances: {}, rejected: 0)
+    number: i64 @= 0
+
+    lines = cut(text.must(), at: '\n')
+    count: i64 @= lines.len()
+
+    if lines[count - 1] == ""
+        count @ count - 1
+
+    for line in lines.slice(from: 0, to: count)
+        number @ number + 1
+
+        if !applied(@book, words: cut(line, at: ' '))
+            print("bad line ", number)
+            exit(code: 1)
+
+    for name in sort(keys(book.balances))
+        print(name, " ", book.balances[name].must())
+
+    print("rejected ", book.rejected)
+
+# One line's operation run on `book`; false where the line is bad.
+function applied(@book: Ledger, words: [str]) -> bool
+    if words.len() < 3 || words.len() > 4 || !named(words[1]) || !named(words[words.len() - 2])
+        return false
+    amount = digits(words[words.len() - 1])
+
+    if amount.is_err()
+        return false
+    v = amount.must()
+    held = book.balances[words[1]]
+
+    if words[0] == "open" && words.len() == 3 && held.is_err()
+        book.balances[words[1]] @ v
+    else if words[0] == "deposit" && words.len() == 3 && !held.is_err()
+        book.balances[words[1]] @ held.must() + v
+    else if words[0] == "withdraw" && words.len() == 3 && !held.is_err()
+        if v > held.must()
+            book.rejected @ book.rejected + 1
+        else
+            book.balances[words[1]] @ held.must() - v
+    else if words[0] == "transfer" && words.len() == 4 && !held.is_err()
+        to = book.balances[words[2]]
+
+        if to.is_err()
+            return false
+
+        if v > held.must()
+            book.rejected @ book.rejected + 1
+        else
+            book.balances[words[1]] @ held.must() - v
+            book.balances[words[2]] @ to.must() + v
+    else
+        return false
+    return true
+
+function named(text: str) -> bool
+    return text.len() > 0 && text.chars().all(letter)
+
+function letter(c: str) -> bool
+    return c[0] >= 'a' && c[0] <= 'z' || c[0] >= 'A' && c[0] <= 'Z'
+
+# One or more decimal digits.
+function digits(text: str) -> i64?
+    if text.len() == 0
+        return fail(code: "bad_amount", msg: "no digits")
+    value: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] < '0' || text[i] > '9'
+            return fail(code: "bad_amount", msg: "not a digit")
+        value @ value * 10 + to_i64(text[i] - '0').must()
+
+    return ok(value)
+
+# The pieces between the bytes `at`, an empty one where two meet: the lines
+# of a file, its final line feed leaving one empty piece last, or the words.
+function cut(text: str, at: u8) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == at
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+
+    return out.push(text.slice(from: start, to: text.len()))

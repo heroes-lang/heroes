@@ -1,0 +1,103 @@
+# mistake: one shape has no arm where every shape's area is matched
+# strict: compile_error non_exhaustive
+# control: abort case 3
+variant Shape
+    square
+        s: i64
+    rect
+        w: i64
+        h: i64
+    tri
+        b: i64
+        h: i64
+    diamond
+        p: i64
+        q: i64
+
+function main()
+    given = args()
+
+    if given.len() != 1
+        exit(code: 2)
+    text = read_file(path: given[0])
+
+    if text.is_err()
+        exit(code: 2)
+    lines = cut(text.must(), at: '\n')
+    last: i64 @= lines.len()
+
+    if lines[last - 1] == ""
+        last @ last - 1
+    count: [i64] @= [0, 0, 0, 0]
+    sum: [i64] @= [0, 0, 0, 0]
+
+    for i in range(from: 0, to: last)
+        match parsed(cut(lines[i], at: ' '))
+            .ok shape =>
+                k = kind(shape)
+                count[k] @ count[k] + 1
+                sum[k] @ sum[k] + area(shape)
+            .err _ =>
+                print("bad line ", i + 1)
+                exit(code: 1)
+
+    names = ["square", "rect", "tri", "diamond"]
+
+    for k in range(from: 0, to: 4)
+        if count[k] > 0
+            print(names[k], " ", count[k], " ", sum[k])
+
+    print("total ", sum[0] + sum[1] + sum[2] + sum[3])
+
+function parsed(words: [str]) -> Shape?
+    if words.len() == 2 && words[0] == "square"
+        return ok(.square(s: number(words[1])?))
+
+    if words.len() == 3 && words[0] == "rect"
+        return ok(.rect(w: number(words[1])?, h: number(words[2])?))
+
+    if words.len() == 3 && words[0] == "tri"
+        return ok(.tri(b: number(words[1])?, h: number(words[2])?))
+
+    if words.len() == 3 && words[0] == "diamond"
+        return ok(.diamond(p: number(words[1])?, q: number(words[2])?))
+    return fail(code: "bad_line", msg: "no shape")
+
+function kind(shape: Shape) -> i64
+    match shape
+        .square _  => return 0
+        .rect _    => return 1
+        .tri _     => return 2
+        .diamond _ => return 3
+
+# Each area rounded down on its own.
+function area(shape: Shape) -> i64
+    match shape
+        .square x => return x.s * x.s
+        .rect x   => return x.w * x.h
+        .tri x    => return x.b * x.h / 2
+
+# One or more decimal digits.
+function number(text: str) -> i64?
+    if text.len() == 0
+        return fail(code: "bad_number", msg: "no digits")
+    value: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] < '0' || text[i] > '9'
+            return fail(code: "bad_number", msg: "not a digit")
+        value @ value * 10 + to_i64(text[i] - '0').must()
+
+    return ok(value)
+
+# The pieces between the bytes `at`, an empty one where two meet.
+function cut(text: str, at: u8) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == at
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+
+    return out.push(text.slice(from: start, to: text.len()))

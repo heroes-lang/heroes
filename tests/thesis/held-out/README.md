@@ -9,8 +9,8 @@ is panel 226 (2026-10-20; `docs/panel/`, the file opening `226-`), on the author
 
 ## What is inside
 
-- `suite.enc`: 40 tasks in the shape of the three assistant-written tasks in clear one folder up
-  (`tests/thesis/01` to `03`): a `task.md` of English prose a model receives, 4 to 8 hidden cases
+- `suite.enc`: 40 tasks in the shape of the ten assistant-written tasks in clear one folder up
+  (`tests/thesis/01` to `10`): a `task.md` of English prose a model receives, 4 to 8 hidden cases
   (`cases/K.args`, `cases/K.files/`, `cases/K.expected`), a `reference.hero` the instrument's `dry`
   word grades and no model sees, and the hand mutants each task tempts. **It lands at the
   milestone's freeze** (M-thesis-harness step 12; this page was written at step 4, 2026-10-20, and
@@ -77,10 +77,10 @@ otherwise.
 with the milestone's step 4b, dated 2026-10-20, when this page was written) decrypts the archives
 inside the runner, under the key held as a GitHub Actions secret in an environment with a required
 reviewer, runs `tasks --sealed` against `hashes.txt`, the prose lint and `dry --mute` on the
-reference solutions, and prints **counts and digests alone**: how many tasks, how many cases, which
-digests, and on a failure a task's digest and never its text. Anyone can read the job's log and see
-that the archive holds what this page says, without seeing a task. The job is skipped on a fork,
-where the secret does not exist.
+reference solutions and the hand mutants, and prints **counts and digests alone**: how many tasks,
+how many cases, which digests, and on a failure a task's digest and never its text. Anyone can read
+the job's log and see that the archive holds what this page says, without seeing a task. The job is
+skipped on a fork, where the secret does not exist.
 
 ## When it opens
 

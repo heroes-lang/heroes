@@ -1,0 +1,97 @@
+# mistake: an empty line is skipped where it is a bad command
+# strict: compiled_wrong case 6
+# control: compiled_wrong case 6
+variant Command
+    push
+        n: i64
+    pop
+    add
+    sub
+    mul
+    show
+
+function main()
+    given = args()
+
+    if given.len() != 1
+        exit(code: 2)
+    text = read_file(path: given[0])
+
+    if text.is_err()
+        exit(code: 2)
+    body = text.must()
+    stack: [i64] @= []
+    number: i64 @= 0
+    start: i64 @= 0
+
+    while start < body.len()
+        end: i64 @= start
+
+        while end < body.len() && body[end] != '\n'
+            end @ end + 1
+
+        number @ number + 1
+
+        if end == start
+            start @ end + 1
+            continue
+        told = step(@stack, parsed(body.slice(from: start, to: end)))
+
+        if told != ""
+            print("line ", number, ": ", told)
+            exit(code: 1)
+        start @ end + 1
+
+function parsed(line: str) -> Command?
+    match line
+        "pop"   => return ok(.pop)
+        "add"   => return ok(.add)
+        "sub"   => return ok(.sub)
+        "mul"   => return ok(.mul)
+        "print" => return ok(.show)
+        _       => _ = 0
+
+    if line.len() < 6 || line.slice(from: 0, to: 5) != "push "
+        return fail(code: "bad_command", msg: "no command")
+    sign: i64 @= 1
+    at: i64 @= 5
+
+    if line[at] == '-'
+        sign @ -1
+        at @ at + 1
+
+    if at == line.len()
+        return fail(code: "bad_command", msg: "no digits")
+    n: i64 @= 0
+
+    for i in range(from: at, to: line.len())
+        if line[i] < '0' || line[i] > '9'
+            return fail(code: "bad_command", msg: "not a digit")
+        n @ n * 10 + to_i64(line[i] - '0').must() * sign
+
+    return ok(.push(n: n))
+
+# The command run on `stack`: "" where it ran, else what stopped it.
+function step(@stack: [i64], c: Command?) -> str
+    if c.is_err()
+        return "bad command"
+    n = stack.len()
+
+    match c.must()
+        .push p => stack @ stack.push(p.n)
+        .pop | .show =>
+            if n < 1
+                return "stack underflow"
+        .add | .sub | .mul =>
+            if n < 2
+                return "stack underflow"
+
+    match c.must()
+        .push _ => _ = 0
+        .pop    => stack @ stack.slice(from: 0, to: n - 1)
+        .show   => print(stack[n - 1])
+        .add    => stack @ stack.slice(from: 0, to: n - 2).push(stack[n - 2] + stack[n - 1])
+        .sub    => stack @ stack.slice(from: 0, to: n - 2).push(stack[n - 2] - stack[n - 1])
+        .mul    => stack @ stack.slice(from: 0, to: n - 2).push(stack[n - 2] * stack[n - 1])
+
+    return ""

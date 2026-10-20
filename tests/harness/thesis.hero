@@ -20,9 +20,11 @@
 # spend money and send a specification to a third party stays out of the
 # compiler's binary. The words arrive with the milestone's steps; `tasks`
 # reads a suite and prints its digests (`thesis_tasks.hero`); `dry` grades
-# every task's `reference.hero` as if a model had answered it, so the grader
-# and the cases are proven before a model is asked, `--mute` saying on a
-# failure the task's digest alone (the CI's form, where a log is public);
+# every task's `reference.hero` as if a model had answered it, and every
+# program of its `mutants/`, each of which must end as its opening lines say
+# (`thesis_mutants.hero`), so the grader is proven and the cases are shown to
+# kill the mistakes each task tempts before a model is asked, `--mute` saying
+# on a failure the task's digest alone (the CI's form, where a log is public);
 # `grade` grades one answer file for one task (`thesis_grade.hero`); `plan`
 # renders every turn-1 request of a run, counts them and estimates their
 # tokens, sending nothing, which is the number the author is asked with; `run
@@ -54,6 +56,7 @@ use strings
 use thesis_args
 use thesis_canary
 use thesis_grade
+use thesis_mutants
 use thesis_prompt
 use thesis_report
 use thesis_run
@@ -141,9 +144,11 @@ function compiler_of(asked: thesis_args.Asked) -> str?
         return ok(asked.compiler)
     return shell.some_compiler()
 
-# `dry`: every task's reference solution graded in the arm; exit 0 where every
-# one passes every case, 1 where one does not, 2 where the grader could not
-# run. The bound per case is the grader's own: ten seconds and a mebibyte.
+# `dry`: every task's reference solution and hand mutants graded in the arm;
+# exit 0 where every reference passes every case and every mutant ends as it
+# says, 1 where one does not, a task has no mutant or its reference is not 25
+# to 80 lines of code, 2 where the grader could not run. The bound per case
+# is the grader's own: ten seconds and a mebibyte.
 function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
     compiler = compiler_of(asked)
 
@@ -156,6 +161,7 @@ function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
         hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: suite.is_err(), of: "the suite") + "\n")
         return 1
     red: i64 @= 0
+    mutants: i64 @= 0
 
     for task in suite.must().tasks
         reference = read_file(path: task.dir + "/reference.hero")
@@ -164,6 +170,13 @@ function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
             print(said(task: task, outcome: "no_reference", detail: "", mute: asked.mute))
             red @ red + 1
             continue
+        size = thesis_tasks.code_lines(reference.must())
+
+        if size < REFERENCE_LEAST || size > REFERENCE_MOST
+            print(
+                said(task: task, outcome: "reference_size", detail: "the reference holds " + size.to_str() + " lines of code, where a task's holds " + REFERENCE_LEAST.to_str() + " to " + REFERENCE_MOST.to_str() + " (`docs/metrics/tasks.md`)", mute: asked.mute)
+            )
+            red @ red + 1
         got = thesis_grade.graded(
             scratch: scratch + "/" + task.number,
             compiler: compiler.must(),
@@ -186,13 +199,71 @@ function dry_word(scratch: str, asked: thesis_args.Asked) -> i64
                 hero_write_err(text: "thesis: " + e.msg + "\n")
                 return 2
 
+        judged = thesis_mutants.judged_all(
+            scratch: scratch + "/" + task.number + "-mutants",
+            compiler: compiler.must(),
+            arm: asked.arm,
+            task: task,
+            seconds: 10,
+            bytes: 1048576
+        )
+
+        match judged
+            .ok lines =>
+                if lines.len() == 0
+                    print(said(task: task, outcome: "no_mutants", detail: NO_MUTANTS, mute: asked.mute))
+                    red @ red + 1
+
+                for i in range(from: 0, to: lines.len())
+                    print(mutant_said(task: task, place: i + 1, one: lines[i], mute: asked.mute))
+
+                    if lines[i].why != ""
+                        red @ red + 1
+
+                mutants @ mutants + lines.len()
+            .err e =>
+                if e.code != "bad_mutant"
+                    hero_write_err(text: "thesis: " + e.msg + "\n")
+                    return 2
+                print(said(task: task, outcome: "bad_mutant", detail: e.msg, mute: asked.mute))
+                red @ red + 1
+
     print(
-        "dry " + suite.must().sha + " " + asked.arm + " " + suite.must().tasks.len().to_str() + " tasks, " + red.to_str() + " red"
+        "dry " + suite.must().sha + " " + asked.arm + " " + suite.must().tasks.len().to_str() + " tasks, " + mutants.to_str() + " mutants, " + red.to_str() + " red"
     )
 
     if red > 0
         return 1
     return 0
+
+# A reference's size in lines of code, comments and blank lines left out
+# (`thesis_tasks.code_lines`): the task rules' measure of how big a task is.
+constant REFERENCE_LEAST: i64
+    25
+
+constant REFERENCE_MOST: i64
+    80
+
+# What `dry` says of a task with no mutant: the rule it breaks.
+constant NO_MUTANTS: str
+    "a task tempts at least one mistake, and its `mutants/` holds a program making each (`docs/metrics/tasks.md`)"
+
+# One mutant's line of `dry`: its task, its name, or its place in the folder
+# where muted since a name can say the mistake, what it ended as, and why that
+# is not what it says.
+function mutant_said(task: thesis_tasks.Task, place: i64, one: thesis_mutants.Judged, mute: bool) -> str
+    name: str @= one.name
+
+    if mute
+        name @ "#" + place.to_str()
+    line = task.sha + " " + task.number + " mutant " + name + " " + thesis_mutants.shown(thesis_mutants.Want(outcome: one.outcome, detail: one.detail))
+
+    if one.why == ""
+        return line
+
+    if mute
+        return line + " red"
+    return line + "\n  " + one.why
 
 # One task's line of `dry`: its digest and outcome, and the detail unless muted.
 function said(task: thesis_tasks.Task, outcome: str, detail: str, mute: bool) -> str

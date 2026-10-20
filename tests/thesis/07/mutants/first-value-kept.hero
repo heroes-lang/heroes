@@ -1,0 +1,78 @@
+# mistake: an entry set twice keeps its first value
+# strict: compiled_wrong case 6
+# control: compiled_wrong case 6
+function main()
+    given = args()
+
+    if given.len() != 2 || !well_keyed(given[1])
+        exit(code: 2)
+    text = read_file(path: given[0])
+
+    if text.is_err()
+        exit(code: 2)
+    settings: {str: str} @= {}
+    section: str @= ""
+    number: i64 @= 0
+
+    for line in rows(text.must())
+        number @ number + 1
+
+        if line.len() == 0 || line[0] == '#'
+            continue
+
+        if line[0] == '[' && line[line.len() - 1] == ']' && named(line.slice(from: 1, to: line.len() - 1))
+            section @ line.slice(from: 1, to: line.len() - 1)
+            continue
+        eq: i64 @= 0
+
+        while eq < line.len() && line[eq] != '='
+            eq @ eq + 1
+
+        if section == "" || eq == line.len() || !named(line.slice(from: 0, to: eq))
+            print("bad line ", number)
+            exit(code: 1)
+        key = section + "." + line.slice(from: 0, to: eq)
+
+        if settings[key].is_err()
+            settings[key] @ line.slice(from: eq + 1, to: line.len())
+
+    match settings[given[1]]
+        .ok value => print(value)
+        .err _ =>
+            print("not found")
+            exit(code: 3)
+
+# One or more of a to z, A to Z, 0 to 9 and _.
+function named(text: str) -> bool
+    if text.len() == 0
+        return false
+
+    for i in range(from: 0, to: text.len())
+        b = text[i]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_')
+            return false
+
+    return true
+
+# A section name, one `.` and a name.
+function well_keyed(key: str) -> bool
+    for i in range(from: 0, to: key.len())
+        if key[i] == '.'
+            return named(key.slice(from: 0, to: i)) && named(key.slice(from: i + 1, to: key.len()))
+
+    return false
+
+# The file's lines; a final line feed starts no row.
+function rows(text: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == '\n'
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out

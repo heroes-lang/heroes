@@ -9,9 +9,9 @@ this page says only what a task is and where it stands.
 ## Two suites, two homes
 
 - **The assistant's tasks, in clear**: `tests/thesis/`, labelled `assistant` in its `LABEL` file.
-  They prove the instrument (`dry` grades their reference solutions, the trial runs on them) and
-  **never enter a published number**: a suite the assistant wrote measures the assistant's priors
-  (panel 011; the author's rule of 2026-08-24).
+  They prove the instrument (`dry` grades their reference solutions and hand mutants, the trial runs
+  on them) and **never enter a published number**: a suite the assistant wrote measures the
+  assistant's priors (panel 011; the author's rule of 2026-08-24).
 - **The author's tasks, held out**: `tests/thesis/held-out/` (its files land at the milestone's
   step 4, 2026-10-20), sealed in this public repository as `openssl enc -aes-256-cbc -pbkdf2`
   archives, three of them with three keys (`HEROES_TASKS_KEY` the suite, `HEROES_RESERVE_KEY` the
@@ -70,10 +70,17 @@ A task's digest is the sha256 of `task.md` and its cases in order; its prose dig
   and `--5`; overflow; the order of ties; an empty line in the middle; a case that is malformed
   only after good lines. Each is pinned by a sentence of the prose or covered by a hidden case, so
   a hidden failure is the language's and never a guess's.
-- **A reference of 25 to 80 lines** accepted by `check`, passing every case under `dry` in the
-  strict arm and in the control arm.
+- **A reference of 25 to 80 lines of code**, comment lines and blank lines not counted (the blank
+  lines are the formatter's and the comments the writer's, and neither is the task's size), accepted
+  by `check`, passing every case under `dry` in the strict arm and in the control arm.
 - **For every mistake the task tempts, a hand mutant and the case that kills it**, kept beside the
-  reference under `mutants/` (step 6's `dry` runs them and each bucket must fire).
+  reference under `mutants/`: one program each, the reference with that mistake made, opening with
+  three lines, `# mistake:` and the mistake, then `# strict:` and `# control:`, how that arm must
+  end it: `compile_error <code>`; `<bucket> case <name>` for a bucket a case ends in
+  (`compiled_wrong`, `abort`, `timeout`, `crash`), with the first case in order it fails; or
+  `cases_pass` for a mistake that changes no output, which the strict arm refuses and the control
+  arm runs as written. `dry` grades every mutant in its arm, the `brief` arm by the `strict` line,
+  and is red where one ends otherwise or a task has none (`tests/harness/thesis_mutants.hero`).
 - **Spread over the surface**, counted over the held-out suite before the freeze: records in at
   least 6 tasks, a `variant` with at least 4 cases in at least 8, `T?` with propagation in at least
   8, `@` parameters in at least 5, maps in at least 6, a generic built-in taking a function value in

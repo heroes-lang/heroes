@@ -1,0 +1,89 @@
+# mistake: the map a call changes is passed without `@` where the call is made
+# strict: compile_error marker_mismatch
+# control: cases_pass
+function main()
+    given = args()
+
+    if given.len() != 1
+        exit(code: 2)
+
+    match read_file(path: given[0])
+        .ok text => balances(text)
+        .err _   => exit(code: 2)
+
+# The whole number `digits` writes, or `bad_number` where it is not one.
+function parsed(digits: str) -> i64?
+    if digits.len() == 0
+        return fail(code: "bad_number", msg: "empty")
+    sign: i64 @= 1
+    start: i64 @= 0
+
+    if digits[0] == '-'
+        sign @ -1
+        start @ 1
+
+    if start == digits.len()
+        return fail(code: "bad_number", msg: "a sign alone")
+    value: i64 @= 0
+
+    for i in range(from: start, to: digits.len())
+        b = digits[i]
+
+        if b < '0' || b > '9'
+            return fail(code: "bad_number", msg: "not a digit")
+        value @ value * 10 + to_i64(b - '0').must()
+
+    return ok(value * sign)
+
+function balances(text: str)
+    totals: {str: i64} @= {}
+    line: str @= ""
+    number: i64 @= 1
+    at: i64 @= 0
+
+    while at <= text.len()
+        ended = at == text.len()
+
+        if ended || text[at] == '\n'
+            if !(ended && line == "")
+                if !added(totals, line: line)
+                    print("bad line ", number)
+                    exit(code: 1)
+                number @ number + 1
+            line @ ""
+        else
+            line @ line + text.slice(from: at, to: at + 1)
+        at @ at + 1
+
+    for name in sort(keys(totals))
+        print(name, " ", totals[name].must())
+
+# `line` as `name amount`, added to `totals`; false where it is not that shape.
+function added(@totals: {str: i64}, line: str) -> bool
+    space: i64 @= -1
+
+    for i in range(from: 0, to: line.len())
+        if line[i] == ' '
+            if space != -1
+                return false
+            space @ i
+
+    if space <= 0
+        return false
+    name = line.slice(from: 0, to: space)
+
+    for i in range(from: 0, to: name.len())
+        if !letter(name[i])
+            return false
+
+    amount = parsed(line.slice(from: space + 1, to: line.len()))
+
+    match amount
+        .ok v  => totals[name] @ totals[name].default(0) + v
+        .err _ => return false
+
+    return true
+
+# Whether `b` is an ASCII letter, the one class a name is made of.
+function letter(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'

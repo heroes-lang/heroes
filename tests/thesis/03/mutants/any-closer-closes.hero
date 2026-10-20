@@ -1,0 +1,30 @@
+# mistake: a closing bracket closes an opening one of another kind
+# strict: compiled_wrong case 1
+# control: compiled_wrong case 1
+function main()
+    given = args()
+
+    if given.len() != 1
+        exit(code: 2)
+    text = given[0]
+    open: [u8] @= []
+    deepest: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        b = text[i]
+
+        if b == '(' || b == '[' || b == '{'
+            open @ open.push(b)
+
+            if open.len() > deepest
+                deepest @ open.len()
+        else if b == ')' || b == ']' || b == '}'
+            if open.len() == 0
+                print("unbalanced")
+                exit(code: 1)
+            open @ open.slice(from: 0, to: open.len() - 1)
+
+    if open.len() > 0
+        print("unbalanced")
+        exit(code: 1)
+    print(deepest)

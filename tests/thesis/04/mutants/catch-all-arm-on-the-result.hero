@@ -1,0 +1,77 @@
+# mistake: a catch-all arm stands where the refused text's case is named
+# strict: compile_error wildcard_on_variant
+# control: cases_pass
+function main()
+    given = args()
+
+    if given.len() != 2
+        exit(code: 2)
+
+    if given[0] == "encode"
+        finish(encoded(given[1]))
+    else if given[0] == "decode"
+        finish(decoded(given[1]))
+    else
+        exit(code: 2)
+
+# The result printed, or `bad input` and status 1 where the text was refused.
+function finish(result: str?)
+    match result
+        .ok out => print(out)
+        _ =>
+            print("bad input")
+            exit(code: 1)
+
+function encoded(text: str) -> str?
+    if text.len() == 0
+        return fail(code: "bad_input", msg: "the empty text")
+    pieces: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b < 'a' || b > 'z'
+            return fail(code: "bad_input", msg: "a letter from a to z")
+        run: i64 @= 1
+
+        while at + run < text.len() && text[at + run] == b
+            run @ run + 1
+
+        pieces @ pieces.push(text.slice(from: at, to: at + 1) + run.to_str())
+        at @ at + run
+
+    return ok(pieces.join(""))
+
+function decoded(text: str) -> str?
+    if text.len() == 0
+        return fail(code: "bad_input", msg: "the empty text")
+    pieces: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b < 'a' || b > 'z'
+            return fail(code: "bad_input", msg: "a pair opens with a letter from a to z")
+        end: i64 @= at + 1
+
+        while end < text.len() && text[end] >= '0' && text[end] <= '9'
+            end @ end + 1
+
+        count = counted(text.slice(from: at + 1, to: end))?
+        pieces @ pieces.push(repeat(text.slice(from: at, to: at + 1), to_u64(count).must()))
+        at @ end
+
+    return ok(pieces.join(""))
+
+# A count: one or more digits with no leading zero.
+function counted(digits: str) -> i64?
+    if digits.len() == 0 || digits[0] == '0'
+        return fail(code: "bad_input", msg: "a count is digits with no leading zero")
+    value: i64 @= 0
+
+    for i in range(from: 0, to: digits.len())
+        value @ value * 10 + to_i64(digits[i] - '0').must()
+
+    return ok(value)

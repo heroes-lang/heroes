@@ -1,0 +1,341 @@
+# THE HAND MUTANTS OF A TASK, read and judged against what each says of
+# itself (M-thesis-harness, 2026-10-20; panel 226's R8, design.md Part 11).
+#
+# Beside a task's `reference.hero`, `mutants/` holds one program for each
+# mistake the task tempts: the reference with that mistake made. Its first
+# three lines say which mistake, and how each arm must end it:
+#
+#     # mistake: <the mistake, in one line>
+#     # strict: <outcome> [<code> | case <name>]
+#     # control: <outcome> [<code> | case <name>]
+#
+# The outcome is the grader's (`thesis_grade.hero`). `compile_error` is
+# followed by a code the check must name; a bucket a case ends in,
+# `compiled_wrong`, `abort`, `timeout` or `crash`, by `case` and the case
+# the grader stops at, the first in order that the mutant fails; and
+# `cases_pass` by nothing, a mistake that changes no output, which the
+# strict arm refuses and the control arm runs as written. `dry` grades every
+# mutant in its arm, the `brief` arm by the `strict` line, and a mutant that
+# ends otherwise is red: the cases do not catch the mistake they were written
+# against, or the check does not refuse it. So each mistake a task tempts is
+# shown killed before a model is graded by its cases, which is what makes a
+# `compiled_wrong` the program's and never the suite's.
+#
+# A mutant is the suite writer's, as the reference is: no digest covers it,
+# and the grader never reads it while grading a model.
+
+use shell
+use strings
+use thesis_grade
+use thesis_sandbox
+use thesis_tasks
+
+# What one arm must make of a mutant: the outcome, and the code or the case
+# that gives it, "" after `cases_pass`.
+record Want
+    outcome: str
+    detail: str
+
+record Mutant
+    name: str
+    text: str
+    mistake: str
+    strict: Want
+    control: Want
+
+# One mutant as `dry` saw it: what it ended as, and why that is not what it
+# says, "" where it is.
+record Judged
+    name: str
+    outcome: str
+    detail: str
+    why: str
+
+# The buckets a case ends in, each declared with the case that ends it.
+constant CASE_ENDINGS: [str]
+    ["compiled_wrong", "abort", "timeout", "crash"]
+
+# The mutants beside a task in name order, none where it has no `mutants/`;
+# a file that is not a `.hero`, or whose three lines are not the shape above,
+# refuses the folder by its name.
+function mutants_of(scratch: str, task: thesis_tasks.Task) -> [Mutant]?
+    folder = task.dir + "/mutants"
+    out: [Mutant] @= []
+
+    if !shell.is_directory(folder)
+        return ok(out)
+
+    for path in shell.list_entries(scratch: scratch, dir: folder)?
+        name = strings.base_name(path: path)
+
+        if !strings.ends_with(text: name, suffix: ".hero")
+            return fail(code: "bad_mutant", msg: folder + " holds `" + name + "`, and a mutant is a `.hero` file")
+        out @ out.push(read_mutant(name: name, text: read_file(path: path)?)?)
+
+    return ok(out)
+
+# A mutant's three opening lines read, and anything else refused by the line.
+function read_mutant(name: str, text: str) -> Mutant?
+    rows = strings.lines(text: text)
+
+    if rows.len() < 3
+        return fail(
+            code: "bad_mutant",
+            msg: name + " has fewer than three lines, and a mutant opens with `# mistake:`, `# strict:` and `# control:`"
+        )
+    mistake = strings.trimmed(text: strings.without_prefix(text: rows[0], prefix: "# mistake:"))
+
+    if !strings.starts_with(text: rows[0], prefix: "# mistake: ") || mistake == ""
+        return fail(
+            code: "bad_mutant",
+            msg: name + " opens with `" + rows[0] + "`, where `# mistake: <the mistake>` belongs"
+        )
+    strict = want_of(name: name, row: rows[1], arm: "strict")?
+    control = want_of(name: name, row: rows[2], arm: "control")?
+    return ok(Mutant(name: name, text: text, mistake: mistake, strict: strict, control: control))
+
+# One arm's line: `# <arm>: compile_error <code>`, `# <arm>: <bucket> case
+# <name>` for a bucket a case ends in, or `# <arm>: cases_pass`.
+function want_of(name: str, row: str, arm: str) -> Want?
+    prefix = "# " + arm + ": "
+
+    if strings.starts_with(text: row, prefix: prefix)
+        said = strings.words(text: strings.without_prefix(text: row, prefix: prefix))
+
+        if said.len() == 1 && said[0] == "cases_pass"
+            return ok(Want(outcome: "cases_pass", detail: ""))
+
+        if said.len() == 2 && said[0] == "compile_error"
+            return ok(Want(outcome: "compile_error", detail: said[1]))
+
+        if said.len() == 3 && ends_at_case(said[0]) && said[1] == "case"
+            return ok(Want(outcome: said[0], detail: said[2]))
+    return fail(
+        code: "bad_mutant",
+        msg: name + " says `" + row + "`, where `" + prefix + "compile_error <code>`, `" + prefix + "<compiled_wrong|abort|timeout|crash> case <name>` or `" + prefix + "cases_pass` belongs"
+    )
+
+function ends_at_case(outcome: str) -> bool
+    for one in CASE_ENDINGS
+        if one == outcome
+            return true
+
+    return false
+
+# The line an arm is judged by: the `brief` arm's is the `strict` one, the
+# two refusing the same programs and differing in the words alone.
+function wanted(m: Mutant, arm: str) -> Want
+    if arm == "control"
+        return m.control
+    return m.strict
+
+# What the grader ended a program as, in the words a mutant's line uses.
+function seen(graded: thesis_grade.Graded) -> Want
+    if graded.outcome == "compile_error"
+        return Want(outcome: graded.outcome, detail: graded.codes.join(" "))
+
+    if ends_at_case(graded.outcome)
+        return Want(outcome: graded.outcome, detail: graded.at_case)
+    return Want(outcome: graded.outcome, detail: "")
+
+function shown(want: Want) -> str
+    if want.detail == ""
+        return want.outcome
+
+    if ends_at_case(want.outcome)
+        return want.outcome + " case " + want.detail
+    return want.outcome + " " + want.detail
+
+# Why `graded` is not what the mutant says of `arm`, or "" where it is.
+function unmet(m: Mutant, arm: str, graded: thesis_grade.Graded) -> str
+    want = wanted(m: m, arm: arm)
+    got = seen(graded)
+
+    if got.outcome != want.outcome
+        return "ended " + shown(got) + " where it says " + shown(want)
+
+    if want.outcome == "compile_error" && !named(codes: graded.codes, code: want.detail)
+        return "was refused with " + got.detail + " where it says " + want.detail
+
+    if ends_at_case(want.outcome) && got.detail != want.detail
+        return "ended at case " + got.detail + " where it says case " + want.detail
+    return ""
+
+function named(codes: [str], code: str) -> bool
+    for one in codes
+        if one == code
+            return true
+
+    return false
+
+# Every mutant of `task` graded in `arm` under the grader's bounds, one
+# line each, in the folder's order.
+function judged_all(scratch: str, compiler: str, arm: str, task: thesis_tasks.Task, seconds: i64, bytes: i64) -> [Judged]?
+    mutants = mutants_of(scratch: scratch, task: task)?
+    out: [Judged] @= []
+
+    for i in range(from: 0, to: mutants.len())
+        m = mutants[i]
+        graded = thesis_grade.graded(scratch: scratch + "/mutant-" + (i + 1).to_str(), compiler: compiler, arm: arm, answer: thesis_grade.as_answer(m.text), task: task, seconds: seconds, bytes: bytes)?
+        got = seen(graded)
+        out @ out.push(
+            Judged(name: m.name, outcome: got.outcome, detail: got.detail, why: unmet(m: m, arm: arm, graded: graded))
+        )
+
+    return ok(out)
+
+function refusal(of: Mutant?) -> str
+    return match of
+        .ok _  => ""
+        .err e => e.msg
+
+test "a mutant's three lines read, and every other shape is refused by its line"
+    good = read_mutant(
+        name: "m.hero",
+        text: "# mistake: the brackets left open are never checked\n# strict: compile_error wildcard_on_variant\n# control: compiled_wrong case 4\nfunction main()\n    print(1)\n"
+    ).must()
+    assert good.mistake == "the brackets left open are never checked"
+    assert good.strict.outcome == "compile_error"
+    assert good.strict.detail == "wildcard_on_variant"
+    assert good.control.outcome == "compiled_wrong"
+    assert good.control.detail == "4"
+    quiet = read_mutant(
+        name: "q.hero",
+        text: "# mistake: x\n# strict: compile_error unused_binding\n# control: cases_pass\n"
+    ).must()
+    assert quiet.control == Want(outcome: "cases_pass", detail: "")
+    assert strings.contains(
+        text: refusal(read_mutant(name: "short.hero", text: "# mistake: x\n# strict: cases_pass\n")),
+        needle: "short.hero has fewer than three lines"
+    )
+    assert strings.contains(
+        text: refusal(read_mutant(name: "a.hero", text: "# mistake:\n# strict: cases_pass\n# control: cases_pass\n")),
+        needle: "# mistake: <the mistake>"
+    )
+    assert strings.contains(
+        text: refusal(read_mutant(name: "b.hero", text: "# mistake: x\n# strict: compile_error\n# control: cases_pass\n")),
+        needle: "b.hero says `# strict: compile_error`"
+    )
+    assert strings.contains(
+        text: refusal(read_mutant(name: "c.hero", text: "# mistake: x\n# strict: compiled_wrong 4\n# control: cases_pass\n")),
+        needle: "c.hero says"
+    )
+    assert strings.contains(
+        text: refusal(read_mutant(name: "d.hero", text: "# mistake: x\n# strict: hole\n# control: cases_pass\n")),
+        needle: "d.hero says"
+    )
+    assert strings.contains(
+        text: refusal(read_mutant(name: "e.hero", text: "# mistake: x\n# control: cases_pass\n# strict: cases_pass\n")),
+        needle: "e.hero says `# control: cases_pass`"
+    )
+    assert strings.contains(
+        text: refusal(read_mutant(name: "f.hero", text: "# mistake: x\n# strict: cases_pass now\n# control: cases_pass\n")),
+        needle: "f.hero says"
+    )
+    assert strings.contains(
+        text: refusal(read_mutant(name: "g.hero", text: "# mistake: x\n# strict: crashed case 2\n# control: cases_pass\n")),
+        needle: "g.hero says"
+    )
+
+test "a mutant ends as its arm's line says, or the line says why not"
+    m = read_mutant(
+        name: "m.hero",
+        text: "# mistake: x\n# strict: compile_error wildcard_on_variant\n# control: compiled_wrong case 4\n"
+    ).must()
+    refused = thesis_grade.Graded(
+        outcome: "compile_error",
+        codes: ["unused_binding", "wildcard_on_variant"],
+        message: "",
+        passed: 0,
+        total: 9,
+        at_case: ""
+    )
+    assert unmet(m: m, arm: "strict", graded: refused) == ""
+    assert unmet(m: m, arm: "brief", graded: refused) == ""
+    other = thesis_grade.Graded(
+        outcome: "compile_error",
+        codes: ["unused_binding"],
+        message: "",
+        passed: 0,
+        total: 9,
+        at_case: ""
+    )
+    assert unmet(m: m, arm: "strict", graded: other) == "was refused with unused_binding where it says wildcard_on_variant"
+    at4 = thesis_grade.Graded(
+        outcome: "compiled_wrong",
+        codes: [],
+        message: "case 4: printed something else",
+        passed: 4,
+        total: 9,
+        at_case: "4"
+    )
+    assert unmet(m: m, arm: "control", graded: at4) == ""
+    assert unmet(m: m, arm: "strict", graded: at4) == "ended compiled_wrong case 4 where it says compile_error wildcard_on_variant"
+    at3 = thesis_grade.Graded(
+        outcome: "compiled_wrong",
+        codes: [],
+        message: "case 3: printed something else",
+        passed: 3,
+        total: 9,
+        at_case: "3"
+    )
+    assert unmet(m: m, arm: "control", graded: at3) == "ended at case 3 where it says case 4"
+    passed = thesis_grade.Graded(outcome: "cases_pass", codes: [], message: "", passed: 9, total: 9, at_case: "")
+    assert unmet(m: m, arm: "control", graded: passed) == "ended cases_pass where it says compiled_wrong case 4"
+    aborted = thesis_grade.Graded(
+        outcome: "abort",
+        codes: [],
+        message: "case 4: panic: this match has no arm for .empty",
+        passed: 4,
+        total: 9,
+        at_case: "4"
+    )
+    assert unmet(m: m, arm: "control", graded: aborted) == "ended abort case 4 where it says compiled_wrong case 4"
+
+test "the assistant's third task's mutants end as they say in both arms, and one that lies is red"
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_mutants: " + thesis_sandbox.unrunnable())
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    copied = shell.run(scratch: scratch, program: "cp", words: ["cp", "-R", "tests/thesis/03", scratch + "/03"]).must()
+    assert copied.code == 0
+    task = thesis_tasks.read_task(scratch: scratch, dir: scratch + "/03", number: "03").must()
+    own = mutants_of(scratch: scratch, task: task).must()
+
+    # The premise this test rests on: the third task carries its mutants.
+    assert own.len() >= 1
+
+    for arm in ["strict", "control"]
+        for one in judged_all(scratch: scratch + "/" + arm, compiler: compiler, arm: arm, task: task, seconds: 10, bytes: 1048576).must()
+            assert one.why == ""
+
+    reference = read_file(path: scratch + "/03/reference.hero").must()
+    write_file(
+        path: scratch + "/03/mutants/zz-lies.hero",
+        text: "# mistake: none at all\n# strict: compiled_wrong case 1\n# control: compiled_wrong case 1\n" + reference
+    ).must()
+    lies = judged_all(
+        scratch: scratch + "/lies",
+        compiler: compiler,
+        arm: "control",
+        task: task,
+        seconds: 10,
+        bytes: 1048576
+    ).must()
+    last = lies[lies.len() - 1]
+    assert last.name == "zz-lies.hero"
+    assert last.outcome == "cases_pass"
+    assert last.why == "ended cases_pass where it says compiled_wrong case 1"
+
+    write_file(path: scratch + "/03/mutants/zz-notes.txt", text: "not a program\n").must()
+    assert strings.contains(
+        text: refusal_of(mutants_of(scratch: scratch, task: task)),
+        needle: "`zz-notes.txt`, and a mutant is a `.hero` file"
+    )
+
+function refusal_of(read: [Mutant]?) -> str
+    return match read
+        .ok _  => ""
+        .err e => e.msg

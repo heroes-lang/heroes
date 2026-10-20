@@ -1,0 +1,35 @@
+# mistake: brackets still open at the end are never checked
+# strict: compiled_wrong case 4
+# control: compiled_wrong case 4
+function main()
+    given = args()
+
+    if given.len() != 1
+        exit(code: 2)
+    text = given[0]
+    open: [u8] @= []
+    deepest: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        b = text[i]
+
+        if b == '(' || b == '[' || b == '{'
+            open @ open.push(b)
+
+            if open.len() > deepest
+                deepest @ open.len()
+        else if b == ')' || b == ']' || b == '}'
+            if open.len() == 0 || closer_of(open[open.len() - 1]) != b
+                print("unbalanced")
+                exit(code: 1)
+            open @ open.slice(from: 0, to: open.len() - 1)
+
+    print(deepest)
+
+function closer_of(opener: u8) -> u8
+    if opener == '('
+        return ')'
+
+    if opener == '['
+        return ']'
+    return '}'
