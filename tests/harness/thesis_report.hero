@@ -95,7 +95,7 @@ function report(scratch: str, out: str, seed: i64, primary: str, labels: str) ->
         strata @ strata.push(line)
 
     return ok(
-        rendered(verdicts: verdicts, seed: seed, primary: primary, through: asked_through(out)) + strata.join("\n") + "\n"
+        rendered(verdicts: verdicts, seed: seed, primary: primary, through: asked_through(out) + " " + capped_at(out)) + strata.join("\n") + "\n"
     )
 
 # The fields of a run's provenance that are its protocol, each of which a
@@ -328,6 +328,32 @@ function asked_through(out: str) -> str
         return "Asked through the `codex exec` harness (" + json_fields.text_at(of: doc.must(), name: "harness").default("") + "), a ChatGPT plan's, on the assistant's tasks alone: a table of its own, never pooled with the API's rows."
     return "Asked through the API."
 
+# The cap of turns the run's provenance names, and what it makes of green@k: a
+# cap below three leaves green@2 and green@3 no turn to be green at, so they
+# read green at the cap, and the page says so (defect 2171: a one-turn run's
+# primary was headed green@3 with nothing to say no third turn was asked).
+function capped_at(out: str) -> str
+    held = read_file(path: out + "/provenance.json")
+
+    if held.is_err()
+        return "No `provenance.json` names the cap of turns."
+    doc = json_read.read_json(held.must())
+
+    if doc.is_err()
+        return "The cap of turns is not said: `provenance.json` does not read as JSON."
+    turns = json_fields.whole_at(of: doc.must(), name: "turns")
+
+    if turns.is_err()
+        return "`provenance.json` names no cap of turns."
+    n = turns.must()
+
+    if n == 1
+        return "Each conversation was capped at 1 turn, so green@2 and green@3 read green@1."
+
+    if n == 2
+        return "Each conversation was capped at 2 turns, so green@3 reads green@2."
+    return "Each conversation was capped at " + n.to_str() + " turns."
+
 function rendered(verdicts: [thesis_verdict.Verdict], seed: i64, primary: str, through: str) -> str
     lines: [str] @= [
         "## What the run read"
@@ -336,10 +362,12 @@ function rendered(verdicts: [thesis_verdict.Verdict], seed: i64, primary: str, t
         ""
         through
         ""
+        "Prompt tokens are every turn's input, cache reads and cache writes together; tokens out hold the thinking with the answer. A loud failure is an abort, a crash or a timeout."
+        ""
     ]
     groups = grouped(verdicts)
     lines @ lines.push(
-        "| model | arm | context | n | green@1 | green@2 | green@3 | green@cap | Wilson 95% on green@3 | converged | mean turns to green | compile_error | abort | silent | other | out: refusal / transport / build | tokens in | tokens out |"
+        "| model | arm | context | n | green@1 | green@2 | green@3 | green@cap | Wilson 95% on green@3 | converged | mean turns to green | compile_error | loud (abort, crash, timeout) | silent | other | out: refusal / transport / build | prompt tokens | tokens out |"
     )
     lines @ lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
 
@@ -564,7 +592,7 @@ function row_of(g: Group) -> str
         last = v.turns[v.turns.len() - 1].outcome
 
         for t in v.turns
-            tokens_in @ tokens_in + t.input
+            tokens_in @ tokens_in + t.input + t.cache_read + t.cache_write
             tokens_out @ tokens_out + t.output
 
         if last == "api_refusal"
@@ -910,6 +938,68 @@ test "the report says what its rows were asked through, from the run's provenanc
     assert asked_through(scratch) == "Asked through the API."
     write_file(path: scratch + "/provenance.json", text: "not json").must()
     assert strings.contains(text: asked_through(scratch), needle: "does not read as JSON")
+
+test "the report names the run's cap of turns, and what a cap below three makes of green@2 and green@3"
+    scratch = shell.own_scratch()
+    assert capped_at(scratch) == "No `provenance.json` names the cap of turns."
+    write_file(path: scratch + "/provenance.json", text: "{\"turns\":1}").must()
+    assert capped_at(scratch) == "Each conversation was capped at 1 turn, so green@2 and green@3 read green@1."
+    write_file(path: scratch + "/provenance.json", text: "{\"turns\":2}").must()
+    assert capped_at(scratch) == "Each conversation was capped at 2 turns, so green@3 reads green@2."
+    write_file(path: scratch + "/provenance.json", text: "{\"turns\":5}").must()
+    assert capped_at(scratch) == "Each conversation was capped at 5 turns."
+    write_file(path: scratch + "/provenance.json", text: "{\"schema\":1}").must()
+    assert capped_at(scratch) == "`provenance.json` names no cap of turns."
+    write_file(path: scratch + "/provenance.json", text: "not json").must()
+    assert strings.contains(text: capped_at(scratch), needle: "does not read as JSON")
+
+test "a row's prompt tokens hold the cache's reads and writes beside the input, and a timeout is counted loud"
+    cached = thesis_verdict.Turn(
+        outcome: "cases_pass",
+        codes: [],
+        stop: "end_turn",
+        input: 100,
+        output: 50,
+        cache_read: 1000,
+        cache_write: 10
+    )
+    timed = thesis_verdict.Turn(
+        outcome: "timeout",
+        codes: [],
+        stop: "end_turn",
+        input: 7,
+        output: 3,
+        cache_read: 0,
+        cache_write: 0
+    )
+    green = thesis_verdict.Verdict(
+        key: thesis_verdict.verdict_key(task_sha: "taskaaaaaaaaaaaa", model: "claude-haiku-5-5", context_sha: "212264059c985c2e", sample: 1, arm: "strict"),
+        task_sha: "taskaaaaaaaaaaaa",
+        model: "claude-haiku-5-5",
+        arm: "strict",
+        context_sha: "212264059c985c2e",
+        sample: 1,
+        turns: [cached],
+        green_turn: 1,
+        converged: true
+    )
+    slow = thesis_verdict.Verdict(
+        key: thesis_verdict.verdict_key(task_sha: "taskbbbbbbbbbbbb", model: "claude-haiku-5-5", context_sha: "212264059c985c2e", sample: 1, arm: "strict"),
+        task_sha: "taskbbbbbbbbbbbb",
+        model: "claude-haiku-5-5",
+        arm: "strict",
+        context_sha: "212264059c985c2e",
+        sample: 1,
+        turns: [timed],
+        green_turn: 0,
+        converged: false
+    )
+    text = rendered(verdicts: [green, slow], seed: 7, primary: "the test's", through: "Asked through the API.")
+    assert strings.contains(text: text, needle: "| prompt tokens | tokens out |")
+    assert strings.contains(text: text, needle: "| loud (abort, crash, timeout) |")
+
+    # 100 + 1,000 + 10 and 7 in; 50 and 3 out; the timeout one loud failure.
+    assert strings.contains(text: text, needle: "| 0 | 1 | 0 | 0 | 0 / 0 / 0 | 1117 | 53 |")
 
 test "the primary is stratified by traps.txt and weighed by constructs.txt, on hand-computed numbers"
     verdicts: [thesis_verdict.Verdict] @= []
