@@ -241,3 +241,26 @@ their first Sonnet 5.5 request under defect 2173's rule, *asked
   first answers and is not a reading of their own first tries. The trial is
   asked again with every model named in its request, its measurement the next
   number.
+
+## Corrected underneath, 2026-10-21, later the same morning: the first `harness` rows were answered by Haiku 5.5
+
+The correction above says *the two answers Haiku 4.5 gave the first `harness`
+rows (defect 2173) have no price in that table*. Haiku 4.5 gave no answer.
+The two sessions, `dbdfb060` and `e37553be`, kept in
+`build/thesis-runs/00fb571c-claude-substituted` in the lane, hold two
+assistant messages each, all four `claude-haiku-5-5`, the API's own name for
+the model that wrote them; their `modelUsage` names
+`claude-haiku-4-5-20251001` first, 9,380 tokens in and 11 and 10 out, the
+session title `claude` 2.1.292 asked its small fast model for, and
+`claude-haiku-5-5` after it, 10,768 and 13,426 out, the answers. The
+instrument read the first name as the answer's until defect 2179, and the
+`unrecognized_model` on that run's stderr was `hasUnknownModelCost: true`, a
+price that version did not know. At Haiku 5.5's rates, the instrument's own
+table, the two answers cost $0.0067 and $0.0068.
+
+So defect 2173's rule stands, every answer held to the model its request
+named, and its diagnosis does not: no answer of this trial came from a model
+other than the one its request named. Defect 2176 stands as written, read
+from the `model` the API returned in each answer of the API's rows; the
+`harness` stop that brought it to light was a request that named Haiku 5.5,
+as 2176 says every turn-1 request did.
