@@ -4402,9 +4402,12 @@ were not measurable in it.
    conditional p beside it, never the primary), three outcomes named before the run (confirmed,
    falsified, inconclusive); everything else exploratory. `green@k` is *solved by turn k*, not Chen
    et al.'s pass@k, which is reported apart on the turn-1 samples, and Olausson's pass@t beside it
-   from the usage recorded. n from the trial's measured discordance and intra-task correlation; 40
-   author-written held-out tasks plus 20 in reserve, 3 samples each, 10 assistant-written tasks in
-   clear for the trial; a task's prose pins, or a hidden case covers, every choice point a blind
+   from the usage recorded. **n is fixed: 40 author-written held-out tasks plus 20 in reserve, 3
+   samples each**, 10 assistant-written tasks in clear for the trial; the power is declared unknown
+   and the inconclusive outcome stands named before the run, since the trial (measurement 050) found
+   no discordant pair of 90 and so no discordance to size n on (the author's reading of panel 226,
+   2026-10-21, R8 corrected; until then *n from the trial's measured discordance and intra-task
+   correlation*); a task's prose pins, or a hidden case covers, every choice point a blind
    reader found (the argument count, an unreadable input, the trailing newline, CRLF, a name's
    characters, signs and leading zeros, overflow, the order of ties, every malformed input's exit
    code). Contexts: `spec`; `none` (the task alone, read against each model's declared cutoff,

@@ -139,8 +139,11 @@ pre-registered primary, `green@3` strict-full minus control on Sonnet 5.5 with a
 cluster bootstrap over tasks and McNemar on the discordant pairs, named so
 because Chen et al. 2021's pass@k is another quantity, everything else
 exploratory, and three outcomes named before the freeze, confirmed, falsified,
-inconclusive; the sample size comes from the trial's measured discordance and
-intra-task correlation, never from the width of a single proportion's interval;
+inconclusive; the sample size is fixed at 40 held-out tasks and 3 samples
+each, the power declared unknown, since the trial found no discordant pair of
+90 to size it on (the author's reading of panel 226, 2026-10-21, R8 corrected;
+until then it was to come from the trial's measured discordance and intra-task
+correlation), never from the width of a single proportion's interval;
 contamination has two layers, the language (the spec is public since
 2026-09-08, each model's declared cutoff goes in the provenance) and the tasks
 (the canary, the transports' terms); and the model's program runs in a sandbox,

@@ -683,6 +683,17 @@ the amended *ablation* sentence and `count_tokens` on the program.
 Pending: the open decision https://github.com/heroes-lang/heroes/issues/2159 queues it, and the
 author's reading is recorded here when given.
 
+**Read by the author on 2026-10-21**, in these words, *ratifico 226 con R8 corretto*, meant as:
+*I ratify panel 226, with R8 corrected as the coordinator recommended*. The recommendation, put the
+same day in the session that ran the trial: R1 as built, every one of the 27 codes with its meaning
+in the control arm; R9's route A, the API's number the thesis; R10's opening within 30 days of the
+first `v*` release after the held-out run, or of the suite's being burned, and the key in the
+reviewed `thesis-attest` environment; R2 to R7 and R11 to R13 as written; and **R8 corrected**:
+n fixed at 40 held-out tasks plus 20 in reserve, 3 samples each, the power declared unknown and
+the inconclusive outcome named before the run, because measurement 050 found no discordant pair
+of 90 at `green@3` strict against control, so the trial gives no discordance to size n on, which
+R8 as written asked of it. design.md Part 11 and the milestone page carry the corrected rule.
+
 ## Process notes
 
 - The critic's first pass repaired the briefs in the places `critic-briefs.md` names before any
