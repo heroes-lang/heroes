@@ -38,10 +38,18 @@ constant OPENAI_KEY: str
 constant VERSION_HEADER: str
     "anthropic-version: 2023-06-01"
 
-# Seconds `curl` waits for the whole exchange before it gives up: above the
-# longest answer a model takes with thinking on, which the trial measures.
+# Seconds `curl` waits for the whole exchange before it gives up: thirty
+# minutes, so 32,000 tokens of output, the run's `max_tokens`, arrive at any
+# rate above eighteen a second; how long the slowest answer takes is not yet
+# measured. It was 900 under the watchdog's 600 until defect 2177, so the
+# watchdog cut an answer first.
 constant MAX_TIME: i64
-    900
+    1800
+
+# The bound `curl` runs under: a minute past its own deadline, the backstop
+# for a `curl` that ignores it (`shell.run_self_bounded`).
+constant WIRE_SECONDS: i64
+    1860
 
 function anthropic() -> issue_wire.Transport
     return issue_wire.Transport(send: anthropic_sent, pause: issue_wire.slept)
@@ -105,10 +113,13 @@ function curl_sent(world: issue_wire.World, request: issue_wire.Request, auth: [
             reply: issue_wire.failed(why: "the request's body could not be written to " + body_path, sent: false)
         )
 
-    ran = shell.run(
+    ran = shell.run_self_bounded(
         scratch: w.scratch,
         program: "curl",
-        words: curl_words(auth: auth, body_path: body_path, url: request.path)
+        words: curl_words(auth: auth, body_path: body_path, url: request.path),
+        seconds: WIRE_SECONDS,
+        bytes: 0,
+        stdin_path: ""
     )
     _ = shell.remove_tree(body_path).is_err()
 
@@ -146,7 +157,7 @@ test "the curl words keep the key out of argv, name the dialect's headers and th
         text: words.join(" "),
         needle: "--data-binary @build/x/request-1.json https://api.anthropic.com/v1/messages"
     )
-    assert strings.contains(text: words.join(" "), needle: "-H Expect: --max-time 900")
+    assert strings.contains(text: words.join(" "), needle: "-H Expect: --max-time 1800")
 
     for word in words
         assert !strings.contains(text: word, needle: "sk-")
@@ -156,3 +167,8 @@ test "the curl words keep the key out of argv, name the dialect's headers and th
     assert !may_have_reached(6)
     assert !may_have_reached(7)
     assert !may_have_reached(0)
+
+test "curl's deadline stands inside the bound it runs under, which no spawn passes"
+    assert WIRE_SECONDS > MAX_TIME
+    assert WIRE_SECONDS <= shell.SELF_BOUNDED_MOST
+    assert MAX_TIME > shell.WATCHDOG_SECONDS

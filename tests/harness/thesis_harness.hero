@@ -19,9 +19,11 @@
 # - **`--tools ""`**, which disables every tool, `--bare` leaving Bash and
 #   the file tools on;
 # - **`--output-format json`**, one result object (`SDKResultMessage`);
-# - **spawned by `run_bounded`** with `HARNESS_SECONDS` of its own, through
-#   `sh -c 'cd "$1" && HOME="$2" ...'`, so the child is one process in an
-#   empty folder with a home of its own;
+# - **spawned by `run_self_bounded`** under `HARNESS_SECONDS`, above the
+#   `API_TIMEOUT_MS` Claude Code is handed, through `sh -c 'cd "$1" &&
+#   HOME="$2" ...'`, so the child is one process in an empty folder with a
+#   home of its own, and the watchdog never cuts an answer the child is still
+#   within its time to finish (defect 2177);
 # - **refused before any child** where the key is not set, or where `command
 #   -v heroes` answers in the child's PATH.
 #
@@ -69,10 +71,16 @@ use thesis_wire
 constant CLAUDE: str
     "claude"
 
-# Seconds a harness child may run: the watchdog's own, the most `run_bounded`
-# grants any spawn of this harness.
+# Seconds a harness child may run: a minute past the deadline its API calls
+# are handed, `API_TIMEOUT_MS`, the wire's own thirty minutes; it was the
+# watchdog's 600 until defect 2177.
 constant HARNESS_SECONDS: i64
-    600
+    1860
+
+# Claude Code's deadline for one API request, in milliseconds, the wire's
+# `MAX_TIME`: the setting its own message names to raise *to wait longer*.
+constant API_TIMEOUT_MS: str
+    "1800000"
 
 # Bytes a harness child may write: one result object, an answer and its
 # accounting, far below this.
@@ -82,7 +90,7 @@ constant HARNESS_BYTES: i64
 # The child's start, R9's own words: one process in the folder `$1` with the
 # home `$2`, the harness's words after them.
 constant SPAWN: str
-    "cd \"$1\" && HOME=\"$2\" && export HOME && shift 2 && exec \"$@\""
+    "cd \"$1\" && HOME=\"$2\" && API_TIMEOUT_MS=1800000 && export HOME API_TIMEOUT_MS && shift 2 && exec \"$@\""
 
 constant CODEX: str
     "codex"
@@ -95,7 +103,7 @@ constant CODEX_HOME_DIR: str
 
 # `codex`'s start: `SPAWN`'s, its own home `$3` beside the child's.
 constant CODEX_SPAWN: str
-    "cd \"$1\" && HOME=\"$2\" && CODEX_HOME=\"$3\" && export HOME CODEX_HOME && shift 3 && exec \"$@\""
+    "cd \"$1\" && HOME=\"$2\" && CODEX_HOME=\"$3\" && API_TIMEOUT_MS=1800000 && export HOME CODEX_HOME API_TIMEOUT_MS && shift 3 && exec \"$@\""
 
 # One message of a request: who said it, and its text.
 record Said
@@ -366,7 +374,7 @@ function spawned(scratch: str, harness: Harness, asked: Asked, resume: str, n: i
     for word in wanted
         words @ words.push(word)
 
-    ran = shell.run_bounded(
+    ran = shell.run_self_bounded(
         scratch: scratch,
         program: "sh",
         words: words,
@@ -803,3 +811,10 @@ function request_of(system: str, messages: [str]) -> issue_wire.Request
 # failed one where `state/fail` exists.
 function stand_in(state: str) -> str
     return ["#!/bin/sh", "state='" + state + "'", "n=$(( $(cat \"$state/count\" 2>/dev/null || echo 0) + 1 ))", "echo \"$n\" > \"$state/count\"", "printf '%s\\n' \"$@\" > \"$state/args-$n\"", "pwd > \"$state/pwd-$n\"", "printf '%s\\n' \"$HOME\" > \"$state/home-$n\"", "cat > \"$state/stdin-$n\"", "if [ -f \"$state/fail\" ]; then printf '%s' '{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true,\"session_id\":\"x\",\"errors\":[\"the API answered 529\"],\"usage\":{}}'; exit 1; fi", "printf '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"answer %s\",\"session_id\":\"s%s\",\"stop_reason\":\"end_turn\",\"num_turns\":1,\"total_cost_usd\":0.01,\"usage\":{\"input_tokens\":10,\"output_tokens\":5,\"cache_read_input_tokens\":2,\"cache_creation_input_tokens\":0},\"modelUsage\":{\"claude-haiku-5-5-20261001\":{\"inputTokens\":10}}}' \"$n\" \"$n\""].join("\n") + "\n"
+
+test "the harness child runs under a bound past the API deadline it is handed, and both stand inside the wire's"
+    assert strings.contains(text: SPAWN, needle: "API_TIMEOUT_MS=" + API_TIMEOUT_MS + " ")
+    assert strings.contains(text: CODEX_SPAWN, needle: "API_TIMEOUT_MS=" + API_TIMEOUT_MS + " ")
+    assert API_TIMEOUT_MS == (thesis_wire.MAX_TIME * 1000).to_str()
+    assert HARNESS_SECONDS == thesis_wire.WIRE_SECONDS
+    assert HARNESS_SECONDS <= shell.SELF_BOUNDED_MOST

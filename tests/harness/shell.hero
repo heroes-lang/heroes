@@ -207,6 +207,35 @@ function run_bounded(scratch: str, program: str, words: [str], seconds: i64, byt
         program: program
     )
 
+# **A child with a deadline of its own runs under a bound above it**, never
+# under the watchdog's: `curl --max-time` and `claude -p` under
+# `API_TIMEOUT_MS` each end themselves, and the watchdog's ten minutes, below
+# their deadlines, cut a model's answer they were still within their time to
+# finish, which was then asked again and maybe paid again (defect 2177). The
+# caller passes `seconds` above the program's own deadline, as the backstop
+# for a program that ignores it; an hour at most, so no spawn of this harness
+# runs unbounded, and the other rules of `run_bounded` hold.
+constant SELF_BOUNDED_MOST: i64
+    3600
+
+function run_self_bounded(scratch: str, program: str, words: [str], seconds: i64, bytes: i64, stdin_path: str) -> Run?
+    if seconds <= 0 || seconds > SELF_BOUNDED_MOST
+        return fail(
+            code: "unbounded",
+            msg: program + " was asked to run under " + seconds.to_str() + " seconds, where a program bounding itself is held to 1 to " + SELF_BOUNDED_MOST.to_str()
+        )
+
+    if bytes > 0 && !can_limit_writes()
+        return fail(
+            code: "unlimitable",
+            msg: program + " was asked to write at most " + bytes.to_str() + " bytes, and this platform cannot hold a child to a ceiling on what it writes"
+        )
+
+    return insisted(
+        ran: spawned(scratch: scratch, program: program, words: words, in_path: stdin_path, write_limit: bytes, seconds: seconds)?,
+        program: program
+    )
+
 # Whether a child can be held to a ceiling on what it writes: every POSIX
 # platform, and not Windows. Asking clears any ceiling not yet taken.
 function can_limit_writes() -> bool
@@ -2345,3 +2374,35 @@ test "fixedbugs: on Windows a link, a compiler path and HEROES_RUNTIME holding a
         needle: "runtime      `HEROES_RUNTIME` is set, and its value, `" + w.root + "/rt" + surrogate + "`, is not UTF-8"
     )
     assert !remove_tree(scratch).is_err()
+
+test "a child bounding itself runs under the caller's bound, above the watchdog's where asked and never past an hour"
+    # Defect 2177, 2026-10-21: a transport with a deadline of its own is
+    # bounded above it, the watchdog's 600 seconds no longer its ceiling.
+    if !can_run_scripts()
+        print("SKIP shell: this machine runs no /bin/sh script")
+        return
+
+    scratch = own_scratch()
+    slow = run_self_bounded(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "sleep 30"],
+        seconds: 1,
+        bytes: 0,
+        stdin_path: ""
+    )
+    assert slow.must().code == 124
+    quick = run_self_bounded(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "exit 0"],
+        seconds: WATCHDOG_SECONDS + 1,
+        bytes: 0,
+        stdin_path: ""
+    )
+    assert quick.must().code == 0
+
+    for seconds in [0, SELF_BOUNDED_MOST + 1]
+        match run_self_bounded(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"], seconds: seconds, bytes: 0, stdin_path: "")
+            .ok _  => assert false
+            .err e => assert e.code == "unbounded"
