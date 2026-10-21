@@ -1,0 +1,360 @@
+# THE KIT FOR WRITING A HELD-OUT TASK (M-thesis-harness, 2026-10-21; issue
+# 2156, `docs/metrics/tasks.md` § The rules a task is written by,
+# `docs/metrics/writing-a-held-out-task.md`).
+#
+# `scaffold <folder> <NN>` writes one task's skeleton into a suite folder,
+# making the folder and its `LABEL`, `held-out`, where they are missing: a
+# `task.md` to replace with the task's prose, a first case, a reference that is
+# a hole until it is written, and a mutant whose three opening lines say what
+# decision 2172 asks of every held-out task. It never writes over a task that
+# exists.
+#
+# `lint <folder>` reads a suite and says, task by task, which of the rules a
+# task is written by do not hold, among those no other word checks: the prose
+# holds no spelling of the language and no mark of the skeleton; case 0, the
+# visible example, is shown in the prose; four to eight cases beside it, one at
+# least ending at a non-zero exit, none naming more than three files; a
+# reference of 25 to 80 lines of code with no hole; mutants, one a trap on a
+# held-out suite, none still the skeleton's; and over a held-out suite,
+# `traps.txt` and `constructs.txt` naming every task, and the spread the page
+# asks for. **It prints task numbers, rules and counts, never a line of a
+# task's prose, a case or a reference**, so a reader who must not see a held-out
+# task, a model above all, can be shown what it prints, as `dry --mute` can.
+# What only a reading of the prose can judge, a choice point pinned or the
+# prose naming no construct in English words, is the blind second reader's.
+
+use shell
+use strings
+use thesis_mutants
+use thesis_tasks
+
+# What a task's prose must not hold: the language's own spellings, which a
+# model would read as the answer's shape, and the skeleton's marks, which say
+# the prose is not written yet.
+constant FORBIDDEN: [str]
+    ["@=", "???", ".must(", "fail(code:", "function main", "<!--", "TODO"]
+
+# The construct classes `constructs.txt` names (`thesis_strata.hero`).
+constant CLASSES: [str]
+    ["record", "variant", "propagation", "at-parameter", "map", "function-value"]
+
+# What `lint` found: one line a finding or a task that holds, and how many
+# findings, which decide the word's exit.
+record Linted
+    lines: [str]
+    findings: i64
+
+# The tasks of a frozen held-out suite, the count `least` is written for.
+constant SUITE_SIZE: i64
+    40
+
+# The fewest tasks of a held-out suite each class must stand in
+# (`docs/metrics/tasks.md`, the spread).
+function least(kind: str) -> i64
+    return match kind
+        "record"         => 6
+        "variant"        => 8
+        "propagation"    => 8
+        "at-parameter"   => 5
+        "map"            => 6
+        "function-value" => 4
+        _                => 0
+
+# The fewest tasks of a folder of `count` each class must stand in: the page's
+# number for forty scaled to the folder and rounded up, so a suite of forty is
+# held to the page's own numbers, a reserve of twenty to the suite's
+# proportions, and a suite half written to where it stands.
+function needed(kind: str, count: i64) -> i64
+    return (least(kind) * count + SUITE_SIZE - 1) / SUITE_SIZE
+
+# A task's skeleton under `folder`, numbered `number`; the folder made.
+function scaffold(folder: str, number: str) -> str?
+    if number.len() != 2 || !thesis_tasks.all_digits(number)
+        return fail(code: "number", msg: "a task's number is two digits, `01` to `99`, not `" + number + "`")
+    dir = folder + "/" + number
+
+    if shell.exists(dir)
+        return fail(code: "exists", msg: dir + " exists already, and `scaffold` never writes over a task")
+    shell.mkdir_all(dir + "/cases")?
+    shell.mkdir_all(dir + "/mutants")?
+
+    if !shell.exists(folder + "/LABEL")
+        write_file(path: folder + "/LABEL", text: "held-out\n")?
+    write_file(path: dir + "/task.md", text: task_skeleton(number))?
+    write_file(path: dir + "/cases/0.args", text: "")?
+    write_file(path: dir + "/cases/0.expected", text: "")?
+    write_file(path: dir + "/reference.hero", text: reference_skeleton(number))?
+    write_file(path: dir + "/mutants/trap.hero", text: trap_skeleton())?
+    return ok(dir)
+
+function task_skeleton(number: str) -> str
+    return ["<!-- Replace this whole file with the task's prose, in English, naming no construct of the language: what the program receives, what it prints, and the exit code of every input it refuses. Show case 0, the visible example, at the end. `lint` refuses this line and every TODO while they stand. -->", "", "# Task " + number + ": TODO a title", "", "TODO what the program receives: its arguments, and the files they name.", "", "TODO what it prints, and the exit code of every malformed input.", "", "Example: with TODO, the output is", "", "```", "TODO", "```"].join("\n") + "\n"
+
+function reference_skeleton(number: str) -> str
+    return ["# The reference solution of task " + number + ": 25 to 80 lines of code, accepted by", "# `check`, passing every case in the strict arm and in the control arm.", "function main()", "    ???"].join("\n") + "\n"
+
+function trap_skeleton() -> str
+    return ["# mistake: TODO the mistake this task tempts", "# strict: compile_error TODO", "# control: compiled_wrong case TODO", "# The reference with that one mistake made: the strict arm refuses it with", "# the code above, and the control arm runs it to a wrong output on the", "# hidden case named, never on case 0 (decision 2172).", "function main()", "    ???"].join("\n") + "\n"
+
+# The suite under `folder` read against the rules, without printing a word of
+# what its tasks say.
+function lint(scratch: str, folder: str) -> Linted?
+    suite = thesis_tasks.read_suite(scratch: scratch, dir: folder)?
+    lines: [str] @= []
+    findings: i64 @= 0
+
+    for task in suite.tasks
+        found = task_findings(scratch: scratch, label: suite.label, task: task)?
+
+        if found.len() == 0
+            lines @ lines.push(task.number + " holds every rule lint checks")
+        else
+            for one in found
+                lines @ lines.push(task.number + " " + one)
+
+            findings @ findings + found.len()
+
+    if suite.label == "held-out"
+        over = suite_findings(folder: folder, suite: suite)
+
+        for one in over
+            lines @ lines.push("suite " + one)
+
+        findings @ findings + over.len()
+    lines @ lines.push(
+        "lint: " + suite.tasks.len().to_str() + " tasks, label " + suite.label + ", " + findings.to_str() + " findings"
+    )
+    return ok(Linted(lines: lines, findings: findings))
+
+# What one task breaks, each a rule and a count, never its text.
+function task_findings(scratch: str, label: str, task: thesis_tasks.Task) -> [str]?
+    out: [str] @= []
+
+    for token in FORBIDDEN
+        if strings.contains(text: task.prose, needle: token)
+            out @ out.push("prose: holds `" + token + "`")
+
+    example: str @= ""
+    has_example: bool @= false
+    exits: i64 @= 0
+
+    for c in task.cases
+        if c.name == "0"
+            has_example @ true
+            example @ stdout_of(c.expected)
+
+        if ends_in_exit(c.expected)
+            exits @ exits + 1
+
+        if c.files.len() > 3
+            out @ out.push("cases: case " + c.name + " names " + c.files.len().to_str() + " files, at most 3")
+
+    if !has_example
+        out @ out.push("cases: no case 0, the visible example")
+    else if example != "" && !strings.contains(text: task.prose, needle: example)
+        out @ out.push("prose: case 0's output is not shown in it")
+    beside: i64 @= task.cases.len()
+
+    if has_example
+        beside @ beside - 1
+
+    if beside < 4 || beside > 8
+        out @ out.push("cases: " + beside.to_str() + " beside case 0, the rule asks 4 to 8")
+
+    if exits == 0
+        out @ out.push("cases: none ends at a non-zero exit, the code of a malformed input")
+    reference = read_file(path: task.dir + "/reference.hero")
+
+    if reference.is_err()
+        out @ out.push("reference: no reference.hero")
+    else
+        lines = thesis_tasks.code_lines(reference.must())
+
+        if lines < 25 || lines > 80
+            out @ out.push("reference: " + lines.to_str() + " lines of code, the rule asks 25 to 80")
+
+        if strings.contains(text: reference.must(), needle: "???")
+            out @ out.push("reference: holds a hole, `???`")
+
+    # A mutant is told by its place in name order and never by its name, which
+    # can say the mistake, and a mutant that does not read by its code alone,
+    # the reader's message quoting its lines (`dry --mute` does the same).
+    match thesis_mutants.mutants_of(scratch: scratch, task: task)
+        .ok mutants =>
+            if mutants.len() == 0
+                out @ out.push("mutants: none, and the rule asks one for every mistake the task tempts")
+
+            for i in range(from: 0, to: mutants.len())
+                text = mutants[i].text
+
+                if strings.contains(text: text, needle: "TODO") || strings.contains(text: text, needle: "???")
+                    out @ out.push(
+                        "mutants: the " + (i + 1).to_str() + " of " + mutants.len().to_str() + " in name order is still the skeleton's"
+                    )
+
+            if mutants.len() > 0 && thesis_mutants.trap_refusal(label: label, mutants: mutants) != ""
+                out @ out.push(
+                    "mutants: no trap, a mutant saying `# strict: compile_error <code>` and `# control: compiled_wrong case K`, K not 0 (decision 2172)"
+                )
+        .err e =>
+            out @ out.push(
+                "mutants: one does not read as a mutant (" + e.code + "); `dry` without `--mute` names it, in a shell no model reads"
+            )
+
+    return ok(out)
+
+# What a held-out suite breaks as a whole: the two files that name its tasks
+# by number, and the spread.
+function suite_findings(folder: str, suite: thesis_tasks.Suite) -> [str]
+    out: [str] @= []
+    traps = read_file(path: folder + "/traps.txt").default("")
+    trapped = strings.words(text: traps)
+
+    for task in suite.tasks
+        if !listed(number: task.number, among: trapped)
+            out @ out.push(
+                "traps.txt: task " + task.number + " not listed, and every held-out task is a trap (decision 2172)"
+            )
+
+    constructs = read_file(path: folder + "/constructs.txt").default("")
+    counts: [i64] @= []
+
+    for _ in CLASSES
+        counts @ counts.push(0)
+
+    for task in suite.tasks
+        row = row_of(number: task.number, text: constructs)
+
+        if row.is_err()
+            out @ out.push("constructs.txt: task " + task.number + " has no line")
+
+        words = row.default([])
+
+        for w in range(from: 0, to: words.len())
+            at = index_of(word: words[w], among: CLASSES)
+
+            if at < 0
+                out @ out.push(
+                    "constructs.txt: task " + task.number + "'s word " + (w + 1).to_str() + " is no class of the six"
+                )
+            else
+                counts[at] @ counts[at] + 1
+
+    for i in range(from: 0, to: CLASSES.len())
+        need = needed(kind: CLASSES[i], count: suite.tasks.len())
+
+        if counts[i] < need
+            out @ out.push(
+                "spread: " + CLASSES[i] + " in " + counts[i].to_str() + " tasks, and " + suite.tasks.len().to_str() + " ask at least " + need.to_str() + " (" + least(CLASSES[i]).to_str() + " in " + SUITE_SIZE.to_str() + ", scaled)"
+            )
+
+    return out
+
+# The classes `constructs.txt` names for task `number`, its line's words after
+# the number, which may be none; a task with no line fails, which a line naming
+# no class does not (the assistant's task 03 has one).
+function row_of(number: str, text: str) -> [str]?
+    for line in strings.lines(text: text)
+        words = strings.words(text: line)
+
+        if words.len() > 0 && words[0] == number
+            return ok(words.slice(from: 1, to: words.len()))
+
+    return fail(code: "no_line", msg: "no line for task " + number)
+
+function listed(number: str, among: [str]) -> bool
+    return index_of(word: number, among: among) >= 0
+
+function index_of(word: str, among: [str]) -> i64
+    for i in range(from: 0, to: among.len())
+        if among[i] == word
+            return i
+
+    return -1
+
+# A case's expected stdout, its ending line taken off.
+function stdout_of(expected: str) -> str
+    kept: [str] @= []
+
+    for line in strings.lines(text: expected)
+        if !strings.starts_with(text: line, prefix: "!exit:") && !strings.starts_with(text: line, prefix: "!panic:")
+            kept @ kept.push(line)
+
+    return strings.trimmed(text: kept.join("\n"))
+
+function ends_in_exit(expected: str) -> bool
+    for line in strings.lines(text: expected)
+        if strings.starts_with(text: line, prefix: "!exit:")
+            return true
+
+    return false
+
+## Tests
+
+test "a scaffold is a skeleton lint refuses, written once, never over a task, its number two digits, and lint says no word of it"
+    scratch = shell.own_scratch()
+    folder = scratch + "/held"
+    dir = scaffold(folder: folder, number: "01").must()
+    assert dir == folder + "/01"
+    assert read_file(path: folder + "/LABEL").must() == "held-out\n"
+    assert scaffold(folder: folder, number: "01").is_err()
+    assert scaffold(folder: folder, number: "1").is_err()
+    assert scaffold(folder: folder, number: "a1").is_err()
+    linted = lint(scratch: scratch, folder: folder).must()
+    said = linted.lines.join("\n")
+    assert strings.contains(text: said, needle: "01 prose: holds `TODO`")
+    assert strings.contains(text: said, needle: "01 prose: holds `<!--`")
+    assert strings.contains(text: said, needle: "01 reference: holds a hole, `???`")
+    assert strings.contains(text: said, needle: "01 mutants: the 1 of 1 in name order is still the skeleton's")
+    assert !strings.contains(text: said, needle: "trap.hero")
+    assert strings.contains(text: said, needle: "01 cases: 0 beside case 0, the rule asks 4 to 8")
+    assert strings.contains(text: said, needle: "suite traps.txt: task 01 not listed")
+    assert strings.contains(text: said, needle: "suite constructs.txt: task 01 has no line")
+    assert linted.findings > 0
+    assert !strings.contains(text: said, needle: "Replace this whole file")
+    assert !strings.contains(text: said, needle: "what the program receives")
+
+test "a task that keeps every rule lint checks is told so, the suite's spread counted beside it, and a forbidden spelling or a lost trap is named"
+    scratch = shell.own_scratch()
+    folder = scratch + "/held"
+    shell.mkdir_all(folder).must()
+    copied = shell.run(scratch: scratch, program: "cp", words: ["cp", "-R", "tests/thesis/09", folder + "/09"]).must()
+    assert copied.code == 0
+    write_file(path: folder + "/LABEL", text: "held-out\n").must()
+    write_file(path: folder + "/traps.txt", text: "09\n").must()
+    write_file(path: folder + "/constructs.txt", text: "09 variant record\n").must()
+    linted = lint(scratch: scratch, folder: folder).must()
+    assert linted.lines[0] == "09 holds every rule lint checks"
+    spread: i64 @= 0
+
+    for line in linted.lines
+        if strings.starts_with(text: line, prefix: "suite spread: ")
+            spread @ spread + 1
+
+    # One task asks one of each class, so the four it does not name are told.
+    assert spread == 4
+    assert linted.findings == spread
+    prose = read_file(path: folder + "/09/task.md").must()
+    write_file(path: folder + "/09/task.md", text: prose + "\nkeep a total @= the sum\n").must()
+    _ = shell.remove_tree(folder + "/09/mutants/catch-all-area-zero.hero").is_err()
+    again = lint(scratch: scratch, folder: folder).must().lines.join("\n")
+    assert strings.contains(text: again, needle: "09 prose: holds `@=`")
+    assert strings.contains(text: again, needle: "09 mutants: no trap")
+    assert !strings.contains(text: again, needle: ".hero")
+    write_file(
+        path: folder + "/09/mutants/zz.hero",
+        text: "the secret mistake\n# strict: cases_pass\n# control: cases_pass\n"
+    ).must()
+    bad = lint(scratch: scratch, folder: folder).must().lines.join("\n")
+    assert strings.contains(text: bad, needle: "09 mutants: one does not read as a mutant (bad_mutant)")
+    assert !strings.contains(text: bad, needle: "secret")
+    assert !strings.contains(text: bad, needle: "zz")
+
+test "the spread is the page's for forty, scaled to the folder and rounded up"
+    assert needed(kind: "variant", count: 40) == 8
+    assert needed(kind: "function-value", count: 40) == 4
+    assert needed(kind: "variant", count: 20) == 4
+    assert needed(kind: "at-parameter", count: 20) == 3
+    assert needed(kind: "record", count: 1) == 1
+    assert needed(kind: "record", count: 0) == 0
+    assert needed(kind: "no-class", count: 40) == 0

@@ -57,6 +57,23 @@ READERS = frozenset({"cat", "less", "more", "head", "tail", "bat", "open",
 SECRETS = ("$ANTHROPIC_API_KEY", "${ANTHROPIC_API_KEY}",
            "$CLOUDFLARE_API_TOKEN", "${CLOUDFLARE_API_TOKEN}")
 
+# **A held-out task in clear is read by no model** (M-thesis-harness,
+# 2026-10-21, issue 2156; `docs/metrics/writing-a-held-out-task.md`). The author
+# writes the sealed suite's tasks in `held-out-draft/`, which git ignores, and
+# an archive is opened into `build/opened/`; a task a model has read is held out
+# no longer, and this shell's transcript is read by one, on terms the protocol
+# has not documented as training on nothing (`docs/metrics/tasks.md`). The
+# thesis instrument's words that print numbers, digests and rules and never a
+# word of a task may name the two folders: `dry` with `--mute` alone, since
+# without it a failure prints what a case expected. Every other command naming
+# one is refused. What it cannot see is what the rules around it cannot: a path
+# assembled from pieces or held in a variable, and a walk from above that names
+# neither folder (`grep -r`, `find .`); `.claude/settings.json`'s `deny` rules
+# hold the file tools to the same folders.
+HELD_OUT = (("held-out-draft",), ("build", "opened"))
+THESIS = "tests/harness/thesis.hero"
+TASK_FREE = frozenset({"lint", "tasks", "seal", "canary", "scaffold", "unseal"})
+
 
 HEREDOC = re.compile(r"<<-?\s*(?:'([^']+)'|\"([^\"]+)\"|([A-Za-z_][A-Za-z0-9_]*))")
 
@@ -740,6 +757,34 @@ def gh_rule(w, segment):
     return None
 
 
+def names_held_out(words):
+    """Whether a word of `words` is a path naming a folder of held-out tasks
+    in clear, or a path inside one: a word is read as the paths it holds,
+    split at `=`, `:` and `,`, so `--into=build/opened` is one, and a word
+    with a space in it, a message's, holds none."""
+    for word in words:
+        for piece in re.split(r"[=:,]", word):
+            if any(c.isspace() for c in piece):
+                continue
+            parts = [p for p in piece.strip("'\"").split("/") if p not in ("", ".")]
+            for folder in HELD_OUT:
+                n = len(folder)
+                if any(tuple(parts[i:i + n]) == folder for i in range(len(parts) - n + 1)):
+                    return True
+    return False
+
+
+def task_free(w):
+    """Whether `w` runs the thesis instrument with a word that prints no word
+    of a task: the word after the program's `--`."""
+    if not any(t == THESIS or t.endswith("/" + THESIS) for t in w) or "--" not in w:
+        return False
+    after = w[w.index("--") + 1:]
+    if not after:
+        return False
+    return after[0] in TASK_FREE or (after[0] == "dry" and "--mute" in after)
+
+
 def judged(raw, w, here, segment, command, cwd, seen=frozenset()):
     """The refusal of one command, or None: `raw` its words as written, `w`
     with the wrappers left out, run in `here`, inside the segment `segment` of
@@ -940,6 +985,17 @@ def judged(raw, w, here, segment, command, cwd, seen=frozenset()):
         return (
             "refused: `.env` holds the live keys. `.env.example` is the "
             "shape and carries no value. `.env.example`"
+        )
+
+    # A held-out task in clear, read into this transcript (its rule is above,
+    # with `HELD_OUT`).
+    if names_held_out(raw) and not task_free(w):
+        return (
+            "refused: that names a folder of held-out tasks in clear (`held-out-draft/` "
+            "or `build/opened/`), and a task a model has read is held out no longer. "
+            "Run it in a shell no model reads; from here only the thesis instrument's "
+            "`lint`, `tasks`, `seal`, `canary`, `scaffold`, `unseal` and `dry --mute`. "
+            "`docs/metrics/writing-a-held-out-task.md`"
         )
 
     # A GitHub write, or the credential itself, from the assistant's shell.

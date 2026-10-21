@@ -58,6 +58,7 @@ use thesis_args
 use thesis_canary
 use thesis_grade
 use thesis_harness
+use thesis_kit
 use thesis_mutants
 use thesis_price
 use thesis_prompt
@@ -99,6 +100,8 @@ function main()
         "canary"       => canary_word(scratch: scratch, asked: asked)
         "unseal"       => unseal_word(scratch: scratch, asked: asked)
         "canary-probe" => canary_probe_word(scratch: scratch, asked: asked)
+        "scaffold"     => scaffold_word(asked: asked)
+        "lint"         => lint_word(scratch: scratch, asked: asked)
         _              => 2
 
     _ = shell.remove_tree(scratch).is_err()
@@ -554,6 +557,35 @@ function canary_word(scratch: str, asked: thesis_args.Asked) -> i64
     match thesis_seal.canaried(scratch: scratch, folder: folder)
         .ok n =>
             print("canaries written " + n.to_str() + " in " + folder)
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+# `scaffold`: one task's skeleton written into a suite folder
+# (`thesis_kit.hero`); exit 0 with the folder printed, 2 where the number is
+# not two digits or the task exists.
+function scaffold_word(asked: thesis_args.Asked) -> i64
+    match thesis_kit.scaffold(folder: asked.paths[0], number: asked.paths[1])
+        .ok dir =>
+            print("scaffold " + dir)
+            return 0
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+# `lint`: the suite read against the rules no other word checks, every line a
+# task number, a rule and a count, never a word of a task (`thesis_kit.hero`);
+# exit 0 where nothing is found, 1 where something is, 2 where the suite does
+# not read.
+function lint_word(scratch: str, asked: thesis_args.Asked) -> i64
+    match thesis_kit.lint(scratch: scratch, folder: asked.paths[0])
+        .ok linted =>
+            for line in linted.lines
+                print(line)
+
+            if linted.findings > 0
+                return 1
             return 0
         .err e =>
             hero_write_err(text: "thesis: " + e.msg + "\n")

@@ -61,6 +61,15 @@ __pycache__/
 .env.*
 !.env.example
 
+# The held-out tasks in clear, written here before the freeze seals them into
+# `tests/thesis/held-out/` (`docs/metrics/writing-a-held-out-task.md`, issue
+# 2156, 2026-10-21). This repository is public, so a task committed in clear
+# enters the next crawl and is held out no longer; `build/opened/`, where an
+# archive is opened, is under `/build` above. The assistant's settings and
+# shell guard refuse both folders as well (`.claude/settings.json`,
+# `.claude/hooks/guard_bash.py`).
+/held-out-draft/
+
 # Wrangler's local state: a cached `request.cf` object and miniflare's cache.
 # Derived, per-machine, and written by a `wrangler` invocation rather than by
 # anybody. Never project content.

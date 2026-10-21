@@ -2301,6 +2301,64 @@ class GithubWrites(unittest.TestCase):
         self.assertIsNone(self.said("git log --oneline --grep='gh issue create'"))
 
 
+class HeldOut(unittest.TestCase):
+    """Issue 2156, 2026-10-21: a held-out task in clear is read by no model, so
+    a command naming `held-out-draft/` or `build/opened/` is refused in the
+    assistant's shell, save the thesis instrument's words that print no word
+    of a task; and the file tools are denied the same folders by the
+    settings."""
+
+    def setUp(self):
+        self.top = fresh("hooks-2156-")
+        self.tree = make_tree(os.path.join(self.top, "tree"))
+
+    def said(self, command):
+        return guard_bash.verdict(command, self.tree)
+
+    def test_a_reader_a_walk_or_a_move_into_either_folder_is_refused(self):
+        for command in ("cat held-out-draft/suite/01/task.md", "ls held-out-draft", "ls ./held-out-draft/",
+                        "cd held-out-draft && ls", "head -n 3 build/opened/03/cases/1.expected",
+                        "grep -rn x held-out-draft/", "cp -R build/opened /tmp/x",
+                        "find /Users/x/repo/held-out-draft -name '*.md'", "sed -n 1,9p held-out-draft/suite/07/reference.hero",
+                        "python3 -I -c 'print(1)' --path=held-out-draft/suite"):
+            said = self.said(command)
+            self.assertIsNotNone(said, command)
+            self.assertIn("held out no longer", said)
+
+    def test_a_wrapper_or_a_shell_does_not_hide_it(self):
+        self.assertIsNotNone(self.said("caffeinate -i cat held-out-draft/suite/01/task.md"))
+        self.assertIsNotNone(self.said("sh -c 'cat held-out-draft/suite/01/task.md'"))
+        self.assertIsNotNone(self.said("true; less build/opened/02/task.md"))
+
+    def test_the_instruments_words_that_print_no_task_pass_and_the_others_are_refused(self):
+        start = "./heroes-next run tests/harness/thesis.hero -- "
+        for word in ("lint held-out-draft/suite", "tasks held-out-draft/suite --label held-out",
+                     "seal held-out-draft/suite -o tests/thesis/held-out/suite.enc --key HEROES_TASKS_KEY",
+                     "canary held-out-draft/suite", "scaffold held-out-draft/suite 07",
+                     "unseal --sealed tests/thesis/held-out/suite.enc --into build/opened",
+                     "dry held-out-draft/suite --mute", "dry build/opened --arm control --mute --compiler ./heroes-next"):
+            self.assertIsNone(self.said(start + word), word)
+            self.assertIsNone(self.said("caffeinate -i " + start + word), word)
+        for word in ("dry held-out-draft/suite", "grade x.hero --task held-out-draft/suite/01",
+                     "plan held-out-draft/suite --model claude-sonnet-5-5", "report build/opened"):
+            self.assertIsNotNone(self.said(start + word), word)
+
+    def test_a_word_that_only_mentions_a_folder_is_not_a_path_into_it(self):
+        self.assertIsNone(self.said("git commit -m 'the kit: lint reads held-out-draft/suite' -- .gitignore"))
+        self.assertIsNone(self.said("grep -n held-out .gitignore"))
+        self.assertIsNone(self.said("ls tests/thesis/held-out"))
+        self.assertIsNone(self.said("ls build/thesis-1234/opened-not"))
+        self.assertIsNone(self.said("cat docs/metrics/writing-a-held-out-task.md"))
+
+    def test_the_settings_deny_the_file_tools_both_folders(self):
+        with open(os.path.join(os.path.dirname(HOOKS), "settings.json"), encoding="utf-8") as f:
+            deny = json.load(f)["permissions"]["deny"]
+        for tool in ("Read", "Edit"):
+            for folder in ("held-out-draft", "build/opened"):
+                self.assertIn(tool + "(/" + folder + "/**)", deny)
+                self.assertIn(tool + "(**/" + folder + "/**)", deny)
+
+
 class Credit(unittest.TestCase):
     """CL-083, 2026-10-11: a file the code cites a defect in is asked of the
     `records` suite narrowed to it. Since the author's seven answers of

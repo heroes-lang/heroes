@@ -50,6 +50,8 @@ by construction, so it carries no information.
 - `tasks.md` — the task suites' rules: who writes a task, how, the canary, the adjudication, and
   where the tasks live: the assistant's in clear under `tests/thesis/`, the author's sealed in this
   repository.
+- `writing-a-held-out-task.md` — the order of work for whoever writes the held-out tasks, from the
+  instrument's `scaffold` to the freeze's `seal`, and the folders no model reads.
 
 Provenance, on every run: spec sha, compiler sha and `sources` key, model id with its effort
 and declared cutoff, the template's sha and the request layout's sha, suite sha, per request the

@@ -41,7 +41,15 @@
       "Bash(git stash push*)",
       "Bash(git stash save*)",
       "Bash(git push -f*)",
-      "Bash(git push --force*)"
+      "Bash(git push --force*)",
+      "Read(/held-out-draft/**)",
+      "Read(**/held-out-draft/**)",
+      "Edit(/held-out-draft/**)",
+      "Edit(**/held-out-draft/**)",
+      "Read(/build/opened/**)",
+      "Read(**/build/opened/**)",
+      "Edit(/build/opened/**)",
+      "Edit(**/build/opened/**)"
     ],
     "ask": [
       "Bash(git push*)"

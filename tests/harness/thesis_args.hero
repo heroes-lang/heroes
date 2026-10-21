@@ -18,11 +18,25 @@
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live --max-dollars n [--max-requests n] | preregister <folder> --model <id>... [plan's flags] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live]; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
+    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live --max-dollars n [--max-requests n] | preregister <folder> --model <id>... [plan's flags] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live] | scaffold <folder> <NN> | lint <folder>; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
 
 # The words of this program.
 constant WORDS: [str]
-    ["tasks", "dry", "grade", "plan", "run", "preregister", "report", "seal", "canary", "unseal", "canary-probe"]
+    [
+        "tasks"
+        "dry"
+        "grade"
+        "plan"
+        "run"
+        "preregister"
+        "report"
+        "seal"
+        "canary"
+        "unseal"
+        "canary-probe"
+        "scaffold"
+        "lint"
+    ]
 
 # The labels a suite may carry: the assistant's tasks, in clear, which the
 # instrument is tried on; the author's, held out (design.md Part 11).
@@ -176,6 +190,12 @@ function parsed(word: str, words: [str]) -> Asked
 
     if word == "canary" && a.paths.len() != 1
         return wrong(word: word, why: "`canary` takes one folder")
+
+    if word == "scaffold" && a.paths.len() != 2
+        return wrong(word: word, why: "`scaffold` takes a suite folder and a task's number, `scaffold <folder> 01`")
+
+    if word == "lint" && a.paths.len() != 1
+        return wrong(word: word, why: "`lint` takes one folder")
 
     if word == "report" && a.paths.len() != 1
         return wrong(word: word, why: "`report` takes one run folder, the `--out` of a run")
