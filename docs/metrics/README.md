@@ -52,6 +52,8 @@ by construction, so it carries no information.
   repository.
 - `writing-a-held-out-task.md` — the order of work for whoever writes the held-out tasks, from the
   instrument's `scaffold` to the freeze's `seal`, and the folders no model reads.
+- `trap-families.md` — the 27 rules the control arm drops and what it does with each, read from
+  its witnesses, so a held-out task's trap is chosen from facts of the compiler.
 
 Provenance, on every run: spec sha, compiler sha and `sources` key, model id with its effort
 and declared cutoff, the template's sha and the request layout's sha, suite sha, per request the

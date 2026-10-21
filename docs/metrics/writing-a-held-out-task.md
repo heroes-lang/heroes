@@ -54,7 +54,8 @@ model indexes.
    opening `# mistake:`, `# strict:` and `# control:` (`docs/metrics/tasks.md`, the hand mutants).
    **At least one is the trap** every held-out task carries (decision 2172): `# strict:
    compile_error <code>` and `# control: compiled_wrong case K`, `K` a hidden case and never `0`.
-   A file's name may say its mistake: no word that can be shown prints it.
+   A file's name may say its mistake: no word that can be shown prints it. Which rules the
+   control arm runs with another meaning, and so can make a trap, is `docs/metrics/trap-families.md`.
 6. **The two lists**, one line a task: the number in `traps.txt` (every held-out task is a trap),
    and in `constructs.txt` the number then its classes among `record`, `variant`, `propagation`,
    `at-parameter`, `map` and `function-value`.
