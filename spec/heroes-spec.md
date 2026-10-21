@@ -313,8 +313,8 @@ array itself to an `@` parameter or hoist it into a name.
 An out-of-bounds index or slice aborts, and so does a slice that splits a character.
 
 ## 11. Built-ins
-Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` ·
-`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (ascending: a number by value, a `str` by bytes, `false` before `true`; never a type parameter) ·
+Built-ins: `print(...)` · `len` · `push` · `xs.slice(from:, to:)` ·
+`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` (`n` a `u64`) · `sort` (ascending: a number by value, a `str` by bytes, `false` before `true`; never a type parameter) ·
 `to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
 `to_u32` `to_u64` — and, written in Heroes: `map` · `filter`, keeping what
 the function accepts · `fold` (left, its function names them `acc` then `item`) · `find` (the first it accepts, else `not_found`) ·
