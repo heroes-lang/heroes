@@ -24,6 +24,11 @@
 #   HOME="$2" ...'`, so the child is one process in an empty folder with a
 #   home of its own, and the watchdog never cuts an answer the child is still
 #   within its time to finish (defect 2177);
+# - **`CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1`** in the child's environment,
+#   which Claude Code's documentation says *skips the background
+#   small/fast-model request that generates a session title* (its environment
+#   variables page, read 2026-10-21), so every request the child sends is the
+#   answer's own (defect 2179);
 # - **refused before any child** where the key is not set, or where `command
 #   -v heroes` answers in the child's PATH.
 #
@@ -53,9 +58,12 @@
 # What the harness does not take: a token ceiling, which none of its flags
 # sets, and session persistence's refusal, `--no-session-persistence`, since
 # a later turn resumes a saved session. The model it answers with is read
-# from `modelUsage`, and where that names none it is left unnamed, never
-# filled with the one asked: `claude -p` 2.1.292 answered a model it did not
-# know with another (defect 2173), and only the name it gives can show it.
+# from `modelUsage`, which counts every request of the child: one name is the
+# answer's, several are told together, and none is left unnamed, never filled
+# with the one asked, so defect 2173's rule stops a row that cannot show its
+# model. The title request came first in it, Haiku 4.5's under 2.1.292 and
+# Haiku 5.5's under 2.1.304, and was read as the answer's model until defect
+# 2179; the answers were the asked model's (their sessions' messages say so).
 
 use issue_wire
 use json_fields
@@ -87,10 +95,15 @@ constant API_TIMEOUT_MS: str
 constant HARNESS_BYTES: i64
     4194304
 
+# The setting that keeps Claude Code from asking a model of its own for a
+# session title (defect 2179).
+constant NO_TITLE: str
+    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1"
+
 # The child's start, R9's own words: one process in the folder `$1` with the
 # home `$2`, the harness's words after them.
 constant SPAWN: str
-    "cd \"$1\" && HOME=\"$2\" && API_TIMEOUT_MS=1800000 && export HOME API_TIMEOUT_MS && shift 2 && exec \"$@\""
+    "cd \"$1\" && HOME=\"$2\" && API_TIMEOUT_MS=1800000 && CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1 && export HOME API_TIMEOUT_MS CLAUDE_CODE_DISABLE_TERMINAL_TITLE && shift 2 && exec \"$@\""
 
 constant CODEX: str
     "codex"
@@ -566,15 +579,15 @@ function api_body(h: Heard) -> str
 function count(of: json_read.Json, name: str) -> i64
     return json_fields.whole_at(of: of, name: name).default(0)
 
-# The model that answered: the first `modelUsage` names, else none (defect 2173).
+# The model that answered, as `modelUsage` gives it: the one model it names;
+# several joined with `+` in its order, a name no model asked can be, so
+# defect 2173's rule stops the row naming them; none as "". Its first name was
+# taken for the answer's until defect 2179, and it was a session title's.
 function answering(result: json_read.Json) -> str
     match json_fields.field(of: result, name: "modelUsage")
         .ok held =>
             match held
-                .fields f =>
-                    if f.names.len() > 0
-                        return f.names[0]
-                    return ""
+                .fields f                                               => return f.names.join("+")
                 .null_value | .truth _ | .number _ | .text _ | .items _ => return ""
         .err _ => return ""
 
@@ -587,6 +600,17 @@ test "the harness's words: print mode, nothing of the machine, no tool, one JSON
 
     for word in later
         assert !strings.contains(text: word, needle: "sk-")
+
+test "the answering model is the one modelUsage names; several are named together, never the first alone, and none is none (defect 2179)"
+    # `claude` 2.1.304's own `modelUsage` for one Sonnet 5.5 answer with its
+    # title request on, 2026-10-21: the title's model first, the answer's after.
+    both = "{\"modelUsage\":{\"claude-haiku-5-5\":{\"inputTokens\":1181,\"outputTokens\":19},\"claude-sonnet-5-5\":{\"inputTokens\":144,\"outputTokens\":52}}}"
+    assert answering(json_read.read_json(both).must()) == "claude-haiku-5-5+claude-sonnet-5-5"
+    one = "{\"modelUsage\":{\"claude-sonnet-5-5\":{\"inputTokens\":144,\"outputTokens\":53}}}"
+    assert answering(json_read.read_json(one).must()) == "claude-sonnet-5-5"
+    assert answering(json_read.read_json("{\"modelUsage\":{}}").must()) == ""
+    assert answering(json_read.read_json("{\"result\":\"x\"}").must()) == ""
+    assert strings.contains(text: SPAWN, needle: " " + NO_TITLE + " ")
 
 test "a request is read back to its model, effort, system text and messages, and the prompt is a first turn whole or a later turn's message"
     asked = asked_of(request_of(system: "SPEC", messages: [thesis_answer.user_turn("TASK")]).body).must()
@@ -651,6 +675,10 @@ test "a stand-in harness answers two arms over three turns: the first from the p
     assert !strings.contains(text: read_file(path: state + "/args-1").must(), needle: "--resume")
     assert strings.trimmed(read_file(path: state + "/pwd-1").must()) == here + "/out/harness-cwd"
     assert strings.trimmed(read_file(path: state + "/home-1").must()) == here + "/out/harness-home"
+
+    # The child is handed the setting that keeps its own title request off
+    # (defect 2179).
+    assert strings.trimmed(read_file(path: state + "/title-1").must()) == "1"
 
     # Two arms continue one history: each resumes the first session, forked.
     a = harness_sent(
@@ -810,7 +838,7 @@ function request_of(system: str, messages: [str]) -> issue_wire.Request
 # and stdin under `state`, and prints a result in the documented shape, or a
 # failed one where `state/fail` exists.
 function stand_in(state: str) -> str
-    return ["#!/bin/sh", "state='" + state + "'", "n=$(( $(cat \"$state/count\" 2>/dev/null || echo 0) + 1 ))", "echo \"$n\" > \"$state/count\"", "printf '%s\\n' \"$@\" > \"$state/args-$n\"", "pwd > \"$state/pwd-$n\"", "printf '%s\\n' \"$HOME\" > \"$state/home-$n\"", "cat > \"$state/stdin-$n\"", "if [ -f \"$state/fail\" ]; then printf '%s' '{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true,\"session_id\":\"x\",\"errors\":[\"the API answered 529\"],\"usage\":{}}'; exit 1; fi", "printf '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"answer %s\",\"session_id\":\"s%s\",\"stop_reason\":\"end_turn\",\"num_turns\":1,\"total_cost_usd\":0.01,\"usage\":{\"input_tokens\":10,\"output_tokens\":5,\"cache_read_input_tokens\":2,\"cache_creation_input_tokens\":0},\"modelUsage\":{\"claude-haiku-5-5-20261001\":{\"inputTokens\":10}}}' \"$n\" \"$n\""].join("\n") + "\n"
+    return ["#!/bin/sh", "state='" + state + "'", "n=$(( $(cat \"$state/count\" 2>/dev/null || echo 0) + 1 ))", "echo \"$n\" > \"$state/count\"", "printf '%s\\n' \"$@\" > \"$state/args-$n\"", "pwd > \"$state/pwd-$n\"", "printf '%s\\n' \"$HOME\" > \"$state/home-$n\"", "printf '%s\\n' \"$CLAUDE_CODE_DISABLE_TERMINAL_TITLE\" > \"$state/title-$n\"", "cat > \"$state/stdin-$n\"", "if [ -f \"$state/fail\" ]; then printf '%s' '{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true,\"session_id\":\"x\",\"errors\":[\"the API answered 529\"],\"usage\":{}}'; exit 1; fi", "printf '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"answer %s\",\"session_id\":\"s%s\",\"stop_reason\":\"end_turn\",\"num_turns\":1,\"total_cost_usd\":0.01,\"usage\":{\"input_tokens\":10,\"output_tokens\":5,\"cache_read_input_tokens\":2,\"cache_creation_input_tokens\":0},\"modelUsage\":{\"claude-haiku-5-5-20261001\":{\"inputTokens\":10}}}' \"$n\" \"$n\""].join("\n") + "\n"
 
 test "the harness child runs under a bound past the API deadline it is handed, and both stand inside the wire's"
     assert strings.contains(text: SPAWN, needle: "API_TIMEOUT_MS=" + API_TIMEOUT_MS + " ")

@@ -407,8 +407,9 @@ function every_arm_kept(plan: Plan, task_sha: str, model: str, context_sha: str,
 # answered by `claude-haiku-4-5-20251001`), and anything else is another
 # model's, which a row named for the asked one would misreport and the cap
 # would misprice; an answer that names no model cannot be told the asked
-# one's (defect 2173: `claude -p` 2.1.292 did not know `claude-haiku-5-5` and
-# answered with Haiku 4.5). The run stops there and keeps nothing of it.
+# one's (defect 2173; the answer that prompted it was the asked model's, a
+# session title's model read in its place, defect 2179). The run stops there
+# and keeps nothing of it.
 function substituted(asked: str, answered: str) -> str
     if answered == asked
         return ""
