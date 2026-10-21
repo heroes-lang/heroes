@@ -91,7 +91,7 @@ function sweep(transport: issue_wire.Transport, world: issue_wire.World, models:
             body: str @= thesis_answer.anthropic_request(
                 model: model,
                 max_tokens: max_tokens,
-                effort: effort,
+                effort: thesis_answer.effort_for(model: model, asked: effort)?,
                 system: "",
                 messages: messages
             )
@@ -203,7 +203,7 @@ test "a sweep asks every probe of every model, reads a completion, and keeps a l
         dialect: "anthropic",
         base: "https://api.example",
         max_tokens: 4000,
-        effort: ""
+        effort: "low"
     ).must()
     assert swept.results.len() == 4
     assert swept.results[0].completed

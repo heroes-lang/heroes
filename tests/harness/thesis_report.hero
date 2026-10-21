@@ -1092,7 +1092,7 @@ test "a run is set against its pre-registration field by protocol field, and a m
         text: "{\"date\":\"2026-11-02\",\"head\":\"bbb\",\"samples\":3,\"models\":[\"claude-sonnet-5-5\"],\"instrument\":\"i1\"}"
     ).must()
     same = deviation_lines(out: scratch, dir: scratch).join("\n")
-    assert strings.contains(text: same, needle: "None: the run holds every one of the 20 protocol fields")
+    assert strings.contains(text: same, needle: "None: the run holds every one of the 21 protocol fields")
     write_file(
         path: scratch + "/provenance.json",
         text: "{\"date\":\"2026-11-02\",\"head\":\"bbb\",\"samples\":1,\"models\":[\"claude-sonnet-5-5\"],\"instrument\":\"i2\",\"turns\":5}"

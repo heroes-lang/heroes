@@ -148,6 +148,13 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
         for model in plan.models
             _ = thesis_price.price_of(model: model, prompt_tokens: 0)?
 
+    # And every model's effort is written out before anything is asked
+    # (panel 226's R7): one the run names none for and that has no default
+    # refuses the run (defect 2181). The OpenAI-compatible dialect sends none.
+    if plan.dialect != "openai"
+        for model in plan.models
+            _ = thesis_answer.effort_for(model: model, asked: plan.effort)?
+
     if plan.live && tally.priced
         tally.spent @ spent_under(scratch: scratch, out: plan.out)?
 
@@ -324,7 +331,7 @@ function asked_once(plan: Plan, model: str, transport: issue_wire.Transport, wor
         body @ thesis_answer.anthropic_request(
             model: model,
             max_tokens: plan.max_tokens,
-            effort: plan.effort,
+            effort: thesis_answer.effort_for(model: model, asked: plan.effort)?,
             system: system,
             messages: messages
         )
@@ -749,6 +756,17 @@ function planned_provenance(plan: Plan, scratch: str) -> str?
 
 function provenance_json(plan: Plan, suite: thesis_tasks.Suite, template: thesis_prompt.Template, layout_sha: str, contexts: [thesis_prompt.Context]) -> str
     named: [str] @= []
+    efforts: [str] @= []
+
+    # The effort each model's requests carry, written out (defect 2181).
+    for model in plan.models
+        effort: str @= "(not sent: the OpenAI-compatible dialect names none)"
+
+        if plan.dialect != "openai"
+            effort @ thesis_answer.effort_for(model: model, asked: plan.effort).default("(none written)")
+        efforts @ efforts.push(
+            thesis_json.object([thesis_json.member(key: "model", value: model), thesis_json.member(key: "effort", value: effort)])
+        )
 
     for c in contexts
         named @ named.push(
@@ -756,7 +774,7 @@ function provenance_json(plan: Plan, suite: thesis_tasks.Suite, template: thesis
         )
 
     return thesis_json.object(
-        [thesis_json.number(key: "schema", value: 1), thesis_json.member(key: "date", value: plan.date), thesis_json.member(key: "head", value: plan.head), thesis_json.member(key: "compiler", value: plan.compiler), thesis_json.member(key: "sources", value: plan.sources), thesis_json.member(key: "template", value: template.path), thesis_json.member(key: "template_sha", value: template.sha), thesis_json.member(key: "layout", value: plan.layout), thesis_json.member(key: "layout_sha", value: layout_sha), thesis_json.member(key: "dialect", value: plan.dialect), thesis_json.member(key: "transport", value: plan.transport), thesis_json.member(key: "harness", value: plan.harness), thesis_json.member(key: "instrument", value: plan.instrument), thesis_json.member(key: "base", value: plan.base), thesis_json.member(key: "suite", value: plan.suite_dir), thesis_json.member(key: "suite_sha", value: suite.sha), thesis_json.member(key: "suite_label", value: suite.label), thesis_json.raw(key: "contexts", json: thesis_json.list(named)), thesis_json.strings(key: "models", items: plan.models), thesis_json.member(key: "effort", value: plan.effort), thesis_json.number(key: "max_tokens", value: plan.max_tokens), thesis_json.strings(key: "arms", items: plan.arms), thesis_json.number(key: "samples", value: plan.samples), thesis_json.number(key: "turns", value: plan.turns), thesis_json.number(key: "case_seconds", value: plan.seconds), thesis_json.number(key: "case_bytes", value: plan.bytes)]
+        [thesis_json.number(key: "schema", value: 1), thesis_json.member(key: "date", value: plan.date), thesis_json.member(key: "head", value: plan.head), thesis_json.member(key: "compiler", value: plan.compiler), thesis_json.member(key: "sources", value: plan.sources), thesis_json.member(key: "template", value: template.path), thesis_json.member(key: "template_sha", value: template.sha), thesis_json.member(key: "layout", value: plan.layout), thesis_json.member(key: "layout_sha", value: layout_sha), thesis_json.member(key: "dialect", value: plan.dialect), thesis_json.member(key: "transport", value: plan.transport), thesis_json.member(key: "harness", value: plan.harness), thesis_json.member(key: "instrument", value: plan.instrument), thesis_json.member(key: "base", value: plan.base), thesis_json.member(key: "suite", value: plan.suite_dir), thesis_json.member(key: "suite_sha", value: suite.sha), thesis_json.member(key: "suite_label", value: suite.label), thesis_json.raw(key: "contexts", json: thesis_json.list(named)), thesis_json.strings(key: "models", items: plan.models), thesis_json.member(key: "effort", value: plan.effort), thesis_json.raw(key: "efforts", json: thesis_json.list(efforts)), thesis_json.number(key: "max_tokens", value: plan.max_tokens), thesis_json.strings(key: "arms", items: plan.arms), thesis_json.number(key: "samples", value: plan.samples), thesis_json.number(key: "turns", value: plan.turns), thesis_json.number(key: "case_seconds", value: plan.seconds), thesis_json.number(key: "case_bytes", value: plan.bytes)]
     )
 
 test "the feedback is the template's block for the bucket, the compiler's words on a refusal, the example's where it compiled and failed it, and nothing past the example"
@@ -1039,6 +1057,10 @@ test "a run's provenance names the template and the layout apart, the suite, the
     assert strings.contains(text: text, needle: "\"arms\":[\"strict\",\"control\"]")
     assert json_fields.text_at(of: read, name: "transport").default("") == "api"
     assert json_fields.text_at(of: read, name: "harness").default("x") == ""
+
+    # The plan names no effort, and the record writes the one its requests carry (defect 2181).
+    assert json_fields.text_at(of: read, name: "effort").default("x") == ""
+    assert strings.contains(text: text, needle: "\"efforts\":[{\"model\":\"claude-sonnet-5-5\",\"effort\":\"high\"}]")
     assert strings.contains(text: text, needle: "\"sha\":\"" + spec.spec_sha + "\"")
 
 # A plan of the tests below: one model, the `none` context, the folder given.
@@ -1266,6 +1288,54 @@ test "a capped run stops before the request whose bound would pass the cap, and 
     )
     assert refused.is_err()
     assert !shell.is_directory(scratch + "/unpriced")
+
+test "a request carries the effort the run names, else its model's default written out, and a run on a model with neither is refused before anything is asked (defect 2181)"
+    scratch = shell.own_scratch()
+    plain: Plan @= test_plan(dir: "tests/thesis", out: scratch + "/out", arms: ["strict"])
+    plain.effort @ ""
+    script = [
+        issue_wire.answer(status: 200, headers: [], body: answered_json(text: "x", output: 5, model: "claude-sonnet-5-5"))
+    ]
+    sent = asked_once(
+        plan: plain,
+        model: "claude-sonnet-5-5",
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: script),
+        system: "",
+        messages: [thesis_answer.user_turn("x")]
+    ).must()
+    body = json_read.read_json(sent.world.requests[0].body).must()
+    assert json_fields.text_at(of: json_fields.field(of: body, name: "output_config").must(), name: "effort").must() == "high"
+    named: Plan @= plain
+    named.effort @ "low"
+    asked = asked_once(
+        plan: named,
+        model: "claude-sonnet-5-5",
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: script),
+        system: "",
+        messages: [thesis_answer.user_turn("x")]
+    ).must()
+    body_named = json_read.read_json(asked.world.requests[0].body).must()
+    assert json_fields.text_at(of: json_fields.field(of: body_named, name: "output_config").must(), name: "effort").must() == "low"
+
+    # A model with no default and no effort named: refused, and no folder made.
+    unknown: Plan @= plain
+    unknown.models @ ["gpt-5.5"]
+    unknown.out @ scratch + "/unknown"
+    refused = run(
+        plan: unknown,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: []),
+        scratch: scratch,
+        compiler: "unused"
+    )
+
+    match refused
+        .ok _  => assert false
+        .err e => assert e.code == "no_effort"
+
+    assert !shell.is_directory(scratch + "/unknown")
 
 test "a run resumed into its folder holds the protocol it began with: another is refused before anything is asked, and the same keeps the first provenance and notes the resume"
     if thesis_sandbox.unrunnable() != ""

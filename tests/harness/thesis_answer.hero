@@ -24,6 +24,7 @@
 
 use json_fields
 use json_read
+use strings
 use thesis_json
 use thesis_sha256
 
@@ -72,6 +73,31 @@ function anthropic_request(model: str, max_tokens: i64, effort: str, system: str
             thesis_json.raw(key: "output_config", json: thesis_json.object([thesis_json.member(key: "effort", value: effort)]))
         )
     return thesis_json.object(members)
+
+# The effort a request to `model` carries: the one the run asks for, or where
+# it asks none the model's own default, written out as panel 226's R7 asks
+# (defect 2181: a request naming none ran at the API's default and a
+# `claude -p` child at Claude Code's `medium`, and no record said which).
+function effort_for(model: str, asked: str) -> str?
+    if asked != ""
+        return ok(asked)
+    return default_effort(model)
+
+# The API's default effort per model, from Anthropic's models overview as
+# panel 226's historian read it on 2026-10-20 (`docs/panel/226-reports/historian.md`):
+# `high` on Fable 5.1 and Sonnet 5.5, `medium` on Opus 5.5 and Haiku 5.5. A
+# model with no row has no default this instrument can write, and fails by
+# name, so a run naming no effort refuses it before anything is asked.
+function default_effort(model: str) -> str?
+    if model == "claude-haiku-5-5" || model == "claude-opus-5-5"
+        return ok("medium")
+
+    if model == "claude-sonnet-5-5" || model == "claude-fable-5-1"
+        return ok("high")
+    return fail(
+        code: "no_effort",
+        msg: "no default effort is written for `" + model + "` in tests/harness/thesis_answer.hero, so a run that names none cannot write the one it runs at: name it with --effort"
+    )
 
 # The body of an OpenAI-compatible request; `system` "" sends no system message.
 function openai_request(model: str, max_tokens: i64, system: str, messages: [str]) -> str
@@ -192,6 +218,18 @@ test "an Anthropic request carries the cached system block, the messages and the
     ).must()
     assert json_fields.field(of: bare, name: "system").is_err()
     assert json_fields.field(of: bare, name: "output_config").is_err()
+
+test "a request's effort is the one asked, else the model's default written out, and a model with none fails by name (defect 2181)"
+    assert effort_for(model: "claude-sonnet-5-5", asked: "low").must() == "low"
+    assert effort_for(model: "claude-sonnet-5-5", asked: "").must() == "high"
+    assert effort_for(model: "claude-fable-5-1", asked: "").must() == "high"
+    assert effort_for(model: "claude-opus-5-5", asked: "").must() == "medium"
+    assert effort_for(model: "claude-haiku-5-5", asked: "").must() == "medium"
+    assert effort_for(model: "gpt-5.5", asked: "high").must() == "high"
+
+    match effort_for(model: "gpt-5.5", asked: "")
+        .ok _  => assert false
+        .err e => assert e.code == "no_effort" && strings.contains(text: e.msg, needle: "`gpt-5.5`")
 
 test "an Anthropic answer is read, its thinking block kept whole in the turn that goes back"
     body = "{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-sonnet-5-5\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"sig\"},{\"type\":\"text\",\"text\":\"```\\nfunction main()\\n    print(1)\\n```\"}],\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":10400,\"output_tokens\":120,\"cache_read_input_tokens\":10294,\"cache_creation_input_tokens\":0}}"

@@ -27,6 +27,7 @@ constant PROTOCOL: [str]
         "contexts"
         "models"
         "effort"
+        "efforts"
         "max_tokens"
         "arms"
         "samples"
