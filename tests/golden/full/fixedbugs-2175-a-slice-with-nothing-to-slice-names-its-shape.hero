@@ -1,0 +1,11 @@
+# Defect 2175, 2026-10-21, panel 227's R3 (written by its compiler seat): a
+# `slice` with nothing to slice is told its count, and the note names the
+# call's shape, the value first, as a declared function's note names its
+# signature. A built-in with no unlabelled first position takes no note.
+
+function main()
+    line = "hello world"
+    print(line)
+    part = slice(from: 0, to: 5)  #~ wrong_arity
+    print(part)
+    print(line.len(1))  #~ wrong_arity

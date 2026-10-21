@@ -53,6 +53,15 @@ record Held
     value: i64
     at: i64
 
+# Whether the argument `id` of a call refused for its count has a type of its
+# own to read with no parameter beside it (panel 227's R4): it does not take
+# its type from its parameter, and it is no branch, whose arms may. Read with
+# no context, one that does would be told it lacks a context it has.
+function typed_alone(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+    return match a.exprs[id].kind
+        .if_expr | .match_expr => false
+        .variant_case | .hole | .array | .map | .null_ptr | .int_lit | .char_lit | .float_lit | .unary | .str_lit | .interp | .bool_lit | .name | .binary | .field | .field_name | .index | .call | .method | .try_expr | .error => !needs_context(a, r, s, decls, id: id)
+
 # Whether the argument `id`, written for a generic callee, waits.
 function needs_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
     if function_value.generic_at(a, r, decls, id) || contextual.contextual(a, id)

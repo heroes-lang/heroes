@@ -1,0 +1,28 @@
+# Defect 2185, 2026-10-21, panel 227's R4: a declared function given the
+# wrong count was told `wrong_arity` and nothing else, its arguments never
+# read, so `"a" + 1` inside one was told only once the count was repaired,
+# where a built-in given the same call tells both (panel 227's R3,
+# `check/builtin_args.hero`). Now the arguments with a type of their own are
+# read beside the count; one that takes its type from its parameter, a case,
+# an empty array or a number, is left unread, since read with no context it
+# would be told it lacks a context it has.
+
+variant Colour
+    red
+    green
+
+function cut(s: str, from: i64, to: i64) -> str
+    return s.slice(from: from, to: to)
+
+function paint(c: Colour, xs: [i64], n: i64) -> i64
+    match c
+        .red   => return xs.len() + n
+        .green => return n
+
+function main()
+    line = "hello"
+    print(cut(from: "a" + 1, to: 5))  #~ wrong_arity mixed_arithmetic
+    print(paint(.red, []))  #~ wrong_arity
+    print(paint(.green, [], 3, 4))  #~ wrong_arity
+    print(range(to: "a" + 1))  #~ wrong_arity mixed_arithmetic
+    print(line.cut(from: 0))  #~ wrong_arity

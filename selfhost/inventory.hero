@@ -245,6 +245,27 @@ function labelled_of(name: str) -> Labelled?
         "slice" => ok(Labelled(name: name, params: ["", "from", "to"], shared: "i64"))
         _       => fail(code: "free", msg: "this built-in has no two parameters of one type")
 
+## How many arguments a built-in typed by name takes
+
+# The count a call of a built-in typed in `check/builtins.hero` or
+# `check/lend_types.hero` gives, its receiver included, so a wrong count is
+# told before any label is read (panel 227's R3, route E): absent
+# for `print`, which takes any number, for `ok` and `fail`, which are
+# constructions, and for the built-ins written in Heroes, whose declarations
+# give their count. **A premise about the world, written as a falsifiable
+# claim**: every arm of those two files asks `given.len()` of exactly this
+# number, and a built-in added to `NAMES` with no row here is caught by the
+# test below rather than told `builtin_shape` in silence.
+function arity_of(name: str) -> i64?
+    return match name
+        "slice" => ok(3)
+        "push" | "join" | "repeat" | "default" => ok(2)
+        "len" | "chars" | "keys" | "sort" | "must" | "is_err" => ok(1)
+        "cstr" | "lease" | "end_lease" | "validated_bytes" | "ptr" => ok(1)
+        "to_f32" | "to_f64" | "to_str" | "to_i8" | "to_i16" => ok(1)
+        "to_i32" | "to_i64" | "to_u8" | "to_u16" | "to_u32" | "to_u64" => ok(1)
+        _ => fail(code: "uncounted", msg: "any number, a construction, or a declaration's count")
+
 ## Tests
 
 test "a reserved name answers with its index, a free one with absence"
@@ -317,3 +338,33 @@ test "the two same-typed signatures carry their parameter names"
     assert labelled_of("push").is_err()
     assert labelled_of("print").is_err()
     assert labelled_of("to_u8").is_err()
+
+test "every built-in typed by name has a count, and no other has one"
+    uncounted = [
+        "all"
+        "args"
+        "any"
+        "exit"
+        "fail"
+        "filter"
+        "find"
+        "fold"
+        "map"
+        "ok"
+        "print"
+        "range"
+        "read_file"
+        "write_file"
+    ]
+
+    for name in NAMES
+        listed: bool @= false
+
+        for one in uncounted
+            if one == name
+                listed @ true
+
+        assert arity_of(name).is_err() == listed
+
+    assert arity_of("slice").must() == 3
+    assert arity_of("repeat").must() == 2

@@ -36,7 +36,22 @@ function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expecte
         d.fixes @ d.fixes.push(
             diag.Fix(title: "`.must()` — abort on the error case, giving `" + a_text + "`", replacement: source.span_text(s, span) + ".must()", span: span, certainty: .guess)
         )
+
+    # Two integer widths: the conversion is named with what it gives, a `T?`,
+    # as every integer conversion does, a widening too, where every value
+    # fits (spec § 11; panel 227's R5). No fix: whether a value that does not
+    # fit aborts or takes a default is theirs.
+    if integer(c, expected) && integer(c, got)
+        d.notes @ d.notes.push(
+            "`to_" + a_text + "(x)` converts it to `" + a_text + "?`, as every integer conversion gives a `T?`: `.must()` aborts on a value that does not fit, `.default(v)` gives `v` instead"
+        )
     state.push_diagnostic(@c, d)
+
+function integer(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .int_ty                                                                     => true
+        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array | .fixed | .map    => false
+        .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => false
 
 # The got side rendered by the caller, a literal's own spelling. A poisoned
 # expectation was told where it was born, so the literal says nothing

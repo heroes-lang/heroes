@@ -1,0 +1,13 @@
+error[type_mismatch]: expected `u64`, found `i64`
+  at tests/golden/full/panel227-an-integer-of-another-width-names-its-conversion.hero:9:24
+    |
+  9 |     print(repeat("ab", n))  #~ type_mismatch
+    |                        ^
+  note: `to_u64(x)` converts it to `u64?`, as every integer conversion gives a `T?`: `.must()` aborts on a value that does not fit, `.default(v)` gives `v` instead
+
+error[type_mismatch]: expected `u64`, found `u8`
+  at tests/golden/full/panel227-an-integer-of-another-width-names-its-conversion.hero:11:24
+     |
+  11 |     print(repeat("ab", k))  #~ type_mismatch
+     |                        ^
+  note: `to_u64(x)` converts it to `u64?`, as every integer conversion gives a `T?`: `.must()` aborts on a value that does not fit, `.default(v)` gives `v` instead

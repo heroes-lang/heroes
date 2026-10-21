@@ -1,0 +1,23 @@
+# Defect 2175, 2026-10-21, panel 227's R3 (written by its compiler seat):
+# `slice(from: 0, to: 5)`, a `slice` with nothing to slice, was told
+# `builtin_shape` and a `wrong_label` whose guess wrote `from:` a second
+# time, the label at the receiver's position never asked and every label
+# after it read one position off. Now a built-in given the wrong count is
+# told its count before any label is read, as a declared function is, and
+# its arguments are still walked, so a mistake inside one is told beside it.
+
+function main()
+    line = "hello world"
+    print(line)
+    print(slice(from: 0, to: 5))  #~ wrong_arity
+    print(slice(from: 0))  #~ wrong_arity
+    print(slice(to: 5, from: 0))  #~ wrong_arity
+    print(slice())  #~ wrong_arity
+    print(slice(line, from: 0))  #~ wrong_arity
+    print(slice(0, 5))  #~ wrong_arity
+    print(line.slice(from: 0))  #~ wrong_arity
+    xs = [1, 2, 3, 4]
+    print(slice(from: 0, to: 2).len())  #~ wrong_arity
+    print(slice(from: "a" + 1, to: 5))  #~ wrong_arity mixed_arithmetic
+    print(xs.len(1))  #~ wrong_arity
+    print(repeat("ab"))  #~ wrong_arity

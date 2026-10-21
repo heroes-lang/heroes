@@ -80,9 +80,9 @@ function annotated(d: diag.Diagnostic, s: source.Source, cell: resolved.Local, w
     out: diag.Diagnostic @= d
     name = source.span_text(s, cell.name)
     born = source.elsewhere(s, here: d.span.start, there: cell.name.start)
-    out.notes @ out.notes.push(
+    out.notes @ [
         "`" + name + "` is an `i64` from the literal it was born of at " + born + ", and a cell keeps the type it was born with — the width it should hold is written on the declaration"
-    )
+    ]
     out.fixes @ out.fixes.push(
         diag.Fix(title: "annotate the cell: `" + name + ": " + width + " @= …`", replacement: ": " + width, span: token.Span(start: cell.name.end, end: cell.name.end), certainty: .guess)
     )

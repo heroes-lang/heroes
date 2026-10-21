@@ -1,0 +1,12 @@
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:12:11: error[wrong_arity]: `slice` takes 3 argument(s), found 2
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:13:11: error[wrong_arity]: `slice` takes 3 argument(s), found 1
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:14:11: error[wrong_arity]: `slice` takes 3 argument(s), found 2
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:15:11: error[wrong_arity]: `slice` takes 3 argument(s), found 0
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:16:11: error[wrong_arity]: `slice` takes 3 argument(s), found 2
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:17:11: error[wrong_arity]: `slice` takes 3 argument(s), found 2
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:18:11: error[wrong_arity]: `slice` takes 3 argument(s), found 2
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:20:11: error[wrong_arity]: `slice` takes 3 argument(s), found 2
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:21:11: error[wrong_arity]: `slice` takes 3 argument(s), found 2
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:21:23: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `str` and `i64`
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:22:11: error[wrong_arity]: `len` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-2175-a-built-in-given-the-wrong-count-is-told-its-count.hero:23:11: error[wrong_arity]: `repeat` takes 2 argument(s), found 1

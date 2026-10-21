@@ -1,0 +1,11 @@
+# Panel 227's R5, 2026-10-21, beside defect 2175 (written by its compiler seat):
+# an `i64` where `repeat` counts in `u64` was told `expected u64, found i64`
+# and nothing else; the note now names the conversion and what it gives, a
+# `T?`, true of a narrowing and a widening alike. A cell born of a literal
+# keeps panel 209's note alone, its repair being the declaration.
+
+function main()
+    n: i64 = 3
+    print(repeat("ab", n))  #~ type_mismatch
+    k: u8 = 2
+    print(repeat("ab", k))  #~ type_mismatch

@@ -1,0 +1,12 @@
+error[wrong_arity]: `slice` takes 3 argument(s), found 2
+  at tests/golden/full/fixedbugs-2175-a-slice-with-nothing-to-slice-names-its-shape.hero:9:12
+    |
+  9 |     part = slice(from: 0, to: 5)  #~ wrong_arity
+    |            ^^^^^^^^^^^^^^^^^^^^^
+  note: `slice` is called `xs.slice(from: a, to: b)` or `slice(xs, from: a, to: b)`, the value it works on first
+
+error[wrong_arity]: `len` takes 1 argument(s), found 2
+  at tests/golden/full/fixedbugs-2175-a-slice-with-nothing-to-slice-names-its-shape.hero:11:11
+     |
+  11 |     print(line.len(1))  #~ wrong_arity
+     |           ^^^^^^^^^^^

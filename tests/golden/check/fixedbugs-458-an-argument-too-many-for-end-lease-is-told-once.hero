@@ -12,7 +12,7 @@
 function main()
     x = "abc"
     c: cstr @= x.lease()
-    end_lease(@c, 1)  #~ builtin_shape
-    end_lease(1, @c)  #~ builtin_shape
+    end_lease(@c, 1)  #~ wrong_arity
+    end_lease(1, @c)  #~ wrong_arity
     d: cstr @= x.lease()
-    end_lease(@c, @d)  #~ builtin_shape
+    end_lease(@c, @d)  #~ wrong_arity
