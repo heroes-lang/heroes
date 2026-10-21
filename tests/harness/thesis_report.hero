@@ -41,7 +41,7 @@ use json_fields
 use json_read
 use shell
 use strings
-use thesis_json
+use thesis_protocol
 use thesis_stats
 use thesis_strata
 use thesis_verdict
@@ -95,35 +95,8 @@ function report(scratch: str, out: str, seed: i64, primary: str, labels: str) ->
         strata @ strata.push(line)
 
     return ok(
-        rendered(verdicts: verdicts, seed: seed, primary: primary, through: asked_through(out) + " " + capped_at(out)) + strata.join("\n") + "\n"
+        rendered(verdicts: verdicts, seed: seed, primary: primary, through: [asked_through(out), capped_at(out), resumed_at(out)].join(" ")) + strata.join("\n") + "\n"
     )
-
-# The fields of a run's provenance that are its protocol, each of which a
-# run must hold as the pre-registration did; its date, its commit and the
-# compiler's path move by construction and are not among them.
-constant PROTOCOL: [str]
-    [
-        "template_sha"
-        "layout"
-        "layout_sha"
-        "dialect"
-        "transport"
-        "harness"
-        "base"
-        "suite_sha"
-        "suite_label"
-        "contexts"
-        "models"
-        "effort"
-        "max_tokens"
-        "arms"
-        "samples"
-        "turns"
-        "case_seconds"
-        "case_bytes"
-        "sources"
-        "instrument"
-    ]
 
 # The run set against the pre-registration beside the suite: the block of
 # `prediction.md` the `preregister` word printed, field by protocol field
@@ -153,16 +126,12 @@ function deviation_lines(out: str, dir: str) -> [str]
         return lines.push("The run's `provenance.json` does not read as JSON, so nothing is set against the run.")
     rows: [str] @= []
 
-    for name in PROTOCOL
-        was = field_written(of: registered.must(), name: name)
-        is_now = field_written(of: run_doc.must(), name: name)
-
-        if was != is_now
-            rows @ rows.push("| `" + name + "` | " + was + " | " + is_now + " |")
+    for m in thesis_protocol.moved(was: registered.must(), is_now: run_doc.must())
+        rows @ rows.push("| `" + m.name + "` | " + m.was + " | " + m.is_now + " |")
 
     if rows.len() == 0
         return lines.push(
-            "None: the run holds every one of the " + PROTOCOL.len().to_str() + " protocol fields as the pre-registration did."
+            "None: the run holds every one of the " + thesis_protocol.PROTOCOL.len().to_str() + " protocol fields as the pre-registration did."
         )
     lines @ lines.push("| field | pre-registered | ran |").push("|---|---|---|")
 
@@ -185,12 +154,6 @@ function registered_block(text: str) -> str
             kept @ kept.push(line)
 
     return ""
-
-# A field's JSON as written, `(absent)` where the document holds none.
-function field_written(of: json_read.Json, name: str) -> str
-    match json_fields.field(of: of, name: name)
-        .ok held => return thesis_json.written(held)
-        .err _   => return "(absent)"
 
 # The suite folder the run's provenance names, "" where it names none.
 function suite_of(out: str) -> str
@@ -353,6 +316,29 @@ function capped_at(out: str) -> str
     if n == 2
         return "Each conversation was capped at 2 turns, so green@3 reads green@2."
     return "Each conversation was capped at " + n.to_str() + " turns."
+
+# The days and commits a run was resumed on into its folder, `resumed.txt`'s
+# lines, which a resume holding the folder's protocol writes (defect 2180); a
+# run asked in one go says so.
+function resumed_at(out: str) -> str
+    held = read_file(path: out + "/resumed.txt")
+
+    if held.is_err()
+        return "Asked in one go."
+    told: [str] @= []
+
+    for line in strings.lines(text: held.must())
+        words = strings.words(text: line)
+
+        if words.len() == 2
+            told @ told.push(words[0] + " at `" + words[1] + "`")
+
+    if told.len() == 0
+        return "Asked in one go."
+
+    if told.len() == 1
+        return "Resumed once into its folder, its protocol held: " + told[0] + "."
+    return "Resumed " + told.len().to_str() + " times into its folder, its protocol held: " + told.join("; ") + "."
 
 function rendered(verdicts: [thesis_verdict.Verdict], seed: i64, primary: str, through: str) -> str
     lines: [str] @= [
@@ -952,6 +938,14 @@ test "the report names the run's cap of turns, and what a cap below three makes 
     assert capped_at(scratch) == "`provenance.json` names no cap of turns."
     write_file(path: scratch + "/provenance.json", text: "not json").must()
     assert strings.contains(text: capped_at(scratch), needle: "does not read as JSON")
+
+test "the report says on which days and commits a run was resumed into its folder, and that a run with none was asked in one go"
+    scratch = shell.own_scratch()
+    assert resumed_at(scratch) == "Asked in one go."
+    write_file(path: scratch + "/resumed.txt", text: "2026-10-21 10e27a55b\n").must()
+    assert resumed_at(scratch) == "Resumed once into its folder, its protocol held: 2026-10-21 at `10e27a55b`."
+    write_file(path: scratch + "/resumed.txt", text: "2026-10-21 aaaa\n2026-10-22 bbbb\n").must()
+    assert resumed_at(scratch) == "Resumed 2 times into its folder, its protocol held: 2026-10-21 at `aaaa`; 2026-10-22 at `bbbb`."
 
 test "a row's prompt tokens hold the cache's reads and writes beside the input, and a timeout is counted loud"
     cached = thesis_verdict.Turn(

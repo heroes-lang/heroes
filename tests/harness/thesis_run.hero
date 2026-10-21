@@ -34,6 +34,7 @@ use thesis_grade
 use thesis_pace
 use thesis_price
 use thesis_prompt
+use thesis_protocol
 use thesis_sandbox
 use thesis_sha256
 use thesis_tasks
@@ -155,7 +156,7 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
 
     if plan.live
         shell.mkdir_all(plan.out)?
-        write_file(path: plan.out + "/provenance.json", text: planned_provenance(plan: plan, scratch: scratch)?)?
+        kept_record(plan: plan, scratch: scratch)?
 
         # The tasks as they ran, digest and number, which the report ties
         # each verdict to its stratum by (`thesis_strata.numbers_of`).
@@ -694,6 +695,40 @@ function feedback(template: thesis_prompt.Template, outcome: str, message: str) 
         return ok(Feedback(text: "", go_on: false))
     return ok(Feedback(text: "", go_on: false))
 
+# The folder's record: `<out>/provenance.json` as its first live run wrote
+# it, never written over. A run resumed into the folder holds every protocol
+# field that record holds, or is refused before anything is asked, by the
+# fields that moved, since the verdict key names no turns, effort, template
+# or code and nothing else keeps two protocols' samples out of one report; one
+# that holds them notes its date and commit in `<out>/resumed.txt`, a line
+# each, so a folder asked over two days or two commits says so (defect 2180).
+function kept_record(plan: Plan, scratch: str) -> ()?
+    planned = planned_provenance(plan: plan, scratch: scratch)?
+    path = plan.out + "/provenance.json"
+    held = read_file(path: path)
+
+    if held.is_err()
+        return write_file(path: path, text: planned)
+    began = json_read.read_json(held.must())
+
+    if began.is_err()
+        return fail(
+            code: "protocol",
+            msg: path + " does not read as JSON, so the protocol this folder began with cannot be held: name a new --out"
+        )
+    moved: [str] @= []
+
+    for m in thesis_protocol.moved(was: began.must(), is_now: json_read.read_json(planned)?)
+        moved @ moved.push("`" + m.name + "` " + m.was + " where this run asks " + m.is_now)
+
+    if moved.len() > 0
+        return fail(
+            code: "protocol",
+            msg: plan.out + " holds a run of another protocol, " + moved.join("; ") + ": a folder holds one protocol, so resume it as it began or name a new --out"
+        )
+    noted = read_file(path: plan.out + "/resumed.txt").default("")
+    return write_file(path: plan.out + "/resumed.txt", text: noted + plan.date + " " + plan.head + "\n")
+
 # `<out>/provenance.json`: what the run was, written before its first request
 # (design.md Part 11: *every measurement records provenance*; panel 226's R12,
 # the template's sha and the layout's apart).
@@ -1231,6 +1266,62 @@ test "a capped run stops before the request whose bound would pass the cap, and 
     )
     assert refused.is_err()
     assert !shell.is_directory(scratch + "/unpriced")
+
+test "a run resumed into its folder holds the protocol it began with: another is refused before anything is asked, and the same keeps the first provenance and notes the resume"
+    if thesis_sandbox.unrunnable() != ""
+        print("SKIP thesis_run: " + thesis_sandbox.unrunnable())
+        return
+
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    suite = suite_of(scratch: scratch, numbers: ["03"]).must()
+    right = answer_json(text: thesis_grade.as_answer(read_file(path: suite + "/03/reference.hero").must()))
+    first: Plan @= test_plan(dir: suite, out: scratch + "/out", arms: ["strict"])
+    first.date @ "2026-10-20"
+    first.head @ "aaaa"
+    began = run(
+        plan: first,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: [issue_wire.answer(status: 200, headers: [], body: right)]),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert began.verdicts == 1
+    kept = read_file(path: scratch + "/out/provenance.json").must()
+
+    # Five turns where it began with three: the folder's record stands and the
+    # run is refused by the field that moved (defect 2180).
+    other: Plan @= first
+    other.turns @ 5
+    refused = run(
+        plan: other,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: []),
+        scratch: scratch,
+        compiler: compiler
+    )
+    assert read_file(path: scratch + "/out/provenance.json").must() == kept
+
+    match refused
+        .ok _  => assert false
+        .err e => assert strings.contains(text: e.msg, needle: "`turns`")
+
+    # The same protocol a day later at another commit: the first record stands
+    # and the resume is noted beside it.
+    later: Plan @= first
+    later.date @ "2026-10-21"
+    later.head @ "bbbb"
+    again = run(
+        plan: later,
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: scratch, script: []),
+        scratch: scratch,
+        compiler: compiler
+    ).must()
+    assert again.requests == 0
+    assert again.verdicts == 0
+    assert read_file(path: scratch + "/out/provenance.json").must() == kept
+    assert read_file(path: scratch + "/out/resumed.txt").must() == "2026-10-21 bbbb\n"
 
 test "an answer is the asked model's when it names that id or that id dated, and anything else, nothing included, is another's"
     assert substituted(asked: "claude-haiku-5-5", answered: "claude-haiku-5-5") == ""

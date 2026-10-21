@@ -1,0 +1,83 @@
+# A RUN'S PROTOCOL: the fields of its provenance that decide what it asks and
+# how it grades (M-thesis-harness; design.md Part 11, *every measurement
+# records provenance*; panel 226's R12). A run holds every one of them as its
+# pre-registration did, which `thesis_report` sets out field by field, and as
+# the folder it resumes into began, which `thesis_run` asks before anything
+# is sent: a folder holds one protocol, and its record is its first run's
+# (defect 2180). Its date, its commit and the compiler's path move by
+# construction and are not among them; what the code and the compiler were is
+# `instrument` and `sources`, which are.
+
+use json_fields
+use json_read
+use thesis_json
+
+# The fields of a run's provenance that are its protocol.
+constant PROTOCOL: [str]
+    [
+        "template_sha"
+        "layout"
+        "layout_sha"
+        "dialect"
+        "transport"
+        "harness"
+        "base"
+        "suite_sha"
+        "suite_label"
+        "contexts"
+        "models"
+        "effort"
+        "max_tokens"
+        "arms"
+        "samples"
+        "turns"
+        "case_seconds"
+        "case_bytes"
+        "sources"
+        "instrument"
+    ]
+
+# One protocol field two provenances write otherwise.
+record Moved
+    name: str
+    was: str
+    is_now: str
+
+# The protocol fields `is_now` writes otherwise than `was`, in `PROTOCOL`'s
+# order.
+function moved(was: json_read.Json, is_now: json_read.Json) -> [Moved]
+    rows: [Moved] @= []
+
+    for name in PROTOCOL
+        before = field_written(of: was, name: name)
+        after = field_written(of: is_now, name: name)
+
+        if before != after
+            rows @ rows.push(Moved(name: name, was: before, is_now: after))
+
+    return rows
+
+# A field's JSON as written, `(absent)` where the document holds none.
+function field_written(of: json_read.Json, name: str) -> str
+    match json_fields.field(of: of, name: name)
+        .ok held => return thesis_json.written(held)
+        .err _   => return "(absent)"
+
+test "two provenances differ by the protocol fields they write otherwise, and the date, the commit and the compiler's path are none of them"
+    was = json_read.read_json(
+        "{\"date\":\"2026-10-20\",\"head\":\"aaaa\",\"compiler\":\"./heroes\",\"turns\":3,\"models\":[\"m\"]}"
+    ).must()
+    same = json_read.read_json(
+        "{\"date\":\"2026-10-21\",\"head\":\"bbbb\",\"compiler\":\"./heroes-next\",\"turns\":3,\"models\":[\"m\"]}"
+    ).must()
+    assert moved(was: was, is_now: same).len() == 0
+    other = json_read.read_json("{\"turns\":5,\"models\":[\"m\",\"n\"],\"effort\":\"low\"}").must()
+    rows = moved(was: was, is_now: other)
+    assert rows.len() == 3
+    assert rows[0].name == "models"
+    assert rows[1].name == "effort"
+    assert rows[1].was == "(absent)"
+    assert rows[1].is_now == "\"low\""
+    assert rows[2].name == "turns"
+    assert rows[2].was == "3"
+    assert rows[2].is_now == "5"
