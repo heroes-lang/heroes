@@ -78,6 +78,8 @@ record Plan
     quiet: bool
 
 record Tally
+    # The requests sent, retries apart, or those a dry plan would send; the
+    # one a cap keeps back is not among them (defect 2178).
     requests: i64
     estimated_tokens: i64
     generations: i64
@@ -188,15 +190,20 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
                             tally.skipped @ tally.skipped + 1
 
                     if !have
-                        tally.requests @ tally.requests + 1
-                        tally.estimated_tokens @ tally.estimated_tokens + thesis_prompt.estimated_tokens(prompt.system + prompt.user)
+                        estimate = thesis_prompt.estimated_tokens(prompt.system + prompt.user)
 
+                        # A request is counted where it is sent, or in a dry
+                        # plan where it would be; the one a cap keeps back is
+                        # not among them (defect 2178).
                         if !plan.live
+                            tally.requests @ tally.requests + 1
+                            tally.estimated_tokens @ tally.estimated_tokens + estimate
+
                             if tally.priced
                                 tally.bound @ tally.bound + thesis_price.worst(model: model, prompt_bytes: prompt.system.len() + prompt.user.len(), max_tokens: plan.max_tokens)?
                             continue
 
-                        if plan.max_requests > 0 && tally.requests > plan.max_requests
+                        if plan.max_requests > 0 && tally.requests >= plan.max_requests
                             tally.stopped @ "the request cap of " + plan.max_requests.to_str() + " was reached"
                             return ok(tally)
                         over = cap_reached(plan: plan, tally: tally, model: model, prompt_bytes: prompt.system.len() + prompt.user.len())?
@@ -204,6 +211,8 @@ function run(plan: Plan, transport: issue_wire.Transport, world: issue_wire.Worl
                         if over != ""
                             tally.stopped @ over
                             return ok(tally)
+                        tally.requests @ tally.requests + 1
+                        tally.estimated_tokens @ tally.estimated_tokens + estimate
                         asked = asked_once(plan: plan, model: model, transport: transport, world: w, system: prompt.system, messages: [thesis_answer.user_turn(prompt.user)])?
                         w @ asked.world
                         tally.attempts @ tally.attempts + asked.attempts
@@ -584,9 +593,7 @@ function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_
             next_turn @ reused.must()
             t.shared @ t.shared + 1
         else
-            t.requests @ t.requests + 1
-
-            if plan.max_requests > 0 && t.requests > plan.max_requests
+            if plan.max_requests > 0 && t.requests >= plan.max_requests
                 t.stopped @ "the request cap of " + plan.max_requests.to_str() + " was reached"
                 break
             over = cap_reached(plan: plan, tally: t, model: generation.model, prompt_bytes: system.len() + messages.join("\n").len())?
@@ -594,6 +601,7 @@ function conversation(plan: Plan, transport: issue_wire.Transport, world: issue_
             if over != ""
                 t.stopped @ over
                 break
+            t.requests @ t.requests + 1
             asked = asked_once(plan: plan, model: generation.model, transport: transport, world: w, system: system, messages: messages)?
             w @ asked.world
             t.attempts @ t.attempts + asked.attempts
@@ -913,6 +921,10 @@ test "a live run on the scripted transport goes green at turn 1, repairs at turn
     assert stopped.stopped != ""
     assert stopped.generations == 1
 
+    # The request the cap kept back is not among those sent (defect 2178).
+    assert stopped.requests == 1
+    assert stopped.attempts == 1
+
 # An Anthropic answer holding `text`, as a script records one.
 function answer_json(text: str) -> str
     return answer_costing(text: text, output: 50)
@@ -1173,6 +1185,8 @@ test "a capped run stops before the request whose bound would pass the cap, and 
     ).must()
     assert first.generations == 2
     assert first.verdicts == 2
+    assert first.requests == 2
+    assert first.attempts == 2
     assert first.spent == 2 * (100 * 100 + 1000000 * 500)
     assert strings.starts_with(
         text: first.stopped,
