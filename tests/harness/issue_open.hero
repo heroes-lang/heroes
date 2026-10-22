@@ -113,10 +113,11 @@ constant DATE: str
 test "open lists the open issues by number, one line each, narrowed by kind, milestone and class"
     every = Narrowed(kind: "", milestone: "", grade: "")
     s: issue_pace.Session @= issue_pace.scripted(
-        [issue_wire_answer("[" + page().join(",") + "]")]
+        [issue_wire_answer("[" + page().join(",") + "]"), issue_wire_answer("{\"open_issues_count\":3}")]
     )
     assert opened(@s, wanted: every, json: false) == 0
     assert s.world.requests[0].path == github_issues.OPEN_LISTING + "1"
+    assert s.world.requests[1].path == github_issues.REPOSITORY
     assert s.out == ["4 task - M-issue-files a task", "5 defect improvement - an improvement", "9 defect blocking - Defect 235: t"]
     listing = github_issues.held_of(page())
     assert chosen(listing: listing, wanted: Narrowed(kind: "defect", milestone: "", grade: "")).len() == 2

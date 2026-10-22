@@ -81,6 +81,15 @@ constant LISTING: str
 constant OPEN_LISTING: str
     "/repos/heroes-lang/heroes/issues?state=open&sort=created&direction=asc&per_page=100&page="
 
+# The newest issue alone, whose number says how many a whole `LISTING` holds,
+# and the repository, whose `open_issues_count` says it of `OPEN_LISTING`
+# (`whole`).
+constant NEWEST: str
+    "/repos/heroes-lang/heroes/issues?state=all&sort=created&direction=desc&per_page=1"
+
+constant REPOSITORY: str
+    "/repos/heroes-lang/heroes"
+
 # One issue as the checks read it: `labels` sorted, `milestone` its title or
 # "", `milestone_number` the number GitHub gave that milestone or 0, `closed`
 # "" while open, `reason` GitHub's `state_reason` or "", `association` GitHub's
@@ -176,12 +185,72 @@ function listed_from(@s: issue_pace.Session, dir: str, listing: str) -> Listing
             out @ out.push(one)
 
         if some.must().len() < PAGE
+            short = whole(@s, listing: listing, issues: out)
+
+            if short != ""
+                return unasked(short)
+
             if dir != "" && write_file(path: dir + "/pages", text: page.to_str() + "\n").is_err()
                 return broken("cannot keep the count of GitHub's pages under " + dir)
             return Listing(asked: true, broken: false, why: "", issues: out)
         page @ page + 1
 
     return broken("GET " + listing + "<n> gave " + PAGES.to_str() + " full pages and no end")
+
+# Whether the pages read are the whole list, "" where they are, else why not
+# (defect 2189). A page with fewer than `PAGE` issues ends the reading, and on
+# 2026-10-22, GitHub's status reading *Partially Degraded Service*, most pages
+# came back with no issue at random, so the first empty one read as the last
+# and `records` judged a fraction of the issues as all of them: two false reds,
+# and `records/tagged` would have passed a tag over a list it never saw. So the
+# count is asked apart and the pages must agree with it: every number from 1
+# to the newest issue's for `LISTING`, **a premise about the world**, that no
+# issue of this repository was ever deleted or moved (measured that day: the
+# newest is 2188 and GitHub's search counts 2,188 issues and no pull request),
+# which a deletion would falsify loudly, every listing then refused until this
+# function learns the gap; and the repository's `open_issues_count` for
+# `OPEN_LISTING`. A count that does not agree is a listing GitHub did not give
+# whole, `unasked` and so a skip, never a fraction read as the list.
+function whole(@s: issue_pace.Session, listing: str, issues: [Listed]) -> str
+    if listing == OPEN_LISTING
+        reply = issue_pace.exchange(
+            @s,
+            request: issue_wire.Request(method: "GET", path: REPOSITORY, accept: "", body: "")
+        )
+
+        if reply.is_err() || reply.must().status != 200
+            return "GET " + REPOSITORY + " gave no count of the open issues to hold the pages to"
+        repository = json_read.read_json(reply.must().body)
+
+        if repository.is_err()
+            return "GET " + REPOSITORY + " gave no `open_issues_count` to hold the pages to"
+        count = json_fields.whole_at(repository.must(), "open_issues_count")
+
+        if count.is_err()
+            return "GET " + REPOSITORY + " gave no `open_issues_count` to hold the pages to"
+
+        if count.must() != issues.len()
+            return "the pages listed " + issues.len().to_str() + " open issues where GitHub counts " + count.must().to_str() + ": a page came back short, as a degraded GitHub answers, and part of a list is not read as the list"
+        return ""
+    reply = issue_pace.exchange(@s, request: issue_wire.Request(method: "GET", path: NEWEST, accept: "", body: ""))
+
+    if reply.is_err() || reply.must().status != 200
+        return "GET " + NEWEST + " gave no newest issue to hold the pages to"
+    newest = page_of(reply.must().body)
+
+    if newest.is_err() || newest.must().len() != 1
+        return "GET " + NEWEST + " gave no newest issue to hold the pages to"
+    last = newest.must()[0].number
+    seen: {i64: bool} @= {}
+
+    for one in issues
+        seen[one.number] @ true
+
+    for n in range(from: 1, to: last + 1)
+        if seen[n].is_err()
+            return "the pages hold no issue " + n.to_str() + " of the " + last.to_str() + " GitHub numbers: a page came back short, as a degraded GitHub answers, and part of a list is not read as the list"
+
+    return ""
 
 # A status other than 200: GitHub saying it cannot answer this run (a refused
 # credential, a token without the scope, a server failing), which is a skip;
@@ -480,20 +549,69 @@ test "the listing is read a page at a time until a short page, kept, and read ag
         closed: ""
     )
     s: issue_pace.Session @= issue_pace.scripted(
-        [issue_wire.answer(status: 200, headers: [DATE], body: "[" + full.join(",") + "]"), issue_wire.answer(status: 200, headers: [DATE], body: "[" + last + "]")]
+        [issue_wire.answer(status: 200, headers: [DATE], body: "[" + full.join(",") + "]"), issue_wire.answer(status: 200, headers: [DATE], body: "[" + last + "]"), issue_wire.answer(status: 200, headers: [DATE], body: "[" + last + "]")]
     )
     scratch = shell.own_scratch()
     dir = scratch + "/" + CACHE
     got = listed(@s, dir: dir)
     assert got.asked
     assert got.issues.len() == 101
-    assert s.world.requests.len() == 2
+    assert s.world.requests.len() == 3
     assert s.world.requests[1].path == LISTING + "2"
     assert s.world.requests[1].method == "GET"
+    assert s.world.requests[2].path == NEWEST
     again = held_at(scratch: scratch, transport: issue_wire.scripted())
     assert again.asked
     assert again.issues.len() == 101
     assert again.issues[100].title == "u"
+    _ = shell.remove_tree(scratch).is_err()
+
+# Defect 2189: on 2026-10-22 a degraded GitHub answered pages with no issue
+# at random, and the first empty page read as the last.
+test "a listing GitHub gives in part is a skip, never part of a list read as the list"
+    newest = json_of(
+        number: 2188,
+        title: "t",
+        body: "",
+        state: "open",
+        labels: [],
+        milestone: "",
+        created: "2026-10-22T12:00:00Z",
+        closed: ""
+    )
+    s: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [DATE], body: "[]"), issue_wire.answer(status: 200, headers: [DATE], body: "[" + newest + "]")]
+    )
+    scratch = shell.own_scratch()
+    got = listed(@s, dir: scratch + "/" + CACHE)
+    assert !got.asked
+    assert !got.broken
+    assert strings.contains(text: got.why, needle: "the pages hold no issue 1 of the 2188 GitHub numbers")
+    assert read_file(scratch + "/" + CACHE + "/pages").is_err()
+    mute: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [DATE], body: "[]"), issue_wire.answer(status: 200, headers: [DATE], body: "[]")]
+    )
+    assert strings.contains(text: listed(@mute, dir: "").why, needle: "gave no newest issue")
+    one = json_of(
+        number: 1,
+        title: "t",
+        body: "",
+        state: "open",
+        labels: [],
+        milestone: "",
+        created: "2026-10-22T12:00:00Z",
+        closed: ""
+    )
+    opened: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [DATE], body: "[" + one + "]"), issue_wire.answer(status: 200, headers: [DATE], body: "{\"open_issues_count\":63}")]
+    )
+    short = listed_from(@opened, dir: "", listing: OPEN_LISTING)
+    assert !short.asked
+    assert strings.contains(text: short.why, needle: "the pages listed 1 open issues where GitHub counts 63")
+    agreed: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [DATE], body: "[" + one + "]"), issue_wire.answer(status: 200, headers: [DATE], body: "{\"open_issues_count\":1}")]
+    )
+    assert listed_from(@agreed, dir: "", listing: OPEN_LISTING).asked
     _ = shell.remove_tree(scratch).is_err()
 
 test "a GitHub that cannot be asked is a skip with its reason, and an answer this reader cannot read is a failure"
