@@ -250,6 +250,13 @@ platforms. So everything this sitting changes stands before the freeze, as R9 as
 
 Pending: the decision issue `Panel 227:` holds the ratification.
 
+**RATIFIED, 2026-10-22**, R1 to R10 as written above, the author answering in conversation that
+day, meant as *I ratify panel 227*, in these words, *ratifico 227*, after reading this file on the
+coordinator's recommendation to ratify: no seat's verdict contradicts the resolution, and
+everything it changes landed before the freeze and was gated whole (§ At the landing). The
+decision https://github.com/heroes-lang/heroes/issues/2187 is closed with the commit that
+writes this line.
+
 ## Process notes
 
 - **The critic read the briefs first, and the seats were spared their errors**: a line number, a

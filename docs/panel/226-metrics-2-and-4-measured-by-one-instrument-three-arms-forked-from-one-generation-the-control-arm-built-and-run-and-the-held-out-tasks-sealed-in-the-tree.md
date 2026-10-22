@@ -694,6 +694,12 @@ the inconclusive outcome named before the run, because measurement 050 found no 
 of 90 at `green@3` strict against control, so the trial gives no discordance to size n on, which
 R8 as written asked of it. design.md Part 11 and the milestone page carry the corrected rule.
 
+**RATIFIED, 2026-10-21**, R1 to R13 as written above with R8 amended as the reading above
+records, the author answering in conversation that day. (This line added 2026-10-22: the reading
+above was written in a shape `records/verdicts` does not read, `Read by the author`, and the
+check reads an answer beneath a pending stub only as `RATIFIED,`, `AMENDED,` or `OVERTURNED,` and
+its date.)
+
 ## Process notes
 
 - The critic's first pass repaired the briefs in the places `critic-briefs.md` names before any
