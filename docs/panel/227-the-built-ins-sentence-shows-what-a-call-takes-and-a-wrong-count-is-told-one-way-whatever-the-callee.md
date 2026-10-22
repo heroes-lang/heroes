@@ -237,6 +237,15 @@ lines, its predicate `typed_alone` in `check/waiting.hero`, every case of `ExprK
 sentence, is its own commit, asked of the author before it is made, since its push publishes the
 site.
 
+**Added 2026-10-22**: R1 landed at `f34f944c3` on the author's yes to publish it, `measure --refresh`
+reading real 10,299 (P3 a hit); R8's two `blocking` filings were repaired at `be9009cac`, defect
+2183 (a label the call holds already is a guess, with a note, at all five kinds of call) and
+defect 2184 (a label at a built-in's unnamed position is `wrong_label`, dropped `certain` where it
+names nothing and a guess where it names another position), the compiler's own test
+`"buffer-crossing ".repeat(count: 512)` in `selfhost/cli/io.hero` the one such label in the tree,
+found by the gate's stage 3; the full net 8937 passed and 0 failed, and the CI green on its four
+platforms. So everything this sitting changes stands before the freeze, as R9 asks.
+
 ## Author's verdict
 
 Pending: the decision issue `Panel 227:` holds the ratification.
