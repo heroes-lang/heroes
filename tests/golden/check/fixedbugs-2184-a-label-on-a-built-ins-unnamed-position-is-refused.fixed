@@ -1,0 +1,20 @@
+# Defect 2184, 2026-10-22, panel 227's R2: a label at a position a built-in
+# does not name was accepted and read by no rule, where a declared function's
+# `f(b: 1)` is `wrong_label`: `len(foo: line)` and the labels of the
+# specification's own placeholders, `repeat(s: "ab", n: 3)`, checked clean.
+# The sentence's bare names are values (R2), so each label here is refused,
+# `wrong_label`, and dropped by a `certain` fix: the compiler reads these
+# arguments by position whatever the label says, so the program the fixes
+# write, `.fixed` beside this file, does what this one meant.
+
+function main()
+    line = "hello world"
+    xs = [1, 2, 3]
+    print(len(line))  #~ wrong_label
+    print(repeat("ab", 3))  #~ wrong_label wrong_label
+    print(join(["a", "b"], ","))  #~ wrong_label wrong_label
+    print(slice(line, from: 0, to: 5))  #~ wrong_label
+    print(push(xs, 4).len())  #~ wrong_label wrong_label
+    print(to_str(3))  #~ wrong_label
+    print(chars(line).len())  #~ wrong_label
+    print(1)  #~ wrong_label

@@ -53,9 +53,7 @@ function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, 
     # The note is for a label that names nothing, whose rename would write a
     # name the call already holds; a swap keeps panel 127's message alone.
     if doubled && !elsewhere
-        d.notes @ d.notes.push(
-            "another label of this call is `" + expected + ":` already, so the order written may not be the order meant"
-        )
+        d.notes @ d.notes.push(already_written(expected))
     d.fixes @ d.fixes.push(
         diag.Fix(title: "write `" + expected + ":`", replacement: expected, span: span, certainty: certainty)
     )
@@ -89,6 +87,39 @@ function label_on_function_value(written: str, span: token.Span) -> diag.Diagnos
     )
     return d
 
+# A label at a BUILT-IN's position that has no name (defect 2184, panel 227's
+# R2): `len(foo: line)`, `repeat(n: "ab", s: 3)` and `slice(to: line, from: 0,
+# to: 5)` were accepted, the label read by no rule, where a declared
+# function's `f(b: 1)` is `wrong_label`; so is this, the same mistake. The fix
+# is `certain` where the label names nothing of the built-in: the compiler
+# reads this argument by its position whatever the label says, so dropping the
+# label leaves the program doing what it already did. **Where the label names
+# another of its positions** (`elsewhere`), `slice(from: 0, to: 5, line)`, the
+# value may belong there and the call be out of order, so the drop is a guess
+# and the message says so (defect 135's rule: a fix with two readings).
+function label_on_builtin(holder: str, written: str, elsewhere: bool, span: token.Span) -> diag.Diagnostic
+    what: str @= "`" + written + ":` names nothing"
+
+    if elsewhere
+        what @ "`" + written + ":` is the name of another of its arguments"
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "wrong_label",
+        message: "`" + holder + "` takes this argument by its position, so it has no name — " + what,
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a built-in's arguments carry names only where two of its parameters share a type (§4.9), and this one of `" + holder + "` carries none: its position says which it is"
+    )
+    certainty: diag.Certainty @= .certain
+
+    if elsewhere
+        certainty @ .guess
+        d.notes @ d.notes.push(
+            "the value written here may belong where `" + written + ":` is, and the call be out of order"
+        )
+    d.fixes @ d.fixes.push(diag.Fix(title: "drop the label", replacement: "", span: span, certainty: certainty))
+    return d
+
 # §4.9's same-typed-argument rule. The message names the REASON — two
 # parameters share a type — because the rule looks arbitrary without it,
 # and a model that does not know why will drop the label again at the
@@ -105,26 +136,40 @@ function label_on_function_value(written: str, span: token.Span) -> diag.Diagnos
 # parameters or fields of a type it takes, and a marker it carries, that no
 # label of the call has taken (`check/labels.other_parameters`). With none,
 # the argument can be this one alone and the label is certain; otherwise the
-# message names every reading and each is offered, none applied. `at` is
+# message names every reading and each is offered, none applied. **And where
+# another label of the call writes this one already** (`doubled`, defect 2183):
+# `cut(from: 0, to: 5, line)` was offered `to:` for `line` as `certain` and
+# `--apply` wrote `to:` twice; the order written is not the order meant, so the
+# label is a guess and the note says why, as `wrong_label`'s does. `at` is
 # where the label goes: before an argument's `@`, since `swap(@a: x, …)`
 # does not parse (`argument_front`).
-function needs_label(name: str, expected: str, shared: str, others: [str], span: token.Span, at: i64) -> diag.Diagnostic
+function needs_label(name: str, expected: str, shared: str, others: [str], doubled: bool, span: token.Span, at: i64) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "needs_label",
         message: "two of `" + name + "`'s parameters are `" + shared + "`, so every one of them is named at the call site — " + which_one(expected, others),
         span: span
     )
-    d.fixes @ label_fixes(expected, others: others, at: at)
+    d.fixes @ label_fixes(expected, others: others, doubled: doubled, at: at)
+
+    if doubled
+        d.notes @ d.notes.push(already_written(expected))
     return d
 
-function missing_label(holder: str, expected: str, others: [str], span: token.Span, at: i64) -> diag.Diagnostic
+function missing_label(holder: str, expected: str, others: [str], doubled: bool, span: token.Span, at: i64) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "missing_label",
         message: "`" + holder + "`'s fields are always named — " + which_one(expected, others),
         span: span
     )
-    d.fixes @ label_fixes(expected, others: others, at: at)
+    d.fixes @ label_fixes(expected, others: others, doubled: doubled, at: at)
+
+    if doubled
+        d.notes @ d.notes.push(already_written(expected))
     return d
+
+# What a call holds where the label a position gives is written already.
+function already_written(expected: str) -> str
+    return "another label of this call is `" + expected + ":` already, so the order written may not be the order meant"
 
 # The clause that names the label: the one the position gives, or, where the
 # order written may not be the order meant, every one the argument could be.
@@ -146,12 +191,13 @@ function in_order(expected: str, others: [str]) -> str
     return "`" + expected + "` in the order written, or " + quoted.join(" or ") + " in " + order
 
 # The label the position gives, certain where nothing else could stand
-# there, and beside it as guesses the labels of the other readings.
-function label_fixes(expected: str, others: [str], at: i64) -> [diag.Fix]
+# there and no other label writes it, and beside it as guesses the labels of
+# the other readings.
+function label_fixes(expected: str, others: [str], doubled: bool, at: i64) -> [diag.Fix]
     insertion = token.Span(start: at, end: at)
     certainty: diag.Certainty @= .certain
 
-    if others.len() > 0
+    if others.len() > 0 || doubled
         certainty @ .guess
     fixes: [diag.Fix] @= [
         diag.Fix(title: "write `" + expected + ": `", replacement: expected + ": ", span: insertion, certainty: certainty)
@@ -266,6 +312,7 @@ test "needs_label carries its reason and a zero-width insertion"
         expected: "text",
         shared: "str",
         others: none,
+        doubled: false,
         span: token.Span(start: 20, end: 24),
         at: 20
     )
@@ -273,6 +320,44 @@ test "needs_label carries its reason and a zero-width insertion"
     assert d.fixes[0].replacement == "text: "
     assert d.fixes[0].span.start == 20 && d.fixes[0].span.end == 20
     assert d.fixes[0].certainty == .certain
+    assert d.notes.len() == 0
+
+# Defect 2183: `cut(from: 0, to: 5, line)` was offered `to:` for `line` as
+# certain, and the call holds `to:` already.
+test "a label the call holds already is offered as a guess, the note saying why"
+    none: [str] = []
+    d = needs_label(
+        name: "cut",
+        expected: "to",
+        shared: "i64",
+        others: none,
+        doubled: true,
+        span: token.Span(start: 30, end: 34),
+        at: 30
+    )
+    assert d.fixes.len() == 1
+    assert d.fixes[0].certainty == .guess
+    assert d.notes == ["another label of this call is `to:` already, so the order written may not be the order meant"]
+    field = missing_label(
+        holder: "Point",
+        expected: "y",
+        others: none,
+        doubled: true,
+        span: token.Span(start: 5, end: 6),
+        at: 5
+    )
+    assert field.fixes[0].certainty == .guess
+    assert field.notes.len() == 1
+
+test "a label at a built-in's unnamed position is dropped, certain"
+    d = label_on_builtin(holder: "len", written: "foo", elsewhere: false, span: token.Span(start: 4, end: 9))
+    assert d.code == "wrong_label"
+    assert d.message == "`len` takes this argument by its position, so it has no name — `foo:` names nothing"
+    assert d.fixes[0].replacement == "" && d.fixes[0].certainty == .certain
+    assert d.fixes[0].span.start == 4 && d.fixes[0].span.end == 9
+    swapped = label_on_builtin(holder: "slice", written: "from", elsewhere: true, span: token.Span(start: 6, end: 12))
+    assert swapped.fixes[0].certainty == .guess
+    assert swapped.notes.len() == 2
 
 # Defect 135: where the argument could be another parameter as well, the
 # order written is one reading among others and no label is certain.
@@ -283,6 +368,7 @@ test "a label the order written gives is a guess where another could stand there
         expected: "from",
         shared: "[i64]",
         others: other,
+        doubled: false,
         span: token.Span(start: 20, end: 26),
         at: 19
     )
@@ -291,7 +377,14 @@ test "a label the order written gives is a guess where another could stand there
     assert d.fixes[0].certainty == .guess && d.fixes[1].certainty == .guess
     assert d.fixes[1].replacement == "to: " && d.fixes[1].span.start == 19
     three: [str] = ["low", "high"]
-    field = missing_label(holder: "Range", expected: "value", others: three, span: token.Span(start: 5, end: 7), at: 5)
+    field = missing_label(
+        holder: "Range",
+        expected: "value",
+        others: three,
+        doubled: false,
+        span: token.Span(start: 5, end: 7),
+        at: 5
+    )
     assert field.message == "`Range`'s fields are always named — this one is `value` in the order written, or `low` or `high` in another order"
     assert argument_front("swap(@x, @ y)", value_start: 6, mutable: true) == 5
     assert argument_front("swap(@x, @ y)", value_start: 11, mutable: true) == 9

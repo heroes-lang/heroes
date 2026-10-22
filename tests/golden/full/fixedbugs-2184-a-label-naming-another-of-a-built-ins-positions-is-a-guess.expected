@@ -1,0 +1,8 @@
+error[wrong_label]: `slice` takes this argument by its position, so it has no name — `to:` is the name of another of its arguments
+  at tests/golden/full/fixedbugs-2184-a-label-naming-another-of-a-built-ins-positions-is-a-guess.hero:10:17
+     |
+  10 |     print(slice(to: line, from: 0, to: 5))  #~ wrong_label
+     |                 ^^^^
+  note: a built-in's arguments carry names only where two of its parameters share a type (§4.9), and this one of `slice` carries none: its position says which it is
+  note: the value written here may belong where `to:` is, and the call be out of order
+  fix (guess): drop the label

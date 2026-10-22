@@ -1,0 +1,81 @@
+error[wrong_label]: `cut` has nothing called `from` at this position — it is `s`
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:32:15
+     |
+  32 |     print(cut(from: 0, to: 5, line))  #~ wrong_label type_mismatch wrong_label needs_label type_mismatch
+     |               ^^^^
+  fix (guess): write `s:`
+
+error[type_mismatch]: expected `str`, found `i64`
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:32:21
+     |
+  32 |     print(cut(from: 0, to: 5, line))  #~ wrong_label type_mismatch wrong_label needs_label type_mismatch
+     |                     ^
+
+error[wrong_label]: `cut` has nothing called `to` at this position — it is `from`
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:32:24
+     |
+  32 |     print(cut(from: 0, to: 5, line))  #~ wrong_label type_mismatch wrong_label needs_label type_mismatch
+     |                        ^^
+  fix (guess): write `from:`
+
+error[needs_label]: two of `cut`'s parameters are `i64`, so every one of them is named at the call site — this one is `to`
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:32:31
+     |
+  32 |     print(cut(from: 0, to: 5, line))  #~ wrong_label type_mismatch wrong_label needs_label type_mismatch
+     |                               ^^^^
+  note: another label of this call is `to:` already, so the order written may not be the order meant
+  fix (guess): write `to: `
+
+error[type_mismatch]: expected `i64`, found `str`
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:32:31
+     |
+  32 |     print(cut(from: 0, to: 5, line))  #~ wrong_label type_mismatch wrong_label needs_label type_mismatch
+     |                               ^^^^
+
+error[wrong_label]: `f` has nothing called `b` at this position — it is `a`
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:34:13
+     |
+  34 |     print(f(b: 1, 2))  #~ wrong_label needs_label
+     |             ^
+  fix (guess): write `a:`
+
+error[needs_label]: two of `f`'s parameters are `i64`, so every one of them is named at the call site — this one is `b` in the order written, or `a` in the other order
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:34:19
+     |
+  34 |     print(f(b: 1, 2))  #~ wrong_label needs_label
+     |                   ^
+  note: another label of this call is `b:` already, so the order written may not be the order meant
+  fix (guess): write `b: `
+  fix (guess): write `a: `
+
+error[wrong_label]: `Point` has nothing called `y` at this position — it is `x`
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:35:15
+     |
+  35 |     p = Point(y: 1, 2)  #~ wrong_label missing_label
+     |               ^
+  fix (guess): write `x:`
+
+error[missing_label]: `Point`'s fields are always named — this one is `y` in the order written, or `x` in the other order
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:35:21
+     |
+  35 |     p = Point(y: 1, 2)  #~ wrong_label missing_label
+     |                     ^
+  note: another label of this call is `y:` already, so the order written may not be the order meant
+  fix (guess): write `y: `
+  fix (guess): write `x: `
+
+error[wrong_label]: `Shape.rect` has nothing called `h` at this position — it is `w`
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:37:22
+     |
+  37 |     print(area(.rect(h: 2, 3)))  #~ wrong_label missing_label
+     |                      ^
+  fix (guess): write `w:`
+
+error[missing_label]: `Shape.rect`'s fields are always named — this one is `h` in the order written, or `w` in the other order
+  at tests/golden/full/fixedbugs-2183-a-label-the-call-holds-already-is-offered-never-applied.hero:37:28
+     |
+  37 |     print(area(.rect(h: 2, 3)))  #~ wrong_label missing_label
+     |                            ^
+  note: another label of this call is `h:` already, so the order written may not be the order meant
+  fix (guess): write `h: `
+  fix (guess): write `w: `

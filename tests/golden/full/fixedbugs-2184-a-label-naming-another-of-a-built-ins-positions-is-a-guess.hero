@@ -1,0 +1,10 @@
+# Defect 2184, 2026-10-22, panel 227's R2: a label at a built-in's position
+# with no name is refused and dropped by a `certain` fix
+# (`check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused`),
+# except where the label names another of the built-in's positions: here
+# `to:` stands where `slice` takes the value it works on, and the value may
+# belong where `to:` is, so the drop is a guess and the message says so.
+
+function main()
+    line = "hello world"
+    print(slice(to: line, from: 0, to: 5))  #~ wrong_label

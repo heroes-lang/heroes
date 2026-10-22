@@ -1241,7 +1241,7 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
         # what lets a .case or an ok(…) be written as a built-in's
         # argument.
         if !counted
-            labels.check_label(
+            builtin_args.check_label(
                 @c,
                 s,
                 name: name,
@@ -1349,7 +1349,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                     )
                     state.push_diagnostic(
                         @c,
-                        label_errors.needs_label(name: callee_text.written(s, callee), expected: wanted, shared: state.show(c, s, decls, params[position]), others: others, span: a.exprs[arg.value].span, at: front)
+                        label_errors.needs_label(name: callee_text.written(s, callee), expected: wanted, shared: state.show(c, s, decls, params[position]), others: others, doubled: labels.listed(taken, wanted), span: a.exprs[arg.value].span, at: front)
                     )
                 else
                     misnamed @ source.span_text(s, arg.name.must()) != wanted
@@ -1660,7 +1660,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                     )
                     state.push_diagnostic(
                         @c,
-                        label_errors.needs_label(name: name, expected: wanted, shared: shared_text, others: others, span: a.exprs[arg.value].span, at: front)
+                        label_errors.needs_label(name: name, expected: wanted, shared: shared_text, others: others, doubled: labels.listed(taken, wanted), span: a.exprs[arg.value].span, at: front)
                     )
 
                 # §4.8: the marker is repeated at the call site, and a
@@ -2107,7 +2107,7 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
             )
             state.push_diagnostic(
                 @c,
-                label_errors.missing_label(holder: label, expected: spec_names[index], others: others, span: a.exprs[arg.value].span, at: front)
+                label_errors.missing_label(holder: label, expected: spec_names[index], others: others, doubled: labels.listed(taken, spec_names[index]), span: a.exprs[arg.value].span, at: front)
             )
         index @ index + 1
 

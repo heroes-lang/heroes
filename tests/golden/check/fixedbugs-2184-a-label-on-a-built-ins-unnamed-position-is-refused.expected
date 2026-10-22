@@ -1,0 +1,11 @@
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:13:15: error[wrong_label]: `len` takes this argument by its position, so it has no name — `foo:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:14:18: error[wrong_label]: `repeat` takes this argument by its position, so it has no name — `s:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:14:27: error[wrong_label]: `repeat` takes this argument by its position, so it has no name — `n:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:15:16: error[wrong_label]: `join` takes this argument by its position, so it has no name — `xs:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:15:32: error[wrong_label]: `join` takes this argument by its position, so it has no name — `sep:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:16:17: error[wrong_label]: `slice` takes this argument by its position, so it has no name — `xs:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:17:16: error[wrong_label]: `push` takes this argument by its position, so it has no name — `xs:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:17:24: error[wrong_label]: `push` takes this argument by its position, so it has no name — `x:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:18:18: error[wrong_label]: `to_str` takes this argument by its position, so it has no name — `x:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:19:17: error[wrong_label]: `chars` takes this argument by its position, so it has no name — `of:` names nothing
+tests/golden/check/fixedbugs-2184-a-label-on-a-built-ins-unnamed-position-is-refused.hero:20:11: error[wrong_label]: `print` takes this argument by its position, so it has no name — `value:` names nothing

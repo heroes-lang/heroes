@@ -1,6 +1,8 @@
 # What a built-in call's arguments are refused for before they are typed: an
-# `@` no built-in but `end_lease` takes, and a count the built-in does not take
-# (panel 227's R3, route E, defect 2175; built by the sitting's compiler seat).
+# `@` no built-in but `end_lease` takes, a count the built-in does not take
+# (panel 227's R3, route E, defect 2175; built by the sitting's compiler seat),
+# and a label at a position the built-in does not name (panel 227's R2, defect
+# 2184).
 #
 # `slice(from: 0, to: 5)` is `slice` with nothing to slice. Read label by
 # label it was told twice, `builtin_shape` and a `wrong_label` whose guess
@@ -13,10 +15,13 @@
 use token
 use ast
 use diag
+use source
 use inventory
 use value_errors
 use data_errors
+use label_errors
 use check/state
+use check/labels
 
 # §4.8's marker, on this side of the table too: ONE built-in takes an @
 # parameter — `end_lease(@x)`, which nulls the cell it frees (panel 125) —
@@ -56,6 +61,36 @@ function refused(@c: state.Checker, name: str, given: [ast.Arg], receiver: bool,
     state.push_diagnostic(@c, d)
     return true
 
+# One argument's label, read before its value is typed: a label at a position
+# the built-in does not name is refused here, `wrong_label` with the label's
+# removal, and every other is the rule's (`check/labels.hero`'s `check_label`).
+# Until defect 2184 that rule returned at such a position, so `len(foo: line)`
+# and a label written twice, `slice(to: line, from: 0, to: 5)`, checked clean.
+function check_label(@c: state.Checker, s: source.Source, name: str, position: i64, written: token.Span?, value_span: token.Span, taken: [str])
+    if !written.is_err() && !named(name, position)
+        label = written.must()
+        text = source.span_text(s, label)
+        entry = inventory.labelled_of(name)
+        elsewhere = !entry.is_err() && labels.names_a_position(entry.must().params, text)
+        state.push_diagnostic(
+            @c,
+            label_errors.label_on_builtin(holder: name, written: text, elsewhere: elsewhere, span: token.Span(start: label.start, end: value_span.start))
+        )
+        return
+    labels.check_label(@c, s, name: name, position: position, written: written, value_span: value_span, taken: taken)
+
+# Whether the built-in names its argument at `position`: `slice` names every
+# one but the value it works on, `fail` both of its own, and a built-in with no
+# `Labelled` entry none. A position past the entry's is the count's to tell,
+# not a label's, and is left to the rule as it was.
+function named(name: str, position: i64) -> bool
+    entry = inventory.labelled_of(name)
+
+    if entry.is_err()
+        return false
+    params = entry.must().params
+    return position >= params.len() || params[position].len() > 0
+
 # The call's shape, read from the built-in's labels: the value first, before
 # the dot or as the first argument, then each labelled position.
 function shape(name: str, params: [str]) -> str
@@ -75,3 +110,12 @@ function shape(name: str, params: [str]) -> str
 test "slice's shape names the value first and both bounds"
     params = inventory.labelled_of("slice").must().params
     assert shape("slice", params) == "`slice` is called `xs.slice(from: a, to: b)` or `slice(xs, from: a, to: b)`, the value it works on first"
+
+test "a built-in names a position only where its entry gives it a name"
+    assert !named("len", 0)
+    assert !named("repeat", 1)
+    assert !named("slice", 0)
+    assert named("slice", 1)
+    assert named("slice", 2)
+    assert named("fail", 0)
+    assert named("slice", 3)

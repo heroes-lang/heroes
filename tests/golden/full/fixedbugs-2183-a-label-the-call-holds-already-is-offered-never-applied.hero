@@ -1,0 +1,37 @@
+# Defect 2183, 2026-10-22: `cut(from: 0, to: 5, line)` was told `needs_label`
+# for `line` with `fix (certain): write to:`, and `--apply` wrote `to:` twice,
+# a call refused three ways that no message said was doubled. Where another
+# label of the call writes the name already, the order written is not the
+# order meant, so the label is a guess and a note says why, as `wrong_label`'s
+# does; every kind of call that writes a missing label asks it, a declared
+# function, a built-in, a function value, a record and a case.
+
+record Point
+    x: i64
+    y: i64
+
+variant Shape
+    rect
+        w: i64
+        h: i64
+    dot
+
+function cut(s: str, from: i64, to: i64) -> str
+    return s.slice(from: from, to: to)
+
+function pair(a: i64, b: i64) -> i64
+    return a * 10 + b
+
+function area(s: Shape) -> i64
+    return match s
+        .rect r => r.w * r.h
+        .dot    => 0
+
+function main()
+    line = "hello"
+    print(cut(from: 0, to: 5, line))  #~ wrong_label type_mismatch wrong_label needs_label type_mismatch
+    f = pair
+    print(f(b: 1, 2))  #~ wrong_label needs_label
+    p = Point(y: 1, 2)  #~ wrong_label missing_label
+    print(p.x)
+    print(area(.rect(h: 2, 3)))  #~ wrong_label missing_label

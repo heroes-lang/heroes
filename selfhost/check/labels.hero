@@ -57,7 +57,7 @@ function check_label(@c: state.Checker, s: source.Source, name: str, position: i
     if written.is_err()
         state.push_diagnostic(
             @c,
-            label_errors.needs_label(name: name, expected: wanted, shared: entry.must().shared, others: others, span: value_span, at: value_span.start)
+            label_errors.needs_label(name: name, expected: wanted, shared: entry.must().shared, others: others, doubled: listed(taken, wanted), span: value_span, at: value_span.start)
         )
         return
     seen = source.span_text(s, written.must())
