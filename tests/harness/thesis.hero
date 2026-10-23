@@ -114,6 +114,13 @@ function suite_dir(scratch: str, asked: thesis_args.Asked) -> str?
         return ok(asked.paths[0])
     return thesis_seal.unsealed(scratch: scratch, file: asked.sealed, key_name: asked.key)
 
+# The suite a word names, as its provenance writes it: the folder, or the
+# archive `--sealed` gives, which only `tasks` and `preregister` take.
+function where_of(asked: thesis_args.Asked) -> str
+    if asked.sealed != ""
+        return asked.sealed
+    return asked.paths[0]
+
 # `tasks`: the suite's digests, one task a line and the suite's last; for a
 # sealed archive, the archive's digest first.
 function tasks_word(scratch: str, asked: thesis_args.Asked) -> i64
@@ -336,13 +343,21 @@ function plan_word(scratch: str, asked: thesis_args.Asked) -> i64
     if compiler.is_err()
         hero_write_err(text: "thesis: no compiler to grade with; give --compiler <path>\n")
         return 2
-    suite = thesis_tasks.read_suite(scratch: scratch, dir: asked.paths[0])
+    folder: str @= ""
+
+    match suite_dir(scratch: scratch, asked: asked)
+        .ok d => folder @ d
+        .err e =>
+            hero_write_err(text: "thesis: " + e.msg + "\n")
+            return 2
+
+    suite = thesis_tasks.read_suite(scratch: scratch, dir: folder)
 
     if suite.is_err()
         hero_write_err(text: "thesis: " + thesis_grade.unreadable(failed: suite.is_err(), of: "the suite") + "\n")
         return 1
 
-    barred = held_out_barred(transport: asked.transport, label: suite.must().label, folder: asked.paths[0])
+    barred = held_out_barred(transport: asked.transport, label: suite.must().label, folder: where_of(asked))
 
     if barred != ""
         hero_write_err(text: "thesis: " + barred + "\n")
@@ -359,7 +374,7 @@ function plan_word(scratch: str, asked: thesis_args.Asked) -> i64
     # `preregister`: the provenance a run of these flags would write, in the
     # block the freeze's `prediction.md` holds, and nothing run.
     if asked.word == "preregister"
-        match thesis_run.planned_provenance(plan: plan, scratch: scratch)
+        match thesis_run.provenance_for(plan: plan, suite: suite.must())
             .ok text =>
                 print("```preregistered\n" + text + "\n```")
                 return 0
@@ -464,7 +479,7 @@ function plan_of(asked: thesis_args.Asked, suite_sha: str, compiler: str, scratc
         if asked.transport != "api"
             out @ out + "-" + asked.transport
     return ok(
-        thesis_run.Plan(suite_dir: asked.paths[0], models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, transport: asked.transport, harness: harness, instrument: thesis_prompt.instrument_digest(scratch: scratch, dir: "tests/harness").default(""), base: base, out: out, live: asked.live, max_requests: asked.max_requests, max_dollars: asked.max_dollars, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
+        thesis_run.Plan(suite_dir: where_of(asked), models: asked.models, arms: asked.arms, contexts: asked.contexts, samples: asked.samples, turns: asked.turns, effort: asked.effort, max_tokens: asked.max_tokens, layout: asked.layout, dialect: asked.dialect, transport: asked.transport, harness: harness, instrument: thesis_prompt.instrument_digest(scratch: scratch, dir: "tests/harness").default(""), base: base, out: out, live: asked.live, max_requests: asked.max_requests, max_dollars: asked.max_dollars, seconds: 10, bytes: 1048576, date: date, head: head, sources: sources, compiler: compiler, quiet: false)
     )
 
 # A plan with nothing in it, the cell `plan_word` fills from `plan_of`.

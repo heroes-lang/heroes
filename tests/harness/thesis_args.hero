@@ -18,7 +18,7 @@
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live --max-dollars n [--max-requests n] | preregister <folder> --model <id>... [plan's flags] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live] | scaffold <folder> <NN> | lint <folder>; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
+    "heroes run tests/harness/thesis.hero -- tasks <folder> [--label assistant|held-out] [--sealed <file>] | dry <folder> [--arm ...] [--mute] | grade <answer.hero> --task <folder/NN> [--arm ...] | plan <folder> --model <id>... [--arm strict|brief|control|all] [--context spec|none|<path>]... [--samples n] [--turns k] [--effort e] [--max-tokens n] [--layout single|cached] [--dialect anthropic|openai] [--transport api|claude|codex] [--base url] [--out dir] | run <folder> ... --live --max-dollars n [--max-requests n] | preregister <folder> | --sealed <file> [--key VAR] --model <id>... [plan's flags] | report <out> [--seed n] [--primary <sentence>] [--labels <dir>] | seal <folder> -o <file> [--key VAR] | canary <folder> | unseal --sealed <file> --into <dir> [--key VAR] | canary-probe <folder> --model <id>... [--dialect anthropic|openai] [--base url] [--out dir] [--max-tokens n] [--effort e] [--live] | scaffold <folder> <NN> | lint <folder>; `tasks` takes --sealed <file> [--key VAR] in place of a folder, and `dry` reads a folder `unseal` opened, never the archive; every word takes --compiler <path>"
 
 # The words of this program.
 constant WORDS: [str]
@@ -108,10 +108,10 @@ function valued(flag: str, word: str) -> bool
         return word == "tasks"
 
     if flag == "--sealed"
-        return word == "tasks" || word == "dry" || word == "unseal"
+        return word == "tasks" || word == "dry" || word == "unseal" || word == "preregister"
 
     if flag == "--key"
-        return word == "tasks" || word == "dry" || word == "seal" || word == "unseal"
+        return word == "tasks" || word == "dry" || word == "seal" || word == "unseal" || word == "preregister"
 
     if flag == "--into"
         return word == "unseal"
@@ -182,8 +182,13 @@ function parsed(word: str, words: [str]) -> Asked
     if (word == "tasks" || word == "dry") && a.paths.len() == 1 && a.sealed != ""
         return wrong(word: word, why: "`" + word + "` takes a folder or `--sealed <file>`, not both")
 
-    if (word == "plan" || word == "run" || word == "preregister" || word == "canary-probe") && a.paths.len() != 1
+    if (word == "plan" || word == "run" || word == "canary-probe") && a.paths.len() != 1
         return wrong(word: word, why: "`" + word + "` takes one folder")
+
+    # The freeze writes its pre-registration from the sealed suite, since the
+    # suite in clear is in no folder a session may read (2026-10-24).
+    if word == "preregister" && (a.paths.len() > 1 || a.paths.len() == 1 == (a.sealed != ""))
+        return wrong(word: word, why: "`preregister` takes one folder, or `--sealed <file>`, not both")
 
     if word == "seal" && (a.paths.len() != 1 || a.out == "")
         return wrong(word: word, why: "`seal` takes one folder and `-o <file>`")
@@ -554,4 +559,23 @@ test "`preregister` takes a plan's flags, one folder and a model, and never `--l
     assert strings.contains(
         text: parsed(word: "preregister", words: ["tests/thesis", "--model", "m", "--live"]).wrong,
         needle: "`--live` is no flag of `preregister`"
+    )
+
+test "preregister takes a folder or a sealed archive with its key, never both and never neither"
+    sealed = parsed(
+        word: "preregister",
+        words: ["--sealed", "tests/thesis/held-out/suite.enc", "--key", "HEROES_TASKS_KEY", "--model", "claude-sonnet-5-5"]
+    )
+    assert sealed.wrong == ""
+    assert sealed.sealed == "tests/thesis/held-out/suite.enc"
+    assert sealed.key == "HEROES_TASKS_KEY"
+    assert parsed(word: "preregister", words: ["tests/thesis", "--model", "claude-sonnet-5-5"]).wrong == ""
+    assert strings.contains(
+        text: parsed(word: "preregister", words: ["tests/thesis", "--sealed", "x.enc", "--model", "m"]).wrong,
+        needle: "not both"
+    )
+    assert strings.contains(text: parsed(word: "preregister", words: ["--model", "m"]).wrong, needle: "not both")
+    assert strings.contains(
+        text: parsed(word: "plan", words: ["--sealed", "x.enc", "--model", "m"]).wrong,
+        needle: "no flag"
     )

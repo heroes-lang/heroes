@@ -743,7 +743,14 @@ function kept_record(plan: Plan, scratch: str) -> ()?
 # the `preregister` word prints for the freeze's `prediction.md`: one
 # function, so the report sets the two side by side byte for byte.
 function planned_provenance(plan: Plan, scratch: str) -> str?
-    suite = thesis_tasks.read_suite(scratch: scratch, dir: plan.suite_dir)?
+    return provenance_for(plan: plan, suite: thesis_tasks.read_suite(scratch: scratch, dir: plan.suite_dir)?)
+
+# The provenance a run of `plan` would write over `suite`, read already: what
+# `preregister --sealed` prints of a suite opened from its archive, the plan
+# naming the archive (2026-10-24, the freeze), where `planned_provenance` reads
+# the suite from the plan's folder. `suite`, the path, is no protocol field
+# (`thesis_protocol.PROTOCOL`); `suite_sha` is, and is the same either way.
+function provenance_for(plan: Plan, suite: thesis_tasks.Suite) -> str?
     template = thesis_prompt.template_at(path: thesis_prompt.TEMPLATE)?
     contexts: [thesis_prompt.Context] @= []
 
