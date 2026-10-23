@@ -124,3 +124,6 @@ One line per event: the day, what happened, and who was given a key or which tas
 
 - 2026-10-20: this page written, at M-thesis-harness step 4, no archive yet; the suite and the
   reserve land at the freeze.
+- 2026-10-24: the freeze. The suite, 40 tasks (`c24a5b81...`), and the reserve, 20 (`b27ea1a9...`),
+  sealed and committed with their digests, `traps.txt`, `constructs.txt` and `prediction.md`; no
+  key given to anybody.

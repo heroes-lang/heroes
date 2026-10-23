@@ -130,9 +130,21 @@ constant RECORD: [str]
 # Exact match, never a prefix. RECORD names trees because a record directory is
 # a record all the way down; a generated file is one file, and a prefix here
 # would quietly exempt a directory somebody adds later.
+#
+# **The two sealed archives of the held-out suite are the lockfile's case
+# again** (M-thesis-harness step 12, the freeze, 2026-10-24): `openssl enc -a`
+# writes the ciphertext as base64 in lines of 64, so a `+`, a `/` or a line's
+# start stands before an `M` and a digit. Measured that day with the check's
+# own boundary, `(?<![A-Za-z0-9_-])M[0-9]`: **2,708** in `suite.enc` and **391**
+# in `reserve.enc`, and `records/numbered` reported the first of each, `M3+j`
+# and `M8Eb`. Their bytes are chosen by the cipher and the key, so the claim
+# above holds of them; the prose they hold is the author's and no model's,
+# readable only by `tests/harness/thesis.hero` with the key.
 constant GENERATED: [str]
     [
         "site/package-lock.json"
+        "tests/thesis/held-out/suite.enc"
+        "tests/thesis/held-out/reserve.enc"
     ]
 
 # The blessed emissions: 5.4 MB of generated C, derived from the
