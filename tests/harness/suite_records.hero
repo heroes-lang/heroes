@@ -1842,8 +1842,9 @@ function redirects(@r: report.Report, present: [str], archive: Archive)
 
         # **Only a row whose left side is a whole PATH can claim the old one is
         # gone.** Where it names a section — `docs/ROADMAP.md § The names` — the
-        # file it opens with is still there and still right, and asserting its
-        # absence would refuse the true rows. So this half runs on the plain
+        # file it opens with may still be there and still right, and asserting
+        # its absence would refuse the true rows. (That one is not: the ROADMAP
+        # moved to the root on 2026-10-24, and its own row below says so.) So this half runs on the plain
         # paths and says so, rather than being written to fire on everything and
         # quietly exempted later.
         if strings.index_of(text: written, needle: " §").is_err()
@@ -2798,6 +2799,7 @@ constant MOVED: [str]
         "docs/ROADMAP.md § The milestones, one by one -> docs/roadmap/milestones"
         "docs/ROADMAP.md § Decisions this file records -> docs/roadmap/shape.md"
         "docs/ROADMAP.md § Who scheduled what -> docs/roadmap/scheduling.md"
+        "docs/ROADMAP.md -> ROADMAP.md"
         "docs/ref/environment/linux/Dockerfile -> docs/platforms/linux/Dockerfile.amd64"
         "docs/design/design.md -> docs/design.md"
         "docs/ref/assets -> docs/assets"
@@ -4462,7 +4464,7 @@ test "a verdict answered beneath its stub is answered, and a quoted word is not"
     assert !answered_beneath(text: "**Ratified, 2026-10-10**, R1.\n")
     assert !answered_beneath(text: "Pending.\n\nRatified, without a date.\n")
 
-# **`docs/ROADMAP.md` § Where we are, held to its own ceiling.**
+# **`ROADMAP.md` § Where we are, held to its own ceiling.**
 #
 # The rule is `/step`'s milestone-close checklist: that section says what is
 # NEXT, and a closed milestone's record is its journal, so the section stays at
@@ -4532,10 +4534,10 @@ function scan_where(text: str) -> WhereScan
     return WhereScan(counted: counted, mangled: mangled, found: inside)
 
 function where_we_are(@r: report.Report)
-    text = read_file("docs/ROADMAP.md")
+    text = read_file("ROADMAP.md")
 
     if text.is_err()
-        report.keep_failure(@r, label: "records/roadmap", detail: "  docs/ROADMAP.md cannot be read")
+        report.keep_failure(@r, label: "records/roadmap", detail: "  ROADMAP.md cannot be read")
         return
     got = scan_where(text.must())
 
@@ -4543,7 +4545,7 @@ function where_we_are(@r: report.Report)
         report.keep_failure(
             @r,
             label: "records/roadmap",
-            detail: "  docs/ROADMAP.md has no `## Where we are` section, and /step's checklist names one"
+            detail: "  ROADMAP.md has no `## Where we are` section, and /step's checklist names one"
         )
         return
 
@@ -4566,7 +4568,7 @@ function where_we_are(@r: report.Report)
         report.keep_pass(@r)
 
 # **Every open item in `docs/work/SCHEDULED.md (retired 2026-09-12)` names a milestone that has a row
-# in `docs/ROADMAP.md` § The chain and is NOT closed** (author instruction
+# in `ROADMAP.md` § The chain and is NOT closed** (author instruction
 # 2026-09-04; the rule is in that list's own preamble, this is what performs it).
 #
 # **It arrived with twelve items of twenty-nine already breaking it.** Nine named
@@ -4612,10 +4614,10 @@ function where_we_are(@r: report.Report)
 # (`records_github.unhomed`); where GitHub cannot be asked that half is a
 # skip, and the pages are judged all the same.
 function homed(@r: report.Report, present: [str], held: github_issues.Listing)
-    chain = read_file("docs/ROADMAP.md")
+    chain = read_file("ROADMAP.md")
 
     if chain.is_err()
-        report.keep_failure(@r, label: "records/homes", detail: "  docs/ROADMAP.md cannot be read")
+        report.keep_failure(@r, label: "records/homes", detail: "  ROADMAP.md cannot be read")
         return
     states = cards.chain_states(chain.must())
 

@@ -19,7 +19,7 @@
   <a href="https://heroes-lang.org"><b>heroes-lang.org</b></a> &nbsp;&middot;&nbsp;
   <a href="spec/heroes-spec.md">The spec</a> &nbsp;&middot;&nbsp;
   <a href="docs/design.md">The design</a> &nbsp;&middot;&nbsp;
-  <a href="docs/ROADMAP.md">The chain</a> &nbsp;&middot;&nbsp;
+  <a href="ROADMAP.md">The chain</a> &nbsp;&middot;&nbsp;
   <a href="docs/records/journal/README.md">The journals</a> &nbsp;&middot;&nbsp;
   <a href="docs/panel/">The panels</a> &nbsp;&middot;&nbsp;
   <a href="examples/">The examples</a>
@@ -141,7 +141,7 @@ versions, and a patch version changes no sentence of the spec.**
 </p>
 
 **More than half the chain is closed.** Which milestone is in flight, and how
-many stand behind it, is `docs/ROADMAP.md` § Where we are, one place re-measured
+many stand behind it, is `ROADMAP.md` § Where we are, one place re-measured
 at every close rather than a number here that goes quietly stale. The program that has to keep
 working is a calculator, spread over four modules, with its own tests.
 
@@ -157,7 +157,7 @@ working is a calculator, spread over four modules, with its own tests.
 | `read_file`/`write_file`, `args()`, `exit(code)` | |
 | a guide, chapter by chapter, in English and Italian, at [heroes-lang.org/docs](https://heroes-lang.org/docs/) | |
 
-The chain from here is `docs/ROADMAP.md` § The chain. What is already built has
+The chain from here is `ROADMAP.md` § The chain. What is already built has
 one journal each, indexed at `docs/records/journal/README.md`.
 
 > [!NOTE]
@@ -220,7 +220,7 @@ instruments have run. The first is the spec's measured size, held **under a hard
 ceiling of 16384** tokens by a test that fails the day it is crossed, counted by
 two vendored BPE tables so that neither can hide its own drift, with every
 amendment's cost in `docs/measurements/010-spec-budget-ledger.md` and the
-standing figure in `docs/ROADMAP.md`. The second is a mutation-based check over
+standing figure in `ROADMAP.md`. The second is a mutation-based check over
 the compiler's own corpus. **The third, the rewrite rate, has not run**, so the formula remains the design rule it always
 was and is not yet an audited one. This is written here rather than discovered by
 a reader, because measurement beats opinion in this project, the author's
@@ -232,7 +232,7 @@ included.
 |---|---|
 | `design.md` | the source of truth for the language, and the reasoning behind it |
 | `spec/heroes-spec.md` | the contract, budgeted at 16384 tokens measured by the tokeniser that reads it, a control instrument and never a tutorial |
-| `docs/ROADMAP.md` | the milestone chain, in execution order |
+| `ROADMAP.md` | the milestone chain, in execution order |
 | [the issues](https://github.com/heroes-lang/heroes/issues) | every defect, decision and milestone task, one GitHub issue each |
 | `docs/panel/` | the design reviews: five judges with differentiated inputs, their vetoes, and what lifted them |
 | `docs/records/journal/` | one entry per milestone: what was built, what broke, and why |

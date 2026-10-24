@@ -211,20 +211,35 @@ export function sourcesFor(pathname: string): string[] {
  * page by the file would move its date thirteen times as often as the page
  * moved, the build-time stamp again in miniature. `--follow` reads through a
  * rename, so the day the file moves is not a day the chain changed.
+ *
+ * TWO SILENCES, AND THEY ARE DIFFERENT FACTS. A file git holds no commit of
+ * at all, a move not committed yet, is dated as any page whose sources have no
+ * history, by the fallback in `lastmodFor`: measured on the build of the move,
+ * which refused with the message below until the two were told apart. A file
+ * with commits and none that changes a row means the pattern stopped reading
+ * one, and that refuses the build.
  */
-let cachedChain: Date | null = null;
+let cachedChain: Date | null | undefined;
 
-function chainChanged(): Date {
-  if (cachedChain !== null) return cachedChain;
-
-  assertHistoryAvailable();
-  const said = execFileSync('git', ['log', '-1', '--follow', '--format=%cI', '-G', CHAIN_ROW_PATTERN, '--', CHAIN_FILE], {
+function gitLast(words: string[]): string {
+  return execFileSync('git', ['log', '-1', '--follow', '--format=%cI', ...words, '--', CHAIN_FILE], {
     cwd: repoRoot(),
     encoding: 'utf8',
   }).trim();
+}
+
+function chainChanged(): Date | null {
+  if (cachedChain !== undefined) return cachedChain;
+
+  assertHistoryAvailable();
+  const said = gitLast(['-G', CHAIN_ROW_PATTERN]);
   if (said === '') {
+    if (gitLast([]) === '') {
+      cachedChain = null;
+      return cachedChain;
+    }
     throw new Error(
-      `no commit changes a row of ${CHAIN_FILE} by git's reading of ${CHAIN_ROW_PATTERN}.\n` +
+      `no commit changes a row of ${CHAIN_FILE} by git's reading of ${CHAIN_ROW_PATTERN}, and commits of the file exist.\n` +
         `  The pattern no longer reads a row, and the project page would be dated by its wrapper alone.`
     );
   }
@@ -252,7 +267,7 @@ export function lastmodFor(pathname: string): Date {
   const bare = pathname.startsWith('/it/') ? pathname.slice(3) : pathname;
   if (bare === '/project/') {
     const chain = chainChanged();
-    if (best === null || chain > best) best = chain;
+    if (chain !== null && (best === null || chain > best)) best = chain;
   }
 
   return best ?? newest(dates);

@@ -1620,7 +1620,7 @@ pre:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 }
 
 /* ------- the chain, on the project page -----------------------------------
-   One row per milestone, read out of `docs/ROADMAP.md` § The chain at build
+   One row per milestone, read out of `ROADMAP.md` § The chain at build
    time (`src/lib/chain.ts`), because a summary written by hand is a summary
    that goes stale against the repository it summarises.
 

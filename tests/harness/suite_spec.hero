@@ -974,7 +974,7 @@ constant MISSING_DOCUMENT: str
 function other_headings() -> [str]
     out: [str] @= []
 
-    for path in ["CLAUDE.md", "docs/ROADMAP.md", "site/README.md"]
+    for path in ["CLAUDE.md", "ROADMAP.md", "site/README.md"]
         text = read_file(path)
 
         if text.is_err()

@@ -24,7 +24,7 @@ in seconds, so a bisection that took an afternoon takes a coffee.
 **What it is and what it is not.** It is the **hunting instrument**: it finds where
 something dies, it prices a hypothesis, it lets a fix be tried before it is
 committed. It is **not the judge**. M-argv-execution's acceptance criterion is
-*the Windows leg of CI is green* (`docs/ROADMAP.md` § The chain, row 27), and that
+*the Windows leg of CI is green* (`ROADMAP.md` § The chain, row 27), and that
 stays true — a green run on this box is evidence, not the criterion. The tag goes
 on when CI says so.
 

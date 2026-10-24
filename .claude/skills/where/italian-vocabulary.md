@@ -44,7 +44,7 @@ testo .hero
 poi: [M-module-namespace moduli] → [M-ffi-ladder FFI]
   → [M-program-corpus corpus] → [M-selfhost-probe sonda]
   → [M-selfhost-port port] → [M-selfhost-fixpoint fixpoint] = v1
-  (l'ordine è quello scritto in docs/ROADMAP.md § The chain; il nome
+  (l'ordine è quello scritto in ROADMAP.md § The chain; il nome
    non promette una posizione)
 ```
 

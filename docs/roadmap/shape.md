@@ -1,6 +1,6 @@
 # The shape of the chain file, and what each rule cost
 
-`docs/ROADMAP.md` is the status and the table, and nothing else, by author
+`ROADMAP.md` is the status and the table, and nothing else, by author
 instruction 2026-09-12: *it is the file I open most, to see where I stand and to
 reason, so I want it really simple*. What used to stand above and below the
 table is here, and the five rules below are why the table looks the way it does.

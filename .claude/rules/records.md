@@ -57,12 +57,17 @@ record's shape changes, the citations into it that a living file holds are
 rewritten to the new shape in the same change, and no file is kept only so an
 old citation still resolves.
 
-## The top of `docs/`: two documents, then collections
+## The top of `docs/`: one document, then collections
 
 Author's answers of 2026-10-05, on the coordinator's reading of `docs/`. **A
-file at the top of `docs/` is one of the two living documents the contract
-names**, `docs/ROADMAP.md` and `docs/design.md`; **every folder is a collection
-of one kind**: `roadmap/` what a row of the chain cannot hold, with
+file at the top of `docs/` is the living document the contract names there,
+`docs/design.md`**, and since 2026-10-24 **the ROADMAP stands at the root**,
+`ROADMAP.md`, beside `README.md` and `CLAUDE.md` (the author's instruction of
+2026-10-20, meant as: *move it from docs to the root, it is the one file I open
+to follow the project*). Until that day it was the second document at the top
+of `docs/`, and the root had kept `README.md` and `CLAUDE.md` alone since the
+author's instruction of 2026-09-12; `MOVED` in `tests/harness/suite_records.hero`
+keeps the old path followable. **Every folder is a collection of one kind**: `roadmap/` what a row of the chain cannot hold, with
 `milestones/` one page per milestone; `learn/` the questions by day and its
 `glossary/`; `platforms/` the Linux and Windows machines; `assets/` the front
 page's pictures; `metrics/` design.md Part 11's instruments, the operator table,
@@ -397,7 +402,7 @@ issues), and what this section
 binds is the pages of the tree that front them. A milestone's page under
 `docs/roadmap/milestones/` carries its reasoning alone, which `/step` § 1 calls
 the thing that must not be lost, under no ceiling and with no item.
-`docs/ROADMAP.md` carries a very short preamble, then its tables, and no count
+`ROADMAP.md` carries a very short preamble, then its tables, and no count
 of the issues, GitHub's counts being the truth (the author's sixth answer of
 2026-10-12). **No other story goes in either**, and a story already there is
 MOVED rather than deleted: to a decision issue, to the milestone's journal, or

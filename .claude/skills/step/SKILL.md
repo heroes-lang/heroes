@@ -13,7 +13,7 @@ for it before a step; no other ceremony attaches to it.)
 
 ## 1. Orient
 `git log --oneline -10` · the open decisions,
-`heroes run tests/harness/issues.hero -- open --kind decision` · `docs/ROADMAP.md` status · read
+`heroes run tests/harness/issues.hero -- open --kind decision` · `ROADMAP.md` status · read
 `spec/heroes-spec.md` in full. If no step was named, take the next one from
 the ROADMAP.
 
@@ -85,7 +85,7 @@ in this shape and says why (`.claude/rules/records.md` § The issues).
   10 to 21 suites reported 0 failed for 0 defects closed.
   Naming a suite runs only that one, which is what makes a fast loop possible:
   `-- <compiler> records`. The three suites since **M-bootstrap-archive**
-  (2026-08-19), with their counts in `docs/ROADMAP.md` § Where we are and
+  (2026-08-19), with their counts in `ROADMAP.md` § Where we are and
   nowhere else:
   - `heroes test selfhost/main.hero` — the compiler's own;
   - `heroes run tests/harness/main.hero -- <compiler>` — the net, which carries
@@ -185,14 +185,14 @@ Milestone close — the checklist (this is its only copy):
   CLAUDE.md § 3);
 - append the closing block — the status paragraph and the milestone's chain entry —
   to `docs/records/journal/NNN-<slug>.md` § *What landed, and what carried forward*, and
-  leave `docs/ROADMAP.md` § Where we are at **≤32 lines** (15 until 2026-09-12,
+  leave `ROADMAP.md` § Where we are at **≤32 lines** (15 until 2026-09-12,
   when the section stood at exactly 15 and the next legitimate line would have
   gone red; `WHERE_CEILING` in `tests/harness/suite_records.hero` is the number
   and carries the reason). The ROADMAP says what is
   *next*; a closed milestone's record is its journal. (It reached 935 lines before
   this rule existed, growing ~66 per close, and the reader met 512 lines about the
   past before the first line about the future.)
-- update `docs/ROADMAP.md` § Where we are and § The chain — the closing row takes
+- update `ROADMAP.md` § Where we are and § The chain — the closing row takes
   its date, tag and journal link, and the counts in the summary table are
   **re-measured, never carried** (CLAUDE.md §1). **The reasoning a future
   milestone has to honour stays in that milestone's own file under

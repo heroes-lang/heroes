@@ -3,7 +3,7 @@
 **Issues and questions are welcome from anyone. Code is welcome from
 authorized contributors, through an issue first.**
 
-Heroes is below `1.0.0` and moves along a roadmap, `docs/ROADMAP.md` § The
+Heroes is below `1.0.0` and moves along a roadmap, `ROADMAP.md` § The
 chain, where every row is a milestone and every change belongs to one. A patch
 that arrives unannounced cannot be placed on that chain, and a language that is
 still moving can make it stale before anyone reads it. A patch from somebody the

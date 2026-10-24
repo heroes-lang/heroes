@@ -62,7 +62,7 @@ on:
       - 'spec/heroes-spec.md'
       - 'tests/harness/suite_spec.hero'
       - 'tests/thesis/held-out/**'
-      - 'docs/ROADMAP.md'
+      - 'ROADMAP.md'
       - 'docs/panel/**'
       - 'docs/measurements/**'
       - '.claude/agents/**'

@@ -5,7 +5,7 @@ mistake is a compile error**. The compiler is written in Heroes under
 `selfhost/`, emits C11 compiled by clang, and compiles itself.
 `docs/design.md` is the source of truth, reached **by grep** and never
 from memory;
-`spec/heroes-spec.md` is the language as a reader gets it; `docs/ROADMAP.md` is
+`spec/heroes-spec.md` is the language as a reader gets it; `ROADMAP.md` is
 the chain; the skills are the process. One person is learning compilers here:
 comprehension is the objective, on the author's clock, never as a gate.
 
@@ -119,7 +119,7 @@ at their cost too.
 ## 1. Re-read protocol: what never to trust from memory
 - Read `spec/heroes-spec.md` in full at the start of every session; its budget
   is design.md §1.6's and `heroes measure` settles it. Then
-  `git log --oneline -10`, the newest decision issues, `docs/ROADMAP.md` status.
+  `git log --oneline -10`, the newest decision issues, `ROADMAP.md` status.
 - Re-read a shared record immediately before writing a scheduling fact into it,
   never from the session-start copy (CL-047).
 - Any asserted design rule cites its design.md section; an uncitable rule is a
@@ -293,7 +293,7 @@ CL-027, CL-035, CL-038, CL-042, CL-046, CL-047, CL-049, CL-050, CL-056 and
 CL-060.
 
 ## Verification
-**The three suites** are in § Commands. Their counts live in `docs/ROADMAP.md`
+**The three suites** are in § Commands. Their counts live in `ROADMAP.md`
 § Where we are and nowhere else (CL-064).
 
 - **A repair is gated by its own cases alone; a ROUND of lanes is gated once,
@@ -348,7 +348,7 @@ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # the compiler, fro
 
 On Windows the first line is `seed/README.md`'s, which adds a stack flag and
 says why; the CI leg builds both so they cannot drift in silence (CL-065).
-Counts and timings are `docs/ROADMAP.md` § Where we are.
+Counts and timings are `ROADMAP.md` § Where we are.
 
 ## Where the rest lives
 `.claude/rules/` loads a file when its `paths:` match what is being touched, so

@@ -640,7 +640,7 @@ function failure_of<T>(got: T?) -> str
         .err e => e.msg
 
 # THE CHAIN'S ROWS, the one place a card's milestone is held to: `milestone`
-# names a row of `docs/ROADMAP.md` § The chain, and an open feature or task an
+# names a row of `ROADMAP.md` § The chain, and an open feature or task an
 # open one (`.claude/rules/records.md` § The issues). Moved here from
 # `suite_records.hero` on 2026-10-12, so that a draft (`issue_draft.hero`) and
 # `records/homes` read one chain.
@@ -684,7 +684,7 @@ function row_open(name: str, row: str) -> bool?
         return ok(false)
     return fail(
         code: "chain_state",
-        msg: "docs/ROADMAP.md § The chain: the row of " + name + " holds the state `" + state + "`, and a row's state is `done YYYY-MM-DD`, `**OPEN**` or `scheduled` (defect 673)"
+        msg: "ROADMAP.md § The chain: the row of " + name + " holds the state `" + state + "`, and a row's state is `done YYYY-MM-DD`, `**OPEN**` or `scheduled` (defect 673)"
     )
 
 # `| 35 | **M-declared-freer** | scheduled | …` — the milestone of a CHAIN row.

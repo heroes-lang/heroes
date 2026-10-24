@@ -1,5 +1,5 @@
 /**
- * The chain, read out of `docs/ROADMAP.md` § The chain at build time.
+ * The chain, read out of `ROADMAP.md` § The chain at build time.
  *
  * The project page carried the Zen, the principles and the panel and said
  * nothing about what is built and what is next, which is the one question a
@@ -71,7 +71,7 @@ function firstClause(notes: string): string {
  * extended or a basic expression; git reads `-G` as an extended one, and refused
  * `^| ` as an empty alternative the day this was written.
  */
-export const CHAIN_FILE = 'docs/ROADMAP.md';
+export const CHAIN_FILE = 'ROADMAP.md';
 export const CHAIN_ROW_PATTERN = '^[|] [0-9][0-9]* [|]';
 
 export function chain(): ChainRow[] {

@@ -140,8 +140,8 @@ function tree_of(scratch: str) -> Tree?
     for path in walked.must()
         known[path] @ true
 
-    roadmap = read_file("docs/ROADMAP.md")
-    chain: {str: bool}? @= fail(code: "unread", msg: "docs/ROADMAP.md cannot be read")
+    roadmap = read_file("ROADMAP.md")
+    chain: {str: bool}? @= fail(code: "unread", msg: "ROADMAP.md cannot be read")
 
     if !roadmap.is_err()
         chain @ cards.chain_states(roadmap.must())

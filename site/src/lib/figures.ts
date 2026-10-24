@@ -196,7 +196,7 @@ export function fillOutbound(html: string): string {
  */
 /**
  * `{{chain}}` in a fragment becomes the chain: one row per milestone, read out
- * of `docs/ROADMAP.md` § The chain at build time (`chain.ts`).
+ * of `ROADMAP.md` § The chain at build time (`chain.ts`).
  *
  * The project page said what the project believes and nothing about what is
  * built and what is next, which is the question a visitor brings to a project

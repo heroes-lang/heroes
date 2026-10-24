@@ -1356,7 +1356,7 @@ directory, and it is done in one place.
 | `src/lib/triggers.ts` | holds `.github/workflows/deploy-site.yml`'s `paths:` to the build's reads, at the end of the build: every read under a path the workflow names, every path it names read. Two shapes only, an exact path and `dir/**`; any other is refused rather than guessed |
 | `src/lib/tables.ts` | parses the keyword table out of `selfhost/keywords.hero` and the type words out of `spec/heroes-spec.md` § Types, with a floor and a shape assertion on each, so the site holds no copy of the language |
 | `src/lib/markdown.ts` | the specification page's colouring, and `assertVerbatim`: take the text back out of the HTML and compare it with what went in, so the one page whose argument is byte fidelity cannot ship a colouring that moved a byte. Four accents, the stylesheet's own: a heading takes the keyword red, a code span or fence the literal gold, a table's pipes and rules the dim, and `**bold**` is bold with its asterisks kept, because the page shows the source a reader pastes |
-| `src/lib/chain.ts` | the chain, read out of `docs/ROADMAP.md` § The chain, with four assertions because a parse that quietly reads nothing renders an empty table: sixty rows at least, forty closed at least, at most one `**OPEN**`, and no gap in the numbering. **The trailing `|` is optional and that is the hole it fell into first**: nine of the seventy rows do not carry one, markdown renders a row either way, and a reader that demanded it read nine milestones fewer in silence |
+| `src/lib/chain.ts` | the chain, read out of `ROADMAP.md` § The chain, with four assertions because a parse that quietly reads nothing renders an empty table: sixty rows at least, forty closed at least, at most one `**OPEN**`, and no gap in the numbering. **The trailing `|` is optional and that is the hole it fell into first**: nine of the seventy rows do not carry one, markdown renders a row either way, and a reader that demanded it read nine milestones fewer in silence |
 | `src/lib/highlight.ts` | the tokenizer, a reading of `selfhost/scan.hero`, `number.hero` and `literals.hero`, plus `assertRoundTrip`: strip the spans, decode the three entities, and the source must come back byte for byte |
 | `src/lib/expectation.ts` | the JavaScript twin of `tests/harness/expectation.hero`. The harness's ending marker never reaches a reader: `!exit: 1` renders as an exit status |
 | `src/lib/fingerprint.ts` | sha256 per file, then sha256 of the manifest in `shasum`'s own line format, and the one command that reproduces it |
@@ -1536,5 +1536,5 @@ construction: the ones it misses are mutations that changed nothing.
 
 `site/`'s Aladdin Sane bolt is iconography attached to an actively managed
 estate — the style guide already keeps lyrics out, and this is the other half.
-Recorded in `docs/ROADMAP.md` under M-publication-gate; cheaper to answer
+Recorded as issue 1004, a task of M-publication-gate; cheaper to answer
 before publication than after.

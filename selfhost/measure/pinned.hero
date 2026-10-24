@@ -145,4 +145,4 @@ test "the refresh refuses every file no ceiling judges, on the path and not on t
     # §1.6 says in its own words that *"the spec has a budget; the compiler does
     # not"*, so measuring it is a count and never a verdict.
     assert cli_table.exit_code(run_refresh(path: "design.md", text: "x", spec: "spec/heroes-spec.md", contract: "CLAUDE.md", vendored: 0)) == 2
-    assert cli_table.exit_code(run_refresh(path: "docs/ROADMAP.md", text: "x", spec: "spec/heroes-spec.md", contract: "CLAUDE.md", vendored: 0)) == 2
+    assert cli_table.exit_code(run_refresh(path: "ROADMAP.md", text: "x", spec: "spec/heroes-spec.md", contract: "CLAUDE.md", vendored: 0)) == 2

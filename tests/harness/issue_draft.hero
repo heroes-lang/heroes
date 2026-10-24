@@ -252,7 +252,7 @@ function card_offences(issue: cards.Issue, chain: {str: bool}) -> [str]
     row = chain[card.milestone]
 
     if row.is_err()
-        out @ out.push("line 4: `milestone` is " + card.milestone + ", which has no row in docs/ROADMAP.md § The chain")
+        out @ out.push("line 4: `milestone` is " + card.milestone + ", which has no row in ROADMAP.md § The chain")
     else if work && !row.must()
         out @ out.push(
             "line 4: `milestone` is " + card.milestone + ", which is CLOSED, and an open " + card.kind + " is owed to an open one"
@@ -481,5 +481,5 @@ test "a decision taken is a ticked item naming its commit, every defect states o
         name: "2026-10-12-1800-g.md",
         text: cards.card_text(kind: "defect", area: "none", milestone: "M-guide-book", filed: "2026-10-12", commit: "none", github: "none") + DEFECT_ITEM
     )
-    assert strings.contains(text: nowhere.refused[0], needle: "has no row in docs/ROADMAP.md § The chain")
+    assert strings.contains(text: nowhere.refused[0], needle: "has no row in ROADMAP.md § The chain")
     _ = shell.remove_tree(scratch).is_err()

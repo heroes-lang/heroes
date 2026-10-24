@@ -13,7 +13,7 @@
 #   holds already where the issue's `Record:` link names the card's file and its
 #   `created_at` is the card's `filed` at noon, which only an import can set, so
 #   no stranger's issue is taken for one of ours, and a pull request never is;
-# - the milestones, one per row of `docs/ROADMAP.md` § The chain (R6 item 3),
+# - the milestones, one per row of `ROADMAP.md` § The chain (R6 item 3),
 #   that GitHub lacks or holds open or closed otherwise than their row, and the
 #   labels the issues to import take that GitHub lacks, with those GitHub holds
 #   that no issue file takes (`kind:learn`, R6 item 3);

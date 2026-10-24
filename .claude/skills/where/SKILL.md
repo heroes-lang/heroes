@@ -26,12 +26,16 @@ appears — no exceptions, take nothing for granted.**
 git log --oneline -15
 git tag --list --sort=creatordate
 gh issue list --repo heroes-lang/heroes --state all --limit 8   # the newest issues, decisions among them
-sed -n '/^## Where we are/,/^## Verify/p' docs/ROADMAP.md        # where we are
-sed -n '/^## The chain/,/^## The milestones/p' docs/ROADMAP.md   # what is next, in order
+awk '/^## /{on = ($0 == "## Where we are")} on' ROADMAP.md   # where we are
+awk '/^## /{on = ($0 == "## The chain")} on' ROADMAP.md      # what is next, in order
                                   # (this said `head -40 … § Status + § The order` until
                                   #  2026-08-26: two headings renamed on 2026-08-25 and a
                                   #  line count that stopped reaching the table it named.
-                                  #  A pattern range cannot rot the same way.)
+                                  #  Then two `sed` ranges, which rotted another way: they
+                                  #  ended at `## Verify` and `## The milestones`, which left
+                                  #  the file on 2026-09-12, so each ran to its end, 202 and
+                                  #  172 lines on 2026-10-24. A section read up to whatever
+                                  #  heading follows it names no second heading to lose.)
 ./heroes run tests/harness/issues.hero -- open --kind decision    # open decisions = what the compiler is waiting on
 ./heroes run tests/harness/issues.hero -- open --kind defect      # what is BROKEN right now, one issue per defect
                                   # (docs/work/DEFECTS.md until 2026-10-04, files of

@@ -25,7 +25,7 @@ body:
     id: why
     attributes:
       label: Why, and what it serves
-      description: A row of `docs/ROADMAP.md` § The chain, an open defect's number, a sentence of the spec or the design, or a program that should compile and does not.
+      description: A row of `ROADMAP.md` § The chain, an open defect's number, a sentence of the spec or the design, or a program that should compile and does not.
     validations:
       required: true
   - type: dropdown

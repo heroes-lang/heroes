@@ -10,7 +10,7 @@ lldb-dap and a terminal lldb imports with one line. `vsix/` holds the two
 manifests needed to package it.
 Its version is the language's, `VERSION` in `selfhost/main.hero`, and the
 `spec` suite holds the two to each other. Where it goes next is
-M-vscode-extension (`docs/ROADMAP.md`,
+M-vscode-extension (`ROADMAP.md`,
 `docs/roadmap/milestones/M-vscode-extension.md`).
 
 It highlights what the spec defines — and one thing more: **the foreign
