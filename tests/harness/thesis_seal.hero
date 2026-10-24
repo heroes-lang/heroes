@@ -15,6 +15,22 @@
 # (`HEROES_TASKS_KEY` the suite, `HEROES_RESERVE_KEY` the reserve,
 # `HEROES_RUNS_KEY` the runs' transcripts) differ only in the variable named.
 #
+# **THE MAC'S METADATA STAYS OUT OF WHAT IS OPENED** (defect 2197,
+# 2026-10-24). macOS's `tar`, bsdtar, writes before a file that carries an
+# extended attribute an AppleDouble member `._<name>` holding it, lists no
+# such member, and folds it back when it unpacks, so on a Mac an archive reads
+# as it was packed; GNU tar on Linux unpacks it as a file, and
+# `thesis_tasks.read_task` took `._0.args` for a case, which stopped the CI's
+# attestation of the suite. So `sealed` packs under `COPYFILE_DISABLE=1`, with
+# `--no-mac-metadata --no-xattrs` where the `tar` is bsdtar, and refuses an
+# archive whose bytes still hold an AppleDouble header's filler; and
+# `unsealed` removes, once unpacked, a file `._X` only where an `X` stands
+# beside it and its first four bytes are AppleDouble's magic, read by `od`.
+# Asked of the file's bytes and never of its name alone, so an archive sealed
+# before that day (the suite and its reserve, whose digests are the
+# pre-registration's and are not sealed again) opens on Linux as on a Mac,
+# and any other file no task holds still stops the read.
+#
 # THE CANARY (panel 226's R6, BIG-bench's shape): `seal` writes, where it is
 # missing, a suite GUID as `LABEL`'s second line and a per-task GUID as the
 # last line of every `task.md`, each from `openssl rand`; the per-task one
@@ -53,6 +69,15 @@ constant SUITE_CANARY: str
 
 constant TASK_CANARY: str
     "canary heroes-task:"
+
+# AppleDouble's magic, as `od -An -tx1 -N4` prints it, its spaces made one.
+constant APPLEDOUBLE_MAGIC: str
+    "00 05 16 07"
+
+# An AppleDouble header's filler, `Mac OS X` and eight spaces, which a packed
+# archive's bytes hold wherever bsdtar wrote such a member.
+constant APPLEDOUBLE_FILLER: str
+    "Mac OS X        "
 
 record Sealed
     file: str
@@ -93,6 +118,58 @@ function parent_of(path: str) -> str
 
     return "."
 
+# The words that pack `base`, inside `parent`, into `tar`: under
+# `COPYFILE_DISABLE=1` always, and with bsdtar's two refusals of the Mac's
+# metadata where `bsd` says the `tar` is bsdtar, since GNU tar writes no
+# attribute unless asked and refuses `--no-mac-metadata` as unknown.
+function pack_words(bsd: bool, parent: str, tar: str, base: str) -> [str]
+    words: [str] @= ["env", "COPYFILE_DISABLE=1", "tar"]
+
+    if bsd
+        words @ words.push("--no-mac-metadata").push("--no-xattrs")
+    return words.push("-C").push(parent).push("-cf").push(tar).push(base)
+
+# Whether the `tar` on the path is bsdtar, by what it says of itself.
+function bsd_tar(scratch: str) -> bool?
+    asked = shell.run(scratch: scratch, program: "tar", words: ["tar", "--version"])?
+
+    if asked.code != 0
+        return fail(code: "tar_failed", msg: "`tar --version` failed" + shell.said_on_stderr(asked.err))
+    return ok(strings.contains(text: asked.out, needle: "bsdtar"))
+
+# Whether the bytes of the archive `tar` hold an AppleDouble header's filler,
+# asked of the bytes by `grep -a`, since bsdtar's own listing hides the member.
+function holds_appledouble(scratch: str, tar: str) -> bool?
+    found = shell.run(scratch: scratch, program: "grep", words: ["grep", "-a", "-c", APPLEDOUBLE_FILLER, tar])?
+
+    # grep answers 0 where a line matched, 1 where none did, 2 on an error.
+    if found.code > 1
+        return fail(code: "grep_failed", msg: "grep could not read " + tar + shell.said_on_stderr(found.err))
+    return ok(found.code == 0)
+
+# The AppleDouble files under `dir` removed, how many answered: a file `._X`
+# with an `X` beside it, file or folder, whose first four bytes are
+# AppleDouble's magic. Every other file stays, to be read, and refused, by
+# whoever reads it.
+function without_appledouble(scratch: str, dir: str) -> i64?
+    dropped: i64 @= 0
+
+    for path in shell.found_under(dir: dir, suffix: "", reference: "")?
+        name = strings.base_name(path: path)
+
+        if name.len() <= 2 || !strings.starts_with(text: name, prefix: "._")
+            continue
+
+        if !shell.exists(parent_of(path) + "/" + name.slice(from: 2, to: name.len()))
+            continue
+        head = shell.run(scratch: scratch, program: "od", words: ["od", "-An", "-tx1", "-N4", path])?
+
+        if head.code == 0 && strings.words(head.out).join(" ") == APPLEDOUBLE_MAGIC
+            shell.remove_tree(path)?
+            dropped @ dropped + 1
+
+    return ok(dropped)
+
 # `folder` sealed into `out` under the key `key_name` names, and `out + ".sha256"`
 # written beside it; nothing is written where the variable is unset.
 function sealed(scratch: str, folder: str, out: str, key_name: str) -> Sealed?
@@ -105,10 +182,17 @@ function sealed(scratch: str, folder: str, out: str, key_name: str) -> Sealed?
     shell.mkdir_all(work)?
     tar = work + "/suite.tar"
     base = strings.base_name(path: strings.without_suffix(text: folder, suffix: "/"))
-    packed = shell.run(scratch: scratch, program: "tar", words: ["tar", "-C", parent_of(folder), "-cf", tar, base])?
+    bsd = bsd_tar(scratch)?
+    packed = shell.run(scratch: scratch, program: "env", words: pack_words(bsd: bsd, parent: parent_of(folder), tar: tar, base: base))?
 
     if packed.code != 0
         return fail(code: "tar_failed", msg: "tar could not pack " + folder + shell.said_on_stderr(packed.err))
+
+    if holds_appledouble(scratch: scratch, tar: tar)?
+        return fail(
+            code: "mac_metadata",
+            msg: "the archive of " + folder + " holds `Mac OS X` and eight spaces, an AppleDouble header's filler, which tar on Linux unpacks as a file no task holds (defect 2197); nothing is sealed"
+        )
     enc = shell.run(scratch: scratch, program: "openssl", words: openssl_words(decrypt: false, in_path: tar, out_path: out, key_name: key_name))?
 
     if enc.code != 0
@@ -174,6 +258,7 @@ function unsealed(scratch: str, file: str, key_name: str) -> str?
 
     if unpacked.code != 0
         return fail(code: "tar_failed", msg: "tar could not unpack " + file + shell.said_on_stderr(unpacked.err))
+    _ = without_appledouble(scratch: scratch, dir: into)?
     dirs = shell.list_directories(scratch: scratch, dir: into)?
 
     if dirs.len() != 1
@@ -233,6 +318,47 @@ test "openssl is asked for PBKDF2, base64 and the key by its variable's name, ne
     assert parent_of("tests/thesis/") == "tests"
     assert parent_of("thesis") == "."
 
+test "bsdtar is told to leave the Mac's metadata out, and GNU tar is told nothing it refuses"
+    assert pack_words(bsd: true, parent: "tests", tar: "s.tar", base: "thesis") == ["env", "COPYFILE_DISABLE=1", "tar", "--no-mac-metadata", "--no-xattrs", "-C", "tests", "-cf", "s.tar", "thesis"]
+    assert pack_words(bsd: false, parent: "tests", tar: "s.tar", base: "thesis") == ["env", "COPYFILE_DISABLE=1", "tar", "-C", "tests", "-cf", "s.tar", "thesis"]
+
+test "an opened archive loses the AppleDouble files beside what they describe, and nothing else"
+    scratch = shell.own_scratch()
+    _ = shell.mkdir_all(scratch).is_err()
+    root = scratch + "/opened/suite"
+    _ = shell.mkdir_all(root + "/01/cases").is_err()
+    write_file(path: root + "/01/cases/0.args", text: "hi\n").must()
+    write_file(path: root + "/01/cases/1.args", text: "ho\n").must()
+
+    # An AppleDouble header with no entry: magic, version, filler, a count of 0.
+    for path in [root + "/01/cases/._0.args", root + "/01/._cases", root + "/01/cases/._9.args"]
+        made = shell.run(
+            scratch: scratch,
+            program: "sh",
+            words: ["sh", "-c", "printf '\\000\\005\\026\\007\\000\\002\\000\\000Mac OS X        \\000\\000' > \"$1\"", "sh", path]
+        ).must()
+        assert made.code == 0
+
+    # A name that looks like one, holding text.
+    write_file(path: root + "/01/cases/._1.args", text: "not apple\n").must()
+
+    assert without_appledouble(scratch: scratch, dir: scratch + "/opened").must() == 2
+    assert !shell.exists(root + "/01/cases/._0.args")
+    assert !shell.exists(root + "/01/._cases")
+
+    # One with nothing beside it, and one without the magic: both stay.
+    assert shell.exists(root + "/01/cases/._9.args")
+    assert shell.exists(root + "/01/cases/._1.args")
+    assert read_file(path: root + "/01/cases/0.args").must() == "hi\n"
+    assert without_appledouble(scratch: scratch, dir: scratch + "/opened").must() == 0
+
+    # An archive's bytes are asked, never its listing.
+    write_file(path: scratch + "/with.tar", text: "x" + APPLEDOUBLE_FILLER + "y").must()
+    write_file(path: scratch + "/without.tar", text: "Mac OS X and nothing after\n").must()
+    assert holds_appledouble(scratch: scratch, tar: scratch + "/with.tar").must()
+    assert !holds_appledouble(scratch: scratch, tar: scratch + "/without.tar").must()
+    _ = shell.remove_tree(scratch).is_err()
+
 test "a seal under a variable nobody set writes nothing and names the variable"
     scratch = shell.own_scratch()
     _ = shell.mkdir_all(scratch).is_err()
@@ -276,6 +402,15 @@ test "a small suite, canaried, sealed and opened, reads the same bytes and the d
     write_file(path: suite + "/01/cases/0.args", text: "hi\n").must()
     write_file(path: suite + "/01/cases/0.expected", text: "hi\n").must()
     write_file(path: suite + "/01/reference.hero", text: "function main()\n    print(args()[0])\n").must()
+
+    # Where `xattr` exists, a case carries an attribute, which is what made
+    # bsdtar write an AppleDouble member (defect 2197): `frozen` below refuses
+    # an archive that holds one, so the seal answering at all is the witness.
+    _ = shell.run(
+        scratch: scratch,
+        program: "sh",
+        words: ["sh", "-c", "command -v xattr >/dev/null || exit 0; xattr -w com.apple.TextEncoding 'utf-8;134217984' \"$1\"", "sh", suite + "/01/cases/0.args"]
+    ).is_err()
 
     before = thesis_tasks.told(thesis_tasks.read_suite(scratch: scratch, dir: suite).must())
     made = frozen(scratch: scratch, folder: suite, out: scratch + "/suite.enc", key_name: TEST_KEY).must()
