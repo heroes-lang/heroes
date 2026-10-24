@@ -1,0 +1,61 @@
+error[bad_operand]: `-` takes `i64` with `i64` or `f64` with `f64`, found `i64?`
+  at tests/golden/full/fixedbugs-2186-a-fallible-operand-is-offered-must.hero:12:9
+     |
+  12 |     _ = to_i64(c) - 48  #~ bad_operand
+     |         ^^^^^^^^^^^^^^
+  fix (guess): `.must()` — abort on the error case, giving `i64`
+
+error[bad_operand]: `-` takes `i64` with `i64` or `f64` with `f64`, found `i64?`
+  at tests/golden/full/fixedbugs-2186-a-fallible-operand-is-offered-must.hero:13:9
+     |
+  13 |     _ = 48 - to_i64(c)  #~ bad_operand
+     |         ^^^^^^^^^^^^^^
+  fix (guess): `.must()` — abort on the error case, giving `i64`
+
+error[bad_operand]: `*` takes `i64` with `i64` or `f64` with `f64`, found `i64?`
+  at tests/golden/full/fixedbugs-2186-a-fallible-operand-is-offered-must.hero:14:9
+     |
+  14 |     _ = to_i64(c) * to_i64(c)  #~ bad_operand
+     |         ^^^^^^^^^^^^^^^^^^^^^
+  fix (guess): `.must()` — abort on the error case, giving `i64`
+  fix (guess): `.must()` — abort on the error case, giving `i64`
+
+error[bad_operand]: `<` takes any integer or a float, found `i64?`
+  at tests/golden/full/fixedbugs-2186-a-fallible-operand-is-offered-must.hero:15:9
+     |
+  15 |     _ = to_i64(c) < 5  #~ bad_operand
+     |         ^^^^^^^^^^^^^
+  fix (guess): `.must()` — abort on the error case, giving `i64`
+
+error[bad_operand]: `-` takes any integer or a float, found `i64?`
+  at tests/golden/full/fixedbugs-2186-a-fallible-operand-is-offered-must.hero:16:9
+     |
+  16 |     _ = -to_i64(c)  #~ bad_operand
+     |         ^^^^^^^^^^
+  fix (guess): `.must()` — abort on the error case, giving `i64`
+
+error[bad_operand]: `+` takes `i64` with `i64`, `f64` with `f64`, or `str` with `str`, found `str?`
+  at tests/golden/full/fixedbugs-2186-a-fallible-operand-is-offered-must.hero:17:9
+     |
+  17 |     _ = "a" + read_file(path: "f")  #~ bad_operand
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  fix (guess): `.must()` — abort on the error case, giving `str`
+
+error[type_mismatch]: expected `u8?`, found `u8`
+  at tests/golden/full/fixedbugs-2186-a-fallible-operand-is-offered-must.hero:18:9
+     |
+  18 |     _ = to_u8(300) == c  #~ type_mismatch
+     |         ^^^^^^^^^^^^^^^
+  fix (guess): `.must()` — abort on the error case, giving `u8`
+
+error[bad_operand]: `-` takes `i64` with `i64` or `f64` with `f64`, found `i64?`
+  at tests/golden/full/fixedbugs-2186-a-fallible-operand-is-offered-must.hero:19:9
+     |
+  19 |     _ = to_i64(c) - 1.5  #~ bad_operand
+     |         ^^^^^^^^^^^^^^^
+
+error[bad_operand]: `!` takes `bool`, found `str?`
+  at tests/golden/full/fixedbugs-2186-a-fallible-operand-is-offered-must.hero:20:9
+     |
+  20 |     _ = !read_file(path: "f")  #~ bad_operand
+     |         ^^^^^^^^^^^^^^^^^^^^^
