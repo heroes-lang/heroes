@@ -1,9 +1,10 @@
 # site/CLAUDE.md, the rules for the site and every outward-facing text
 
 These rules govern all copy under `site/`, both editions, and any outward-facing
-communication written for this project. Three of them bind every line, whoever
+communication written for this project. Four of them bind every line, whoever
 writes it and whatever they are doing, and they are the whole of this file: no
-dates on the page, no assumed expert, no em dashes.
+dates on the page, no assumed expert, no em dashes, and the README following
+the site.
 
 `site/README.md` keeps the site's structural rules and its register.
 `site/.claude/skills/no-ai-slop/SKILL.md` is the editing pass. CLAUDE.md § 11 is
@@ -111,6 +112,29 @@ site prose there are **none at all**. The two exceptions are evidence and are
 never edited: compiler output shown verbatim, and code copied byte for byte from
 a repository file, which keeps whatever characters it actually contains.
 
+## The README follows the site
+
+Author instruction 2026-10-20, meant as: *whenever you update the site, always
+update GitHub's README as well*. The README is the repository's front page,
+the first page a reader who arrives through GitHub meets, and it says many of
+the things the home page says: the claim, the size of the language, the
+judges, the platforms, where things are written down.
+
+- **A change to what the site says carries the README's matching change, in
+  the same commit**, or the commit's body says why the README has nothing to
+  match. A chapter or an example the README does not echo needs nothing; a
+  claim, a number or a promise the README repeats does.
+- **What a machine can read, the build checks**: the rows of
+  `src/lib/claims.ts` whose page is `README.md`, run by `checkReadme` at the
+  end of the build. The ceiling in its three sentences, the judges, the
+  platforms a push runs on, the specification's length as a threshold that
+  must be the next hundred, and the two expired promises about a closed
+  repository and closed contributions. A fact the two share joins those rows
+  the day it is written into both.
+- **Measured 2026-10-24, when the rule was first applied**: the README said
+  *the whole language in fewer than 400 lines* against a specification of 470,
+  false since the specification passed 400 lines, and nothing had said so.
+
 ## The editing pass is a skill
 
 **The 92 lines of editing procedure that stood here until 2026-09-07 are
@@ -121,6 +145,7 @@ for a rulebook it was not using. Invoke `/no-ai-slop` to edit a draft or to
 audit one without rewriting it.
 
 What stays here is what binds **every** line of site copy, whoever writes it and
-whatever they are doing: no dates, no assumed expert, no em dashes. The wider
+whatever they are doing: no dates, no assumed expert, no em dashes, the
+README following the site. The wider
 rules are `site/README.md` § Style guide for the register and structure, and
 CLAUDE.md § 11 for the language of the repository as a whole.

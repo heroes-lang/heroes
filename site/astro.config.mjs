@@ -3,7 +3,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { readdirSync, statSync, unlinkSync, renameSync, rmdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { assertEveryClaimVisited, claimsSummary } from './src/lib/claims.ts';
+import { assertEveryClaimVisited, checkReadme, claimsSummary } from './src/lib/claims.ts';
 import { assertNodsMirrored } from './src/lib/nods.ts';
 import { lastmodFor, assertHistoryAvailable, assertSitemapDated } from './src/lib/lastmod.ts';
 import { assertHeadsUsable } from './src/lib/seo.ts';
@@ -107,6 +107,10 @@ function claimsAudit() {
     name: 'heroes:claims',
     hooks: {
       'astro:build:done': ({ logger }) => {
+        // The README is the repository's front page and no page of this site,
+        // so it is checked here, before the audit asks whether every page the
+        // table names was seen (`site/CLAUDE.md` § The README follows the site).
+        checkReadme();
         const pages = assertEveryClaimVisited();
         logger.info(claimsSummary(pages));
         // The two editions spend the same nods, and every row of the tracklist

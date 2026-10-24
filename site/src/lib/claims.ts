@@ -38,7 +38,7 @@
 
 import { appendFileSync, readFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { readText, filesIn, absolute } from './repo.ts';
+import { readText, filesIn, absolute, countLines } from './repo.ts';
 import { number } from './i18n.ts';
 import { checkNods, nodCount } from './nods.ts';
 
@@ -51,6 +51,17 @@ const CHAPTERS_DIR = 'site/src/html/docs';
 const SPEC_SUITE = 'tests/harness/suite_spec.hero';
 const MUTATION_RECORD = 'docs/measurements/024-the-corpus-at-one-hundred-and-twenty-files.md';
 const CHECK_JSON_FILE = 'selfhost/cli/check_json.hero';
+const SPEC_FILE = 'spec/heroes-spec.md';
+
+/**
+ * The repository's front page on GitHub, checked as a page is: it says facts
+ * the site says, and a reader meets it first. Author instruction 2026-10-20,
+ * meant as: *whenever you update the site, always update GitHub's README as
+ * well* (`site/CLAUDE.md` § The README follows the site). No page wrapper
+ * passes it through `checkClaims`, so `checkReadme` does, from the build-done
+ * hook.
+ */
+const README = 'README.md';
 
 /* -- The facts, each read from the one place the tree keeps it ------------- */
 
@@ -389,6 +400,19 @@ const CLAIMS: Claim[] = [
   // project page where the five are listed, and on the thanks page.
   { page: 'site/src/html/index.html', what: 'the number of judges',
     fact: () => judges().seats, shape: (n) => new RegExp(`${n} judges`, 'i') },
+  // The README says the judges twice, as the home page and the project page do.
+  { page: README, what: 'the number of judges in its heading',
+    fact: () => judges().seats, shape: (n) => new RegExp(`${n} judges, and they are not shown the same thing`, 'i') },
+  { page: README, what: 'the number of judges in its table of where things are written down',
+    fact: () => judges().seats, shape: (n) => new RegExp(`${n} judges with differentiated inputs`, 'i') },
+  // And the ceiling three times, as a number where the site writes it in K:
+  // the figures under the title, the thesis's paragraph, and the table.
+  { page: README, what: 'the specification ceiling in the figures under the title',
+    fact: specCeiling, shape: () => new RegExp(`a hard ceiling of <b>${specCeiling()}</b> spec tokens`) },
+  { page: README, what: 'the specification ceiling in the paragraph on the thesis',
+    fact: specCeiling, shape: () => new RegExp(`under a hard\\s+ceiling of ${specCeiling()}\\*\\* tokens`) },
+  { page: README, what: 'the specification ceiling in its table of where things are written down',
+    fact: specCeiling, shape: () => new RegExp(`budgeted at ${specCeiling()} tokens`) },
   { page: 'site/src/html/index.html', what: 'the judges who can refuse',
     fact: () => judges().vetoes, shape: (n) => new RegExp(`${n} can veto`, 'i') },
   { page: 'site/src/html/it/index.html', what: 'the number of judges',
@@ -481,6 +505,8 @@ const CLAIMS: Claim[] = [
     fact: () => ci().pushPlatforms, shape: (n) => new RegExp(`on all ${n} platforms`, 'i') },
   { page: 'site/src/html/it/project.html', what: 'the platforms a push runs on',
     fact: () => ci().pushPlatforms, shape: (n) => new RegExp(`su tutte e ${n} le piattaforme`, 'i') },
+  { page: README, what: 'the platforms a push runs on',
+    fact: () => ci().pushPlatforms, shape: (n) => new RegExp(`CI runs every push on ${n} platforms`, 'i') },
 
   // The chapters of the documentation.
   { page: 'site/src/html/docs/index.html', what: 'the number of chapters',
@@ -637,6 +663,7 @@ export function checkClaims(html: string, pagePath: string): void {
   problems.push(...checkFixpointLeg(html, pagePath));
   problems.push(...checkRepositoryIsOpen(html, pagePath));
   problems.push(...checkContributionsOpen(html, pagePath));
+  problems.push(...checkSpecLinesThreshold(html, pagePath));
   if (NAME_EVERY_VERB.includes(pagePath)) {
     markVisited(pagePath);
     for (const verb of verbs()) {
@@ -770,6 +797,7 @@ export function staleOpenness(text: string, path: string): string[] {
  */
 const UNAMBIGUOUS: { page: RegExp; noun: RegExp; fact: () => number }[] = [
   { page: /^site\/src\/html\/(index|project|about\/thanks|why\/not)\.html$/, noun: /(judges|seats)/, fact: () => judges().seats },
+  { page: /^README\.md$/, noun: /(judges|seats)/, fact: () => judges().seats },
   { page: /^site\/src\/html\/it\/(index|project|about\/thanks|why\/not)\.html$/, noun: /(giudici|seggi)/, fact: () => judges().seats },
   { page: /^site\/src\/html\/start\.html$/, noun: /verbs/, fact: () => verbs().length },
   { page: /^site\/src\/html\/it\/start\.html$/, noun: /verbi/, fact: () => verbs().length },
@@ -813,6 +841,39 @@ function checkFixpointLeg(html: string, pagePath: string): string[] {
   if (gated && !says) return [`${pagePath}: ${CI_FILE} gates the fixpoint step to Linux and the page no longer says so.`];
   if (!gated && says) return [`${pagePath}: the page says the fixpoint runs on the Linux leg alone and ${CI_FILE} no longer gates it.`];
   return [];
+}
+
+/**
+ * The README's line count of the specification, which is a threshold and must
+ * be the right one (`site/CLAUDE.md` § A number on the page is generated, or
+ * it is a threshold). The site's specification page prints the exact count,
+ * generated; the README cannot be generated, and the specification changes
+ * length in nearly every commit that touches it (37 of 37 in the thirty days
+ * to 2026-10-24), so the README says *fewer than* the next hundred, and this
+ * asks that it is that hundred: true, and close enough to say something. It
+ * said *fewer than 400* from 2026-09-12, and was false from the day the
+ * specification passed 400 lines until 2026-10-24, with nothing to say so.
+ */
+function checkSpecLinesThreshold(text: string, pagePath: string): string[] {
+  if (pagePath !== README) return [];
+  const lines = countLines(readText(SPEC_FILE));
+  const next = (Math.floor(lines / 100) + 1) * 100;
+  const said = /the whole language in <b>fewer than (\d+) lines<\/b>/.exec(text);
+  if (said === null) {
+    return [`${README}: the figure "the whole language in <b>fewer than N lines</b>" left the README; ${SPEC_FILE} has ${lines} lines.`];
+  }
+  if (Number(said[1]) !== next) {
+    return [`${README}: says the whole language is in fewer than ${said[1]} lines, and ${SPEC_FILE} has ${lines}: write "fewer than ${next} lines".`];
+  }
+  return [];
+}
+
+/**
+ * The README through the same checks as a page, before the audit below asks
+ * whether every page the table names was seen. Called by the build-done hook.
+ */
+export function checkReadme(): void {
+  checkClaims(readText(README), README);
 }
 
 /**

@@ -44,7 +44,8 @@ on:
     # checks; the spec and its suite for the type words and the ceiling; the
     # ROADMAP for the chain on the project page; the panel's seats and its
     # sittings; the sealed suite's hashes and prediction on the Measured page;
-    # the measurements figures are cut from; ci.yml for the platforms it names.
+    # the measurements figures are cut from; ci.yml for the platforms it names;
+    # README.md, the repository's front page, whose shared facts it checks.
     #
     # Until that day this list was kept by hand, and was widened four times,
     # each after a page had gone stale: examples/, the keyword table, the spec,
@@ -65,6 +66,7 @@ on:
       - 'docs/panel/**'
       - 'docs/measurements/**'
       - '.claude/agents/**'
+      - 'README.md'
       - '.github/workflows/ci.yml'
       - '.github/workflows/deploy-site.yml'
   workflow_dispatch:

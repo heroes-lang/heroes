@@ -1217,7 +1217,11 @@ Three rules follow, and they bind every later edit:
   begin a top-level line from the parser, the verbs of the one command from the
   argv table, the lines of the Zen from the string `heroes this` prints, the
   chapters from the directory. Thirty-two claims across eighteen fragments
-  today, run by `page()` on every hand-written page, plus four checks that are
+  when this was written, forty-eight across twenty-three on 2026-10-24 (the
+  build log's `heroes:claims` line is the count, never this sentence), run by
+  `page()` on every hand-written page and by `checkReadme` on the repository's
+  `README.md`, whose shared facts follow the site's (`site/CLAUDE.md` § The
+  README follows the site), plus four checks that are
   not counts: every nod on a page links to its own row of the tracklist, in its
   own edition, and every row is spent by a nod, because the hand-kept ledger
   this replaced said twenty against a markup carrying thirteen; every linked
