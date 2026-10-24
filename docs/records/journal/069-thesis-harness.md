@@ -131,3 +131,17 @@ open (2139, 2143, 2158 and 2190, `adjacent`), and no open decision. Panels 226
 and 227 were read by the author before the freeze (issues 2159 and 2187), and
 this close's three decisions are filed closed: the freeze's five choices
 (2191), the worked diagnostic (2192) and § 13's three sentences, kept (2193).
+
+**Corrected 2026-10-24, the same evening.** The list above was clean by
+`records/tagged` when it was asked and not once the tag stood: defects 2139
+and 2143, filed 2026-10-18 and open at `m-witnessed-seed`, count as `blocking`
+from the second tag placed since they were filed, and that tag is this one.
+The check judges the newest tag, so before this one was placed it judged
+`m-witnessed-seed`, and it was not asked again between the placing and the
+push (defect 2198); the session heroes-lang-51 read it red at 21:40, after the
+push. By the author's *B* (decision 2200) the two are carried past this tag,
+`records_github.CARRIED` excusing it over exactly them, and they are the next
+batch's first items. The same evening the attestation the author re-ran with
+the keys stopped on an AppleDouble member macOS's `tar` had packed into the
+suite's archive (defect 2197), repaired in the same round without sealing the
+archives again, since their digests are the pre-registration's.

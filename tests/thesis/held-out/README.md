@@ -87,6 +87,16 @@ how many cases, which digests, and on a failure a task's digest and never its te
 the job's log and see that the archive holds what this page says, without seeing a task. The job is
 skipped on a fork, where the secret does not exist.
 
+**Corrected 2026-10-24** (defect 2197): the job's first run with the keys, after that day's held-out
+run, stopped at the suite's first task, because `seal` had packed the archives with macOS's `tar`,
+which writes an AppleDouble member `._<name>` before a file carrying an extended attribute; a Mac
+never shows it, and tar on Linux unpacks it as a file. The archives are not sealed again, since
+their digests are the pre-registration's: from that day `unseal` removes such a member where it
+opens an archive, asked of the file's bytes and not of its name, and `seal` packs without them.
+The change is to `tests/harness/thesis_seal.hero`, which is inside the digest a run records as
+`instrument`, so that digest differs from the pre-registration's from that day, for this change
+alone.
+
 ## When it opens
 
 **The archive opens by itself**: within 30 days of the first `v*` release tagged after the first
