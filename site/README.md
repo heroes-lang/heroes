@@ -349,6 +349,35 @@ grammar under `editors/` paints the same places by the same rule. Blocks
 are generated *from* the source file, so highlighting and byte-fidelity arrive
 together.
 
+**Since 2026-10-24 it paints four things more, and the compiler judges every
+one** (the author's request of 2026-10-21, meant as: *do for the site's
+highlighter what was done for the editor's plugin*). `.h` is the hole `???`,
+which the stylesheet had a class for and nothing painted; `.d` the name a
+declaration gives, after `function`, `record`, `variant` or `constant`; `.e`
+an escape inside a literal, a span inside its `.s`; and `.x`, a wavy red line,
+what the lexer refuses: a word of another language (`selfhost/foreign_words.hero`'s
+`declared_word`), a number or a character literal of a refused shape, an
+escape the lexer does not have, a tab or a character a line cannot show
+outside a comment, `//`, a string in backticks, a lone `}` in an `f` literal.
+No program on the site is one the compiler refuses, so `.x` paints nothing
+today; it is there because a figure that shows a mistake one day must show it
+as the lexer reads it. **Operators, `@` and `@=` stay plain**, a choice: a
+page is read and not edited, and the palette is four colours; the editor
+paints them because its themes do (the coordinator's reading, which the
+author may turn). The shapes of a number and of a character literal are
+**read from the editor's grammar**, the one place they are written as
+patterns and already held to the lexer by the `spec` suite; what a code escape
+may write is the compiler's own rule (`raw_chars.written_by_code`), stricter
+than the grammar's, which paints `\u{e9}` as an escape the lexer refuses.
+**`src/lib/lexed.ts` holds all of it to `heroes lex` at every build**: the
+120 programs under `examples/` token for token, the `spec` suite's 76 literal
+forms, and 288 escapes generated over every printable letter, every code to
+U+00A0 and each end of the bidirectional ranges. Run against the highlighter
+of the day before, it found 337 places where the two parted, the hole of
+`examples/gallery/09-holes.hero` and 336 forms and escapes; it finds none
+now. What it cannot see is where a contextual word is a mark, which the
+parser decides and the lexer does not.
+
 ## What a machine that is not a browser gets
 
 Author instruction 2026-09-07: *all the SEO tags, and push them hard.* Every one
@@ -1354,10 +1383,11 @@ directory, and it is done in one place.
 |---|---|
 | `src/lib/repo.ts` | finds the repository root by walking up from the working directory to the directory holding `examples/README.md`, `spec/heroes-spec.md` and `CLAUDE.md` together, and reads bytes from there. The only module that reads outside `src/`, and it writes down every path it reads for `triggers.ts` |
 | `src/lib/triggers.ts` | holds `.github/workflows/deploy-site.yml`'s `paths:` to the build's reads, at the end of the build: every read under a path the workflow names, every path it names read. Two shapes only, an exact path and `dir/**`; any other is refused rather than guessed |
-| `src/lib/tables.ts` | parses the keyword table out of `selfhost/keywords.hero` and the type words out of `spec/heroes-spec.md` § Types, with a floor and a shape assertion on each, so the site holds no copy of the language |
+| `src/lib/tables.ts` | parses the keyword table out of `selfhost/keywords.hero`, the type words out of `spec/heroes-spec.md` § Types, the foreign words out of `selfhost/foreign_words.hero`, the bidirectional controls out of `selfhost/shown_char.hero`, and the number and character rules out of the editor's grammar, with a floor and a shape assertion on each, so the site holds no copy of the language |
 | `src/lib/markdown.ts` | the specification page's colouring, and `assertVerbatim`: take the text back out of the HTML and compare it with what went in, so the one page whose argument is byte fidelity cannot ship a colouring that moved a byte. Four accents, the stylesheet's own: a heading takes the keyword red, a code span or fence the literal gold, a table's pipes and rules the dim, and `**bold**` is bold with its asterisks kept, because the page shows the source a reader pastes |
 | `src/lib/chain.ts` | the chain, read out of `ROADMAP.md` § The chain, with four assertions because a parse that quietly reads nothing renders an empty table: sixty rows at least, forty closed at least, at most one `**OPEN**`, and no gap in the numbering. **The trailing `|` is optional and that is the hole it fell into first**: nine of the seventy rows do not carry one, markdown renders a row either way, and a reader that demanded it read nine milestones fewer in silence |
 | `src/lib/highlight.ts` | the tokenizer, a reading of `selfhost/scan.hero`, `number.hero` and `literals.hero`, plus `assertRoundTrip`: strip the spans, decode the three entities, and the source must come back byte for byte |
+| `src/lib/lexed.ts` | holds the tokenizer to `heroes lex` at every build: every program it colours token for token, the `spec` suite's literal forms read out of `literal_forms`, and every escape a string can be written with; refuses the build where the compiler is missing, with the command that makes it |
 | `src/lib/expectation.ts` | the JavaScript twin of `tests/harness/expectation.hero`. The harness's ending marker never reaches a reader: `!exit: 1` renders as an exit status |
 | `src/lib/fingerprint.ts` | sha256 per file, then sha256 of the manifest in `shasum`'s own line format, and the one command that reproduces it |
 | `src/lib/examples-model.ts` | discovery, the run command, the badges from the program's tokens, the floors |

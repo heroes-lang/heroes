@@ -113,6 +113,16 @@ export function readBytes(relative: string): Buffer {
 }
 
 /**
+ * A path a subprocess reads on the build's behalf, written down as a read. The
+ * compiler `lexed.ts` runs is built from `seed/heroes.c` and `runtime/`, which
+ * nothing here opens, and a change to either changes what the colouring is held
+ * to.
+ */
+export function recordRead(relative: string): void {
+  record(relative);
+}
+
+/**
  * The text of a repository-relative file, decoded as UTF-8.
  *
  * `.gitattributes` forces `* text=auto eol=lf`, so a file in this tree holds no

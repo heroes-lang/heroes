@@ -130,7 +130,12 @@ The list to walk, and each one is owed a test rather than a reading:
   `selfhost/`: `editors/vscode/syntaxes/heroes.tmLanguage.json` and
   `site/src/lib/highlight.ts`. They are on it for the reason the formatter is —
   each holds its own copy of what the language is, and one that has not learned
-  the new form does not error, it **mis-colours**, which a reader trusts.
+  the new form does not error, it **mis-colours**, which a reader trusts. The
+  grammar's test is the `spec` suite's `colouring` checks; the site's, since
+  2026-10-24, is its own build (`site/src/lib/lexed.ts`), which holds every
+  program it colours to `heroes lex` token for token, with the suite's literal
+  forms and every escape, and reads the grammar's literal rules rather than
+  holding a third copy of them.
 
 **And this clause was paid for before it was written.** Measured 2026-09-10, four
 days after `f"…"` landed: the site's highlighter knew the form, read a string

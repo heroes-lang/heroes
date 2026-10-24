@@ -714,6 +714,15 @@ pre .k { color: var(--red); }                      /* keywords */
 pre .t { color: var(--blue); }                     /* built-in types */
 pre .s, pre .n { color: var(--gold); }             /* strings, chars, numbers */
 pre .h { color: var(--red); font-style: italic; }  /* ??? — a hole is a question */
+/* Since 2026-10-24, the highlighter's four classes more (`src/lib/highlight.ts`).
+   A name a declaration gives is bold in the text's own colour, the one word a
+   reader looks for in a signature. An escape inside a literal is the literal's
+   gold, bold, so `\n` reads as one thing. What the lexer refuses carries the
+   one mark every reader already knows for wrong, a wavy red line under the
+   text, never a background, so it stays selectable and copies as it is. */
+pre .d { font-weight: 700; color: var(--fg); }
+pre .e { font-weight: 700; color: var(--gold); }
+pre .x { text-decoration: underline wavy var(--red); text-decoration-skip-ink: none; text-underline-offset: 0.2em; }
 /* Markdown, on the one page that serves a markdown document verbatim: a heading
    takes the keyword red, because a heading is to a document what a keyword is to
    a program; a code span or fence takes the literal gold it already has inside a

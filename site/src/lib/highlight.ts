@@ -1,6 +1,6 @@
 /**
- * Colouring a Heroes program for the page, and proving the colours changed
- * nothing.
+ * Colouring a Heroes program for the page, proving the colours changed
+ * nothing, and (`lexed.ts`) holding them to what the compiler's lexer reads.
  *
  * This is a reading of the compiler's own lexer, close enough to be checkable:
  * `selfhost/scan.hero`'s `line_body` dispatches on the first byte of each token,
@@ -9,15 +9,33 @@
  * stop at the end of their line. Everything here follows those three, and where
  * it cannot follow them it stays plain rather than guessing.
  *
- * It is deliberately NOT a parser. Five classes exist in the stylesheet, the
- * comment, the keyword, the built-in type, the string and the number, and a
- * user's own type is left uncoloured on purpose (`site/README.md` § Syntax
- * colouring). A word after a dot stays plain too, because `s.cstr()` calls a
- * method and `cstr` there is not the type: that is a fact about the character
- * before the word rather than a premise about the program. The keyword class
- * also takes the contextual words, `owned` or `link` or `as`, but only in the
- * places the parser reads them as marks (`markAt`), since everywhere else they
- * are ordinary names.
+ * It is deliberately NOT a parser. It paints the comment, the keyword, the
+ * built-in type, the string and the number, as it always has, and since
+ * 2026-10-24 four things more, the author's request of 2026-10-21, meant as:
+ * *do for the site's highlighter what was done for the editor's plugin*: the
+ * hole `???` (`h`), which the stylesheet had a class for and nothing painted;
+ * the name a declaration gives (`d`), after `function`, `record`, `variant` or
+ * `constant`; an escape inside a literal (`e`, a part of its token); and what
+ * the lexer refuses (`x`): a word of another language, a number or a character
+ * literal of a refused shape, an escape the lexer does not have, a tab or a
+ * character a line cannot show outside a comment, `//`, a string in backticks,
+ * a lone `}` in an `f` literal. A user's own type is left uncoloured on purpose
+ * (`site/README.md` § Syntax colouring). A word after a dot stays plain too,
+ * because `s.cstr()` calls a method and `cstr` there is not the type: that is a
+ * fact about the character before the word rather than a premise about the
+ * program. The keyword class also takes the contextual words, `owned` or
+ * `link` or `as`, but only in the places the parser reads them as marks
+ * (`markAt`), since everywhere else they are ordinary names.
+ *
+ * WHERE EACH COMES FROM, so the site holds no copy of the language: the words
+ * from the compiler's tables (`tables.ts`); the shapes of a number and of a
+ * character literal from the editor's grammar, the one place they are written
+ * as patterns, which the `spec` suite already holds to the lexer; what a
+ * string's escape may write from the compiler's own rule
+ * (`raw_chars.written_by_code` over `shown_char.hero`'s `BIDI_CONTROL`), which
+ * is stricter than the grammar's: the grammar paints `\u{e9}` as an escape and
+ * the lexer refuses it, since a string holds `é` as itself (measured
+ * 2026-10-24). And `lexed.ts` holds all of it to the lexer at every build.
  *
  * The guarantee that makes this safe to run over 118 files nobody re-reads is
  * `assertRoundTrip`: strip the spans, decode the three entities, and what comes
@@ -26,14 +44,27 @@
  * mechanism is that a reader can check it.
  */
 
-import { contextual, keywords, typeWords } from './tables.ts';
+import { bidiControls, contextual, foreignWords, grammarRules, keywords, typeWords } from './tables.ts';
 
 /** What a token is coloured as. `ident` and `other` carry no class. */
-export type TokenKind = 'c' | 'k' | 't' | 's' | 'n' | 'ident' | 'other';
+export type TokenKind = 'c' | 'k' | 't' | 's' | 'n' | 'h' | 'd' | 'x' | 'ident' | 'other';
+
+/**
+ * A stretch inside a token painted on its own: an escape inside a literal
+ * (`e`), or what the lexer refuses there (`x`), a control character in a
+ * comment or a backslash the language has no escape for. Offsets into the
+ * token's text.
+ */
+export interface Part {
+  kind: 'e' | 'x';
+  start: number;
+  end: number;
+}
 
 export interface Token {
   kind: TokenKind;
   text: string;
+  parts?: Part[];
 }
 
 const CLASS_OF: Record<TokenKind, string | null> = {
@@ -42,9 +73,23 @@ const CLASS_OF: Record<TokenKind, string | null> = {
   t: 't',
   s: 's',
   n: 'n',
+  h: 'h',
+  d: 'd',
+  x: 'x',
   ident: null,
   other: null,
 };
+
+/** The words after which an identifier is the name a declaration gives. */
+const DECLARING = new Set(['function', 'record', 'variant', 'constant']);
+
+/**
+ * The letters a backslash takes in a string and in an `f` literal's text, and
+ * in a character literal. Held to the lexer over every printable character by
+ * `lexed.ts`, which is why they can be written here: a letter added to the
+ * language turns the build red until it is added.
+ */
+const STRING_ESCAPES = '"\\nrt';
 
 const ENTITIES: Record<string, string> = {
   '&amp;': '&',
@@ -81,6 +126,29 @@ const isIdentChar = (ch: string) => isAlnum(ch) || ch === '_';
 const isHex = (ch: string) => isDigit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
 
 /**
+ * Whether a line cannot show the character `code` as itself:
+ * `selfhost/shown_char.hero`'s `unshowable`, a control character but the tab
+ * and the line feed, a bidirectional control, U+2028 or U+2029, its
+ * bidirectional controls read from the same file.
+ */
+function unshowable(code: number): boolean {
+  if (code < 32) return code !== 9 && code !== 10;
+  if (code < 127) return false;
+  if (code < 160) return true;
+  if (code === 0x2028 || code === 0x2029) return true;
+  return bidiControls().some(([first, last]) => code >= first && code <= last);
+}
+
+/**
+ * Whether `\u{…}` writes `code` in a string: `selfhost/raw_chars.hero`'s
+ * `written_by_code`, a character a line cannot show but the NUL, which no
+ * escape writes, and the carriage return, which `\r` writes.
+ */
+function writtenByCode(code: number): boolean {
+  return unshowable(code) && code !== 0 && code !== 13;
+}
+
+/**
  * Where the escape whose backslash stands at `at` ends: after `\u{`, its hex
  * digits and the `}` that closes them (panel 192's R5, the escape by code), or
  * after the one character every other escape takes. Until defect 376
@@ -97,6 +165,88 @@ function escapeEnd(source: string, at: number): number {
     return end;
   }
   return at + 2;
+}
+
+/**
+ * The escape whose backslash stands at `at` in a literal's text, painted `e`
+ * where the lexer reads it and `x` where it refuses it. A code escape is read
+ * only in its one spelling, lowercase hexadecimal with no leading zero, and
+ * only for a character `writtenByCode`; every other backslash takes one of
+ * `STRING_ESCAPES` or is refused.
+ */
+function escapeAt(text: string, at: number): Part {
+  const end = Math.min(escapeEnd(text, at), text.length);
+  if (text[at + 1] === 'u' && text[at + 2] === '{') {
+    const closed = text[end - 1] === '}';
+    const digits = text.slice(at + 3, closed ? end - 1 : end);
+    const value = parseInt(digits, 16);
+    const read =
+      closed && /^[1-9a-f][0-9a-f]*$/.test(digits) && value < 0x110000 && !(value >= 0xd800 && value <= 0xdfff) && writtenByCode(value);
+    return { kind: read ? 'e' : 'x', start: at, end };
+  }
+  const letter = text[at + 1];
+  return { kind: letter !== undefined && STRING_ESCAPES.includes(letter) ? 'e' : 'x', start: at, end };
+}
+
+/**
+ * What a string's text, or one piece of an `f` literal's, holds besides its
+ * characters: each backslash's escape (`escapeAt`), `{{` and `}}` an escape in
+ * a piece and a lone `}` refused there (spec § 2), and a tab or a character a
+ * line cannot show refused anywhere in it. `continuation` is a piece after a
+ * hole, whose first character is the `}` that closed the hole and no text.
+ */
+function literalParts(text: string, interpolated: boolean, continuation: boolean): Part[] {
+  const parts: Part[] = [];
+  let at = continuation ? 1 : 0;
+  while (at < text.length) {
+    if (text[at] === '\\') {
+      const part = escapeAt(text, at);
+      parts.push(part);
+      at = part.end;
+      continue;
+    }
+    if (interpolated && (text.startsWith('{{', at) || text.startsWith('}}', at))) {
+      parts.push({ kind: 'e', start: at, end: at + 2 });
+      at += 2;
+      continue;
+    }
+    if (interpolated && text[at] === '}') {
+      parts.push({ kind: 'x', start: at, end: at + 1 });
+      at += 1;
+      continue;
+    }
+    const code = text.codePointAt(at)!;
+    const width = code > 0xffff ? 2 : 1;
+    if (code === 9 || unshowable(code)) parts.push({ kind: 'x', start: at, end: at + width });
+    at += width;
+  }
+  return parts;
+}
+
+/** A comment holds a tab, and refuses every other character a line cannot show. */
+function commentParts(text: string): Part[] {
+  const parts: Part[] = [];
+  let at = 0;
+  while (at < text.length) {
+    const code = text.codePointAt(at)!;
+    const width = code > 0xffff ? 2 : 1;
+    if (unshowable(code)) parts.push({ kind: 'x', start: at, end: at + width });
+    at += width;
+  }
+  return parts;
+}
+
+/**
+ * The first of the grammar's rules for a literal that matches at the start of
+ * `subject`, and what it matched; `null` where none does.
+ */
+function firstRule(name: 'number' | 'char', subject: string): { text: string; refused: boolean } | null {
+  for (const rule of grammarRules(name)) {
+    rule.pattern.lastIndex = 0;
+    const found = rule.pattern.exec(subject);
+    if (found !== null && found.index === 0 && found[0].length > 0) return { text: found[0], refused: rule.refused };
+  }
+  return null;
 }
 
 /**
@@ -200,7 +350,8 @@ function interpolatedTokens(text: string): Token[] {
   let scanFrom = 2;
   for (;;) {
     const piece = pieceEnd(text, scanFrom);
-    out.push({ kind: 's', text: text.slice(at, piece.end) });
+    const pieceText = text.slice(at, piece.end);
+    out.push({ kind: 's', text: pieceText, parts: literalParts(pieceText, true, at > 0) });
     if (!piece.opensHole) return out;
     const close = holeEnd(text, piece.end);
     for (const token of tokenize(text.slice(piece.end, close))) out.push(token);
@@ -209,15 +360,6 @@ function interpolatedTokens(text: string): Token[] {
     at = close;
     scanFrom = close + 1;
   }
-}
-
-/** The digits each base admits, `_` included: `selfhost/number.hero`'s Base table. */
-function inBase(ch: string, marker: string): boolean {
-  if (ch === '_') return true;
-  if (marker === 'x') return isHex(ch);
-  if (marker === 'o') return ch >= '0' && ch <= '7';
-  if (marker === 'b') return ch === '0' || ch === '1';
-  return isDigit(ch);
 }
 
 /**
@@ -231,6 +373,7 @@ export function tokenize(source: string): Token[] {
   const kw = keywords();
   const types = typeWords();
   const marks = contextual();
+  const foreign = foreignWords();
   const out: Token[] = [];
   let i = 0;
 
@@ -257,8 +400,8 @@ export function tokenize(source: string): Token[] {
    */
   let beforePrevious: Token | null = null;
 
-  const push = (kind: TokenKind, text: string) => {
-    const token = { kind, text };
+  const push = (kind: TokenKind, text: string, parts?: Part[]) => {
+    const token: Token = parts !== undefined && parts.length > 0 ? { kind, text, parts } : { kind, text };
     out.push(token);
     if (kind === 'c') return;
     if (kind === 'other' && text.trim().length === 0) return;
@@ -351,7 +494,8 @@ export function tokenize(source: string): Token[] {
     if (ch === '#') {
       let end = i;
       while (end < source.length && source[end] !== '\n') end += 1;
-      push('c', source.slice(i, end));
+      const text = source.slice(i, end);
+      push('c', text, commentParts(text));
       i = end;
       continue;
     }
@@ -368,43 +512,57 @@ export function tokenize(source: string): Token[] {
     // is inside the string token because that is where the lexer puts it.
     if (ch === 'f' && source[i + 1] === '"' && !isIdentChar(source[i - 1] ?? ' ')) {
       const end = interpolatedEnd(source, i);
-      for (const token of interpolatedTokens(source.slice(i, end))) push(token.kind, token.text);
+      for (const token of interpolatedTokens(source.slice(i, end))) push(token.kind, token.text, token.parts);
       i = end;
       continue;
     }
 
-    // A string and a character literal both stop at the end of the line: a
-    // string is not multi-line in this language, so an unterminated one has a
-    // known extent (`literals.hero`). A backslash consumes what follows it.
-    if (ch === '"' || ch === "'") {
+    // A string stops at the end of the line: a string is not multi-line in
+    // this language, so an unterminated one has a known extent
+    // (`literals.hero`). A backslash consumes what follows it, and its escape
+    // is painted on its own, `e` where the lexer reads it and `x` where not.
+    if (ch === '"') {
       const end = literalEnd(source, i);
-      // Both quoted forms take the string class. A character literal IS an
-      // integer by the specification's Types table, so the number class would
-      // be defensible, and the stylesheet paints `.s` and `.n` the same gold
-      // either way. What settles it is the 160 figures already on the site:
-      // they were written by hand, read by the author and ratified, and they
-      // say `.s`. Agreeing with them costs nothing and leaves the drift check
-      // comparing markup with markup.
-      push('s', source.slice(i, end));
+      const text = source.slice(i, end);
+      push('s', text, literalParts(text, false, false));
       i = end;
       continue;
     }
 
+    // A character literal by the editor's grammar's rules, first match
+    // winning: one character or one escape is a literal, anything else between
+    // two quotes is refused, and a quote no rule reads is refused alone.
+    // It takes the string class. A character literal IS an integer by the
+    // specification's Types table, so the number class would be defensible,
+    // and the stylesheet paints `.s` and `.n` the same gold either way. What
+    // settles it is the 160 figures already on the site: they were written by
+    // hand, read by the author and ratified, and they say `.s`.
+    if (ch === "'") {
+      const rule = firstRule('char', restOfLine(i));
+      if (rule === null) {
+        push('x', ch);
+        i += 1;
+        continue;
+      }
+      const escaped = !rule.refused && rule.text[1] === '\\' ? [{ kind: 'e' as const, start: 1, end: rule.text.length - 1 }] : undefined;
+      push(rule.refused ? 'x' : 's', rule.text, escaped);
+      i += rule.text.length;
+      continue;
+    }
+
+    // A number by the editor's grammar's rules, first match winning: a refused
+    // shape painted as refused (`07`, `1e5`, `0X1F`, `1__000`) and a legal one
+    // as a number. Where no rule reads one, the digits are what the lexer
+    // reads as a number before a name, `1u8` being `1` and `u8`.
     if (isDigit(ch)) {
+      const rule = firstRule('number', restOfLine(i));
       let end = i;
-      let marker = 'd';
-      if (ch === '0' && end + 1 < source.length && 'xob'.includes(source[end + 1].toLowerCase())) {
-        marker = source[end + 1].toLowerCase();
-        end += 2;
+      if (rule !== null) {
+        end = i + rule.text.length;
+      } else {
+        while (end < source.length && isDigit(source[end])) end += 1;
       }
-      while (end < source.length && inBase(source[end], marker)) end += 1;
-      // `1.5` is one token and `1.str()` is three: the dot makes a float only
-      // when a digit follows it (`number.hero::number`).
-      if (marker === 'd' && source[end] === '.' && isDigit(source[end + 1] ?? '')) {
-        end += 1;
-        while (end < source.length && inBase(source[end], 'd')) end += 1;
-      }
-      push('n', source.slice(i, end));
+      push(rule !== null && rule.refused ? 'x' : 'n', source.slice(i, end));
       i = end;
       continue;
     }
@@ -413,16 +571,52 @@ export function tokenize(source: string): Token[] {
       let end = i;
       while (end < source.length && (isAlnum(source[end]) || source[end] === '_')) end += 1;
       const word = source.slice(i, end);
+      const declared = previous !== null && previous.kind === 'k' && DECLARING.has(previous.text);
       const kind: TokenKind =
       afterDot() || afterColons()
         ? 'ident'
         : kw.has(word) || markAt(word, i, end)
           ? 'k'
-          : types.has(word)
-            ? 't'
-            : 'ident';
+          : foreign.has(word)
+            ? 'x'
+            : declared
+              ? 'd'
+              : types.has(word)
+                ? 't'
+                : 'ident';
       push(kind, word);
       i = end;
+      continue;
+    }
+
+    // The hole, one token to the lexer as it is one thing to a reader.
+    if (source.startsWith('???', i)) {
+      push('h', '???');
+      i += 3;
+      continue;
+    }
+
+    // What the lexer refuses outside a literal and a comment, as the editor's
+    // grammar paints it: `//`, which is not a comment here, a string in
+    // backticks, a tab, and a character a line cannot show.
+    if (ch === '/' && source[i + 1] === '/') {
+      push('x', '//');
+      i += 2;
+      continue;
+    }
+    if (ch === '`') {
+      const close = source.indexOf('`', i + 1);
+      const stop = source.indexOf('\n', i);
+      const end = close >= 0 && (stop < 0 || close < stop) ? close + 1 : stop < 0 ? source.length : stop;
+      push('x', source.slice(i, end));
+      i = end;
+      continue;
+    }
+    const code = source.codePointAt(i)!;
+    if (code === 9 || unshowable(code)) {
+      const width = code > 0xffff ? 2 : 1;
+      push('x', source.slice(i, i + width));
+      i += width;
       continue;
     }
 
@@ -440,7 +634,14 @@ export function highlight(source: string): string {
   let out = '';
   for (const token of tokenize(source)) {
     const className = CLASS_OF[token.kind];
-    const text = escapeHtml(token.text);
+    let text = '';
+    let at = 0;
+    for (const part of token.parts ?? []) {
+      text += escapeHtml(token.text.slice(at, part.start));
+      text += `<span class="${part.kind}">${escapeHtml(token.text.slice(part.start, part.end))}</span>`;
+      at = part.end;
+    }
+    text += escapeHtml(token.text.slice(at));
     out += className === null ? text : `<span class="${className}">${text}</span>`;
   }
   return out;
@@ -491,7 +692,7 @@ export function assertRoundTrip(source: string, label: string): void {
 export function words(source: string): Set<string> {
   const found = new Set<string>();
   for (const token of tokenize(source)) {
-    if (token.kind === 'ident' || token.kind === 'k' || token.kind === 't') found.add(token.text);
+    if (token.kind === 'ident' || token.kind === 'k' || token.kind === 't' || token.kind === 'd') found.add(token.text);
   }
   return found;
 }

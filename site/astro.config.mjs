@@ -10,6 +10,7 @@ import { assertHeadsUsable } from './src/lib/seo.ts';
 import { assertScriptsHonest } from './src/lib/scripts.ts';
 import { assertCrumbsMatchTheNav } from './src/lib/crumbs.ts';
 import { assertTriggersCoverReads } from './src/lib/triggers.ts';
+import { assertColouringLexed } from './src/lib/lexed.ts';
 
 const ORIGIN = 'https://heroes-lang.org';
 
@@ -219,6 +220,22 @@ function crumbAudit() {
   };
 }
 
+// The colouring held to the compiler's lexer (`src/lib/lexed.ts`): every program
+// the site colours token for token, the suite's table of literal forms, and
+// every escape a string can be written with. At the end of the build, when the
+// pages that colour have rendered, and before the triggers' audit, since what
+// it reads is a read like any other.
+function lexedAudit() {
+  return {
+    name: 'heroes:lexed',
+    hooks: {
+      'astro:build:done': ({ logger }) => {
+        logger.info(assertColouringLexed());
+      },
+    },
+  };
+}
+
 // The deploy publishes the site on a push that touches one of its `paths:`, and
 // this build reads files from all over the repository. `src/lib/triggers.ts`
 // holds the two to each other at the end of every build: a read the list does
@@ -280,6 +297,7 @@ export default defineConfig({
       },
     }),
     lastmodAudit(),
+    lexedAudit(),
     triggersAudit(),
   ],
 });

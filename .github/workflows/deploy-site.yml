@@ -45,7 +45,10 @@ on:
     # ROADMAP for the chain on the project page; the panel's seats and its
     # sittings; the sealed suite's hashes and prediction on the Measured page;
     # the measurements figures are cut from; ci.yml for the platforms it names;
-    # README.md, the repository's front page, whose shared facts it checks.
+    # README.md, the repository's front page, whose shared facts it checks; the
+    # editor's grammar for the shapes of a number and a character literal; and
+    # the seed and the runtime, which the compiler that judges the colouring is
+    # built from (`site/src/lib/lexed.ts`).
     #
     # Until that day this list was kept by hand, and was widened four times,
     # each after a page had gone stale: examples/, the keyword table, the spec,
@@ -67,6 +70,9 @@ on:
       - 'docs/measurements/**'
       - '.claude/agents/**'
       - 'README.md'
+      - 'editors/vscode/syntaxes/heroes.tmLanguage.json'
+      - 'seed/heroes.c'
+      - 'runtime/**'
       - '.github/workflows/ci.yml'
       - '.github/workflows/deploy-site.yml'
   workflow_dispatch:
@@ -121,6 +127,22 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: site/package-lock.json
+
+      # The compiler, because the build holds the site's colouring to its lexer
+      # (`site/src/lib/lexed.ts`) and refuses to run without one. The tree's own:
+      # clang on the seed, then that compiler on `selfhost/`, the stage 2 every
+      # gate judges with (`.claude/rules/verification.md` § The compiler that
+      # judges is a build artifact), since the seed is refreshed only at a red
+      # two-stage build or a release and may lag the lexer `selfhost/` holds.
+      # clang is installed by name, as `ci.yml`'s Linux legs install it.
+      - name: The compiler, built from the tree
+        working-directory: .
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang
+          clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
+          ./heroes build selfhost/main.hero -o heroes-next
+          mv heroes-next heroes
+          ./heroes --version
 
       # `npm ci`, never `npm install`: it installs exactly the lockfile and
       # fails if package.json and the lockfile disagree, which is the whole

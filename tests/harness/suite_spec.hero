@@ -304,7 +304,10 @@ constant FOREIGN_SOURCE: str
 # the spec and the site — and it is the only one that is a copy at all.
 # `site/src/lib/tables.ts` reads its keywords out of `selfhost/keywords.hero`
 # and its types out of § 3's table, each behind a floor, and
-# `site/src/lib/highlight.ts` does not colour escapes at all. The grammar is the
+# `site/src/lib/highlight.ts` did not colour escapes at all until 2026-10-24,
+# when it began to, by the compiler's own rule, and to read this grammar's
+# number and character rules rather than hold its own, its build holding all
+# of it to the lexer (`site/src/lib/lexed.ts`). The grammar is the
 # one place the language is written down a second time by hand and read from
 # nothing, and on 2026-09-13 that cost what this file's own doc comment
 # predicts: it admitted **four** escapes where the spec gives **five**, so a

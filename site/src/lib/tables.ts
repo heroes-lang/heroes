@@ -217,6 +217,124 @@ export function contextual(): Set<string> {
   return words;
 }
 
+const FOREIGN_FILE = 'selfhost/foreign_words.hero';
+const SHOWN_FILE = 'selfhost/shown_char.hero';
+const GRAMMAR_FILE = 'editors/vscode/syntaxes/heroes.tmLanguage.json';
+
+/** 23 words today, in 17 arms. */
+const FOREIGN_FLOOR = 15;
+
+let cachedForeign: Set<string> | null = null;
+let cachedBidi: [number, number][] | null = null;
+const cachedRules = new Map<string, LiteralRule[]>();
+
+/**
+ * The words of another language the lexer refuses, from `declared_word` in
+ * `selfhost/foreign_words.hero`, the table the compiler tells its repair from.
+ * The highlighter paints them as refused, as the editor's grammar does, which
+ * the `spec` suite holds to the same arms.
+ *
+ * An arm may name several words, `"null" | "nil" | "None" => ok(`, and the
+ * `_ => fail(` arm ends the table; a parse that never reaches it is refused,
+ * since it would not know the table had ended.
+ */
+export function foreignWords(): Set<string> {
+  if (cachedForeign !== null) return cachedForeign;
+
+  const text = readText(FOREIGN_FILE);
+  const start = text.indexOf('function declared_word(');
+  if (start < 0) {
+    throw new Error(`${FOREIGN_FILE}: no \`function declared_word(\` to read the foreign words from.`);
+  }
+  const words = new Set<string>();
+  let closed = false;
+  for (const line of text.slice(start).split('\n').slice(1)) {
+    if (/^\s*_\s*=>\s*fail\(/.test(line)) {
+      closed = true;
+      break;
+    }
+    const arm = /^\s+("[A-Za-z]+"(?:\s*\|\s*"[A-Za-z]+")*)\s*=>\s*ok\(/.exec(line);
+    if (arm === null) continue;
+    for (const word of arm[1].matchAll(/"([A-Za-z]+)"/g)) words.add(word[1]);
+  }
+  if (!closed) {
+    throw new Error(`${FOREIGN_FILE}: read ${words.size} foreign words and never reached \`declared_word\`'s closing \`_ => fail(\` arm.`);
+  }
+  if (words.size < FOREIGN_FLOOR) {
+    throw new Error(
+      `${FOREIGN_FILE}: read only ${words.size} foreign words, and the floor is ${FOREIGN_FLOOR}.\n` +
+        `  a parse that falls apart paints none of them as the mistake they are.`
+    );
+  }
+  cachedForeign = words;
+  return words;
+}
+
+/**
+ * The bidirectional controls, as pairs of first and last code, from
+ * `BIDI_CONTROL` in `selfhost/shown_char.hero`: with the control characters
+ * and U+2028 and U+2029, what a line cannot show as itself (`unshowable`), so
+ * what a string refuses raw and writes by its code.
+ */
+export function bidiControls(): [number, number][] {
+  if (cachedBidi !== null) return cachedBidi;
+
+  const text = readText(SHOWN_FILE);
+  const start = text.indexOf('constant BIDI_CONTROL: [i64]');
+  if (start < 0) throw new Error(`${SHOWN_FILE}: no \`constant BIDI_CONTROL: [i64]\` to read the bidirectional controls from.`);
+  const close = text.indexOf(']', text.indexOf('[', start + 'constant BIDI_CONTROL: [i64]'.length));
+  const codes = [...text.slice(start + 'constant BIDI_CONTROL: [i64]'.length, close).matchAll(/^\s+(\d+)\s*$/gm)].map((m) => Number(m[1]));
+  if (codes.length < 8 || codes.length % 2 !== 0) {
+    throw new Error(`${SHOWN_FILE}: read ${codes.length} codes in BIDI_CONTROL, and it holds pairs, four of them at least.`);
+  }
+  const pairs: [number, number][] = [];
+  for (let i = 0; i < codes.length; i += 2) pairs.push([codes[i], codes[i + 1]]);
+  cachedBidi = pairs;
+  return pairs;
+}
+
+/** One rule of the editor's grammar for a literal: its pattern, and whether it paints a mistake. */
+export interface LiteralRule {
+  pattern: RegExp;
+  refused: boolean;
+}
+
+/**
+ * The editor's grammar's rules for a number or a character literal, in their
+ * order, first match winning as an editor reads them.
+ *
+ * READ, NOT COPIED: the grammar is the one place the shapes of a literal are
+ * written as patterns, and the `spec` suite runs these very rules over its
+ * table of forms against the lexer (`literals_painted`), so the site paints
+ * with patterns the compiler already judges, and `lexed.ts` judges them again
+ * as the site runs them. Each is compiled sticky, so it matches where the
+ * highlighter stands or not at all; the grammar's patterns use only what an
+ * ECMAScript expression reads the same way, the classes, groups, quantifiers
+ * and `\\b` its own reader in `tests/harness/textmate.hero` admits.
+ */
+export function grammarRules(name: 'number' | 'char'): LiteralRule[] {
+  const cached = cachedRules.get(name);
+  if (cached !== undefined) return cached;
+
+  const grammar = JSON.parse(readText(GRAMMAR_FILE));
+  const patterns = grammar?.repository?.[name]?.patterns;
+  if (!Array.isArray(patterns)) throw new Error(`${GRAMMAR_FILE}: no \`repository.${name}.patterns\` to read the ${name} rules from.`);
+  const rules: LiteralRule[] = patterns.map((rule: { match?: string; name?: string }) => {
+    if (typeof rule.match !== 'string' || typeof rule.name !== 'string') {
+      throw new Error(`${GRAMMAR_FILE}: a rule of \`${name}\` without a \`match\` and a \`name\`, which this reader cannot run.`);
+    }
+    const refused = rule.name.startsWith('invalid.illegal');
+    if (!refused && !rule.name.startsWith('constant.')) {
+      throw new Error(`${GRAMMAR_FILE}: the \`${name}\` rule \`${rule.name}\` paints neither a literal nor a mistake.`);
+    }
+    return { pattern: new RegExp(rule.match, 'y'), refused };
+  });
+  const floor = name === 'number' ? 8 : 3;
+  if (rules.length < floor) throw new Error(`${GRAMMAR_FILE}: read ${rules.length} \`${name}\` rules, and the floor is ${floor}.`);
+  cachedRules.set(name, rules);
+  return rules;
+}
+
 /** What the two parses found, for the build's own report and for a test. */
 export function tableSummary(): string {
   return `${keywords().size} keywords from ${KEYWORDS_FILE}, ${typeWords().size} type words from ${SPEC_FILE}`;
