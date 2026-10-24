@@ -1,0 +1,184 @@
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/why/">Perché</a> / misurato</p>
+
+  <div class="page-head">
+    <h1 class="page">Misurato</h1>
+  </div>
+  <p class="lede">
+    La tesi del progetto, messa alla prova in pubblico: che cosa è stato misurato, che cosa è stato scritto prima di misurare e che cosa questa pagina non dice ancora. Ogni numero di questa pagina è copiato dal file del repository che lo ha misurato, e quel file è nominato accanto.
+  </p>
+
+  <ul class="pillars">
+    <li><b>Misurato: che cosa rileva il compilatore.</b> Rifiuta gli sbagli plausibili per cui esistono le sue regole, e con quelle regole spente gli stessi sbagli passano. <a href="#mechanism">Il meccanismo&nbsp;&rarr;</a></li>
+    <li><b>Scritto prima di misurare: la prova della tesi.</b> L&rsquo;unico numero che riporterà, che cosa vorrà dire ciascun esito e che cosa si aspetta l&rsquo;autore, fissati in un commit insieme ai compiti sigillati. <a href="#preregistered">Le regole della prova&nbsp;&rarr;</a></li>
+    <li><b>Provato, ma non è una prova a favore: un collaudo.</b> Dieci compiti di collaudo hanno dimostrato che lo strumento funziona, e non dicono nulla sulla tesi. <a href="#trial">Il collaudo&nbsp;&rarr;</a></li>
+    <li><b>Non ancora su questa pagina: il numero della tesi.</b> Viene dal giro sui compiti sigillati, e si dichiara alla soglia di pubblicazione. <a href="#not-yet">Perché non ancora&nbsp;&rarr;</a></li>
+  </ul>
+
+  <h2 id="claim">La tesi</h2>
+  <blockquote>
+    Un linguaggio progettato perché ogni sbaglio plausibile di un modello sia
+    un errore di compilazione produrrà programmi funzionanti spendendo meno
+    token in totale di un linguaggio convenzionale, anche se ogni singolo
+    programma costa più token da scrivere.
+  </blockquote>
+  <p>
+    Il modello di cui parla la tesi è un LLM, un grande modello linguistico: il tipo di modello AI che scrive codice. I token sono i frammenti di testo che un modello legge e genera. La tesi poggia su una formula del <a href="https://github.com/heroes-lang/heroes/blob/main/docs/design.md#12-the-cost-formula">documento di progetto</a>:
+  </p>
+  <pre><code>costo reale = token del programma × (1 + tasso di riscrittura)</code></pre>
+  <p>
+    Accorciare la sintassi riduce i token necessari per scrivere un file. Correggere un errore richiede invece altri passaggi: il modello legge il messaggio, rilegge il codice, riscrive una funzione e riprova la compilazione. Evitare una correzione può quindi far risparmiare più token di una sintassi più breve. <a href="/it/why/">Tutto il ragionamento&nbsp;&rarr;</a>
+  </p>
+  <p>
+    La formula ha due fattori, e il documento di progetto dice con parole sue che solo il primo è misurato. Il secondo, quanto spesso un programma va riscritto, richiede un modello nel giro, quindi finché un modello non ci viene messo la formula è una regola di progetto e non una regola verificata. La prova che mette un modello nel giro è qui sotto, con le sue regole scritte prima che parta.
+  </p>
+
+  <h2 id="mechanism">Misurato: che cosa rileva il compilatore</h2>
+  <p>
+    <code>heroes mutate</code> prende programmi funzionanti e ci pianta uno sbaglio plausibile alla volta: due argomenti scambiati, un nome scritto male, un caso dimenticato. Poi chiede se il compilatore rifiuta il risultato, due volte: una con tutte le regole, e una con le regole proprie di Heroes spente (<code>--permissive</code>), così la differenza fra le due è quello che aggiungono quelle regole. Un mutante è un programma modificato, e <em>killed</em> vuol dire che il compilatore lo ha rifiutato. Lo strumento dà un tasso per ogni tipo di sbaglio e avverte di non fonderli mai in un unico titolo, perché la misura è il tasso di ciascun tipo.
+  </p>
+  <p>
+    Letta un tipo alla volta, la tabella mostra tre cose. Alcuni sbagli li rilevano solo le regole proprie di Heroes: un argomento posizionale dove serviva un&rsquo;etichetta, un nome che ne nasconde un altro scritto uguale. Altri li rilevano già i controlli ordinari, un refuso in un nome o interi mescolati a decimali, e lì le regole non aggiungono nulla e non sono contate a loro favore. E alcuni non li rileva nessun controllo, come un refuso dentro una stringa, e la tabella lo dice. La tabella vera e propria, ogni riga in parole semplici e rieseguita ogni volta che viene pubblicata, sta nel <a href="/it/docs/errors/#measured">capitolo sugli errori</a>.
+  </p>
+  <p>
+    Quello che si misura qui è il compilatore: se rifiuta uno sbaglio piantato da uno strumento. Non si misura se un modello fa quegli sbagli, quanto spesso, né se rifiutarli fa risparmiare qualcosa. Quella è la tesi stessa, e la sua prova è la sezione che segue.
+  </p>
+
+  <h2 id="preregistered">Scritto prima di misurare: la prova della tesi</h2>
+  <p>
+    La tesi parla di modelli, quindi la sua prova mette dei modelli nel giro. Il panel di progetto ha fissato le regole di quella prova e l&rsquo;autore le ha ratificate prima che un modello girasse sui compiti su cui sarà giudicato; le regole sono nel <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/226-metrics-2-and-4-measured-by-one-instrument-three-arms-forked-from-one-generation-the-control-arm-built-and-run-and-the-held-out-tasks-sealed-in-the-tree.md">verbale di quella seduta</a>. In parole semplici:
+  </p>
+  <ul class="pillars">
+    <li><b>Compiti tenuti lontani dagli occhi.</b> 40 compiti di programmazione scritti dall&rsquo;autore, e altri venti di riserva, ciascuno descritto in inglese e giudicato da casi nascosti: entrano argomenti e file, escono l&rsquo;output stampato e il codice di uscita, e a parte l&rsquo;unico esempio che il compito mostra, il modello i casi non li vede mai. Ogni compito invita di proposito a uno sbaglio plausibile. I compiti sono sigillati, come mostra la parte che segue, e a nessun modello ne era stato dato uno prima del giro che li valuta, secondo quanto riferisce l&rsquo;autore.</li>
+    <li><b>Heroes contro sé stesso, con le sue regole spente.</b> La prova non mette Heroes contro un altro linguaggio. Un modello scrive un programma per un compito, e quell&rsquo;unico programma viene giudicato in tre modi, i tre bracci della prova: <em>strict</em>, con tutte le regole e il messaggio completo del compilatore; <em>brief</em>, le stesse regole e un messaggio breve; e <em>control</em>, il braccio di controllo, con le 27 regole proprie di Heroes spente, ognuna con un significato fissato perché il programma venga costruito ed eseguito lo stesso. Strict contro brief è quanto vale il messaggio; brief contro control è quanto valgono le regole.</li>
+    <li><b>Lo stesso aiuto in ogni braccio.</b> Dopo un rifiuto il modello vede il messaggio del compilatore; dopo un programma che compila, l&rsquo;output dell&rsquo;unico esempio che il compito mostra, accanto a quello atteso; i casi nascosti, mai. Al massimo cinque tentativi.</li>
+    <li><b>Tre modi di fallire.</b> Rifiutato dal compilatore; fermato in modo evidente mentre gira; oppure <em>silenzioso</em>, un programma che finisce normalmente e stampa la risposta sbagliata. Quello silenzioso è il fallimento di cui parla la tesi.</li>
+    <li><b>Un solo numero, scelto in anticipo.</b> Quanti programmi sono <em>verdi</em>, la parola del progetto per un programma che passa tutti i casi nascosti, entro il terzo tentativo: il braccio strict meno quello di controllo, su un modello, Claude Sonnet 5.5, con la specifica nel prompt, inviata attraverso l&rsquo;API di Anthropic con un prompt fisso. Gli altri modelli, Haiku 5.5, Opus 5.5 e Fable 5.1 come tetto con cui confrontarsi, e tutto il resto vengono riportati anch&rsquo;essi, ciascuno marcato come esplorativo.</li>
+  </ul>
+  <p>
+    Perché un conteggio di programmi funzionanti, se la tesi parla di token: la ragione della seduta è che ciò che la tesi promette a chi legge è un programma che funziona, con il riscontro che avrebbe chi lo usa. Il giro riporta anche, per ogni braccio, i due fattori della formula (i token del programma e quante riscritture ha richiesto) e i token spesi finché un programma funziona; quelli sono esplorativi, e lo dicono dove vengono riportati.
+  </p>
+
+  <h3 id="prediction">La previsione, come è stata fissata</h3>
+  <p>
+    La preregistrazione è un file solo, <a href="https://github.com/heroes-lang/heroes/blob/a4e09e061130af837a1ed66d61cf247fb10afe4a/tests/thesis/held-out/prediction.md"><code>prediction.md</code></a>, scritto nello stesso commit dei compiti sigillati. Seguono le sue parole, copiate da quel file e controllate contro di esso a ogni build del sito. Prima, l&rsquo;unico numero:
+  </p>
+  <figure class="example record" data-src="tests/thesis/held-out/prediction.md" data-lines="30-37">
+<pre><code>**`green@3`(strict, full message) − `green@3`(control) on `claude-sonnet-5-5` in the `spec`
+context**, over the 40 tasks at three samples each (panel 226's R2). `green@k` is *the hidden cases
+passed by turn k under the compiler's feedback*. The interval is **the cluster bootstrap over
+tasks**, the task the cluster and its three samples never nine independent pairs, 2,000 resamples,
+the seed in the run's provenance; the test is **McNemar's mid-p over the discordant pairs**, the
+exact conditional p reported beside it and never as the primary's. **The smallest effect of
+interest is 10 percentage points**: a confirmed difference under it is reported as confirmed and
+small, never as success. Everything else is exploratory and says so where it is reported.</code></pre>
+    <figcaption>tests/thesis/held-out/prediction.md, righe 30&ndash;37</figcaption>
+  </figure>
+  <p>
+    In parole semplici: la quota di programmi strict verdi entro il terzo tentativo, meno quella del braccio di controllo. Accanto va un intervallo in cui è probabile che cada la differenza vera, calcolato ricampionando i compiti 2.000 volte, e un test che conta solo le coppie in cui i due bracci non sono d&rsquo;accordo. Una differenza sotto i 10 punti percentuali (una differenza fra due percentuali) viene riportata come piccola, mai come un successo. Poi, che cosa vorrà dire ciascun esito:
+  </p>
+  <figure class="example record" data-src="tests/thesis/held-out/prediction.md" data-lines="46-52">
+<pre><code>- **Confirmed**: the bootstrap interval's lower bound is above 0.
+- **Falsified**: its upper bound is below 0.
+- **Inconclusive**: otherwise. **Rule, the author's choice (1a)**: an inconclusive result is
+  published as inconclusive, with its interval as measured. n is not extended once the result is
+  seen, since extending a sample after reading it inflates the false positives it then reports;
+  the reserve is drawn only to replace a task the canary burns or the adjudication finds
+  ambiguous.</code></pre>
+    <figcaption>tests/thesis/held-out/prediction.md, righe 46&ndash;52</figcaption>
+  </figure>
+  <p>
+    Confermata se l&rsquo;intervallo sta tutto sopra lo zero, smentita se sta tutto sotto, non conclusiva altrimenti. Un risultato non conclusivo viene pubblicato come non conclusivo, e dopo aver visto il risultato non si aggiungono compiti. Poi, che cosa si aspetta l&rsquo;autore:
+  </p>
+  <figure class="example record" data-src="tests/thesis/held-out/prediction.md" data-lines="56-63">
+<pre><code>- `green@1`: the strict arm **below** the control by **5 to 15 points**, the price of refusing at
+  turn 1, before any feedback.
+- `green@3`: the strict arm **above** the control by **at least 10 points**, the smallest effect
+  of interest.
+- The silent rate at turn 3: the strict arm's **at most half** the control's.
+
+The trial on the assistant's ten tasks (measurement 050) is not evidence for or against these:
+those tasks tempt no trap, and its arms were level by turn 3 with no discordant pair of 90.</code></pre>
+    <figcaption>tests/thesis/held-out/prediction.md, righe 56&ndash;63</figcaption>
+  </figure>
+  <p>
+    L&rsquo;autore si aspetta che le regole costino al primo tentativo, il braccio strict da 5 a 15 punti sotto il controllo, e che ripaghino entro il terzo, almeno 10 punti sopra, con al più la metà dei fallimenti silenziosi del controllo. Il numero dei compiti è fissato: 40 compiti, 3 campioni ciascuno, per ogni modello e braccio. Il collaudo qui sotto doveva servire a dimensionarlo, da quanto spesso i bracci non sono d&rsquo;accordo; entro il terzo tentativo non ha trovato nessuna coppia in disaccordo, quindi la probabilità che la prova rilevi un effetto reale è dichiarata sconosciuta invece di essere calcolata da un numero che non c&rsquo;è.
+  </p>
+  <p>
+    Lo stesso file si chiude con il protocollo e i digest di ciò che il giro userà, in un solo blocco: il compilatore, il prompt e la sua struttura, lo strumento, la specifica che il prompt contiene, i modelli e le loro impostazioni. Il report mette ogni giro a confronto con quel blocco, campo per campo, e stampa ogni differenza come una deviazione.
+  </p>
+
+  <h3 id="seal">Il sigillo, e come controllarlo</h3>
+  <p>
+    Una prova che un modello ha letto durante l&rsquo;addestramento misura la sua memoria, non il linguaggio, e questo repository è pubblico, quindi un compito messo in chiaro finirebbe nella prossima raccolta di testi dal web. Per questo i compiti sono nel repository cifrati, con chiavi che tiene l&rsquo;autore e che non vengono mai scritte su una riga di comando né in un file del repository. Un digest è l&rsquo;impronta di un testo: basta cambiare un carattere e cambia tutta. Queste due righe sono quelle che il congelamento ha scritto per la suite e per la sua riserva, ciascun digest calcolato dai digest dei compiti che contiene:
+  </p>
+  <figure class="example record" data-src="tests/thesis/held-out/hashes.txt" data-lines="41-41">
+<pre><code>suite c24a5b813f6bba6da2f8ca28f63aa15f76a790be5e012e74468f6924f7ad2274 held-out 40 canary</code></pre>
+    <figcaption>tests/thesis/held-out/hashes.txt, riga 41</figcaption>
+  </figure>
+  <figure class="example record" data-src="tests/thesis/held-out/hashes-reserve.txt" data-lines="21-21">
+<pre><code>suite b27ea1a9949cd555646f816f73ac5473276156eea7bd5556eeb019a700f77dd4 held-out 20 canary</code></pre>
+    <figcaption>tests/thesis/held-out/hashes-reserve.txt, riga 21</figcaption>
+  </figure>
+  <p>
+    Quei digest sono calcolati sul testo e sui casi dei compiti, quindi si possono controllare quando l&rsquo;archivio sarà aperto. Due cose invece si controllano già oggi, da un clone del repository, con i soli file:
+  </p>
+  <pre><code>$ cd tests/thesis/held-out
+$ shasum -a 256 -c suite.enc.sha256 reserve.enc.sha256
+suite.enc: OK
+reserve.enc: OK
+$ git log --format=%H -- prediction.md hashes.txt hashes-reserve.txt suite.enc reserve.enc
+a4e09e061130af837a1ed66d61cf247fb10afe4a</code></pre>
+  <p>
+    Il primo comando controlla i due archivi cifrati contro i digest scritti accanto a loro. Il secondo elenca ogni commit che abbia mai cambiato la previsione, i digest o gli archivi, e ne stampa uno: <a href="https://github.com/heroes-lang/heroes/commit/a4e09e061130af837a1ed66d61cf247fb10afe4a">il commit che li ha fissati</a>. Una modifica successiva a uno qualsiasi di loro stamperebbe una seconda riga; e qualunque risultato, una volta nel repository, si può mettere a confronto con questo commit per vedere quale è venuto prima.
+  </p>
+  <p>
+    La CI del progetto, i controlli automatici che girano a ogni push su GitHub, ha un job che apre l&rsquo;archivio dentro una macchina di GitHub, con le chiavi custodite come suoi segreti, e stampa soltanto conteggi e digest, mai il testo di un compito; dove le chiavi non ci sono, come in una copia del repository, dice di non aver attestato nulla invece di passare come se l&rsquo;avesse fatto. Ogni compito porta inoltre una stringa casuale unica, un canary: prima di un giro a ogni modello si chiede di completarle una per una, e un compito la cui stringa un modello completa esattamente stava nei suoi dati di addestramento, quindi viene sostituito dal compito successivo della riserva. La stessa sonda, fatta girare sui compiti di collaudo prima del congelamento con quattro modelli: 44 sonde, 0 completate.
+  </p>
+  <p>
+    <b>L&rsquo;archivio si apre da solo.</b> Entro 30 giorni dalla prima release pubblicata dopo il primo giro su questi compiti, o dal giorno in cui i canary dichiarano bruciata la suite, quale dei due venga prima, l&rsquo;autore fa il commit delle chiavi e ogni compito diventa leggibile da chiunque. Fino ad allora la chiave viene data a chi la chiede, alla sola condizione di non ripubblicarla, e ogni consegna è annotata nel <a href="https://github.com/heroes-lang/heroes/blob/main/tests/thesis/held-out/README.md">README della cartella sigillata</a>.
+  </p>
+
+  <h2 id="trial">Il collaudo: la prova che lo strumento funziona, non una prova della tesi</h2>
+  <p>
+    Prima del congelamento lo strumento è stato provato su dieci compiti scritti dall&rsquo;assistente AI che scrive il compilatore. Per una regola del progetto quei dieci compiti non entrano mai in un numero pubblicato: <a href="https://github.com/heroes-lang/heroes/blob/main/docs/metrics/tasks.md#two-suites-two-homes">una suite scritta dall&rsquo;assistente misura quello che l&rsquo;assistente già si aspetta</a>. Nessuno è stato scritto per invitare a uno sbaglio. Quello che il collaudo può mostrare è che lo strumento misura, quanto costa un giro e dove il protocollo andava riparato. Non può mostrare se la tesi regge, e niente in questa sezione è offerto come prova che regga.
+  </p>
+  <p>
+    Tre modelli, i dieci compiti, tre campioni ciascuno, la specifica nel prompt; quanti dei 30 programmi di ogni modello e braccio erano verdi al primo tentativo, ed entro il secondo, il terzo e il quinto:
+  </p>
+  <figure class="example record" data-src="docs/measurements/050-the-trial-asked-again-with-every-model-named-level-by-turn-three-through-the-api-and-through-claude-p-and-without-the-specification-no-model-wrote-a-program-that-ran-right.md" data-lines="36-40">
+<pre><code>| model | green@1 strict / brief / control | green@2 | green@3, every arm | green@5 | mean turns to green |
+|---|---|---|---|---|---|
+| Haiku 5.5 | 16 / 16 / 16 | 27 | 28 | 28 | 1.5 |
+| Sonnet 5.5 | 18 / 18 / 20 | 29 | 29 | 29 | 1.4 strict, 1.3 control |
+| Opus 5.5 | 23 / 23 / 24 | 29 strict, 30 control | 30 | 30 | 1.3 strict, 1.2 control |</code></pre>
+    <figcaption>docs/measurements/050-the-trial-asked-again-with-every-model-named-level-by-turn-three-through-the-api-and-through-claude-p-and-without-the-specification-no-model-wrote-a-program-that-ran-right.md, righe 36&ndash;40</figcaption>
+  </figure>
+  <ul class="pillars">
+    <li><b>Il braccio strict paga al primo tentativo ed è pari entro il terzo.</b> Una coppia è lo stesso compito e campione giudicato in due bracci, e il braccio strict ne perde una quando il controllo è verde e lui no. Ne ha perse 3 al primo tentativo (Sonnet 5.5 2, Opus 5.5 1), 1 al secondo (Opus 5.5), nessuna al terzo, e non ne ha vinta nessuna a nessun tentativo. L&rsquo;unico numero che riporterà la prova vera, letto qui su Sonnet 5.5, è +0,0 punti: 29 e 29, e nemmeno una coppia in cui i due bracci non siano d&rsquo;accordo.</li>
+    <li><b>I fallimenti silenziosi sono stati gli stessi in ogni braccio.</b> Entro il terzo tentativo: 1 contro 1 per Haiku 5.5 e per Sonnet 5.5, 0 per Opus 5.5, gli stessi sbagli in ogni braccio, che nessuna regola nomina. Lo stesso collaudo fatto attraverso la riga di comando di Claude Code invece che con l&rsquo;API, in una tabella a parte e mai sommata a quella dell&rsquo;API, ha avuto tutti i suoi 270 campioni verdi entro il terzo tentativo, in ogni braccio.</li>
+    <li><b>Senza la specifica, nessun modello ha scritto un programma che girasse giusto.</b> 0 verdi su 270, ogni modello e ogni braccio, con cinque tentativi e ogni volta i messaggi del compilatore; per ogni modello e braccio, trenta tentativi, l&rsquo;intervallo probabile va ancora da 0,0 a 11,4%, perché trenta tentativi senza un successo non dimostrano un tasso pari a zero. Le prime risposte hanno scritto il <code>main</code> di qualche altro linguaggio (Sonnet 5.5 ha scritto <code>def main</code> 26 volte su 30), e cinque delle trenta prime risposte di Opus 5.5 dicevano che il linguaggio era loro sconosciuto. Un programma è arrivato in fondo stampando una risposta sbagliata, solo nel braccio di controllo, e il resoconto lo chiama un aneddoto, non un tasso. Quindi le righe qui sopra misurano quello che la specifica insegna, a partire da niente che i modelli si portassero dietro.</li>
+  </ul>
+  <p>
+    Letto come lo legge il resoconto: pari è quello che dieci compiti possono dire. Questi compiti non sono stati scritti per invitare a uno sbaglio; i compiti sigillati, ognuno una trappola, sono dove una differenza potrebbe vedersi. La preregistrazione dice la stessa cosa di sé, nelle ultime righe citate sopra.
+  </p>
+  <p>
+    <b>Il collaudo è stato fatto due volte.</b> <a href="https://github.com/heroes-lang/heroes/blob/main/docs/measurements/049-the-trial-on-the-assistants-ten-tasks-the-strict-arm-pays-at-turn-one-is-level-by-turn-two-and-no-arm-failed-silently.md">Il resoconto del primo</a> dice, nelle correzioni scritte sotto, che ogni prima richiesta era andata a Haiku 5.5, qualunque modello nominasse: un difetto dello strumento, trovato quando una regola che tiene ogni risposta al modello nominato dalla sua richiesta ha fermato un giro successivo. Il collaudo è stato rifatto con ogni modello nominato, e i numeri qui sopra sono quelli del <a href="https://github.com/heroes-lang/heroes/blob/main/docs/measurements/050-the-trial-asked-again-with-every-model-named-level-by-turn-three-through-the-api-and-through-claude-p-and-without-the-specification-no-model-wrote-a-program-that-ran-right.md">secondo</a>.
+  </p>
+
+  <h2 id="not-yet">Non ancora su questa pagina: il numero della tesi</h2>
+  <p>
+    Il numero della tesi viene dal giro sui compiti sigillati, e questa pagina non lo dichiara né tira a indovinarlo. Se il braccio strict finisce davanti al controllo, pari o dietro si legge contro la previsione qui sopra, quella che c&rsquo;era prima del giro, e un risultato non conclusivo viene pubblicato come non conclusivo.
+  </p>
+  <p>
+    Il sito dirà il numero della tesi alla <a href="https://github.com/heroes-lang/heroes/blob/main/docs/roadmap/milestones/M-publication-gate.md">soglia di pubblicazione</a> del progetto, il passaggio per annunciare una cosa finita, e non prima: con le parole della pagina di quella soglia, dirlo senza averlo misurato pubblica un&rsquo;opinione con i decimali.
+  </p>
+
+  <p class="next away">
+    Perché la tesi: <a href="/it/why/">le scelte di progetto</a>. Che cosa dice il compilatore quando rifiuta: <a href="/it/docs/errors/">il capitolo sugli errori</a>. E che cosa Heroes ha escluso: <a href="/it/why/not/">i no</a>.
+  </p>
+
+  <footer>
+    <p>
+    Ogni numero di questa pagina è copiato dal file nominato accanto, e nessuno è stato calcolato per la pagina. I blocchi etichettati con il percorso di un file sono porzioni di quei file, controllate contro di essi byte per byte a ogni build del sito; i due comandi sono stati eseguiti sui file così come stanno nel <a href="https://github.com/heroes-lang/heroes">repository</a>.
+  </p>
+  </footer>

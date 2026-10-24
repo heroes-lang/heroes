@@ -168,13 +168,14 @@ function alternates(pathname) {
 // The refusals page, `/why/not/`, is not in the nav either: it is one click
 // below three pages that are, the same distance a program is from the examples
 // index, so it takes that tier rather than the default and the tiers keep
-// meaning what this comment says.
+// meaning what this comment says. The thesis's ledger, `/why/measured/`, sits
+// at the same distance under the same entry, and takes the same tier.
 function priority(pathname) {
   if (pathname === '/' || pathname === '/it/') return 1.0;
   const path = pathname.startsWith('/it/') ? pathname.slice(3) : pathname;
   if (path === '/examples/') return 0.8;
   if (path.startsWith('/examples/')) return 0.7;
-  if (path === '/why/not/') return 0.7;
+  if (path === '/why/not/' || path === '/why/measured/') return 0.7;
   return path.startsWith('/docs/') ? 0.6 : 0.8;
 }
 

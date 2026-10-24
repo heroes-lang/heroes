@@ -767,6 +767,14 @@ figure.example figcaption {
 }
 figure.example figcaption::before { content: '\21B3\00A0'; color: var(--dim); }
 
+/* A slice of a record rather than of a program: a measurement's transcript, the
+   pre-registration's sentences, a digest line (`why/measured.html`). Its lines
+   are sentences and pipes, so it wraps at every width for the reason the
+   specification block does, and a digest too long for a phone breaks rather
+   than pushing the page sideways. The class outranks the narrow-screen
+   `figure.example pre` rule below by specificity, so one rule covers both. */
+figure.example.record pre { white-space: pre-wrap; overflow-wrap: break-word; }
+
 /* == 8. home ============================================================== */
 
 /* The hero is a two-column stage: the promise on the left, and on the right a

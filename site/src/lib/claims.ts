@@ -147,6 +147,27 @@ function mutationCorpus(): number {
   return Number(found[1]);
 }
 
+const HELD_OUT_SUITE = 'tests/thesis/held-out/hashes.txt';
+const HELD_OUT_RESERVE = 'tests/thesis/held-out/hashes-reserve.txt';
+
+/**
+ * How many tasks a sealed held-out archive holds, read from the suite line the
+ * freeze committed for it (`tests/thesis/held-out/README.md`): `seal` writes
+ * it and `tasks --sealed` prints it again from the archive, `suite <digest>
+ * held-out <n> canary`. The measured pages show that line itself as a figure
+ * cut from the file, which `figures.ts` holds byte for byte; what this binds is
+ * the sentence around it that says how many tasks the claim will be tested on
+ * and how many wait in reserve, so a suite replaced or extended moves the
+ * sentence too or turns the build red.
+ */
+function sealedTasks(file: string): number {
+  const found = /^suite [0-9a-f]{64} held-out (\d+) canary$/m.exec(readText(file));
+  if (found === null) {
+    throw new Error(`${file}: no \`suite <digest> held-out <n> canary\` line, which is what \`seal\` writes and the measured pages quote.`);
+  }
+  return Number(found[1]);
+}
+
 /** The seats of the language panel, and how many of them carry a veto. */
 function judges(): { seats: number; vetoes: number } {
   // `filesIn` returns repository-relative paths, so each brief is read by the
@@ -474,6 +495,17 @@ const CLAIMS: Claim[] = [
     fact: mutationCorpus, shape: (n) => new RegExp(`complete run on the ${n} programs`, 'i') },
   { page: 'site/src/html/it/docs/errors.html', what: 'the corpus the mutation table was taken over',
     fact: mutationCorpus, shape: (n) => new RegExp(`completa sui ${n} programmi`, 'i') },
+  // The held-out suite and its reserve, from the suite lines the freeze
+  // committed: how many tasks the claim's test is scored on, and how many wait
+  // to replace a task its canary burns.
+  { page: 'site/src/html/why/measured.html', what: 'the tasks of the sealed held-out suite',
+    fact: () => sealedTasks(HELD_OUT_SUITE), shape: (n) => new RegExp(`${n}\\s+programming\\s+tasks\\s+written\\s+by\\s+the\\s+author`, 'i') },
+  { page: 'site/src/html/it/why/measured.html', what: 'the tasks of the sealed held-out suite',
+    fact: () => sealedTasks(HELD_OUT_SUITE), shape: (n) => new RegExp(`${n}\\s+compiti\\s+di\\s+programmazione\\s+scritti`, 'i') },
+  { page: 'site/src/html/why/measured.html', what: 'the tasks of the sealed reserve',
+    fact: () => sealedTasks(HELD_OUT_RESERVE), shape: (n) => new RegExp(`${n}\\s+more\\s+in\\s+reserve`, 'i') },
+  { page: 'site/src/html/it/why/measured.html', what: 'the tasks of the sealed reserve',
+    fact: () => sealedTasks(HELD_OUT_RESERVE), shape: (n) => new RegExp(`altri\\s+${n}\\s+di\\s+riserva`, 'i') },
 
   // The schema `check --json` writes and the stream it writes to (panel 193's
   // R8). A version is written in digits, so the shape reads the fact itself
