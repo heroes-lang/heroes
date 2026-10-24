@@ -63,15 +63,16 @@ positioned to see.
 - The hero shows working code, never a diagnostic; states the category before
   the name; names LLMs plainly (author, 2026-08-18). A diagnostic may appear in
   the first value prop UNDER the hero, and one does. **The kicker is "A language
-  for the age of LLMs", the one subtitle the language carries everywhere**
-  (author instruction 2026-10-13; in Italian "Un linguaggio per l'era degli
-  LLM"), and the specification opens on it. From 2026-09-10 it named the
+  for the age of agents", the one subtitle the language carries everywhere**
+  (author instruction 2026-10-24, its casing the coordinator's; in Italian "Un
+  linguaggio per l'era degli agenti"), and the specification opens on it. From
+  2026-09-10 it named the
   language small and compiled (author decision, chosen among the five wordings
   that were in use: the specification's own line, and the measured adjective,
   since the ceiling and the line count are what "small" rests on), replacing "A
   simple programming language", the author's word of 2026-09-09, which two
-  seats had asked for; the reversal is the author's. From 2026-10-12 it added
-  the LLM age. The claim under the name no longer opens with "A compiled
+  seats had asked for; the reversal is the author's. From 2026-10-12 it named
+  LLMs, and from 2026-10-24 agents. The claim under the name no longer opens with "A compiled
   language", and the tagline says what the word meant: no interpreter, no
   virtual machine. A seat that asks to change either is re-arguing a decision,
   not finding a defect.

@@ -1,6 +1,6 @@
 # Heroes
 
-A language for the age of LLMs, designed so that **every plausible mistake**
+A language for the age of agents, designed so that **every plausible mistake**
 is a compile error. The whole language is one document: see
 [the spec](spec/heroes-spec.md).
 

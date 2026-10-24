@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
-    <img src="docs/assets/banner-light.svg" alt="Heroes, a language for the age of LLMs.">
+    <img src="docs/assets/banner-light.svg" alt="Heroes, a language for the age of agents.">
   </picture>
 </p>
 
@@ -25,7 +25,7 @@
   <a href="examples/">The examples</a>
 </p>
 
-A language for the age of LLMs, designed so that **every plausible mistake a
+A language for the age of agents, designed so that **every plausible mistake a
 model makes is a compile error**.
 
 Not a language that tolerates a machine writing it. Its surface is chosen so
