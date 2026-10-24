@@ -140,11 +140,19 @@ constant RECORD: [str]
 # and `M8Eb`. Their bytes are chosen by the cipher and the key, so the claim
 # above holds of them; the prose they hold is the author's and no model's,
 # readable only by `tests/harness/thesis.hero` with the key.
+#
+# **And the two sealed transcripts of the first held-out run**, for the same
+# reason (M-thesis-harness step 13, 2026-10-24): `runs/c24a5b81.enc`, the
+# primary's, holds **2,176** such places by the same boundary and
+# `runs/c1e3d004.enc`, the variants', **875**, sealed under `HEROES_RUNS_KEY`
+# since a transcript holds the tasks' prose.
 constant GENERATED: [str]
     [
         "site/package-lock.json"
         "tests/thesis/held-out/suite.enc"
         "tests/thesis/held-out/reserve.enc"
+        "tests/thesis/held-out/runs/c24a5b81.enc"
+        "tests/thesis/held-out/runs/c1e3d004.enc"
     ]
 
 # The blessed emissions: 5.4 MB of generated C, derived from the
