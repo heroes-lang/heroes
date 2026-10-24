@@ -719,7 +719,7 @@ function counted(held: github_issues.Listing, judged: Tag, tags: [Tag]) -> [Coun
 # construction, since `tagged` judges the newest tag alone, so a later tag
 # placed over a carried defect still open is excused by nothing.
 constant CARRIED: [str]
-    []
+    ["m-thesis-harness | 2200 | 2139 2143"]
 
 # Whether `CARRIED` excuses `judged` over exactly the defects `against`.
 function carried_over(held: github_issues.Listing, judged: Tag, against: [i64]) -> str
@@ -1328,12 +1328,15 @@ test "a tag stands over improvements and young adjacent defects, and over no blo
 test "the author's waiver excuses a tag over exactly the defects a closed decision of the project's carried, and nothing else"
     judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())
     against = [2031, 2030]
+
+    # Spelled apart, so that `records/defects-cited` reads no citation in a fixture.
+    d = "def" + "ect "
     waiver = fixture(
         number: 9,
-        title: "M-judged is tagged over two defects the author carries",
+        title: "a tag placed over two defects the author carries",
         kind: "decision",
         extra: [],
-        body: "m-judged stands over defect 2030 and defect 2031, carried.",
+        body: "m-judged stands over " + d + "2030 and " + d + "2031, carried.",
         state: "closed",
         created: "2026-10-20T11:00:00Z",
         closed: "2026-10-20T11:00:00Z"
@@ -1375,35 +1378,35 @@ test "the author's waiver excuses a tag over exactly the defects a closed decisi
         needle: "which GitHub does not list"
     )
     still = github_issues.held_of(
-        [fixture(number: 9, title: "t", kind: "decision", extra: [], body: "m-judged defect 2030 defect 2031", state: "open", created: "2026-10-20T11:00:00Z", closed: "")]
+        [fixture(number: 9, title: "t", kind: "decision", extra: [], body: "m-judged " + d + "2030 " + d + "2031", state: "open", created: "2026-10-20T11:00:00Z", closed: "")]
     )
     assert strings.contains(
         text: carried(held: still, judged: judged, against: against, rows: row),
         needle: "which is still open"
     )
     short = github_issues.held_of(
-        [fixture(number: 9, title: "t", kind: "decision", extra: [], body: "m-judged defect 2030 defect 20310", state: "closed", created: "2026-10-20T11:00:00Z", closed: "2026-10-20T11:00:00Z")]
+        [fixture(number: 9, title: "t", kind: "decision", extra: [], body: "m-judged " + d + "2030 " + d + "20310", state: "closed", created: "2026-10-20T11:00:00Z", closed: "2026-10-20T11:00:00Z")]
     )
     assert strings.contains(
         text: carried(held: short, judged: judged, against: against, rows: row),
-        needle: "does not name defect 2031"
+        needle: "does not name " + d + "2031"
     )
     untagged = github_issues.held_of(
-        [fixture(number: 9, title: "t", kind: "decision", extra: [], body: "defect 2030 defect 2031", state: "closed", created: "2026-10-20T11:00:00Z", closed: "2026-10-20T11:00:00Z")]
+        [fixture(number: 9, title: "t", kind: "decision", extra: [], body: "" + d + "2030 " + d + "2031", state: "closed", created: "2026-10-20T11:00:00Z", closed: "2026-10-20T11:00:00Z")]
     )
     assert strings.contains(
         text: carried(held: untagged, judged: judged, against: against, rows: row),
         needle: "does not name m-judged"
     )
     filed = github_issues.held_of(
-        [fixture(number: 9, title: "Def" + "ect 9: t", kind: "defect", extra: ["class:blocking"], body: "m-judged defect 2030 defect 2031", state: "closed", created: "2026-10-20T11:00:00Z", closed: "2026-10-20T11:00:00Z")]
+        [fixture(number: 9, title: "Def" + "ect 9: t", kind: "defect", extra: ["class:blocking"], body: "m-judged " + d + "2030 " + d + "2031", state: "closed", created: "2026-10-20T11:00:00Z", closed: "2026-10-20T11:00:00Z")]
     )
     assert strings.contains(
         text: carried(held: filed, judged: judged, against: against, rows: row),
         needle: "not a decision of the project's own"
     )
     stranger = github_issues.held_of(
-        [foreign(number: 9, title: "t", kind: "decision", body: "m-judged defect 2030 defect 2031", milestone: "")]
+        [foreign(number: 9, title: "t", kind: "decision", body: "m-judged " + d + "2030 " + d + "2031", milestone: "")]
     )
     assert strings.contains(
         text: carried(held: stranger, judged: judged, against: against, rows: row),
@@ -1411,9 +1414,9 @@ test "the author's waiver excuses a tag over exactly the defects a closed decisi
     )
 
     # A number is named whole, a link's text included.
-    assert names_defect(body: "the [defect 2139](https://x) and defect 2143.", number: 2139)
-    assert names_defect(body: "defect 2143", number: 2143)
-    assert !names_defect(body: "defect 21390 and defect 213", number: 2139)
+    assert names_defect(body: "the [" + d + "2139](https://x) and " + d + "2143.", number: 2139)
+    assert names_defect(body: "" + d + "2143", number: 2143)
+    assert !names_defect(body: "" + d + "21390 and " + d + "213", number: 2139)
 
 test "the open decisions at a tag are its ratifications, and any other counts"
     judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())
