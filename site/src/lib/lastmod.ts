@@ -38,6 +38,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { repoRoot, isFile } from './repo.ts';
 import { examples } from './examples-model.ts';
+import { CHAIN_FILE, CHAIN_ROW_PATTERN } from './chain.ts';
 
 /**
  * The history is deep enough to date a page, or the build stops before it runs.
@@ -199,6 +200,39 @@ export function sourcesFor(pathname: string): string[] {
 }
 
 /**
+ * When the chain last changed: the newest commit whose diff of its file adds
+ * or removes a row (`chain.ts`, `CHAIN_ROW_PATTERN`).
+ *
+ * The project page renders the chain, so a closed milestone is the page
+ * changing although its fragment and its wrapper never move; that is the
+ * specification page's case below, a page that renders a file. The FILE is not
+ * the source, though, and the reason is this module's own: 317 commits touched
+ * it in thirty days and 24 of them a row (measured 2026-10-24), so dating the
+ * page by the file would move its date thirteen times as often as the page
+ * moved, the build-time stamp again in miniature. `--follow` reads through a
+ * rename, so the day the file moves is not a day the chain changed.
+ */
+let cachedChain: Date | null = null;
+
+function chainChanged(): Date {
+  if (cachedChain !== null) return cachedChain;
+
+  assertHistoryAvailable();
+  const said = execFileSync('git', ['log', '-1', '--follow', '--format=%cI', '-G', CHAIN_ROW_PATTERN, '--', CHAIN_FILE], {
+    cwd: repoRoot(),
+    encoding: 'utf8',
+  }).trim();
+  if (said === '') {
+    throw new Error(
+      `no commit changes a row of ${CHAIN_FILE} by git's reading of ${CHAIN_ROW_PATTERN}.\n` +
+        `  The pattern no longer reads a row, and the project page would be dated by its wrapper alone.`
+    );
+  }
+  cachedChain = new Date(said);
+  return cachedChain;
+}
+
+/**
  * When the page at this address last changed: the newest of its own sources.
  *
  * A directory source counts every file under it, because adding a file to an
@@ -213,6 +247,12 @@ export function lastmodFor(pathname: string): Date {
       if (path !== source && !path.startsWith(`${source}/`)) continue;
       if (best === null || date > best) best = date;
     }
+  }
+
+  const bare = pathname.startsWith('/it/') ? pathname.slice(3) : pathname;
+  if (bare === '/project/') {
+    const chain = chainChanged();
+    if (best === null || chain > best) best = chain;
   }
 
   return best ?? newest(dates);

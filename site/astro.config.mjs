@@ -9,6 +9,7 @@ import { lastmodFor, assertHistoryAvailable, assertSitemapDated } from './src/li
 import { assertHeadsUsable } from './src/lib/seo.ts';
 import { assertScriptsHonest } from './src/lib/scripts.ts';
 import { assertCrumbsMatchTheNav } from './src/lib/crumbs.ts';
+import { assertTriggersCoverReads } from './src/lib/triggers.ts';
 
 const ORIGIN = 'https://heroes-lang.org';
 
@@ -214,6 +215,24 @@ function crumbAudit() {
   };
 }
 
+// The deploy publishes the site on a push that touches one of its `paths:`, and
+// this build reads files from all over the repository. `src/lib/triggers.ts`
+// holds the two to each other at the end of every build: a read the list does
+// not name is a page nobody republishes, and a path nothing reads is a deploy
+// that changes nothing. LISTED LAST, because hooks of one name run in
+// integration order and the audits above read files too: a read made after
+// this hook ran would be a read nobody held to the list.
+function triggersAudit() {
+  return {
+    name: 'heroes:triggers',
+    hooks: {
+      'astro:build:done': ({ logger }) => {
+        logger.info(assertTriggersCoverReads());
+      },
+    },
+  };
+}
+
 export default defineConfig({
   site: ORIGIN,
 
@@ -257,5 +276,6 @@ export default defineConfig({
       },
     }),
     lastmodAudit(),
+    triggersAudit(),
   ],
 });

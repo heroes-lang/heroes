@@ -37,8 +37,8 @@ Refusals, not trade-offs; no measurement and no deadline outranks them.
   (CL-041), and an open one is told what this one will touch, file or push
   before it does (author, 2026-10-12; `.claude/rules/records.md` § Two habits).
 - **Pushing `main`, publishing the site, anything outward-facing: asked for,
-  every time.** A push touching `site/`, `examples/` or `spec/` publishes the
-  site: `.github/workflows/deploy-site.yml`. Say how many site commits would
+  every time.** A push touching a path in `.github/workflows/deploy-site.yml`'s
+  `paths:`, every file the site's build reads, publishes the site. Say how many site commits would
   travel and wait for the yes **before committing**, because a peer session's
   push publishes the branch (CL-042, CL-073). **The repository is public since
   2026-09-08** (M-open-repository), so every push is outward-facing and a commit

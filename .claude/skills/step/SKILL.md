@@ -218,9 +218,10 @@ Milestone close — the checklist (this is its only copy):
 - **tag `m-<name>` LOCALLY, and stop there.** This bullet said *push
   `--follow-tags`* until 2026-09-07, and that command pushes the branch as well
   as its tags: the site lives on this branch and
-  `.github/workflows/deploy-site.yml` publishes it on any push touching `site/`,
-  `examples/`, `spec/heroes-spec.md` or `selfhost/keywords.hero`, so a close
-  that followed this checklist to the letter published the site without asking. The push is asked for, with how many site
+  `.github/workflows/deploy-site.yml` publishes it on any push touching a path
+  its `paths:` names, every file the site's build reads, the ROADMAP a close
+  writes among them since 2026-10-24, so a close that followed this checklist
+  to the letter published the site without asking. The push is asked for, with how many site
   commits would travel, and it carries the tag when the author says yes
   (CLAUDE.md § Hard stops, `docs/records/contract/case-law.md` CL-042);
 - site build log: only when the author asks (`site/README.md`).

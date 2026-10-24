@@ -549,7 +549,7 @@ a separate staging project.
 
 | file | what it does |
 |---|---|
-| `.github/workflows/deploy-site.yml` | on push to `main` touching `site/**`, `examples/**`, `selfhost/keywords.hero` or `spec/heroes-spec.md`, and on demand: `npm ci`, `npm run build`, `wrangler pages deploy dist`. The three paths outside `site/` are there because the examples browser reads them, so a change to a program changes a page |
+| `.github/workflows/deploy-site.yml` | on push to `main` touching any file the build reads, its `paths:`, which the build holds to its reads (`src/lib/triggers.ts`), and on demand: `npm ci`, `npm run build`, `wrangler pages deploy dist`. The paths outside `site/` are there because the build reads them, so a change to one of them changes a page |
 | `.github/workflows/release-site.yml` | `git tag site-v1 && git push origin site-v1` ships the tree by hand |
 
 Three details in there are load-bearing and each one fails **silently** if moved:
@@ -582,8 +582,14 @@ compiler from seed and running the net to answer a question no file under
 ignore list is safe by default, and a new directory of real code stays covered
 without anybody remembering to add it.
 
-`deploy-site.yml` runs `npm run build` on every push that touches `site/`, so a
-site that does not build is a red workflow rather than a bad deploy. Now that the
+`deploy-site.yml` runs `npm run build` on every push that touches a file the
+build reads, so a site that does not build is a red workflow rather than a bad
+deploy. **Its `paths:` are every such file, and the build checks them** since
+2026-10-24 (`src/lib/triggers.ts`): `src/lib/repo.ts` writes down every
+repository path it reads, and the build fails on a read the list does not name,
+which would change a page nobody republishes, and on a line of the list that
+nothing read. The list had been widened by hand four times, each after a page
+went stale, and was found nine paths short the day the chain page was. Now that the
 site is public that is the only thing standing between a bad commit and a live
 page, which is worth knowing before editing a template.
 
@@ -1342,7 +1348,8 @@ directory, and it is done in one place.
 
 | module | what it does |
 |---|---|
-| `src/lib/repo.ts` | finds the repository root by walking up from the working directory to the directory holding `examples/README.md`, `spec/heroes-spec.md` and `CLAUDE.md` together, and reads bytes from there. The only module that reads outside `src/` |
+| `src/lib/repo.ts` | finds the repository root by walking up from the working directory to the directory holding `examples/README.md`, `spec/heroes-spec.md` and `CLAUDE.md` together, and reads bytes from there. The only module that reads outside `src/`, and it writes down every path it reads for `triggers.ts` |
+| `src/lib/triggers.ts` | holds `.github/workflows/deploy-site.yml`'s `paths:` to the build's reads, at the end of the build: every read under a path the workflow names, every path it names read. Two shapes only, an exact path and `dir/**`; any other is refused rather than guessed |
 | `src/lib/tables.ts` | parses the keyword table out of `selfhost/keywords.hero` and the type words out of `spec/heroes-spec.md` § Types, with a floor and a shape assertion on each, so the site holds no copy of the language |
 | `src/lib/markdown.ts` | the specification page's colouring, and `assertVerbatim`: take the text back out of the HTML and compare it with what went in, so the one page whose argument is byte fidelity cannot ship a colouring that moved a byte. Four accents, the stylesheet's own: a heading takes the keyword red, a code span or fence the literal gold, a table's pipes and rules the dim, and `**bold**` is bold with its asterisks kept, because the page shows the source a reader pastes |
 | `src/lib/chain.ts` | the chain, read out of `docs/ROADMAP.md` § The chain, with four assertions because a parse that quietly reads nothing renders an empty table: sixty rows at least, forty closed at least, at most one `**OPEN**`, and no gap in the numbering. **The trailing `|` is optional and that is the hole it fell into first**: nine of the seventy rows do not carry one, markdown renders a row either way, and a reader that demanded it read nine milestones fewer in silence |
@@ -1392,9 +1399,9 @@ records what those files print, and they say so.
 file, for whatever reads this site next. It has no date field: the hashes are
 the timestamp.
 
-The deploy workflow triggers on `examples/**`, `selfhost/keywords.hero` and
-`spec/heroes-spec.md` as well as on `site/**`, because a change to any of those
-changes a page.
+The deploy workflow triggers on `examples/**` as well as on `site/**`, because a
+change there changes a page, and on every other file the build reads for the
+same reason; the build holds that list to its reads (`src/lib/triggers.ts`).
 
 ## Keeping it current — on demand, not per milestone
 

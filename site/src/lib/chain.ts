@@ -62,10 +62,22 @@ function firstClause(notes: string): string {
   return text.replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * The file the chain is read out of, named once, and what a row of it looks
+ * like in a diff. `lastmod.ts` dates the project page by the newest commit that
+ * added or removed a row, because the table is the part of the file the page
+ * renders: measured 2026-10-24, 317 commits touched the file in thirty days and
+ * 24 of them a row. The pipe is written `[|]`, which reads the same as an
+ * extended or a basic expression; git reads `-G` as an extended one, and refused
+ * `^| ` as an empty alternative the day this was written.
+ */
+export const CHAIN_FILE = 'docs/ROADMAP.md';
+export const CHAIN_ROW_PATTERN = '^[|] [0-9][0-9]* [|]';
+
 export function chain(): ChainRow[] {
-  const text = readText('docs/ROADMAP.md');
+  const text = readText(CHAIN_FILE);
   const start = text.indexOf('\n## The chain');
-  if (start < 0) throw new Error('docs/ROADMAP.md: no `## The chain` section to read the milestones from.');
+  if (start < 0) throw new Error(`${CHAIN_FILE}: no \`## The chain\` section to read the milestones from.`);
   const after = text.slice(start);
   const end = after.indexOf('\n## ', 1);
   const section = end < 0 ? after : after.slice(0, end);
@@ -88,17 +100,17 @@ export function chain(): ChainRow[] {
 
   if (rows.length < FLOOR_ROWS) {
     throw new Error(
-      `docs/ROADMAP.md § The chain: read ${rows.length} milestone rows and the floor is ${FLOOR_ROWS}.\n` +
+      `${CHAIN_FILE} § The chain: read ${rows.length} milestone rows and the floor is ${FLOOR_ROWS}.\n` +
         `  a parse that falls apart renders an empty table, which is why there is a floor instead of trust.`
     );
   }
   const done = rows.filter((r) => r.state === 'done').length;
   if (done < FLOOR_DONE) {
-    throw new Error(`docs/ROADMAP.md § The chain: only ${done} rows read as closed, and the floor is ${FLOOR_DONE}.`);
+    throw new Error(`${CHAIN_FILE} § The chain: only ${done} rows read as closed, and the floor is ${FLOOR_DONE}.`);
   }
   rows.forEach((r, i) => {
     if (r.number !== i + 1) {
-      throw new Error(`docs/ROADMAP.md § The chain: row ${i + 1} is numbered ${r.number}, so the sequence has a gap.`);
+      throw new Error(`${CHAIN_FILE} § The chain: row ${i + 1} is numbered ${r.number}, so the sequence has a gap.`);
     }
   });
   return rows;

@@ -92,7 +92,8 @@ on:
     # remembered to add.
     #
     # `site/` still has its own gate: `.github/workflows/deploy-site.yml` runs
-    # `npm run build` on every push that touches it, so a site that does not
+    # `npm run build` on every push that touches a file the site's build reads,
+    # its `paths:`, which that build holds to its reads, so a site that does not
     # build is a red workflow rather than a bad deploy.
     paths-ignore:
       - 'site/**'

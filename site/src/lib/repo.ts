@@ -19,7 +19,7 @@
  * (CLAUDE.md § 11, a narrowing asks the value and never the world).
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname, sep } from 'node:path';
 
 /**
@@ -78,8 +78,37 @@ export function absolute(relative: string): string {
   return join(repoRoot(), ...relative.split('/'));
 }
 
+/**
+ * Every repository path this build reads, written down as it is read, for the
+ * end-of-build audit that holds `.github/workflows/deploy-site.yml`'s `paths:`
+ * to them (`triggers.ts`).
+ *
+ * A FILE rather than a Set, for the reason `claims.ts` gives for its own: the
+ * pages run this code from Astro's prerender bundle and the build-done hook
+ * imports it from source, so the two never share a module's memory, and what
+ * they share is the output directory. The Set below only keeps one instance of
+ * this module from writing a path twice. The audit reads the file and deletes
+ * it, so it never ships.
+ *
+ * The output is not an input: a read under `site/dist/` is the build reading
+ * what it wrote, and nothing a push changes.
+ */
+export const READS_FILE = 'site/dist/.reads';
+
+const recorded = new Set<string>();
+
+function record(relative: string): void {
+  if (relative === 'site/dist' || relative.startsWith('site/dist/')) return;
+  if (recorded.has(relative)) return;
+  recorded.add(relative);
+  const file = absolute(READS_FILE);
+  mkdirSync(dirname(file), { recursive: true });
+  appendFileSync(file, `${relative}\n`);
+}
+
 /** The bytes of a repository-relative file. The fingerprint hashes these. */
 export function readBytes(relative: string): Buffer {
+  record(relative);
   return readFileSync(absolute(relative));
 }
 
@@ -96,6 +125,9 @@ export function readText(relative: string): string {
 
 /** Whether a repository-relative path is a regular file. */
 export function isFile(relative: string): boolean {
+  // Asked of a path that may not exist, and recorded all the same: a file whose
+  // absence a page depends on changes the page the day somebody creates it.
+  record(relative);
   try {
     return statSync(absolute(relative)).isFile();
   } catch {
@@ -105,6 +137,7 @@ export function isFile(relative: string): boolean {
 
 /** The repository-relative names of the directories directly inside `relative`. */
 export function directoriesIn(relative: string): string[] {
+  record(relative);
   return readdirSync(absolute(relative), { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
     .map((entry) => `${relative}/${entry.name}`)
@@ -113,6 +146,7 @@ export function directoriesIn(relative: string): string[] {
 
 /** The repository-relative names of the regular files directly inside `relative`. */
 export function filesIn(relative: string): string[] {
+  record(relative);
   return readdirSync(absolute(relative), { withFileTypes: true })
     .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
     .map((entry) => `${relative}/${entry.name}`)
@@ -130,6 +164,7 @@ export function filesIn(relative: string): string[] {
  * fingerprint nobody can check.
  */
 export function walk(relative: string): string[] {
+  record(relative);
   const out: string[] = [];
 
   const visit = (dir: string) => {

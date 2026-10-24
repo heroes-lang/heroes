@@ -119,7 +119,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets; their temporary folders, made and removed by the tests themselves in the system's temporary directory, are the author's one exception (2026-10-09) to CLAUDE.md § Hard stops' *no file outside this repository's root*, since two tests ask how a file outside every tree is judged |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero`, which runs the issue program's own, `tests/harness/issues.hero`'s, inside it since defect 2064, and the thesis instrument's own, `tests/harness/thesis.hero`'s, since M-thesis-harness (2026-10-20), and `canonical`, plus what `tests/**` gets |
 | `tests/thesis/**` (the assistant's task suite, `tests/harness/thesis.hero`'s input) | **the net's own tests** (the instrument's end-to-end tests read the suite), `-- dry tests/thesis` in the strict and the control arm (every reference passes every case and every hand mutant ends as its opening lines say), `records` for its `.md`, `unseen`, plus what `tests/**` gets; a held-out archive under it is text the instrument alone opens |
-| a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push; and `spec` for `site/README.md`, whose headings a `§` citation names |
+| a file the site's build reads, every path in `.github/workflows/deploy-site.yml`'s `paths:` (the build holds that list to its reads since 2026-10-24, `site/src/lib/triggers.ts`; until then this cell named the files `claims.ts` lists at its top), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push; and `spec` for `site/README.md`, whose headings a `§` citation names |
 
 **The paths a suite names have been read from the tree since 2026-10-08, and
 `tests/harness` was the first one found missing** (defect 486, lane
@@ -475,8 +475,8 @@ filed and repaired in a later batch. So, from batch 16:
 1. **Before the push**: gate A (the seed over two generations, its fixpoint,
    the compiler's own tests, the net's own tests) and gate B (the full net,
    its suites four at a time, `run` first since it is the critical path,
-   `cache` alone after), and the site's build when a file `claims.ts` names
-   moved, a push publishing the site; and, where the batch moved the emitted
+   `cache` alone after), and the site's build when a file it reads moved,
+   `deploy-site.yml`'s `paths:`, a push publishing the site; and, where the batch moved the emitted
    C, the Linux bless of the emissions of the cases this Mac skips (`/step`
    § 5's checklist, the author's instruction of 2026-10-11, after defects 558
    and 604). Nothing else. Measured the first day:
@@ -756,7 +756,7 @@ fast-forward the trunk: same tree, no second gate):
    rule is judged by every golden tree*, done with one instrument), run with
    `xargs -P 8`;
 4. the formatter's probe by hand if `selfhost/print/` moved, the site's build if
-   a file `claims.ts` reads moved (both above);
+   a file it reads moved, `deploy-site.yml`'s `paths:` (both above);
 5. then the Linux x86-64 container (`.claude/rules/platforms.md`).
 
 **Red**: the batch's commits are linear in its lane, one per defect. `git bisect`

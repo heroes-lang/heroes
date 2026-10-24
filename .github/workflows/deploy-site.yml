@@ -26,29 +26,46 @@ name: Deploy site
 # question `ci.yml`'s header states; it does not change this job either way,
 # which runs on Linux and takes seconds.
 #
-# Triggered when the site or what it shows changes, on demand from the Actions
-# tab, and from
-# `release-site.yml` when a `site-v*` tag is pushed.
+# Triggered when anything the site's build reads changes, on demand from the
+# Actions tab, and from `release-site.yml` when a `site-v*` tag is pushed.
 
 on:
   push:
     branches: [main]
-    # The site is no longer built out of site/ alone. Since the examples
-    # browser landed, `npm run build` reads examples/ for the programs it shows,
-    # selfhost/keywords.hero for the keyword table it colours by, and
-    # spec/heroes-spec.md for the type words. A change to any of those changes a
-    # page, so a deploy that watched only site/ would serve yesterday's corpus.
-    # selfhost/main.hero holds VERSION, which the home and start pages print:
-    # a release whose spec did not move changes that file alone, and until
-    # 2026-10-12 it deployed nothing, so the pages kept the old number. The
-    # project page's sizes (modules, lines, sittings) are read from the tree
-    # too, floored, so they stay true between deploys and need no trigger.
+    # EVERY PATH THE SITE'S BUILD READS, AND THE BUILD CHECKS IT, since
+    # 2026-10-24 (`site/src/lib/triggers.ts`). Every read goes through
+    # `site/src/lib/repo.ts`, which writes it down, and the build fails on a
+    # read this list does not cover and on a line here that nothing read. Two
+    # shapes only, an exact path and `dir/**`; any other is refused, not guessed.
+    #
+    # What the build reads beyond site/: examples/ for the programs it shows;
+    # the compiler's own sources for the keywords it colours by, the version
+    # and the verbs it prints, the sizes of the project page, and the claims it
+    # checks; the spec and its suite for the type words and the ceiling; the
+    # ROADMAP for the chain on the project page; the panel's seats and its
+    # sittings; the sealed suite's hashes and prediction on the Measured page;
+    # the measurements figures are cut from; ci.yml for the platforms it names.
+    #
+    # Until that day this list was kept by hand, and was widened four times,
+    # each after a page had gone stale: examples/, the keyword table, the spec,
+    # and selfhost/main.hero, whose VERSION a release changes alone and which
+    # deployed nothing until 2026-10-12. On 2026-10-20 the chain page was found
+    # stale the same way, the ROADMAP not on the list, and the build turned out
+    # to read nine more paths that were not; the project page's sizes had been
+    # left off on purpose, being floored, but a floor holds only while the tree
+    # grows.
     paths:
       - 'site/**'
       - 'examples/**'
-      - 'selfhost/keywords.hero'
-      - 'selfhost/main.hero'
+      - 'selfhost/**'
       - 'spec/heroes-spec.md'
+      - 'tests/harness/suite_spec.hero'
+      - 'tests/thesis/held-out/**'
+      - 'docs/ROADMAP.md'
+      - 'docs/panel/**'
+      - 'docs/measurements/**'
+      - '.claude/agents/**'
+      - '.github/workflows/ci.yml'
       - '.github/workflows/deploy-site.yml'
   workflow_dispatch:
   workflow_call:
