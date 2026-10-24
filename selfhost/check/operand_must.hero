@@ -1,0 +1,102 @@
+# The `.must()` an operator offers its fallible operand (defect 2186;
+# design.md §4.6, §4.14, §4.17). `to_i64(c) - 48` is refused because `-`
+# takes no `i64?`, and the repair is the one `check/mismatch.hero` offers a
+# binding that wants an `i64` and holds an `i64?`: `.must()` on that operand,
+# a GUESS (panel 043), since aborting, `?`, `.default(v)` and a `match` are
+# the four answers §4.6 gives and which one is meant is the author's. Until
+# this module the operator's refusal named the `i64?` and offered nothing.
+#
+# Offered only where it repairs: every fallible operand read as its payload
+# makes an operation the operator takes, asked of the types in hand and never
+# of the expression's shape. `to_u8(3) < to_u8(4)` is offered one fix per
+# operand, and `to_u8(300) == c` one on its left, the side that is fallible,
+# where the mismatch alone names `u8?` as what was expected.
+
+use token
+use diag
+use ast
+use source
+use check/table
+use check/state
+
+# The fixes for the refusal `ops.binary` pushed after `before` diagnostics.
+function after_binary(@c: state.Checker, s: source.Source, decls: [ast.Decl], before: i64, op: ast.BinaryOp, left: i64, right: i64, left_span: token.Span, right_span: token.Span)
+    if !refused_once(c, before)
+        return
+    l = payload_of(c, left)
+    r = payload_of(c, right)
+
+    if l == left && r == right || !binary_takes(c, op, left: l, right: r)
+        return
+
+    if l != left
+        offer(@c, s, decls, span: left_span, payload: l)
+
+    if r != right
+        offer(@c, s, decls, span: right_span, payload: r)
+
+# The fix for the refusal `ops.unary` pushed after `before` diagnostics.
+function after_unary(@c: state.Checker, s: source.Source, decls: [ast.Decl], before: i64, op: ast.UnaryOp, operand: i64, operand_span: token.Span)
+    if !refused_once(c, before)
+        return
+    payload = payload_of(c, operand)
+
+    if payload != operand && unary_takes(c, op, operand: payload)
+        offer(@c, s, decls, span: operand_span, payload: payload)
+
+# The operator's own check pushed exactly one diagnostic, and it is the
+# refusal of a type: a `partial` record's `==` or a type parameter's is told
+# with its own code, and a `.must()` would leave either standing.
+function refused_once(c: state.Checker, before: i64) -> bool
+    if c.out.diagnostics.len() != before + 1
+        return false
+    code = c.out.diagnostics[before].code
+    return code == "bad_operand" || code == "type_mismatch"
+
+# The `.must()` on one operand, added to the refusal just pushed, worded as
+# `check/mismatch.hero` words it.
+function offer(@c: state.Checker, s: source.Source, decls: [ast.Decl], span: token.Span, payload: i64)
+    at = c.out.diagnostics.len() - 1
+    shown = state.show(c, s, decls, payload)
+    fix = diag.Fix(
+        title: "`.must()` — abort on the error case, giving `" + shown + "`",
+        replacement: source.span_text(s, span) + ".must()",
+        span: span,
+        certainty: .guess
+    )
+    c.out.diagnostics[at].fixes @ c.out.diagnostics[at].fixes.push(fix)
+
+# A `T?`'s `T`, and any other type itself.
+function payload_of(c: state.Checker, ty: i64) -> i64
+    return match table.get(c.out.types, ty)
+        .fallible f                                               => f.payload
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => ty
+        .array | .fixed | .map | .function_ty | .named | .case_ty => ty
+        .failure | .generic | .error                              => ty
+
+# What `ops.binary` takes, for two operands of these types: one type both
+# sides, and the operator's own set (§4.14).
+function binary_takes(c: state.Checker, op: ast.BinaryOp, left: i64, right: i64) -> bool
+    if left != right
+        return false
+
+    return match op
+        .add                                              => numeric(c, left) || table.get(c.out.types, left) == .str
+        .sub | .mul | .div | .rem | .lt | .le | .gt | .ge => numeric(c, left)
+        .eq | .ne                                         => true
+        .and | .or                                        => left == table.bool_ty(c.out.types)
+        .bit_and | .bit_or | .bit_xor | .shl | .shr       => left == table.int_ty_id(c.out.types)
+
+# What `ops.unary` takes.
+function unary_takes(c: state.Checker, op: ast.UnaryOp, operand: i64) -> bool
+    return match op
+        .neg     => numeric(c, operand)
+        .not     => operand == table.bool_ty(c.out.types)
+        .bit_not => operand == table.int_ty_id(c.out.types)
+
+function numeric(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .int_ty | .float_ty                                   => true
+        .bool | .str | .ptr | .cstr | .unit | .array | .fixed => false
+        .map | .fallible | .function_ty | .named | .case_ty   => false
+        .failure | .generic | .error                          => false

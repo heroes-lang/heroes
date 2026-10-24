@@ -160,7 +160,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             return state.record_expr(
                 @c,
                 at: id,
-                ty: ops.unary(@c, s, decls, u.op, operand: operand_ty, span: span)
+                ty: ops.unary_at(@c, s, decls, a, id: id, operand: operand_ty)
             )
         .binary =>
             # Every binary operator wants both operands to be one type, so
@@ -631,7 +631,7 @@ function operator_type(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
             else
                 left_ty @ operand_type(@c, a, r, s, decls, id: b.left, takes: takes)
                 right_ty @ operand_type(@c, a, r, s, decls, id: b.right, takes: takes)
-            return ops.binary(@c, s, decls, b.op, left: left_ty, right: right_ty, span: a.exprs[id].span)
+            return ops.binary_at(@c, s, decls, a, id: id, left: left_ty, right: right_ty)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
         .name | .hole | .unary | .field | .field_name | .index | .call | .method       => fall_through()
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => fall_through()

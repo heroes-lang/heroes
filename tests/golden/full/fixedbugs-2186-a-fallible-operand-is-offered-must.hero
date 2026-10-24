@@ -1,0 +1,20 @@
+# Defect 2186, 2026-10-21: `to_i64(c) - 48` was told `bad_operand` for its
+# `i64?` with no fix, where the same `i64?` bound to an `i64` is offered
+# `.must()`. An operator refusing a fallible operand is offered that guess on
+# the operand wherever every fallible operand read as its payload makes an
+# operation the operator takes: either side, both, a comparison, a unary
+# minus, a `str?` joined, and the `==` whose mismatch names the other side as
+# the one expected; never where the payload is refused too, `to_i64(c) - 1.5`
+# and `!` on a `str?`.
+
+function main()
+    c: u8 = 55
+    _ = to_i64(c) - 48  #~ bad_operand
+    _ = 48 - to_i64(c)  #~ bad_operand
+    _ = to_i64(c) * to_i64(c)  #~ bad_operand
+    _ = to_i64(c) < 5  #~ bad_operand
+    _ = -to_i64(c)  #~ bad_operand
+    _ = "a" + read_file(path: "f")  #~ bad_operand
+    _ = to_u8(300) == c  #~ type_mismatch
+    _ = to_i64(c) - 1.5  #~ bad_operand
+    _ = !read_file(path: "f")  #~ bad_operand

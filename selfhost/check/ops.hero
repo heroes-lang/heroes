@@ -24,6 +24,7 @@ use check/type_fit
 use check/partial
 use value_errors
 use ffi_errors
+use check/operand_must
 
 # Is this type a type parameter itself? Total on Ty by construction, and
 # every other arm is `false` rather than a `_ =>`: a new type kind must be
@@ -35,6 +36,55 @@ function is_type_parameter(c: state.Checker, ty: i64) -> bool
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => false
         .array | .fixed | .map | .fallible | .function_ty | .named => false
         .case_ty | .failure | .error                               => false
+
+# The walk's entry for the binary operator at `id`: `binary`, then the
+# `.must()` its refusal of a fallible operand owes (`check/operand_must.hero`,
+# defect 2186), which needs where each operand stands.
+function binary_at(@c: state.Checker, s: source.Source, decls: [ast.Decl], a: ast.Ast, id: i64, left: i64, right: i64) -> i64
+    before = c.out.diagnostics.len()
+
+    match a.exprs[id].kind
+        .binary b =>
+            ty = binary(@c, s, decls, b.op, left: left, right: right, span: a.exprs[id].span)
+            left_span = a.exprs[b.left].span
+            right_span = a.exprs[b.right].span
+            operand_must.after_binary(
+                @c,
+                s,
+                decls,
+                before: before,
+                op: b.op,
+                left: left,
+                right: right,
+                left_span: left_span,
+                right_span: right_span
+            )
+            return ty
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => assert false
+        .name | .hole | .unary | .field | .field_name | .index | .call | .method       => assert false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => assert false
+
+# The walk's entry for the unary operator at `id`, as `binary_at` is for a
+# binary one.
+function unary_at(@c: state.Checker, s: source.Source, decls: [ast.Decl], a: ast.Ast, id: i64, operand: i64) -> i64
+    before = c.out.diagnostics.len()
+
+    match a.exprs[id].kind
+        .unary u =>
+            ty = unary(@c, s, decls, u.op, operand: operand, span: a.exprs[id].span)
+            operand_must.after_unary(
+                @c,
+                s,
+                decls,
+                before: before,
+                op: u.op,
+                operand: operand,
+                operand_span: a.exprs[u.operand].span
+            )
+            return ty
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => assert false
+        .name | .hole | .binary | .field | .field_name | .index | .call | .method      => assert false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => assert false
 
 function binary(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: ast.BinaryOp, left: i64, right: i64, span: token.Span) -> i64
     # A type that is already wrong was already reported: stay quiet
