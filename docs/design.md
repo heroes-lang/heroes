@@ -386,7 +386,10 @@ is unknown and no headroom claim means anything.
 
 Note what this leaves unaudited: §1.2's cost formula has two factors, and only the first is now
 measured. The rewrite rate needs a model in the loop, so until metric 2 runs the formula remains
-the design rule it always was and stops being an audited one (panel 011).
+the design rule it always was and stops being an audited one (panel 011). Metric 2 first ran on
+2026-10-24 (measurement 052): the rewrite rate read 0.198 on Sonnet 5.5 strict and 0.147 control,
+the round-trip's median 3,619 tokens (a correction turn's uncached input and its output, thinking
+included, by the run's own usage); the formula is audited from that day (panel 226's R12).
 
 **The discipline the number was proxying for survives independently of headroom: every addition
 still carries §1.0's burden of proof — compiler-need or a measured thesis effect — and a bigger
