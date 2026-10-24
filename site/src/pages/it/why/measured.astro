@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { page } from '../../../lib/figures.ts';
+import content from '../../../html/it/why/measured.html?raw';
+---
+<BaseLayout url="/it/why/measured/" title={"Misurato: che cosa Heroes ha verificato e che cosa no"} description={"Che cosa il progetto ha misurato della propria tesi, la prova scritta prima del giro, con la sua previsione e i suoi digest, e che cosa resta da dichiarare."} current="why">
+<Fragment set:html={page(content, 'site/src/html/it/why/measured.html')} />
+</BaseLayout>

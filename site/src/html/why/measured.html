@@ -1,0 +1,183 @@
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/why/">Why</a> / measured</p>
+
+  <div class="page-head">
+    <h1 class="page">Measured</h1>
+  </div>
+  <p class="lede">
+    The project&rsquo;s claim, held to account in public: what has been measured, what was written down before measuring, and what this page does not state yet. Every number on this page is copied from the file in the repository that measured it, and that file is named beside it.
+  </p>
+
+  <ul class="pillars">
+    <li><b>Measured: what the compiler catches.</b> It refuses the plausible mistakes its own rules exist for, and with those rules switched off the same mistakes get through. <a href="#mechanism">The mechanism&nbsp;&rarr;</a></li>
+    <li><b>Written down before measuring: the test of the claim.</b> The one number it will report, what each outcome will mean and what the author expects, frozen in a commit together with the sealed tasks. <a href="#preregistered">The rules of the test&nbsp;&rarr;</a></li>
+    <li><b>Tried, and not evidence: a practice run.</b> Ten practice tasks proved that the instrument works, and say nothing about the claim. <a href="#trial">The practice run&nbsp;&rarr;</a></li>
+    <li><b>Not on this page yet: the claim&rsquo;s own number.</b> It comes from the run on the sealed tasks, and is stated at the publication gate. <a href="#not-yet">Why not yet&nbsp;&rarr;</a></li>
+  </ul>
+
+  <h2 id="claim">The claim</h2>
+  <blockquote>
+    A language designed so that every plausible LLM mistake is a compile error
+    will produce working programs in fewer total tokens than a conventional
+    language, even if each program costs more tokens to write.
+  </blockquote>
+  <p>
+    An LLM is a large language model, the kind of AI model that writes code. Tokens are the pieces of text a model reads and generates. The claim rests on one formula from the project&rsquo;s <a href="https://github.com/heroes-lang/heroes/blob/main/docs/design.md#12-the-cost-formula">design document</a>:
+  </p>
+  <pre><code>real cost = program tokens × (1 + rewrite rate)</code></pre>
+  <p>
+    Shorter syntax reduces the tokens needed to write a file. Fixing an error requires more steps: the model reads the message, rereads the code, rewrites a function and tries compiling again. Avoiding a correction can therefore save more tokens than shorter syntax. <a href="/why/">The whole argument&nbsp;&rarr;</a>
+  </p>
+  <p>
+    The formula has two factors, and the design document says in its own words that only the first is measured. The second, how often a program has to be rewritten, needs a model in the loop, so until a model is put there the formula is a design rule and not an audited one. The test that puts a model in the loop is below, with its rules written down before it runs.
+  </p>
+
+  <h2 id="mechanism">Measured: what the compiler catches</h2>
+  <p>
+    <code>heroes mutate</code> takes working programs and plants one plausible mistake at a time: two arguments swapped, a name misspelled, a case forgotten. Then it asks whether the compiler refuses the result, twice: once with every rule, and once with the rules that are Heroes&rsquo; own switched off (<code>--permissive</code>), so the difference between the two is what those rules add. A mutant is one modified program, and <em>killed</em> means the compiler refused it. The tool gives a rate for each kind of mistake and warns never to pool them into one headline, because the rate for each kind is the measurement.
+  </p>
+  <p>
+    Read one kind at a time, the table shows three things. Some mistakes only Heroes&rsquo; own rules catch: a positional argument where a label was required, a name that hides another of the same spelling. Some ordinary checks already catch, a typo in a name or integers mixed with decimals, and there the rules add nothing and are not counted in their favour. And some no check catches, such as a typo inside a string, which the table reports as such. The table itself, every row in plain words and re-run each time it is published, lives in <a href="/docs/errors/#measured">the chapter on errors</a>.
+  </p>
+  <p>
+    What this measures is the compiler: whether it refuses a mistake a tool planted. It does not measure whether a model makes those mistakes, how often, or whether refusing them saves anything. That is the claim itself, and the test of it is the next section.
+  </p>
+
+  <h2 id="preregistered">Written down before measuring: the test of the claim</h2>
+  <p>
+    The claim is about models, so its test puts models in the loop. The project&rsquo;s design panel set the rules of that test and the author ratified them, before any model was run on the tasks it will be scored on; the rules are in <a href="https://github.com/heroes-lang/heroes/blob/main/docs/panel/226-metrics-2-and-4-measured-by-one-instrument-three-arms-forked-from-one-generation-the-control-arm-built-and-run-and-the-held-out-tasks-sealed-in-the-tree.md">the record of that sitting</a>. In plain words:
+  </p>
+  <ul class="pillars">
+    <li><b>Tasks kept out of sight.</b> 40 programming tasks written by the author, and twenty more in reserve, each described in English and judged by hidden cases: arguments and input files go in, the printed output and the exit code come out, and apart from the one example a task shows, the model never sees the cases. Every task tempts a plausible mistake on purpose. The tasks are sealed, as the next part shows, and no model had been given one before the run that scores them, as the author reports.</li>
+    <li><b>Heroes against itself, with its rules switched off.</b> The test does not set Heroes against another language. A model writes one program for a task, and that one program is judged three ways, the three arms of the test: <em>strict</em>, with every rule and the compiler&rsquo;s full message; <em>brief</em>, the same rules and a short message; and <em>control</em>, with the 27 rules that are Heroes&rsquo; own switched off, each given a fixed meaning so that the program is built and run anyway. Strict against brief is what the message is worth; brief against control is what the rules are worth.</li>
+    <li><b>The same help in every arm.</b> After a refusal the model is shown the compiler&rsquo;s message; after a program that compiles, the output of the one example the task shows, beside the output expected; the hidden cases, never. Five attempts at most.</li>
+    <li><b>Three ways to fail.</b> Refused by the compiler; stopped loudly while running; or <em>silent</em>, a program that ends normally and prints the wrong answer. The silent one is the failure the claim is about.</li>
+    <li><b>One number, chosen in advance.</b> How many programs are <em>green</em>, the project&rsquo;s word for passing every hidden case, by the third attempt: the strict arm minus the control, on one model, Claude Sonnet 5.5, with the specification in the prompt, sent through Anthropic&rsquo;s API with a fixed prompt. The other models, Haiku 5.5, Opus 5.5 and Fable 5.1 as a ceiling to compare against, and everything else are reported too, each labelled exploratory.</li>
+  </ul>
+  <p>
+    Why a count of working programs, when the claim is about tokens: the sitting&rsquo;s reason is that what the claim promises a reader is a program that works, with the feedback a user would have. The run also reports, for each arm, the formula&rsquo;s two factors (the program&rsquo;s tokens and how many rewrites it took) and the tokens spent until a program works; those are exploratory, and say so where they are reported.
+  </p>
+
+  <h3 id="prediction">The prediction, as it was frozen</h3>
+  <p>
+    The pre-registration is one file, <a href="https://github.com/heroes-lang/heroes/blob/a4e09e061130af837a1ed66d61cf247fb10afe4a/tests/thesis/held-out/prediction.md"><code>prediction.md</code></a>, written in the same commit as the sealed tasks. Its own words follow, copied from that file and checked against it every time the site is built. First, the one number:
+  </p>
+  <figure class="example record" data-src="tests/thesis/held-out/prediction.md" data-lines="30-37">
+<pre><code>**`green@3`(strict, full message) − `green@3`(control) on `claude-sonnet-5-5` in the `spec`
+context**, over the 40 tasks at three samples each (panel 226's R2). `green@k` is *the hidden cases
+passed by turn k under the compiler's feedback*. The interval is **the cluster bootstrap over
+tasks**, the task the cluster and its three samples never nine independent pairs, 2,000 resamples,
+the seed in the run's provenance; the test is **McNemar's mid-p over the discordant pairs**, the
+exact conditional p reported beside it and never as the primary's. **The smallest effect of
+interest is 10 percentage points**: a confirmed difference under it is reported as confirmed and
+small, never as success. Everything else is exploratory and says so where it is reported.</code></pre>
+    <figcaption>tests/thesis/held-out/prediction.md, lines 30&ndash;37</figcaption>
+  </figure>
+  <p>
+    In plain words: the share of strict programs that are green by the third attempt, minus the control&rsquo;s. Beside it goes a range the true difference is likely to lie in, computed by resampling the tasks 2,000 times, and a test that counts only the pairs where the two arms disagree. A difference smaller than 10 percentage points (a difference between two percentages) is reported as small, never as success. Then, what each outcome will mean:
+  </p>
+  <figure class="example record" data-src="tests/thesis/held-out/prediction.md" data-lines="46-52">
+<pre><code>- **Confirmed**: the bootstrap interval's lower bound is above 0.
+- **Falsified**: its upper bound is below 0.
+- **Inconclusive**: otherwise. **Rule, the author's choice (1a)**: an inconclusive result is
+  published as inconclusive, with its interval as measured. n is not extended once the result is
+  seen, since extending a sample after reading it inflates the false positives it then reports;
+  the reserve is drawn only to replace a task the canary burns or the adjudication finds
+  ambiguous.</code></pre>
+    <figcaption>tests/thesis/held-out/prediction.md, lines 46&ndash;52</figcaption>
+  </figure>
+  <p>
+    Confirmed if the whole range lies above zero, falsified if the whole range lies below it, inconclusive otherwise. An inconclusive result is published as inconclusive, and no tasks are added after the result has been seen. Then what the author expects:
+  </p>
+  <figure class="example record" data-src="tests/thesis/held-out/prediction.md" data-lines="56-63">
+<pre><code>- `green@1`: the strict arm **below** the control by **5 to 15 points**, the price of refusing at
+  turn 1, before any feedback.
+- `green@3`: the strict arm **above** the control by **at least 10 points**, the smallest effect
+  of interest.
+- The silent rate at turn 3: the strict arm's **at most half** the control's.
+
+The trial on the assistant's ten tasks (measurement 050) is not evidence for or against these:
+those tasks tempt no trap, and its arms were level by turn 3 with no discordant pair of 90.</code></pre>
+    <figcaption>tests/thesis/held-out/prediction.md, lines 56&ndash;63</figcaption>
+  </figure>
+  <p>
+    The author expects the rules to cost at the first attempt, the strict arm 5 to 15 points below the control, and to pay by the third, at least 10 points above it, with at most half the control&rsquo;s silent failures. The number of tasks is fixed: 40 tasks, 3 samples each, for every model and arm. The practice run below was meant to size it, from how often the arms disagree; by the third attempt it found no pair where they did, so how likely the test is to detect a real effect is declared unknown rather than computed from a number that is not there.
+  </p>
+  <p>
+    The same file closes with the protocol and the digests of what the run will use, in one block: the compiler, the prompt and its layout, the instrument, the specification the prompt carries, the models and their settings. The report sets every run against that block field by field, and prints every difference as a deviation.
+  </p>
+
+  <h3 id="seal">The seal, and how to check it</h3>
+  <p>
+    A test a model has read in training measures its memory, not the language, and this repository is public, so a task committed as plain text would reach the next crawl. The tasks are therefore committed encrypted, under keys the author holds, never written on a command line or in a file of the repository. A digest is a fingerprint of a text: change one character and it changes completely. These two lines are what the freeze wrote for the suite and for its reserve, each digest computed from the digests of the tasks inside:
+  </p>
+  <figure class="example record" data-src="tests/thesis/held-out/hashes.txt" data-lines="41-41">
+<pre><code>suite c24a5b813f6bba6da2f8ca28f63aa15f76a790be5e012e74468f6924f7ad2274 held-out 40 canary</code></pre>
+    <figcaption>tests/thesis/held-out/hashes.txt, line 41</figcaption>
+  </figure>
+  <figure class="example record" data-src="tests/thesis/held-out/hashes-reserve.txt" data-lines="21-21">
+<pre><code>suite b27ea1a9949cd555646f816f73ac5473276156eea7bd5556eeb019a700f77dd4 held-out 20 canary</code></pre>
+    <figcaption>tests/thesis/held-out/hashes-reserve.txt, line 21</figcaption>
+  </figure>
+  <p>
+    Those digests are over the tasks&rsquo; text and cases, so they can be checked once the archive is open. Two things can be checked today, from a clone of the repository, with nothing but the files:
+  </p>
+  <pre><code>$ cd tests/thesis/held-out
+$ shasum -a 256 -c suite.enc.sha256 reserve.enc.sha256
+suite.enc: OK
+reserve.enc: OK
+$ git log --format=%H -- prediction.md hashes.txt hashes-reserve.txt suite.enc reserve.enc
+a4e09e061130af837a1ed66d61cf247fb10afe4a</code></pre>
+  <p>
+    The first command checks the two encrypted archives against the digests committed beside them. The second lists every commit that ever changed the prediction, the digests or the archives, and it prints one: <a href="https://github.com/heroes-lang/heroes/commit/a4e09e061130af837a1ed66d61cf247fb10afe4a">the commit that froze them</a>. A later change to any of them would print a second line; and any result, once committed, can be set against this commit to see which came first.
+  </p>
+  <p>
+    The project&rsquo;s CI, the automatic checks that run on every push to GitHub, has a job that opens the archive inside GitHub&rsquo;s own machine, with the keys held as its secrets, and prints counts and digests alone, never a task&rsquo;s text; where the keys are not there, as in a copy of the repository, it says that it attested nothing rather than passing as if it had. Each task also carries a unique random string, a canary: before a run every model is asked to complete each one, and a task whose string a model completes exactly was in its training data, so it is replaced by the next task in reserve. The same probe, run on the practice tasks before the freeze with four models: 44 probes, 0 completed.
+  </p>
+  <p>
+    <b>The archive opens by itself.</b> Within 30 days of the first release tagged after the first run on these tasks, or of the suite being declared burned by its canaries, whichever comes first, the author commits the keys and every task becomes readable by anyone. Until then the key is given on request, on the one condition that it is not republished, and every delivery is written down in <a href="https://github.com/heroes-lang/heroes/blob/main/tests/thesis/held-out/README.md">the sealed folder&rsquo;s README</a>.
+  </p>
+
+  <h2 id="trial">The practice run: proof the instrument works, not evidence for the claim</h2>
+  <p>
+    Before the freeze, the instrument was tried on ten tasks written by the AI assistant that writes the compiler. By the project&rsquo;s own rule those ten tasks never enter a published number: <a href="https://github.com/heroes-lang/heroes/blob/main/docs/metrics/tasks.md#two-suites-two-homes">a suite the assistant wrote measures what the assistant already expects</a>. None of them was written to tempt a mistake. What the run can show is that the instrument measures, what a run costs and where the protocol needed repair. It cannot show whether the claim holds, and nothing in this section is offered as evidence that it does.
+  </p>
+  <p>
+    Three models, the ten tasks, three samples each, the specification in the prompt; how many of the 30 programs of each model and arm were green at the first attempt, and by the second, third and fifth:
+  </p>
+  <figure class="example record" data-src="docs/measurements/050-the-trial-asked-again-with-every-model-named-level-by-turn-three-through-the-api-and-through-claude-p-and-without-the-specification-no-model-wrote-a-program-that-ran-right.md" data-lines="36-40">
+<pre><code>| model | green@1 strict / brief / control | green@2 | green@3, every arm | green@5 | mean turns to green |
+|---|---|---|---|---|---|
+| Haiku 5.5 | 16 / 16 / 16 | 27 | 28 | 28 | 1.5 |
+| Sonnet 5.5 | 18 / 18 / 20 | 29 | 29 | 29 | 1.4 strict, 1.3 control |
+| Opus 5.5 | 23 / 23 / 24 | 29 strict, 30 control | 30 | 30 | 1.3 strict, 1.2 control |</code></pre>
+    <figcaption>docs/measurements/050-the-trial-asked-again-with-every-model-named-level-by-turn-three-through-the-api-and-through-claude-p-and-without-the-specification-no-model-wrote-a-program-that-ran-right.md, lines 36&ndash;40</figcaption>
+  </figure>
+  <ul class="pillars">
+    <li><b>The strict arm pays at the first attempt and is level by the third.</b> A pair is one task and sample judged in two arms, and the strict arm loses one where the control is green and it is not. It lost 3 pairs at the first attempt (Sonnet 5.5 2, Opus 5.5 1), 1 at the second (Opus 5.5), none at the third, and won none at any attempt. The one number the real test will report, read here on Sonnet 5.5, is +0.0 points: 29 and 29, and not one pair where the two arms disagree.</li>
+    <li><b>The silent failures were the same in every arm.</b> By the third attempt: 1 against 1 for Haiku 5.5 and for Sonnet 5.5, 0 for Opus 5.5, the same mistakes in every arm, which no rule names. The same run through Claude Code&rsquo;s command line instead of the API, in a table of its own and never pooled with it, had every one of its 270 samples green by the third attempt, in every arm.</li>
+    <li><b>Without the specification, no model wrote a program that ran right.</b> 0 green of 270, every model and every arm, with five attempts and the compiler&rsquo;s messages each time; for each model and arm, thirty tries, the likely range still runs from 0.0 to 11.4%, because thirty tries with no success do not prove a rate of zero. The first answers wrote the <code>main</code> of some other language (Sonnet 5.5 wrote <code>def main</code> 26 times of 30), and five of Opus 5.5&rsquo;s thirty first answers said the language was unknown to them. One program did run to the end and print a wrong answer, in the control arm alone, and the record calls it an anecdote, not a rate. So the rows above measure what the specification teaches, from nothing the models brought with them.</li>
+  </ul>
+  <p>
+    Read as the record reads it: level is what ten tasks can say. These tasks were not written to tempt a mistake; the sealed tasks, every one of them a trap, are where a difference could show. The pre-registration says the same thing of itself, in the last lines quoted above.
+  </p>
+  <p>
+    <b>The practice run ran twice.</b> <a href="https://github.com/heroes-lang/heroes/blob/main/docs/measurements/049-the-trial-on-the-assistants-ten-tasks-the-strict-arm-pays-at-turn-one-is-level-by-turn-two-and-no-arm-failed-silently.md">The record of the first</a> says, in corrections written under it, that every first request had gone to Haiku 5.5 whatever model it named: a defect of the instrument, found when a rule that holds each answer to the model its request named stopped a later run. The run was asked again with every model named, and the numbers above are <a href="https://github.com/heroes-lang/heroes/blob/main/docs/measurements/050-the-trial-asked-again-with-every-model-named-level-by-turn-three-through-the-api-and-through-claude-p-and-without-the-specification-no-model-wrote-a-program-that-ran-right.md">the second run&rsquo;s</a>.
+  </p>
+
+  <h2 id="not-yet">Not on this page yet: the claim&rsquo;s number</h2>
+  <p>
+    The claim&rsquo;s own number comes from the run on the sealed tasks, and this page neither states it nor guesses at it. Whether the strict arm ends up ahead of the control, level with it or behind it is read against the prediction above, the one that stood before the run, and an inconclusive result is published as inconclusive.
+  </p>
+  <p>
+    The site states the claim&rsquo;s number at the project&rsquo;s <a href="https://github.com/heroes-lang/heroes/blob/main/docs/roadmap/milestones/M-publication-gate.md">publication gate</a>, the gate for a finished thing being announced, and not before: in the words of that gate&rsquo;s page, stating it unmeasured publishes an opinion with a decimal point.
+  </p>
+
+  <p class="next away">
+    Why the claim is made: <a href="/why/">the design choices</a>. What the compiler says when it refuses: <a href="/docs/errors/">the chapter on errors</a>. And what Heroes turned down: <a href="/why/not/">the refusals</a>.
+  </p>
+
+  <footer>
+    <p>
+    Every number on this page is copied from the file named beside it, and none was computed for the page. The blocks labelled with a file path are slices of those files, checked against them byte for byte every time the site is built; the two commands were run on the files as they stand in the <a href="https://github.com/heroes-lang/heroes">repository</a>.
+  </p>
+  </footer>
