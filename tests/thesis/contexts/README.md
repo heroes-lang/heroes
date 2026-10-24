@@ -10,6 +10,13 @@ specification at `a4e09e061`, whose sha256 is
 `4d8e5251e78dee55f8c9a563a0e98e50dfac83b5d00c95cde4703ccd2a3e9cc7`, the
 digest the held-out run's pre-registration names.
 
+**Which run scores them**: panel 226's R6 asks the variants *at the held-out
+run on ten tasks with Haiku and Sonnet*, so the scoring run is the author's,
+over the held-out suite's tasks 01 to 10 opened in `build/opened/ten/`, in a
+shell no model reads. The run over the assistant's ten tasks (measurement 051)
+is its pilot: what the three contexts cost and how long they take, and enters
+no score.
+
 ## `spec-without-productions.md`
 
 What panel 133's third prediction compares the specification against (issue
@@ -19,7 +26,9 @@ specification less its grammar, and nothing else:
 
 - every line indented four spaces outside a fence, which is what a production
   is by the one extractor that exists, `heroes grammar`'s
-  (`selfhost/cli/grammar.hero`, `production_block`): 65 lines;
+  (`selfhost/cli/grammar.hero`, `production_block`): 65 lines holding 44
+  productions, each opening with a name, spaces and `=` (R6 wrote 46 of the
+  specification of 2026-10-20);
 - the opening paragraph's two sentences that define the notation, from *A
   production is written in Wirth's notation* to *come from the indentation.*;
   the layout rules after them, from *NEWLINE ends a statement*, stay, being
