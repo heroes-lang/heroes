@@ -1,6 +1,6 @@
 # Report on the Programming Language Heroes
 
-Heroes is a language for the age of LLMs. This document is the whole language.
+Heroes is a language for the age of agents. This document is the whole language.
 
 A production is written in Wirth's notation: `=` defines and `.` ends, `|`
 separates alternatives, `[ ]` encloses what is optional, `{ }` what repeats zero
