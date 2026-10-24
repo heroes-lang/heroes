@@ -1086,7 +1086,10 @@ function narrowed(@r: report.Report, scratch: str, only: str)
 # `CARRIED_OVER` (`m-agreed-retention` over 129 and 130), went the same day:
 # each named a tag that is no longer the newest and never again can be, tags
 # being immovable and the newest judged alone (`git show 9f876589:tests/harness/suite_records.hero`
-# holds them).
+# holds them). **A third since 2026-10-24**, `records_github.CARRIED`, the
+# author's waiver as `CARRIED_OVER` was, read from the issues by
+# `github_route` (the author's *B* that day, `m-thesis-harness` placed over
+# defects 2139 and 2143, which its own placing had aged; defect 2198).
 function tagged(@r: report.Report, scratch: str, held: github_issues.Listing)
     listed = shell.run(
         scratch: scratch,
@@ -1246,15 +1249,27 @@ function github_route(@r: report.Report, scratch: str, held: github_issues.Listi
         )
         return
     judged = tags.must()[0]
-    standing = records_github.standing(held: held, judged: judged, tags: tags.must())
+    against = records_github.counted(held: held, judged: judged, tags: tags.must())
 
-    if standing.len() > 0
-        report.keep_failure(
-            @r,
-            label: "records/tagged",
-            detail: "  " + newest + " was placed over " + standing.len().to_str() + " open defect(s) that count against a tag:\n    " + standing.join("\n    ") + "\n  " + TAGGED_RULE
-        )
-        return
+    if against.len() > 0
+        numbers: [i64] @= []
+        standing: [str] @= []
+
+        for one in against
+            numbers @ numbers.push(one.number)
+            standing @ standing.push(one.said)
+
+        # The author's waiver, where a row of `records_github.CARRIED` names
+        # this tag and exactly these defects (the author's *B* of 2026-10-24).
+        excuse = records_github.carried_over(held: held, judged: judged, against: numbers)
+
+        if excuse != ""
+            report.keep_failure(
+                @r,
+                label: "records/tagged",
+                detail: "  " + newest + " was placed over " + standing.len().to_str() + " open defect(s) that count against a tag:\n    " + standing.join("\n    ") + "\n  " + TAGGED_RULE + "\n  " + excuse
+            )
+            return
     unqueued = records_github.unqueued(held: held, judged: judged)
 
     if unqueued.len() > 0
