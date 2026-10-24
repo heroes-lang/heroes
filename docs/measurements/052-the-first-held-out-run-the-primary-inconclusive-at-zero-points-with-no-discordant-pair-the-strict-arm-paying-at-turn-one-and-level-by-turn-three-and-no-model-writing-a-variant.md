@@ -267,3 +267,207 @@ later sitting, or no milestone at all (panels 089, 090, 119, 120, 110:270, 073
 to 079, 048, 059:260, 095, 161:180, 102:231, 039:242, 114, 043:255, 044, 011,
 023:290, 118:306, 131, 132, 133:219, 194, 196, 187, 204, 175:214, 176:208, 091,
 164, 170, 184, 185, 186, 201, 203, 213), as the enumeration found them.
+
+## The two counters, verbatim (appended 2026-10-25)
+
+Sections 6 and 7 cite their counters by sha256 as programs kept outside the
+tree. That place was a scratch folder git ignores, and when it was cleared on
+2026-10-25 the two files were the only copies, so they are kept here as text,
+by the author's *A* that day: the record carries the instruments of its own
+numbers, and the tree gains no script (CLAUDE.md § 10). Each program is the
+lines between its four-backtick fences, every line ending in a newline, and
+its sha256 is the one its section cites. Neither holds a task, an answer or a
+line of one: each reads a run folder's answers and prints numbers.
+`census-old.py` imports `program` and `code_lines` from `count227.py`, so the
+two stand in one folder to run.
+
+### `count227.py`, sha256 `7db331f2419bd0c6f2f871b933ed5a66c109c34cf8b44e2075188359f75b12ad`
+
+````python
+# Panel 227's P1 and P2 counted over a run folder's turn-1 answers, printing
+# numbers alone: never a line of a program, never a task's text. A scratch
+# instrument of M-thesis-harness's close (decision 4a of 2026-10-24); its
+# results go into the measurement that cites it, the counter beside them.
+#
+# usage: python3 -I count227.py <run folder> <compiler> <scratch dir> <spec sha prefix>
+import json, os, re, subprocess, sys, collections
+
+
+FENCE = re.compile(r"(```|~~~)[^\n]*\n(.*?)\1", re.S)
+
+def program(text):
+    blocks = [m.group(2) for m in FENCE.finditer(text.replace("\r\n", "\n"))]
+    blocks = [b for b in blocks if "function main" in b]
+    return blocks[-1] if blocks else None
+
+def code_lines(src):
+    # each line with its string literals and its comment blanked, columns kept
+    out = []
+    for line in src.split("\n"):
+        chars = list(line); i = 0; inside = False
+        while i < len(chars):
+            c = chars[i]
+            if inside:
+                if c == "\\": chars[i] = " "; i += 1
+                elif c == '"': inside = False
+                else: chars[i] = " "
+            elif c == '"': inside = True
+            elif c == "#": chars[i:] = [" "] * (len(chars) - i); break
+            i += 1
+        out.append("".join(chars))
+    return out
+
+def args_of(line, open_at):
+    # the top-level arguments of the call whose `(` is at open_at: (start, end) columns
+    depth = 0; start = open_at + 1; out = []
+    for j in range(open_at, len(line)):
+        c = line[j]
+        if c in "([{": depth += 1
+        elif c in ")]}":
+            depth -= 1
+            if depth == 0: out.append((start, j)); return out
+        elif c == "," and depth == 1: out.append((start, j)); start = j + 1
+    return None  # the call goes on below: not judged here
+
+def calls(lines, name):
+    found = []
+    for n, line in enumerate(lines, 1):
+        for m in re.finditer(r"(\.?)\b" + name + r"\s*\(", line):
+            method = m.group(1) == "."
+            if not method and m.start() > 0 and (line[m.start() - 1].isalnum() or line[m.start() - 1] == "_"):
+                continue
+            a = args_of(line, m.end() - 1)
+            found.append((n, method, a))
+    return found
+
+def diagnostics(src, key):
+    path = os.path.join(scratch, key + ".hero")
+    with open(path, "w") as f: f.write(src)
+    r = subprocess.run([compiler, "check", "--json", path], capture_output=True, text=True)
+    text = r.stderr[r.stderr.find("{"):] if "{" in r.stderr else "{}"
+    try: return json.loads(text).get("diagnostics", [])
+    except Exception: return None
+
+def main():
+    global run, compiler, scratch, spec
+    run, compiler, scratch, spec = sys.argv[1:5]
+    os.makedirs(scratch, exist_ok=True)
+    p1 = collections.Counter(); p2 = collections.Counter(); unread = 0
+    for name in sorted(os.listdir(os.path.join(run, "generations"))):
+        g = json.load(open(os.path.join(run, "generations", name)))
+        if not g.get("context_sha", "").startswith(spec): continue
+        model = g.get("model", "?"); src = program(g.get("text", ""))
+        if src is None: continue
+        lines = code_lines(src)
+        rep = calls(lines, "repeat"); sli = calls(lines, "slice")
+        if sli:
+            p2[(model, "calls")] += 1
+            bare = any((not method) and a is not None and len(a) >= 1 and re.match(r"\s*from\s*:", lines[n - 1][a[0][0]:a[0][1]]) for n, method, a in sli)
+            if bare: p2[(model, "nothing to slice")] += 1
+        if rep:
+            ds = diagnostics(src, name[:-5])
+            if ds is None: unread += 1; continue
+            p1[(model, "calls")] += 1
+            refused = False; klass = set()
+            for n, method, a in rep:
+                if a is None or not a: continue
+                s, e = a[-1]
+                count = lines[n - 1][s:e]
+                k = "padding" if "len(" in count else ("literal" if re.fullmatch(r"\s*[0-9_]+\s*", count) else "parsed")
+                klass.add(k)
+                for d in ds:
+                    if d.get("line") == n and s < d.get("col", 0) <= e + 1:
+                        refused = True; p1[(model, "refused at count", k)] += 1
+            if refused: p1[(model, "refused at count")] += 1
+            for k in klass: p1[(model, "class", k)] += 1
+
+    models = sorted({k[0] for k in list(p1) + list(p2)})
+    print("P1 repeat, turn-1 answers under the spec context; unreadable checks:", unread)
+    for m in models:
+        print(" ", m, "calling", p1[(m, "calls")], "refused at the count", p1[(m, "refused at count")],
+              "| classes padding", p1[(m, "class", "padding")], "parsed", p1[(m, "class", "parsed")], "literal", p1[(m, "class", "literal")],
+              "| refused padding", p1[(m, "refused at count", "padding")], "parsed", p1[(m, "refused at count", "parsed")])
+    print("P2 slice, turn-1 answers under the spec context")
+    for m in models:
+        print(" ", m, "calling", p2[(m, "calls")], "with nothing to slice", p2[(m, "nothing to slice")])
+
+
+if __name__ == "__main__":
+    main()
+````
+
+### `census-old.py`, sha256 `ef3d98ad752fb5811dbd2d8fd70f4e426eb9175ad3b17e455805c5b55d9484ce`
+
+````python
+# Older sittings' predictions counted over a run folder's turn-1 answers under
+# the `spec` context, numbers alone: never a line of a program, never a task's
+# text. A scratch instrument of M-thesis-harness's close (decision 4a of
+# 2026-10-24); each rule is the operational reading written beside its count
+# in the measurement that cites it.
+#
+# usage: python3 -I census-old.py <run folder> <compiler> <scratch dir> <spec sha prefix>
+import json, os, re, subprocess, sys, collections
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from count227 import program, code_lines  # the shared extraction
+
+run, compiler, scratch, spec = sys.argv[1:5]
+os.makedirs(scratch, exist_ok=True)
+
+def check(src, key):
+    path = os.path.join(scratch, key + ".hero")
+    with open(path, "w") as f: f.write(src)
+    r = subprocess.run([compiler, "check", "--json", path], capture_output=True, text=True)
+    text = r.stderr[r.stderr.find("{"):] if "{" in r.stderr else "{}"
+    try: return json.loads(text).get("diagnostics", [])
+    except Exception: return None
+
+INT = r"[iu](?:8|16|32|64)"
+WIDTHS = re.compile(r"`(" + INT + r")\??`.*?`(" + INT + r")\??`")
+OPENER = re.compile(r"^\s*(if|else|while|for|match|function)\b.*:\s*$")
+BARE_PATTERN = re.compile(r"^\s*\.[A-Za-z_]\w*\s+[A-Za-z_]\w*\s+[A-Za-z_]\w*[\w\s]*(\||=>)")
+ACCUMULATE = re.compile(r"\b(\w+)\.(\w+)\s*@\s*\1\.\2\.push\(")
+CONSTRUCT = re.compile(r"(?<![\w)\]'\x22])\.([a-z_]\w*)\(")
+QUALIFIED = re.compile(r"\b[A-Z][a-z]\w*\.[a-z_]\w*\(")
+CASE_PATTERN = re.compile(r"^\s*\.(?!ok\b|err\b)[A-Za-z_]\w*(\s+[A-Za-z_]\w*)*\s*(\||=>)")
+
+c = collections.Counter(); unread = 0
+for name in sorted(os.listdir(os.path.join(run, "generations"))):
+    g = json.load(open(os.path.join(run, "generations", name)))
+    if not g.get("context_sha", "").startswith(spec): continue
+    src = program(g.get("text", ""))
+    if src is None: continue
+    c["programs"] += 1
+    lines = code_lines(src)
+    ds = check(src, name[:-5])
+    if ds is None: unread += 1; continue
+    refused = len(ds) > 0
+    if refused: c["refused"] += 1
+    if any(d.get("code") and WIDTHS.search(d.get("message", "")) and len(set(WIDTHS.search(d["message"]).groups())) == 2 for d in ds):
+        c["refused with an integer-width message"] += 1
+    if any(OPENER.match(l) for l in lines):
+        c["a block opener ending in a colon"] += 1
+        if refused: c["a block opener ending in a colon, refused"] += 1
+    bare = [n for n, l in enumerate(lines, 1) if BARE_PATTERN.match(l)]
+    if bare:
+        c["a pattern binding two bare names"] += 1
+        if any(d.get("line") in bare for d in ds): c["a pattern binding two bare names, refused there"] += 1
+    if any(ACCUMULATE.search(l) for l in lines): c["accumulates through x.f @ x.f.push"] += 1
+    if any(CASE_PATTERN.match(l) for l in lines): c["a match with a case pattern"] += 1
+    sites = {n for n, l in enumerate(lines, 1) if CONSTRUCT.search(l) or QUALIFIED.search(l)}
+    if sites:
+        c["constructs a case with fields"] += 1
+        if any(d.get("line") in sites and d.get("code") in ("missing_label", "wrong_label", "needs_label", "wrong_arity", "unknown_case", "unknown_field", "missing_fields", "type_mismatch") for d in ds):
+            c["a diagnostic on a case construction"] += 1
+    reads = any(re.search(r"\bread_file\s*\(", l) for l in lines); writes = any(re.search(r"\bwrite_file\s*\(", l) for l in lines)
+    if reads and writes:
+        c["reads and writes a file"] += 1
+        if refused: c["reads and writes a file, refused"] += 1
+
+print("turn-1 answers under the spec context; unreadable checks:", unread)
+for k in ["programs", "refused", "refused with an integer-width message", "a block opener ending in a colon",
+          "a block opener ending in a colon, refused", "a pattern binding two bare names",
+          "a pattern binding two bare names, refused there", "accumulates through x.f @ x.f.push",
+          "a match with a case pattern", "constructs a case with fields", "a diagnostic on a case construction",
+          "reads and writes a file", "reads and writes a file, refused"]:
+    print(f"  {k}: {c[k]}")
+````
