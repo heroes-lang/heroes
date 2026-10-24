@@ -12,15 +12,15 @@
 
   <h3>Declaring type parameters</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="8-16">
-<pre><code><span class="c"># The parentheses around a function type are mandatory: without them</span>
-<span class="c"># `f: function(A) -&gt; B -&gt; [B]` would be a guessing game.</span>
-<span class="k">function</span> each&lt;A, B&gt;(xs: [A], f: (<span class="k">function</span>(A) -&gt; B)) -&gt; [B]
+<pre><code># The parentheses around a function type are mandatory: without them
+# `f: function(A) -&gt; B -&gt; [B]` would be a guessing game.
+function each&lt;A, B&gt;(xs: [A], f: (function(A) -&gt; B)) -&gt; [B]
     out: [B] @= []
 
-    <span class="k">for</span> x <span class="k">in</span> xs
+    for x in xs
         out @ out.push(f(x))
 
-    <span class="k">return</span> out</code></pre>
+    return out</code></pre>
     <figcaption>examples/gallery/06-generics.hero, lines 8&ndash;16</figcaption>
   </figure>
   <p>
@@ -46,18 +46,18 @@
 
   <h3>Functions are values, and they have names</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="36-47">
-<pre><code><span class="c"># The functions passed above are ordinary declarations. No lambdas exist.</span>
-<span class="k">function</span> double(n: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
-    <span class="k">return</span> n * <span class="n">2</span>
+<pre><code># The functions passed above are ordinary declarations. No lambdas exist.
+function double(n: i64) -&gt; i64
+    return n * 2
 
-<span class="k">function</span> is_positive(n: <span class="t">i64</span>) -&gt; <span class="t">bool</span>
-    <span class="k">return</span> n &gt; <span class="n">0</span>
+function is_positive(n: i64) -&gt; bool
+    return n &gt; 0
 
-<span class="k">function</span> add(a: <span class="t">i64</span>, b: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
-    <span class="k">return</span> a + b
+function add(a: i64, b: i64) -&gt; i64
+    return a + b
 
-<span class="k">function</span> label(n: <span class="t">i64</span>) -&gt; <span class="t">str</span>
-    <span class="k">return</span> n.to_str()</code></pre>
+function label(n: i64) -&gt; str
+    return n.to_str()</code></pre>
     <figcaption>examples/gallery/06-generics.hero, lines 36&ndash;47</figcaption>
   </figure>
   <p>
@@ -97,14 +97,14 @@ error[expected_type]: expected a type, found `function` — a type is `i64`, `f6
 
   <h3>Filtering and combining elements</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="18-25">
-<pre><code><span class="k">function</span> keep_if&lt;A&gt;(xs: [A], ok_for: (<span class="k">function</span>(A) -&gt; <span class="t">bool</span>)) -&gt; [A]
+<pre><code>function keep_if&lt;A&gt;(xs: [A], ok_for: (function(A) -&gt; bool)) -&gt; [A]
     out: [A] @= []
 
-    <span class="k">for</span> x <span class="k">in</span> xs
-        <span class="k">if</span> ok_for(x)
+    for x in xs
+        if ok_for(x)
             out @ out.push(x)
 
-    <span class="k">return</span> out</code></pre>
+    return out</code></pre>
     <figcaption>examples/gallery/06-generics.hero, lines 18&ndash;25</figcaption>
   </figure>
   <p>
@@ -117,14 +117,14 @@ error[type_mismatch]: expected `bool`, found `i64`
   52 |     assert keep_if([-1, 2, -3, 4], double) == [2, 4]
      |                                    ^^^^^^</code></pre>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="27-34">
-<pre><code><span class="c"># Two type parameters, and the accumulator is the one that names the result.</span>
-<span class="k">function</span> combine&lt;A, B&gt;(xs: [A], start: B, step: (<span class="k">function</span>(B, A) -&gt; B)) -&gt; B
+<pre><code># Two type parameters, and the accumulator is the one that names the result.
+function combine&lt;A, B&gt;(xs: [A], start: B, step: (function(B, A) -&gt; B)) -&gt; B
     total: B @= start
 
-    <span class="k">for</span> x <span class="k">in</span> xs
+    for x in xs
         total @ step(total, x)
 
-    <span class="k">return</span> total</code></pre>
+    return total</code></pre>
     <figcaption>examples/gallery/06-generics.hero, lines 27&ndash;34</figcaption>
   </figure>
   <p>
@@ -133,11 +133,11 @@ error[type_mismatch]: expected `bool`, found `i64`
 
   <h3>One generic, three element types</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="49-53">
-<pre><code><span class="k">test</span> <span class="s">"one generic, three element types"</span>
-    <span class="k">assert</span> each([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>], double) == [<span class="n">2</span>, <span class="n">4</span>, <span class="n">6</span>]
-    <span class="k">assert</span> each([<span class="n">1</span>, <span class="n">2</span>], label) == [<span class="s">"1"</span>, <span class="s">"2"</span>]
-    <span class="k">assert</span> keep_if([-<span class="n">1</span>, <span class="n">2</span>, -<span class="n">3</span>, <span class="n">4</span>], is_positive) == [<span class="n">2</span>, <span class="n">4</span>]
-    <span class="k">assert</span> combine([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>], <span class="n">0</span>, add) == <span class="n">10</span></code></pre>
+<pre><code>test "one generic, three element types"
+    assert each([1, 2, 3], double) == [2, 4, 6]
+    assert each([1, 2], label) == ["1", "2"]
+    assert keep_if([-1, 2, -3, 4], is_positive) == [2, 4]
+    assert combine([1, 2, 3, 4], 0, add) == 10</code></pre>
     <figcaption>examples/gallery/06-generics.hero, lines 49&ndash;53</figcaption>
   </figure>
   <p>
@@ -147,8 +147,8 @@ error[type_mismatch]: expected `bool`, found `i64`
     The compiler generates a version of <code>each</code> for each combination of concrete types used by the program. The C output therefore contains separate versions for integers and strings. The program does not need to select types at run time or wrap values in a generic container. Additional versions do increase the executable&rsquo;s size.
   </p>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="55-56">
-<pre><code><span class="k">function</span> main()
-    print(combine([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>], <span class="n">0</span>, add))</code></pre>
+<pre><code>function main()
+    print(combine([1, 2, 3, 4], 0, add))</code></pre>
     <figcaption>examples/gallery/06-generics.hero, lines 55&ndash;56</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/06-generics.hero

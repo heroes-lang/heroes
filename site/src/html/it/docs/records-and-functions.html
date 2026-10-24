@@ -12,18 +12,18 @@
 
   <h3>Come si dichiara</h3>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="6-9">
-<pre><code><span class="c"># A position on the integer grid.</span>
-<span class="k">record</span> Point
-    x: <span class="t">i64</span>
-    y: <span class="t">i64</span></code></pre>
+<pre><code># A position on the integer grid.
+record Point
+    x: i64
+    y: i64</code></pre>
     <figcaption>examples/gallery/01-points.hero, righe 6&ndash;9</figcaption>
   </figure>
   <p>
     Ogni campo dichiara un nome e un tipo su una riga indentata. Può contenere anche un altro record: <code>Rect</code> contiene due valori di tipo punto:
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="11-14">
-<pre><code><span class="c"># A rectangle, by two corners.</span>
-<span class="k">record</span> Rect
+<pre><code># A rectangle, by two corners.
+record Rect
     corner: Point
     extent: Point</code></pre>
     <figcaption>examples/gallery/01-points.hero, righe 11&ndash;14</figcaption>
@@ -34,11 +34,11 @@
     C&rsquo;è un modo solo di fare un record, e nomina ogni campo:
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="45-49">
-<pre><code><span class="k">function</span> main()
-    a = Point(x: <span class="n">0</span>, y: <span class="n">0</span>)
-    b = Point(x: <span class="n">3</span>, y: <span class="n">4</span>)
-    print(<span class="s">"distance squared: "</span>, a.dist2(b: b))
-    print(<span class="s">"midpoint x: "</span>, a.midpoint(b: b).x)</code></pre>
+<pre><code>function main()
+    a = Point(x: 0, y: 0)
+    b = Point(x: 3, y: 4)
+    print("distance squared: ", a.dist2(b: b))
+    print("midpoint x: ", a.midpoint(b: b).x)</code></pre>
     <figcaption>examples/gallery/01-points.hero, righe 45&ndash;49</figcaption>
   </figure>
   <p>
@@ -57,10 +57,10 @@ error[missing_label]: `Point`'s fields are always named — this one is `x`
 
   <h3>Le funzioni, e dove i nomi diventano obbligatori</h3>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="21-24">
-<pre><code><span class="k">function</span> dist2(a: Point, b: Point) -&gt; <span class="t">i64</span>
+<pre><code>function dist2(a: Point, b: Point) -&gt; i64
     dx = a.x - b.x
     dy = a.y - b.y
-    <span class="k">return</span> dx * dx + dy * dy</code></pre>
+    return dx * dx + dy * dy</code></pre>
     <figcaption>examples/gallery/01-points.hero, righe 21&ndash;24</figcaption>
   </figure>
   <p>
@@ -85,10 +85,10 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
     <code>x.f(y)</code> equivale a <code>f(x, y)</code>. La sintassi con il punto permette di scrivere una normale chiamata di funzione. Non definisce un metodo, cioè una funzione associata a un tipo; il compilatore stabilisce quale funzione chiamare prima dell&rsquo;esecuzione.
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="33-36">
-<pre><code><span class="c"># Reads as a sentence, and it is one function call: `translate(r, by)`.</span>
-<span class="k">function</span> translate(r: Rect, by: Point) -&gt; Rect
+<pre><code># Reads as a sentence, and it is one function call: `translate(r, by)`.
+function translate(r: Rect, by: Point) -&gt; Rect
     moved = Point(x: r.corner.x + by.x, y: r.corner.y + by.y)
-    <span class="k">return</span> Rect(corner: moved, extent: r.extent)</code></pre>
+    return Rect(corner: moved, extent: r.extent)</code></pre>
     <figcaption>examples/gallery/01-points.hero, righe 33&ndash;36</figcaption>
   </figure>
   <p>
@@ -97,12 +97,12 @@ error[needs_label]: two of `dist2`'s parameters are `Point`, so every one of the
 
   <h3>I test stanno accanto a quello che provano</h3>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="38-43">
-<pre><code><span class="k">test</span> <span class="s">"the 3-4-5 triangle"</span>
-    <span class="k">assert</span> dist2(a: Point(x: <span class="n">0</span>, y: <span class="n">0</span>), b: Point(x: <span class="n">3</span>, y: <span class="n">4</span>)) == <span class="n">25</span>
+<pre><code>test "the 3-4-5 triangle"
+    assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25
 
-<span class="k">test</span> <span class="s">"a rectangle keeps its size when it moves"</span>
-    unit = Rect(corner: Point(x: <span class="n">0</span>, y: <span class="n">0</span>), extent: Point(x: <span class="n">2</span>, y: <span class="n">3</span>))
-    <span class="k">assert</span> unit.translate(Point(x: <span class="n">10</span>, y: <span class="n">10</span>)).area() == unit.area()</code></pre>
+test "a rectangle keeps its size when it moves"
+    unit = Rect(corner: Point(x: 0, y: 0), extent: Point(x: 2, y: 3))
+    assert unit.translate(Point(x: 10, y: 10)).area() == unit.area()</code></pre>
     <figcaption>examples/gallery/01-points.hero, righe 38&ndash;43</figcaption>
   </figure>
   <p>

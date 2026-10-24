@@ -21,11 +21,12 @@
  * The generated examples pages do not need it, because they cut their blocks
  * from the file at build time and cannot drift. What needs it is the 160 figures
  * written by hand across the 46 pages that came before, and every one written
- * from here on.
+ * from here on. Since 2026-10-24 those carry their text alone, and the build
+ * colours them from the file as it does the examples (`fillFigures`).
  */
 
 import { readText, isFile } from './repo.ts';
-import { plain } from './highlight.ts';
+import { assertRoundTrip, escapeHtml, highlight, plain } from './highlight.ts';
 import { tracklist } from './nods.ts';
 import { version } from './tables.ts';
 import { checkClaims, specReal, ceilingK } from './claims.ts';
@@ -151,9 +152,42 @@ export function page(html: string, pagePath: string): string {
   // thing this function checked and the prose around them was the last thing
   // anybody did, which is where four false claims in one day came from.
   checkClaims(html, pagePath);
-  return fillOutbound(
-    fillChain(fillTracklist(fillCeiling(fillMeasured(fillSizes(fillVersion(html, pagePath)))), pagePath), pagePath)
+  // The figures last, so no fill above reads a program's `{{x}}` as its own.
+  return fillFigures(
+    fillOutbound(
+      fillChain(fillTracklist(fillCeiling(fillMeasured(fillSizes(fillVersion(html, pagePath)))), pagePath), pagePath)
+    ),
+    pagePath
   );
+}
+
+const FIGURE_BODY = /(<figure class="example[^"]*"([^>]*)>\s*<pre><code>)([\s\S]*?)(<\/code><\/pre>)/g;
+
+/**
+ * Every figure's body, written by the build from the file it is cut from:
+ * a program coloured by the one highlighter (`highlight.ts`), which the build
+ * holds to the compiler's lexer (`lexed.ts`), and any other file as its text.
+ *
+ * Since 2026-10-24 a figure carries its slice as text and no span. Until then
+ * each of the 170 program figures carried spans written by hand, which
+ * `checkFigures` could not judge, comparing text and never markup, and which
+ * the highlighter could not reach: 8 of them, measured that day, still painted
+ * `as` and `link` plain on lines where the highlighter had learned on
+ * 2026-10-14 to paint them the marks they are. The text check stays, run on the
+ * page as written; what a reader sees is generated from the same slice.
+ */
+export function fillFigures(html: string, pagePath: string): string {
+  return html.replace(FIGURE_BODY, (whole, open: string, attributes: string, _body: string, close: string) => {
+    const src = /data-src="([^"]+)"/.exec(attributes)?.[1];
+    if (src === undefined) return whole;
+    const range = /data-lines="(\d+)-(\d+)"/.exec(attributes);
+    const source = readText(src);
+    const slice =
+      range === null ? source.replace(/\n$/, '') : source.split('\n').slice(Number(range[1]) - 1, Number(range[2])).join('\n');
+    if (!src.endsWith('.hero')) return open + escapeHtml(slice) + close;
+    assertRoundTrip(slice, `${pagePath}: the figure of ${src}`);
+    return open + highlight(slice) + close;
+  });
 }
 
 /**

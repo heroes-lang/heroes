@@ -41,10 +41,10 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     To use a library, declare the functions you need. The name on the first line identifies the header, the file that describes the library&rsquo;s functions and types. Clang, the C compiler, checks your declarations against that file.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
-<pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
-    <span class="k">function</span> sqrt(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
-    <span class="k">function</span> pow(base: <span class="t">f64</span>, exponent: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
-    <span class="k">function</span> floor(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span></code></pre>
+<pre><code>extern "math.h" link "m"
+    function sqrt(x: f64) -&gt; f64
+    function pow(base: f64, exponent: f64) -&gt; f64
+    function floor(x: f64) -&gt; f64</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
   </figure>
   <p>
@@ -85,13 +85,13 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     no interfaces, and nowhere a global variable anybody can modify.
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="6-14">
-<pre><code><span class="c"># A position on the integer grid.</span>
-<span class="k">record</span> Point
-    x: <span class="t">i64</span>
-    y: <span class="t">i64</span>
+<pre><code># A position on the integer grid.
+record Point
+    x: i64
+    y: i64
 
-<span class="c"># A rectangle, by two corners.</span>
-<span class="k">record</span> Rect
+# A rectangle, by two corners.
+record Rect
     corner: Point
     extent: Point</code></pre>
     <figcaption>examples/gallery/01-points.hero, lines 6&ndash;14</figcaption>
@@ -105,8 +105,8 @@ graphics, audio, terminal  →  SDL, raylib, ncurses</code></pre>
     A string can carry values, and an <code>f</code> before the opening quote is what turns <code>{n}</code> into the text of <code>n</code>.
   </p>
   <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="20-21">
-<pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="s">f"{</span>at<span class="s">}/{</span>of<span class="s">} {</span>star.name<span class="s">} at magnitude {</span>star.magnitude<span class="s">}"</span></code></pre>
+<pre><code>function line(at: i64, of: i64, star: Star) -&gt; str
+    return f"{at}/{of} {star.name} at magnitude {star.magnitude}"</code></pre>
     <figcaption>examples/gallery/12-interpolation.hero, lines 20&ndash;21</figcaption>
   </figure>
   <p>

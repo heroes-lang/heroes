@@ -12,15 +12,15 @@
 
   <h3>L&rsquo;indice ti dà un byte</h3>
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="7-15">
-<pre><code><span class="c"># Bytes, not characters: this counts the ASCII spaces.</span>
-<span class="k">function</span> space_count(s: <span class="t">str</span>) -&gt; <span class="t">i64</span>
-    seen: <span class="t">i64</span> @= <span class="n">0</span>
+<pre><code># Bytes, not characters: this counts the ASCII spaces.
+function space_count(s: str) -&gt; i64
+    seen: i64 @= 0
 
-    <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: s.len())
-        <span class="k">if</span> s[i] == <span class="s">' '</span>
-            seen @ seen + <span class="n">1</span>
+    for i in range(from: 0, to: s.len())
+        if s[i] == ' '
+            seen @ seen + 1
 
-    <span class="k">return</span> seen</code></pre>
+    return seen</code></pre>
     <figcaption>examples/gallery/07-strings.hero, righe 7&ndash;15</figcaption>
   </figure>
   <p>
@@ -42,15 +42,15 @@ error[type_mismatch]: expected `u8`, found `str`
 
   <h3><code>chars()</code> ti dà i caratteri</h3>
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="17-25">
-<pre><code><span class="c"># Characters, not bytes: this one is right for text.</span>
-<span class="k">function</span> letters_of(s: <span class="t">str</span>) -&gt; [<span class="t">str</span>]
-    out: [<span class="t">str</span>] @= []
+<pre><code># Characters, not bytes: this one is right for text.
+function letters_of(s: str) -&gt; [str]
+    out: [str] @= []
 
-    <span class="k">for</span> c <span class="k">in</span> s.chars()
-        <span class="k">if</span> c != <span class="s">" "</span>
+    for c in s.chars()
+        if c != " "
             out @ out.push(c)
 
-    <span class="k">return</span> out</code></pre>
+    return out</code></pre>
     <figcaption>examples/gallery/07-strings.hero, righe 17&ndash;25</figcaption>
   </figure>
   <p>
@@ -67,20 +67,20 @@ error[type_mismatch]: expected `u8`, found `str`
 
   <h3>Dividere il testo in parole</h3>
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="27-40">
-<pre><code><span class="c"># Splitting on a single space, written out. There is no library to hide in.</span>
-<span class="k">function</span> words_of(s: <span class="t">str</span>) -&gt; [<span class="t">str</span>]
-    out: [<span class="t">str</span>] @= []
-    start: <span class="t">i64</span> @= <span class="n">0</span>
+<pre><code># Splitting on a single space, written out. There is no library to hide in.
+function words_of(s: str) -&gt; [str]
+    out: [str] @= []
+    start: i64 @= 0
 
-    <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: s.len())
-        <span class="k">if</span> s[i] == <span class="s">' '</span>
-            <span class="k">if</span> i &gt; start
+    for i in range(from: 0, to: s.len())
+        if s[i] == ' '
+            if i &gt; start
                 out @ out.push(s.slice(from: start, to: i))
-            start @ i + <span class="n">1</span>
+            start @ i + 1
 
-    <span class="k">if</span> s.len() &gt; start
+    if s.len() &gt; start
         out @ out.push(s.slice(from: start, to: s.len()))
-    <span class="k">return</span> out</code></pre>
+    return out</code></pre>
     <figcaption>examples/gallery/07-strings.hero, righe 27&ndash;40</figcaption>
   </figure>
   <p>
@@ -94,21 +94,21 @@ error[type_mismatch]: expected `u8`, found `str`
 
   <h3>Rimetterle insieme</h3>
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="42-45">
-<pre><code><span class="c"># `join` is the other direction, and the separator is an argument, not a</span>
-<span class="c"># convention.</span>
-<span class="k">function</span> sentence_of(words: [<span class="t">str</span>]) -&gt; <span class="t">str</span>
-    <span class="k">return</span> words.join(<span class="s">" "</span>)</code></pre>
+<pre><code># `join` is the other direction, and the separator is an argument, not a
+# convention.
+function sentence_of(words: [str]) -&gt; str
+    return words.join(" ")</code></pre>
     <figcaption>examples/gallery/07-strings.hero, righe 42&ndash;45</figcaption>
   </figure>
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="47-54">
-<pre><code><span class="k">function</span> initials_of(words: [<span class="t">str</span>]) -&gt; <span class="t">str</span>
-    out: <span class="t">str</span> @= <span class="s">""</span>
+<pre><code>function initials_of(words: [str]) -&gt; str
+    out: str @= ""
 
-    <span class="k">for</span> w <span class="k">in</span> words
-        <span class="k">if</span> w.len() &gt; <span class="n">0</span>
-            out @ out + w.slice(from: <span class="n">0</span>, to: <span class="n">1</span>)
+    for w in words
+        if w.len() &gt; 0
+            out @ out + w.slice(from: 0, to: 1)
 
-    <span class="k">return</span> out</code></pre>
+    return out</code></pre>
     <figcaption>examples/gallery/07-strings.hero, righe 47&ndash;54</figcaption>
   </figure>
   <p>
@@ -120,8 +120,8 @@ error[type_mismatch]: expected `u8`, found `str`
     Una stringa può portare dei valori. Una <code>f</code> prima della virgoletta d&rsquo;apertura trasforma <code>{n}</code> nel testo di <code>n</code>, scritto come lo scriverebbe <code>to_str</code>. In un buco può stare qualsiasi espressione, e il buco finisce alla graffa che lo chiude, così una chiamata o una ricerca al suo interno si legge come si leggerebbe ovunque. <code>{{</code> e <code>}}</code> scrivono ciascuna una graffa, e una <code>}</code> da sola è un errore: una graffa intesa come testo si raddoppia sempre. Una stringa senza la <code>f</code> tiene le sue graffe come testo, tranne dove formerebbero un buco che nomina solo ciò che esiste in quel punto, come in <code>"{i + 1}"</code>: lì è rifiutata come una <code>f</code> dimenticata, e le graffe intese come testo si scrivono allora <code>{{</code> e <code>}}</code> in una stringa con la <code>f</code>.
   </p>
   <figure class="example" data-src="examples/gallery/12-interpolation.hero" data-lines="20-21">
-<pre><code><span class="k">function</span> line(at: <span class="t">i64</span>, of: <span class="t">i64</span>, star: Star) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="s">f"{</span>at<span class="s">}/{</span>of<span class="s">} {</span>star.name<span class="s">} at magnitude {</span>star.magnitude<span class="s">}"</span></code></pre>
+<pre><code>function line(at: i64, of: i64, star: Star) -&gt; str
+    return f"{at}/{of} {star.name} at magnitude {star.magnitude}"</code></pre>
     <figcaption>examples/gallery/12-interpolation.hero, righe 20&ndash;21</figcaption>
   </figure>
   <p>
@@ -152,8 +152,8 @@ nested: 2 stars</code></pre>
 
   <h3>Il programma</h3>
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="63-66">
-<pre><code><span class="k">function</span> main()
-    words = words_of(<span class="s">"the quick brown fox"</span>)
+<pre><code>function main()
+    words = words_of("the quick brown fox")
     print(sentence_of(words))
     print(initials_of(words))</code></pre>
     <figcaption>examples/gallery/07-strings.hero, righe 63&ndash;66</figcaption>

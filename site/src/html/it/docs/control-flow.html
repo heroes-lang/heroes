@@ -26,16 +26,16 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
 
   <h3><code>for x in xs</code>: percorrere una sequenza</h3>
   <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="7-16">
-<pre><code><span class="c"># The largest element. Fails on nothing: an empty array has no largest, so</span>
-<span class="c"># the caller is asked for a floor instead.</span>
-<span class="k">function</span> largest_or(xs: [<span class="t">i64</span>], floor: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
-    best: <span class="t">i64</span> @= floor
+<pre><code># The largest element. Fails on nothing: an empty array has no largest, so
+# the caller is asked for a floor instead.
+function largest_or(xs: [i64], floor: i64) -&gt; i64
+    best: i64 @= floor
 
-    <span class="k">for</span> x <span class="k">in</span> xs
-        <span class="k">if</span> x &gt; best
+    for x in xs
+        if x &gt; best
             best @ x
 
-    <span class="k">return</span> best</code></pre>
+    return best</code></pre>
     <figcaption>examples/gallery/04-loops.hero, righe 7&ndash;16</figcaption>
   </figure>
   <p>
@@ -47,31 +47,31 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
 
   <h3>Uscire prima: <code>break</code></h3>
   <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="18-27">
-<pre><code><span class="c"># Sums until the running total would pass a limit, then stops.</span>
-<span class="k">function</span> sum_until(xs: [<span class="t">i64</span>], limit: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
-    total: <span class="t">i64</span> @= <span class="n">0</span>
+<pre><code># Sums until the running total would pass a limit, then stops.
+function sum_until(xs: [i64], limit: i64) -&gt; i64
+    total: i64 @= 0
 
-    <span class="k">for</span> x <span class="k">in</span> xs
-        <span class="k">if</span> total + x &gt; limit
-            <span class="k">break</span>
+    for x in xs
+        if total + x &gt; limit
+            break
         total @ total + x
 
-    <span class="k">return</span> total</code></pre>
+    return total</code></pre>
     <figcaption>examples/gallery/04-loops.hero, righe 18&ndash;27</figcaption>
   </figure>
 
   <h3>Saltarne uno: <code>continue</code></h3>
   <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="29-38">
-<pre><code><span class="c"># Counts the even ones, and shows `continue` earning its keep.</span>
-<span class="k">function</span> even_count(xs: [<span class="t">i64</span>]) -&gt; <span class="t">i64</span>
-    seen: <span class="t">i64</span> @= <span class="n">0</span>
+<pre><code># Counts the even ones, and shows `continue` earning its keep.
+function even_count(xs: [i64]) -&gt; i64
+    seen: i64 @= 0
 
-    <span class="k">for</span> x <span class="k">in</span> xs
-        <span class="k">if</span> x % <span class="n">2</span> != <span class="n">0</span>
-            <span class="k">continue</span>
-        seen @ seen + <span class="n">1</span>
+    for x in xs
+        if x % 2 != 0
+            continue
+        seen @ seen + 1
 
-    <span class="k">return</span> seen</code></pre>
+    return seen</code></pre>
     <figcaption>examples/gallery/04-loops.hero, righe 29&ndash;38</figcaption>
   </figure>
   <p>
@@ -80,17 +80,17 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
 
   <h3><code>while</code>: ripetere su una condizione</h3>
   <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="40-50">
-<pre><code><span class="c"># The conditional loop, with the counter visible: `while cond` has no header</span>
-<span class="c"># that hides where the index changes.</span>
-<span class="k">function</span> digits_in(n: <span class="t">i64</span>) -&gt; <span class="t">i64</span>
-    left: <span class="t">i64</span> @= n
-    digits: <span class="t">i64</span> @= <span class="n">1</span>
+<pre><code># The conditional loop, with the counter visible: `while cond` has no header
+# that hides where the index changes.
+function digits_in(n: i64) -&gt; i64
+    left: i64 @= n
+    digits: i64 @= 1
 
-    <span class="k">while</span> left &gt;= <span class="n">10</span>
-        left @ left / <span class="n">10</span>
-        digits @ digits + <span class="n">1</span>
+    while left &gt;= 10
+        left @ left / 10
+        digits @ digits + 1
 
-    <span class="k">return</span> digits</code></pre>
+    return digits</code></pre>
     <figcaption>examples/gallery/04-loops.hero, righe 40&ndash;50</figcaption>
   </figure>
   <p>
@@ -99,15 +99,15 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
 
   <h3>Contare: un intervallo è una chiamata di funzione</h3>
   <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="52-60">
-<pre><code><span class="c"># The loop variable is not needed, so it is `_` — the same wildcard a pattern</span>
-<span class="c"># uses, and the reason an unused name is never an accident here.</span>
-<span class="k">function</span> repeat_dash(times: <span class="t">i64</span>) -&gt; <span class="t">str</span>
-    out: <span class="t">str</span> @= <span class="s">""</span>
+<pre><code># The loop variable is not needed, so it is `_` — the same wildcard a pattern
+# uses, and the reason an unused name is never an accident here.
+function repeat_dash(times: i64) -&gt; str
+    out: str @= ""
 
-    <span class="k">for</span> _ <span class="k">in</span> range(from: <span class="n">0</span>, to: times)
-        out @ out + <span class="s">"-"</span>
+    for _ in range(from: 0, to: times)
+        out @ out + "-"
 
-    <span class="k">return</span> out</code></pre>
+    return out</code></pre>
     <figcaption>examples/gallery/04-loops.hero, righe 52&ndash;60</figcaption>
   </figure>
   <p>
@@ -119,9 +119,9 @@ error[not_bool]: an `if` condition must be `bool`, found `i64` — there is no t
 
   <h3>Tutto quanto, in esecuzione</h3>
   <figure class="example" data-src="examples/gallery/04-loops.hero" data-lines="70-72">
-<pre><code><span class="k">function</span> main()
-    print(repeat_dash(<span class="n">20</span>))
-    print(<span class="s">"digits in 2026: "</span>, digits_in(<span class="n">2026</span>))</code></pre>
+<pre><code>function main()
+    print(repeat_dash(20))
+    print("digits in 2026: ", digits_in(2026))</code></pre>
     <figcaption>examples/gallery/04-loops.hero, righe 70&ndash;72</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/04-loops.hero

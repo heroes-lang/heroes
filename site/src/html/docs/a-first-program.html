@@ -12,8 +12,8 @@
 
   <h3>The whole program</h3>
   <figure class="example" data-src="examples/gallery/00-first.hero" data-lines="7-8">
-<pre><code><span class="k">function</span> main()
-    print((<span class="n">2</span> + <span class="n">3</span>) * <span class="n">4</span>)</code></pre>
+<pre><code>function main()
+    print((2 + 3) * 4)</code></pre>
     <figcaption>examples/gallery/00-first.hero, lines 7&ndash;8</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/00-first.hero
@@ -64,20 +64,20 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
     Write documentation in comments. <code>#</code> starts a comment that ends at the end of the line. Comments may contain Markdown, a text format for headings, lists and other elements. <code>##</code> opens a section:
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="1-4">
-<pre><code><span class="c">## Points</span>
-<span class="c">#</span>
-<span class="c"># Records, their constructors, and UFCS. Every field is named at the call</span>
-<span class="c"># site, always — `Point(3, 4)` does not exist.</span></code></pre>
+<pre><code>## Points
+#
+# Records, their constructors, and UFCS. Every field is named at the call
+# site, always — `Point(3, 4)` does not exist.</code></pre>
     <figcaption>examples/gallery/01-points.hero, lines 1&ndash;4</figcaption>
   </figure>
   <p>
     A comment directly above a declaration documents it, with no extra markers:
   </p>
   <figure class="example" data-src="examples/gallery/01-points.hero" data-lines="6-9">
-<pre><code><span class="c"># A position on the integer grid.</span>
-<span class="k">record</span> Point
-    x: <span class="t">i64</span>
-    y: <span class="t">i64</span></code></pre>
+<pre><code># A position on the integer grid.
+record Point
+    x: i64
+    y: i64</code></pre>
     <figcaption>examples/gallery/01-points.hero, lines 6&ndash;9</figcaption>
   </figure>
 
@@ -86,7 +86,7 @@ error[indentation_not_multiple_of_4]: indentation must be exactly 4 spaces per l
     When you need more than one file, organize them into modules. <code>use</code> makes another module available:
   </p>
   <figure class="example" data-src="examples/calculator/main.hero" data-lines="31-31">
-<pre><code><span class="k">use</span> eval</code></pre>
+<pre><code>use eval</code></pre>
     <figcaption>examples/calculator/main.hero, line 31</figcaption>
   </figure>
   <p>

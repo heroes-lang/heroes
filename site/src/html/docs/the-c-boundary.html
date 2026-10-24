@@ -12,10 +12,10 @@
 
   <h3>A group names its header</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
-<pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
-    <span class="k">function</span> sqrt(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
-    <span class="k">function</span> pow(base: <span class="t">f64</span>, exponent: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
-    <span class="k">function</span> floor(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span></code></pre>
+<pre><code>extern "math.h" link "m"
+    function sqrt(x: f64) -&gt; f64
+    function pow(base: f64, exponent: f64) -&gt; f64
+    function floor(x: f64) -&gt; f64</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
   </figure>
   <p>
@@ -53,12 +53,12 @@
 
   <h3>The boundary is visible in the types</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="17-22">
-<pre><code><span class="c"># `cstr` is a C string and `ptr` an opaque pointer. Neither is a `str`:</span>
-<span class="c"># the boundary is visible in the type. A second group, because this one</span>
-<span class="c"># comes from a different header — and on macOS neither needs `link`, since</span>
-<span class="c"># libm and libc are already there.</span>
-<span class="k">extern</span> <span class="s">"stdio.h"</span>
-    <span class="k">function</span> puts(s: <span class="t">cstr</span>) -&gt; <span class="t">i64</span></code></pre>
+<pre><code># `cstr` is a C string and `ptr` an opaque pointer. Neither is a `str`:
+# the boundary is visible in the type. A second group, because this one
+# comes from a different header — and on macOS neither needs `link`, since
+# libm and libc are already there.
+extern "stdio.h"
+    function puts(s: cstr) -&gt; i64</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 17&ndash;22</figcaption>
   </figure>
   <p>
@@ -71,12 +71,12 @@
     A string lent with <code>.cstr()</code> may stand only as an argument of the call that reads it, and only where the declaration says the call keeps nothing of it: <code>function strlen(s: cstr lent) -&gt; u64</code>. Without that word a C parameter is taken to keep what it is handed, and the lend is refused, because bytes kept past the call are read after the program has changed or freed them. The word is a claim about C that nothing here can check, so the compiler never writes it for you. Kept anywhere else, the pointer would outlive the bytes it points into, and the compiler refuses that shape before anything runs. When a library keeps the text past the call, the program says so and stays in charge of the bytes. <code>x: cstr @= s.lease()</code> hands C a copy of the bytes on lease, a loan that ends when you say so: the copy lives until <code>end_lease(@x)</code> frees it. A lease nobody ends stops the program when <code>main</code> returns, with the count of what was left open. A program that leaves through <code>exit()</code> is not counted there, and on the Linux build the memory checker reports the bytes as leaked. In the example, <code>keep_label</code> is a C function that keeps the pointer and <code>kept_label_length</code> reads it later:
   </p>
   <figure class="example" data-src="examples/gallery/13-lease.hero" data-lines="22-27">
-<pre><code>    <span class="k">while</span> at &lt; <span class="n">3</span>
-        label: <span class="t">cstr</span> @= <span class="s">f"row-{</span>at<span class="s">}-payload"</span>.lease()
+<pre><code>    while at &lt; 3
+        label: cstr @= f"row-{at}-payload".lease()
         keep_label(s: label)
-        print(<span class="s">f"C still reads {</span>kept_label_length()<span class="s">} bytes"</span>)
+        print(f"C still reads {kept_label_length()} bytes")
         end_lease(@label)
-        at @ at + <span class="n">1</span></code></pre>
+        at @ at + 1</code></pre>
     <figcaption>examples/gallery/13-lease.hero, lines 22&ndash;27</figcaption>
   </figure>
   <p>
@@ -94,29 +94,29 @@
 
   <h3>Using them</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="24-31">
-<pre><code><span class="c"># The hypotenuse, in the language's own arithmetic plus one C call.</span>
-<span class="c">#</span>
-<span class="c"># Both sides are `f64`, so §4.9 makes the names mandatory at the call site. C's</span>
-<span class="c"># numeric APIs are where same-typed parameters cluster — `pow(base:, exponent:)`</span>
-<span class="c"># is the same shape — so this is where the rule is felt most and where argument</span>
-<span class="c"># inversion would be silent without it.</span>
-<span class="k">function</span> hypotenuse(a: <span class="t">f64</span>, b: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
-    <span class="k">return</span> sqrt(a * a + b * b)</code></pre>
+<pre><code># The hypotenuse, in the language's own arithmetic plus one C call.
+#
+# Both sides are `f64`, so §4.9 makes the names mandatory at the call site. C's
+# numeric APIs are where same-typed parameters cluster — `pow(base:, exponent:)`
+# is the same shape — so this is where the rule is felt most and where argument
+# inversion would be silent without it.
+function hypotenuse(a: f64, b: f64) -&gt; f64
+    return sqrt(a * a + b * b)</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 24&ndash;31</figcaption>
   </figure>
   <p>
     You call a C function like a Heroes function. The label rule from <a href="/docs/records-and-functions/">chapter 3</a> also applies: in <code>pow(base:, exponent:)</code>, both arguments have the same type, so their names are required.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="33-35">
-<pre><code><span class="c"># No implicit conversions: an `i64` becomes an `f64` because you said so.</span>
-<span class="k">function</span> diagonal_of(width: <span class="t">i64</span>, height: <span class="t">i64</span>) -&gt; <span class="t">f64</span>
-    <span class="k">return</span> hypotenuse(a: to_f64(width), b: to_f64(height))</code></pre>
+<pre><code># No implicit conversions: an `i64` becomes an `f64` because you said so.
+function diagonal_of(width: i64, height: i64) -&gt; f64
+    return hypotenuse(a: to_f64(width), b: to_f64(height))</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 33&ndash;35</figcaption>
   </figure>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="37-39">
-<pre><code><span class="c"># `pow` is C's, `floor` is C's, and the rounding is yours.</span>
-<span class="k">function</span> rounded_power(base: <span class="t">f64</span>, exponent: <span class="t">f64</span>) -&gt; <span class="t">i64</span>
-    <span class="k">return</span> to_i64(floor(pow(base: base, exponent: exponent))).must()</code></pre>
+<pre><code># `pow` is C's, `floor` is C's, and the rounding is yours.
+function rounded_power(base: f64, exponent: f64) -&gt; i64
+    return to_i64(floor(pow(base: base, exponent: exponent))).must()</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 37&ndash;39</figcaption>
   </figure>
   <p>
@@ -149,16 +149,16 @@
     Many C libraries hand you a <b>handle</b>: a pointer to something the library keeps for itself, a database connection, a prepared query, and that sooner or later you will have to give back. So far that would be a <code>ptr</code>, an address you know nothing about. Inside a group you can instead give it the name the library itself uses: a <code>record</code> with no fields, a <code>tag</code> and the name of the C type is the pointer to that type. Clang checks the name against the header, a <code>CDb</code> cannot be handed where a <code>CStmt</code> belongs, and <code>nullptr</code> is its empty value.
   </p>
   <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="64-65">
-<pre><code>    <span class="k">record</span> CDb tag sqlite3
-    <span class="k">record</span> CStmt tag sqlite3_stmt</code></pre>
+<pre><code>    record CDb tag sqlite3
+    record CStmt tag sqlite3_stmt</code></pre>
     <figcaption>examples/ledger/db/sqlite.hero, lines 64&ndash;65</figcaption>
   </figure>
   <p>
     Then every declaration that touches a handle says what it does, with one of three words. <code>acquires</code> and a name: the call hands you one, and that name is the function that takes it back. <code>consumes</code>: the call takes one back and ends its life. <code>borrows</code>: the call shows you one the library goes on keeping, and you owe nothing. None of the three is guessed by the compiler, because two functions with the same signature can do the first thing and the third: you write it.
   </p>
   <figure class="example" data-src="examples/ledger/db/sqlite.hero" data-lines="83-84">
-<pre><code>    <span class="k">function</span> sqlite3_open(filename: <span class="t">cstr</span> lent, @out: CDb acquires sqlite3_close) -&gt; <span class="t">i64</span>
-    <span class="k">function</span> sqlite3_close(db: CDb consumes) -&gt; <span class="t">i64</span></code></pre>
+<pre><code>    function sqlite3_open(filename: cstr lent, @out: CDb acquires sqlite3_close) -&gt; i64
+    function sqlite3_close(db: CDb consumes) -&gt; i64</code></pre>
     <figcaption>examples/ledger/db/sqlite.hero, lines 83&ndash;84</figcaption>
   </figure>
   <p>
@@ -184,16 +184,16 @@ panic: 1 C handle(s) never given back — every call marked `acquires` owes one 
 
   <h3>The program</h3>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="41-43">
-<pre><code><span class="k">test</span> <span class="s">"the C library does the maths"</span>
-    <span class="k">assert</span> hypotenuse(a: <span class="n">3.0</span>, b: <span class="n">4.0</span>) == <span class="n">5.0</span>
-    <span class="k">assert</span> rounded_power(base: <span class="n">2.0</span>, exponent: <span class="n">10.0</span>) == <span class="n">1024</span></code></pre>
+<pre><code>test "the C library does the maths"
+    assert hypotenuse(a: 3.0, b: 4.0) == 5.0
+    assert rounded_power(base: 2.0, exponent: 10.0) == 1024</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 41&ndash;43</figcaption>
   </figure>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="45-49">
-<pre><code><span class="k">function</span> main()
+<pre><code>function main()
     print(
-        <span class="s">"the 16:9 diagonal of a 1920-wide screen: "</span>,
-        diagonal_of(width: <span class="n">1920</span>, height: <span class="n">1080</span>)
+        "the 16:9 diagonal of a 1920-wide screen: ",
+        diagonal_of(width: 1920, height: 1080)
     )</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 45&ndash;49</figcaption>
   </figure>

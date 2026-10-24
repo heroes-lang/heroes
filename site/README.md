@@ -1342,9 +1342,14 @@ follow:
 readable half: the drift check greps these attributes, strips the tags from the
 `<pre>`, decodes the entities, and diffs against the file slice — so
 documentation drift becomes a test failure. The `figcaption` is the same promise
-for readers. Syntax highlighting via `<span class="c">` is allowed because the
-check compares *text content*, not markup. Blocks are copied from the file,
-never retyped. The showcase page follows the convention too, so the rule has no
+for readers. Blocks are copied from the file, never retyped. **Since 2026-10-24
+a block carries its text alone, and the build colours it** (`fillFigures` in
+`src/lib/figures.ts`): a program by the one highlighter, which the build holds
+to the compiler's lexer, and any other file as its text. Until then the
+colouring was written by hand in `<span>`s, allowed because the check compares
+text and never markup, which is also why nothing judged it: 8 of the 170
+program figures, measured that day, painted `as` and `link` plain where the
+highlighter had painted them marks since 2026-10-14. The showcase page follows the convention too, so the rule has no
 exceptions to explain later.
 
 The `in progress` tag and its `.todo` row are kept in the stylesheet although

@@ -15,21 +15,21 @@
     If you run <code>heroes run shapes/main.hero</code>, <code>shapes/</code> is the program&rsquo;s root directory. Every <code>use</code> path in every file starts there.
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="19-23">
-<pre><code><span class="k">use</span> geom/point
-<span class="k">use</span> geom/area
-<span class="k">use</span> render/ascii
-<span class="k">use</span> render/scale as near_scale
-<span class="k">use</span> scale</code></pre>
+<pre><code>use geom/point
+use geom/area
+use render/ascii
+use render/scale as near_scale
+use scale</code></pre>
     <figcaption>examples/shapes/main.hero, lines 19&ndash;23</figcaption>
   </figure>
   <p>
     The program has six modules in three directories. Here is how a file uses a module in the same directory:
   </p>
   <figure class="example" data-src="examples/shapes/geom/area.hero" data-lines="8-11">
-<pre><code><span class="k">use</span> geom/point
+<pre><code>use geom/point
 
-<span class="k">function</span> rect(a: point.Point, b: point.Point) -&gt; <span class="t">i64</span>
-    <span class="k">return</span> point.span(from: a, to: b) * height(a: a, b: b)</code></pre>
+function rect(a: point.Point, b: point.Point) -&gt; i64
+    return point.span(from: a, to: b) * height(a: a, b: b)</code></pre>
     <figcaption>examples/shapes/geom/area.hero, lines 8&ndash;11</figcaption>
   </figure>
   <p>
@@ -57,12 +57,12 @@ error[module_path_climbs]: a `use` path cannot climb — every `use` starts at t
     <code>use geom/point</code> makes the name <code>point</code> available, using the last part of the path. Directory names are excluded: the name is neither <code>geom_point</code> nor <code>geom.point</code>.
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="26-31">
-<pre><code>    corner = point.Point(x: <span class="n">0</span>, y: <span class="n">0</span>)
-    far = point.Point(x: <span class="n">4</span>, y: <span class="n">3</span>)
+<pre><code>    corner = point.Point(x: 0, y: 0)
+    far = point.Point(x: 4, y: 3)
     print(area.rect(a: corner, b: far))
     print(area.perimeter(a: corner, b: far))
     print(ascii.bar(width: point.span(from: corner, to: far)))
-    print(ascii.frame(width: <span class="n">3</span>, height: <span class="n">2</span>))</code></pre>
+    print(ascii.frame(width: 3, height: 2))</code></pre>
     <figcaption>examples/shapes/main.hero, lines 26&ndash;31</figcaption>
   </figure>
   <p>

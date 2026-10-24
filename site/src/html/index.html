@@ -27,25 +27,25 @@
       <div class="demo">
         <div class="bar">examples/gallery/02-tokens.hero</div>
         <figure class="example" data-src="examples/gallery/02-tokens.hero" data-lines="7-25">
-<pre><code><span class="k">variant</span> Token
+<pre><code>variant Token
     number
-        value: <span class="t">i64</span>
+        value: i64
     word
-        text: <span class="t">str</span>
+        text: str
     plus
     times
     open
     close
 
-<span class="c"># What a token is called in a message.</span>
-<span class="k">function</span> name_of(t: Token) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="k">match</span> t
-        .number _ =&gt; <span class="s">"a number"</span>
-        .word _   =&gt; <span class="s">"a word"</span>
-        .plus     =&gt; <span class="s">"`+`"</span>
-        .times    =&gt; <span class="s">"`*`"</span>
-        .open     =&gt; <span class="s">"`(`"</span>
-        .close    =&gt; <span class="s">"`)`"</span></code></pre>
+# What a token is called in a message.
+function name_of(t: Token) -&gt; str
+    return match t
+        .number _ =&gt; "a number"
+        .word _   =&gt; "a word"
+        .plus     =&gt; "`+`"
+        .times    =&gt; "`*`"
+        .open     =&gt; "`(`"
+        .close    =&gt; "`)`"</code></pre>
         </figure>
         <p class="under">leave a case out and it does not compile<span class="sep">&nbsp;&middot;</span> <a href="/examples/gallery/02-tokens/">read the example&nbsp;→</a></p>
       </div>
@@ -93,10 +93,10 @@
     Heroes uses C libraries for maths, files, sockets, databases and graphics. A few lines declare the library functions your program needs. Clang, the C compiler, checks these declarations against the library&rsquo;s header, the file that describes its functions and types. If the types do not match, compilation stops.
   </p>
   <figure class="example" data-src="examples/gallery/08-ffi.hero" data-lines="12-15">
-<pre><code><span class="k">extern</span> <span class="s">"math.h"</span> link <span class="s">"m"</span>
-    <span class="k">function</span> sqrt(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
-    <span class="k">function</span> pow(base: <span class="t">f64</span>, exponent: <span class="t">f64</span>) -&gt; <span class="t">f64</span>
-    <span class="k">function</span> floor(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span></code></pre>
+<pre><code>extern "math.h" link "m"
+    function sqrt(x: f64) -&gt; f64
+    function pow(base: f64, exponent: f64) -&gt; f64
+    function floor(x: f64) -&gt; f64</code></pre>
     <figcaption>examples/gallery/08-ffi.hero, lines 12&ndash;15</figcaption>
   </figure>
   <p>

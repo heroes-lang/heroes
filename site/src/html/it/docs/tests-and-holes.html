@@ -12,9 +12,9 @@
 
   <h3><code>test</code> è una dichiarazione</h3>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="30-32">
-<pre><code><span class="k">test</span> <span class="s">"the part that exists, works"</span>
-    lunch = [Entry(name: <span class="s">"soup"</span>, calories: <span class="n">120</span>), Entry(name: <span class="s">"bread"</span>, calories: <span class="n">250</span>)]
-    <span class="k">assert</span> total_calories(lunch) == <span class="n">370</span></code></pre>
+<pre><code>test "the part that exists, works"
+    lunch = [Entry(name: "soup", calories: 120), Entry(name: "bread", calories: 250)]
+    assert total_calories(lunch) == 370</code></pre>
     <figcaption>examples/gallery/09-holes.hero, righe 30&ndash;32</figcaption>
   </figure>
   <p>
@@ -39,27 +39,27 @@ ok   "a rectangle keeps its size when it moves"
     Scrivi <code>???</code> dove manca un valore. Il compilatore verifica il codice circostante e indica il tipo necessario per completare l&rsquo;espressione.
   </p>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="12-19">
-<pre><code><span class="c"># Written, tested, done.</span>
-<span class="k">function</span> total_calories(entries: [Entry]) -&gt; <span class="t">i64</span>
-    total: <span class="t">i64</span> @= <span class="n">0</span>
+<pre><code># Written, tested, done.
+function total_calories(entries: [Entry]) -&gt; i64
+    total: i64 @= 0
 
-    <span class="k">for</span> e <span class="k">in</span> entries
+    for e in entries
         total @ total + e.calories
 
-    <span class="k">return</span> total</code></pre>
+    return total</code></pre>
     <figcaption>examples/gallery/09-holes.hero, righe 12&ndash;19</figcaption>
   </figure>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="21-24">
-<pre><code><span class="c"># Next up: the compiler will name the expected type and list `entries`,</span>
-<span class="c"># `total_calories` and the fields of `Entry` when it reaches this.</span>
-<span class="k">function</span> heaviest(entries: [Entry]) -&gt; Entry
+<pre><code># Next up: the compiler will name the expected type and list `entries`,
+# `total_calories` and the fields of `Entry` when it reaches this.
+function heaviest(entries: [Entry]) -&gt; Entry
     ???</code></pre>
     <figcaption>examples/gallery/09-holes.hero, righe 21&ndash;24</figcaption>
   </figure>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="26-28">
-<pre><code><span class="c"># The hole can be one argument of an otherwise finished line.</span>
-<span class="k">function</span> summary_of(entries: [Entry]) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="s">"total "</span> + total_calories(entries).to_str() + <span class="s">", heaviest "</span> + ???</code></pre>
+<pre><code># The hole can be one argument of an otherwise finished line.
+function summary_of(entries: [Entry]) -&gt; str
+    return "total " + total_calories(entries).to_str() + ", heaviest " + ???</code></pre>
     <figcaption>examples/gallery/09-holes.hero, righe 26&ndash;28</figcaption>
   </figure>
   <p>Controlla quel file e il compilatore risponde:</p>
@@ -108,8 +108,8 @@ hole at holes.hero:28:74
     Una persona o un modello può ottenere queste informazioni direttamente dal compilatore, senza installare un editor o estensioni. I tre caratteri <code>???</code> indicano nel sorgente il punto ancora da completare.
   </p>
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="34-35">
-<pre><code><span class="k">function</span> main()
-    print(summary_of([Entry(name: <span class="s">"tea"</span>, calories: <span class="n">2</span>)]))</code></pre>
+<pre><code>function main()
+    print(summary_of([Entry(name: "tea", calories: 2)]))</code></pre>
     <figcaption>examples/gallery/09-holes.hero, righe 34&ndash;35</figcaption>
   </figure>
   <p>

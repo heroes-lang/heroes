@@ -29,9 +29,9 @@ error[no_size]: `variant Expr` contains itself, so it has no size
 
   <h3>Usare un array per i rami</h3>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="8-16">
-<pre><code><span class="k">variant</span> Expr
+<pre><code>variant Expr
     number
-        v: <span class="t">i64</span>
+        v: i64
     add
         parts: [Expr]
     multiply
@@ -49,32 +49,32 @@ error[no_size]: `variant Expr` contains itself, so it has no size
 
   <h3>Percorrerlo è un <code>match</code> e un <code>for</code></h3>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="18-25">
-<pre><code><span class="c"># Recursion over a variant is one `match` and one `for` — and the `match` is</span>
-<span class="c"># exhaustive or it does not compile.</span>
-<span class="k">function</span> value_of(e: Expr) -&gt; <span class="t">i64</span>
-    <span class="k">return</span> <span class="k">match</span> e
+<pre><code># Recursion over a variant is one `match` and one `for` — and the `match` is
+# exhaustive or it does not compile.
+function value_of(e: Expr) -&gt; i64
+    return match e
         .number n   =&gt; n.v
         .add a      =&gt; sum_of(a.parts)
         .multiply m =&gt; product_of(m.parts)
-        .negate g   =&gt; <span class="n">0</span> - first_value(g.inner)</code></pre>
+        .negate g   =&gt; 0 - first_value(g.inner)</code></pre>
     <figcaption>examples/gallery/11-trees.hero, righe 18&ndash;25</figcaption>
   </figure>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="27-41">
-<pre><code><span class="k">function</span> sum_of(parts: [Expr]) -&gt; <span class="t">i64</span>
-    total: <span class="t">i64</span> @= <span class="n">0</span>
+<pre><code>function sum_of(parts: [Expr]) -&gt; i64
+    total: i64 @= 0
 
-    <span class="k">for</span> part <span class="k">in</span> parts
+    for part in parts
         total @ total + value_of(part)
 
-    <span class="k">return</span> total
+    return total
 
-<span class="k">function</span> product_of(parts: [Expr]) -&gt; <span class="t">i64</span>
-    total: <span class="t">i64</span> @= <span class="n">1</span>
+function product_of(parts: [Expr]) -&gt; i64
+    total: i64 @= 1
 
-    <span class="k">for</span> part <span class="k">in</span> parts
+    for part in parts
         total @ total * value_of(part)
 
-    <span class="k">return</span> total</code></pre>
+    return total</code></pre>
     <figcaption>examples/gallery/11-trees.hero, righe 27&ndash;41</figcaption>
   </figure>
   <p>
@@ -86,12 +86,12 @@ error[no_size]: `variant Expr` contains itself, so it has no size
 
   <h3>Come se ne costruisce uno</h3>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="77-82">
-<pre><code><span class="c"># The annotation on the binding is not decoration: a leading-dot case takes its</span>
-<span class="c"># variant from the context, and a bare `=` gives it none (§4.5). Written without</span>
-<span class="c"># it, the compiler says so and names the three places the type could come from.</span>
-<span class="k">function</span> two_plus_three_times_four() -&gt; Expr
-    three_times_four: Expr = .multiply(parts: [.number(v: <span class="n">3</span>), .number(v: <span class="n">4</span>)])
-    <span class="k">return</span> .add(parts: [.number(v: <span class="n">2</span>), three_times_four])</code></pre>
+<pre><code># The annotation on the binding is not decoration: a leading-dot case takes its
+# variant from the context, and a bare `=` gives it none (§4.5). Written without
+# it, the compiler says so and names the three places the type could come from.
+function two_plus_three_times_four() -&gt; Expr
+    three_times_four: Expr = .multiply(parts: [.number(v: 3), .number(v: 4)])
+    return .add(parts: [.number(v: 2), three_times_four])</code></pre>
     <figcaption>examples/gallery/11-trees.hero, righe 77&ndash;82</figcaption>
   </figure>
   <p>
@@ -109,34 +109,34 @@ error[cannot_infer]: `.multiply` does not say which variant it belongs to — th
 
   <h3>Verificare i casi vuoti</h3>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="84-95">
-<pre><code><span class="k">test</span> <span class="s">"the tree evaluates and measures itself"</span>
+<pre><code>test "the tree evaluates and measures itself"
     e = two_plus_three_times_four()
-    <span class="k">assert</span> value_of(e) == <span class="n">14</span>
-    <span class="k">assert</span> depth_of(e) == <span class="n">3</span>
-    <span class="k">assert</span> is_combination(e)
-    <span class="k">assert</span> is_combination(.number(v: <span class="n">1</span>)) == <span class="k">false</span>
+    assert value_of(e) == 14
+    assert depth_of(e) == 3
+    assert is_combination(e)
+    assert is_combination(.number(v: 1)) == false
 
-<span class="k">test</span> <span class="s">"negation nests, and an empty child list is neutral"</span>
-    <span class="k">assert</span> value_of(.negate(inner: [.number(v: <span class="n">7</span>)])) == <span class="n">0</span> - <span class="n">7</span>
-    <span class="k">assert</span> value_of(.add(parts: [])) == <span class="n">0</span>
-    <span class="k">assert</span> value_of(.multiply(parts: [])) == <span class="n">1</span>
-    <span class="k">assert</span> value_of(.negate(inner: [])) == <span class="n">0</span></code></pre>
+test "negation nests, and an empty child list is neutral"
+    assert value_of(.negate(inner: [.number(v: 7)])) == 0 - 7
+    assert value_of(.add(parts: [])) == 0
+    assert value_of(.multiply(parts: [])) == 1
+    assert value_of(.negate(inner: [])) == 0</code></pre>
     <figcaption>examples/gallery/11-trees.hero, righe 84&ndash;95</figcaption>
   </figure>
   <p>
     I test verificano il risultato dei casi vuoti. I quattro <code>assert</code> permettono di rilevare una modifica involontaria al comportamento di <code>value_of</code>.
   </p>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="70-75">
-<pre><code><span class="c"># Two cases share one answer, so their patterns share one arm (`|`).</span>
-<span class="k">function</span> is_combination(e: Expr) -&gt; <span class="t">bool</span>
-    <span class="k">return</span> <span class="k">match</span> e
-        .add _ | .multiply _ =&gt; <span class="k">true</span>
-        .number _            =&gt; <span class="k">false</span>
-        .negate _            =&gt; <span class="k">false</span></code></pre>
+<pre><code># Two cases share one answer, so their patterns share one arm (`|`).
+function is_combination(e: Expr) -&gt; bool
+    return match e
+        .add _ | .multiply _ =&gt; true
+        .number _            =&gt; false
+        .negate _            =&gt; false</code></pre>
     <figcaption>examples/gallery/11-trees.hero, righe 70&ndash;75</figcaption>
   </figure>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="97-98">
-<pre><code><span class="k">function</span> main()
+<pre><code>function main()
     print(value_of(two_plus_three_times_four()))</code></pre>
     <figcaption>examples/gallery/11-trees.hero, righe 97&ndash;98</figcaption>
   </figure>

@@ -15,21 +15,21 @@
     Se esegui <code>heroes run shapes/main.hero</code>, la cartella <code>shapes/</code> è la radice del programma. Tutti i percorsi <code>use</code>, in qualsiasi file, partono da quella cartella.
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="19-23">
-<pre><code><span class="k">use</span> geom/point
-<span class="k">use</span> geom/area
-<span class="k">use</span> render/ascii
-<span class="k">use</span> render/scale as near_scale
-<span class="k">use</span> scale</code></pre>
+<pre><code>use geom/point
+use geom/area
+use render/ascii
+use render/scale as near_scale
+use scale</code></pre>
     <figcaption>examples/shapes/main.hero, righe 19&ndash;23</figcaption>
   </figure>
   <p>
     Il programma contiene sei moduli in tre cartelle. Ecco come un file usa un modulo nella stessa cartella:
   </p>
   <figure class="example" data-src="examples/shapes/geom/area.hero" data-lines="8-11">
-<pre><code><span class="k">use</span> geom/point
+<pre><code>use geom/point
 
-<span class="k">function</span> rect(a: point.Point, b: point.Point) -&gt; <span class="t">i64</span>
-    <span class="k">return</span> point.span(from: a, to: b) * height(a: a, b: b)</code></pre>
+function rect(a: point.Point, b: point.Point) -&gt; i64
+    return point.span(from: a, to: b) * height(a: a, b: b)</code></pre>
     <figcaption>examples/shapes/geom/area.hero, righe 8&ndash;11</figcaption>
   </figure>
   <p>
@@ -58,12 +58,12 @@ error[module_path_climbs]: a `use` path cannot climb — every `use` starts at t
     <code>use geom/point</code> rende disponibile il nome <code>point</code>, ricavato dall&rsquo;ultima parte del percorso. Le cartelle non entrano nel nome: non si usa <code>geom_point</code> né <code>geom.point</code>.
   </p>
   <figure class="example" data-src="examples/shapes/main.hero" data-lines="26-31">
-<pre><code>    corner = point.Point(x: <span class="n">0</span>, y: <span class="n">0</span>)
-    far = point.Point(x: <span class="n">4</span>, y: <span class="n">3</span>)
+<pre><code>    corner = point.Point(x: 0, y: 0)
+    far = point.Point(x: 4, y: 3)
     print(area.rect(a: corner, b: far))
     print(area.perimeter(a: corner, b: far))
     print(ascii.bar(width: point.span(from: corner, to: far)))
-    print(ascii.frame(width: <span class="n">3</span>, height: <span class="n">2</span>))</code></pre>
+    print(ascii.frame(width: 3, height: 2))</code></pre>
     <figcaption>examples/shapes/main.hero, righe 26&ndash;31</figcaption>
   </figure>
   <p>

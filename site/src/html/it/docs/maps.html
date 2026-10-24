@@ -28,39 +28,39 @@ error[type_mismatch]: expected `i64`, found `i64?`
 
   <h3>Quattro modi di gestire una ricerca</h3>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="7-9">
-<pre><code><span class="c"># The four ways to read a `V?`, on one line each (§4.6).</span>
-<span class="k">function</span> score_of(scores: {<span class="t">str</span>: <span class="t">i64</span>}, name: <span class="t">str</span>) -&gt; <span class="t">i64</span>
-    <span class="k">return</span> scores[name].default(<span class="n">0</span>)</code></pre>
+<pre><code># The four ways to read a `V?`, on one line each (§4.6).
+function score_of(scores: {str: i64}, name: str) -&gt; i64
+    return scores[name].default(0)</code></pre>
     <figcaption>examples/gallery/10-maps.hero, righe 7&ndash;9</figcaption>
   </figure>
   <p>
     <b><code>.default(v)</code></b> restituisce il valore trovato oppure <code>v</code> se la chiave manca. In questo esempio il risultato ha tipo <code>i64</code>.
   </p>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="11-12">
-<pre><code><span class="k">function</span> known(scores: {<span class="t">str</span>: <span class="t">i64</span>}, name: <span class="t">str</span>) -&gt; <span class="t">bool</span>
-    <span class="k">return</span> !scores[name].is_err()</code></pre>
+<pre><code>function known(scores: {str: i64}, name: str) -&gt; bool
+    return !scores[name].is_err()</code></pre>
     <figcaption>examples/gallery/10-maps.hero, righe 11&ndash;12</figcaption>
   </figure>
   <p>
     <b><code>.is_err()</code></b> restituisce <code>true</code> se la chiave manca. Non estrae il valore. Per verificare che la chiave sia presente, l&rsquo;esempio nega il risultato con <code>!</code>.
   </p>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="14-20">
-<pre><code><span class="c"># `.is_err()` asks without extracting; the `match` extracts without aborting.</span>
-<span class="k">function</span> report(scores: {<span class="t">str</span>: <span class="t">i64</span>}, name: <span class="t">str</span>) -&gt; <span class="t">str</span>
+<pre><code># `.is_err()` asks without extracting; the `match` extracts without aborting.
+function report(scores: {str: i64}, name: str) -&gt; str
     got = scores[name]
 
-    <span class="k">if</span> got.is_err()
-        <span class="k">return</span> name + <span class="s">" has no score"</span>
-    <span class="k">return</span> name + <span class="s">" scored "</span> + got.must().to_str()</code></pre>
+    if got.is_err()
+        return name + " has no score"
+    return name + " scored " + got.must().to_str()</code></pre>
     <figcaption>examples/gallery/10-maps.hero, righe 14&ndash;20</figcaption>
   </figure>
   <p>
     <b><code>.must()</code></b> restituisce il valore trovato e termina il programma se la chiave manca. Qui la riga precedente ha già verificato che la chiave esiste. Usa questa forma quando hai verificato che la ricerca riesce.
   </p>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="22-26">
-<pre><code><span class="c"># The general way, and the only one that names the error: `match` on `.ok`/`.err`.</span>
-<span class="k">function</span> describe(scores: {<span class="t">str</span>: <span class="t">i64</span>}, name: <span class="t">str</span>) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="k">match</span> scores[name]
+<pre><code># The general way, and the only one that names the error: `match` on `.ok`/`.err`.
+function describe(scores: {str: i64}, name: str) -&gt; str
+    return match scores[name]
         .ok v  =&gt; v.to_str()
         .err e =&gt; e.code</code></pre>
     <figcaption>examples/gallery/10-maps.hero, righe 22&ndash;26</figcaption>
@@ -71,10 +71,10 @@ error[type_mismatch]: expected `i64`, found `i64?`
 
   <h3>Come se ne costruisce una</h3>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="28-31">
-<pre><code><span class="c"># A map is built as a literal. There is no insert in the built-in inventory</span>
-<span class="c"># (§4.20) — `push` is for arrays — so this table is written, not accumulated.</span>
-<span class="k">function</span> table() -&gt; {<span class="t">str</span>: <span class="t">i64</span>}
-    <span class="k">return</span> {<span class="s">"ada"</span>: <span class="n">10</span>, <span class="s">"grace"</span>: <span class="n">9</span>, <span class="s">"alan"</span>: <span class="n">8</span>}</code></pre>
+<pre><code># A map is built as a literal. There is no insert in the built-in inventory
+# (§4.20) — `push` is for arrays — so this table is written, not accumulated.
+function table() -&gt; {str: i64}
+    return {"ada": 10, "grace": 9, "alan": 8}</code></pre>
     <figcaption>examples/gallery/10-maps.hero, righe 28&ndash;31</figcaption>
   </figure>
   <p>
@@ -88,10 +88,10 @@ error[type_mismatch]: expected `i64`, found `i64?`
   <figure class="example" data-src="examples/adventure/world.hero" data-lines="80-86">
 <pre><code>    w = make()
 
-    <span class="k">for</span> name <span class="k">in</span> sort(keys(w.rooms))
+    for name in sort(keys(w.rooms))
         room = room_at(w, name).must()
 
-        <span class="k">for</span> direction <span class="k">in</span> sort(keys(room.exits))
+        for direction in sort(keys(room.exits))
             there = room.exits[direction].must()</code></pre>
     <figcaption>examples/adventure/world.hero, righe 80&ndash;86</figcaption>
   </figure>
@@ -101,28 +101,28 @@ error[type_mismatch]: expected `i64`, found `i64?`
 
   <h3>Tutto quanto, in esecuzione</h3>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="41-47">
-<pre><code><span class="k">test</span> <span class="s">"a missing key is a type, not a crash"</span>
+<pre><code>test "a missing key is a type, not a crash"
     scores = table()
-    <span class="k">assert</span> score_of(scores, <span class="s">"ada"</span>) == <span class="n">10</span>
-    <span class="k">assert</span> score_of(scores, <span class="s">"nobody"</span>) == <span class="n">0</span>
-    <span class="k">assert</span> known(scores, <span class="s">"grace"</span>)
-    <span class="k">assert</span> known(scores, <span class="s">"nobody"</span>) == <span class="k">false</span>
-    <span class="k">assert</span> scores.len() == <span class="n">3</span></code></pre>
+    assert score_of(scores, "ada") == 10
+    assert score_of(scores, "nobody") == 0
+    assert known(scores, "grace")
+    assert known(scores, "nobody") == false
+    assert scores.len() == 3</code></pre>
     <figcaption>examples/gallery/10-maps.hero, righe 41&ndash;47</figcaption>
   </figure>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="33-39">
-<pre><code><span class="k">function</span> total_of(scores: {<span class="t">str</span>: <span class="t">i64</span>}, names: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>
-    sum: <span class="t">i64</span> @= <span class="n">0</span>
+<pre><code>function total_of(scores: {str: i64}, names: [str]) -&gt; i64
+    sum: i64 @= 0
 
-    <span class="k">for</span> name <span class="k">in</span> names
+    for name in names
         sum @ sum + score_of(scores, name)
 
-    <span class="k">return</span> sum</code></pre>
+    return sum</code></pre>
     <figcaption>examples/gallery/10-maps.hero, righe 33&ndash;39</figcaption>
   </figure>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="62-63">
-<pre><code><span class="k">function</span> main()
-    print(total_of(table(), [<span class="s">"ada"</span>, <span class="s">"grace"</span>, <span class="s">"nobody"</span>]))</code></pre>
+<pre><code>function main()
+    print(total_of(table(), ["ada", "grace", "nobody"]))</code></pre>
     <figcaption>examples/gallery/10-maps.hero, righe 62&ndash;63</figcaption>
   </figure>
   <pre><code>$ heroes run examples/gallery/10-maps.hero

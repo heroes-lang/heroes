@@ -12,11 +12,11 @@
 
   <h3>Come si dichiara</h3>
   <figure class="example" data-src="examples/gallery/02-tokens.hero" data-lines="7-15">
-<pre><code><span class="k">variant</span> Token
+<pre><code>variant Token
     number
-        value: <span class="t">i64</span>
+        value: i64
     word
-        text: <span class="t">str</span>
+        text: str
     plus
     times
     open
@@ -32,15 +32,15 @@
     <code>match</code> riconosce il caso di un variant e permette di accedere ai suoi campi nello stesso ramo:
   </p>
   <figure class="example" data-src="examples/gallery/02-tokens.hero" data-lines="17-25">
-<pre><code><span class="c"># What a token is called in a message.</span>
-<span class="k">function</span> name_of(t: Token) -&gt; <span class="t">str</span>
-    <span class="k">return</span> <span class="k">match</span> t
-        .number _ =&gt; <span class="s">"a number"</span>
-        .word _   =&gt; <span class="s">"a word"</span>
-        .plus     =&gt; <span class="s">"`+`"</span>
-        .times    =&gt; <span class="s">"`*`"</span>
-        .open     =&gt; <span class="s">"`(`"</span>
-        .close    =&gt; <span class="s">"`)`"</span></code></pre>
+<pre><code># What a token is called in a message.
+function name_of(t: Token) -&gt; str
+    return match t
+        .number _ =&gt; "a number"
+        .word _   =&gt; "a word"
+        .plus     =&gt; "`+`"
+        .times    =&gt; "`*`"
+        .open     =&gt; "`(`"
+        .close    =&gt; "`)`"</code></pre>
     <figcaption>examples/gallery/02-tokens.hero, righe 17&ndash;25</figcaption>
   </figure>
   <p>
@@ -109,10 +109,10 @@ error[non_exhaustive]: this `match` does not cover `.minus`
     Se più casi producono lo stesso risultato, <code>|</code> permette di elencarli nello stesso ramo:
   </p>
   <figure class="example" data-src="examples/gallery/02-tokens.hero" data-lines="36-39">
-<pre><code><span class="k">function</span> is_operator(t: Token) -&gt; <span class="t">bool</span>
-    <span class="k">return</span> <span class="k">match</span> t
-        .plus | .times                       =&gt; <span class="k">true</span>
-        .number _ | .word _ | .open | .close =&gt; <span class="k">false</span></code></pre>
+<pre><code>function is_operator(t: Token) -&gt; bool
+    return match t
+        .plus | .times                       =&gt; true
+        .number _ | .word _ | .open | .close =&gt; false</code></pre>
     <figcaption>examples/gallery/02-tokens.hero, righe 36&ndash;39</figcaption>
   </figure>
   <p>
@@ -121,13 +121,13 @@ error[non_exhaustive]: this `match` does not cover `.minus`
 
   <h3>Come creare un valore</h3>
   <figure class="example" data-src="examples/gallery/02-tokens.hero" data-lines="46-53">
-<pre><code><span class="k">function</span> main()
-    <span class="c"># The annotation is required and it is not ceremony: a case says which</span>
-    <span class="c"># case it is, never which variant, so a literal list of them has nothing</span>
-    <span class="c"># to infer from. Name the type once and the whole list is checked.</span>
-    line: [Token] = [.open, .number(value: <span class="n">12</span>), .plus, .word(text: <span class="s">"x"</span>), .close]
+<pre><code>function main()
+    # The annotation is required and it is not ceremony: a case says which
+    # case it is, never which variant, so a literal list of them has nothing
+    # to infer from. Name the type once and the whole list is checked.
+    line: [Token] = [.open, .number(value: 12), .plus, .word(text: "x"), .close]
 
-    <span class="k">for</span> t <span class="k">in</span> line
+    for t in line
         print(name_of(t))</code></pre>
     <figcaption>examples/gallery/02-tokens.hero, righe 46&ndash;53</figcaption>
   </figure>
