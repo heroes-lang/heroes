@@ -1,7 +1,7 @@
 # M-separate-compilation — one `.c` per module *(closed 2026-08-26)*
 
 
-**The record is [journal 025](journal/025-separate-compilation.md).** What stays
+**The record is [journal 025](../../records/journal/025-separate-compilation.md).** What stays
 here is only what a later milestone has to honour.
 
 **The four acceptance rows, and what closed each** (panel 030 R2 — they are what

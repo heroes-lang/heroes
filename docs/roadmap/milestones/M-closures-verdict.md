@@ -1,7 +1,7 @@
 # M-closures-verdict — CLOSED 2026-09-08, and what a later milestone must honour
 
 
-The retrospective is [039](journal/039-closures-verdict.md) and the reasoning is
+The retrospective is [039](../../records/journal/039-closures-verdict.md) and the reasoning is
 `docs/panel/119-the-warning-that-does-not-fit.md`. What stays here is only what
 binds work that has not happened yet.
 

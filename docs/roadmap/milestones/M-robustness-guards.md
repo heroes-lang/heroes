@@ -2,7 +2,7 @@
 
 
 **Done 2026-09-03**, tag `m-robustness-guards`; the record is
-[journal 031](journal/031-robustness-guards.md). What a later milestone has to
+[journal 031](../../records/journal/031-robustness-guards.md). What a later milestone has to
 honour:
 
 - **Robust over cheap, on every platform, and never a `-Wno-` flag** (author

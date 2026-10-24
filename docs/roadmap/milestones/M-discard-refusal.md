@@ -2,7 +2,7 @@
 
 
 **Closed 2026-09-08**, tag `m-discard-refusal`, journal
-[038](journal/038-discard-refusal.md), sitting `docs/panel/118`. What the
+[038](../../records/journal/038-discard-refusal.md), sitting `docs/panel/118`. What the
 milestone measured, broke and repaired is there; what a later milestone has to
 honour is here.
 

@@ -1,7 +1,7 @@
 # M-package-layout — `use` paths, the qualifier, and where a program's files live *(closed 2026-09-02)*
 
 
-**The record is [journal 027](journal/027-package-layout.md), and the rulings are
+**The record is [journal 027](../../records/journal/027-package-layout.md), and the rulings are
 panels 099, 100 and 101.** Everything below this line is the section **as it read
 the day the milestone opened**, kept rather than deleted for two reasons: a later
 milestone on modules inherits the same constraints, and a brief that outlives its

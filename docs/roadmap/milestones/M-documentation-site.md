@@ -1,7 +1,7 @@
 # M-documentation-site — the whole language, anchored to programs that run *(closed 2026-09-02)*
 
 
-**The record is [journal 030](journal/030-documentation-site.md).** The four
+**The record is [journal 030](../../records/journal/030-documentation-site.md).** The four
 bullets below were the milestone's **brief**, written while it was scheduled;
 what landed is the journal's to say, and the site's own register rules live in
 `site/README.md` § Style guide. Two of the four bind **any later work on the

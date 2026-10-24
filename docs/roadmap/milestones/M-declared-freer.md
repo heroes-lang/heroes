@@ -1,7 +1,7 @@
 # M-declared-freer — the string C hands you, freed by name *(closed 2026-09-07)*
 
 
-**What happened is [journal 036](journal/036-declared-freer.md).** Panels 109
+**What happened is [journal 036](../../records/journal/036-declared-freer.md).** Panels 109
 and 116, both ratified; five steps; `owned <C function>` in both positions, with
 the release built in the lowering. What stays here is only what a later
 milestone is bound by.

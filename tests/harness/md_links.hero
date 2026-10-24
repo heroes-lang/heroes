@@ -1,0 +1,201 @@
+# The relative links of a markdown document, and where each one lands
+# (`records/links` in `suite_records.hero`).
+#
+# **Why a link and not only a path in backticks.** `records/citations` reads a
+# path written as code, and a link is the citation a reader clicks. On
+# 2026-10-24, the day the ROADMAP moved to the root, 62 of its 70 distinct link
+# targets were already dead: every row of § The chain linked `journal/NNN.md`
+# from `docs/`, where no journal was, the same shape in ten milestone pages and
+# `docs/roadmap/names.md`, 73 dead links in twelve living files, and nothing
+# read a markdown link.
+#
+# **What a link is here**: `](target)` outside a fenced block and outside a code
+# span, whose target names no scheme (`http:`, `https:`, `mailto:`) and is not
+# an anchor alone (`#heading`); its own `#fragment` is dropped, since a heading
+# is not a file. A fence is a line opening with three backticks; `~~~` is not
+# read as one, and no living document uses it. **Where it lands**: the target
+# read from the document's own directory, or from the root where it opens with
+# `/` as GitHub reads one, `.` staying and `..` climbing, and a trailing `/`
+# kept, so a directory is matched as a directory.
+
+use strings
+
+record Link
+    line: i64
+    target: str
+
+# Every relative link of `text`, with its line, in file order.
+function relative_links(text: str) -> [Link]
+    out: [Link] @= []
+    fenced: bool @= false
+    number: i64 @= 0
+
+    for line in strings.lines(text)
+        number @ number + 1
+
+        if strings.starts_with(text: strings.trimmed(line), prefix: "```")
+            fenced @ !fenced
+            continue
+
+        if fenced
+            continue
+
+        for target in targets_in(outside_code(line))
+            if is_relative(target)
+                out @ out.push(Link(line: number, target: without_fragment(target)))
+
+    return out
+
+# `line` with each code span blanked to one space: a run of backticks opens a
+# span and the next run of the same length closes it, as CommonMark reads them;
+# a run with no closing twin is text.
+#
+# **Cut only where a backtick stands**, the line's own ends aside. The first
+# version copied the line one byte at a time and a character of two or three
+# bytes, the dashes and arrows the documents are written with, was split in
+# half, which aborts a slice: measured 2026-10-24 by the run this check was made
+# to fail on, `panic: string slice splits a character`, where the module's own
+# tests, all ASCII, had passed. A backtick is one ASCII byte, and no byte inside
+# a longer character is one, so every cut here falls between two characters.
+function outside_code(line: str) -> str
+    out: str @= ""
+    kept: i64 @= 0
+    i: i64 @= 0
+
+    while i < line.len()
+        if line[i] != 96
+            i @ i + 1
+            continue
+        run = run_at(text: line, at: i)
+        close = closing_run(text: line, from: i + run, length: run)
+
+        if close.is_err()
+            i @ i + run
+        else
+            out @ out + line.slice(from: kept, to: i) + " "
+            i @ close.must() + run
+            kept @ i
+
+    return out + line.slice(from: kept, to: line.len())
+
+# How many backticks stand at `at` in a row.
+function run_at(text: str, at: i64) -> i64
+    end: i64 @= at
+
+    while end < text.len() && text[end] == 96
+        end @ end + 1
+
+    return end - at
+
+# Where the next run of exactly `length` backticks from `from` begins.
+function closing_run(text: str, from: i64, length: i64) -> i64?
+    i: i64 @= from
+
+    while i < text.len()
+        if text[i] == 96
+            run = run_at(text: text, at: i)
+
+            if run == length
+                return ok(i)
+            i @ i + run
+        else
+            i @ i + 1
+
+    return fail(code: "open", msg: "no closing run of " + length.to_str() + " backticks")
+
+# The text between each `](` and the `)` or space that ends it.
+function targets_in(line: str) -> [str]
+    out: [str] @= []
+    i: i64 @= 0
+
+    while i + 1 < line.len()
+        if line[i] == 93 && line[i + 1] == 40
+            start = i + 2
+            end: i64 @= start
+
+            while end < line.len() && line[end] != 41 && line[end] != 32
+                end @ end + 1
+
+            if end > start
+                out @ out.push(line.slice(from: start, to: end))
+            i @ end
+        else
+            i @ i + 1
+
+    return out
+
+# Whether `target` points into the tree rather than at a page elsewhere or at a
+# heading of the document itself.
+function is_relative(target: str) -> bool
+    for opening in ["http:", "https:", "mailto:", "#"]
+        if strings.starts_with(text: target, prefix: opening)
+            return false
+
+    return true
+
+function without_fragment(target: str) -> str
+    at = strings.index_of(text: target, needle: "#")
+
+    if at.is_err()
+        return target
+    return target.slice(from: 0, to: at.must())
+
+# Where `target`, linked from the document at `from`, lands in the tree.
+function landed(from: str, target: str) -> str?
+    parts: [str] @= []
+
+    if !strings.starts_with(text: target, prefix: "/")
+        for segment in strings.split_on(text: from, byte: 47)
+            parts @ parts.push(segment)
+
+        parts @ parts.slice(from: 0, to: parts.len() - 1)
+
+    for segment in strings.split_on(text: target, byte: 47)
+        if segment == "" || segment == "."
+            continue
+
+        if segment == ".."
+            if parts.len() == 0
+                return fail(code: "outside", msg: target + " climbs out of the tree from " + from)
+            parts @ parts.slice(from: 0, to: parts.len() - 1)
+        else
+            parts @ parts.push(segment)
+
+    joined = parts.join("/")
+
+    if strings.ends_with(text: target, suffix: "/")
+        return ok(joined + "/")
+    return ok(joined)
+
+test "a link lands from the document's own directory, or from the root"
+    assert landed(from: "docs/roadmap/names.md", target: "../records/journal/033-c-callbacks.md").must() == "docs/records/journal/033-c-callbacks.md"
+    assert landed(from: "ROADMAP.md", target: "docs/roadmap/names.md").must() == "docs/roadmap/names.md"
+    assert landed(from: "docs/roadmap/names.md", target: "/ROADMAP.md").must() == "ROADMAP.md"
+    assert landed(from: "docs/roadmap/names.md", target: "./shape.md").must() == "docs/roadmap/shape.md"
+    assert landed(from: "README.md", target: "docs/panel/").must() == "docs/panel/"
+
+test "a link that climbs out of the tree is told, never read as the root"
+    assert landed(from: "README.md", target: "../outside.md").is_err()
+    assert landed(from: "docs/a.md", target: "../../outside.md").is_err()
+
+test "an anchor, a scheme and a code span are not links into the tree, and a fragment is dropped"
+    links = relative_links("see [a](#top), [b](https://x.org/y), `[c](d.md)` and [e](f.md#g)\n")
+    assert links.len() == 1
+    assert links[0].target == "f.md"
+    assert links[0].line == 1
+
+test "a fenced block's links belong to its example, not to the document"
+    links = relative_links("[a](a.md)\n```\n[b](b.md)\n```\n[c](c.md)\n")
+    assert links.len() == 2
+    assert links[1].target == "c.md"
+    assert links[1].line == 5
+
+test "a line of characters longer than a byte is read whole, its spans and links where they stand"
+    links = relative_links("a — b · `c→d` [x](xé.md) → [y](y.md)\n")
+    assert links.len() == 2
+    assert links[0].target == "xé.md"
+    assert links[1].target == "y.md"
+
+test "a backtick with no closing twin is text, and a double run closes only on a double"
+    assert relative_links("a ` and [x](x.md)\n").len() == 1
+    assert relative_links("``[y](y.md) ` still code`` and [z](z.md)\n")[0].target == "z.md"

@@ -1,7 +1,7 @@
 # M-thread-stacks — every thread's stack, and what happens when it runs out *(closed 2026-09-06)*
 
 
-The story is [journal 035](journal/035-thread-stacks.md). What a later milestone
+The story is [journal 035](../../records/journal/035-thread-stacks.md). What a later milestone
 has to honour is here, and nothing else.
 
 **Panel 115 refused three things permanently, each with the measurement that

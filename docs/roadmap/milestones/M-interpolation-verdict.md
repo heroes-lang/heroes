@@ -64,7 +64,7 @@ re-measured 2026-09-08 in 021, which is the current answer).
   `{key}` with `{{` as the escape for a literal brace, refuses an unknown key
   instead of leaving the hole, and its module doc defends both choices in writing.
   A corpus program found a defect in exactly that escape rule
-  ([029](journal/029-corpus-coverage.md): `{{name}}` was refused because the rule
+  ([029](../../records/journal/029-corpus-coverage.md): `{{name}}` was refused because the rule
   protected `{{` and not `}}`), which is the cheapest available demonstration that
   the rule is not free.
 - The spec stands at **3685** tokens of a hard 4096, headroom **411**, spread 79

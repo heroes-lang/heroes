@@ -16,6 +16,7 @@ use floors
 use github_issues
 use issue_wire
 use item_shape
+use md_links
 use portable
 use records_github
 use report
@@ -933,6 +934,7 @@ function run_all(scratch: str, only: str) -> report.Report?
     sections(@r, living: living)
     c_files(@r, living: living)
     citations(@r, scratch: scratch, present: walked, closed: closed, archive: archive, bootstrap: bootstrap)
+    links(@r, present: walked, closed: closed, known: known)
     english(@r, present: walked, closed: closed)
     exemptions(@r, present: walked, bootstrap: bootstrap)
     redirects(@r, present: walked, archive: archive)
@@ -3979,6 +3981,83 @@ function exists_or_prefixes(token: str, known: {str: bool}) -> bool
 
     return false
 
+# **EVERY RELATIVE LINK OF A LIVING DOCUMENT LANDS ON SOMETHING THE TREE HOLDS**
+# (`records/links`, 2026-10-24). `citations` above reads a path written as
+# code, and a link is the citation a reader clicks: the day the ROADMAP moved to
+# the root, 62 of its 70 distinct link targets were found dead, the journals'
+# links of § The chain written `journal/NNN.md` from `docs/`, and the same shape
+# in eleven pages beside it, with nothing to say so. What a link is and where it
+# lands is `md_links.hero`'s; a directory is matched as one, by its slash
+# (`exists_or_prefixes`). Records keep the links they were written with and are
+# not walked, as for `citations`, and neither is a question answered; **a file
+# that quotes the old milestone spelling is**, since that exemption is about a
+# name and not a link: the first version read `living`, which drops them, and
+# so never read `docs/roadmap/names.md`, one of the twelve with a dead link.
+#
+# Two texts look like links and are not, each kept by its document and its
+# target, so a real link beside it is still read: the form a `## Prior art`
+# line takes, written twice in `.claude/rules/records.md` as
+# `[<reference>](<url>)`, and `examples/markdown/sample.md`, a program's input,
+# whose link is part of what the program renders. Measured the day the check
+# landed: these two and no third.
+constant NOT_LINKS: [str]
+    [
+        ".claude/rules/records.md <url>"
+        "examples/markdown/sample.md spec/heroes-spec.md"
+    ]
+
+# Measured 2026-10-24: 101 relative links in 19 living documents.
+constant LEAST_LINKS: i64
+    101
+
+# The dead links of one document: each relative link that climbs out of the
+# tree or lands on a path the tree does not hold, told with its line.
+function dead_links(path: str, text: str, known: {str: bool}) -> [str]
+    dead: [str] @= []
+
+    for link in md_links.relative_links(text)
+        if is_among(path + " " + link.target, seen: NOT_LINKS)
+            continue
+        where = md_links.landed(from: path, target: link.target)
+
+        if where.is_err()
+            dead @ dead.push("    " + path + ":" + link.line.to_str() + ": " + link.target + " climbs out of the tree")
+        else if !exists_or_prefixes(token: where.must(), known: known)
+            dead @ dead.push(
+                "    " + path + ":" + link.line.to_str() + ": " + link.target + " lands on " + where.must() + ", which the tree does not hold"
+            )
+
+    return dead
+
+function links(@r: report.Report, present: [str], closed: {str: bool}, known: {str: bool})
+    dead: [str] @= []
+    read: i64 @= 0
+
+    for path in present
+        if !strings.ends_with(text: path, suffix: ".md") || is_record(path) || is_generated(path) || !closed[path].is_err()
+            continue
+        text = read_file(path)
+
+        if text.is_err()
+            dead @ dead.push("    " + path + ": cannot be read")
+            continue
+        read @ read + md_links.relative_links(text.must()).len()
+
+        for one in dead_links(path: path, text: text.must(), known: known)
+            dead @ dead.push(one)
+
+    if !floors.sound(@r, label: "records/links", found: read, floor: LEAST_LINKS, what: "relative links in living documents")
+        return
+
+    if dead.len() > 0
+        report.keep_failure(
+            @r,
+            label: "records/links",
+            detail: "  a link a reader clicks lands on nothing:\n" + dead.join("\n") + "\n  A link is written from the document's own directory. Point it at the file as it\n  is today; a dated sentence that named a moved file keeps its words and links the\n  new place, since the record of the move is MOVED and the commit, not the link."
+        )
+    else
+        report.keep_pass(@r)
+
 # No golden's expected output names a milestone in EITHER spelling.
 #
 # The byte-pinned diagnostic text is where a leak from any diagnostic
@@ -5116,6 +5195,21 @@ function alias_table() -> [str]
                 rows @ rows.push(rest.slice(from: 0, to: at.must()))
 
     return rows
+
+test "a dead link is told with its line, and a live one, a directory and a placeholder are not"
+    known: {str: bool} @= {}
+    known["docs/records/journal/033-c-callbacks.md"] @ true
+    known["docs/panel/001-a.md"] @ true
+    text = "[a](../records/journal/033-c-callbacks.md) and [b](journal/033-c-callbacks.md)\n[c](../panel/) [d](../../../x.md)\n"
+    dead = dead_links(path: "docs/roadmap/names.md", text: text, known: known)
+    assert dead.len() == 2
+    assert strings.contains(
+        text: dead[0],
+        needle: "docs/roadmap/names.md:1: journal/033-c-callbacks.md lands on docs/roadmap/journal/033-c-callbacks.md"
+    )
+    assert strings.contains(text: dead[1], needle: "docs/roadmap/names.md:2: ../../../x.md climbs out of the tree")
+    assert dead_links(path: ".claude/rules/records.md", text: "[<reference>](<url>)\n", known: known).len() == 0
+    assert dead_links(path: "docs/x.md", text: "[<reference>](<url>)\n", known: known).len() == 1
 
 test "a dead citation is caught, and the anchored rule ignores what it must"
     roots: {str: bool} @= {}

@@ -2,7 +2,7 @@
 
 
 **CLOSED 2026-09-05**, the day it opened, tag `m-c-callbacks`, six steps. The
-milestone's own record is [033](journal/033-c-callbacks.md); what stays here is
+milestone's own record is [033](../../records/journal/033-c-callbacks.md); what stays here is
 the reasoning a later milestone has to honour, and it is four things.
 
 **The split is settled and is not re-argued.** The permission is bought entirely
