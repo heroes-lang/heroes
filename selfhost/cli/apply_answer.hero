@@ -18,6 +18,7 @@ use diag
 use source
 use source_extent
 use cli/check_json
+use cli/holes_json
 use cli/argv
 use cli/io
 use cli/publish
@@ -34,7 +35,7 @@ record Settled
     readings: [source.Source]
 
 # What `--apply` prints: the program, or with `--json` the document holding it.
-function answer(s: source.Source, settled: Settled, as_json: bool) -> str
+function answer(s: source.Source, settled: Settled, as_json: bool, holes: holes_json.Holes) -> str
     if !as_json
         return settled.text
     readings: [source.Source] @= [s]
@@ -47,7 +48,7 @@ function answer(s: source.Source, settled: Settled, as_json: bool) -> str
     for one in settled.elsewhere
         others @ others.push(check_json.quote(one))
 
-    return check_json.head_of(kind: "applied", readings: readings) + "  \"file\": " + check_json.quote(s.name) + ",\n  \"rounds\": " + settled.rounds.to_str() + ",\n  \"not_applied\": [" + others.join(", ") + "],\n  \"output\": " + check_json.quote(settled.text) + "\n}\n"
+    return check_json.head_of(kind: "applied", readings: readings) + "  \"file\": " + check_json.quote(s.name) + ",\n  \"rounds\": " + settled.rounds.to_str() + ",\n  \"not_applied\": [" + others.join(", ") + "],\n  \"output\": " + check_json.quote(settled.text) + holes_json.members(holes) + "\n}\n"
 
 # A file no stage speaks of, handed back as it is: no round wrote.
 function untouched(s: source.Source) -> Settled
@@ -61,11 +62,11 @@ function untouched(s: source.Source) -> Settled
 # printed, so `check --apply` into a file emptied a clean one, and a file with
 # a hole got the hole's report, `check`'s own artifact and not this flag's,
 # which `--in-place` printed too.
-function hand_back_clean(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
+function hand_back_clean(s: source.Source, inv: argv.Invocation, holes: holes_json.Holes) -> cli_table.Exit
     as_json = argv.has(inv, spelling: "--json")
 
     if !argv.has(inv, spelling: "--in-place") || as_json
-        io.print_artifact(text: answer(s, settled: untouched(s), as_json: as_json))
+        io.print_artifact(text: answer(s, settled: untouched(s), as_json: as_json, holes: holes))
     return .ok_exit
 
 # What `--apply` hands back once a stage spoke and its rounds settled: the
@@ -76,7 +77,7 @@ function hand_back(s: source.Source, settled: Settled, inv: argv.Invocation, own
     as_json = argv.has(inv, spelling: "--json")
 
     if !argv.has(inv, spelling: "--in-place")
-        io.print_artifact(text: answer(s, settled: settled, as_json: as_json))
+        io.print_artifact(text: answer(s, settled: settled, as_json: as_json, holes: holes_json.unknown()))
         return .ok_exit
 
     # The write goes through s.name because that is the file the text came
@@ -98,7 +99,7 @@ function hand_back(s: source.Source, settled: Settled, inv: argv.Invocation, own
         io.eprint(text: unchanged(name: s.name, own: own, elsewhere: settled.elsewhere.len()))
 
     if as_json
-        io.print_artifact(text: answer(s, settled: settled, as_json: true))
+        io.print_artifact(text: answer(s, settled: settled, as_json: true, holes: holes_json.unknown()))
     return .ok_exit
 
 # What `--in-place` says of a root it leaves as it was (defect 621): of the
@@ -146,8 +147,8 @@ test "the applied answer holds the program, its rounds and what it did not write
     s = source.with_library(name: "t.hero", user: "abc", library: "function range()\n")
     unread: [source.Source] = []
     settled = Settled(text: "abd\n", rounds: 2, elsewhere: ["geom.hero:3"], readings: unread)
-    assert answer(s, settled: settled, as_json: false) == "abd\n"
-    assert answer(s, settled: settled, as_json: true) == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"file\": \"t.hero\",\n  \"rounds\": 2,\n  \"not_applied\": [\"geom.hero:3\"],\n  \"output\": \"abd\\n\"\n}\n"
+    assert answer(s, settled: settled, as_json: false, holes: holes_json.unknown()) == "abd\n"
+    assert answer(s, settled: settled, as_json: true, holes: holes_json.unknown()) == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"file\": \"t.hero\",\n  \"rounds\": 2,\n  \"not_applied\": [\"geom.hero:3\"],\n  \"output\": \"abd\\n\",\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"
     assert untouched(s).text == "abc"
     assert untouched(s).rounds == 0
 
@@ -159,5 +160,5 @@ test "the applied answer names the files every round read, each once"
         [source.user_file(name: "m.hero", text: "abd"), source.user_file(name: "g.hero", text: "")]
     )
     settled = Settled(text: "abd", rounds: 1, elsewhere: ["g.hero:1"], readings: [again])
-    got = answer(first, settled: settled, as_json: true)
-    assert got == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"m.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"},\n    {\"file\": \"g.hero\", \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}\n  ],\n  \"file\": \"m.hero\",\n  \"rounds\": 1,\n  \"not_applied\": [\"g.hero:1\"],\n  \"output\": \"abd\"\n}\n"
+    got = answer(first, settled: settled, as_json: true, holes: holes_json.unknown())
+    assert got == "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"m.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"},\n    {\"file\": \"g.hero\", \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}\n  ],\n  \"file\": \"m.hero\",\n  \"rounds\": 1,\n  \"not_applied\": [\"g.hero:1\"],\n  \"output\": \"abd\",\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"

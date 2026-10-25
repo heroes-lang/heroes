@@ -180,3 +180,20 @@ member's landing and design.md's two corrections; it does not settle the repairs
 - **The coordinator repaired defect 2203 during the sitting**, in the lane the seats did not read,
   each seat working on its own worktree at `9a38f1b26`; two of the compiler-engineer's predictions are
   scored on that commit above.
+
+## The landing, on the provisional resolution
+
+**Landed 2026-10-25 in the lane `rechecked-issues`**, after defects 2203, 2204 and 2205 closed in it
+(R5's order): the value, `selfhost/check/hole_report.hero`, which `check/holes.hero` writes as text
+and `cli/holes_json.hero` as the two members R1 names in every `"diagnostics"` and `"applied"`
+document; the text byte for byte what it was but for R4's count under a cut list of functions;
+design.md §4.16 and §4.17 corrected (R6, R7); the help, the errors pages in both editions and
+`llms.txt` saying what the document now holds. **One key more than R2 lists, `"asked"`**: what a
+value place asks in words (*an array, `[T]`, or `range(from:, to:)`*), which defect 2204's repair
+gave the text after this sitting wrote R2, and which the proposal's own rule, *carrying what the
+text report carries*, puts in the document; `""` where there is none, as R2 asks of every string.
+Measured on the landed compiler with the critic's reading: a json-c 0.19 reader in the library's
+idiom, acting on `"holes"` only under a true `"holes_complete"`, read a value hole, read a statement
+hole whose `"expected"` is `""` with no signal (A' as first built faulted there, exit 139), refused a
+document beside an error at exit 2, and refused at exit 2 the answer of the trunk's compiler, built
+before the members (`sources 451802aa66692eb3`).

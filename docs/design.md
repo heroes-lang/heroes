@@ -2263,6 +2263,13 @@ Two rules discovered by adversarial review (panel 000), both now normative:
 - **Hole suggestions are ranked by type-relevance, capped at 5, in deterministic order — and the
   cap is stated in the spec.** Unbounded "nearby functions" would flood a model's context on a
   5k-line compiler and vary with file layout, making identical holes give different guidance.
+  **Corrected 2026-10-25** (panel 228's R6, provisional, author ratification pending): no revision
+  of the specification has stated the cap, by the sitting's critic's searches of its history, and
+  the suggestions are filtered by result type and listed in a fixed order, (module, name), not
+  ranked. The cap is this section's own, five, and every list it cuts says by how many, in the text
+  (`… and N more`) and in `check --json`'s `"more_in_scope"` and `"more_functions"`: a list cut in
+  silence is one a reader takes for whole. The same report is a member of every `check --json`
+  document since that sitting, below, the text staying on stdout.
 
 Prior art: proof assistants (Idris, Agda) have holes, but for mathematicians. Nobody has them for
 LLM code generation.
@@ -2337,6 +2344,22 @@ the files read, not the program: a module edited since can make a written fix wr
 check tells. A flag no one answer can hold is refused at exit 2 rather than dropped, as each was
 until defect 371: `--brief` or `--dump-scopes` with `--apply`, `--in-place` without it, and
 `--brief` with `--json`.
+
+**Every answer carries the program's holes, and says whether the list is whole** (panel 228's R1,
+R2 and R7, provisional, author ratification pending; feature 2091, defect 2158). A `"diagnostics"`
+and an `"applied"` document each hold `"holes"`, an array, and `"holes_complete"`, a boolean, true
+exactly when every stage ran quiet, the list then every hole of the program in source order (§4.16's
+report, one value rendered as the text and as these objects); beside a diagnostic, or after
+`--apply`'s rounds rewrote the program, it is `false` and the list `[]`, since the type stage may
+not have reached a hole. Every hole carries every key and none is ever `null`: `file`, `line`,
+`col`; `position`, `value` or `statement`; `expected`, `asked` and `returns`, strings, `""` where
+there is none; `in_scope` (`name`, `type`, `mutable`) and `more_in_scope`; `fields` (`name`,
+`type`); `cases`; `functions` (`call`, `doc`) and `more_functions`; every type one the hole's file
+can write, `""` where the checker holds none. **When `"schema"` moves**: when a member's meaning
+changes or a member leaves. A member is added with what its absence means, and `"holes"` with
+`"holes_complete"`, whose absence a reader takes as false, so an answer written before them reads as
+not whole and never as finished, which a reader acting on `"holes"` only under a true flag gets from
+json-c's and cJSON's idiomatic reads alike (measured by the sitting's critic).
 
 **A directory operand writes a module where every root under it agrees** (panel 211, provisional,
 author ratification pending; defect 607). `check <directory> --apply --in-place` takes every

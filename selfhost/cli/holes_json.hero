@@ -1,0 +1,129 @@
+# The holes of every document `check --json` writes (panel 228's R1 and R2,
+# provisional, author ratification pending; feature 2091, defect 2158):
+# `"holes"`, each hole of the program in source order, every key always
+# there and none ever null, and `"holes_complete"`, true exactly when every
+# stage ran quiet, so that the list is every hole the program holds. A reader
+# acts on `"holes"` only where `"holes_complete"` is true, which no document
+# written before these members says, so an older answer reads as not whole
+# rather than as finished: json-c's and cJSON's idiomatic boolean read of an
+# absent member is false, measured by the sitting's critic. What a hole says
+# is `check/hole_report.hero`'s, which the text renders too.
+
+use cli/json_text
+use check/hole_report
+
+# The holes a document carries, and whether they are all the program holds.
+record Holes
+    reports: [hole_report.Report]
+    complete: bool
+
+# Holes nobody can promise whole: a stage spoke, so the type stage may not
+# have reached a hole, or the program is not the one that was checked.
+function unknown() -> Holes
+    none: [hole_report.Report] = []
+    return Holes(reports: none, complete: false)
+
+# Every hole of a program whose every stage ran quiet.
+function whole(reports: [hole_report.Report]) -> Holes
+    return Holes(reports: reports, complete: true)
+
+# The two members, written after a document's last member: a comma, their
+# lines, and no closing brace.
+function members(h: Holes) -> str
+    rows: [str] @= []
+
+    if h.reports.len() == 0
+        rows @ rows.push(",\n  \"holes\": []")
+    else
+        rows @ rows.push(",\n  \"holes\": [\n")
+        index: i64 @= 0
+
+        for one in h.reports
+            rows @ rows.push(hole(one))
+
+            if index < h.reports.len() - 1
+                rows @ rows.push(",\n")
+            else
+                rows @ rows.push("\n")
+            index @ index + 1
+
+        rows @ rows.push("  ]")
+    complete: str @= "false"
+
+    if h.complete
+        complete @ "true"
+    rows @ rows.push(",\n  \"holes_complete\": " + complete)
+    return rows.join("")
+
+# One hole, every key there: a string none of the report holds is "".
+function hole(one: hole_report.Report) -> str
+    position: str @= "value"
+
+    if one.statement
+        position @ "statement"
+    scope: [str] @= []
+
+    for seen in one.in_scope
+        scope @ scope.push(
+            "{\"name\": " + quoted(seen.name) + ", \"type\": " + quoted(seen.ty) + ", \"mutable\": " + truth(seen.mutable) + "}"
+        )
+
+    fields: [str] @= []
+
+    for f in one.fields
+        fields @ fields.push("{\"name\": " + quoted(f.name) + ", \"type\": " + quoted(f.ty) + "}")
+
+    cases: [str] @= []
+
+    for one_case in one.cases
+        cases @ cases.push(quoted(one_case))
+
+    offered: [str] @= []
+
+    for f in one.functions
+        offered @ offered.push("{\"call\": " + quoted(f.call) + ", \"doc\": " + quoted(doc_text(f.doc)) + "}")
+
+    rows: [str] = [
+        "    {\n"
+        "      \"file\": " + quoted(one.file) + ",\n"
+        "      \"line\": " + one.line.to_str() + ",\n"
+        "      \"col\": " + one.col.to_str() + ",\n"
+        "      \"position\": " + quoted(position) + ",\n"
+        "      \"expected\": " + quoted(one.expected) + ",\n"
+        "      \"asked\": " + quoted(one.asked) + ",\n"
+        "      \"returns\": " + quoted(one.returns) + ",\n"
+        "      \"in_scope\": [" + scope.join(", ") + "],\n"
+        "      \"more_in_scope\": " + one.more_in_scope.to_str() + ",\n"
+        "      \"fields\": [" + fields.join(", ") + "],\n"
+        "      \"cases\": [" + cases.join(", ") + "],\n"
+        "      \"functions\": [" + offered.join(", ") + "],\n"
+        "      \"more_functions\": " + one.more_functions.to_str() + "\n"
+        "    }"
+    ]
+    return rows.join("")
+
+# A documentation line's words, its `#` and the spaces after it left out.
+function doc_text(line: str) -> str
+    at: i64 @= 0
+
+    while at < line.len() && (line[at] == '#' || line[at] == ' ')
+        at @ at + 1
+
+    return line.slice(from: at, to: line.len())
+
+function truth(b: bool) -> str
+    if b
+        return "true"
+    return "false"
+
+function quoted(text: str) -> str
+    return "\"" + json_text.json_string(text) + "\""
+
+## Tests
+
+test "a document says its holes whole only when it can, and an older one reads as not whole"
+    assert members(unknown()) == ",\n  \"holes\": [],\n  \"holes_complete\": false"
+    none: [hole_report.Report] = []
+    assert members(whole(none)) == ",\n  \"holes\": [],\n  \"holes_complete\": true"
+    assert doc_text("# Builds the origin.") == "Builds the origin."
+    assert doc_text("") == ""

@@ -32,18 +32,20 @@ use token
 use cli/json_text
 use cli/certain
 use cli/sha256
+use cli/holes_json
 
 # The schema's number, which every document opens with. The help, the page a
 # model reads and the errors page say it, each held to this constant.
 constant SCHEMA: i64
     2
 
-# The diagnostics a stage said, as the document `check --json` writes.
-function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
+# The diagnostics a stage said, and the program's holes (panel 228's R1), as
+# the document `check --json` writes.
+function json(diagnostics: [diag.Diagnostic], s: source.Source, holes: holes_json.Holes) -> str
     rows: [str] @= [head(kind: "diagnostics", s: s)]
 
     if diagnostics.len() == 0
-        rows @ rows.push("  \"diagnostics\": []\n}\n")
+        rows @ rows.push("  \"diagnostics\": []" + holes_json.members(holes) + "\n}\n")
         return rows.join("")
     rows @ rows.push("  \"diagnostics\": [\n")
     rounds = certain.outcomes(diagnostics, s)
@@ -87,7 +89,7 @@ function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
             rows @ rows.push("    },\n")
         index @ index + 1
 
-    rows @ rows.push("  ]\n}\n")
+    rows @ rows.push("  ]" + holes_json.members(holes) + "\n}\n")
     return rows.join("")
 
 # What every document opens with: its schema, its kind, and the files the
@@ -177,5 +179,5 @@ test "a fix's place is per file, its column in characters and its offsets in byt
 test "every answer says its schema and kind, names what it read, and a clean one is a document"
     s = source.with_library(name: "t.hero", user: "abc", library: "function range()\n")
     none: [diag.Diagnostic] = []
-    clean = json(none, s)
-    assert clean == "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"diagnostics\": []\n}\n"
+    clean = json(none, s, holes: holes_json.unknown())
+    assert clean == "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"t.hero\", \"sha256\": \"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\"}\n  ],\n  \"diagnostics\": [],\n  \"holes\": [],\n  \"holes_complete\": false\n}\n"
