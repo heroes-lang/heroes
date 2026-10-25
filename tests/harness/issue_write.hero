@@ -461,10 +461,31 @@ function comments_of(@s: issue_pace.Session, number: i64) -> [str]?
     return ok(out)
 
 # `close`: the issue `number` given its settling section, its one comment and
-# its closed state; `commits` the backticked words of `given` and its last
-# line's commit that git knows. The exit code.
+# its closed state; `commits` the backticked words of `given`, its bare ones
+# and its last line's commit that git knows. The exit code. A bare word that
+# reads as a commit and names none refuses the text before GitHub is asked
+# (defect 2190), but the last line's, which the check below names as what the
+# text ends with.
 function closed_with(@s: issue_pace.Session, number: i64, given: str, commits: {str: bool}) -> i64
     address = WEB + number.to_str()
+    rows = strings.lines(strings.trimmed(given))
+    last: str @= ""
+
+    if rows.len() > 0
+        last @ strings.trimmed(rows[rows.len() - 1])
+    sentenced: [str] @= []
+
+    for word in issue_safe.unnamed_hashes(text: given, commits: commits)
+        if word != last
+            sentenced @ sentenced.push(word)
+
+    unnamed = issue_safe.unnamed_told(whose: "it", unnamed: sentenced)
+
+    if unnamed.len() > 0
+        for one in unnamed
+            issue_pace.warn(@s, text: "the closing text of " + address + ": " + one)
+
+        return 1
     held = issue_github.issue(@s, number: number)
 
     if held.is_err()
@@ -576,7 +597,10 @@ function closed_with(@s: issue_pace.Session, number: i64, given: str, commits: {
 function commented(@s: issue_pace.Session, number: i64, given: str, commits: {str: bool}) -> i64
     address = WEB + number.to_str()
     text = made_inert(text: strings.trimmed(given), commits: commits)
-    wrong = text_offences(text)
+    wrong: [str] @= text_offences(text)
+
+    for one in issue_safe.unnamed_told(whose: "it", unnamed: issue_safe.unnamed_hashes(text: given, commits: commits))
+        wrong @ wrong.push(one)
 
     if wrong.len() > 0
         for one in wrong
@@ -894,6 +918,20 @@ test "a comment is made inert, posted, and read back by its own address"
     empty: issue_pace.Session @= issue_pace.scripted([])
     assert commented(@empty, number: 7, given: "\n\n", commits: commits) == 1
     assert empty.world.requests.len() == 0
+
+test "a hash written bare in a sentence that names no commit refuses a comment and a close before GitHub is asked (defect 2190)"
+    wrong = "0123456789abcdef0123456789abcdef0123456a"
+    unknown: {str: bool} = {}
+    s: issue_pace.Session @= issue_pace.scripted([])
+    assert commented(@s, number: 7, given: "Repaired at " + wrong + ", gated by its cases.", commits: unknown) == 1
+    assert s.world.requests.len() == 0
+    assert strings.contains(text: s.err[0], needle: "names " + wrong + " bare, which is no commit of this history")
+    known: {str: bool} @= {}
+    known[issue_scripts.SETTLED] @ true
+    c: issue_pace.Session @= issue_pace.scripted([])
+    assert closed_with(@c, number: 7, given: "Landed, see 7d2f03be0 beside it.\n\n" + issue_scripts.SETTLED, commits: known) == 1
+    assert c.world.requests.len() == 0
+    assert strings.contains(text: c.err[0], needle: "names 7d2f03be0 bare")
 
 test "edit refuses a closed issue, which comment corrects, and a draft that would close an open one"
     d = defect_draft()

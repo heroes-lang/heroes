@@ -12,6 +12,7 @@ use emit/clang_place
 use emit/clang_name
 use emit/externs as emit_externs
 use cli/strings
+use module/names as module_names
 
 # The name the Heroes library's lowered code carries in every unit
 # (`source.hero`'s library file).
@@ -105,6 +106,24 @@ function plain(path: str) -> str
 # The group whose header is the file at `path`, spelled every way clang's
 # path allows, longest first.
 function group_of(s: source.Source, decls: [ast.Decl], path: str) -> Group?
+    return group_among(s, decls, path: path, component: "")
+
+# The group whose header is the file at `path` in the module whose unit is
+# `compiled`, the file clang compiled, where that module has one, else the
+# first of the program's (defect 2208): a header two modules' groups name,
+# refused in both units, is told at each unit's own group. A unit's file is
+# its module's C component and `.c` (`cli/units.hero`), so a file that is no
+# module's, `heroes test`'s or a probe's, finds the first as before.
+function unit_group(s: source.Source, decls: [ast.Decl], path: str, compiled: str) -> Group?
+    own = group_among(s, decls, path: path, component: module_names.stem_of(compiled))
+
+    if !own.is_err()
+        return own
+    return group_of(s, decls, path: path)
+
+# `group_of` among the declarations of the module whose C component is
+# `component`, or of every module where it is "".
+function group_among(s: source.Source, decls: [ast.Decl], path: str, component: str) -> Group?
     for spelled in clang_place.spellings(path)
         for decl in decls
             named: token.Span? @= fail(code: "none", msg: "no header")
@@ -115,7 +134,7 @@ function group_of(s: source.Source, decls: [ast.Decl], path: str) -> Group?
                 .record_decl rec           => named @ rec.header
                 .variant_decl | .test_decl => continue
 
-            if named.is_err()
+            if named.is_err() || component != "" && source.file_at(s, decl.span.start).component != component
                 continue
             header = emit_externs.unquoted(s, span: named.must())
 

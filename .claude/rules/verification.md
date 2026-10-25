@@ -91,7 +91,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `selfhost/**` | `canonical` `layout` `order` `probe` `records` `seed` `spec`, **plus the compiler's own tests** |
 | `seed/heroes.c` | **`seed`** (it defines what the compiler it builds reads of its own C, panel 222's R3), `descriptors` `wholes`; the CI's two-stage check after the push |
 | `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**`, `tests/golden/emit/**` and `seed/heroes.c`) | **`emission`** **`emit`** `determinism` **`wholes`** `descriptors`, `lldb` (its sessions pin the `#line`s and the C names a stopped frame shows; issue 944, 2026-10-12), plus everything `selfhost/**` already gets |
-| `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, `grammar` for `selfhost/parse/**` (it reads the contextual words there), plus everything `selfhost/**` already gets, and the run by hand below before a push |
+| `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, `grammar` for `selfhost/parse/**` (it reads the contextual words there), plus everything `selfhost/**` already gets, and the run by hand below, owed after the push (panel 229's R4) |
 | `tests/golden/check/**` | **`check`** `annotations` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
 | `tests/golden/unsupported/**` | **`unsupported`** `annotations` |
@@ -195,7 +195,8 @@ refused the deploy. The page that was live stayed live, so nothing false was
 published, and nothing true was either. The claims check is the site's
 instrument and no suite of the net runs it, so a change to a file it reads goes
 through the site's build before the push, as a `selfhost/print/` change goes
-through the probe by hand.
+through the probe by hand (after the push since 2026-10-09, § The optimistic
+chain; panel 229's R4).
 
 **`grammar` was missing from the spec row until 2026-09-16**, found by panel
 159's completeness critic while auditing the briefs that sitting was working
@@ -294,7 +295,7 @@ and the suite passes such a program with nothing to bless (defect 341 is its
 floor). The suite's comments say so since defect 298's repair; the paragraph
 above stands as the history of 2026-09-09.
 
-## The formatter's probe, by hand, before a push that touches `selfhost/print/`
+## The formatter's probe, by hand, after a push that touches `selfhost/print/`
 
 Added 2026-09-28 with `heroes probe`, panel 179 item 7. The net holds two of
 its forms: the fixtures under every family, one variant in two because the
@@ -339,6 +340,28 @@ a compiler built at `-O2`, 8.6 variants per line in the two families, and
 4.4 CPU hours at `-O2` and five times that with the gate's plain build. It is
 the reason the run is by hand: build the compiler with `clang -O2` for it and
 run the six invocations side by side.
+
+**Amended 2026-10-25 by panel 229** (R2 to R5, provisional, author
+ratification pending; decision 2210, defect 2139). **When**: the run is owed
+after the push, beside the CI, and nothing waits for it, as § The optimistic
+chain has said since the author's instruction of 2026-10-09; this section's
+heading said *before* and its rule *push only over exit 0* until this day, and
+both stand above as the rule of 2026-09-28. **How**: one `heroes probe
+<seed> --family <family>` per seed of the three roots and per family, `single`
+and `bracket`, unstrided, with the compiler built at `-O2`, as many side by
+side as the machine has cores (`xargs -P`, as journal 061's run went); a seed
+whose own job sets the wall is cut by `--stride N --offset K` for K from 0 to
+N−1, which judge every variant of it once between them. **A stride that is a
+multiple of 3 is refused**: `bracket` and `paren` write three forms of each
+place, so such a stride judges one form of each place in every seed, and
+defect 506 holds in its `O` form. **What it costs**, measured by the
+sitting's seats on this Mac, a fanless MacBook Air with four performance and
+four efficiency cores, after the formatter asked a chain once (R1): about 15 cool CPU hours
+of work, `bracket` 10.2 and `single` 4.8, and 3.8 to 4.6 hours of wall eight
+wide, each ×100 of stride-100 passes, so an inference and a lower bound; eight
+processes there deliver about 3.9 cool cores. **A run that ends at exit 0, or
+at exit 2 only on failures an open defect names, closes defect 2139**, its
+wall and CPU written beside that inference.
 
 ## What may run beside a gate, and what may not
 
@@ -755,8 +778,9 @@ fast-forward the trunk: same tree, no second gate):
    where the batch changed what the compiler refuses (the rule *a new checker
    rule is judged by every golden tree*, done with one instrument), run with
    `xargs -P 8`;
-4. the formatter's probe by hand if `selfhost/print/` moved, the site's build if
-   a file it reads moved, `deploy-site.yml`'s `paths:` (both above);
+4. the formatter's probe by hand if `selfhost/print/` moved (after the push since
+   2026-10-09, § The optimistic chain; panel 229's R4), the site's build if a
+   file it reads moved, `deploy-site.yml`'s `paths:` (both above);
 5. then the Linux x86-64 container (`.claude/rules/platforms.md`).
 
 **Red**: the batch's commits are linear in its lane, one per defect. `git bisect`

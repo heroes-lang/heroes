@@ -176,6 +176,18 @@ Milestone close — the checklist (this is its only copy):
   renewed with a new milestone name** (panel 046 R2). This bullet exists because
   the mechanism failed without it: panel 036's *"Score at M-ffi-ladder close"*
   survived that milestone's close untouched;
+- **re-check every open `feature` and `task` that two milestone tags have
+  passed**, the one this close places counting: each filed before the newest
+  tag already standing (`git tag --list 'm-*' --sort=-creatordate
+  --format='%(creatordate:short) %(refname:short)'`), listed by `heroes run
+  tests/harness/issues.hero -- open --kind feature` and `--kind task`, is run
+  again against the tree and given a dated comment saying against which commit
+  and what came out, then closed with the commit that settled it, closed with
+  the reason it no longer applies, re-homed on a row still to come, or left on
+  its row with that comment (issue 2092, M-rechecked-issues). A defect ages by
+  rule, an `adjacent` one counting as `blocking` from its second tag, and a
+  feature or a task did not: on 2026-10-14, 44 of the 49 open were filed in
+  September against a tree that had since closed rows 33 to 65;
 - **WRITE** the milestone's `/learn` offers as questions of `docs/learn/`
   (walkthrough, golden ratification, mutation drill, exit-quiz), and **do not
   put them to the author**. `/learn` is never convened by the assistant, not at
@@ -223,5 +235,13 @@ Milestone close — the checklist (this is its only copy):
   writes among them since 2026-10-24, so a close that followed this checklist
   to the letter published the site without asking. The push is asked for, with how many site
   commits would travel, and it carries the tag when the author says yes
-  (CLAUDE.md § Hard stops, `docs/records/contract/case-law.md` CL-042);
+  (CLAUDE.md § Hard stops, `docs/records/contract/case-law.md` CL-042).
+  **That push is judged with the tag placed**: the guard in front of a push
+  that can carry an `m-*` tag asks `records/tagged` and refuses on anything but
+  a pass (`.claude/hooks/tagged.py`, defect 2198). A refusal is answered by
+  `git tag -d m-<name>`, the list repaired or a waiver decided by the author,
+  and the tag placed again; a local tag moves, a pushed one does not. Until
+  2026-10-25 the close asked `records` before placing the tag, when `tagged`
+  still judged the tag before it, and `m-thesis-harness` stood over two
+  defects its own placing aged;
 - site build log: only when the author asks (`site/README.md`).

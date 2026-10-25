@@ -153,6 +153,13 @@ record Checker
     # order — a generic id is only meaningful inside it, and messages
     # must print the letter the author wrote.
     generic_names: [str]
+    # Who reads the types its messages write: the module of the declaration
+    # being checked and what its file calls the others (defect 2205).
+    reader: render.Reader
+    # Every file's `render.calls_of`, by its module, built once from the
+    # resolver, so a message written after the declarations' walk reads its
+    # types from where it stands (`reader_at`).
+    module_calls: {str: {str: str}}
     # A missing_return per function that can run off its end, held back
     # until the whole file is checked so §4.16's file-wide hole exemption
     # can apply.
@@ -231,6 +238,13 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
         k @ k + 1
 
     generic_names: [str] = []
+    module_calls: {str: {str: str}} @= {}
+
+    # ORDER: none — each module's entry is written once, from its own name
+    # alone, so no entry reads another.
+    for module in sort(keys(out_of.module_uses.at))
+        module_calls[module] @ render.calls_of(out_of, module: module)
+
     missing_returns: [diag.Diagnostic] = []
     cases: {i64: {str: i64}} = {}
     kept: {i64: bool} = {}
@@ -240,6 +254,8 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
         loops: 0,
         locals_by_span: locals_by_span,
         generic_names: generic_names,
+        reader: render.bare_reader(),
+        module_calls: module_calls,
         missing_returns: missing_returns,
         fallible: false,
         tail: false,
@@ -270,7 +286,22 @@ function append_hole(@holes: [Hole], h: Hole)
 # A type as the author would have written it — every message goes through
 # here so that no diagnostic ever prints a notation the language lacks.
 function show(c: Checker, s: source.Source, decls: [ast.Decl], id: i64) -> str
-    return render.render_ty(c.out.types, s, decls, id, c.generic_names)
+    return render.render_read(c.out.types, s, decls, id, c.generic_names, reader: c.reader)
+
+# `show` for a message standing at `at`, its types written as that module's
+# file writes them, whatever declaration the walk last entered (defect 2205).
+function show_at(c: Checker, s: source.Source, decls: [ast.Decl], id: i64, at: i64) -> str
+    return render.render_read(c.out.types, s, decls, id, c.generic_names, reader: reader_at(c, s, at: at))
+
+# The reader standing at the byte `at`.
+function reader_at(c: Checker, s: source.Source, at: i64) -> render.Reader
+    module = source.module_at(s, at)
+    calls = c.module_calls[module]
+
+    if calls.is_err()
+        none: {str: str} = {}
+        return render.Reader(module: module, calls: none)
+    return render.Reader(module: module, calls: calls.must())
 
 # Gives a local the type its declaration says it has. Keyed by the span
 # of the name, so the checker and the resolver agree by POSITION IN THE

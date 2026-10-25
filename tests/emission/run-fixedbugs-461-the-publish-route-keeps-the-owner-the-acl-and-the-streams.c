@@ -456,7 +456,7 @@ HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7745db43336c33b0", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("05c7a58a4e334d5f", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_main();

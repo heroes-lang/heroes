@@ -355,15 +355,20 @@ in `selfhost/keywords.hero`, the foreign words in
 `selfhost/escape.hero` and `selfhost/code_escape.hero`, the numbers in
 `selfhost/number.hero`, the character literals in `selfhost/literals.hero`,
 and the `f` literal's holes in `selfhost/lex_interp.hero`. The `spec`
-suite holds the grammar to them, its words read from those files and its
-rules for each literal run against the lexer:
+suite holds the grammar to them two ways: its words are read from
+`keywords.hero`, `foreign_words.hero` and `escape.hero`, and its rules for
+the numbers, the character literals, the strings, the `f` literals and the
+comments are run against the lexer, `heroes lex`. Its rules for `//` and
+for a backtick are held by no check yet (2026-10-25), so a change to
+`token.hero` or `punctuation.hero` carries them by hand:
 
 ```sh
 ./heroes run tests/harness/main.hero -- ./heroes spec
 ```
 
 When a token kind, a keyword or an escape rule changes, change the grammar
-in the same commit, run that, then repackage.
+in the same commit, run that, then repackage. It is highlighting, not
+truth: the compiler is the only authority (CLAUDE.md § 12).
 
 The formatter is held by the `lldb` suite's `formatter-` cases, which import
 it from the tree and pin what a stopped program shows, each soundness rule
@@ -371,10 +376,9 @@ made to fire by a write through `expression` (`tests/golden/lldb/`):
 
 ```sh
 ./heroes run tests/harness/main.hero -- ./heroes lldb
-``` It is highlighting, not
-truth: the compiler is the only authority (CLAUDE.md § 12).
+```
 
-The same suite holds the package to itself: its two manifests say one
+The `spec` suite holds the package to itself: its two manifests say one
 version, one engine, one description and one list of categories; every file
 `package.json` names is there; and the language it declares is named by
 `contributes.breakpoints` and by its debugger, the two places where a slip

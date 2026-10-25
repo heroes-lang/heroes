@@ -134,14 +134,13 @@ record Resolved
     # entry and the collision is a map hit — Modula-3's per-file rule as the
     # shape of the data rather than a check bolted beside it.
     module_uses: name_rows.UseRows
-    # Every module that contains a `???`. While one does, unused bindings are
-    # not reported IN THAT MODULE (§4.16, normative: the suppression is
-    # file-wide). A set rather than a flag, and the difference is a fixed
-    # defect: one `bool` made the exemption program-wide, so an unfinished
-    # `geom.hero` silently suspended the rule in a `main.hero` nobody was
-    # editing (panel 033 D1). Heroes has no set type, so it is an array — and
-    # an array sorts, which a set of records would not.
+    # Every module holding a `???`, where unused bindings go unreported (§4.16:
+    # file-wide). A set, never a flag: one `bool` let an unfinished `geom.hero`
+    # suspend the rule in a `main.hero` (panel 033 D1). An array, which sorts.
     holes_in: [str]
+    # The locals visible at each `???`, by its expression, as bound: the
+    # resolver's own answer, which the hole's report reads (defect 2203).
+    hole_scopes: {i64: [i64]}
     # The parameter NAMES a function type wrote, by type-arena node, and absent
     # where it wrote none (defect 026). Read here because this pass is the last
     # one holding the source: `check/lower.hero`, which puts the names into the
@@ -163,6 +162,7 @@ function new_resolved() -> Resolved
         top: name_rows.new_name_rows(),
         module_uses: name_rows.new_use_rows(),
         holes_in: [],
+        hole_scopes: {},
         fn_labels: {},
         diagnostics: [],
         rebinds: {}

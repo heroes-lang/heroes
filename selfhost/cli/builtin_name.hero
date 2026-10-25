@@ -60,7 +60,7 @@ function told(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @a
 
     if steps.len() != 2 || group_file.compilers(path: first.place.path, compiled: steps[0].path, runtime: own)
         return fail(code: "none", msg: "the error lies in no header the compiled file includes")
-    group = group_file.group_of(s, decls, path: first.place.path)?
+    group = group_file.unit_group(s, decls, path: first.place.path, compiled: steps[0].path)?
 
     if !one_place(rows, first: first, including: steps[0])
         return fail(code: "none", msg: "a note places the earlier declaration elsewhere")

@@ -24,6 +24,7 @@ use resolve
 use resolved
 use check/table
 use check/state
+use check/render
 use check/lower
 use check/walk
 use check/join
@@ -42,6 +43,8 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
     index: i64 @= 0
 
     for decl in decls
+        c.reader @ state.reader_at(c, s, at: decl.span.start)
+
         match decl.kind
             .constant_decl k =>
                 declared = lower.lower_ty(@c, a, r, k.ty)
@@ -223,6 +226,11 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                         _ = lower.lower_ty(@c, a, r, field.ty)
 
         index @ index + 1
+
+    # A message written after this walk names its own place (`state.show_at`);
+    # one that does not reads every type bare, never as the last declaration's
+    # module would (defect 2205).
+    c.reader @ render.bare_reader()
 
 # A constant's body (§4.2: its last line is its value), walked as
 # `walk.block` walks a value block, and told at the one statement it left

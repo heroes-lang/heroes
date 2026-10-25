@@ -1,0 +1,25 @@
+# FIXED, DEFECT 2143, 2026-10-25, M-rechecked-issues (its other half; the
+# issue's swapped shape, with a third unit).
+#
+# SYMPTOM: of a program whose root and two modules each bind a name their
+# header refuses, the seed's compiler (`sources 5f45d6514b22d650`) told one
+# unit's mistake per build, in the order the units compiled: `K_GONE`
+# alone at exit 1, then `narrow` of `fixedbugs2143/wide` once `K_GONE` was
+# gone, then `K_NONE` of `fixedbugs2143/vals` once `narrow` took an `i32`.
+#
+# CAUSE: a round's verdict was its first refused unit's, and the other
+# units' refusals were kept for the tag round alone (`cli/assemble.hero`'s
+# `per_module`).
+#
+# FIX: every refused unit is read for whose its refusal is, each under its
+# own module's headers, and every mistake is told in the one build, the
+# units in their order (`cli/refused_units.hero`); `K_DIV`, a value only the
+# probe sees, follows them.
+use fixedbugs2143/wide
+use fixedbugs2143/vals
+
+extern "fixedbugs-2128-values.h"
+    constant K_GONE: i64  #~ ffi_unknown_name
+
+function main()
+    print(K_GONE + wide.got() + vals.got())

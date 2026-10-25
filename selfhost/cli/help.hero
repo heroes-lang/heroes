@@ -14,8 +14,11 @@
 # once advertised verbs §10's stopping rule had refused, tagged with
 # legacy numbered ids §4.17 forbids — a reader given one grepped the
 # repository for it and concluded the toolchain was broken. What is
-# left is the two commands that are genuinely scheduled, with no date
-# attached.
+# left is the commands a row of the chain genuinely schedules, with no
+# date attached: `add` and `fetch`, and `lsp`. It said `lsp · cc` until
+# 2026-10-25, when no row scheduled a `cc` and `add` and `fetch` stood on
+# one (M-rechecked-issues, `grep 'heroes cc'` over the ROADMAP and the
+# milestones' pages empty).
 
 use cli/table as cli_table
 
@@ -59,7 +62,7 @@ function help() -> str
     rows @ rows.push("         2 the tool could not run. `run` forwards the program's own status.\n")
     rows @ rows.push("env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n")
     rows @ rows.push("         under the working directory or beside the compiler.\n\n")
-    rows @ rows.push("Commands not built yet: lsp · cc\n")
+    rows @ rows.push("Commands not built yet: add · fetch · lsp\n")
     return rows.join("")
 
 ## Tests
@@ -117,5 +120,5 @@ test "the help is the table spoken, contract and env channel included"
     )
     assert has(
         text: text,
-        needle: "env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n         under the working directory or beside the compiler.\n\nCommands not built yet: lsp · cc\n"
+        needle: "env:     HEROES_RUNTIME  where heroes_runtime.h and runtime.c live, if not\n         under the working directory or beside the compiler.\n\nCommands not built yet: add · fetch · lsp\n"
     )

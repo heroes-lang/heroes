@@ -1,11 +1,12 @@
-# FIXED IN PART, DEFECT 2143, 2026-10-19, lane lane-witnessed-seed (panel
-# 225's R1; the critic's `first`).
+# FIXED, DEFECT 2143, 2026-10-19, lane lane-witnessed-seed (panel 225's R1;
+# the critic's `first`), and 2026-10-25, M-rechecked-issues (its other half).
 #
 # What it guards: this module's unit is refused inside its own header, so
 # its copy cannot compile either, and the probe of `fixedbugs2143/narrowing`,
 # refused at `narrow`, is still asked: each refused unit's copy is asked on
 # its own, and one that does not compile is silent alone. `narrow` itself,
-# the second unit's own refusal, waits a build while defect 2143 is open.
+# the second unit's own refusal, is told in the same build since its other
+# half (`cli/refused_units.hero`), between the header and `K_DIV`.
 use fixedbugs2143/narrowing
 
 extern "fixedbugs-2143-open-attribute.h"  #~ ffi_header_refused

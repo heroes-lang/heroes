@@ -1,0 +1,38 @@
+# FIXED, DEFECT 2204, 2026-10-25, lane rechecked-issues: a hole whose value is
+# read is told what its place asks, where the report told every hole it could
+# not type `position: statement — any type, or none` and the checker refused
+# a value of the wrong type there. A condition asks a `bool`, an index the
+# index's type, a branch's value its sibling's type, a `for`'s array an array
+# or a `range`, what `print` writes a number, `str` or `bool`; a hole standing
+# as a statement is still told so.
+function pick(n: i64) -> i64
+    m = match n
+        0 => ???
+        _ => n
+
+    return m
+
+function main()
+    a = 1
+    xs = [1, 2]
+
+    for v in ???
+        print(v)
+
+    d = if a > 1
+        ???
+    else
+        a
+    print(xs[???])
+
+    while ???
+        print(d)
+
+    print(???)
+    assert ???
+    x = ???
+    y: i64 = x
+    print(y + pick(a))
+
+    if a > 0
+        ???

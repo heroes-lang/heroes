@@ -252,7 +252,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2d0b168b76efa282", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b8ce0d111b6bc32", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_deadaddressrememberedthroughamillionlaterends_main();

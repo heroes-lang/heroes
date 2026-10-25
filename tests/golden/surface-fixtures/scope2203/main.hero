@@ -1,0 +1,25 @@
+# FIXED, DEFECT 2203, 2026-10-25, lane rechecked-issues.
+#
+# SYMPTOM: each hole's report listed among the names in scope the binding its
+# own initialiser defines (`d` at `d: i64 = ???`) and the names of a block
+# already closed (`inner`, `k`), each refused `unknown_name` at that column.
+#
+# CAUSE: the report modelled visibility as every local of the declaration
+# whose name began before the hole.
+#
+# FIX: the resolver keeps, where it meets each `???`, the locals it holds in
+# scope there (`resolve/names.hero`'s `hole`), and the report reads them.
+function main()
+    a = 1
+
+    if a > 0
+        inner = 2
+        print(inner)
+
+    for k in [1, 2]
+        print(k)
+
+    x @= 0
+    x @ ???
+    d: i64 = ???
+    print(d + a + x)

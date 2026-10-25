@@ -232,7 +232,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5ea8ef9f2c269267", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d2ab9e546edac16", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs396aonecelllocalcoverrunsaborts_main();

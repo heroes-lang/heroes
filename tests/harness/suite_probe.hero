@@ -95,12 +95,13 @@ record Sum
     broken: [str]
 
 # The stride of the census: the largest the probe takes, its `counted`
-# refusing an eighth digit. `--stride` judges one variant in that many and
-# counts every one, so under it the probe parses the whole root, judges its
-# first variant and says how many seeds, refused files and variants the
+# refusing an eighth digit and panel 229's R3 a multiple of 3, which
+# 9,999,999 was until 2026-10-25. `--stride` judges one variant in that many
+# and counts every one, so under it the probe parses the whole root, judges
+# its first variant and says how many seeds, refused files and variants the
 # root holds.
 constant CENSUS_STRIDE: str
-    "9999999"
+    "9999998"
 
 # The probe's own words when the one file it is given does not parse
 # (`selfhost/cli/probe.hero`, at exit 1): such a file is no seed, as it is

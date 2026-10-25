@@ -1,0 +1,15 @@
+# Fixed defect 2205, 2026-10-25, lane rechecked-issues: a record of another
+# module is named in a message as this file must write it, `shapes.Box`, where
+# it was named bare, `Box`, a spelling this file refuses (`needs_qualifying`,
+# `unknown_type`). Both directions of a mismatch, and a map key told after the
+# declarations' walk, which reads its types from where it stands.
+
+use fixedbugs2205/shapes
+
+function main()
+    x: shapes.Box = 3  #~ type_mismatch
+    b = shapes.unit()
+    y: i64 = b  #~ type_mismatch
+    m: {shapes.Spot: i64} @= {}  #~ float_map_key
+    m[shapes.Spot(at: 1.0)] @ x.width + y
+    print(m.len())

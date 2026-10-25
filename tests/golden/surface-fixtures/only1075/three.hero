@@ -1,0 +1,18 @@
+# Issue 1075, 2026-10-25: `heroes test --only <text>` runs the tests whose
+# title holds the text, every one that holds it, and refuses at exit 2 where
+# none does. The second test fails on purpose, so a run that took it would
+# say so.
+function double(n: i64) -> i64
+    return n * 2
+
+test "first doubles"
+    assert double(1) == 2
+
+test "second fails on purpose"
+    assert double(2) == 5
+
+test "first again doubles"
+    assert double(3) == 6
+
+function main()
+    print(double(4))

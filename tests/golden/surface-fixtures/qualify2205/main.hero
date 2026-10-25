@@ -1,0 +1,11 @@
+# FIXED, DEFECT 2205, 2026-10-25, lane rechecked-issues: a hole's report names
+# a type of another module as this file must write it, `lib.Box`, in its
+# expected type, its names in scope, its fields' header and types, and its
+# functions' parameters; one of a module this file does not `use` with that
+# module's own name, `mark.Mark`.
+use lib
+
+function main()
+    b = lib.boxed(2)
+    print(lib.area(???))
+    print(b.width)

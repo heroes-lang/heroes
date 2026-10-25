@@ -37,6 +37,15 @@ use cli/deep_types
 use cli/link
 use cli/package_missing
 
+# What one refusal is read as, printing nothing (defect 2143, so a round's
+# every refused unit can be read before any is told): what tells it where it
+# is the author's, its verdict, and where it is the compiler's, the words
+# printed as `internal error`, else "".
+record Reading
+    told: [diag.Diagnostic]
+    verdict: ()?
+    internal: str
+
 # The verdict on a refused round or artifact, always a failure: `diagnostics`
 # where the author was told, `failed` where the refusal is the compiler's, and
 # then clang's words are printed as `internal error` and `refused` says what
@@ -52,19 +61,48 @@ use cli/package_missing
 # header clang refused there that compiles alone is told after the earlier
 # one it does not compile after (`cli/header_alone.hero`, defect 557).
 function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, asking: [probing.Probing], unit_headers: [str], refused: str, beside: [diag.Diagnostic]) -> ()?
+    read = reading(
+        failed,
+        art,
+        s,
+        t,
+        under: under,
+        answered: answered,
+        struct_tags: struct_tags,
+        asked: asked,
+        asking: asking,
+        unit_headers: unit_headers,
+        refused: refused
+    )
+    return tell(read, s: s, beside: beside)
+
+# A reading told: what it tells, then what was found beside it, staged once;
+# then the compiler's own words, where the refusal is the compiler's.
+function tell(read: Reading, s: source.Source, beside: [diag.Diagnostic]) -> ()?
+    if read.told.len() > 0
+        _ = compile.stage(with_beside(told: read.told, beside: beside), s, permissive: false).is_err()
+
+    if read.internal != ""
+        io.eprint(text: "internal error: " + read.internal)
+    return read.verdict
+
+# `of_refusal`'s reading, each class asked in its order.
+function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, asking: [probing.Probing], unit_headers: [str], refused: str) -> Reading
     code = failure_code(failed)
     message = failure_message(failed) + deep_types.note(code, art.decls, art.checked, s)
+    none: [diag.Diagnostic] = []
 
     if code != "clang" && code != link.REFUSED
-        return fail(code: "failed", msg: message)
+        return Reading(told: none, verdict: fail(code: "failed", msg: message), internal: "")
 
     # A bound header clang refused on its own is the author's (defect 360),
     # told before any question is asked of the header after it. The unit's
     # headers are asked under the unit's own words (defect 572).
     words = unit_words(under, asking: asking, unit_headers: unit_headers)
+    header = header_told(message, art, s, t, under: words, unit_headers: unit_headers)
 
-    if told_header(message, art, s, t, under: words, unit_headers: unit_headers, beside: beside)
-        return fail(code: "diagnostics", msg: "a header this program binds does not compile")
+    if header.len() > 0
+        return authors(header, msg: "a header this program binds does not compile")
 
     # A function the linker found no definition of whose header defines it
     # only `inline` (defect 562, `cli/inline_only.hero`), told before the
@@ -73,16 +111,14 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         inline = inline_only.told(message, s, art.decls, t, asking: asking)
 
         if inline.len() > 0
-            _ = compile.stage(with_beside(told: inline, beside: beside), s, permissive: false).is_err()
-            return fail(code: "diagnostics", msg: "a header defines a called function only inline")
+            return authors(inline, msg: "a header defines a called function only inline")
 
         # A symbol a header's label gave a C name (defects 591, 592,
         # `cli/renamed.hero`), which no group declares by that symbol.
         relabelled = renamed.told(message, s, art.decls, t, asking: asking)
 
         if relabelled.len() > 0
-            _ = compile.stage(with_beside(told: relabelled, beside: beside), s, permissive: false).is_err()
-            return fail(code: "diagnostics", msg: "a header gives a C name a linker name nothing defines")
+            return authors(relabelled, msg: "a header gives a C name a linker name nothing defines")
 
     # Asked only now, of a round clang refused (defect 152), unless the rounds
     # asked it already.
@@ -111,8 +147,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         theirs @ theirs.push(name_order.unknown(d, s, art.decls, t, under: words, unit_headers: unit_headers))
 
     if theirs.len() > 0
-        _ = compile.stage(with_beside(told: theirs, beside: beside), s, permissive: false).is_err()
-        return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
+        return authors(theirs, msg: "the author's extern disagrees with the header")
 
     # A package's `-l` the linker found no library for, asked after every
     # `link` group was (`cli/package_missing.hero`, defect 528).
@@ -126,8 +161,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         )
 
         if lacked.len() > 0
-            _ = compile.stage(with_beside(told: lacked, beside: beside), s, permissive: false).is_err()
-            return fail(code: "diagnostics", msg: "a package names a library this machine does not have")
+            return authors(lacked, msg: "a package names a library this machine does not have")
 
     # What no reader of clang's words named is the headers' where the unit's
     # opening is refused with them and compiles without them, told on the
@@ -138,21 +172,25 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         late = opening_told.told(art, s, t, under: words, unit_headers: unit_headers)
 
         if late.len() > 0
-            _ = compile.stage(
-                with_beside(told: system_paths.shown(t, under: words, told: late), beside: beside),
-                s,
-                permissive: false
-            ).is_err()
-            return fail(code: "diagnostics", msg: "a header this program binds does not compile")
+            return authors(
+                system_paths.shown(t, under: words, told: late),
+                msg: "a header this program binds does not compile"
+            )
 
     # A unit clang refused carries its own path inside the message
-    # (`units.tu_object`), the fused test unit's included.
-    io.eprint(text: "internal error: " + message)
-
-    # A link the linker refused is not C clang refused (defect 443).
+    # (`units.tu_object`), the fused test unit's included. A link the linker
+    # refused is not C clang refused (defect 443).
     if code == link.REFUSED
-        return fail(code: "failed", msg: "the linker refused the objects clang compiled")
-    return fail(code: "failed", msg: refused)
+        return Reading(
+            told: none,
+            verdict: fail(code: "failed", msg: "the linker refused the objects clang compiled"),
+            internal: message
+        )
+    return Reading(told: none, verdict: fail(code: "failed", msg: refused), internal: message)
+
+# A refusal that is the author's, told by `tell`.
+function authors(told: [diag.Diagnostic], msg: str) -> Reading
+    return Reading(told: told, verdict: fail(code: "diagnostics", msg: msg), internal: "")
 
 # Whether a clang failure is the AUTHOR's: `emit/ffi.hero` reads its marker
 # lines back into diagnostics on the `.hero` line, prints them, and the answer
@@ -191,10 +229,10 @@ function unit_words(under: compiling.Compiling, asking: [probing.Probing], unit_
 
     return under
 
-# Whether clang's refusal is a header a group binds that does not compile
-# (`cli/header_refused.hero`, defect 360): told on the group's string, and the
-# answer is yes.
-function told_header(message: str, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str], beside: [diag.Diagnostic]) -> bool
+# What tells clang's refusal as a header a group binds that does not compile
+# (`cli/header_refused.hero`, defect 360), on the group's string; nothing
+# where the refusal is not that.
+function header_told(message: str, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> [diag.Diagnostic]
     # The refused unit, compiled again once where a reader asks the name
     # under one of clang's carets (`cli/caret_bytes.hero`, defect 2117).
     again: caret_bytes.Again @= caret_bytes.of(
@@ -207,8 +245,7 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
     macro = macro_twice.told(message, s, art.decls, t, under: under, unit_headers: unit_headers, @again)
 
     if macro.len() > 0
-        _ = compile.stage(with_beside(told: macro, beside: beside), s, permissive: false).is_err()
-        return true
+        return macro
     refusal: [diag.Diagnostic] @= header_refused.refused(
         stderr: message,
         s: s,
@@ -218,7 +255,7 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
     )
 
     if refusal.len() == 0
-        return false
+        return refusal
 
     # A header refused on its own that compiles alone is two headers'
     # refusal, the earlier named (defect 557).
@@ -249,12 +286,7 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
 
     # A file of the C library or the toolchain named as an include names it
     # (`cli/system_paths.hero`, defect 2047).
-    _ = compile.stage(
-        with_beside(told: system_paths.shown(t, under: under, told: told), beside: beside),
-        s,
-        permissive: false
-    ).is_err()
-    return true
+    return system_paths.shown(t, under: under, told: told)
 
 # What a refusal is told with, then what the value probe found beside it
 # (`cli/value_beside.hero`, defect 2128), as one list: one staging, so a

@@ -78,7 +78,7 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
     reached = partial.reaches(c, decls, key)
 
     if !reached.is_err()
-        shown = state.show(c, s, decls, key)
+        shown = state.show_at(c, s, decls, id: key, at: span.start)
         name = source.span_text(s, decls[reached.must()].name)
         state.push_diagnostic(
             @c,
@@ -88,14 +88,14 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
     handled = reaches.reaches_handle(c, s, decls, ty: key)
 
     if !handled.is_err()
-        shown = state.show(c, s, decls, key)
+        shown = state.show_at(c, s, decls, id: key, at: span.start)
         state.push_diagnostic(@c, handles.handle_map_key(key: shown, reached: handled.must().path, span: span))
         return
     float_seen: {i64: bool} @= {}
     floated = reaches_float(c, s, decls, ty: key, @float_seen)
 
     if !floated.is_err()
-        shown = state.show(c, s, decls, key)
+        shown = state.show_at(c, s, decls, id: key, at: span.start)
         state.push_diagnostic(@c, ffi_errors.float_map_key(key: shown, reached: floated.must(), span: span))
 
 # The handle walk MOVED to `check/reaches.hero` on 2026-09-14 (panel 149), which

@@ -1,0 +1,8 @@
+record Box
+    width: i64
+
+record Spot
+    at: f64
+
+function unit() -> Box
+    return Box(width: 1)

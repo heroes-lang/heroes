@@ -1,0 +1,9 @@
+[plain]
+[a b]
+[C:\dir\]
+[say "hi"]
+[]
+[back\"slash]
+[tab	here]
+[\\server\share]
+child exit 0

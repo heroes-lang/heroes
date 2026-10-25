@@ -33,7 +33,7 @@ import trees
 
 # The modules only a git command needs, imported by `git_rules` the first time
 # one is read.
-commits = discards = staged = unseen = runs = None
+commits = discards = staged = unseen = runs = tagged = None
 
 CONTRACT = "CLAUDE.md § Hard stops"
 LAST_JUDGE = "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
@@ -318,12 +318,12 @@ def what_runs():
 
 
 def git_rules():
-    """Import `commits`, `discards`, `staged`, `unseen` and `runs`, which only
-    the git rules use, `runs` for a `find` too. This guard runs before every
+    """Import `commits`, `discards`, `staged`, `unseen`, `runs` and `tagged`,
+    which only the git rules use, `runs` for a `find` too. This guard runs before every
     Bash call and most are not git: imported at the top, the three of
     2026-10-07 and what they import took an `ls` from 235.6 to 251.8 million
     instructions (measured that day, the guard's own process)."""
-    global commits, discards, staged, unseen, runs
+    global commits, discards, staged, unseen, runs, tagged
     if commits is None:
         if HOOKS not in sys.path:
             sys.path.insert(0, HOOKS)
@@ -331,10 +331,11 @@ def git_rules():
         import discards as discards_module
         import staged as staged_module
         import runs as runs_module
+        import tagged as tagged_module
         import unseen as unseen_module
 
         commits, discards, staged, unseen = commits_module, discards_module, staged_module, unseen_module
-        runs = runs_module
+        runs, tagged = runs_module, tagged_module
 
 
 def git_dir(w, here):
@@ -917,6 +918,14 @@ def judged(raw, w, here, segment, command, cwd, seen=frozenset()):
             "refused: a force push rewrites what other sessions and CI "
             "have already read. " + CONTRACT
         )
+
+    # **A milestone tag is pushed only over a clean list** (defect 2198,
+    # `tagged.py`): `records/tagged` asked with the tag placed, since a tag
+    # can be moved until it is pushed and never after.
+    if rest is not None and tagged.carries_tag(rest):
+        said = tagged.verdict(where)
+        if said is not None:
+            return said
 
     # An ASSIGNMENT, not the bare word: `grep -rn UPDATE_GOLDEN .` is how
     # somebody checks the rule still holds, and refusing that would be a
