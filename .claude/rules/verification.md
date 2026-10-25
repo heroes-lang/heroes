@@ -359,9 +359,12 @@ sitting's seats on this Mac, a fanless MacBook Air with four performance and
 four efficiency cores, after the formatter asked a chain once (R1): about 15 cool CPU hours
 of work, `bracket` 10.2 and `single` 4.8, and 3.8 to 4.6 hours of wall eight
 wide, each ×100 of stride-100 passes, so an inference and a lower bound; eight
-processes there deliver about 3.9 cool cores. **A run that ends at exit 0, or
-at exit 2 only on failures an open defect names, closes defect 2139**, its
-wall and CPU written beside that inference.
+processes there deliver about 3.9 cool cores. **Defect 2139 closed on
+2026-10-25 on its seed, 259, judged whole** (all 84,027 `bracket` variants in
+eight offset parts, every one held), by the author's answer; the rest of that
+run followed the push as every post-push check does, and so does every run
+after it: one that ends at exit 0, or at exit 2 only on failures an open defect
+names, is the run this section owes.
 
 ## What may run beside a gate, and what may not
 

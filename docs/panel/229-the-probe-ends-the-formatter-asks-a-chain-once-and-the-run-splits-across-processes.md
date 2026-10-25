@@ -185,3 +185,34 @@ later sitting.
 - **Timings under others' load**: the seats' clocks ran beside each other and beside the coordinator's
   sweeps; every number here was taken with `real` beside `user`, and the one sustained run that fell
   short is said so (R2).
+
+## The landing, on the provisional resolution
+
+**R1 to R4 landed** at `01c5efd75` (`written_pairs`, the critic's first finding) and `9a627663a`
+(the memo keyed on the value's span and counted, a test that counts the work and went red with the
+memo's answers never taken, `--offset`, the refusal of a stride that is a multiple of 3, the census
+stride 9,999,998, `.claude/rules/verification.md` amended), every one of the 4,126 tracked `.hero`
+files formatting to the same output and exit as `01c5efd75`'s; the batch's gate green over the
+merged lane at `3f52c6fea`, pushed the same afternoon.
+
+**R5, as the author answered on 2026-10-25**: asked whether to close defect 2139 on its seed judged
+whole and let the rest of the owed run follow the push, as § The optimistic chain has every
+post-push check do, the author answered *yes, close now*, on the coordinator's recommendation. So
+the defect closed on **259's `bracket` family judged whole**: eight parts at `--stride 8 --offset
+0` to `7`, each at exit 0, 84,027 variants judged between them, 72,012 parsing and 72,012 held,
+none refused by the guard or the reader, 15,654.78 s of `user` in all and 2,395 s of wall for the
+longest part, under a load of 35 to 90 from two other sessions' gates beside it (their windows in
+the run's own record). The rest of the owed run, 6,247 jobs over a copy of the lane at
+`3f52c6fea` with the compiler at `-O2`, goes on as the post-push check; its result is written on
+the defect's issue when it ends, and a refusal becomes a defect of its own. Its wall is not a
+measurement: two sessions' gates ran beside it.
+
+**Predictions scored at the landing**: the compiler-engineer's 1 **held**, 259's variant with a
+comment after the 1,000th `[` of line 18 formatting in 0.14, 0.14 and 0.15 s of `user` at `-O2`
+on the landed compiler, under a load of 62 to 78; its 2 **held**, the 4,126 files the same; its 5
+**held**, every root's `bracket` count a multiple of 3 (`selfhost` 1,546,695, `tests` 1,058,277,
+`examples` 123,345, 259 84,027); the historian's 2 **held** on three seeds, the offsets' judged
+counts summing to every variant (503's seed 276, `comments101/parens.hero` 291, 259 84,027); the
+historian's 1 and 3 and the compiler-engineer's 3 and 7 were run by the seats themselves and held
+there. The compiler-engineer's 4 waits on the rest of the run, its wall not a measurement now; its
+6 waits on the next tag.

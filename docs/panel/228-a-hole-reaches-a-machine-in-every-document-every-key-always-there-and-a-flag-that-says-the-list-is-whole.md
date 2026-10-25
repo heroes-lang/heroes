@@ -205,3 +205,18 @@ idiom, acting on `"holes"` only under a true `"holes_complete"`, read a value ho
 hole whose `"expected"` is `""` with no signal (A' as first built faulted there, exit 139), refused a
 document beside an error at exit 2, and refused at exit 2 the answer of the trunk's compiler, built
 before the members (`sources 451802aa66692eb3`).
+
+## Predictions scored at the milestone's close, 2026-10-25
+
+- **spec-warden**: **held**. `git diff 9a38f1b26 ca95f2b5d -- spec/heroes-spec.md` prints nothing,
+  and the warden's probe hole, `probe: str = ???` put after `g = holes_gather.gather(...)` in
+  `selfhost/check/holes.hero` at `9a38f1b26` (the place its report names, `g` among the names in
+  scope) and checked by the landed compiler (`sources 00fc702a64dd9600`), reads `… and 3 more` in
+  scope under the five parameters and `… and 9 more` under its functions.
+- **ffi-pragmatist**: **held in part, lapsed in the rest**. At the landing a json-c 0.19 reader acting
+  on `"holes"` only under a true `"holes_complete"` read a value hole and a statement hole whose
+  `"expected"` is `""` with no signal, and refused at exit 2 a document beside an error and the
+  answer of a compiler built before the members (§ The landing). The cJSON 1.7.12 half and the twelve
+  golden programs' answers one by one were not run, and lapse here, unrun.
+- **llm-ergonomist**: **lapsed**: its re-run is a paid run, and none was asked at the landing; the
+  author may ask it, 80 sessions at 0.035 USD each at most.
