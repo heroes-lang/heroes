@@ -21,6 +21,7 @@ use parse
 use resolve
 use checker
 use check/holes_gather
+use check/hole_place
 
 # §4.16's cap, and the reason it exists: identical holes must give
 # identical guidance, whatever the file's size.
@@ -28,13 +29,14 @@ constant SUGGESTIONS: i64
     5
 
 # The report for every hole in the file, in source order.
-function report(r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
     rows: [str] @= []
     none: [str] = []
 
     if c.holes.len() == 0
         return ""
     g = holes_gather.gather(r, c, decls)
+    held = hole_place.holders(tree, s)
 
     for hole in c.holes
         # locate, never line_col plus s.name: the hole report is not a
@@ -46,6 +48,7 @@ function report(r: resolved.Resolved, c: state.Checked, s: source.Source, decls:
         # it (defect 2205).
         reader = render.reader_of(r, module: source.module_at(s, hole.span.start))
         rows @ rows.push("hole at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n")
+        expected: i64 @= hole.expected
         is_error: bool @= false
 
         match table.get(c.types, hole.expected)
@@ -54,11 +57,28 @@ function report(r: resolved.Resolved, c: state.Checked, s: source.Source, decls:
             .array | .fixed | .map | .fallible | .function_ty | .named => is_error @ is_error
             .case_ty | .failure | .generic                             => is_error @ is_error
 
-        if is_error
+        # A hole the checker only synthesized carries no type, and its
+        # place says what it asks (`check/hole_place.hero`, defect 2204).
+        place = hole_place.place_of(held, c, id: hole.at)
+
+        if is_error && place.ty >= 0
+            expected @ place.ty
+            is_error @ false
+
+        if is_error && !place.statement
+            asked: str @= "nothing here fixes its type"
+
+            if place.said != ""
+                asked @ place.said
+            rows @ rows.push("  position: a value — " + asked + "\n")
+        else if is_error
             # A hole in statement position: nothing is expected of it,
             # and "expected `?`" would be worse than saying nothing.
-            # What the model needs is what the FUNCTION owes.
             rows @ rows.push("  position: statement — any type, or none\n")
+
+        if is_error
+            # Where the place fixes no type, what the model needs is what the
+            # FUNCTION owes.
             owner = owner_of(g, decls, at: hole.span.start)
 
             if !owner.is_err()
@@ -79,11 +99,11 @@ function report(r: resolved.Resolved, c: state.Checked, s: source.Source, decls:
                         )
         else
             rows @ rows.push(
-                "  expected type: " + render.render_read(c.types, s, decls, hole.expected, none, reader: reader) + "\n"
+                "  expected type: " + render.render_read(c.types, s, decls, expected, none, reader: reader) + "\n"
             )
         rows @ rows.push(in_scope(r, c, s, decls, id: hole.at, reader: reader))
-        rows @ rows.push(fields_of(c, s, decls, expected: hole.expected, reader: reader))
-        rows @ rows.push(nearby(g, r, c, s, decls, expected: hole.expected, at: hole.span.start, reader: reader))
+        rows @ rows.push(fields_of(c, s, decls, expected: expected, reader: reader))
+        rows @ rows.push(nearby(g, r, c, s, decls, expected: expected, at: hole.span.start, reader: reader))
 
     return rows.join("")
 
@@ -101,12 +121,21 @@ function in_scope(r: resolved.Resolved, c: state.Checked, s: source.Source, decl
 
     for index in r.hole_scopes[id].must()
         local = r.locals[index]
-        rendered = render.render_read(c.types, s, decls, state.local_type(c, index), none, reader: reader)
+        ty = state.local_type(c, index)
         marker: str @= ""
 
         if local.mutable
             marker @ " (mutable)"
-        shown @ shown.push(source.span_text(s, local.name) + ": " + rendered + marker)
+
+        # A name bound to what the checker could not type, `x = ???`, has no
+        # type to write: `?` reads as the fallible suffix (defect 2204's
+        # widening, panel 228's critic).
+        if hole_place.is_value_type(c, ty: ty) || is_unit_type(c, ty: ty)
+            shown @ shown.push(
+                source.span_text(s, local.name) + ": " + render.render_read(c.types, s, decls, ty, none, reader: reader) + marker
+            )
+        else
+            shown @ shown.push(source.span_text(s, local.name) + ", its type not known here" + marker)
 
     if shown.len() == 0
         return ""
@@ -233,6 +262,14 @@ function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked
 
     return rows.join("")
 
+# Whether `ty` is `()`, a type a local can hold and a report writes.
+function is_unit_type(c: state.Checked, ty: i64) -> bool
+    return match table.get(c.types, ty)
+        .unit                                                      => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .error => false
+        .array | .fixed | .map | .fallible | .function_ty | .named => false
+        .case_ty | .failure | .generic                             => false
+
 # A function's parameters as a hole's file reads them, each type the one the
 # checker lowered its written type to, written by `reader`: they were the
 # declaring file's own text, `lib.grow(b: Box)`, a type the reader cannot
@@ -310,7 +347,7 @@ test "a hole reports the expected type, the scope, the fields and the makers"
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     assert c.holes.len() == 1
-    got = report(out, c, s, parsed.decls)
+    got = report(parsed.tree, out, c, s, parsed.decls)
     assert has_text(text: got, needle: "hole at t.hero:11:17\n")
     assert has_text(text: got, needle: "  expected type: Point\n")
     assert has_text(text: got, needle: "  in scope:\n    n: i64\n")
@@ -326,7 +363,7 @@ test "fixedbugs: a hole lists what the resolver holds in scope there, never its 
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     assert c.holes.len() == 2
-    got = report(out, c, s, parsed.decls)
+    got = report(parsed.tree, out, c, s, parsed.decls)
     assert has_text(
         text: got,
         needle: "hole at t.hero:9:9\n  expected type: i64\n  in scope:\n    a: i64\n    x: i64 (mutable)\nhole at t.hero:10:14\n"

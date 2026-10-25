@@ -45,7 +45,7 @@ function main()
         call builtin print($t2, $t4) variadic
         return
 hole at tests/golden/ir/fixedbugs-231-a-hole-leaves-its-function-unmerged.hero:19:9
-  position: statement — any type, or none
+  position: a value — any value `_` may drop, never `()` and never a `T?`
   this function returns: i64
   in scope:
     n: i64

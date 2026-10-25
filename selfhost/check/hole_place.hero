@@ -1,0 +1,189 @@
+# Where a `???` stands, read from the tree around it (design.md §4.16;
+# defect 2204). The checker gives a hole the type it was CHECKED against,
+# and a hole it only synthesized, where the walk compares the value with a
+# type after it has one, gets none: a `while` condition, a `for`'s array, an
+# index, a value `print` or an `f"..."` writes, a branch's value, an
+# unannotated binding's. The report read every such hole as a statement and
+# told it *any type, or none*, which the checker then refused. This module
+# says what holds each expression, once per report, and what that place asks.
+#
+# The tree is two arenas, statements and expressions, so the holders are
+# found in two passes over them and no walk recurses: the statements first,
+# then the expressions, which overrule them where a statement's value is a
+# branch's or an arm's, the one value a statement can hand back.
+
+use ast
+use source
+use check/state
+use check/table
+
+# The place of one hole: `statement` where nothing reads its value; else
+# `ty`, the type a value there must have, or -1 where the place fixes none,
+# and `said`, what it asks in words where no one type says it.
+record Place
+    statement: bool
+    ty: i64
+    said: str
+
+# What holds an expression.
+variant Holder
+    # An expression standing as a statement, its value read by nothing.
+    statement
+    # The value a branch of `owner`, an `if` or a `match`, hands back.
+    tail
+        owner: i64
+    # A condition: `while`, `if`, `assert`.
+    condition
+    # A `for`'s array.
+    iterable
+    # A value `print` writes or an `f"..."` literal renders.
+    rendered
+    # The index of `base[...]`.
+    index
+        base: i64
+    # The value of a binding no annotation types.
+    initializer
+    # The value `_ =` drops: never `()`, never a `T?` (spec § 5).
+    discarded
+    # Anything else, the place the checker answered when it checked it.
+    value
+
+# The holders of every expression a statement or another expression holds.
+function holders(a: ast.Ast, s: source.Source) -> {i64: Holder}
+    out: {i64: Holder} @= {}
+
+    for stmt in a.stmts
+        match stmt.kind
+            .bind b =>
+                if source.span_text(s, b.name) == "_"
+                    out[b.value] @ .discarded
+                else if b.ty.is_err()
+                    out[b.value] @ .initializer
+                else
+                    out[b.value] @ .value
+            .declare d =>
+                if d.ty.is_err()
+                    out[d.value] @ .initializer
+                else
+                    out[d.value] @ .value
+            .assert_stmt v => out[v.value] @ .condition
+            .while_stmt w  => out[w.cond] @ .condition
+            .for_in f      => out[f.iterable] @ .iterable
+            .expr_stmt v   => out[v.value] @ .statement
+            .mutate m      => out[m.value] @ .value
+            .return_stmt _ => continue
+            .break_stmt    => continue
+            .continue_stmt => continue
+            .error         => continue
+
+    at: i64 @= 0
+
+    while at < a.exprs.len()
+        match a.exprs[at].kind
+            .interp ip =>
+                for h in ip.holes
+                    out[h] @ .rendered
+            .index ix => out[ix.index] @ .index(base: ix.base)
+            .call cl =>
+                if is_print(a, s, callee: cl.callee)
+                    for arg in cl.args
+                        out[arg.value] @ .rendered
+            .if_expr f =>
+                for branch in f.branches
+                    out[branch.cond] @ .condition
+                    tail_of(@out, a, block: branch.block, owner: at)
+
+                if !f.otherwise.is_err()
+                    tail_of(@out, a, block: f.otherwise.must(), owner: at)
+            .match_expr m =>
+                for arm in m.arms
+                    match arm.body
+                        .one_stmt one => tail_at(@out, a, stmt: one.at, owner: at)
+                        .block b      => tail_of(@out, a, block: b.block, owner: at)
+            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => at @ at
+            .name | .hole | .unary | .binary | .field | .field_name | .method    => at @ at
+            .variant_case | .array | .map | .try_expr | .error                   => at @ at
+
+        at @ at + 1
+
+    return out
+
+# The last statement of `block`, where it is an expression, holds the value
+# `owner` hands back.
+function tail_of(@out: {i64: Holder}, a: ast.Ast, block: ast.Block, owner: i64)
+    if block.stmts.len() > 0
+        tail_at(@out, a, stmt: block.stmts[block.stmts.len() - 1], owner: owner)
+
+function tail_at(@out: {i64: Holder}, a: ast.Ast, stmt: i64, owner: i64)
+    match a.stmts[stmt].kind
+        .expr_stmt v                                                             => out[v.value] @ .tail(owner: owner)
+        .bind | .declare | .mutate | .return_stmt | .break_stmt | .continue_stmt => return
+        .assert_stmt | .while_stmt | .for_in | .error                            => return
+
+# Whether `callee` names the built-in `print`, which no declaration may take
+# (spec § 11): a value it writes is rendered as `to_str` renders it.
+function is_print(a: ast.Ast, s: source.Source, callee: i64) -> bool
+    return match a.exprs[callee].kind
+        .name => source.span_text(s, a.exprs[callee].span) == "print"
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => false
+        .hole | .unary | .binary | .field | .field_name | .index | .call | .method => false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => false
+
+# The place of the expression `id`, from its holder and the types the
+# checker recorded. A branch's value takes the type the checker joined its
+# `if` or `match` to; where that is no type, the `if` or `match` itself is
+# asked where it stands, so a branch of one standing as a statement is a
+# statement too.
+function place_of(held: {i64: Holder}, c: state.Checked, id: i64) -> Place
+    holder = held[id].default(.value)
+
+    return match holder
+        .statement   => Place(statement: true, ty: -1, said: "")
+        .condition   => Place(statement: false, ty: table.bool_ty(c.types), said: "")
+        .iterable    => Place(statement: false, ty: -1, said: "an array, `[T]`, or `range(from:, to:)`")
+        .rendered    => Place(statement: false, ty: -1, said: "a number, `str` or `bool`, which it writes as text")
+        .index ix    => Place(statement: false, ty: index_type(c, base: ix.base), said: "")
+        .initializer => Place(statement: false, ty: -1, said: "")
+        .discarded   => Place(statement: false, ty: -1, said: "any value `_` may drop, never `()` and never a `T?`")
+        .value       => Place(statement: false, ty: -1, said: "")
+        .tail t      => tail_place(held, c, owner: t.owner, id: id)
+
+function tail_place(held: {i64: Holder}, c: state.Checked, owner: i64, id: i64) -> Place
+    joined = c.expr_types[owner]
+
+    if is_value_type(c, ty: joined)
+        return Place(statement: false, ty: joined, said: "")
+
+    # The `if` or `match` joined to no type, most often because this hole is
+    # one of its branches: another branch's value says what each must be.
+    for other in sort(keys(held))
+        if other != id
+            match held[other].must()
+                .tail t =>
+                    if t.owner == owner && is_value_type(c, ty: c.expr_types[other])
+                        return Place(statement: false, ty: c.expr_types[other], said: "")
+                .statement | .condition | .iterable | .rendered | .index | .initializer | .discarded | .value => continue
+
+    above = place_of(held, c, id: owner)
+
+    if above.statement
+        return above
+    return Place(statement: false, ty: -1, said: "")
+
+# Whether `ty` is a type a value has: not the checker's error, and not `()`,
+# which an `if` standing as a statement is joined to.
+function is_value_type(c: state.Checked, ty: i64) -> bool
+    return match table.get(c.types, ty)
+        .error | .unit                                               => false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .array   => true
+        .fixed | .map | .fallible | .function_ty | .named | .case_ty => true
+        .failure | .generic                                          => true
+
+# The type an index of `base` takes: `i64` for an array, a fixed array or a
+# `str`, a map's key type for a map, none for what the checker could not type.
+function index_type(c: state.Checked, base: i64) -> i64
+    return match table.get(c.types, c.expr_types[base])
+        .array | .fixed | .str                                          => table.int_ty_id(c.types)
+        .map m                                                          => m.key
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .fallible  => -1
+        .function_ty | .named | .case_ty | .failure | .generic | .error => -1
