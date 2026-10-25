@@ -96,7 +96,7 @@ function read_as(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
 
     while at >= 0 && group.is_err()
         if !group_file.compilers(path: steps[at].path, compiled: compiled, runtime: own)
-            group @ group_file.group_of(s, decls, path: steps[at].path)
+            group @ group_file.unit_group(s, decls, path: steps[at].path, compiled: compiled)
 
         if group.is_err()
             at @ at - 1

@@ -62,7 +62,7 @@ function refusals(line: str, accessors: [value_probe.Accessor], preprocessed: st
     if death.is_err() && unlinked.is_err() || accessors.len() == 0
         return out
     name = source.span_text(s, decls[accessors[0].decl].name)
-    known = ffi_lookup.declaration(s, decls, name: name)
+    known = ffi_lookup.declared_at(s, decls, index: accessors[0].decl)
 
     if known.is_err()
         return out
@@ -119,7 +119,10 @@ function diagnostic(one: value_probe.Accessor, words: str, note: str, preprocess
 # The diagnostic on a constant, the header's line given.
 function spelled_at(one: value_probe.Accessor, words: str, note: str, spelled: ffi_value.Spelled?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
     name = source.span_text(s, decls[one.decl].name)
-    known = ffi_lookup.declaration(s, decls, name: name)?
+
+    # The accessor's own declaration, never the first of its name: two
+    # modules may bind one C constant (defect 2208).
+    known = ffi_lookup.declared_at(s, decls, index: one.decl)?
     none: [str] = []
     declared = render.render_ty(c.types, s, decls, one.result, none)
     return ok(

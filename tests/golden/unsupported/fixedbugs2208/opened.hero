@@ -1,0 +1,8 @@
+# A module of defect 2208's second case (2026-10-25, M-rechecked-issues): its
+# group names the header the root's group names, which clang refuses.
+
+extern "fixedbugs-2143-open-attribute.h"  #~ ffi_header_refused
+    constant K_ONE: i64
+
+function one() -> i64
+    return K_ONE

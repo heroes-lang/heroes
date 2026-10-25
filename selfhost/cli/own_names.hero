@@ -103,7 +103,7 @@ function met(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @ag
 
         if group_file.compilers(path: note.path, compiled: compiled, runtime: own)
             return fail(code: "none", msg: "a note in a file of the compiler's own")
-        group = group_file.group_of(s, decls, path: note.path)
+        group = group_file.unit_group(s, decls, path: note.path, compiled: compiled)
 
         if note.text != "expanded from macro '" + name + "'" || group.is_err()
             return fail(code: "none", msg: "the first note is no macro of that name in a group's header")
