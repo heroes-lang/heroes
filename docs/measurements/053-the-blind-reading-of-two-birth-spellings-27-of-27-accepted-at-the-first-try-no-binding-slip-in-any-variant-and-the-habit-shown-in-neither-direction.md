@@ -242,3 +242,15 @@ reading), every session's `report.md`, `run.json` and `run.err`, and under
 `scoring/` each program as submitted, its A form, the checker's output and the
 program's; 238 files, no build output and no compiler binary, which `76e98124e`
 rebuilds.
+
+## Read again, 2026-10-25, after measurement 054
+
+Section 4's *each folder its own git repository with one commit `inputs`* was
+true when written, and the check the session ran behind it could not have
+shown it: `git rev-parse --verify HEAD` answers inside the project's own
+repository too, and in measurement 054 the same question let 54 folders stand
+with no repository of their own, so that 45 Haiku sessions saw the project's
+history and were voided (054 § 2). Asked of all 36 folders of this reading by
+questions that can tell, the same day: `git rev-parse --show-toplevel` is each
+folder itself, `git rev-list --count HEAD` is 1 and that commit's subject is
+`inputs`, 36 of 36. The 27 readings stand.
