@@ -1,0 +1,41 @@
+# Issue 936, 2026-10-25, M-rechecked-issues: a program run through the
+# runtime's spawn, `hero_run_go`, gets every argument it was handed back
+# whole, the shapes Windows' quoting rule exists for among them: a space, a
+# trailing backslash, a quote, an empty word, a backslash before a quote, a
+# tab and a UNC path. On Windows the command line is one string the child
+# splits again, so the runtime quotes each word (`hero_run_win_quote`,
+# `runtime/parts/run.c`), and this case is that function's one test, which
+# the CI's Windows leg runs with the whole net, unrun there the day it was
+# written; on POSIX the words cross as an array, and the case pins that they
+# do. The program is its own child: with arguments it prints them, each
+# between brackets; with none it runs itself with the eight.
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+
+function itself() -> str
+    status: i64 @= 0
+    marks: i64 @= 0
+    return hero_exe_path_shown(status: @status, marks: @marks)
+
+function main()
+    if args().len() > 0
+        for a in args()
+            print("[" + a + "]")
+
+        return
+    program = itself()
+    hero_run_reset()
+    hero_run_arg(word: program)
+
+    for w in ["plain", "a b", "C:\\dir\\", "say \"hi\"", "", "back\\\"slash", "tab\there", "\\\\server\\share"]
+        hero_run_arg(word: w)
+
+    hero_run_limit(seconds: 5)
+    status: i64 @= 0
+    code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    hero_run_reset()
+    print("child exit ", code)

@@ -170,7 +170,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("78c0fa244c4290a1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0742c46b6709aa50", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs389anegativeindexabortsintheruntimeswords_main();

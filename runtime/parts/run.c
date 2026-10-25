@@ -173,8 +173,10 @@ static int hero_run_inherits(const char *path) {
  * NONE OF ITS OWN. This comment claimed a golden that was never written — `git
  * log --diff-filter=A` finds zero commits adding it — and it said so from the
  * day the function landed until 2026-09-06, when the citation check learned to
- * read the compiler's own comments and reported it. The round trip is owed and
- * is in `docs/work/SCHEDULED.md (retired 2026-09-12)`.
+ * read the compiler's own comments and reported it. The round trip is
+ * `tests/golden/run/every-argument-a-program-hands-a-child-comes-back-whole.hero`
+ * since 2026-10-25 (issue 936), which every CI leg runs with the whole net, the
+ * Windows one through here; unrun on Windows the day it landed.
  * **NOT VERIFIED on a real Windows CRT** — the round trip is checked against
  * this project's own parser on the platforms it can run on, and the first green
  * Windows tag run is what closes that gap. */
