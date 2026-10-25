@@ -2264,7 +2264,7 @@ Two rules discovered by adversarial review (panel 000), both now normative:
 - **Hole suggestions are ranked by type-relevance, capped at 5, in deterministic order — and the
   cap is stated in the spec.** Unbounded "nearby functions" would flood a model's context on a
   5k-line compiler and vary with file layout, making identical holes give different guidance.
-  **Corrected 2026-10-25** (panel 228's R6, provisional, author ratification pending): no revision
+  **Corrected 2026-10-25** (panel 228's R6, ratified by the author on 2026-10-25): no revision
   of the specification has stated the cap, by the sitting's critic's searches of its history, and
   the suggestions are filtered by result type and listed in a fixed order, (module, name), not
   ranked. The cap is this section's own, five, and every list it cuts says by how many, in the text
@@ -2347,7 +2347,7 @@ until defect 371: `--brief` or `--dump-scopes` with `--apply`, `--in-place` with
 `--brief` with `--json`.
 
 **Every answer carries the program's holes, and says whether the list is whole** (panel 228's R1,
-R2 and R7, provisional, author ratification pending; feature 2091, defect 2158). A `"diagnostics"`
+R2 and R7, ratified by the author on 2026-10-25; feature 2091, defect 2158). A `"diagnostics"`
 and an `"applied"` document each hold `"holes"`, an array, and `"holes_complete"`, a boolean, true
 exactly when every stage ran quiet, the list then every hole of the program in source order (§4.16's
 report, one value rendered as the text and as these objects); beside a diagnostic, or after

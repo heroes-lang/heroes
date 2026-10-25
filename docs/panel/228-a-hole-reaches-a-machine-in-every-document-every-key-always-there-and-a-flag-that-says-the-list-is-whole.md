@@ -167,6 +167,14 @@ Pending: the decision issue `Panel 228:`, https://github.com/heroes-lang/heroes/
 member's landing and design.md's two corrections; it does not settle the repairs of defects 2204 and
 2205, which are not this sitting's to rule, nor the thesis instrument's showing a model no report.
 
+**RATIFIED, 2026-10-25**, R1 to R9 as written above, the author answering in conversation that
+morning, meant as *ratify*, on the coordinator's recommendation to ratify: `"holes"` and
+`"holes_complete"` in every document `check --json` writes, schema 2; every key always there and
+never null; the text and the JSON read from one record; the counts of what a cap cut; design.md
+§4.16 and §4.17 corrected; route C refused on its veto; and what conservative would have been,
+route D, recorded and not taken. The landing is `ca95f2b5d`. Recorded as a reading (CLAUDE.md
+§ 4). The author may overturn it.
+
 ## Process notes
 
 - **The critic read the briefs first, and its 22 findings changed the sitting before a seat ran**:

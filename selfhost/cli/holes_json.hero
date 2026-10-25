@@ -1,5 +1,5 @@
 # The holes of every document `check --json` writes (panel 228's R1 and R2,
-# provisional, author ratification pending; feature 2091, defect 2158):
+# ratified by the author on 2026-10-25; feature 2091, defect 2158):
 # `"holes"`, each hole of the program in source order, every key always
 # there and none ever null, and `"holes_complete"`, true exactly when every
 # stage ran quiet, so that the list is every hole the program holds. A reader

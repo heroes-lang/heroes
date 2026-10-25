@@ -1,5 +1,5 @@
-# A hole's report as a value (design.md §4.16; panel 228's R3, provisional,
-# author ratification pending): where a `???` stands, what its place asks,
+# A hole's report as a value (design.md §4.16; panel 228's R3, ratified by
+# the author on 2026-10-25): where a `???` stands, what its place asks,
 # the names in scope, the expected type's fields or cases and the functions
 # that return it, each list at §4.16's cap with what the cap left out
 # counted (R4). `check/holes.hero` writes it as text and `cli/holes_json.hero`

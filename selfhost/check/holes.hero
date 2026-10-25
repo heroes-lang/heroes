@@ -8,7 +8,7 @@
 # its ordinary work and normally throws it away. This file is the
 # throwing-away, undone, as text: what each report holds is decided once
 # in `check/hole_report.hero`, which `cli/holes_json.hero` writes as JSON
-# too (panel 228's R3, provisional, author ratification pending). Two
+# too (panel 228's R3, ratified by the author on 2026-10-25). Two
 # normative rules: CAPPED AT 5 in deterministic order, every list the cap
 # cuts counted (unbounded "nearby functions" would flood a model's context
 # and vary with layout), and a file with holes type-checks everything
