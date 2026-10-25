@@ -26,3 +26,23 @@ as a valid reason for a change.
 not `M-compile-speed`, the area. A row of its own for the incremental
 frontend, `M-incremental-frontend`, was considered and not entered: a
 frontend nobody yet needs is built when this ceiling says so.
+
+**A comparison read on 2026-10-25, and four things it suggests for the
+ceiling's instrument.** Goose's benchmark notes (github.com/aardappel/goose,
+[goose/bench/notes.md](https://github.com/aardappel/goose/blob/master/bench/notes.md) § Caveats) report that "a freshly written executable costs up
+to 10x its steady-state time on the first execution", that "differences under
+~10% are within measurement noise" on their one machine, and that compiler
+versions are compared "by building both and running them side by side", never
+across dates. So, before this row's first number: (1) a timing is the best of
+N stated runs after one discarded; (2) the noise floor is measured first, the
+same compiler timed twice on the still machine; (3) a breach is declared only
+by an interleaved comparison in one sitting against the previous tag's
+compiler rebuilt, the dated history staying history; (4) two questions,
+unrun: whether tcc compiles the emitted C11 (`_Generic`, `_Static_assert`,
+`__builtin_*_overflow`), for a development build that skips clang's optimiser
+and as a third witness of the seed's C beside clang and gcc. **And one reading
+of that day**: in a fresh worktree on this MacBook Air (`Mac15,13`, eight
+cores) the seed's build read `real 21.97` against `user 13.80` and `sys 0.65`,
+at a load of seven with another session's work running; the ratio discards it
+as a duration, so it neither confirms nor refutes the start page's *under four
+seconds*, which this row re-times on a still machine.

@@ -45,3 +45,33 @@ languages with hidden tests.
 **Named for the deliverable**, the languages compared. Not
 `M-language-shootout`, the name of a benchmark that measures speed; not
 `M-polyglot-benchmark`, Aider's; not `M-benchmark`, one word and an area.
+
+**A comparison read on 2026-10-25, and three things it suggests for the
+report.** Goose publishes its losses beside its headline, every benchmark row
+with its cause or "cause not re-established", and says above its aggregate how
+it was composed: "It selects the fastest Goose implementation separately for
+each backend and comparison tier" (github.com/aardappel/goose,
+[goose/bench/summary.md](https://github.com/aardappel/goose/blob/master/bench/summary.md), [goose/bench/results.md](https://github.com/aardappel/goose/blob/master/bench/results.md)). So: (1) this row's report owes a
+section of where Heroes loses, per task family, written before its headline;
+(2) it states above its first table which sample, arm and turn each cell
+takes; (3) the pure problems of the suites Goose adopted (PLB, plb2, kostya's
+benchmarks) are shapes for F1 tasks and LangArena's four ecosystem tasks,
+Base64, JSON, CSV and regular expressions, the split between F2 and F3, each
+rewritten to Part 11's task form with hidden cases and never used as a venue:
+every one of those suites ranks speed, a Part 2 non-goal, and sits in every
+model's training data. Goose's own documents show the cost of the other way:
+its compiler was tuned on its sixteen rows by construction ([goose/bench/plan.md](https://github.com/aardappel/goose/blob/master/bench/plan.md)
+derives each change from a row's deficit), which is the objection the
+held-out seal here answers before it is made.
+
+**Decided by the author on 2026-10-25** (the answer *3a*): Goose joins this
+comparison as a second language no measured model has read, an exploratory arm
+of F1 and never the primary. Its repository was born on 2026-08-30, after the
+June 2026 cutoffs design.md Part 11 records for the four models, so beside
+Heroes it isolates a language designed for a model's mistakes from the
+familiarity Go, Rust, C and Zig bring; its prompt is its tutorial and its
+reference, 19,406 and 47,707 vendored tokens against this specification's
+7,854 on the same instrument, which is design.md § 1.2's first factor made
+visible. LangArena (github.com/kostya/LangArena) is not a venue before
+M-core-packages: eight of its fifty tasks need Base64, JSON, CSV and regular
+expressions, and it ranks speed, a Part 2 non-goal.

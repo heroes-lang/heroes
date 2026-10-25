@@ -45,3 +45,20 @@ rewritten again.
 **Corrected 2026-10-15**: the history keeps the seed at every tag, not only at
 the releases, by the author's decision of that day (M-bounded-seed's page);
 the promise is unchanged.
+
+**The order of evaluation, the first item of the next sitting on the
+specification** (the author's *4a* of 2026-10-25). The specification says
+nothing of the order in which a call's arguments and an operator's operands
+are evaluated, while the compiler lowers them left to right
+(`selfhost/ir/flatten.hero:190`, `:619` and `:639`, `selfhost/ir/inout.hero:30`,
+and a record's fields in source order, `selfhost/ir/containers.hero:223`); a
+program whose output depends on the order means one thing today and is
+promised nothing. Panel 010 found the word ambiguous once named arguments may
+be written in any order, left to right of the call or of the signature
+(`docs/panel/010-repeated-mutable-arguments.md:46-47`). The promise `1.0.0`
+rests on states it, so the next sitting on the specification takes it first,
+priced on the reader's tokeniser with its removal or prediction named
+(design.md § 1.6). A comparison read the same day: Goose's specification fixes
+it in one sentence, "Evaluation order is left-to-right everywhere (operands,
+arguments, field initializers ...)" (github.com/aardappel/goose,
+[goose/docs/goose_spec.md](https://github.com/aardappel/goose/blob/master/docs/goose_spec.md) § 2).

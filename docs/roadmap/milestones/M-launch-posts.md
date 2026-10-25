@@ -27,3 +27,24 @@ a reader looks like something hidden.
 
 **Named for the deliverable**, the posts. Not `M-public-launch`, the act; not
 `M-blog-posts`, the medium; not `M-first-readers`, the audience.
+
+**Goose's reception, read in full on 2026-10-25, as a comparison for these
+posts.** Goose is a language whose compiler a model wrote from its author's
+design (github.com/aardappel/goose). Its launch on Hacker News
+(https://news.ycombinator.com/item?id=50224100, 422 points, 259 comments, 43
+of them its author's) came after a first post buried at its submitter's
+request because the page was not ready
+(https://news.ycombinator.com/item?id=49748954, 69 comments). Counted by
+keyword over the 259: 63 on its memory model, 43 on its documentation, 35 on
+its speed claims, 33 on prose read as written by a model, 11 on safety. What
+carries to this row: the first screen and the posts in the author's own words,
+since the prose drew more replies than any feature but one; the costs on the
+first screen beside the claims, a reader having called Goose's list of costs
+hidden at the eighteenth section of its tutorial; posted by the author, who
+answers; no third party's endorsement in a title, the headline's quotation of
+a well-known name having drawn a thread of its own; no number in a title that
+no command produced; and the page ready before the post. The objections the
+two threads raised are answered on the site's common-questions page,
+`why/faq.html`. A sourced survey of languages designed for machine authorship,
+by the historian, is owed before the posts, since "is this the first time?"
+was asked of Goose and will be asked here.

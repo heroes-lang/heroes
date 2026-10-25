@@ -206,3 +206,25 @@ panel 036's `compile "shim.c"` was a deferral read as a veto (issue 927); the
 contextual words are sixteen, not six (`selfhost/keywords.hero`); and step 0's
 three repairs landed as defects 381, 010 and 143 while issue 860 stayed open.
 This row moves from 67 to 75.
+
+**A comparison read on 2026-10-25, and four questions for the opening
+sitting.** Goose ships a library written in itself over `extern fn`
+(github.com/aardappel/goose, [goose/docs/stdlib.md](https://github.com/aardappel/goose/blob/master/docs/stdlib.md)), which § 1.11 refuses here;
+what carries across is the method around it. (1) Each library function it
+adopted "was measured on its own ... against the hand-written form it
+replaced", and the substitutions "tested but not adopted" are written down
+beside them ([goose/bench/notes.md](https://github.com/aardappel/goose/blob/master/bench/notes.md)): a package function here is measured against
+the loop it replaces, and the refused substitutions recorded. (2) Its
+admission test, "is the idiomatic hand-written loop more than three lines,
+*or* is it easy to get subtly wrong ... If neither, it is not in the library",
+published with the refused list and the loop that replaces each
+([goose/docs/design/stdlib_design.md](https://github.com/aardappel/goose/blob/master/docs/design/stdlib_design.md) § 1, § 9), is one candidate for where this
+row's line falls, beside panel 057's refusal of `path_join`. (3) A short page
+of the packages' own conventions, their names and their failure codes, the
+error form itself being spec § 6's. (4) Its `os` module offers a write that is
+never seen half-written beside the plain one; the runtime here already
+stages, flushes and renames (`runtime/parts/replace.c`), so whether spec
+§ 11's `write_file` goes through it is the question to answer before a package
+offers a second function. The same library shows what a missing convention
+costs a reader: a trailing `bool`, an optional, `-1`, a sticky error read once
+and a throw, five conventions in one library, where spec § 6 has one.

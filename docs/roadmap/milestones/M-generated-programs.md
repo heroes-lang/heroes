@@ -91,3 +91,15 @@ milestone deliberately leaves to a later one.
 **Corrected 2026-10-14.** `docs/work/DONE.md`, which the paragraphs above cite,
 was deleted on 2026-10-05; its entries read at `c911dd61`, the last commit
 that held the maps.
+
+**A comparison read on 2026-10-25, and one question it leaves for this row.**
+Goose, another language whose compiler a model writes
+(github.com/aardappel/goose), checks one of its compiler's passes with
+programs it generates and needs no answer for: its implementation notes § 5.11
+say a run of random programs "through the JIT with the pass on and off" found
+the pass's "former misreading of an inlined body with several returns ...
+within a few hundred programs". The same shape here is a second oracle beside
+the known answer this row plans: one generated program built at `-O0`, at
+`-O2` and under `--sanitize` must print the same thing, which needs no answer
+at all and names a class the sanitizers do not, an optimiser taking an
+assumption the emitted C makes.

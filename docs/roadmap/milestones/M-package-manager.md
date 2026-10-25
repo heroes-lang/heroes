@@ -42,3 +42,16 @@ a `.hero` file*, so deleting the file never changes which symbols are linked, on
 whether the build succeeds; and *one named binding that `package "<name>"` and one
 command line cannot build* — a set that was empty on 2026-08-15. Meeting fewer
 does not.
+
+**A comparison read on 2026-10-25, and one answer for panel 056's open
+question**, how a fetched package is fixed to a version without a per-project
+file. Goose (github.com/aardappel/goose, [goose/docs/design/packages.md](https://github.com/aardappel/goose/blob/master/docs/design/packages.md) § 1 and
+§ 4.3) pins it in the root file's own import line, `import x from
+"owner/repo@v1";`, a git source at a tag or a commit, and the same line in any
+other file is a *requirement* the root must satisfy, refused with the line to
+add: "No lockfile, no version ranges, no registry", one version of a package
+per program. A `use` here already resolves from the compiled file's directory
+(spec § 1), so the shape fits this language's rule that the root decides;
+whether the source belongs in the `use` line is a question of surface, so this
+row's sitting's. Beside it, Goose keeps one cache for the machine, where this
+compiler keeps `build/` per project.
