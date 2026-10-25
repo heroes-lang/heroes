@@ -12,9 +12,11 @@ a capability of the one command is reached, and this file is reached through
 lldb's prompt or the editor. `editors/vscode/extension.js` loads it with
 nothing typed, through lldb-dap's `initCommands`; a terminal lldb user types
 the import, or puts it in their own `~/.lldbinit` (`editors/README.md`
-§ Debugging). It retires the half of design.md Part 2's *No typed variable
-inspection in v1* that a formatter can reach; the names stay the emitted C's
-(design.md Part 8 item 12), which no formatter changes.
+§ Debugging). It is the half of what design.md Part 2's bullet read until
+2026-10-13, *No typed variable inspection in v1*, that a formatter can reach;
+the bullet reads *Typed variable inspection stops at the values* since panel
+213's R10, and the names stay the emitted C's (design.md Part 8 item 12),
+which no formatter changes.
 
 WHAT IT SHOWS (spec § 2, § 3, § 6, § 9, § 10):
 

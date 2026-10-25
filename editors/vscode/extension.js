@@ -1,6 +1,6 @@
 // The Heroes extension's one script, which VS Code loads from `main` in
 // package.json. Everything else the extension does is declared there: the
-// grammar, the language configuration, the icons, the breakpoints, and the two
+// grammar, the language configuration, the icons, the breakpoints, and the
 // problem matchers that read the compiler's diagnostics.
 //
 // Two things need code:
@@ -498,8 +498,9 @@ function severityOf(word, otherwise) {
 
 // The `heroes` task type: `{ "type": "heroes", "command": "check", "file":
 // "${file}" }` in tasks.json runs `heroes check` on that file, VS Code
-// substituting the variables, with both problem matchers attached. The four
-// verbs are also offered on the active `.hero` file.
+// substituting the variables, with every problem matcher package.json
+// declares attached. The four verbs are also offered on the active `.hero`
+// file.
 class HeroesTasks {
     provideTasks() {
         const editor = vscode.window.activeTextEditor;

@@ -84,7 +84,7 @@ export const GET: APIRoute = () => {
     `<?xml version="1.0" encoding="utf-8"?>\n` +
     `<feed xmlns="http://www.w3.org/2005/Atom">\n` +
     `  <title>Heroes: the build log</title>\n` +
-    `  <subtitle>One entry per milestone, newest first.</subtitle>\n` +
+    `  <subtitle>One entry per milestone up to the site&apos;s last refresh, newest first.</subtitle>\n` +
     `  <link href="${ORIGIN}/log/"/>\n` +
     `  <link rel="self" href="${ORIGIN}/log.xml"/>\n` +
     `  <id>${ORIGIN}/log/</id>\n` +
