@@ -8,10 +8,65 @@
   </p>
 
   <ol class="log">
+    <li id="72">
+      <span class="when">La tesi messa alla prova</span>
+      <b>Per la prima volta la tesi su cui poggia Heroes è stata messa alla prova con i modelli al lavoro, le intelligenze artificiali che scrivono codice: quaranta compiti scritti e sigillati dall&rsquo;autore, ognuno una trappola, giudicati con le regole proprie di Heroes accese e spente, e una previsione resa pubblica prima di ogni risposta.</b> Nessun modello ha visto un compito prima della prova: l&rsquo;autore li ha scritti in una cartella vietata agli strumenti dell&rsquo;assistente, e li ha lanciati dal suo terminale. Strada facendo si è scoperto che lo strumento teneva risposte di un modello mai interpellato, e il collaudo è stato rifatto: senza la specifica, nessun modello ha scritto un programma corretto. Il risultato si legge solo contro la previsione, e il sito lo dirà alla soglia di pubblicazione, quando si annuncia una cosa finita.
+      <a class="more" href="/it/why/measured/">Che cosa si misura, e come</a>
+    </li>
+    <li id="71">
+      <span class="when">Il seed trova un testimone</span>
+      <b>Il seed, l&rsquo;unico file C da cui una macchina senza Heroes costruisce il compilatore, aveva sempre dimostrato soltanto di riprodurre se stesso, cosa che saprebbe fare anche un seed bugiardo. Ora un secondo compilatore, indipendente, garantisce per lui.</b> Il primo compilatore del progetto, scritto in Rust e archiviato, è stato ricostruito e ha riscritto il primo seed identico byte per byte; ognuno delle decine di seed successivi è stato ricostruito dal precedente. Al primo passo, il compilatore nato dal seed dell&rsquo;archivio lavorava ancora dopo sette ore; quello in Rust ci ha messo meno di un secondo. Ora anche gcc, un secondo compilatore C, costruisce il seed accanto a clang, quello che Heroes usava già. Ogni nuovo seed dice per quale strada lo ricostruisce il precedente, e la CI, i controlli automatici su ogni modifica, la ripercorre.
+      <a class="more" href="/it/project/#self-hosted">Come verificare che compili se stesso</a>
+    </li>
+    <li id="70">
+      <span class="when">Letto, e mai scritto</span>
+      <b>Una funzione che deve solo leggere ciò che tiene chi la chiama ora può dirlo: <code>function peek(l: Lex lent)</code> legge il valore del chiamante lì dov&rsquo;è, non lo scrive mai, e si chiama semplicemente <code>peek(l)</code>.</b> Prima, chi leggeva soltanto un record con dentro un lock, un blocco che il linguaggio non lascia copiare, aveva due grafie, entrambe false: una copia, rifiutata, oppure <code>@</code>, che dichiara una modifica. Passato a una libreria C, il valore ora parte con l&rsquo;avviso che il C può solo leggerlo. I lettori con la sola specifica, prima che la parola esistesse, ci arrivavano al secondo tentativo, dieci volte su dieci; con la parola, nove su dieci al primo. E il nuovo testo della specifica è costato quanto aveva previsto il giudice che la pesa, fino all&rsquo;ultimo token, l&rsquo;unità in cui un modello legge il testo.
+      <a class="more" href="/it/spec/">La regola, nella specifica</a>
+    </li>
+    <li id="69">
+      <span class="when">Da che cosa è stato costruito</span>
+      <b>Ogni programma che Heroes costruisce ora porta un&rsquo;impronta di ciò da cui è nato: i suoi sorgenti, la sua libreria e il suo runtime, il codice di supporto che entra in ogni programma. <code>heroes --version</code> stampa quella del compilatore sulla seconda riga.</b> Il seed, riscritto a ogni giro di correzioni, occupava più di due terzi della storia del repository. Metà del suo peso erano righe che ripetevano una posizione già data: ora sono unite, e il seed si riscrive solo quando il compilatore nato da lui non sa più costruire quello di oggi, e a ogni release, ogni versione che il progetto pubblica. Il giorno dell&rsquo;arrivo, il controllo che giudicava un compilatore dalla data del file ha rifiutato proprio il compilatore che serviva; ora chiede al compilatore da che cosa è nato, e il compilatore risponde.
+      <a class="more" href="/it/project/#self-hosted">Il seed, e l&rsquo;impronta</a>
+    </li>
+    <li id="68">
+      <span class="when">Il valore che calcola il C</span>
+      <b>Quando l&rsquo;header di una libreria C, il file in cui descrive ciò che offre, definisce una costante, il compilatore ora prende il valore che calcola il C stesso, facendo girare un piccolo pezzo del programma sotto i controlli di clang.</b> Ogni strada che non faceva girare il codice del programma sbagliava in un senso o nell&rsquo;altro, su decine di migliaia di costanti vere e tre versioni di clang; quella che lo fa girare le ha azzeccate tutte. Ogni buco trovato stava nel codice nuovo del compilatore, non nei programmi, e l&rsquo;ha trovato chi attaccava il codice così com&rsquo;era, mai i test automatici. Un record C con lunghi array si costruisce nominando i campi che contano e chiudendo con <code>rest: zero</code>; un record di cinque campi che descrive la macchina chiedeva più di mille zeri scritti a mano.
+      <a class="more" href="/it/docs/the-c-boundary/">Costanti e record dal C</a>
+    </li>
+    <li id="67">
+      <span class="when">Un programma fermo mostra quello che hai scritto</span>
+      <b>Ferma un programma Heroes in un debugger, lo strumento che mette in pausa un programma mentre gira per guardarci dentro, e ora vedi quello che hai scritto: le tue variabili, e i loro valori in Heroes, una lista come lista e un fallimento come fallimento.</b> Tutto ciò che aveva inventato il compilatore è sparito, una decina di nomi dove prima ce n&rsquo;erano più di cento. Solo i nomi hanno tenuto il prefisso del compilatore, perché un nome nudo nel C può prenderselo l&rsquo;header di qualunque libreria, e su una macchina è successo: un programma con una variabile chiamata <code>linux</code> si compilava sul Mac ed era rifiutato su Linux. Ogni correzione al confine con il C, quella notte, ha trovato la successiva, sei di fila, e ognuna ha cambiato chi il messaggio incolpa, mai che cosa rifiuta.
+      <a class="more" href="/it/why/">Perché il compilatore scrive C</a>
+    </li>
+    <li id="66">
+      <span class="when">Ogni voce diventa una scheda pubblica</span>
+      <b>Ogni difetto, decisione e compito del progetto ora è una issue, una scheda pubblica su GitHub, il sito dove vive il suo codice: più di duemila, importate nell&rsquo;ordine in cui sono nate, ognuna con le sue date. Poi la cartella da cui venivano è uscita dal repository.</b> Su richiesta dell&rsquo;autore, dove qualcuno fuori dal progetto c&rsquo;era arrivato prima, la decisione lo nomina, come la pagina dei ringraziamenti. L&rsquo;ultima lettura ha trovato collegamenti tra le issue che il panel, i cinque giudici che esaminano ogni modifica al linguaggio, aveva ordinato e nessuno aveva fatto. Il primo difetto chiamato con il numero di GitHub era del compilatore: due moduli con un record <code>Held</code> ciascuno, passato a una funzione scritta per qualunque tipo, superavano il controllo e non si compilavano, con un solo nome in C per le due copie.
+      <a class="more" href="/it/about/thanks/">Qualcuno c&rsquo;era arrivato prima</a>
+    </li>
     <li id="59">
       <span class="when">Una variabile che cambia ha un simbolo tutto suo</span>
       <b>Una variabile il cui valore può cambiare, una cella, ora si dichiara <code>v @= 0</code> e prende il tipo dal suo valore; <code>v @ v + 1</code> la cambia, e una cella che niente cambia mai è rifiutata, con una correzione che scrive <code>=</code>.</b> La domanda e la grafia erano dell&rsquo;autore: perché una cella deve portarsi dietro il tipo e un nome fisso no? Perché <code>@</code> faceva due lavori, e solo il tipo li distingueva. La vecchia riga <code>v: i64 @ 0</code> è rifiutata con una correzione che il compilatore applica da solo, e quella correzione ha riscritto 1.181 file in un solo commit. La riscrittura ha sbagliato nell&rsquo;unico posto che il compilatore non vede, il testo dentro la stringa di un test, e dodici test del compilatore sono falliti tutti insieme.
       <a class="more" href="/it/docs/bindings-and-mutation/">Come si dichiara una cella</a>
+    </li>
+    <li id="65">
+      <span class="when">La lista che non si prosciugava</span>
+      <b>Le tre parole scritte sugli handle di una libreria C, gli indirizzi che consegna a un programma per cose che possiede lei, sono diventate cinque, e il runtime ora numera ogni vita che il C consegna. Un indirizzo non è un&rsquo;identità: il C può liberarne uno e ridarlo a qualcos&rsquo;altro.</b> Prima, un handle scaduto allo stesso indirizzo di uno vivo veniva preso per quello, e un programma corretto poteva abortire dieci volte su dieci su tre piattaforme. Poi ogni correzione, provata sui casi accanto, ha trovato il difetto successivo, più di venti dopo la prima stesura del diario della milestone. La lista non si prosciugava, ed era il metodo che funzionava. L&rsquo;autore l&rsquo;ha fermata a mano, e il controllo che avrebbe rifiutato la chiusura ha imparato a dirlo.
+      <a class="more" href="/it/spec/">Le cinque parole, nella specifica</a>
+    </li>
+    <li id="64">
+      <span class="when">La parola che non arrivava alla chiamata</span>
+      <b>Una funzione C che riceve un indirizzo nella memoria del programma ora si presume che lo tenga, salvo che la dichiarazione dica <code>lent</code>: il panel aveva rifiutato questa regola, e l&rsquo;autore l&rsquo;ha scelta per principio, purché il costo fosse misurato, meno di quaranta miliardesimi di secondo a chiamata.</b> Si era partiti da quanto può leggere il C: con un campo di otto byte e un conteggio di 64, il C sovrascriveva in silenzio il campo accanto; ora quella misura si dichiara e controlla. Dove nessuna parola arriva, perché il C tiene l&rsquo;indirizzo a una chiamata e lo libera in un&rsquo;altra che non lo riceve, il programma che muore dice quanti prestiti erano aperti. La prima versione incolpava il C: l&rsquo;ingegnere del compilatore e il pragmatico del C hanno posto il veto: il controllo fallito di una libreria sembra uguale.
+      <a class="more" href="/it/docs/the-c-boundary/">Prestare al C</a>
+    </li>
+    <li id="63">
+      <span class="when">Il muro era per metà un miraggio</span>
+      <b>Il testo che il C scrive in un campo di byte a misura fissa, come il nome della macchina che ci scrive il sistema, ora si può stampare: <code>f.validated_bytes()</code> lo legge, oppure dice che non è testo.</b> L&rsquo;aveva chiesto l&rsquo;autore, quando una seduta aveva visto che nessuno poteva stamparlo. Tutta la differenza era una riga: la funzione che già leggeva testo dal C cercava uno zero finale, che un campo fisso può non avere. L&rsquo;altro muro, costruire un record che il C riempia, non c&rsquo;era: lo si chiede alla libreria, e i test del progetto lo facevano in sette punti mentre tre sedute discutevano come farlo. Le istruzioni dell&rsquo;assistente alle sedute avevano detto tre volte che al compilatore mancavano cose che aveva; ora una frase che dice che qualcosa manca si verifica, o parte come domanda.
+      <a class="more" href="/it/docs/the-c-boundary/">Il testo che arriva dal C</a>
+    </li>
+    <li id="62">
+      <span class="when">La quarta macchina ha smentito la sua previsione</span>
+      <b>Heroes ora si costruisce e gira su un quarto tipo di macchina, Linux su processori ARM, e per prima cosa ha smentito la sua stessa previsione.</b> La previsione diceva che il <code>char</code> del C, il suo numero da un byte, su ARM non scende mai sotto zero. Su Linux è così; ma anche questo Mac è ARM, e il suo <code>char</code> ci scende. La differenza è del sistema, non del processore, e su questo punto tre macchine erano sempre state una. L&rsquo;unico test capace di vederla diceva da sempre, in un commento, che lì il <code>char</code> ha il segno. Sette strade discusse: sei descrivevano la differenza, e la vincitrice la toglie con un solo flag, un&rsquo;opzione data a clang, <code>-fsigned-char</code>, e il segno è uguale ovunque. Linux stesso aveva preso il flag speculare, per la stessa ragione.
+      <a class="more" href="/it/start/">Costruirlo sulla tua macchina</a>
     </li>
     <li id="58">
       <span class="when">Un buco che non era dove diceva il nome</span>
@@ -102,6 +157,16 @@
       <span class="when">Una stringa prestata resta dove è prestata</span>
       <b>Una stringa prestata al C con <code>.cstr()</code> può stare solo come argomento della chiamata che la legge.</b> Tenuta altrove, sopravviveva ai byte a cui puntava e il programma leggeva memoria liberata; il compilatore ora rifiuta quella forma, con la sua ragione, prima che qualcosa giri.
       <a class="more" href="/it/docs/the-c-boundary/">Il confine con il C</a>
+    </li>
+    <li id="61">
+      <span class="when">Una nota che nessuno aveva contato</span>
+      <b>Le closure, funzioni che si portano dietro le variabili intorno, non entrano in Heroes. Una nota le dava per facili dalla prima settimana del progetto; al momento di costruirle, per prima cosa si è contato.</b> Le funzioni di una riga che avrebbero eliminato: una ventina, tutte negli esempi, nessuna nel compilatore. Il costo: centinaia di punti da cambiare in decine di file. Il lettore, che vede solo la specifica, ha detto che a fermare chi legge sono quattro frasi mancanti sulle funzioni che il linguaggio ha già, e su indicazione dell&rsquo;autore una seconda seduta le ha guardate: il tipo di un filtro è identico che tenga o che scarti, e la specifica ha guadagnato una trentina di parole, che dicono anche quale metà tiene un filtro. Lo storico ha trovato quattro linguaggi che le rifiutano apposta, uno dal 1988.
+      <a class="more" href="/it/why/not/#closures">Il no, per intero</a>
+    </li>
+    <li id="60">
+      <span class="when">Il modo educato di perdere un fallimento</span>
+      <b>Scrivere <code>_ =</code> davanti a una chiamata che può fallire ora ferma la compilazione. Insieme al valore se ne andava la notizia che era fallita, e il programma finiva con il numero che vuol dire che è andato tutto bene.</b> L&rsquo;autore aveva già deciso che andava rifiutato; restava da capire dove mettere il muro. Il primo muro aveva una porta, e uno più largo insegnava un modo per aggirarlo che sconfiggeva anche la regola: così il muro sta dove funziona, e la specifica dice che cosa passa ancora. Nessuna correzione è offerta come sicura: la stessa riga corretta in tre modi stampa 1, stampa 9 o ferma il programma. Più di duecento errori proprio di questo tipo sono stati piantati in programmi veri, e sono stati rifiutati tutti, più di quaranta solo dalle regole proprie di Heroes.
+      <a class="more" href="/it/docs/failure-is-a-value/">Il fallimento è un valore</a>
     </li>
     <li id="40">
       <span class="when">Il repository è aperto</span>
