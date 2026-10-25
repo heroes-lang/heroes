@@ -169,3 +169,15 @@ defect open (2206, `adjacent`; 2211 and 2212, `improvement`), and one decision
 open, panel 229's ratification, which a tag stands over (`records/tagged`).
 Defects 2139 and 2143, carried past `m-thesis-harness` by the author's waiver
 (decision 2200, *the next tag cannot stand over them*), are closed.
+
+## The owed run's end, 2026-10-25
+
+The rest of panel 229's R5 run ended at 19:39, after the push: 6,247 jobs,
+none at exit 2; 4,142,682 variants judged, 3,495,006 parsing and all held, none
+refused; 974 jobs at exit 1, 487 seeds that are programs with diagnostics of
+their own, refused as seeds by the exit-code contract; the fixtures, 28,207
+judged, at exit 0. No defect was filed. Its 4.20 hours of wall and 24.1 hours
+of CPU are not a measurement, heroes-lang-13's full net and other projects'
+work beside it at a load of 188. The sitting's file scores the two predictions
+that waited on it, the compiler-engineer's 4 held in its measured half and its
+6 held at this milestone's tag, 99.21% of the places kept by (B)'s rule.

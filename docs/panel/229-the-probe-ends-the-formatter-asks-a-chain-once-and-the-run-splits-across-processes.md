@@ -216,3 +216,27 @@ counts summing to every variant (503's seed 276, `comments101/parens.hero` 291, 
 historian's 1 and 3 and the compiler-engineer's 3 and 7 were run by the seats themselves and held
 there. The compiler-engineer's 4 waits on the rest of the run, its wall not a measurement now; its
 6 waits on the next tag.
+
+## The owed run's end, scored after the push, 2026-10-25
+
+**The rest of R5's run ended at 19:39**, over a copy of the lane at `3f52c6fea`, whose `.hero`
+files are the tag's (`git diff --name-only 3f52c6fea m-rechecked-issues -- '*.hero'` empty), with
+its compiler at `-O2` (sources `00fc702a64dd9600`): 6,247 jobs, **none at exit 2**. The 5,273 at
+exit 0 judged 4,142,682 variants, `bracket` 2,729,601 with 259's 84,027 and `single` 1,413,081;
+3,495,006 of them parsing and all 3,495,006 held, none refused by the guard or the reader. The 974
+at exit 1 are 487 seeds in both families, each a program with diagnostics of its own (403 of them
+under `tests/golden/check/`), every one of the 974 carrying its seed's own `error[...]` and
+*refusing to probe a file with diagnostics* on stderr: the exit-code contract's 1, the input has
+diagnostics. The fixtures, unstrided (`heroes probe`, no path): 28,207 variants judged, 24,940
+parsing and held, none refused, exit 0. Wall 15,126 s and 86,918 s of `user`, under a load of 2.65
+at the start, 188 at 18:36 beside heroes-lang-13's full net and other projects' work (a `cargo
+test`, an Android emulator, a virtual machine), 3.60 at the end: **neither is a measurement**, so
+the inference of about 15 cool CPU hours above is neither confirmed nor falsified by it. No defect
+was filed. The run's files are `229-reports/owed-run.tar.xz`, described in `owed-run.md`.
+
+**Predictions scored**: the compiler-engineer's 4 **held in its half that is a measurement**, the
+run refusing nothing; its other half, more than 3.8 hours of wall, read 4.20 and is **not scored**,
+the load beside it being other work's. Its 6 **held** at the tag: (B)'s rule keeps 902,681 of
+909,867 places over the 2,633 seeds the run accepted, 99.21% (the route of that seat's
+`tools/lexone.sh` with the run's compiler, `p6/` in the archive), and 909,867 is the run's
+2,729,601 `bracket` variants over 3, two instruments agreeing.
