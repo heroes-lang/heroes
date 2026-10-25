@@ -142,9 +142,20 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
         return .ok_exit
     failed: i64 @= 0
     index: i64 @= 0
+    ran: i64 @= 0
     symbolized.prepare(sanitize: options.sanitize)
 
+    # `--only` runs the tests whose title holds its text, each by its index
+    # as the binary takes it (issue 1075, panel 018): two titles may share
+    # the text, and each is run. One selecting none is refused, a run that
+    # tested nothing being no green.
+    only = argv.value_of(inv, spelling: "--only")
+
     for title in titles
+        if !only.is_err() && !strings.holds(text: title, needle: only.must())
+            index @ index + 1
+            continue
+        ran @ ran + 1
         one = process.run(
             program: made.must().binary,
             words: [made.must().binary, index.to_str()],
@@ -159,15 +170,18 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
             failed @ failed + 1
         index @ index + 1
 
+    if ran == 0
+        io.eprint(text: "error: no test of " + path + " has `" + only.default("") + "` in its title")
+        return .failed_exit
     unit: str @= "tests"
 
-    if titles.len() == 1
+    if ran == 1
         unit @ "test"
 
     if failed == 0
-        print(titles.len().to_str() + " " + unit + ", all passed")
+        print(ran.to_str() + " " + unit + ", all passed")
         return .ok_exit
-    print(titles.len().to_str() + " " + unit + ", " + failed.to_str() + " failed")
+    print(ran.to_str() + " " + unit + ", " + failed.to_str() + " failed")
 
     # A failing test is the PROGRAM being wrong, which is exit 1 — the
     # same code a diagnostic gets, and for the same reason: the tool

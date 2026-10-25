@@ -510,6 +510,7 @@ function help_probes() -> [probe.Probe]
         row(name: "every flag in the table is documented", argv: "--help", code: 0).out_has("--dump-tokens").out_has("--json").out_has("--dump-ast").out_has("--dump-scopes").out_has("--in-place")
         row(name: "measure states its default", argv: "--help", code: 0).out_has("(default: spec/heroes-spec.md)")
         row(name: "probe states its default and names its two flags' values", argv: "--help", code: 0).out_has("  probe [file]\n").out_has("(default: the formatter's fixture directories)").out_has("--family <name>").out_has("--stride <count>")
+        row(name: "a command's --help is the help at exit 0, as `heroes help` is (issue 1077)", argv: "build --help", code: 0).out_has("usage: heroes <command>").out_has("--only <text>").err_empty()
     ]
 
 # Four ways one diagnostic is printed — rich, brief, json, applied — and
@@ -613,6 +614,8 @@ function verb_probes() -> [probe.Probe]
         row(name: "a hole stops the build and says how many", argv: "build examples/gallery/09-holes.hero", code: 1).out_nonempty().err_starts("no binary: 2 holes")
         row(name: "a hole does not stop check", argv: "check examples/gallery/09-holes.hero", code: 0)
         row(name: "a hole does not stop the IR dump", argv: "build examples/gallery/09-holes.hero --dump-ir", code: 0)
+        row(name: "test --only runs the tests whose title holds the text, every one (issue 1075)", argv: "test tests/golden/surface-fixtures/only1075/three.hero --only first", code: 0).out_has("ok   \"first doubles\"\nok   \"first again doubles\"\n2 tests, all passed\n").out_lacks("second")
+        row(name: "test --only that no title holds is refused at exit 2, a run that tested nothing (issue 1075)", argv: "test tests/golden/surface-fixtures/only1075/three.hero --only nothing", code: 2).err_has("no test of tests/golden/surface-fixtures/only1075/three.hero has `nothing` in its title")
         row(name: "test runs each block", argv: "test examples/calculator/whole.hero", code: 0).out_has("ok   \"precedence and parens\"").out_has("7 tests, all passed")
         row(name: "the split calculator passes the same tests across four modules", argv: "test examples/calculator/main.hero", code: 0).out_has("7 tests, all passed").out_has("ok   \"generics work across types\"").out_has("ok   \"tokenizes numbers, names and symbols\"")
         row(name: "every module names itself in the emitted C", argv: "build examples/calculator/main.hero --emit-c", code: 0).out_has("examples/calculator/main.hero\"").out_has("examples/calculator/lex.hero\"").out_has("examples/calculator/parse.hero\"").out_has("examples/calculator/eval.hero\"")
@@ -1009,7 +1012,8 @@ test "the tables are what this module is, so they are counted"
     # 5 -> 4 on 2026-10-07, defect 379: `measure` with no operand left the
     # table for `measure_with_no_operand`, which asks it what naming the spec
     # answers, its pin fresh or stale, where the row asked for exit 0.
-    assert help_probes().len() == 4
+    # 4 -> 5 on 2026-10-25, issue 1077: a command's `--help` is the help.
+    assert help_probes().len() == 5
 
     # 9 -> 13 on 2026-10-06, defect 271's JSON half (panel 193): a fix's place
     # and first round, withheld and written inside `certain137-inside`,
@@ -1250,7 +1254,8 @@ test "the tables are what this module is, so they are counted"
     # 199 -> 200 on 2026-10-17, defect 2102's reader (lane land215): printf's
     # value lent read-only past its `...` in one module of `twoarity-lent/`, told
     # on that module's line and never on its namesake's.
-    assert verb_probes().len() == 200
+    # 200 -> 202 on 2026-10-25, issue 1075: `test --only`, a title held and none.
+    assert verb_probes().len() == 202
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map

@@ -122,6 +122,7 @@ function commands() -> [Command]
         plain(spelling: "--sanitize", what: "compile with -fsanitize=address,undefined")
         plain(spelling: "-O0", what: "compile at -O0 (the default here)")
         plain(spelling: "-O2", what: "compile at -O2")
+        named(spelling: "--only", what: "run only the tests whose title holds this text; none holding it is exit 2 (issue 1075, panel 018)", placeholder: "text")
     ]
     fmt_flags: [Flag] = [
         plain(spelling: "--in-place", what: "rewrite the file instead of printing it; prints nothing, and refuses a file it cannot parse")

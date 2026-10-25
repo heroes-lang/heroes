@@ -136,6 +136,13 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
 
             break
 
+        # `heroes build --help` asks what `heroes help build` asks, and is
+        # answered the same at exit 0, where it was refused as a flag `build`
+        # does not take at exit 2, a stranger's first minute (issue 1077). After
+        # a `--` the word is the program's, which the arm above hands on.
+        if arg == "--help" || arg == "-h"
+            return ok(bare(tag: .help_cmd))
+
         if starts_with_dash(arg)
             known: i64 @= -1
             probe: i64 @= 0
@@ -373,6 +380,18 @@ test "repeatable flags accumulate, -o keeps the first, -- feeds run only"
     assert ran.program_args[0] == "-o"
     sep: [str] = ["check", "m.hero", "--"]
     assert parse(sep, dir_probe: yes_dir).is_err()
+
+# Issue 1077: `--help` after a command is answered as `heroes help` is, and
+# after `run`'s `--` it is the program's.
+test "a command's --help is the help at exit 0, and after -- the program's word"
+    for given in [["build", "--help"], ["check", "m.hero", "-h"], ["run", "m.hero", "--help"], ["test", "--help", "m.hero"]]
+        assert parse(given, dir_probe: yes_dir).must().tag == .help_cmd
+
+    fwd: [str] = ["run", "m.hero", "--", "--help"]
+    ran = parse(fwd, dir_probe: yes_dir).must()
+    assert ran.tag == .run_cmd
+    assert ran.program_args.len() == 1
+    assert ran.program_args[0] == "--help"
 
 # Defect 281: an argument that is not UTF-8 is told by what it is to the
 # command, as `main` hands it over, its bytes written by their value; only an
