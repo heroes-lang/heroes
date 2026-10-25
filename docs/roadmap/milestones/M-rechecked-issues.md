@@ -44,3 +44,27 @@ measured beside the counts before, in the journal and never in the ROADMAP.
 second triage could never take the name; not `M-settled-backlog` or
 `M-settled-issues`, which claim a state the close cannot deliver, `settled`
 being the word `close` already writes for a decision.
+
+**Opened 2026-10-25, at row 71, in the lane `rechecked-issues`**, by `/step`
+with no step named, the ROADMAP's next row. What the opening measured, so that
+the steps start from it rather than from the count of 2026-10-14:
+
+- **57 issues open** on GitHub at `76e98124e` (`open`, read that morning): 5
+  defects, 24 features, 28 tasks; no decision open. This milestone's own three
+  are issues 2090, 2091 and 2092.
+- **Every open defect is this milestone's work**, since its tag cannot stand
+  over one (`records/tagged`, `AGED_AT` 2). Defect 2198 is `blocking`; defects
+  2158 and 2190, classed `adjacent` on 2026-10-20 and 2026-10-24 and open at
+  `m-thesis-harness`, count as `blocking` at the next tag; and defects 2139
+  and 2143, carried past `m-thesis-harness` alone by the author's waiver
+  (decision 2200, *the next tag cannot stand over them*), would stand at it
+  for the third time.
+- **The author's three answers of 2026-10-25**, each the recommended one: the
+  issue writes of `tests/harness/issues.hero` allowed for the whole session
+  (CLAUDE.md § Hard stops' *asked once*); a sitting for the hole's report
+  inside `heroes check --json` (issue 2091 and defect 2158), since it changes
+  the document panel 193 ruled, the one sitting this milestone asks for
+  (CLAUDE.md § 4); and defect 2198 repaired by the guard in front of a push
+  that carries a new `m-*` tag, which asks `records/tagged` with the tag
+  placed and refuses on red, the close checklist citing the guard rather than
+  restating it.
