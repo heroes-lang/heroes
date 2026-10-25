@@ -6,10 +6,8 @@
 # lines; the report that reads it stays there.
 
 use ast
-use source
 use resolved
 use check/state
-use print/types
 
 # **Once per report, not once per hole** (defect 113). Each hole walked
 # every local of the program, every name of every module, rendering each
@@ -25,14 +23,14 @@ record Gathered
     starts: [i64]
     ascending: bool
 
-# A function a hole may be offered, its parameters spelled once.
+# A function a hole may be offered; its parameters are spelled per hole, as
+# the hole's file reads them (`check/holes.hero`'s `params_read`, defect 2205).
 record Maker
     module: str
     name: str
     decl: i64
-    params: str
 
-function gather(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Gathered
+function gather(r: resolved.Resolved, c: state.Checked, decls: [ast.Decl]) -> Gathered
     starts: [i64] @= []
     ascending: bool @= true
 
@@ -54,22 +52,11 @@ function gather(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
             decl = found.must()
 
             match decls[decl].kind
-                .function_decl fd =>
+                .function_decl _ =>
                     result = state.result_type(c, decl)
 
                     if !result.is_err()
-                        params: [str] @= []
-
-                        for p in fd.value.params
-                            marker: str @= ""
-
-                            if p.mutable
-                                marker @ "@"
-                            params @ params.push(
-                                marker + source.span_text(s, p.name) + ": " + types.render_type(tree, p.ty, s)
-                            )
-
-                        maker = Maker(module: module, name: name, decl: decl, params: params.join(", "))
+                        maker = Maker(module: module, name: name, decl: decl)
                         row = maker_at[result.must()]
 
                         if row.is_err()

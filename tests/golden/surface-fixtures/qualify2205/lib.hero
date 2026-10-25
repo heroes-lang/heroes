@@ -1,0 +1,16 @@
+use mark
+
+record Box
+    width: i64
+    tag: mark.Mark
+
+# Builds a box of the width given.
+function boxed(width: i64) -> Box
+    return Box(width: width, tag: mark.Mark(n: 0))
+
+# Grows a box by one.
+function grow(b: Box) -> Box
+    return Box(width: b.width + 1, tag: b.tag)
+
+function area(b: Box) -> i64
+    return b.width * b.width

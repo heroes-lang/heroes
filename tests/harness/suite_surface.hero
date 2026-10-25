@@ -529,6 +529,7 @@ function render_probes() -> [probe.Probe]
         row(name: "apply reaches a mutation", argv: "check tests/golden/check/not-mutable.hero --apply", code: 0).out_has("    x @ 2")
         row(name: "a hole is an artifact at exit 0", argv: "check examples/gallery/09-holes.hero", code: 0).out_has("hole at examples/gallery/09-holes.hero:").out_has("this function returns: Entry").out_has("expected type: str").out_has("in scope:").out_has("entries: [Entry]")
         row(name: "a hole lists what the resolver holds in scope there, never its own binding nor a closed block's names (defect 2203)", argv: "check tests/golden/surface-fixtures/scope2203/main.hero", code: 0).out_has("  in scope:\n    a: i64\n    x: i64 (mutable)\nhole at").out_has("hole at tests/golden/surface-fixtures/scope2203/main.hero:24:14\n  expected type: i64\n  in scope:\n    a: i64\n    x: i64 (mutable)\n").out_lacks("inner").out_lacks("    k: ").out_lacks("    d: ")
+        row(name: "a hole names a type of another module as its file writes it, in every part of the report (defect 2205)", argv: "check tests/golden/surface-fixtures/qualify2205/main.hero", code: 0).out_has("  expected type: lib.Box\n  in scope:\n    b: lib.Box\n  fields of lib.Box: width: i64, tag: mark.Mark\n").out_has("    lib.grow(b: lib.Box)\n").out_lacks("expected type: Box").out_lacks("(b: Box)")
     ]
 
 # `--permissive` drops the diagnostics that exist for the thesis

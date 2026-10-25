@@ -17,7 +17,6 @@ use resolved
 use check/table
 use check/state
 use check/render
-use print/types
 use parse
 use resolve
 use checker
@@ -29,19 +28,23 @@ constant SUGGESTIONS: i64
     5
 
 # The report for every hole in the file, in source order.
-function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+function report(r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
     rows: [str] @= []
     none: [str] = []
 
     if c.holes.len() == 0
         return ""
-    g = holes_gather.gather(tree, r, c, s, decls)
+    g = holes_gather.gather(r, c, decls)
 
     for hole in c.holes
         # locate, never line_col plus s.name: the hole report is not a
         # Diagnostic, which is how it survived a sweep still naming
         # the root file at concatenated lines (panel 033 D2).
         found = source.locate(s, hole.span.start)
+
+        # Every type and name below written as the hole's own file writes
+        # it (defect 2205).
+        reader = render.reader_of(r, module: source.module_at(s, hole.span.start))
         rows @ rows.push("hole at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n")
         is_error: bool @= false
 
@@ -72,13 +75,15 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
 
                     if !is_unit
                         rows @ rows.push(
-                            "  this function returns: " + render.render_ty(c.types, s, decls, result.must(), none) + "\n"
+                            "  this function returns: " + render.render_read(c.types, s, decls, result.must(), none, reader: reader) + "\n"
                         )
         else
-            rows @ rows.push("  expected type: " + render.render_ty(c.types, s, decls, hole.expected, none) + "\n")
-        rows @ rows.push(in_scope(r, c, s, decls, id: hole.at))
-        rows @ rows.push(fields_of(tree, c, s, decls, expected: hole.expected))
-        rows @ rows.push(nearby(g, r, c, s, decls, expected: hole.expected, at: hole.span.start))
+            rows @ rows.push(
+                "  expected type: " + render.render_read(c.types, s, decls, hole.expected, none, reader: reader) + "\n"
+            )
+        rows @ rows.push(in_scope(r, c, s, decls, id: hole.at, reader: reader))
+        rows @ rows.push(fields_of(c, s, decls, expected: hole.expected, reader: reader))
+        rows @ rows.push(nearby(g, r, c, s, decls, expected: hole.expected, at: hole.span.start, reader: reader))
 
     return rows.join("")
 
@@ -90,13 +95,13 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
 # names of a block already closed. The resolver meets every `???` the
 # checker does, so a hole it never met is the compiler's own fault, told
 # loud by `must`.
-function in_scope(r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> str
+function in_scope(r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64, reader: render.Reader) -> str
     none: [str] = []
     shown: [str] @= []
 
     for index in r.hole_scopes[id].must()
         local = r.locals[index]
-        rendered = render.render_ty(c.types, s, decls, state.local_type(c, index), none)
+        rendered = render.render_read(c.types, s, decls, state.local_type(c, index), none, reader: reader)
         marker: str @= ""
 
         if local.mutable
@@ -120,8 +125,9 @@ function in_scope(r: resolved.Resolved, c: state.Checked, s: source.Source, decl
 # The fields of the expected type, where it is a record — the hole is
 # most often a value that has to be built, and the fields are what it
 # is built from (§4.9: every field named, always).
-function fields_of(tree: ast.Ast, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64) -> str
+function fields_of(c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64, reader: render.Reader) -> str
     decl_at: i64 @= -1
+    none: [str] = []
 
     match table.get(c.types, expected)
         .named n                                                   => decl_at @ n.decl
@@ -137,16 +143,18 @@ function fields_of(tree: ast.Ast, c: state.Checked, s: source.Source, decls: [as
             shown: [str] @= []
 
             for f in rec.fields
-                shown @ shown.push(source.span_text(s, f.name) + ": " + types.render_type(tree, f.ty, s))
+                shown @ shown.push(
+                    source.span_text(s, f.name) + ": " + typed(c, s, decls, ty: f.ty, letters: none, reader: reader)
+                )
 
-            return "  fields of " + source.span_text(s, decls[decl_at].name) + ": " + shown.join(", ") + "\n"
+            return "  fields of " + render.written_name(s, decls, decl: decl_at, reader: reader) + ": " + shown.join(", ") + "\n"
         .variant_decl v =>
             shown: [str] @= []
 
             for one_case in v.cases
                 shown @ shown.push("." + source.span_text(s, one_case.name))
 
-            return "  cases of " + source.span_text(s, decls[decl_at].name) + ": " + shown.join(", ") + "\n"
+            return "  cases of " + render.written_name(s, decls, decl: decl_at, reader: reader) + ": " + shown.join(", ") + "\n"
         .constant_decl | .function_decl | .test_decl => return ""
 
     return ""
@@ -158,7 +166,7 @@ function fields_of(tree: ast.Ast, c: state.Checked, s: source.Source, decls: [as
 # it can be written — qualified — AND ONLY from a module this file can
 # name: a hole in geom.hero offered main.tally is three errors, and
 # §4.16's promise is the answer handed over, not a guess to repair.
-function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64, at: i64) -> str
+function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64, at: i64, reader: render.Reader) -> str
     here = source.module_at(s, at)
     is_error: bool @= false
 
@@ -210,7 +218,7 @@ function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked
             if local.is_err()
                 continue
             written @ local.must() + "." + m.name
-        line: str @= written + "(" + m.params + ")"
+        line: str @= written + "(" + params_read(c, s, decls, decl: m.decl, reader: reader) + ")"
 
         if decls[m.decl].doc.len() > 0
             line @ line + "\n      " + source.span_text(s, decls[m.decl].doc[0])
@@ -224,6 +232,39 @@ function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked
         rows @ rows.push("    " + line + "\n")
 
     return rows.join("")
+
+# A function's parameters as a hole's file reads them, each type the one the
+# checker lowered its written type to, written by `reader`: they were the
+# declaring file's own text, `lib.grow(b: Box)`, a type the reader cannot
+# write (defect 2205).
+function params_read(c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, reader: render.Reader) -> str
+    shown: [str] @= []
+
+    match decls[decl].kind
+        .function_decl fd =>
+            letters: [str] @= []
+
+            for g in fd.value.generics
+                letters @ letters.push(source.span_text(s, g))
+
+            for p in fd.value.params
+                marker: str @= ""
+
+                if p.mutable
+                    marker @ "@"
+                shown @ shown.push(
+                    marker + source.span_text(s, p.name) + ": " + typed(c, s, decls, ty: p.ty, letters: letters, reader: reader)
+                )
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return ""
+
+    return shown.join(", ")
+
+# A written type node as `reader` reads it, through the type the checker
+# lowered it to. A declaration a report reads was checked whole, its every
+# written type lowered, so one missing is the compiler's own fault, told
+# loud by `must`.
+function typed(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, letters: [str], reader: render.Reader) -> str
+    return render.render_read(c.types, s, decls, state.written_type(c, ty).must(), letters, reader: reader)
 
 # Which declaration a byte offset falls inside: the last one starting at or
 # before it, found by halving where the declarations' starts ascend, which
@@ -269,7 +310,7 @@ test "a hole reports the expected type, the scope, the fields and the makers"
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     assert c.holes.len() == 1
-    got = report(parsed.tree, out, c, s, parsed.decls)
+    got = report(out, c, s, parsed.decls)
     assert has_text(text: got, needle: "hole at t.hero:11:17\n")
     assert has_text(text: got, needle: "  expected type: Point\n")
     assert has_text(text: got, needle: "  in scope:\n    n: i64\n")
@@ -285,7 +326,7 @@ test "fixedbugs: a hole lists what the resolver holds in scope there, never its 
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     assert c.holes.len() == 2
-    got = report(parsed.tree, out, c, s, parsed.decls)
+    got = report(out, c, s, parsed.decls)
     assert has_text(
         text: got,
         needle: "hole at t.hero:9:9\n  expected type: i64\n  in scope:\n    a: i64\n    x: i64 (mutable)\nhole at t.hero:10:14\n"

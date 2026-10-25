@@ -84,7 +84,7 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     # §4.16: holes are output, not diagnostics. The program is fine;
     # it is unfinished, and the compiler says what belongs in the gaps.
     if c.holes.len() > 0
-        io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))
+        io.print_artifact(text: holes.report(out, c, s, parsed.decls))
     return .ok_exit
 
 # Print a stage's diagnostics in the form the flags asked for, and say

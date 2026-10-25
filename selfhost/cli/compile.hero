@@ -227,14 +227,14 @@ function to_unit(s: source.Source, options: Options, version: str, sources: str)
         io.print_artifact(text: print.dump(p, c, s, parsed.decls))
 
         if c.holes.len() > 0
-            io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))
+            io.print_artifact(text: holes.report(out, c, s, parsed.decls))
         return ok(halted(parsed.tree, parsed.decls, c: c, p: p, r: out))
 
     # §4.16: the hole is not an error, and there is still no binary.
     # Both halves — and the files named are the ones the holes are IN,
     # not the file named on the command line.
     if c.holes.len() > 0
-        io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))
+        io.print_artifact(text: holes.report(out, c, s, parsed.decls))
         files: [str] @= []
 
         for hole in c.holes
