@@ -1784,3 +1784,32 @@ test "an empty bracket is never opened, and the line breaks before it or stays l
         assert again.diagnostics.len() == 0
         s2 = source.new_source(name: "t.hero", text: once)
         assert format_file(again.tree, s2, again.comments, again.uses, again.decls) == once
+
+test "a comment in a chain 81 long is worked out once a part, never the chain's square (defect 2139, panel 229)"
+    parts: [str] @= []
+
+    for _ in range(from: 0, to: 40)
+        parts @ parts.push("[0]")
+
+    text = "function main()\n    a = x" + parts.join("") + "[  # c\n            0]" + parts.join("") + "\n    print(a)\n"
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    f = format_page(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    worked: i64 @= 0
+    most: i64 @= 0
+
+    # ORDER: none — a sum and a maximum.
+    for value in sort(keys(f.asked))
+        times = f.asked[value].must().times
+        worked @ worked + times
+
+        if times > most
+            most @ times
+
+    # Once per value and place, a value asked under two places at most: with
+    # the memo's answers never taken, the chain's last part was worked out 41
+    # times, once at every level above it (panel 229).
+    assert f.asked.len() > 0
+    assert most <= 2
+    assert worked <= 2 * f.asked.len()

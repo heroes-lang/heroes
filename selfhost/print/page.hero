@@ -67,8 +67,36 @@ record Fmt
     # (`print/owners.hero`).
     lines: owners.Lines
 
+    # `print/bare.hero`'s answers, by the value each was asked of.
+    asked: {i64: Asked}
+
+# One answer of `bare.needs_group` and all it read that changes: the next
+# comment, the value's place and its span, so no answer is another tree's;
+# and how many times it was worked out, which a test of the chain's square
+# counts (defect 2139, panel 229).
+record Asked
+    span: token.Span
+    times: i64
+    next: i64
+    needed: i64
+    open: bool
+    taken: i64
+    answer: bool
+
 function blank_page() -> Fmt
-    return Fmt(printed: sheet.empty(), next_comment: 0, last_line: 0, dropped: 0, moved: 0, lines: owners.none())
+    return page_at(next_comment: 0, last_line: 0, lines: owners.none())
+
+# A page with nothing printed on it yet, read from `next_comment` on.
+function page_at(next_comment: i64, last_line: i64, lines: owners.Lines) -> Fmt
+    return Fmt(
+        printed: sheet.empty(),
+        next_comment: next_comment,
+        last_line: last_line,
+        dropped: 0,
+        moved: 0,
+        lines: lines,
+        asked: {}
+    )
 
 # The page as one text, joined once.
 function whole(f: Fmt) -> str
@@ -83,14 +111,15 @@ function put_line(@f: Fmt, indent: i64, text: str)
 function blank_line(@f: Fmt)
     sheet.blank(@f.printed)
 
+# By bytes: a space or a tab is never a byte of a longer character. Split
+# into characters, each comment printed cost one string per character.
 function trim_end(text: str) -> str
-    cs = text.chars()
-    end: i64 @= cs.len()
+    end: i64 @= text.len()
 
-    while end > 0 && (cs[end - 1] == " " || cs[end - 1] == "\t")
+    while end > 0 && (text[end - 1] == ' ' || text[end - 1] == '\t')
         end @ end - 1
 
-    return cs.slice(from: 0, to: end).join("")
+    return text.slice(from: 0, to: end)
 
 ## Blank lines, read from the source
 
@@ -353,7 +382,7 @@ test "a remark keeps its blank line where the re-parse would read a doc, and a d
     parsed = parse.parse(text)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: text)
-    f: Fmt @= Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
+    f: Fmt @= page_at(next_comment: 0, last_line: 2, lines: owners.none())
     doc: [token.Span] @= []
 
     match parsed.decls[0].kind
@@ -365,7 +394,7 @@ test "a remark keeps its blank line where the re-parse would read a doc, and a d
     assert whole(f) == "    # a remark at column 0\n\n    # the doc of y\n"
 
     # Under a head the first member takes no doc, so a remark needs no blank.
-    g: Fmt @= Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
+    g: Fmt @= page_at(next_comment: 0, last_line: 2, lines: owners.none())
     none: [token.Span] = []
     comments_above(@g, s, comments: parsed.comments, line: 4, indent: 4, doc: none, takes_docs: false)
     assert whole(g) == "    # a remark at column 0\n"
@@ -383,7 +412,7 @@ test "a comment after a block's last item is that block's where owners gives it 
     assert lines.owner[1] == 1
     assert lines.owner[2] == 0
     assert lines.owner[3] == owners.TRAILS
-    f: Fmt @= Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: lines)
+    f: Fmt @= page_at(next_comment: 0, last_line: 2, lines: lines)
     block_end(@f, s, parsed.comments, indent: 8)
     assert whole(f) == ""
     block_end(@f, s, parsed.comments, indent: 4)
@@ -393,13 +422,13 @@ test "a comment after a block's last item is that block's where owners gives it 
 
     # Nothing is a block's once code stands between, and a trailing note
     # is never a block's.
-    g: Fmt @= Fmt(printed: sheet.empty(), next_comment: 2, last_line: 1, dropped: 0, moved: 0, lines: lines)
+    g: Fmt @= page_at(next_comment: 2, last_line: 1, lines: lines)
     block_end(@g, s, parsed.comments, indent: 0)
     assert whole(g) == ""
-    h: Fmt @= Fmt(printed: sheet.empty(), next_comment: 3, last_line: 7, dropped: 0, moved: 0, lines: lines)
+    h: Fmt @= page_at(next_comment: 3, last_line: 7, lines: lines)
     block_end(@h, s, parsed.comments, indent: 0)
     assert whole(h) == ""
-    trailed: Fmt = Fmt(printed: sheet.empty(), next_comment: 4, last_line: 8, dropped: 0, moved: 0, lines: lines)
+    trailed: Fmt = page_at(next_comment: 4, last_line: 8, lines: lines)
     assert !after_a_comment(trailed, s, parsed.comments)
 
 # The regression of defect 096's first repair (the skeptic seat's
@@ -425,11 +454,11 @@ test "a comment printed after code written after it is recorded as moved, and on
     parsed = parse.parse(text)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: text)
-    f: Fmt @= Fmt(printed: sheet.empty(), next_comment: 0, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
+    f: Fmt @= page_at(next_comment: 0, last_line: 4, lines: owners.none())
     comments_before(@f, s, parsed.comments, line: 6, indent: 4)
     assert f.moved == 3
     assert whole(f) == "    # inside\n    # after\n"
-    g: Fmt @= Fmt(printed: sheet.empty(), next_comment: 1, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
+    g: Fmt @= page_at(next_comment: 1, last_line: 4, lines: owners.none())
     comments_before(@g, s, parsed.comments, line: 6, indent: 4)
     assert g.moved == 0
 

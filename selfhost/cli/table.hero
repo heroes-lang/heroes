@@ -140,6 +140,7 @@ function commands() -> [Command]
     probe_flags: [Flag] = [
         named(spelling: "--family", what: "make that family's variants alone: single, multi, bracket, paren, ends, columns or texts", placeholder: "name")
         named(spelling: "--stride", what: "judge one variant in that many of each family, the first included, and count them all", placeholder: "count")
+        named(spelling: "--offset", what: "with --stride, start that many variants on, so the runs of each offset below the stride judge every variant once", placeholder: "count")
     ]
 
     # The one flag in this table that reaches the network, and the only one
