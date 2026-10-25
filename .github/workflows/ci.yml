@@ -175,6 +175,10 @@ jobs:
   test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    # A leg that has not ended after four hours is hung, not slow: the slowest,
+    # Windows, read under two hours on 2026-10-25, and GitHub's default lets a
+    # hung one run six before it is killed.
+    timeout-minutes: 240
     # No platform's failure hides another's. That is the point of having three,
     # and `fail-fast` would undo it on the first divergence.
     strategy:
@@ -922,6 +926,22 @@ jobs:
             cmp /tmp/stage-2.c /tmp/stage-3.c
           fi
 
+      # THE COMPILER BUILT AT -O2 EMITS THE C THE COMPILER BUILT AT -O0 EMITS
+      # (the author's decision of 2026-10-25). The step above builds stage 2 at
+      # `heroes build`'s default, -O0, so an optimiser taking an assumption the
+      # emitted C makes would change what the compiler emits only in a build
+      # that optimises, which no other step runs. Measured the day it was added,
+      # on a MacBook Air: the two compilers emitted the same 26,801,953 bytes for
+      # `selfhost/`. One leg, its cost one optimised build of the compiler.
+      - name: The compiler built at -O2 emits the C the compiler built at -O0 emits
+        if: matrix.name == 'Linux x86-64'
+        run: |
+          ./heroes${{ matrix.exe }} build selfhost/main.hero -O2 -o heroes-o2${{ matrix.exe }}
+          ./heroes-o2${{ matrix.exe }} --version
+          ./heroes${{ matrix.exe }} build selfhost/main.hero --emit-c -o /tmp/stage-2-o0.c
+          ./heroes-o2${{ matrix.exe }} build selfhost/main.hero --emit-c -o /tmp/stage-2-o2.c
+          cmp /tmp/stage-2-o0.c /tmp/stage-2-o2.c
+
       # THE SEED THROUGH A SECOND C COMPILER (M-witnessed-seed, task 2096). The
       # step above proves the seed reproduces itself under one clang, not that
       # what it means is C's rather than one clang's: gcc builds the same seed
@@ -962,6 +982,8 @@ jobs:
     name: A refresh of the seed is rebuilt by the seed before it
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # Seconds when nothing was refreshed, a rebuild of the seed otherwise.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -1039,6 +1061,8 @@ jobs:
     name: The sealed held-out suite holds what its README says
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # Four minutes on 2026-10-25.
+    timeout-minutes: 30
     environment: thesis-attest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -1115,6 +1139,7 @@ jobs:
     needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
     env:
