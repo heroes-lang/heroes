@@ -223,8 +223,9 @@ amendment's cost in `docs/measurements/010-spec-budget-ledger.md` and the
 standing figure in `ROADMAP.md`. The second is a mutation-based check over
 the compiler's own corpus. **The third, the rewrite rate, was measured for the
 first time on forty held-out tasks sealed before the run, under a prediction
-pushed first, and the test of the thesis it belongs to read inconclusive**
-(measurement 052, in `docs/measurements/`). The figures are stated on the site
+pushed first: with the thesis's rules and without them, the models solved the
+same tasks within three turns, so the test of the thesis it belongs to read
+inconclusive** (measurement 052, in `docs/measurements/`). The figures are stated on the site
 at the publication gate, and until then the formula stays the design rule it
 always was rather than an audited one. This is written here rather than
 discovered by a reader, because measurement beats opinion in this project, the
