@@ -128,7 +128,16 @@ function drafted(scratch: str, path: str, known: {str: bool}, chain: {str: bool}
 
     if hashes.len() > 0 && days[card.commit].is_err()
         refused @ refused.push("its card's `commit` is " + card.commit + ", which names no commit of this history")
-    commits = issue_git.commits_among(scratch: scratch, words: issue_safe.hash_words(issue.body))?
+    asked: [str] @= issue_safe.hash_words(issue.body)
+
+    for word in issue_safe.bare_hash_words(issue.body)
+        asked @ asked.push(word)
+
+    commits = issue_git.commits_among(scratch: scratch, words: asked)?
+
+    for one in issue_safe.unnamed_told(whose: "its body", unnamed: issue_safe.unnamed_hashes(text: issue.body, commits: commits))
+        refused @ refused.push(one)
+
     none: {str: str} = {}
     unfollowed: {str: bool} = {}
     facts = issue_git.Facts(

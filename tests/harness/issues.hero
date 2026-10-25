@@ -268,6 +268,9 @@ function answering(scratch: str, asked: issue_args.Asked) -> i64
         return 2
     words: [str] @= issue_safe.hash_words(text.must())
 
+    for word in issue_safe.bare_hash_words(text.must())
+        words @ words.push(word)
+
     for row in strings.lines(text.must())
         if cards.is_full_hash(strings.trimmed(row))
             words @ words.push(strings.trimmed(row))
