@@ -12,10 +12,15 @@
  *
  * One feed, from the English log, because a feed carries titles rather than
  * prose and the Italian edition's entries are the same milestones. Every entry
- * links the anchor of its own postcard, and those ids count from the OLDEST
- * entry so that a new one at the top does not renumber the rest: an id in a
- * feed is a promise to a reader's feed reader, and renumbering would resend all
- * thirty-three.
+ * links the anchor of its own postcard, and that anchor is the `id` the
+ * postcard carries, written once and never changed: an id in a feed is a
+ * promise to a reader's feed reader, and renumbering would resend every entry.
+ * Until 2026-10-25 the id was counted from the entry's place, the oldest 1,
+ * which held while postcards were only ever added at the top; a postcard for
+ * a milestone an earlier refresh missed stands where its milestone closed, and
+ * counted by place it renumbered every one above it. So the id is read from
+ * the postcard, a late one takes the next free number, and two postcards with
+ * one id, or one without, stop the build.
  *
  * **The one date on this site, and it is here on purpose.** `site/CLAUDE.md`
  * forbids dates on the page, and RFC 4287 requires `updated` on a feed and on
@@ -59,17 +64,28 @@ function decode(text: string): string {
   return text.replace(/&(?:rsquo|lsquo|ldquo|rdquo|mdash|ndash|middot|hellip|rarr|larr|amp|lt|gt);/g, (e) => ENTITIES[e]);
 }
 
-/** One entry per postcard: the milestone name and the sentence in bold. */
-function entries(): { title: string; summary: string }[] {
+/** One entry per postcard: its own id, the milestone name and the sentence in bold. */
+function entries(): { id: string; title: string; summary: string }[] {
   const html = readText('site/src/html/log.html');
-  const out: { title: string; summary: string }[] = [];
-  const item = /<span class="when">([\s\S]*?)<\/span>\s*<b>([\s\S]*?)<\/b>/g;
+  const out: { id: string; title: string; summary: string }[] = [];
+  const item = /<li id="([^"]+)">\s*<span class="when">([\s\S]*?)<\/span>\s*<b>([\s\S]*?)<\/b>/g;
   for (const match of html.matchAll(item)) {
     const strip = (s: string) => decode(withoutTags(s, 'site/src/html/log.html')).replace(/\s+/g, ' ').trim();
-    out.push({ title: strip(match[1]), summary: strip(match[2]) });
+    out.push({ id: match[1], title: strip(match[2]), summary: strip(match[3]) });
   }
   if (out.length === 0) {
-    throw new Error('site/src/html/log.html gave no entries: the feed reads its `when` and `b` pairs.');
+    throw new Error('site/src/html/log.html gave no entries: the feed reads each `li` id with its `when` and `b`.');
+  }
+  const postcards = (html.match(/<span class="when">/g) || []).length;
+  if (postcards !== out.length) {
+    throw new Error(`site/src/html/log.html holds ${postcards} postcards and ${out.length} carry an id the feed can read: every postcard is an \`<li id="N">\` opening on its \`when\`.`);
+  }
+  const seen = new Set<string>();
+  for (const e of out) {
+    if (seen.has(e.id)) {
+      throw new Error(`site/src/html/log.html gives two postcards the id ${e.id}: an id is a feed reader's promise, so a late postcard takes the next free number.`);
+    }
+    seen.add(e.id);
   }
   return out;
 }
@@ -92,11 +108,11 @@ export const GET: APIRoute = () => {
     `  <author><name>Giuseppe Arici</name></author>\n` +
     all
       .map(
-        (e, i) =>
+        (e) =>
           `  <entry>\n` +
           `    <title>${escape(e.title)}</title>\n` +
-          `    <link href="${ORIGIN}/log/#${all.length - i}"/>\n` +
-          `    <id>${ORIGIN}/log/#${all.length - i}</id>\n` +
+          `    <link href="${ORIGIN}/log/#${e.id}"/>\n` +
+          `    <id>${ORIGIN}/log/#${e.id}</id>\n` +
           `    <updated>${updated}</updated>\n` +
           `    <summary>${escape(e.summary)}</summary>\n` +
           `  </entry>\n`
