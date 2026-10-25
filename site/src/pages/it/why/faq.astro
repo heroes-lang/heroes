@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { page } from '../../../lib/figures.ts';
+import content from '../../../html/it/why/faq.html?raw';
+---
+<BaseLayout url="/it/why/faq/" title={"Domande frequenti su Heroes"} description={"Le domande che ci si fa prima di provare Heroes, con risposte di poche righe: perché esiste, chi lo scrive, velocità, sicurezza, librerie e come usarlo."} current="why">
+<Fragment set:html={page(content, 'site/src/html/it/why/faq.html')} />
+</BaseLayout>

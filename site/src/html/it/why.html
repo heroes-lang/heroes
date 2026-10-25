@@ -135,9 +135,9 @@ record Rect
     <li><b>Abbastanza piccolo da stare in un prompt.</b> La specifica resta sotto il limite di 16K token, contati come li conta il modello stesso, attraverso l&rsquo;API di conteggio dei token di Claude. Il conteggio è registrato insieme al modello che lo ha prodotto, e un test a ogni commit, cioè a ogni modifica registrata, tiene il conteggio registrato sotto il tetto e rifiuta un testo cambiato senza un nuovo conteggio. Puoi passarla intera a un modello. <a href="/it/spec/">Leggila&nbsp;&rarr;</a></li>
   </ul>
 
-  <h2>Cosa Heroes fa male</h2>
+  <h2 id="bad-at">Cosa Heroes fa male</h2>
   <p>
-    Quattro cose, e ognuna il compilatore te la dice da sé.
+    Ognuna è una scelta, e questo è quello che costa.
   </p>
   <ul class="pillars">
     <li><b>Non c&rsquo;è una libreria standard.</b> Le funzioni predefinite
@@ -172,26 +172,30 @@ record Rect
     degli errori porta la misura, così la quota che il compilatore prende
     davvero è un numero che puoi leggere e non una promessa.
     <a href="/it/docs/errors/#measured">I risultati disponibili&nbsp;&rarr;</a></li>
+    <li><b>I programmi sono più lenti dello stesso programma in C.</b> Ogni
+    indice viene controllato, ogni operazione sugli interi ferma il programma se
+    trabocca invece di dare un numero sbagliato, e un valore condiviso da due
+    nomi viene copiato nel momento in cui uno dei due lo cambia. La velocità non
+    è un obiettivo di questo linguaggio, e un crash o una memoria corrotta sono
+    un bug. Nessun confronto di velocità con un altro linguaggio è stato
+    pubblicato, e questa pagina lo dirà finché non ce ne sarà uno.</li>
+    <li><b>Si scrive di più.</b> Gli argomenti vanno nominati quando due
+    parametri hanno lo stesso tipo, ogni chiamata che può fallire va gestita
+    sulla sua riga, e non ci sono funzioni anonime, ereditarietà, overloading,
+    una seconda variabile sotto un nome già in uso né valori predefiniti.
+    Ognuno di questi è un no con la sua ragione scritta.
+    <a href="/it/why/not/">I no&nbsp;&rarr;</a></li>
+    <li><b>Linux, macOS e Windows, a 64 bit, passando da clang.</b> Heroes gira
+    su macchine a 64 bit e compila attraverso clang, che installi tu: non
+    c&rsquo;è ancora un installer né un pacchetto. Il browser e i
+    microcontrollori non sono posti dove gira oggi.
+    <a href="/it/start/">Per cominciare&nbsp;&rarr;</a></li>
   </ul>
 
   <h2>Domande frequenti <span class="nod">&middot; <a href="/it/about/thanks/#quicksand-avoided">quicksand, avoided</a></span></h2>
-  <dl class="why">
-    <dt>Perché niente null e niente eccezioni?</dt>
-    <dd>Heroes rende espliciti i casi in cui un valore manca o un&rsquo;operazione fallisce. Il tipo <code>i64?</code> indica che il risultato può essere un numero oppure un errore. L&rsquo;operatore <code>?</code> propaga l&rsquo;errore alla funzione chiamante, direttamente sulla riga in cui lo usi. <a href="/it/docs/failure-is-a-value/">Come gestire gli errori&nbsp;&rarr;</a></dd>
-    <dt>Perché gli argomenti vanno nominati quando due parametri hanno lo stesso tipo?</dt>
-    <dd>Se due argomenti hanno lo stesso tipo, il compilatore non può distinguerli dal tipo soltanto. I nomi in <code>copy(from: a, to: b)</code> chiariscono quale valore è la sorgente e quale la destinazione. Quando i tipi bastano a distinguere gli argomenti, i nomi sono facoltativi.</dd>
-    <dt>Perché ci sono otto tipi di interi?</dt>
-    <dd>Le diverse dimensioni servono, tra l&rsquo;altro, a usare le librerie C con i tipi che richiedono. Heroes evita le conversioni automatiche: ogni passaggio da un tipo numerico a un altro va scritto esplicitamente. In questo modo può offrire otto tipi senza introdurre le regole di conversione implicita del C. Se scrivi <code>int</code>, il compilatore segnala un errore ed elenca i tipi disponibili.</dd>
-    <dt>Perché la formattazione è rigida, esattamente quattro spazi, e i tab sono un errore?</dt>
-    <dd>L&rsquo;indentazione determina la struttura del programma. Regole rigide permettono al compilatore di segnalare le forme non valide. Il formattatore applica uno stile unico, riducendo le differenze di formattazione quando confronti due versioni del codice.</dd>
-    <dt>Perché ogni assegnamento è una copia?</dt>
-    <dd>Per rendere indipendenti i valori: modificare una copia non cambia l&rsquo;originale. Non puoi creare cicli in cui due valori si mantengono in vita a vicenda. Il runtime, cioè il codice che supporta il programma durante l&rsquo;esecuzione, può quindi liberare la memoria contando i riferimenti ai dati, senza un garbage collector che cerchi i dati inutilizzati.</dd>
-    <dd class="more"><code>+</code> su uno <code>str</code> copia entrambe le stringhe. Ripeterlo in un ciclo può richiedere un lavoro che cresce con il quadrato della lunghezza finale; <code>join</code> costruisce invece il risultato in una sola passata. Un array può crescere senza essere copiato se nessun altro valore usa la sua memoria. Passare un valore grande a una funzione non richiede subito di copiarne tutti i dati: la memoria viene condivisa finché una modifica rende necessaria una copia. <a href="/it/docs/values-all-the-way-down/">Come funzionano le copie&nbsp;&rarr;</a></dd>
-    <dt>Si possono eseguire operazioni in parallelo?</dt>
-    <dd>Sì, usando i thread, operazioni eseguite in parallelo, tramite le librerie C. Ogni thread Heroes ha memoria separata e può ricevere e restituire numeri, che vengono copiati. Il compilatore rifiuta il passaggio di un array. Questo modello è adatto a calcoli con pochi dati in ingresso e un risultato numerico. <a href="/it/examples/threads/">Un esempio con thread&nbsp;&rarr;</a></dd>
-    <dt>Non è solo una versione più piccola di un linguaggio che esiste già?</dt>
-    <dd>Heroes usa idee già note: valori indipendenti, assenza di ereditarietà ed errori rappresentati nel tipo. Le scelte rispondono a un vincolo preciso: descrivere tutto il linguaggio in un prompt lasciando spazio per il programma. Il limite di spazio aiuta a decidere quali funzionalità includere. <a href="/it/project/#panel">Come si valutano le modifiche&nbsp;&rarr;</a></dd>
-  </dl>
+  <p>
+    Perché niente null, perché gli argomenti nominati, perché ogni assegnamento è una copia, quanto è veloce, cosa costa, se fidarsi di un compilatore scritto da un&rsquo;AI: le domande che ci si fa prima di provare Heroes hanno una pagina loro, ognuna con una risposta di poche righe. <a href="/it/why/faq/">Domande frequenti&nbsp;&rarr;</a>
+  </p>
 
   <p class="next away">
     Per proseguire: <a href="/it/spec/">Tutto il linguaggio è un file

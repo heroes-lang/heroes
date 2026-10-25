@@ -1,0 +1,86 @@
+
+  <p class="crumb"><a href="/it/">Heroes</a> / <a href="/it/why/">Perché</a> / domande frequenti</p>
+
+  <div class="page-head">
+    <h1 class="page">Domande frequenti</h1>
+  </div>
+  <p class="lede">
+    Le domande che ci si fa prima di provare Heroes, ognuna con una risposta di poche righe e con la pagina che dice di più. Dove una risposta avrebbe bisogno di un numero che questo progetto non ha misurato, la risposta lo dice.
+  </p>
+
+  <h2 id="why-this">Perché questo linguaggio</h2>
+  <dl class="why">
+    <dt>Perché un altro linguaggio, ora che il codice lo scrivono gli agenti AI?</dt>
+    <dd>Perché a scriverlo saranno proprio gli agenti. Quasi tutti i linguaggi sono nati intorno a quello che una persona trova comodo da digitare. Heroes è nato intorno agli sbagli che un modello, l&rsquo;AI che scrive il codice, fa più spesso, perché si fermino al compilatore invece di arrivare a chi usa il programma. E tutto il linguaggio sta in un file che un modello legge prima di cominciare, il prompt, il testo che gli dai. <a href="/it/why/">Perché è progettato così&nbsp;&rarr;</a></dd>
+    <dt>È per le AI o per le persone? Lo posso leggere io?</dt>
+    <dd>Per tutti e due. Si legge come Python con i tipi scritti e gli argomenti nominati, e ogni regola sta in un file di circa sette pagine. La cosa insolita è per chi è stato tarato: le regole rifiutano le sviste che un modello fa più spesso, e sono sviste che facciamo anche noi. <a href="/it/spec/">La specifica&nbsp;&rarr;</a></dd>
+    <dt>Che cosa risolve che Go, Rust o Python non risolvono?</dt>
+    <dd>I fallimenti silenziosi, il programma che compila, gira e stampa la cosa sbagliata. In Heroes un nome scritto male, due argomenti dello stesso tipo scambiati, un caso dimenticato, un errore ignorato o un valore mai usato sono errori di compilazione, e il messaggio dice che cosa non va e, quando può, come correggerlo. La scommessa è che prenderli prima di eseguire costi meno token, in totale, che correggerli dopo, e la pagina delle misure dice a che punto è quella scommessa. <a href="/it/why/measured/">Cosa è misurato&nbsp;&rarr;</a></dd>
+    <dt>Perché una sintassi nuova, se i modelli conoscono già Python e JavaScript?</dt>
+    <dd>Il progetto poggia su un&rsquo;osservazione: un modello inciampa molto più su un significato nuovo che su una grafia nuova. Una grafia nuova, come <code>@</code> per cambiare una variabile, costa una riga della specifica. Gli sbagli vengono dai significati dei linguaggi che un modello conosce già: un refuso che diventa in silenzio una variabile nuova, un caso che nessuno gestisce. La grafia qui è scelta perché quegli sbagli non abbiano dove posarsi. <a href="/it/docs/errors/">Gli errori che prende&nbsp;&rarr;</a></dd>
+    <dt>Non è solo una versione più piccola di un linguaggio che esiste già?</dt>
+    <dd>Heroes usa idee già note: valori indipendenti, assenza di ereditarietà ed errori rappresentati nel tipo. Le scelte rispondono a un vincolo preciso: descrivere tutto il linguaggio in un prompt lasciando spazio per il programma. Il limite di spazio aiuta a decidere quali funzionalità includere. <a href="/it/project/#panel">Come si valutano le modifiche&nbsp;&rarr;</a></dd>
+    <dt>Cosa mi costa Heroes?</dt>
+    <dd>Scrivi di più. Gli argomenti vanno nominati quando due parametri hanno lo stesso tipo, ogni chiamata che può fallire va gestita sulla sua riga, e non ci sono funzioni anonime, ereditarietà, overloading né una seconda variabile sotto un nome già in uso. I valori vengono copiati invece che condivisi, e ogni indice e ogni operazione aritmetica vengono controllati, quindi un programma gira più lento della stessa cosa in C. Non c&rsquo;è una libreria standard oltre alle funzioni predefinite, e non c&rsquo;è ancora un package manager. <a href="/it/why/#bad-at">Cosa Heroes fa male&nbsp;&rarr;</a></dd>
+  </dl>
+
+  <h2 id="who">Chi lo scrive</h2>
+  <dl class="why">
+    <dt>Il compilatore lo scrive un&rsquo;AI. Perché dovrei fidarmi?</dt>
+    <dd>Controllalo tu. Il compilatore compila il proprio sorgente, e il compilatore che ne esce produce di nuovo lo stesso C, byte per byte; la CI, le macchine che provano ogni modifica mandata al repository, lo verifica a ogni push, su quattro piattaforme, e accanto fa girare migliaia di programmi di prova. Ogni modifica al linguaggio l&rsquo;ha rivista un panel di cinque giudici, l&rsquo;ha approvata una persona, ed è scritta con la sua ragione e con chi l&rsquo;ha presa. <a href="/it/project/#self-hosted">Come si compila da solo&nbsp;&rarr;</a></dd>
+    <dt>Quali decisioni sono dell&rsquo;autore e quali dell&rsquo;assistente?</dt>
+    <dd>Ognuna ha un verbale che dice chi l&rsquo;ha proposta e chi ha deciso. L&rsquo;autore approva o respinge ogni decisione e legge ogni revisione. L&rsquo;assistente scrive il compilatore, i test e la maggior parte dei documenti, seguendo regole conservate nel repository. Dove un risultato è nato da una domanda dell&rsquo;autore il verbale lo dice, e dove l&rsquo;ha trovato l&rsquo;assistente il verbale dice quello. <a href="/it/about/">Chi l&rsquo;ha scritto&nbsp;&rarr;</a></dd>
+    <dt>Anche questo sito lo scrive un&rsquo;AI?</dt>
+    <dd>In gran parte lo abbozza l&rsquo;assistente e lo rivede seguendo regole che puoi leggere nel repository. L&rsquo;autore legge l&rsquo;edizione italiana e autorizza ogni pubblicazione.</dd>
+  </dl>
+
+  <h2 id="speed-safety">Velocità e sicurezza</h2>
+  <dl class="why">
+    <dt>Quanto sono veloci i programmi in Heroes?</dt>
+    <dd>Più lenti del C dove la sicurezza costa qualcosa, per scelta. Ogni indice viene controllato, ogni operazione sugli interi ferma il programma se trabocca invece di dare un numero sbagliato, e un valore condiviso da due nomi viene copiato nel momento in cui uno dei due lo cambia. La velocità non è un obiettivo di questo linguaggio; un crash o una memoria corrotta sono un bug. Nessun confronto di velocità con un altro linguaggio è stato pubblicato, e questa risposta lo dirà finché non ce ne sarà uno.</dd>
+    <dt>Quanto è veloce il compilatore?</dt>
+    <dd>Costruire il compilatore è un solo comando clang su un solo file C, e la pagina per cominciare dice quanto ci mette e su quale macchina. Compilare il tuo programma vuol dire compilare con clang, il compilatore C, il C che Heroes produce, quindi una build ci mette quello che ci mette clang su quel C. <a href="/it/start/">Per cominciare&nbsp;&rarr;</a></dd>
+    <dt>Cosa vuol dire &laquo;sicuro&raquo; qui, e un programma può andare in crash?</dt>
+    <dd>Un programma Heroes non deve mai leggere o scrivere memoria che non è sua, e non va mai avanti a calcolare con un valore che non hai chiesto: un indice fuori dai limiti, un intero che trabocca, una divisione per zero o un&rsquo;asserzione fallita lo fermano con un messaggio che nomina l&rsquo;operazione. Non riguarda chi può cambiare un valore, il lavoro del borrow checker di Rust: qui i valori non condividono mai memoria, quindi quella domanda non si pone. L&rsquo;eccezione è la memoria che possiede una libreria C, e il capitolo sul confine con il C dice che cosa viene controllato lì. Un programma che corrompe la memoria è un bug del compilatore, e la pagina di sicurezza dice come segnalarlo. <a href="/it/docs/the-c-boundary/">Il confine con il C&nbsp;&rarr;</a> <a href="https://github.com/heroes-lang/heroes/blob/main/SECURITY.md">Segnalare un crash&nbsp;&rarr;</a></dd>
+  </dl>
+
+  <h2 id="language">Il linguaggio</h2>
+  <dl class="why">
+    <dt>Perché niente null e niente eccezioni?</dt>
+    <dd>Heroes rende espliciti i casi in cui un valore manca o un&rsquo;operazione fallisce. Il tipo <code>i64?</code> indica che il risultato può essere un numero oppure un errore. L&rsquo;operatore <code>?</code> propaga l&rsquo;errore alla funzione chiamante, direttamente sulla riga in cui lo usi. <a href="/it/docs/failure-is-a-value/">Come gestire gli errori&nbsp;&rarr;</a></dd>
+    <dt>Come si gestiscono gli errori, anche uno nato in fondo a una catena di chiamate?</dt>
+    <dd>Una funzione che può fallire lo dice nel suo tipo: <code>str?</code> è un testo che potrebbe non arrivare. Chi la chiama se ne occupa su quella riga: ci fa un match, lo passa su con <code>?</code>, prende un valore di ripiego, o si ferma con <code>.must()</code>. Un errore che risale di più chiamate attraversa ognuna con un <code>?</code> sulla riga che attraversa, così ogni funzione mostra dove può fallire. Ignorare un errore in silenzio è un errore di compilazione.</dd>
+    <dt>Perché gli argomenti vanno nominati quando due parametri hanno lo stesso tipo?</dt>
+    <dd>Se due argomenti hanno lo stesso tipo, il compilatore non può distinguerli dal tipo soltanto. I nomi in <code>copy(from: a, to: b)</code> chiariscono quale valore è la sorgente e quale la destinazione. Quando i tipi bastano a distinguere gli argomenti, i nomi sono facoltativi.</dd>
+    <dt>Perché ci sono otto tipi di interi?</dt>
+    <dd>Le diverse dimensioni servono, tra l&rsquo;altro, a usare le librerie C con i tipi che richiedono. Heroes evita le conversioni automatiche: ogni passaggio da un tipo numerico a un altro va scritto esplicitamente. In questo modo può offrire otto tipi senza introdurre le regole di conversione implicita del C. Se scrivi <code>int</code>, il compilatore segnala un errore ed elenca i tipi disponibili.</dd>
+    <dt>Perché la formattazione è rigida, esattamente quattro spazi, e i tab sono un errore?</dt>
+    <dd>L&rsquo;indentazione determina la struttura del programma. Regole rigide permettono al compilatore di segnalare le forme non valide. Il formattatore applica uno stile unico, riducendo le differenze di formattazione quando confronti due versioni del codice.</dd>
+    <dt>Perché ogni assegnamento è una copia?</dt>
+    <dd>Per rendere indipendenti i valori: modificare una copia non cambia l&rsquo;originale. Non puoi creare cicli in cui due valori si mantengono in vita a vicenda. Il runtime, cioè il codice che supporta il programma durante l&rsquo;esecuzione, può quindi liberare la memoria contando i riferimenti ai dati, senza un garbage collector che cerchi i dati inutilizzati.</dd>
+    <dd class="more"><code>+</code> su uno <code>str</code> copia entrambe le stringhe. Ripeterlo in un ciclo può richiedere un lavoro che cresce con il quadrato della lunghezza finale; <code>join</code> costruisce invece il risultato in una sola passata. Un array può crescere senza essere copiato se nessun altro valore usa la sua memoria. Passare un valore grande a una funzione non richiede subito di copiarne tutti i dati: la memoria viene condivisa finché una modifica rende necessaria una copia. <a href="/it/docs/values-all-the-way-down/">Come funzionano le copie&nbsp;&rarr;</a></dd>
+    <dt>Ci sono closure o lambda?</dt>
+    <dd>Le funzioni con un nome sono valori: passi <code>double</code> a <code>map</code> per nome. Le funzioni anonime, e quelle che catturano le variabili intorno a loro, sono state misurate sul sorgente del compilatore stesso, che passa una funzione in una manciata di punti e non cattura niente, e rifiutate per quel costo. La pagina dei no ha la misura e che cosa riaprirebbe la questione. <a href="/it/why/not/">I no&nbsp;&rarr;</a></dd>
+    <dt>Posso scrivere una tabella hash, un albero, un parser JSON, una cache?</dt>
+    <dd>Sì. Heroes ha array che crescono, mappe, record e varianti, e un valore può contenere sé stesso attraverso un array, che è il modo in cui si scrive un albero o un documento JSON. Tra gli esempi ci sono un parser con i suoi test, un client di un database SQLite e una richiesta web con libcurl. <a href="/it/examples/">Gli esempi&nbsp;&rarr;</a></dd>
+  </dl>
+
+  <h2 id="libraries">Le librerie, ed eseguirlo</h2>
+  <dl class="why">
+    <dt>C&rsquo;è una libreria standard? Come aggiungo una libreria?</dt>
+    <dd>Una libreria standard non c&rsquo;è, di proposito: le funzioni predefinite stanno in una riga della specifica. Tutto il resto è una libreria C che dichiari in poche righe nel tuo file, nominando il suo header e la libreria, e clang verifica la tua dichiarazione sull&rsquo;header. SQLite, libcurl, raylib e SDL sono collegate negli esempi senza codice di raccordo. Un comando che scarica i pacchetti è nella roadmap. <a href="/it/docs/the-c-boundary/">Usare le librerie C&nbsp;&rarr;</a></dd>
+    <dt>Il C può chiamare Heroes?</dt>
+    <dd>Una libreria C richiama Heroes attraverso una funzione che le passi tu, come un ordinamento o una finestra prendono una callback. Costruire in Heroes una libreria condivisa che un programma C carica non è una cosa che fa oggi.</dd>
+    <dt>Si possono eseguire operazioni in parallelo?</dt>
+    <dd>Sì, usando i thread, operazioni eseguite in parallelo, tramite le librerie C. Ogni thread Heroes ha memoria separata e può ricevere e restituire numeri, che vengono copiati. Il compilatore rifiuta il passaggio di un array. Questo modello è adatto a calcoli con pochi dati in ingresso e un risultato numerico. Un modello con lavoratori isolati che si passano valori interi attraverso code è scritto nel documento di design, e non è ancora in programma. <a href="/it/examples/threads/">Un esempio con thread&nbsp;&rarr;</a></dd>
+    <dt>Il compilatore si ferma al primo errore, e uno strumento può leggere quello che dice?</dt>
+    <dd>Va avanti: il parser riparte dall&rsquo;istruzione o dalla dichiarazione successiva, e il controllo dei tipi raccoglie quello che trova, così una sola esecuzione segnala ogni sbaglio che riesce a vedere, ognuno con il suo punto e la sua correzione. <code>heroes check --json</code> scrive le stesse diagnosi in JSON con uno schema documentato, e con <code>--apply</code> stampa allo stesso modo il programma corretto. Un agente legge quello; una persona legge il testo. <a href="/it/docs/errors/">Leggere un messaggio&nbsp;&rarr;</a></dd>
+    <dt>Posso usarlo senza un compilatore C, e come lo installo?</dt>
+    <dd>Cloni il repository e compili un solo file C con clang; quello è tutto il compilatore. Non ci sono ancora un installer, un pacchetto o una formula Homebrew; sono nella roadmap. Clang resta necessario anche dopo: il compilatore produce C e lo passa a clang, che verifica anche le tue dichiarazioni di librerie C sui loro header. Su un Mac clang arriva con gli strumenti da riga di comando; su Linux e Windows lo installi tu, e <code>heroes doctor</code> dice che cosa ha la macchina. <a href="/it/start/">I quattro comandi&nbsp;&rarr;</a></dd>
+    <dt>Gira su un microcontrollore, nel browser, a 32 bit?</dt>
+    <dd>Oggi no. Heroes è provato su Linux, macOS e Windows a 64 bit e compila in C, quindi un programma ha bisogno di un compilatore C e delle librerie C che ha dichiarato sulla macchina che lo esegue. Il browser vuol dire WebAssembly, che non può chiamare le librerie C native, e le librerie C sono quello intorno a cui Heroes è costruito. Una decisione sui microcontrollori è nella roadmap.</dd>
+    <dt>Che supporto c&rsquo;è negli editor?</dt>
+    <dd>Un&rsquo;estensione per VS Code colora i file Heroes, esegue check, build, run e test come task, e fa il debug di un programma con lldb, il debugger, mostrando i valori Heroes. Un language server, il programma a cui un editor chiede gli errori mentre scrivi, è nella roadmap.</dd>
+    <dt>Dove sta andando il progetto?</dt>
+    <dd>La roadmap è pubblica, una riga per milestone nell&rsquo;ordine in cui verranno affrontate, e la maggior parte è fatta. Le versioni restano sotto la 1.0.0 finché non viene scritta una promessa di compatibilità, quindi il linguaggio può ancora cambiare tra una versione minore e l&rsquo;altra. Il compilatore, i test, le revisioni e le decisioni sono tutti in chiaro. <a href="/it/log/">Il diario della build&nbsp;&rarr;</a></dd>
+  </dl>

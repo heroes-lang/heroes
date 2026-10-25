@@ -56,7 +56,7 @@ function name_of(t: Token) -&gt; str
     <li>
       <span class="n">{{ceilingK}}</span>
       <span class="what">tokens: the specification&rsquo;s ceiling</span>
-      <span class="how">The specification describes the whole language in about seven pages. A token is a piece of text a model reads or generates. A short specification leaves room in the prompt for your program. <a href="/spec/">the specification&nbsp;&rarr;</a> <a href="/why/">why it is designed this way&nbsp;&rarr;</a></span>
+      <span class="how">The specification describes the whole language in about seven pages. A token is a piece of text a model reads or generates. A short specification leaves room in the prompt for your program. <a href="/spec/">the specification&nbsp;&rarr;</a> <a href="/why/">why it is designed this way&nbsp;&rarr;</a> <a href="/why/faq/">common questions&nbsp;&rarr;</a></span>
     </li>
     <li>
       <span class="n">0</span>
@@ -113,7 +113,7 @@ function name_of(t: Token) -&gt; str
     One part of the thesis has been tested. <code>heroes mutate</code> introduces one realistic mistake at a time into working programs and counts how many the compiler catches. It repeats the run with the Heroes-specific checks switched off. The rules that require an argument&rsquo;s name and refuse a reused one carry the difference: with them off, those mistakes compile. The same table names the mistakes no check catches.
   </p>
   <p>
-    The total number of tokens needed to produce a working program in Heroes and another language, including corrections, still needs to be compared. The tool for that comparison has been designed but has not been built yet. <a href="/docs/errors/#measured">The available results&nbsp;&rarr;</a>
+    The other part is the total number of tokens a working program costs, corrections included, with the Heroes-specific checks on and with them off. The instrument that measures it has run once, on tasks written and sealed before the run, under a prediction published first, and the result was inconclusive: the run could not tell the two apart. The figures are stated at the publication gate. A comparison with other languages comes after it. <a href="/why/measured/">What is measured&nbsp;&rarr;</a> <a href="/docs/errors/#measured">The available results&nbsp;&rarr;</a>
   </p>
 
   <h2>Run it <span class="nod">&middot; speed of life &middot;</span></h2>

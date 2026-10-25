@@ -1,0 +1,86 @@
+
+  <p class="crumb"><a href="/">Heroes</a> / <a href="/why/">Why</a> / common questions</p>
+
+  <div class="page-head">
+    <h1 class="page">Common questions</h1>
+  </div>
+  <p class="lede">
+    The questions people ask before they try Heroes, each answered in a few lines, with the page that says more. Where an answer would need a number this project has not measured, the answer says so.
+  </p>
+
+  <h2 id="why-this">Why this language</h2>
+  <dl class="why">
+    <dt>Why another language, now that AI agents write most of the code?</dt>
+    <dd>Because the agents are the ones who will write it. Most languages were shaped around what a person finds comfortable to type. Heroes is shaped around the mistakes a model, the AI that writes the code, makes most often, so that they stop at the compiler instead of reaching the people who run the program. And the whole language fits in one file a model reads before it starts, the prompt, the text you hand it. <a href="/why/">Why it is designed this way&nbsp;&rarr;</a></dd>
+    <dt>Is it for AI, or for people? Can I read it myself?</dt>
+    <dd>Both. It reads like Python with explicit types and named arguments, and every rule is in one file of about seven pages. What is unusual is who it was tuned for: the rules refuse the slips a model makes most often, and those are slips people make as well. <a href="/spec/">The specification&nbsp;&rarr;</a></dd>
+    <dt>What does it solve that Go, Rust or Python do not?</dt>
+    <dd>Silent failures, the program that compiles, runs and prints the wrong thing. In Heroes a misspelled name, two arguments of the same type swapped, a case left out, an error dropped or a value never used is a compile error, and the message says what is wrong and, where it can, how to fix it. The bet is that catching these before the run costs fewer tokens in total than fixing them after it, and the measured page says where that bet stands. <a href="/why/measured/">What is measured&nbsp;&rarr;</a></dd>
+    <dt>Why a new syntax, when models already know Python and JavaScript?</dt>
+    <dd>The design rests on one observation: a model stumbles on an unfamiliar meaning far more than on an unfamiliar spelling. A new spelling, like <code>@</code> for changing a variable, costs one line of the specification. The mistakes come from the meanings of the languages a model already knows: a typo that silently becomes a new variable, a case nobody handles. The spelling here was chosen so that those mistakes have nowhere to land. <a href="/docs/errors/">The errors it catches&nbsp;&rarr;</a></dd>
+    <dt>Is it not just a smaller version of an existing language?</dt>
+    <dd>Heroes uses familiar ideas: independent values, no inheritance and errors represented in the type. The choices serve a specific constraint: describing the whole language in a prompt while leaving room for the program. That limit helps determine which features to include. <a href="/project/#panel">How changes are reviewed&nbsp;&rarr;</a></dd>
+    <dt>What does Heroes cost me?</dt>
+    <dd>You write more. Arguments are named where two parameters share a type, every call that can fail is answered on its own line, and there are no anonymous functions, no inheritance, no overloading, no second variable under a name already in use. Values are copied rather than shared, and every index and every arithmetic operation is checked, so a program runs slower than the same thing in C. There is no standard library beyond the built-ins and no package manager yet. <a href="/why/#bad-at">What Heroes is bad at&nbsp;&rarr;</a></dd>
+  </dl>
+
+  <h2 id="who">Who writes it</h2>
+  <dl class="why">
+    <dt>The compiler is written by an AI. Why should I trust it?</dt>
+    <dd>Check it yourself. The compiler compiles its own source, and the compiler that comes out of that emits the same C again, byte for byte; the CI, the machines that test every change sent to the repository, checks it on every push, on four platforms, and runs thousands of test programs beside it. Each change to the language was reviewed by a panel of five, approved by a person, and written down with its reason and who took it. <a href="/project/#self-hosted">How it compiles itself&nbsp;&rarr;</a></dd>
+    <dt>Which decisions are the author&rsquo;s, and which the assistant&rsquo;s?</dt>
+    <dd>Every one has a record naming who proposed it and who decided. The author approves or rejects each decision and reads every review. The assistant writes the compiler, the tests and most of the documents, under rules kept in the repository. Where a finding came from the author&rsquo;s question the record says so, and where the assistant found it the record says that instead. <a href="/about/">Who wrote this&nbsp;&rarr;</a></dd>
+    <dt>Is this site written by an AI too?</dt>
+    <dd>Most of it is drafted by the assistant and edited under rules you can read in the repository. The author reads the Italian edition and authorises every publication.</dd>
+  </dl>
+
+  <h2 id="speed-safety">Speed and safety</h2>
+  <dl class="why">
+    <dt>How fast are Heroes programs?</dt>
+    <dd>Slower than C where safety costs something, by design. Every index is checked, every integer operation stops the program on overflow instead of wrapping, and a value shared between two names is copied the moment one of them changes it. Speed is not a goal of this language; a crash or a corrupted memory is a bug. No benchmark against another language has been published, and this answer will say so until one has.</dd>
+    <dt>How fast is the compiler?</dt>
+    <dd>Building the compiler is one clang command on one C file, and the getting started page says how long it takes and on which machine. Compiling your program means compiling the C it emits with clang, the C compiler, so a build takes what clang takes on that C. <a href="/start/">Getting started&nbsp;&rarr;</a></dd>
+    <dt>What does &ldquo;safe&rdquo; mean here, and can a program crash?</dt>
+    <dd>A Heroes program must never read or write memory it does not own, and it never goes on computing with a value you did not ask for: an index out of range, an integer overflow, a division by zero or a failed assertion stop it with a message naming the operation. It does not cover who may change a value, the job of Rust&rsquo;s borrow checker: values here never share memory, so that question does not arise. Memory a C library owns is the exception, and the chapter on the C boundary says what is checked there. A program that corrupts memory is a bug in the compiler, and the security policy says how to report one. <a href="/docs/the-c-boundary/">The C boundary&nbsp;&rarr;</a> <a href="https://github.com/heroes-lang/heroes/blob/main/SECURITY.md">Reporting a crash&nbsp;&rarr;</a></dd>
+  </dl>
+
+  <h2 id="language">The language</h2>
+  <dl class="why">
+    <dt>Why no null, and no exceptions?</dt>
+    <dd>Heroes makes missing values and failed operations explicit. The type <code>i64?</code> means that the result can be a number or an error. The <code>?</code> operator propagates an error to the calling function, visibly on the line where you use it. <a href="/docs/failure-is-a-value/">How to handle errors&nbsp;&rarr;</a></dd>
+    <dt>How are errors handled, including one deep in a call chain?</dt>
+    <dd>A function that can fail says so in its type: <code>str?</code> is a text that may not arrive. The caller deals with it on that line: match on it, pass it up with <code>?</code>, take a default, or stop with <code>.must()</code>. An error that travels several calls up crosses each one with a <code>?</code> on the line it crosses, so any function shows where it can fail. Dropping an error in silence is a compile error.</dd>
+    <dt>Why must arguments be named when two parameters share a type?</dt>
+    <dd>When two arguments have the same type, the compiler cannot tell them apart by type alone. The names in <code>copy(from: a, to: b)</code> make the source and destination explicit. When types distinguish the arguments, the names are optional.</dd>
+    <dt>Why are there eight integer types?</dt>
+    <dd>Different widths are needed, among other things, to use C libraries with the types they require. Heroes avoids automatic conversions: every conversion between numeric types must be explicit. This allows eight integer types without C&rsquo;s implicit conversion rules. If you write <code>int</code>, the compiler reports an error and lists the available types.</dd>
+    <dt>Why is the formatting rigid, exactly four spaces, tabs an error?</dt>
+    <dd>Indentation determines the program&rsquo;s structure. Strict rules let the compiler reject invalid forms. The formatter applies one style, reducing formatting differences when you compare two versions of the code.</dd>
+    <dt>Why is every assignment a copy?</dt>
+    <dd>To keep values independent: changing a copy does not change the original. You cannot create cycles in which two values keep each other alive. The runtime, the code that supports the running program, can therefore free memory by counting references to data, without a garbage collector that searches for unused data.</dd>
+    <dd class="more"><code>+</code> on a <code>str</code> copies both strings. Repeating it in a loop can require work that grows with the square of the final length; <code>join</code> builds the result in one pass. An array can grow without being copied when no other value uses its memory. Passing a large value to a function does not immediately copy all its data: memory is shared until a change requires a copy. <a href="/docs/values-all-the-way-down/">How copies work&nbsp;&rarr;</a></dd>
+    <dt>Are there closures or lambdas?</dt>
+    <dd>Named functions are values: you pass <code>double</code> to <code>map</code> by name. Anonymous functions, and functions that capture the variables around them, were measured against the compiler&rsquo;s own source, which passes a function at a handful of places and captures nothing, and refused on that cost. The refusals page has the measurement and what would reopen it. <a href="/why/not/">The refusals&nbsp;&rarr;</a></dd>
+    <dt>Can I write a hash table, a tree, a JSON parser, a cache?</dt>
+    <dd>Yes. Heroes has growable arrays, maps, records and variants, and a value contains itself through an array, which is how a tree or a JSON document is written. The examples include a parser with its own tests, a client of a SQLite database and a web request through libcurl. <a href="/examples/">The examples&nbsp;&rarr;</a></dd>
+  </dl>
+
+  <h2 id="libraries">Libraries, and running it</h2>
+  <dl class="why">
+    <dt>Is there a standard library? How do I add a library?</dt>
+    <dd>There is no standard library, on purpose: the built-ins fit in one line of the specification. Everything else is a C library you declare in a few lines of your own file, naming its header and the library, and clang checks your declaration against the header. SQLite, libcurl, raylib and SDL are bound in the examples with no glue code. A command that fetches packages is on the roadmap. <a href="/docs/the-c-boundary/">Using C libraries&nbsp;&rarr;</a></dd>
+    <dt>Can C call Heroes?</dt>
+    <dd>A C library calls back into Heroes through a function you hand it, the way a sort routine or a window takes a callback. Building a shared library in Heroes for a C program to load is not something it does today.</dd>
+    <dt>Can operations run in parallel?</dt>
+    <dd>Yes, using threads, operations that run in parallel, through C libraries. Each Heroes thread has separate memory and can receive and return numbers, which are copied. The compiler rejects passing an array. This model suits computations with small inputs and a numeric result. A model with isolated workers that pass whole values through queues is written down in the design document, and not scheduled yet. <a href="/examples/threads/">A thread example&nbsp;&rarr;</a></dd>
+    <dt>Does the compiler stop at the first error, and can a tool read what it says?</dt>
+    <dd>It goes on: the parser picks up again at the next statement or declaration, and the checker collects what it finds, so one run reports every mistake it can see, each with its place and its fix. <code>heroes check --json</code> writes the same diagnostics as JSON with a documented schema, and with <code>--apply</code> prints the repaired program the same way. An agent reads that; a person reads the text. <a href="/docs/errors/">Reading a message&nbsp;&rarr;</a></dd>
+    <dt>Can I use it without a C compiler, and how do I install it?</dt>
+    <dd>Clone the repository and compile one C file with clang; that is the whole compiler. There is no installer, package or Homebrew formula yet; they are on the roadmap. Clang stays necessary afterwards: the compiler emits C and hands it to clang, which also checks your C library declarations against their headers. On a Mac clang comes with the command line tools; on Linux and Windows you install it, and <code>heroes doctor</code> says what the machine has. <a href="/start/">The four commands&nbsp;&rarr;</a></dd>
+    <dt>Does it run on a microcontroller, in the browser, on 32 bits?</dt>
+    <dd>Not today. Heroes is tested on 64-bit Linux, macOS and Windows and compiles to C, so a program needs a C compiler and the C libraries it declared on the machine that runs it. The browser means WebAssembly, which cannot call native C libraries, and C libraries are what Heroes is built around. A ruling on microcontrollers is on the roadmap.</dd>
+    <dt>What editor support is there?</dt>
+    <dd>A VS Code extension highlights Heroes files, runs check, build, run and test as tasks, and debugs a program through lldb, the debugger, showing Heroes values. A language server, the program an editor asks for errors as you type, is on the roadmap.</dd>
+    <dt>Where is the project going?</dt>
+    <dd>The roadmap is public, one row per milestone in the order they will be taken, and most of it is done. Versions stay below 1.0.0 until a compatibility promise is written, so the language may still change between minor versions. The compiler, the tests, the reviews and the decisions are all in the open. <a href="/log/">The build log&nbsp;&rarr;</a></dd>
+  </dl>

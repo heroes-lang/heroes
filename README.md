@@ -215,16 +215,20 @@ expired the day the compiler could build itself.
 ## The thesis, and how much of it is measured
 
 The design rule is a cost formula: a construct's cost is its token count times
-one plus the rate at which a model rewrites it wrongly. Two of its three
+one plus the rate at which a model rewrites it wrongly. All three of its
 instruments have run. The first is the spec's measured size, held **under a hard
 ceiling of 16384** tokens by a test that fails the day it is crossed, counted by
 two vendored BPE tables so that neither can hide its own drift, with every
 amendment's cost in `docs/measurements/010-spec-budget-ledger.md` and the
 standing figure in `ROADMAP.md`. The second is a mutation-based check over
-the compiler's own corpus. **The third, the rewrite rate, has not run**, so the formula remains the design rule it always
-was and is not yet an audited one. This is written here rather than discovered by
-a reader, because measurement beats opinion in this project, the author's
-included.
+the compiler's own corpus. **The third, the rewrite rate, was measured for the
+first time on forty held-out tasks sealed before the run, under a prediction
+pushed first, and the test of the thesis it belongs to read inconclusive**
+(measurement 052, in `docs/measurements/`). The figures are stated on the site
+at the publication gate, and until then the formula stays the design rule it
+always was rather than an audited one. This is written here rather than
+discovered by a reader, because measurement beats opinion in this project, the
+author's included.
 
 ## Where things are written down
 

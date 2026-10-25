@@ -58,7 +58,7 @@ function name_of(t: Token) -&gt; str
       <span class="n">{{ceilingK}}</span>
       <span class="what">token: il tetto della specifica</span>
       <span class="how">La specifica descrive tutto il linguaggio in circa sette pagine. Un token è un frammento di testo che il modello legge o genera. Con una specifica breve, nel prompt resta spazio per il tuo programma.
-      <a href="/it/spec/">la specifica&nbsp;&rarr;</a> <a href="/it/why/">perché è progettato così&nbsp;&rarr;</a></span>
+      <a href="/it/spec/">la specifica&nbsp;&rarr;</a> <a href="/it/why/">perché è progettato così&nbsp;&rarr;</a> <a href="/it/why/faq/">domande frequenti&nbsp;&rarr;</a></span>
     </li>
     <li>
       <span class="n">0</span>
@@ -116,7 +116,7 @@ function name_of(t: Token) -&gt; str
     Una parte della tesi è già stata verificata. <code>heroes mutate</code> introduce un errore realistico alla volta in programmi funzionanti e conta quanti errori rileva il compilatore. Ripete poi la prova con i controlli specifici di Heroes disattivati. La differenza sta nelle regole che chiedono il nome di un argomento e vietano di riusare un nome già dichiarato: senza quelle, quegli errori compilano. La stessa tabella dice anche quali errori nessun controllo prende.
   </p>
   <p>
-    Resta da confrontare il numero totale di token necessari per ottenere un programma funzionante in Heroes e in un altro linguaggio, comprese le correzioni. Lo strumento per questo confronto è stato progettato, ma deve ancora essere costruito. <a href="/it/docs/errors/#measured">I risultati disponibili&nbsp;&rarr;</a>
+    L&rsquo;altra parte è il numero totale di token che costa un programma funzionante, correzioni comprese, con i controlli specifici di Heroes accesi e con gli stessi controlli spenti. Lo strumento che lo misura ha fatto un giro, su compiti scritti e sigillati prima, con una previsione pubblicata prima, e il risultato è stato non conclusivo: il giro non ha saputo distinguere i due casi. Le cifre si dichiarano alla soglia di pubblicazione. Il confronto con altri linguaggi viene dopo. <a href="/it/why/measured/">Cosa è misurato&nbsp;&rarr;</a> <a href="/it/docs/errors/#measured">I risultati disponibili&nbsp;&rarr;</a>
   </p>
 
   <h2>Eseguilo <span class="nod">&middot; speed of life &middot;</span></h2>
