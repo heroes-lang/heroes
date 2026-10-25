@@ -43,3 +43,7 @@ Output exactly this structure:
   happened, each marked verified/unverified
 - `argument`: ≤120 words
 - `condition`: what precedent, if found, would change your reading
+- `search`: how the search was done, the queries made and the languages,
+  papers and sources swept, so that a sentence about something not found
+  names what was looked for and where (CLAUDE.md § RUN IT, CL-018; the
+  author's 6a of 2026-10-25)

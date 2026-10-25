@@ -314,8 +314,10 @@ CL-060.
 - **Format at the moment of writing**, `heroes fmt <file> --in-place`, not at
   the moment of verifying (CL-063).
 - **Never slow the compiler down.** Time before and after with
-  `/usr/bin/time -p` and report the number. **While a clock runs the machine
-  stays still**: no build, no second suite, no copy to another box. Read the
+  `/usr/bin/time -p` and report the number: the best of N stated runs, the
+  first discarded, against a noise floor measured first (author, 2026-10-25).
+  **While a clock runs the machine stays still**: no build, no second suite, no
+  copy to another box. Read the
   ratio, because `real` far above `user` plus `sys` means the run was waiting;
   discard it and write down why. **A suite reading the tree owns the tree until
   it exits** (CL-025), so work beside a gate goes in the scratchpad or a
