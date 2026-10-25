@@ -27,6 +27,7 @@ use cli/probing
 use cli/pointee_ask
 use cli/tag_spelling
 use cli/whose
+use cli/refused_units
 use cli/two_ways
 use cli/defined_twice
 use cli/pragma_ask
@@ -41,8 +42,8 @@ use cli/value_beside
 use cli/value_early
 
 # What the rounds came back with: the verdict, the failure already told where
-# it is the author's (`whose.of_refusal`); where the binary landed; the tags
-# they learned; the header's answer where the last one asked it; and the
+# it is the author's (`cli/refused_units.hero`); where the binary landed; the
+# tags they learned; the header's answer where the last one asked it; and the
 # names a bound macro reaches the guard keeps (defect 2059).
 record Rounds
     verdict: ()?
@@ -58,6 +59,7 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
     binary: str @= ""
     asked: ffi_asked.Asked? @= fail(code: "none", msg: "the header was not asked")
     refused_in: [str] @= []
+    units_refused: [assemble.Refused] @= []
 
     # What the value probe asks beside the last round's refusal (defect
     # 2128, panel 225): the round's units that compiled, and every one it
@@ -98,6 +100,7 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
         linked @ went.verdict
         binary @ went.binary
         refused_in @ went.modules
+        units_refused @ went.units
 
         if !linked.is_err()
             break
@@ -122,8 +125,9 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
         # Some clang failures are the AUTHOR's, and the ffi mapping is
         # the only place that decides which (panel 036 rider 3); the
         # pipeline pieces ride in the Artifact for exactly this call. The
-        # questions are asked of the headers of the units that refused. A
-        # value only the probe sees is asked beside it and told with it.
+        # questions are asked of the headers of the units that refused, every
+        # unit read (defect 2143). A value only the probe sees is asked
+        # beside it and told with it.
         found = value_beside.told(
             t,
             units: beside,
@@ -133,7 +137,7 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
             s: s,
             decls: art.decls
         )
-        refused = whose.of_refusal(
+        refused = refused_units.tell(
             linked,
             art,
             s,
@@ -142,9 +146,9 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
             answered: answered,
             struct_tags: struct_tags,
             asked: asked,
-            asking: probing.holding(planned.probings, modules: refused_in),
-            unit_headers: unit_headers(planned: planned, modules: refused_in),
-            refused: "clang refused the generated C",
+            planned: planned,
+            modules: refused_in,
+            units: units_refused,
             beside: found
         )
         return Rounds(verdict: refused, binary: "", struct_tags: struct_tags, asked: asked, kept: kept)
@@ -177,7 +181,7 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
             code: "diagnostics",
             msg: "a group's header defines a name this program's C writes as a macro holding a pragma"
         )
-        return assemble.Round(verdict: held, refusals: [], binary: "", modules: [])
+        return assemble.Round(verdict: held, refusals: [], binary: "", modules: [], units: [])
     checked = probing.check_all(t, art.program, art.checked, s, art.decls, planned.probings, answered: @answered)
 
     if checked.verdict.is_err()
@@ -198,7 +202,8 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
             verdict: checked.verdict,
             refusals: assemble.messages_of(checked.verdict),
             binary: "",
-            modules: checked.modules
+            modules: checked.modules,
+            units: []
         )
 
     # A copy of a group record whose C struct holds a lock, told before any
@@ -213,7 +218,7 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
             permissive: false
         ).is_err()
         locked: ()? = fail(code: "diagnostics", msg: "a group record whose C struct holds a lock is copied")
-        return assemble.Round(verdict: locked, refusals: [], binary: "", modules: [])
+        return assemble.Round(verdict: locked, refusals: [], binary: "", modules: [], units: [])
 
     # One C function two modules' groups bind and their headers declare two
     # ways, told before any unit compiles (panel 202's C1,
@@ -233,7 +238,7 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
             permissive: false
         ).is_err()
         refused: ()? = fail(code: "diagnostics", msg: "two modules' headers disagree about a C name")
-        return assemble.Round(verdict: refused, refusals: [], binary: "", modules: [])
+        return assemble.Round(verdict: refused, refusals: [], binary: "", modules: [], units: [])
 
     # The unit each counted parameter's count is compared in, read from the
     # header by the check above (panel 194's R7): every unit is emitted with
@@ -285,25 +290,6 @@ function joined(first: [diag.Diagnostic], more: [diag.Diagnostic]) -> [diag.Diag
         out @ out.push(d)
 
     return out
-
-# The headers of the unit a refusal is, in its order: a module's unit's, its
-# plan's (`emit/unit_plan.hero`), `heroes test`'s included since defect 560.
-function unit_headers(planned: probing.Planned, modules: [str]) -> [str]
-    out: [str] @= []
-
-    for one in probing.holding(planned.probings, modules: modules)
-        for header in one.headers
-            if !holds(out, one: header)
-                out @ out.push(header)
-
-    return out
-
-function holds(list: [str], one: str) -> bool
-    for each in list
-        if each == one
-            return true
-
-    return false
 
 # Every probe's records asked which hold a lock, then the program's copies of
 # them (panel 215's R2).

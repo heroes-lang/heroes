@@ -1,0 +1,132 @@
+# Every unit clang refused in one round, read for whose each refusal is and
+# told in one build (design.md §4.17, §4.19; defect 2143, 2026-10-25). Panel
+# 093's R5 compiles every dirty unit before any verdict, so a round two
+# modules' units refused holds both refusals; until this file only the first
+# was read, and the second module's own mistake was told a build later, once
+# the first was repaired, which module came first deciding which mistake
+# waited. Each refused unit is now read as one refusal is (`whose.reading`),
+# under its own module's headers and words, and what every reading tells is
+# staged once, the first unit's first, a finding at a span already told
+# dropped (`whose.with_beside`), so a header two units include and clang
+# refuses in both is told once. A unit whose refusal is the compiler's is
+# printed as `internal error` beside the author's mistakes, never hidden
+# behind them, and makes the verdict the compiler's.
+#
+# A refusal that is no one unit's, a link, a dump that did not compile or a
+# probe, is read as before, of the modules it names.
+
+use source
+use emit/ffi_asked
+use cli/compile
+use cli/toolchain
+use cli/compiling
+use cli/assemble
+use cli/probing
+use cli/pointee_ask
+use cli/whose
+use diag
+use token
+
+# What a refused round tells, and its verdict: `failed` the round's, `modules`
+# those it names, `units` every unit clang refused in it.
+function tell(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, planned: probing.Planned, modules: [str], units: [assemble.Refused], beside: [diag.Diagnostic]) -> ()?
+    if units.len() == 0
+        return whose.of_refusal(
+            failed,
+            art,
+            s,
+            t,
+            under: under,
+            answered: answered,
+            struct_tags: struct_tags,
+            asked: asked,
+            asking: probing.holding(planned.probings, modules: modules),
+            unit_headers: headers_of(planned: planned, modules: modules),
+            refused: REFUSED,
+            beside: beside
+        )
+    readings: [whose.Reading] @= []
+
+    for one in units
+        readings @ readings.push(
+            whose.reading(one.failed, art, s, t, under: under, answered: answered, struct_tags: struct_tags, asked: asked, asking: probing.holding(planned.probings, modules: [one.module]), unit_headers: headers_of(planned: planned, modules: [one.module]), refused: REFUSED)
+        )
+
+    return whose.tell(merged(readings), s: s, beside: beside)
+
+# What a refused round could not do, where the refusal is the compiler's.
+constant REFUSED: str
+    "clang refused the generated C"
+
+# The readings as one: every author's diagnostic in the readings' order, a
+# span told once; the compiler's words of each reading that has them, one
+# `internal error` each; and the verdict, the first reading's unless a later
+# one is the compiler's where the first is the author's.
+function merged(readings: [whose.Reading]) -> whose.Reading
+    told: [diag.Diagnostic] @= []
+    internal: [str] @= []
+    verdict: ()? @= fail(code: "failed", msg: "a refused round held no unit to read")
+    first: bool @= true
+
+    for read in readings
+        told @ whose.with_beside(told: told, beside: read.told)
+
+        if read.internal != ""
+            internal @ internal.push(read.internal)
+
+        if first || whose.failure_code(verdict) == "diagnostics" && whose.failure_code(read.verdict) != "diagnostics"
+            verdict @ read.verdict
+        first @ false
+
+    return whose.Reading(told: told, verdict: verdict, internal: internal.join("\ninternal error: "))
+
+# The headers of the unit a refusal is, in its order: a module's unit's, its
+# plan's (`emit/unit_plan.hero`), `heroes test`'s included since defect 560.
+# Moved here from `cli/rounds.hero` with defect 2143.
+function headers_of(planned: probing.Planned, modules: [str]) -> [str]
+    out: [str] @= []
+
+    for one in probing.holding(planned.probings, modules: modules)
+        for header in one.headers
+            if !holds(out, one: header)
+                out @ out.push(header)
+
+    return out
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+## Tests
+
+test "every refused unit's mistakes are told together, a span once, and a compiler's refusal is never hidden behind them"
+    at_a = token.Span(start: 10, end: 20)
+    at_b = token.Span(start: 30, end: 40)
+    a = diag.new_diagnostic(code: "ffi_parameter_type", message: "the first unit's", span: at_a)
+    b = diag.new_diagnostic(code: "ffi_unknown_name", message: "the second unit's", span: at_b)
+    again = diag.new_diagnostic(code: "ffi_parameter_type", message: "the first unit's, read again", span: at_a)
+    first = whose.Reading(told: [a], verdict: fail(code: "diagnostics", msg: "one"), internal: "")
+    second = whose.Reading(told: [again, b], verdict: fail(code: "diagnostics", msg: "two"), internal: "")
+    both = merged([first, second])
+    assert both.told.len() == 2
+    assert both.told[0].message == "the first unit's"
+    assert both.told[1].message == "the second unit's"
+    assert whose.failure_code(both.verdict) == "diagnostics"
+    assert whose.failure_message(both.verdict) == "one"
+    assert both.internal == ""
+    none: [diag.Diagnostic] = []
+    compilers = whose.Reading(told: none, verdict: fail(code: "failed", msg: REFUSED), internal: "unit.c:3: error")
+    mixed = merged([first, compilers])
+    assert mixed.told.len() == 1
+    assert whose.failure_code(mixed.verdict) == "failed"
+    assert mixed.internal == "unit.c:3: error"
+    turned = merged([compilers, first])
+    assert turned.told.len() == 1
+    assert whose.failure_code(turned.verdict) == "failed"
+    alone = merged([first])
+    assert alone.told.len() == 1
+    assert whose.failure_message(alone.verdict) == "one"
+    assert whose.failure_code(merged([]).verdict) == "failed"

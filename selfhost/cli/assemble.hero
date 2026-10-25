@@ -46,12 +46,20 @@ use cli/settled
 # not only the first. A program of several modules may need `struct` on a tag in
 # each, and every dirty TU is compiled before any verdict (panel 093 R5), so one
 # round can learn them all and the second is the last. `modules` are those
-# whose check or unit the verdict is (`cli/header_ask.hero` asks their headers).
+# whose check or unit the verdict is (`cli/header_ask.hero` asks their headers),
+# and `units` every unit clang refused, in the plans' order, the verdict being
+# the first's, each read for whose it is (`cli/refused_units.hero`, defect 2143).
 record Round
     verdict: ()?
     refusals: [str]
     binary: str
     modules: [str]
+    units: [Refused]
+
+# A unit clang refused: its module, and clang's refusal of it.
+record Refused
+    module: str
+    failed: ()?
 
 # What the checks hand the units: each counted parameter's unit, the probes'
 # digests of what they read (each round's memo starts from them, defect 416),
@@ -71,7 +79,9 @@ function unread_round(lent: Lent) -> Round?
     if !lent.unread.is_err()
         return fail(code: "none", msg: "every dump compiled")
     refused: ()? = fail(code: "clang", msg: failure_message(lent.unread))
-    return ok(Round(verdict: refused, refusals: messages_of(refused), binary: "", modules: lent.unread_modules))
+    return ok(
+        Round(verdict: refused, refusals: messages_of(refused), binary: "", modules: lent.unread_modules, units: [])
+    )
 
 # One .c per module (panel 093): each TU compiled to its own cached object,
 # every dirty TU before any verdict (R5), one link over all of them re-run
@@ -84,6 +94,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     stopped: ()? @= ok()
     stopped_in: [str] @= []
     refusals: [str] @= []
+    refused: [Refused] @= []
 
     # The whole-program tables, built once for the whole BUILD rather than
     # once per TU (`cli/probing.hero`); a round renames only what it learned,
@@ -149,6 +160,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
 
         if made.is_err()
             refusals @ refusals.push(failure_of(made))
+            refused @ refused.push(Refused(module: component, failed: carry_failure(made)))
             refused_at @ refused_at.push(at)
             refused_texts @ refused_texts.push(tu_text)
 
@@ -192,7 +204,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
                 beside @ beside.push(again.must())
             index @ index + 1
 
-        return Round(verdict: stopped, refusals: refusals, binary: "", modules: stopped_in)
+        return Round(verdict: stopped, refusals: refusals, binary: "", modules: stopped_in, units: refused)
     unread = unread_round(lent)
 
     if !unread.is_err()
@@ -214,12 +226,12 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     )
 
     if values.is_err()
-        return Round(verdict: values, refusals: [], binary: "", modules: [])
+        return Round(verdict: values, refusals: [], binary: "", modules: [], units: [])
 
     # Every TU compiled and none refused: for a build that does not link, that
     # IS the verdict, and the refusals it met are what a tag round reads.
     if !site.link
-        return Round(verdict: ok(), refusals: refusals, binary: "", modules: [])
+        return Round(verdict: ok(), refusals: refusals, binary: "", modules: [], units: [])
     return linked_round(
         t,
         options,
@@ -248,7 +260,8 @@ function linked_round(t: toolchain.Toolchain, options: compile.Options, site: se
         verdict: carry_failure(linked),
         refusals: refusals_of(linked),
         binary: linked.default(""),
-        modules: modules
+        modules: modules,
+        units: []
     )
 
 # The message of a failed `()?`, as the one-element list a round's refusals

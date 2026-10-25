@@ -1,9 +1,10 @@
 # A module of defect 2143's cases (lane lane-witnessed-seed, 2026-10-19): a
-# parameter wider than the header's `int`, told one build later while
-# defect 2143 is open, and a value only the probe sees.
+# parameter wider than the header's `int`, told in the build that tells the
+# root's own refusal since defect 2143's other half (2026-10-25,
+# M-rechecked-issues), and a value only the probe sees.
 
 extern "fixedbugs-2128-narrow.h"
-    function narrow(x: i64) -> i32
+    function narrow(x: i64) -> i32  #~ ffi_parameter_type
 
 extern "fixedbugs-2128-values.h"
     constant K_DIV: i64  #~ ffi_constant_type
