@@ -875,6 +875,18 @@ function run_all(scratch: str, only: str) -> report.Report?
     # knew to ignore.
     walked = shell.project_files(scratch)?
 
+    # **Narrowed to the tag check, the push guard's question** (defect 2198):
+    # `m-thesis-harness` was placed over two defects that its own placing aged,
+    # since the close asked this suite before the tag stood, when `tagged`
+    # still judged the tag before it. The guard in front of a push that can
+    # carry an `m-*` tag (`.claude/hooks/tagged.py`) asks `tagged` alone, with
+    # the tag placed and GitHub asked once, and refuses the push on any answer
+    # but a pass, a skip included.
+    if only == TAG_CHECK
+        held = github_issues.held_at(scratch: scratch, transport: issue_wire.gh())
+        tagged(@r, scratch: scratch, held: held)
+        return ok(r)
+
     # **Narrowed to one path, the write hook's question** (layer 0,
     # `.claude/rules/verification.md` § A suite is the last judge): the one
     # check that can judge a file alone, `defects-cited`, over `only` where it
@@ -1282,6 +1294,14 @@ function github_route(@r: report.Report, scratch: str, held: github_issues.Listi
         )
         return
     report.keep_pass(@r)
+
+# The word that narrows this suite to `tagged` alone, the push guard's
+# question (defect 2198): the check's own label, which no tracked path can be,
+# since every path the other narrowing takes stands under `selfhost/`,
+# `runtime/`, `seed/` or `tests/`. `.claude/hooks/tagged.py` holds the same
+# word and the hooks' own tests read it from here.
+constant TAG_CHECK: str
+    "records/tagged"
 
 # What the two failures of `tagged` say beneath what they list.
 constant TAGGED_RULE: str
