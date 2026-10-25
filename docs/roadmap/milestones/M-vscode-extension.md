@@ -43,3 +43,13 @@ save and `heroes doctor` as the health check. The row moves from 75 to 84,
 after M-lsp-server and immediately before the gate. **Row 85 since
 2026-10-18**, one further when M-readonly-lend entered the chain at row 68
 (`b5db7e8ff`), still after M-lsp-server and before the gate.
+
+**A comparison read on 2026-10-25, offered by the session of that day for this
+row.** Goose's extension (github.com/aardappel/goose, [goose/vscode/README.md](https://github.com/aardappel/goose/blob/master/vscode/README.md))
+never runs the compiler in a workspace the editor does not trust, keeping
+highlighting and the outline; `editors/vscode/extension.js` asks no
+`isTrusted` today. Its grammar is tested in CI against the compiler just
+built. And its tree-sitter grammar, which Helix, Neovim and Zed read, "should
+never reject a program the compiler accepts" and is checked over every source
+file of the repository; here that check would be `heroes lex` over the tree,
+as the site's highlighter is held to it.

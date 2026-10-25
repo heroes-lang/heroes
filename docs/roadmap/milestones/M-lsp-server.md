@@ -22,3 +22,17 @@ M-readonly-lend entered the chain at row 68, `b5db7e8ff`). The packages are writ
 launch. The incremental frontend this page gave it on 2026-09-03 leaves it and
 becomes M-latency-ceiling's return condition. The 8 s above was measured on
 2026-08-26; `heroes check selfhost/main.hero` read 5.8 s on 2026-09-29.
+
+**A comparison read on 2026-10-25, offered by the session of that day for this
+row.** Goose's language server (github.com/aardappel/goose,
+[goose/docs/design/language_server.md](https://github.com/aardappel/goose/blob/master/docs/design/language_server.md), [goose/docs/implementation.md](https://github.com/aardappel/goose/blob/master/docs/implementation.md) § 12) suggests five
+things: (1) the server is the compiler re-analysing the whole program on every
+change, decided only after measuring it, 104 ms in-process on its 3,318-line
+self-hosted compiler; here `heroes check selfhost/main.hero` read 5.8 s on
+2026-09-29 as a process, so the number to take first is the in-process
+re-check; (2) diagnostics are data and the text one rendering of them, which
+`check --json` already is; (3) the extension stays usable without the verb,
+and a `--probe` tells a compiler with the verb from one without; (4)
+cancellation polled at each declaration and statement; (5) the tests as
+expectation lines inside the fixtures, `#~ lsp:` here, and a sweep of random
+one-character edits with a latency bound, which found two defects there.

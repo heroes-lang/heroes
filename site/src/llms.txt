@@ -36,7 +36,8 @@ function that ends it; a handle never given back stops the program at exit.
 - [Start](https://heroes-lang.org/start/): how to build the compiler, find its runtime and run a program.
 - [Why Heroes](https://heroes-lang.org/why/): why the language uses explicit syntax and C libraries, what has been measured and what remains to be tested.
 - [What Heroes refused](https://heroes-lang.org/why/not/): the design proposals evaluated and turned down, who said no, and what would prove each refusal wrong.
-- [Measured](https://heroes-lang.org/why/measured/): what has been measured about the thesis, the test of it written down before it runs, with its pre-registered prediction and the sealed suite's digests, and what is not known yet.
+- [Common questions](https://heroes-lang.org/why/faq/): the questions people ask before trying Heroes, each answered in a few plain lines: why it exists, who writes it, speed, safety, libraries and running it.
+- [Measured](https://heroes-lang.org/why/measured/): what has been measured about the thesis, the test of it written down before it ran, with its pre-registered prediction and the sealed suite's digests, its first run on the sealed tasks, where the models solved the same tasks with the rules and without them, which the experiment calls inconclusive, and what is not known yet.
 - [The project](https://heroes-lang.org/project/): how to verify that the compiler reproduces its own C, how changes are reviewed and the principles printed by `heroes this`.
 - [The author](https://heroes-lang.org/about/): Giuseppe Arici, CTO at Codermine in Brescia and author of *Heroes of code*, a history of programming languages told as a dream journey with David Bowie. The book is published on Amazon. Arici had never seriously written a compiler before Heroes, but had studied the history of programming languages and their compilers.
 - [Development log](https://heroes-lang.org/log/): project changes and review findings, newest first.
