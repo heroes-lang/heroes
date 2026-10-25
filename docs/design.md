@@ -712,7 +712,8 @@ Part 2 rules out as a justification.
   file around synthetic cleanup code, so lldb never blames user lines for housekeeping —
   which means the restore directive carries the printer's **own output line count**, making a
   newline-counting writer structural rather than incidental (panel 020, measured against
-  `tools/spike/01-first.c`, which advertised `:2` and delivered `:6`). Debugging the emitter
+  `tools/spike/01-first.c`, out of the tree since 2026-10-25 and read at `a126f7a60`, which
+  advertised `:2` and delivered `:6`). Debugging the emitter
   itself is the *author's* activity, not the tool's capability: it is three lines in the emitter's
   test helper, and `--no-line` is refused by CLAUDE.md §10's stopping rule (panel 016's watch
   list, settled in panel 020).
@@ -2994,7 +2995,8 @@ includes — so clang type-checks every runtime call.** Contents:
   UBSan stay in the harness for use-after-free and double-free, which they do catch.
 - the array: a heap header (`refcount`, `len`, `cap`, element descriptor) with elements in-line,
   `push`, and an aborting bounds check — representation fixed by the hand-written, ASan-verified
-  spike `tools/spike/04-variant.c` before any compiler code existed. **A record is a C struct by
+  spike `tools/spike/04-variant.c` (out of the tree since 2026-10-25, read at `a126f7a60`)
+  before any compiler code existed. **A record is a C struct by
   value and a variant a tagged union by value** (panel 022, confirming that spike rather than
   overturning it: its `h_Expr` was already a tagged union, and the only refcounted header in it was
   the array's). So `str`, `[T]` and `{K: V}` are the only reference-counted things in the language,
