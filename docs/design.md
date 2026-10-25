@@ -712,7 +712,8 @@ Part 2 rules out as a justification.
   file around synthetic cleanup code, so lldb never blames user lines for housekeeping —
   which means the restore directive carries the printer's **own output line count**, making a
   newline-counting writer structural rather than incidental (panel 020, measured against
-  `tools/spike/01-first.c`, which advertised `:2` and delivered `:6`). Debugging the emitter
+  `tools/spike/01-first.c`, out of the tree since 2026-10-25 and read at `a126f7a60`, which
+  advertised `:2` and delivered `:6`). Debugging the emitter
   itself is the *author's* activity, not the tool's capability: it is three lines in the emitter's
   test helper, and `--no-line` is refused by CLAUDE.md §10's stopping rule (panel 016's watch
   list, settled in panel 020).
@@ -2263,7 +2264,7 @@ Two rules discovered by adversarial review (panel 000), both now normative:
 - **Hole suggestions are ranked by type-relevance, capped at 5, in deterministic order — and the
   cap is stated in the spec.** Unbounded "nearby functions" would flood a model's context on a
   5k-line compiler and vary with file layout, making identical holes give different guidance.
-  **Corrected 2026-10-25** (panel 228's R6, provisional, author ratification pending): no revision
+  **Corrected 2026-10-25** (panel 228's R6, ratified by the author on 2026-10-25): no revision
   of the specification has stated the cap, by the sitting's critic's searches of its history, and
   the suggestions are filtered by result type and listed in a fixed order, (module, name), not
   ranked. The cap is this section's own, five, and every list it cuts says by how many, in the text
@@ -2346,7 +2347,7 @@ until defect 371: `--brief` or `--dump-scopes` with `--apply`, `--in-place` with
 `--brief` with `--json`.
 
 **Every answer carries the program's holes, and says whether the list is whole** (panel 228's R1,
-R2 and R7, provisional, author ratification pending; feature 2091, defect 2158). A `"diagnostics"`
+R2 and R7, ratified by the author on 2026-10-25; feature 2091, defect 2158). A `"diagnostics"`
 and an `"applied"` document each hold `"holes"`, an array, and `"holes_complete"`, a boolean, true
 exactly when every stage ran quiet, the list then every hole of the program in source order (§4.16's
 report, one value rendered as the text and as these objects); beside a diagnostic, or after
@@ -2482,7 +2483,7 @@ its only occurrence; the rules it was reaching for are §1.7's subtraction test 
 one correct way*, which are named here instead.
 
 **The repository's one instance of the form refutes the rule, and three seats found it without
-conferring.** `selfhost/parse/group.hero:33-36` is the only markdown fence inside a comment in the
+conferring.** `selfhost/parse/group.hero:41-44` is the only markdown fence inside a comment in the
 whole tree; it documents `function extern_group` and holds an `extern` group. Run as statements it
 is `error[expected_expression]` at column 5, exit 1, so the proposal stops the compiler compiling
 itself on the day it lands; repair the parse and it fails again at name resolution, because the
@@ -2994,7 +2995,8 @@ includes — so clang type-checks every runtime call.** Contents:
   UBSan stay in the harness for use-after-free and double-free, which they do catch.
 - the array: a heap header (`refcount`, `len`, `cap`, element descriptor) with elements in-line,
   `push`, and an aborting bounds check — representation fixed by the hand-written, ASan-verified
-  spike `tools/spike/04-variant.c` before any compiler code existed. **A record is a C struct by
+  spike `tools/spike/04-variant.c` (out of the tree since 2026-10-25, read at `a126f7a60`)
+  before any compiler code existed. **A record is a C struct by
   value and a variant a tagged union by value** (panel 022, confirming that spike rather than
   overturning it: its `h_Expr` was already a tagged union, and the only refcounted header in it was
   the array's). So `str`, `[T]` and `{K: V}` are the only reference-counted things in the language,
@@ -3513,6 +3515,12 @@ are *on* the closure list.
    open**: the seat that compiled the C found `sqlite3_step(db)` for `sqlite3_step(statement)`
    building at zero diagnostics and exiting 139, filed as defect 029, and a transparent alias
    catches none of it.
+   **Run again 2026-10-25** (M-rechecked-issues): **(b) is met by the letter, twice.**
+   `8cd394643` (defect 267) removes 8 lines spelling `{str: {str: bool}}` for the record
+   `name_rows.NameSets`, and `44c500b40` (defect 530) respells `[Dead]` as `[flow_groups.Dead]` on
+   10 lines, a type moved between modules; both were repaired by a record and a qualified name,
+   with no alias. (a) reads 6 at most, as before. Issue 2209 takes item 5 to the item-10 sitting at
+   M-core-packages, which rules whether (b) measures what it was meant to.
 6. **Doctests** — ~~v2, once the `test` mechanism is proven.~~ **DEFERRED AGAIN, dated 2026-09-13,
    with a return condition** (panel 136, M-deferral-ledger step 2;
    `docs/panel/136-the-item-named-three-ancestors-and-the-two-it-needed-were-elsewhere.md`). **The
@@ -3620,6 +3628,11 @@ are *on* the closure list.
     correct spelling is the same on all three CI legs. Produce one and this row is wrong. Until
     then the check does the work the vocabulary would have: `ffi_parameter_type` refuses the
     binding rather than letting a width be guessed.
+    **Corrected 2026-10-25** (M-rechecked-issues, run on this Mac only): the check refuses a wider
+    or other-signed parameter, and a narrower one builds, C converting it exactly (spec § 13):
+    `labs(x: i32)` against `long labs(long)` builds and prints 5, `labs(x: u64)` is
+    `ffi_parameter_type`. So `i32` is a spelling of a C `long` parameter that builds here, unrun on
+    Linux and Windows, and no program the closure list needs binds one.
 11. ~~**A `raw` module for low-level access** — see Part 9.~~ **Left this list for Part 6 at panel 140,
     2026-09-13** (M-deferral-ledger step 5;
     `docs/panel/140-the-document-had-already-ruled-against-part-9-and-nobody-told-part-9.md`), refused
@@ -3910,7 +3923,7 @@ visible rather than patched with a second form.
    field into a local and storing back once, 200 000 in 0.00 s. **Twenty times the work in five
    hundred times less time, between two spellings of one operation.** The mechanical witness is
    `--emit-c | grep -c hero_array_push_owned`: **1** lent, **1** hoisted, **0** in-field.
-   `selfhost/ir/place_store.hero:27-31` says why — *"the path is empty … a path step would put a
+   `selfhost/ir/place_store.hero:36-39` says why — *"the path is empty … a path step would put a
    container between the slot and the header, which is the exact corruption panel 037 measured"* —
    and `@w.parts` resolves the path **at the call**, leaving the place bare inside the callee. **This
    repository had already found the route and forgotten it**: https://github.com/heroes-lang/heroes/issues/716
@@ -4003,7 +4016,7 @@ visible rather than patched with a second form.
     `hero_cstr_nonnull` is already emitted at **every** `cstr` lend, so a lent literal carrying a C0
     control byte is checkable at one existing site with no new syntax. The compiler already refuses a
     **raw** carriage return in a literal for word-for-word the same reason
-    (`selfhost/literals.hero:82-89`). **None of the three is adopted here** — nobody built the check,
+    (`selfhost/literals.hero:104-107`). **None of the three is adopted here** — nobody built the check,
     and separating an intended `\t` from a transcribed one is heuristic and owes its own sitting.
     **Note also that this language has no warning level**: a diagnostic is exit 1 or nothing, so
     "just warn" is not available.
@@ -4048,6 +4061,13 @@ visible rather than patched with a second form.
     same commit. **The return condition**: a corpus program that interleaves unterminated output with
     `print` and is stopped by the reordering — which is now a measured shape rather than a
     hypothesis.
+
+    **Corrected 2026-10-25** (M-rechecked-issues): the first of the two routes no longer
+    reorders. Since panel 156's R3 (2026-09-16) the runtime line-buffers stdout
+    (`runtime/parts/os.c`, `_IOLBF`), and `write_file(path: "/dev/stdout", ...)` interleaved with
+    `print` comes out in source order, `label: value` then `second: again`, to a file and to a
+    pipe. The route through C still reorders: `fdopen(1, "w")` and `fputs` print
+    `value\nagain\nlabel: second: `. The return condition stands, on that route.
 
 ---
 

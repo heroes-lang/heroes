@@ -30,10 +30,10 @@ the formatter's probe M-inferred-cell's changes still owe; the false sentences
 the re-ordering found, corrected underneath (`editors/README.md`, the
 `heroes_lldb.py` module doc, `selfhost/cli/help.hero`'s footer, the site's
 log, `docs/roadmap/production-ready.md`, and `selfhost/emit/header_region.hero`'s
-citation of `2067ec875`, a commit GitHub does not hold); `tools/spike/` out of
-the tree; and one line in `/step`'s close checklist so the pile does not grow
-back: a feature or a task that two milestone tags have passed gets a dated
-re-check.
+citation of `2067ec875`, a commit GitHub does not hold);
+`tools/spike/` out of the tree (2026-10-25); and one line in `/step`'s close
+checklist so the pile does not grow back: a feature or a task that two
+milestone tags have passed gets a dated re-check.
 
 **Acceptance.** `records/homes` and `records/tagged` green with GitHub asked;
 every issue open at the start carries its dated comment; the counts after

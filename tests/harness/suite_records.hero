@@ -2707,7 +2707,8 @@ function marked_at(text: str, at: i64, needle: str) -> bool
 # This exists because a throwaway that measured `__builtin_classify_type`
 # was left in the repository root and `git add -A` committed and pushed it
 # (2026-08-14). The list is of DIRECTORIES that own C, not of file names:
-# a new runtime part or a fifth spike needs no edit here.
+# a new runtime part needs no edit here. `tools/spike/` left the list with
+# its four hand-written C spikes on 2026-10-25 (M-rechecked-issues).
 #
 # **And a header a program claims is owned by that program** (2026-09-09).
 # `examples/gallery/13-lease.hero` teaches text that a C library KEEPS, and no
@@ -2724,7 +2725,7 @@ function c_files(@r: report.Report, living: [str])
     # `docs/platforms/` since 2026-10-08: a probe written by hand for one
     # machine lives with that machine's page, as defect 463's does, run on a
     # Linux with SELinux enforcing, which no leg of the net is.
-    owns: [str] = ["runtime/", "tools/spike/", "seed/", "docs/platforms/"]
+    owns: [str] = ["runtime/", "seed/", "docs/platforms/"]
     strays: [str] @= []
 
     for path in living

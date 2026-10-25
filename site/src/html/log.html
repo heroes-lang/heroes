@@ -4,14 +4,69 @@
     <span class="nod">· <a href="/about/thanks/#changes">changes</a></span>
   </div>
   <p class="lede">
-    One entry for each stage of the project, newest first. Full reports, including decisions, reviews and problems encountered, are in the repository, which is open to read.
+    One entry for each stage of the project up to the site&rsquo;s last refresh, newest first; what closed since is in the repository&rsquo;s roadmap. Full reports, including decisions, reviews and problems encountered, are in the repository, which is open to read.
   </p>
 
   <ol class="log">
+    <li id="72">
+      <span class="when">The claim, put to the test</span>
+      <b>For the first time the claim Heroes is built on was tested with models in the loop, the AI programs that write code: forty tasks the author wrote and sealed, every one a trap, judged with Heroes&rsquo; own rules on and off, under a prediction made public before the first answer.</b> No model saw a task before its run: the author wrote them in a folder the assistant&rsquo;s tools are barred from, and ran them from the author&rsquo;s own terminal. On the way the instrument was found keeping answers from a model it had not asked, and the practice run was done again; without the specification, no model wrote a program that ran right. The result is read against the prediction alone, and the site states it at the publication gate, the moment a finished thing is announced.
+      <a class="more" href="/why/measured/">What is measured, and how</a>
+    </li>
+    <li id="71">
+      <span class="when">The seed gets a witness</span>
+      <b>The seed, the one C file a machine without Heroes builds the compiler from, had only ever shown that it reproduces itself, as a lying seed could too. Now a second, independent compiler vouches for it.</b> The project&rsquo;s first compiler, written in Rust and archived, was rebuilt and wrote the first seed again, byte for byte; each of the dozens of seeds since was rebuilt from the one before. At that first step, the compiler built from the archive&rsquo;s own seed was still working after seven hours; the Rust one took under a second. gcc, a second C compiler, now builds the seed beside clang, the one Heroes already used. Every new seed names the route by which the one before rebuilds it, and the CI, the checks run automatically on every change, follows it.
+      <a class="more" href="/project/#self-hosted">How to check it compiles itself</a>
+    </li>
+    <li id="70">
+      <span class="when">Read, and never written</span>
+      <b>A function that only reads what its caller holds can now say so: <code>function peek(l: Lex lent)</code> reads the caller&rsquo;s value where it stands, never writes it, and is called as plain <code>peek(l)</code>.</b> Before, a function that only read a record holding a lock had two spellings and neither was true: a copy, which the language refuses for a lock, or <code>@</code>, which claims a change. Handed on to a C library, the value now goes with C told it may only read. Readers given only the specification needed a second try, ten times out of ten, before the word existed; with it, nine of ten were right the first time. And the specification&rsquo;s new text cost exactly what the judge who weighs it had predicted, to the last token, the unit a model reads text in.
+      <a class="more" href="/spec/">The rule, in the specification</a>
+    </li>
+    <li id="69">
+      <span class="when">What it was built from</span>
+      <b>Every program Heroes builds now carries a fingerprint of what it was made from: its sources, its library and its runtime, the support code that goes into every program. <code>heroes --version</code> prints the compiler&rsquo;s own on its second line.</b> The seed had been rewritten at every round of repairs, and made up more than two thirds of the repository&rsquo;s history. Half its weight was lines restating a position already given; they are joined now, and the seed is rewritten only when the compiler built from it can no longer build today&rsquo;s, and at each release, each version the project publishes. The day this landed, the check that judged a compiler by its file&rsquo;s date refused the very compiler the landing needed; now it asks the compiler what it was built from, and the compiler answers.
+      <a class="more" href="/project/#self-hosted">The seed, and the fingerprint</a>
+    </li>
+    <li id="68">
+      <span class="when">The value C computes</span>
+      <b>When a C library&rsquo;s header, the file where it describes what it offers, defines a constant, the compiler now takes the value C itself computes, by running a small piece of the program under clang&rsquo;s checks.</b> Every route that did not run the program&rsquo;s own code was wrong one way or the other, over tens of thousands of real constants on three versions of clang; the one that runs it was right every time. Each hole found on the way was in the compiler&rsquo;s new code, not the programs, and was found by somebody attacking the code as built, never by a test suite. A C record with long arrays is built by naming the fields that matter and ending with <code>rest: zero</code>; a five-field record describing the machine had needed over a thousand zeros typed out.
+      <a class="more" href="/docs/the-c-boundary/">Constants and records from C</a>
+    </li>
+    <li id="67">
+      <span class="when">A stopped program shows what you wrote</span>
+      <b>Stop a Heroes program in a debugger, the tool that pauses a running program so you can look inside, and it now shows what you wrote: your own variables, and their values in Heroes, a list as a list and a failure as a failure.</b> Everything the compiler had invented left the view, about ten names where there had been more than a hundred. Only the names kept the compiler&rsquo;s prefix, because a bare name in the C can be taken over by any library&rsquo;s header, and on one machine one was: a program with a variable called <code>linux</code> built on the Mac and was refused on Linux. Each repair at the C boundary that night found the next, six in a row, and each changed whom the message blames, never what it refuses.
+      <a class="more" href="/why/">Why the compiler writes C</a>
+    </li>
+    <li id="66">
+      <span class="when">Every item becomes a public issue</span>
+      <b>Every defect, decision and task the project has tracked is now an issue on GitHub, the public site where its code lives: more than two thousand, imported in the order they were born, each keeping its own dates. Then the folder they came from left the repository.</b> At the author&rsquo;s request, where somebody outside the project got there first, the decision names them, and so does the thanks page. The last reading found links between issues that the design panel, the five judges who review every change to the language, had ordered and nobody made. The first defect named by its GitHub number was the compiler&rsquo;s own: two modules each declaring a record called <code>Held</code>, handed to one function written for any type, passed the check and failed to build, both copies given one name in C.
+      <a class="more" href="/about/thanks/">Somebody got there first</a>
+    </li>
     <li id="59">
       <span class="when">A variable that changes gets a symbol of its own</span>
       <b>A variable whose value can change, a cell, is now declared <code>v @= 0</code> and takes its type from its value; <code>v @ v + 1</code> changes it, and a cell that nothing ever changes is refused, with a fix that writes <code>=</code>.</b> The question and the spelling were the author&rsquo;s: why must a cell carry its type when a fixed name does not? Because <code>@</code> did two jobs, and only the type told them apart. The old line <code>v: i64 @ 0</code> is refused with a fix the compiler applies by itself, and that fix rewrote 1,181 files in one commit. The rewrite went wrong in the one place the compiler cannot see, text inside a test&rsquo;s string, and twelve of the compiler&rsquo;s own tests failed at once.
       <a class="more" href="/docs/bindings-and-mutation/">How a cell is declared</a>
+    </li>
+    <li id="65">
+      <span class="when">The list that would not run dry</span>
+      <b>The three words written on a C library&rsquo;s handles, the addresses it hands a program for things it owns, became five, and the runtime now numbers every life C hands out. An address is not an identity: C can free one and hand it out again.</b> Before, a stale handle at the same address as a live one was taken for it, and a correct program could abort ten times out of ten on three platforms. Then every repair, tried on the cases next to it, found the next defect, more than twenty after the milestone&rsquo;s journal was first drafted. The list would not run dry, and that was the method working. The author stopped it by hand, and the check that would have refused the close was taught to say so.
+      <a class="more" href="/spec/">The five words, in the specification</a>
+    </li>
+    <li id="64">
+      <span class="when">The word that could not reach the call</span>
+      <b>A C function handed an address into a program&rsquo;s memory is now taken to keep it, unless its declaration says <code>lent</code>: the panel had declined that default, and the author chose it on principle, provided the cost was measured, under forty billionths of a second a call.</b> It began with how far C may read: handed an eight-byte field and a count of 64, C overwrote the field next to it in silence; now that extent is declared and checked. Where no word can reach, because C keeps the address on one call and frees it on a later one that takes none, the dying program says how many loans were still open. Its first wording blamed C; the compiler engineer and the C pragmatist vetoed it, because a library&rsquo;s own failed check looks the same.
+      <a class="more" href="/docs/the-c-boundary/">Lending to C</a>
+    </li>
+    <li id="63">
+      <span class="when">The wall was half a mirage</span>
+      <b>Text C writes into a fixed field of bytes, like the machine&rsquo;s name the system fills in, can now be printed: <code>f.validated_bytes()</code> reads it, or says it is not text.</b> The author asked for it when a sitting found nobody could print the machine&rsquo;s name. One line was the whole difference: the function that already read C text looked for a closing zero, and a fixed field need not have one. The other wall, building a record for C to fill, was not there: you ask the library for one, and the project&rsquo;s tests did it in seven places while three sittings argued how. The assistant&rsquo;s instructions to them had said three times that the compiler lacked things it had; since then, a claim that something is missing is tested first, or goes out as a question.
+      <a class="more" href="/docs/the-c-boundary/">Text that comes from C</a>
+    </li>
+    <li id="62">
+      <span class="when">The fourth machine scored its own prediction false</span>
+      <b>Heroes now builds and runs on a fourth kind of machine, Linux on ARM processors, and the first thing it did was prove its own prediction false.</b> The prediction said C&rsquo;s plain <code>char</code>, its one-byte number, never goes below zero on ARM. On Linux it does not; but this Mac is ARM too, and its <code>char</code> does. So the split belongs to the system, not the processor, and on this point three machines had all been one. The one test that could see it had carried a comment saying &ldquo;<code>char</code> is signed here&rdquo; all along. Seven routes were argued; six described the split, and the winner removes it with one flag, an option handed to clang, <code>-fsigned-char</code>, so the sign is the same everywhere. Linux itself had taken the mirror-image flag, for the same reason.
+      <a class="more" href="/start/">Build it on your machine</a>
     </li>
     <li id="58">
       <span class="when">A hole that was not where the name said</span>
@@ -102,6 +157,16 @@
       <span class="when">A lent string stays where it was lent</span>
       <b>A string lent to C with <code>.cstr()</code> may stand only as an argument of the call that reads it.</b> Kept anywhere else, it outlived the bytes it pointed into and the program read freed memory; the compiler now refuses that shape, with its reason, before anything runs.
       <a class="more" href="/docs/the-c-boundary/">The C boundary</a>
+    </li>
+    <li id="61">
+      <span class="when">A note nobody had counted</span>
+      <b>Closures, functions that carry the variables around them, do not enter Heroes. A note had called them easy since the design&rsquo;s first week; when the day came to build them, the first thing anybody did was count.</b> The one-line helpers they would delete: about twenty, all in example programs, none in the compiler. Their cost: hundreds of places to change across dozens of files. The reader, who sees only the specification, said what actually stops a reader is four missing sentences about the functions the language already has, and on the author&rsquo;s instruction a second sitting looked at those: a filter&rsquo;s type is the same whether it keeps or discards, so the specification gained about thirty words, one clause saying which half a filter keeps. And the historian found four languages that refuse closures on purpose, one since 1988.
+      <a class="more" href="/why/not/#closures">The no, in full</a>
+    </li>
+    <li id="60">
+      <span class="when">The polite way to lose a failure</span>
+      <b>Writing <code>_ =</code> in front of a call that can fail now stops the compile. Thrown away with the value went the news that it had failed, and the program finished with the number that means all is well.</b> The author had already ruled that it must be refused; what was left was where the wall goes. The first wall had a door, and a wider one taught a way around that also defeated the rule, so the wall stands where it works and the specification says what still gets through. No fix is offered as certain: the same line repaired three ways prints 1, 9, or stops the program. More than two hundred mistakes of exactly this kind were planted in real programs, and every one was refused, more than forty only by Heroes&rsquo; own rules.
+      <a class="more" href="/docs/failure-is-a-value/">Failure is a value</a>
     </li>
     <li id="40">
       <span class="when">The repository is open</span>

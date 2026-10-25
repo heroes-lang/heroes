@@ -16,7 +16,8 @@ text in the cache key). The frontend half is the one an editor feels, so it land
 here; the emission half keeps its numbers in that item as its trigger.
 
 **Re-ordered 2026-10-14, by the author's instruction**: from 74 to 83,
-immediately before the gate. The packages are written by the assistant through
+immediately before the gate (**row 84 since 2026-10-18**, one further when
+M-readonly-lend entered the chain at row 68, `b5db7e8ff`). The packages are written by the assistant through
 `heroes check --json`, so the server serves the people who arrive with the
 launch. The incremental frontend this page gave it on 2026-09-03 leaves it and
 becomes M-latency-ceiling's return condition. The 8 s above was measured on
