@@ -143,6 +143,24 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
 function read_candidates(@r: state.Resolver) -> [[str]]
     return value_candidates(@r).push(LITERALS)
 
+# A `???` the walk meets (§4.16): its module noted, and the locals visible
+# there kept by its expression, in the order they were bound: the open
+# scopes' entries, `state.visible_locals`' own reading of *in scope*. The
+# hole's report read visibility from a name's start in the declaration, and
+# listed the binding a hole's own initialiser defines and the names of a
+# block already closed, each refused `unknown_name` at that column (defect
+# 2203).
+function hole(@r: state.Resolver, id: i64)
+    resolved.note_hole(@r.out, r.module)
+    seen: [i64] @= []
+    i: i64 @= 0
+
+    while i < r.scopes.top
+        seen @ seen.push(r.scopes.entries[i].local)
+        i @ i + 1
+
+    r.out.hole_scopes[id] @ seen
+
 constant LITERALS: [str]
     ["true", "false", "nullptr"]
 

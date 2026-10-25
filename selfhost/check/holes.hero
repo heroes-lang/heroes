@@ -76,34 +76,32 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
                         )
         else
             rows @ rows.push("  expected type: " + render.render_ty(c.types, s, decls, hole.expected, none) + "\n")
-        rows @ rows.push(in_scope(g, r, c, s, decls, at: hole.span.start))
+        rows @ rows.push(in_scope(r, c, s, decls, id: hole.at))
         rows @ rows.push(fields_of(tree, c, s, decls, expected: hole.expected))
         rows @ rows.push(nearby(g, r, c, s, decls, expected: hole.expected, at: hole.span.start))
 
     return rows.join("")
 
-# The locals visible at the hole, with their types. "Visible" is
-# approximated by THE DECLARATION THE HOLE IS IN, which the resolver
-# recorded and is exact for every shape the language has: a local
-# cannot be read outside the declaration that binds it.
-function in_scope(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64) -> str
-    owner = owner_of(g, decls, at: at)
-
-    if owner.is_err()
-        return ""
+# The locals visible at the hole `id`, with their types, in the order they
+# were bound: what the resolver held in scope where it met the hole
+# (`resolve/names.hero`'s `hole`), never a model of it. Until defect 2203
+# this read every local of the declaration whose name began before the
+# hole, and so listed the binding a hole's own initialiser defines and the
+# names of a block already closed. The resolver meets every `???` the
+# checker does, so a hole it never met is the compiler's own fault, told
+# loud by `must`.
+function in_scope(r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> str
     none: [str] = []
     shown: [str] @= []
 
-    for index in g.locals_of[owner.must()]
+    for index in r.hole_scopes[id].must()
         local = r.locals[index]
+        rendered = render.render_ty(c.types, s, decls, state.local_type(c, index), none)
+        marker: str @= ""
 
-        if local.name.start <= at
-            rendered = render.render_ty(c.types, s, decls, state.local_type(c, index), none)
-            marker: str @= ""
-
-            if local.mutable
-                marker @ " (mutable)"
-            shown @ shown.push(source.span_text(s, local.name) + ": " + rendered + marker)
+        if local.mutable
+            marker @ " (mutable)"
+        shown @ shown.push(source.span_text(s, local.name) + ": " + rendered + marker)
 
     if shown.len() == 0
         return ""
@@ -277,6 +275,28 @@ test "a hole reports the expected type, the scope, the fields and the makers"
     assert has_text(text: got, needle: "  in scope:\n    n: i64\n")
     assert has_text(text: got, needle: "  fields of Point: x: i64, y: i64\n")
     assert has_text(text: got, needle: "  functions that return it:\n    origin()\n      # Builds the origin.\n")
+    assert !has_text(text: got, needle: "    p: Point")
+
+test "fixedbugs: a hole lists what the resolver holds in scope there, never its own binding nor a closed block's names (defect 2203)"
+    text = "function main()\n    a = 1\n    if a > 0\n        inner = 2\n        print(inner)\n    for k in [1, 2]\n        print(k)\n    x @= 0\n    x @ ???\n    d: i64 = ???\n    print(d + a + x)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    assert c.holes.len() == 2
+    got = report(parsed.tree, out, c, s, parsed.decls)
+    assert has_text(
+        text: got,
+        needle: "hole at t.hero:9:9\n  expected type: i64\n  in scope:\n    a: i64\n    x: i64 (mutable)\nhole at t.hero:10:14\n"
+    )
+    assert has_text(
+        text: got,
+        needle: "hole at t.hero:10:14\n  expected type: i64\n  in scope:\n    a: i64\n    x: i64 (mutable)\n"
+    )
+    assert !has_text(text: got, needle: "inner")
+    assert !has_text(text: got, needle: "    k: ")
+    assert !has_text(text: got, needle: "    d: ")
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()

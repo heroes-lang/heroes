@@ -130,7 +130,7 @@ function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl
         # hole here must not quiet the unused rule in a module nobody is
         # editing.
 
-        .hole                                         => resolved.note_hole(@r.out, r.module)
+        .hole                                         => names.hole(@r, id)
         .str_lit                                      => plain_literal.judge(@r, a, s, id)
         .int_lit | .float_lit | .char_lit | .bool_lit => return
         .interp ip =>

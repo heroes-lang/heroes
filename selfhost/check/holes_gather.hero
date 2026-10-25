@@ -1,6 +1,7 @@
 # What every hole of a report reads, gathered once per report (defect
-# 113): each declaration's locals, the functions a hole may be offered by
-# result type, and the declarations' starts. Split out of `check/holes.hero`
+# 113): the functions a hole may be offered by result type, and the
+# declarations' starts; the locals in scope are the resolver's since defect
+# 2203 (`resolved.hole_scopes`). Split out of `check/holes.hero`
 # on 2026-09-27, when the gathering took that file past design.md §11's ~300
 # lines; the report that reads it stays there.
 
@@ -16,8 +17,6 @@ use print/types
 # declaration for the one it is in: the report grew with the holes times
 # the program, 0.13, 0.33 and 1.01 s user at 200, 400 and 800 holes.
 record Gathered
-    # Each declaration's locals, by index into `r.locals`, in that order.
-    locals_of: [[i64]]
     # The functions a hole may be offered, by result type, each row in
     # ascending (module, name): `maker_at[type]` is its row in `makers`.
     maker_at: {i64: i64}
@@ -34,24 +33,13 @@ record Maker
     params: str
 
 function gather(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Gathered
-    locals_of: [[i64]] @= []
     starts: [i64] @= []
     ascending: bool @= true
 
     for decl in decls
-        none: [i64] = []
-        locals_of @ locals_of.push(none)
-
         if starts.len() > 0 && decl.span.start < starts[starts.len() - 1]
             ascending @ false
         starts @ starts.push(decl.span.start)
-
-    index: i64 @= 0
-
-    for local in r.locals
-        if local.owner >= 0 && local.owner < locals_of.len()
-            add_local(@locals_of[local.owner], index)
-        index @ index + 1
 
     maker_at: {i64: i64} @= {}
     makers: [[Maker]] @= []
@@ -92,12 +80,9 @@ function gather(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
                             add_maker(@makers[row.must()], maker)
                 .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
-    return Gathered(locals_of: locals_of, maker_at: maker_at, makers: makers, starts: starts, ascending: ascending)
+    return Gathered(maker_at: maker_at, makers: makers, starts: starts, ascending: ascending)
 
 # Lent, so the push lands in the one row it is (design.md Part 8 wart 8's
 # cheap spelling) where a push through the outer array would copy it.
-function add_local(@row: [i64], index: i64)
-    row @ row.push(index)
-
 function add_maker(@row: [Maker], maker: Maker)
     row @ row.push(maker)
