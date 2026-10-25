@@ -9,7 +9,7 @@ clang -I runtime seed/heroes.c runtime/runtime.c -o heroes
 ./heroes --version
 ```
 
-`--version` prints two lines: the release, `heroes 0.4.0`, and `sources` with
+`--version` prints two lines: the release, `heroes 0.5.0`, and `sources` with
 sixteen characters, the key of the modules, the library and the runtime that
 binary was compiled from (panel 222, ratified 2026-10-17). Every program the
 compiler builds carries its own beside its `main`; the compiler's is the one a
