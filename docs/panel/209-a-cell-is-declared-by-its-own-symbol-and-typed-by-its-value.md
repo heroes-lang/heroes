@@ -287,3 +287,29 @@ Scored by the landing lane at the milestone's close, each by the command its row
 
 - **spec-warden (3)**: `forget-at-decl` re-planted kills **758 of 758**, `mutate-undeclared` **675 of 675** (149 excluded); the new row `bind-as-cell` kills **785 of 833, 94%**, and **47 of its 48 survivors are `_ @= …`**, the wildcard with the cell's symbol, which declares nothing and so escapes the never-re-bound rule: **false by that shape alone**, filed as defect 608 (`blocking`); the one other survivor is a module holding a hole, which the sweep exempts on purpose.
 - **historian (3)**: `inverse-at`, the inverse operator over the bare names of `examples/`, kills **805 of 824** (19 excluded), 100% of the mutants that parse, under the landed compiler: **true**; under `--permissive` 5 of 824, which is `cell_redeclared` doing the killing.
+
+## Read again, 2026-10-25: the variant set aside at the ratification, measured
+
+The variant the author raised at this sitting's ratification, **`:=` for the
+once-bound name, `@=` for the cell and bare `=` for the mutation**, set aside
+above unmeasured, was raised again by the author on 2026-10-25 and measured by
+two blind readings, each against today's spelling (A) and the variant spelled
+`$=` (B) and `:=` (C), `$` being the session's suggestion when the author asked
+for a sign other than the colon:
+`docs/measurements/053-the-blind-reading-of-two-birth-spellings-27-of-27-accepted-at-the-first-try-no-binding-slip-in-any-variant-and-the-habit-shown-in-neither-direction.md`
+on `claude-opus-5-5` and
+`docs/measurements/054-the-same-blind-reading-on-the-weakest-model-60-of-60-programs-accepted-no-binding-slip-in-213-chances-and-a-read-at-call-sites-not-told-from-chance.md`
+on `claude-haiku-5-5`. Together: 78 written programs accepted at the first try,
+183 writes under A and 87 immutable births under B and C, **no slip in either
+direction**, and no reader of the read program took a birth for a change or a
+change for a birth. The one read the variants alone produced is an `@`
+argument at a call site counted as no change, 0 in 10 readings under A and 2
+in 20 under B and C on Haiku, which chance alone gives 0.437 of the time. The
+habit this ratification weighed against `:=` and the one the variant was meant
+to spare are both measured at zero, and nothing here moves the ratification.
+
+**The ratification's *the rare act*, corrected underneath**: counted over
+`selfhost/` at `76e98124e` (053 § 8, approximate, test blocks included), 12,826
+immutable births, 6,852 cell births and 9,023 writes, so a write is about 70%
+as frequent as an immutable birth, not rare. The ranking it made stands, the
+immutable birth being the commoner act; the word does not.
