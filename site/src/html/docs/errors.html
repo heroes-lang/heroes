@@ -40,7 +40,9 @@
     format programs read easily, for when the reader is not a person but
     another program. Each fix says where it applies, and
     <code>heroes check --apply</code> is the command that writes the certain
-    ones into the program.
+    ones into the program. A program that still holds holes, the
+    <code>???</code> placeholders, finds them there too, each with what
+    belongs in it, and the answer says whether that list is the whole of them.
   </p>
   <p>The loop, as commands:</p>
   <pre><code>$ heroes check program.hero           <span class="c"># diagnostics, on stderr</span>

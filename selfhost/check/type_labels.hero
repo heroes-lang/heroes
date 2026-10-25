@@ -118,7 +118,7 @@ function shown(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl]
             best @ decl.span.start
             letters @ letters_of(s, decl)
 
-    return render.render_ty(c.out.types, s, decls, ty, letters)
+    return render.render_read(c.out.types, s, decls, ty, letters, reader: state.reader_at(c, s, at: start))
 
 function letters_of(s: source.Source, decl: ast.Decl) -> [str]
     letters: [str] @= []

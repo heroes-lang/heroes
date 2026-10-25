@@ -1,0 +1,15 @@
+error[ffi_header_refused]: `fixedbugs-2143-open-attribute.h`, the header this group names, does not compile: clang refuses it at line 5: unterminated '#pragma clang attribute push' at end of file
+  at tests/golden/unsupported/fixedbugs-2208-a-header-two-modules-name-is-told-at-each-group.hero:16:8
+     |
+  16 | extern "fixedbugs-2143-open-attribute.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2143-open-attribute.h` line 5 reads `#pragma clang attribute push (__attribute__((no_sanitize("signed-integer-overflow"))), apply_to = function)`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+
+error[ffi_header_refused]: `fixedbugs-2143-open-attribute.h`, the header this group names, does not compile: clang refuses it at line 5: unterminated '#pragma clang attribute push' at end of file
+  at tests/golden/unsupported/fixedbugs2208/opened.hero:4:8
+    |
+  4 | extern "fixedbugs-2143-open-attribute.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2143-open-attribute.h` line 5 reads `#pragma clang attribute push (__attribute__((no_sanitize("signed-integer-overflow"))), apply_to = function)`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

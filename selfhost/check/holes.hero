@@ -6,260 +6,91 @@
 # the expected type, and what is in scope to build one from. §4.16's
 # claim is that this costs nothing — the checker holds all of it for
 # its ordinary work and normally throws it away. This file is the
-# throwing-away, undone. Two normative rules: CAPPED AT 5 in
-# deterministic order (unbounded "nearby functions" would flood a
-# model's context and vary with layout), and a file with holes
-# type-checks everything else — the report is OUTPUT, exit 0.
+# throwing-away, undone, as text: what each report holds is decided once
+# in `check/hole_report.hero`, which `cli/holes_json.hero` writes as JSON
+# too (panel 228's R3, ratified by the author on 2026-10-25). Two
+# normative rules: CAPPED AT 5 in deterministic order, every list the cap
+# cuts counted (unbounded "nearby functions" would flood a model's context
+# and vary with layout), and a file with holes type-checks everything
+# else — the report is OUTPUT, exit 0.
 
 use ast
 use source
 use resolved
-use check/table
 use check/state
-use check/render
-use print/types
+use check/hole_report
 use parse
 use resolve
 use checker
-use check/holes_gather
-
-# §4.16's cap, and the reason it exists: identical holes must give
-# identical guidance, whatever the file's size.
-constant SUGGESTIONS: i64
-    5
 
 # The report for every hole in the file, in source order.
 function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    return text_of(hole_report.reports(tree, r, c, s, decls))
+
+# The reports as text, each hole a block of lines.
+function text_of(reported: [hole_report.Report]) -> str
     rows: [str] @= []
-    none: [str] = []
 
-    if c.holes.len() == 0
-        return ""
-    g = holes_gather.gather(tree, r, c, s, decls)
+    for one in reported
+        rows @ rows.push("hole at " + one.file + ":" + one.line.to_str() + ":" + one.col.to_str() + "\n")
 
-    for hole in c.holes
-        # locate, never line_col plus s.name: the hole report is not a
-        # Diagnostic, which is how it survived a sweep still naming
-        # the root file at concatenated lines (panel 033 D2).
-        found = source.locate(s, hole.span.start)
-        rows @ rows.push("hole at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n")
-        is_error: bool @= false
-
-        match table.get(c.types, hole.expected)
-            .error                                                     => is_error @ true
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => is_error @ is_error
-            .array | .fixed | .map | .fallible | .function_ty | .named => is_error @ is_error
-            .case_ty | .failure | .generic                             => is_error @ is_error
-
-        if is_error
-            # A hole in statement position: nothing is expected of it,
-            # and "expected `?`" would be worse than saying nothing.
-            # What the model needs is what the FUNCTION owes.
+        if one.expected != ""
+            rows @ rows.push("  expected type: " + one.expected + "\n")
+        else if one.statement
+            # A hole in statement position: nothing is expected of it, and
+            # "expected `?`" would be worse than saying nothing.
             rows @ rows.push("  position: statement — any type, or none\n")
-            owner = owner_of(g, decls, at: hole.span.start)
-
-            if !owner.is_err()
-                result = state.result_type(c, owner.must())
-
-                if !result.is_err()
-                    is_unit: bool @= false
-
-                    match table.get(c.types, result.must())
-                        .unit                                                      => is_unit @ true
-                        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .error => is_unit @ is_unit
-                        .array | .fixed | .map | .fallible | .function_ty | .named => is_unit @ is_unit
-                        .case_ty | .failure | .generic                             => is_unit @ is_unit
-
-                    if !is_unit
-                        rows @ rows.push(
-                            "  this function returns: " + render.render_ty(c.types, s, decls, result.must(), none) + "\n"
-                        )
         else
-            rows @ rows.push("  expected type: " + render.render_ty(c.types, s, decls, hole.expected, none) + "\n")
-        rows @ rows.push(in_scope(g, r, c, s, decls, at: hole.span.start))
-        rows @ rows.push(fields_of(tree, c, s, decls, expected: hole.expected))
-        rows @ rows.push(nearby(g, r, c, s, decls, expected: hole.expected, at: hole.span.start))
+            rows @ rows.push("  position: a value — " + one.asked + "\n")
+
+        if one.returns != ""
+            rows @ rows.push("  this function returns: " + one.returns + "\n")
+
+        if one.in_scope.len() > 0
+            rows @ rows.push("  in scope:\n")
+
+            for seen in one.in_scope
+                rows @ rows.push("    " + scoped(seen) + "\n")
+
+            if one.more_in_scope > 0
+                rows @ rows.push("    … and " + one.more_in_scope.to_str() + " more\n")
+
+        if one.owner != "" && one.of_variant
+            rows @ rows.push("  cases of " + one.owner + ": " + one.cases.join(", ") + "\n")
+        else if one.owner != ""
+            fields: [str] @= []
+
+            for f in one.fields
+                fields @ fields.push(f.name + ": " + f.ty)
+
+            rows @ rows.push("  fields of " + one.owner + ": " + fields.join(", ") + "\n")
+
+        if one.functions.len() > 0
+            rows @ rows.push("  functions that return it:\n")
+
+            for offered in one.functions
+                rows @ rows.push("    " + offered.call + "\n")
+
+                if offered.doc != ""
+                    rows @ rows.push("      " + offered.doc + "\n")
+
+            if one.more_functions > 0
+                rows @ rows.push("    … and " + one.more_functions.to_str() + " more\n")
 
     return rows.join("")
 
-# The locals visible at the hole, with their types. "Visible" is
-# approximated by THE DECLARATION THE HOLE IS IN, which the resolver
-# recorded and is exact for every shape the language has: a local
-# cannot be read outside the declaration that binds it.
-function in_scope(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64) -> str
-    owner = owner_of(g, decls, at: at)
+# A name in scope as the text writes it: its type where the checker holds
+# one, and where it holds none, `x = ???`, no `?`, which reads as the
+# fallible suffix.
+function scoped(seen: hole_report.Seen) -> str
+    marker: str @= ""
 
-    if owner.is_err()
-        return ""
-    none: [str] = []
-    shown: [str] @= []
+    if seen.mutable
+        marker @ " (mutable)"
 
-    for index in g.locals_of[owner.must()]
-        local = r.locals[index]
-
-        if local.name.start <= at
-            rendered = render.render_ty(c.types, s, decls, state.local_type(c, index), none)
-            marker: str @= ""
-
-            if local.mutable
-                marker @ " (mutable)"
-            shown @ shown.push(source.span_text(s, local.name) + ": " + rendered + marker)
-
-    if shown.len() == 0
-        return ""
-    rows: [str] @= ["  in scope:\n"]
-    kept: i64 @= 0
-
-    for line in shown
-        if kept < SUGGESTIONS
-            rows @ rows.push("    " + line + "\n")
-        kept @ kept + 1
-
-    if shown.len() > SUGGESTIONS
-        rows @ rows.push("    … and " + (shown.len() - SUGGESTIONS).to_str() + " more\n")
-    return rows.join("")
-
-# The fields of the expected type, where it is a record — the hole is
-# most often a value that has to be built, and the fields are what it
-# is built from (§4.9: every field named, always).
-function fields_of(tree: ast.Ast, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64) -> str
-    decl_at: i64 @= -1
-
-    match table.get(c.types, expected)
-        .named n                                                   => decl_at @ n.decl
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => decl_at @ decl_at
-        .array | .fixed | .map | .fallible | .function_ty | .error => decl_at @ decl_at
-        .case_ty | .failure | .generic                             => decl_at @ decl_at
-
-    if decl_at == -1
-        return ""
-
-    match decls[decl_at].kind
-        .record_decl rec =>
-            shown: [str] @= []
-
-            for f in rec.fields
-                shown @ shown.push(source.span_text(s, f.name) + ": " + types.render_type(tree, f.ty, s))
-
-            return "  fields of " + source.span_text(s, decls[decl_at].name) + ": " + shown.join(", ") + "\n"
-        .variant_decl v =>
-            shown: [str] @= []
-
-            for one_case in v.cases
-                shown @ shown.push("." + source.span_text(s, one_case.name))
-
-            return "  cases of " + source.span_text(s, decls[decl_at].name) + ": " + shown.join(", ") + "\n"
-        .constant_decl | .function_decl | .test_decl => return ""
-
-    return ""
-
-# Functions whose result is the expected type, with their
-# documentation — ranked by type-relevance and capped, because on a
-# file with forty functions the five that RETURN WHAT IS NEEDED HERE
-# are the answer. A name from another module is offered the only way
-# it can be written — qualified — AND ONLY from a module this file can
-# name: a hole in geom.hero offered main.tally is three errors, and
-# §4.16's promise is the answer handed over, not a guess to repair.
-function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64, at: i64) -> str
-    here = source.module_at(s, at)
-    is_error: bool @= false
-
-    match table.get(c.types, expected)
-        .error                                                     => is_error @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => is_error @ is_error
-        .array | .fixed | .map | .fallible | .function_ty | .named => is_error @ is_error
-        .case_ty | .failure | .generic                             => is_error @ is_error
-
-    if is_error
-        return ""
-    shown: [str] @= []
-    row = g.maker_at[expected]
-
-    if row.is_err()
-        return ""
-
-    # ORDER: ascending (module, name), the order `gather` read them in, so
-    # the cap picks the same five it picked when this walked every module
-    # per hole (design.md §4.9).
-    for m in g.makers[row.must()]
-        if shown.len() == SUGGESTIONS
-            break
-        reachable: bool @= m.module == here || m.module == source.LIBRARY_MODULE
-
-        if !reachable
-            reachable @ !resolved.binding_in(r, from: here, module: m.module).is_err()
-
-        if !reachable
-            continue
-        written: str @= m.name
-
-        if m.module != here
-            # The form the author would TYPE, which is what THIS FILE
-            # calls the module — its `as` name where it has one, and the
-            # path's last part where it does not (panel 100). A hole's
-            # whole job is to hand back lines that can be pasted, and
-            # `syntax/decl.foo(...)` cannot be.
-            #
-            # **No `.must()` here, and that is panel 100's engineer's own
-            # defect**: it wrote one and `heroes check` answered
-            # `panic: .must() on an error: absent: library`, because the
-            # library is in every compilation and no file `use`s it. The
-            # reachability test above is the same question, so a miss here
-            # cannot happen — and the loud `continue` is what makes that
-            # true rather than hoped.
-            local = resolved.binding_in(r, from: here, module: m.module)
-
-            if local.is_err()
-                continue
-            written @ local.must() + "." + m.name
-        line: str @= written + "(" + m.params + ")"
-
-        if decls[m.decl].doc.len() > 0
-            line @ line + "\n      " + source.span_text(s, decls[m.decl].doc[0])
-        shown @ shown.push(line)
-
-    if shown.len() == 0
-        return ""
-    rows: [str] @= ["  functions that return it:\n"]
-
-    for line in shown
-        rows @ rows.push("    " + line + "\n")
-
-    return rows.join("")
-
-# Which declaration a byte offset falls inside: the last one starting at or
-# before it, found by halving where the declarations' starts ascend, which
-# they do when the sources are joined in load order; where they did not, the
-# walk over every declaration it replaced answers instead, so a premise that
-# stopped holding would cost time and never an answer.
-function owner_of(g: holes_gather.Gathered, decls: [ast.Decl], at: i64) -> i64?
-    if !g.ascending
-        index: i64 @= 0
-
-        for decl in decls
-            if decl.span.start <= at && at < decl.span.end
-                return ok(index)
-            index @ index + 1
-
-        return fail(code: "none", msg: "no declaration holds this offset")
-    low: i64 @= 0
-    high: i64 @= g.starts.len()
-
-    while low < high
-        middle = (low + high) / 2
-
-        if g.starts[middle] <= at
-            low @ middle + 1
-        else
-            high @ middle
-
-    if low == 0
-        return fail(code: "none", msg: "no declaration holds this offset")
-    found = low - 1
-
-    if at < decls[found].span.end
-        return ok(found)
-    return fail(code: "none", msg: "no declaration holds this offset")
+    if seen.ty == ""
+        return seen.name + ", its type not known here" + marker
+    return seen.name + ": " + seen.ty + marker
 
 ## Tests
 
@@ -277,6 +108,28 @@ test "a hole reports the expected type, the scope, the fields and the makers"
     assert has_text(text: got, needle: "  in scope:\n    n: i64\n")
     assert has_text(text: got, needle: "  fields of Point: x: i64, y: i64\n")
     assert has_text(text: got, needle: "  functions that return it:\n    origin()\n      # Builds the origin.\n")
+    assert !has_text(text: got, needle: "    p: Point")
+
+test "fixedbugs: a hole lists what the resolver holds in scope there, never its own binding nor a closed block's names (defect 2203)"
+    text = "function main()\n    a = 1\n    if a > 0\n        inner = 2\n        print(inner)\n    for k in [1, 2]\n        print(k)\n    x @= 0\n    x @ ???\n    d: i64 = ???\n    print(d + a + x)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    assert c.holes.len() == 2
+    got = report(parsed.tree, out, c, s, parsed.decls)
+    assert has_text(
+        text: got,
+        needle: "hole at t.hero:9:9\n  expected type: i64\n  in scope:\n    a: i64\n    x: i64 (mutable)\nhole at t.hero:10:14\n"
+    )
+    assert has_text(
+        text: got,
+        needle: "hole at t.hero:10:14\n  expected type: i64\n  in scope:\n    a: i64\n    x: i64 (mutable)\n"
+    )
+    assert !has_text(text: got, needle: "inner")
+    assert !has_text(text: got, needle: "    k: ")
+    assert !has_text(text: got, needle: "    d: ")
 
 function has_text(text: str, needle: str) -> bool
     cs = text.chars()

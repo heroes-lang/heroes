@@ -45,8 +45,37 @@ use print/breaks
 
 # Does the value at `value`, placed by `at` with no bracket of the page
 # open around it, break a line for a comment where no bracket it prints
-# is open?
-function needs_group(f: page.Fmt, c: elements.Code, value: i64, at: around.Place) -> bool
+# is open? Asked once per value and place (`page.Asked`): `spread` asks it
+# at each part it descends into, and each answer asks the part below, so a
+# chain 2,000 long asked it 2,000 times of its last part and rendered that
+# part's text each time, `fmt` 9.9 s on one comment (defect 2139).
+function needs_group(@f: page.Fmt, c: elements.Code, value: i64, at: around.Place) -> bool
+    known = f.asked[value]
+    span = c.tree.exprs[value].span
+    times: i64 @= 1
+
+    if !known.is_err()
+        was = known.must()
+        same = was.span.start == span.start && was.span.end == span.end
+
+        if same && was.next == f.next_comment && was.needed == at.needed && was.open == at.open && was.taken == at.taken
+            return was.answer
+        times @ was.times + 1
+    answer = fresh(@f, c, value: value, at: at)
+    f.asked[value] @ page.Asked(
+        span: span,
+        times: times,
+        next: f.next_comment,
+        needed: at.needed,
+        open: at.open,
+        taken: at.taken,
+        answer: answer
+    )
+    return answer
+
+# `needs_group`'s answer, worked out: it reads `f` for nothing but the next
+# comment, which nothing here moves, and `@f` only to keep its answers.
+function fresh(@f: page.Fmt, c: elements.Code, value: i64, at: around.Place) -> bool
     span = elements.extent(c, id: value)
 
     if !elements.holds(f, c, from: span.start, to: span.end)
@@ -68,7 +97,7 @@ function needs_group(f: page.Fmt, c: elements.Code, value: i64, at: around.Place
 
         # Opened: the callee or receiver, printed before the bracket opens,
         # and the break between it and the bracket, which is outside it.
-        if b.before >= 0 && part_needs(f, c, value: b.before, needed: parens.POSTFIX_POWER)
+        if b.before >= 0 && part_needs(@f, c, value: b.before, needed: parens.POSTFIX_POWER)
             return true
         return b.seam >= 0 && elements.waits(f, c, span: token.Span(start: b.seam, end: b.from))
 
@@ -81,32 +110,32 @@ function needs_group(f: page.Fmt, c: elements.Code, value: i64, at: around.Place
             mine = parens.power(c.tree, value)
 
             if elements.alone(f, c, value: value, within: bin.right)
-                return part_needs(f, c, value: bin.right, needed: mine + 1)
+                return part_needs(@f, c, value: bin.right, needed: mine + 1)
 
             if elements.alone(f, c, value: value, within: bin.left)
-                return part_needs(f, c, value: bin.left, needed: mine)
+                return part_needs(@f, c, value: bin.left, needed: mine)
 
             # A comment after an operator, or in both operands: `fmt`'s group.
             return false
         .field fl =>
             if elements.alone(f, c, value: value, within: fl.base)
-                return part_needs(f, c, value: fl.base, needed: parens.POSTFIX_POWER)
+                return part_needs(@f, c, value: fl.base, needed: parens.POSTFIX_POWER)
         .field_name fl =>
             if elements.alone(f, c, value: value, within: fl.base)
-                return part_needs(f, c, value: fl.base, needed: parens.POSTFIX_POWER)
+                return part_needs(@f, c, value: fl.base, needed: parens.POSTFIX_POWER)
         .index ix =>
             if elements.alone(f, c, value: value, within: ix.base)
-                return part_needs(f, c, value: ix.base, needed: parens.POSTFIX_POWER)
+                return part_needs(@f, c, value: ix.base, needed: parens.POSTFIX_POWER)
         .try_expr t =>
             if elements.alone(f, c, value: value, within: t.value)
-                return part_needs(f, c, value: t.value, needed: parens.POSTFIX_POWER)
+                return part_needs(@f, c, value: t.value, needed: parens.POSTFIX_POWER)
         .unary u =>
             sign = elements.inner(c, value: value, within: u.operand).start
 
             # A comment after the operator: `fmt`'s group, the operator its lead.
             if elements.holds(f, c, from: c.tree.exprs[value].span.start, to: sign)
                 return false
-            return part_needs(f, c, value: u.operand, needed: parens.UNARY_POWER)
+            return part_needs(@f, c, value: u.operand, needed: parens.UNARY_POWER)
         .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return one_line(
             f,
             c,
@@ -127,11 +156,11 @@ function needs_group(f: page.Fmt, c: elements.Code, value: i64, at: around.Place
 # A part a spread of its own prints: where the author's parentheses are
 # around it, that spread keeps them if it needs them, so only a part with
 # none can leave its break to the value around it.
-function part_needs(f: page.Fmt, c: elements.Code, value: i64, needed: i64) -> bool
+function part_needs(@f: page.Fmt, c: elements.Code, value: i64, needed: i64) -> bool
     if around.untaken(c, span: c.tree.exprs[value].span, taken: -1).len() > 0
         return false
     at = around.Place(needed: needed, open: false, taken: -1, all: false, enclosed: false)
-    return needs_group(f, c, value: value, at: at)
+    return needs_group(@f, c, value: value, at: at)
 
 # The value's one-line text broken at its comments (`around.one_line`):
 # inside `render`'s parentheses where it needs them, which hold every break,

@@ -89,7 +89,7 @@ function commands() -> [Command]
     parse_flags: [Flag] = [plain(spelling: "--dump-ast", what: "print the syntax tree")]
     check_flags: [Flag] = [
         plain(spelling: "--dump-scopes", what: "print the symbols and every binding")
-        plain(spelling: "--json", what: "write the diagnostics to stderr as JSON, schema 2 (design.md §4.17), instead of text; with --apply, print the program inside a JSON document of the same schema, on stdout")
+        plain(spelling: "--json", what: "write the diagnostics, and the program's holes with whether that list is whole, to stderr as JSON, schema 2 (design.md §4.17), instead of text; with --apply, print the program inside a JSON document of the same schema, on stdout")
         plain(spelling: "--brief", what: "one line per diagnostic instead of the full form")
         plain(spelling: "--permissive", what: "drop the diagnostics that exist for the thesis — the control arm of Part 11's measurement")
         plain(spelling: "--apply", what: "print the program with every certain fix applied")
@@ -122,6 +122,7 @@ function commands() -> [Command]
         plain(spelling: "--sanitize", what: "compile with -fsanitize=address,undefined")
         plain(spelling: "-O0", what: "compile at -O0 (the default here)")
         plain(spelling: "-O2", what: "compile at -O2")
+        named(spelling: "--only", what: "run only the tests whose title holds this text; none holding it is exit 2 (issue 1075, panel 018)", placeholder: "text")
     ]
     fmt_flags: [Flag] = [
         plain(spelling: "--in-place", what: "rewrite the file instead of printing it; prints nothing, and refuses a file it cannot parse")
@@ -139,6 +140,7 @@ function commands() -> [Command]
     probe_flags: [Flag] = [
         named(spelling: "--family", what: "make that family's variants alone: single, multi, bracket, paren, ends, columns or texts", placeholder: "name")
         named(spelling: "--stride", what: "judge one variant in that many of each family, the first included, and count them all", placeholder: "count")
+        named(spelling: "--offset", what: "with --stride, start that many variants on, so the runs of each offset below the stride judge every variant once", placeholder: "count")
     ]
 
     # The one flag in this table that reaches the network, and the only one

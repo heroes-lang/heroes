@@ -145,6 +145,17 @@ function pairs(kinds: [token.TokenKind], counts: [i64], partner: [i64]) -> [Pair
 function written_pairs(c: elements.Code, written: [i64]) -> [i64]
     out: [i64] @= []
 
+    # Each written token's place among `written`, the last where one stands
+    # twice, so a partner is found by one lookup: a walk over `written` for
+    # each token was the square of a statement's tokens, `fmt` 29.8 s on one
+    # line of 2,000 indexes (defect 2139).
+    place_of: {i64: i64} @= {}
+    at: i64 @= 0
+
+    for j in written
+        place_of[j] @ at
+        at @ at + 1
+
     for i in written
         other = c.lines.pair[i]
         place: i64 @= -1
@@ -153,13 +164,10 @@ function written_pairs(c: elements.Code, written: [i64]) -> [i64]
             place @ -3
         else if other > i
             place @ -2
-        at: i64 @= 0
+        found = place_of[other]
 
-        for j in written
-            if j == other
-                place @ at
-            at @ at + 1
-
+        if !found.is_err()
+            place @ found.must()
         out @ out.push(place)
 
     return out

@@ -50,3 +50,21 @@ candidate is not proposed again as new*.
 
 **Corrected 2026-10-14**: row 3's *arm64 Linux unowned* has been false since
 M-arm-platform closed on 2026-09-18.
+
+**Corrected 2026-10-25** (M-rechecked-issues, each line its command's):
+
+- **Rows 1, 4 and 6 have owners today**, as row 3 had: row 1's instrument is
+  M-compatibility-promise's suite (chain row 74), row 4 is M-deployable-binary
+  (row 81), both scheduled 2026-09-10 by author decision on this reading; row 6's first three
+  silences are issues 1067 and 1069, open at M-core-packages, and the fourth
+  closed with M-cleanup-verdict on 2026-09-14.
+- **Row 9's repair is done**, not an item to come: the grammar learned the `f`
+  literal at `da807d773` (defect 173, 2026-10-02), and issue 1084, the item at
+  M-vscode-extension, closed on 2026-10-12.
+- **The reason quoted for the five refusals is issue 854's**, not issue 820's:
+  *so the candidate is not proposed again as new* stands once in 854 and
+  nowhere in 820, which lists the five as considered and not entered.
+- **Go's `1.0` is no longer at `:3202`**: it stands in design.md's
+  § Appendix — Historical grounding, the Go bullet's *five years after 1.0*;
+  and the sweep's *no occurrence of deprecation* was true of the 3,612 lines it
+  read, design.md naming a C header's deprecation mark since (§4.19, panel 208).

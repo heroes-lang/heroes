@@ -1,0 +1,352 @@
+# A hole's report as a value (design.md §4.16; panel 228's R3, ratified by
+# the author on 2026-10-25): where a `???` stands, what its place asks,
+# the names in scope, the expected type's fields or cases and the functions
+# that return it, each list at §4.16's cap with what the cap left out
+# counted (R4). `check/holes.hero` writes it as text and `cli/holes_json.hero`
+# as the `"holes"` member of `check --json`'s documents, so what a report
+# SAYS is decided here once and both renderings carry it. Every type and
+# name in it is written as the hole's own file writes it (defect 2205), the
+# names in scope are the resolver's (defect 2203) and the place is the one
+# the tree around the hole holds (defect 2204).
+
+use ast
+use source
+use resolved
+use check/table
+use check/state
+use check/render
+use check/holes_gather
+use check/hole_place
+
+# §4.16's cap, and the reason it exists: identical holes must give
+# identical guidance, whatever the file's size.
+constant SUGGESTIONS: i64
+    5
+
+# A name in scope, or a field of the expected record: its type as the hole's
+# file writes it, "" where the checker holds none, which no `?` stands for.
+record Seen
+    name: str
+    ty: str
+    mutable: bool
+
+# A function that returns the expected type: the call as the hole's file
+# writes it, parameters included, and its documentation's first line as
+# written, `#` and all, "" for none.
+record Offered
+    call: str
+    doc: str
+
+# One hole. `expected` is the type its place fixes, "" where it fixes none;
+# then `statement` says whether nothing reads its value, `asked` what a value
+# there must be in words, and `returns` what the function owes where it is
+# not `()`. `owner` names the expected record or variant, "" for none.
+record Report
+    file: str
+    line: i64
+    col: i64
+    statement: bool
+    expected: str
+    asked: str
+    returns: str
+    in_scope: [Seen]
+    more_in_scope: i64
+    owner: str
+    of_variant: bool
+    fields: [Seen]
+    cases: [str]
+    functions: [Offered]
+    more_functions: i64
+
+# Every hole's report, in the order the checker met them.
+function reports(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [Report]
+    out: [Report] @= []
+
+    if c.holes.len() == 0
+        return out
+    g = holes_gather.gather(r, c, decls)
+    held = hole_place.holders(tree, s)
+
+    for hole in c.holes
+        out @ out.push(one(g, held, r, c, s, decls, hole: hole))
+
+    return out
+
+function one(g: holes_gather.Gathered, held: {i64: hole_place.Holder}, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], hole: state.Hole) -> Report
+    # locate, never line_col plus s.name: the hole report is not a
+    # Diagnostic, which is how it survived a sweep still naming the root
+    # file at concatenated lines (panel 033 D2).
+    found = source.locate(s, hole.span.start)
+    reader = render.reader_of(r, module: source.module_at(s, hole.span.start))
+    none: [str] = []
+    expected: i64 @= hole.expected
+
+    # A hole the checker only synthesized carries no type, and its place
+    # says what it asks (`check/hole_place.hero`, defect 2204).
+    place = hole_place.place_of(held, c, id: hole.at)
+
+    if unknown(c, ty: expected) && place.ty >= 0
+        expected @ place.ty
+    typed = !unknown(c, ty: expected)
+    asked: str @= ""
+    returns: str @= ""
+    written: str @= ""
+
+    if typed
+        written @ render.render_read(c.types, s, decls, expected, none, reader: reader)
+    else
+        if !place.statement
+            asked @ "nothing here fixes its type"
+
+            if place.said != ""
+                asked @ place.said
+
+        # Where the place fixes no type, what a model needs is what the
+        # FUNCTION owes.
+        returns @ owed(g, c, s, decls, at: hole.span.start, reader: reader)
+    scope = in_scope(r, c, s, decls, id: hole.at, reader: reader)
+    owner: str @= ""
+    of_variant: bool @= false
+    fields: [Seen] @= []
+    cases: [str] @= []
+    offered: [Offered] @= []
+    more: i64 @= 0
+
+    if typed
+        decl = declared(c, ty: expected)
+
+        if !decl.is_err()
+            owner @ render.written_name(s, decls, decl: decl.must(), reader: reader)
+
+            match decls[decl.must()].kind
+                .record_decl rec =>
+                    for f in rec.fields
+                        fields @ fields.push(
+                            Seen(name: source.span_text(s, f.name), ty: typed_text(c, s, decls, ty: f.ty, letters: none, reader: reader), mutable: false)
+                        )
+                .variant_decl v =>
+                    of_variant @ true
+
+                    for one_case in v.cases
+                        cases @ cases.push("." + source.span_text(s, one_case.name))
+                .constant_decl | .function_decl | .test_decl => owner @ ""
+        reached = nearby(g, r, c, s, decls, expected: expected, at: hole.span.start, reader: reader)
+        offered @ reached.shown
+        more @ reached.more
+    kept: [Seen] @= []
+    index: i64 @= 0
+
+    for seen in scope
+        if index < SUGGESTIONS
+            kept @ kept.push(seen)
+        index @ index + 1
+
+    return Report(
+        file: found.file,
+        line: found.line,
+        col: found.col,
+        statement: !typed && place.statement,
+        expected: written,
+        asked: asked,
+        returns: returns,
+        in_scope: kept,
+        more_in_scope: scope.len() - kept.len(),
+        owner: owner,
+        of_variant: of_variant,
+        fields: fields,
+        cases: cases,
+        functions: offered,
+        more_functions: more
+    )
+
+# Whether the checker holds no type at `ty`.
+function unknown(c: state.Checked, ty: i64) -> bool
+    return match table.get(c.types, ty)
+        .error                                                     => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => false
+        .array | .fixed | .map | .fallible | .function_ty | .named => false
+        .case_ty | .failure | .generic                             => false
+
+# The record or variant a type names.
+function declared(c: state.Checked, ty: i64) -> i64?
+    return match table.get(c.types, ty)
+        .named n                                                   => ok(n.decl)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => fail(code: "none", msg: "no declaration")
+        .array | .fixed | .map | .fallible | .function_ty | .error => fail(code: "none", msg: "no declaration")
+        .case_ty | .failure | .generic                             => fail(code: "none", msg: "no declaration")
+
+# What the function holding the byte `at` returns, as `reader` writes it, ""
+# where it returns `()` or holds no result.
+function owed(g: holes_gather.Gathered, c: state.Checked, s: source.Source, decls: [ast.Decl], at: i64, reader: render.Reader) -> str
+    owner = owner_of(g, decls, at: at)
+
+    if owner.is_err()
+        return ""
+    result = state.result_type(c, owner.must())
+
+    if result.is_err() || is_unit_type(c, ty: result.must())
+        return ""
+    none: [str] = []
+    return render.render_read(c.types, s, decls, result.must(), none, reader: reader)
+
+# The locals visible at the hole `id`, with their types, in the order they
+# were bound: what the resolver held in scope where it met the hole
+# (`resolve/names.hero`'s `hole`), never a model of it. Until defect 2203 the
+# report read every local of the declaration whose name began before the
+# hole, and so listed the binding a hole's own initialiser defines and the
+# names of a block already closed. The resolver meets every `???` the
+# checker does, so a hole it never met is the compiler's own fault, told loud
+# by `must`. A name bound to what the checker could not type, `x = ???`, has
+# no type to write: `?` reads as the fallible suffix (panel 228's critic).
+function in_scope(r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64, reader: render.Reader) -> [Seen]
+    none: [str] = []
+    shown: [Seen] @= []
+
+    for index in r.hole_scopes[id].must()
+        local = r.locals[index]
+        ty = state.local_type(c, index)
+        text: str @= ""
+
+        if hole_place.is_value_type(c, ty: ty) || is_unit_type(c, ty: ty)
+            text @ render.render_read(c.types, s, decls, ty, none, reader: reader)
+        shown @ shown.push(Seen(name: source.span_text(s, local.name), ty: text, mutable: local.mutable))
+
+    return shown
+
+# The functions offered at a hole, and how many more the cap left out.
+record Reached
+    shown: [Offered]
+    more: i64
+
+# Functions whose result is the expected type, with their documentation,
+# ranked by type-relevance and capped, because on a file with forty
+# functions the five that RETURN WHAT IS NEEDED HERE are the answer; past
+# the cap they are counted, never cut in silence (panel 228's R4). A name
+# from another module is offered the only way it can be written, qualified,
+# AND ONLY from a module this file can name: a hole in geom.hero offered
+# main.tally is three errors, and §4.16's promise is the answer handed over,
+# not a guess to repair.
+function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64, at: i64, reader: render.Reader) -> Reached
+    here = source.module_at(s, at)
+    shown: [Offered] @= []
+    more: i64 @= 0
+    row = g.maker_at[expected]
+
+    if row.is_err()
+        return Reached(shown: shown, more: 0)
+
+    # ORDER: ascending (module, name), the order `gather` read them in, so
+    # the cap picks the same five it picked when this walked every module
+    # per hole (design.md §4.9).
+    for m in g.makers[row.must()]
+        reachable: bool @= m.module == here || m.module == source.LIBRARY_MODULE
+
+        if !reachable
+            reachable @ !resolved.binding_in(r, from: here, module: m.module).is_err()
+
+        if !reachable
+            continue
+        written: str @= m.name
+
+        if m.module != here
+            # The form the author would TYPE, which is what THIS FILE calls
+            # the module: its `as` name where it has one, the path's last part
+            # where it does not (panel 100); `syntax/decl.foo(...)` cannot be
+            # pasted. **No `.must()` here, and that is panel 100's engineer's
+            # own defect**: it wrote one and `heroes check` answered `panic:
+            # .must() on an error: absent: library`, because the library is in
+            # every compilation and no file `use`s it, so a library function
+            # is reachable above and offered by no name here.
+            local = resolved.binding_in(r, from: here, module: m.module)
+
+            if local.is_err()
+                continue
+            written @ local.must() + "." + m.name
+
+        if shown.len() == SUGGESTIONS
+            more @ more + 1
+            continue
+        doc: str @= ""
+
+        if decls[m.decl].doc.len() > 0
+            doc @ source.span_text(s, decls[m.decl].doc[0])
+        shown @ shown.push(
+            Offered(call: written + "(" + params_read(c, s, decls, decl: m.decl, reader: reader) + ")", doc: doc)
+        )
+
+    return Reached(shown: shown, more: more)
+
+# Whether `ty` is `()`, a type a local can hold and a report writes.
+function is_unit_type(c: state.Checked, ty: i64) -> bool
+    return match table.get(c.types, ty)
+        .unit                                                      => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .error => false
+        .array | .fixed | .map | .fallible | .function_ty | .named => false
+        .case_ty | .failure | .generic                             => false
+
+# A function's parameters as a hole's file reads them, each type the one the
+# checker lowered its written type to, written by `reader`: they were the
+# declaring file's own text, `lib.grow(b: Box)`, a type the reader cannot
+# write (defect 2205).
+function params_read(c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, reader: render.Reader) -> str
+    shown: [str] @= []
+
+    match decls[decl].kind
+        .function_decl fd =>
+            letters: [str] @= []
+
+            for g in fd.value.generics
+                letters @ letters.push(source.span_text(s, g))
+
+            for p in fd.value.params
+                marker: str @= ""
+
+                if p.mutable
+                    marker @ "@"
+                shown @ shown.push(
+                    marker + source.span_text(s, p.name) + ": " + typed_text(c, s, decls, ty: p.ty, letters: letters, reader: reader)
+                )
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return ""
+
+    return shown.join(", ")
+
+# A written type node as `reader` reads it, through the type the checker
+# lowered it to. A declaration a report reads was checked whole, its every
+# written type lowered, so one missing is the compiler's own fault, told loud
+# by `must`.
+function typed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, letters: [str], reader: render.Reader) -> str
+    return render.render_read(c.types, s, decls, state.written_type(c, ty).must(), letters, reader: reader)
+
+# Which declaration a byte offset falls inside: the last one starting at or
+# before it, found by halving where the declarations' starts ascend, which
+# they do when the sources are joined in load order; where they did not, the
+# walk over every declaration it replaced answers instead, so a premise that
+# stopped holding would cost time and never an answer.
+function owner_of(g: holes_gather.Gathered, decls: [ast.Decl], at: i64) -> i64?
+    if !g.ascending
+        index: i64 @= 0
+
+        for decl in decls
+            if decl.span.start <= at && at < decl.span.end
+                return ok(index)
+            index @ index + 1
+
+        return fail(code: "none", msg: "no declaration holds this offset")
+    low: i64 @= 0
+    high: i64 @= g.starts.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if g.starts[middle] <= at
+            low @ middle + 1
+        else
+            high @ middle
+
+    if low == 0
+        return fail(code: "none", msg: "no declaration holds this offset")
+    found = low - 1
+
+    if at < decls[found].span.end
+        return ok(found)
+    return fail(code: "none", msg: "no declaration holds this offset")

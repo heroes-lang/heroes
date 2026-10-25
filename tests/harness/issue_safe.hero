@@ -283,6 +283,85 @@ function is_hex(word: str) -> bool
 
     return true
 
+# The words written bare that read as a commit (defect 2190): outside every
+# fenced block, every code span and every address, seven to forty lowercase
+# hexadecimal digits holding a digit and a letter, with no word byte on either
+# side. `hash_words` reads the backticked ones and `answering` the forty
+# digits alone on a line; a full hash typed by hand inside a sentence was
+# neither, and on 2026-10-24 one wrong past its ninth digit reached issue 2186
+# at exit 0. A word of digits alone is a number and one of letters alone a
+# word, so neither is asked.
+function bare_hash_words(text: str) -> [str]
+    out: [str] @= []
+
+    for piece in issue_spans.pieces(text)
+        if piece.code
+            continue
+        body = piece.text
+        found = issue_spans.spans(body)
+        at: i64 @= 0
+
+        while at < body.len()
+            url = url_end(text: body, at: at)
+
+            if url > at
+                at @ url
+                continue
+
+            if issue_spans.inside(found, at) || !is_word_byte(body[at])
+                at @ at + 1
+                continue
+            end: i64 @= at
+
+            while end < body.len() && is_word_byte(body[end]) && !issue_spans.inside(found, end)
+                end @ end + 1
+
+            word = body.slice(from: at, to: end)
+
+            if word.len() >= 7 && word.len() <= 40 && is_hex(word) && holds_digit(word) && holds_letter(word)
+                out @ out.push(word)
+            at @ end
+
+    return out
+
+# The bare words of `text` that read as a commit and name none of this
+# history's, `commits` being what git answered for them: each refuses the
+# write, since GitHub links a bare commit it holds and shows any other as a
+# plain word nobody can open (defect 2190).
+function unnamed_hashes(text: str, commits: {str: bool}) -> [str]
+    out: [str] @= []
+
+    for word in bare_hash_words(text)
+        if commits[word].is_err()
+            out @ out.push(word)
+
+    return out
+
+# What a write that names one says, the words in `unnamed`, for `whose`.
+function unnamed_told(whose: str, unnamed: [str]) -> [str]
+    out: [str] @= []
+
+    for word in unnamed
+        out @ out.push(
+            whose + " names " + word + " bare, which is no commit of this history: write the commit's hash as today's history holds it, or put the word in a code span if it names none (defect 2190)"
+        )
+
+    return out
+
+function holds_digit(word: str) -> bool
+    for b in word.chars()
+        if is_digit(b[0])
+            return true
+
+    return false
+
+function holds_letter(word: str) -> bool
+    for b in word.chars()
+        if !is_digit(b[0])
+            return true
+
+    return false
+
 test "a reference, a short reference and a mention go in code, and an address or a word before them stays"
     nothing: {str: bool} = {}
     assert protect(text: "see #84611 here", commits: nothing) == "see `#84611` here"
@@ -310,6 +389,18 @@ test "a backticked word git names a commit is written bare, and any other stays 
     assert protect(text: "the `deadbeef` word", commits: commits) == "the `deadbeef` word"
     assert protect(text: "``7d2f03be``", commits: commits) == "``7d2f03be``"
     assert hash_words("at `7d2f03be` and `2026` and `DEADBEEF1` and `0123456789abcdef`") == ["7d2f03be", "0123456789abcdef"]
+
+test "a hash written bare inside a sentence is read, and one git names no commit refuses the write (defect 2190)"
+    whole = "0123456789abcdef0123456789abcdef01234567"
+    said = "Fixed at " + whole + ", short 7d2f03be, not `deadbeef12` nor 2026-10-25 nor fixedbugs-381 nor deadbeefcafe."
+    assert bare_hash_words(said) == [whole, "7d2f03be"]
+    assert bare_hash_words("```\n7d2f03be\n```\nsee https://github.com/a/b/blob/7d2f03be9/x and 7d2f03bex") == []
+    commits: {str: bool} @= {}
+    commits["7d2f03be"] @ true
+    assert unnamed_hashes(text: said, commits: commits) == [whole]
+    told = unnamed_told(whose: "the comment", unnamed: [whole])
+    assert told.len() == 1
+    assert strings.starts_with(text: told[0], prefix: "the comment names " + whole + " bare, which is no commit")
 
 test "a rendered body is read for what would still link, mention or backlink"
     assert live("see `#1`, `@x` and https://redirect.github.com/a/b/issues/1").len() == 0

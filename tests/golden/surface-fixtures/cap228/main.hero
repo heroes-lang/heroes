@@ -1,0 +1,39 @@
+# Panel 228's R1, R2 and R4 (ratified by the author on 2026-10-25): a hole
+# whose type seven functions return is offered five, and the text and the
+# document both count the two the cap cut; `check --json` writes every hole
+# with every key and says the list is whole.
+record Money
+    cents: i64
+
+# An amount in dollars.
+function dollars(n: i64) -> Money
+    return Money(cents: n * 100)
+
+# An amount in euros.
+function euros(n: i64) -> Money
+    return Money(cents: n * 100)
+
+# An amount in francs.
+function francs(n: i64) -> Money
+    return Money(cents: n * 100)
+
+# An amount in pounds.
+function pounds(n: i64) -> Money
+    return Money(cents: n * 100)
+
+# An amount in rupees.
+function rupees(n: i64) -> Money
+    return Money(cents: n * 100)
+
+# An amount in yen.
+function yen(n: i64) -> Money
+    return Money(cents: n)
+
+# Nothing.
+function zero() -> Money
+    return Money(cents: 0)
+
+function main()
+    price = 12
+    m: Money = ???
+    print(m.cents + price)

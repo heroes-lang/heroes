@@ -115,20 +115,76 @@ record Failure
 
 # A run: `stride` judges every `stride`-th variant of each family, counted
 # across the run in the order the seeds are read, the first included, so
-# a strided run judges the same variants every time (1 judges them all).
+# a strided run judges the same variants every time (1 judges them all);
+# `offset` moves that first one on, so the runs of offsets 0 up to the
+# stride less one judge every variant between them, once (defect 2139).
 record Run
     tallies: [Tally]
     discards: [Discard]
     failures: [Failure]
     stride: i64
+    offset: i64
 
-function start(families: [str], stride: i64) -> Run
+# The run `--stride` and `--offset` ask for, their words as given, or why
+# none can start: a stride from 1 up, an offset below it.
+function asked(families: [str], stride: str?, offset: str?) -> Run?
+    every: i64 @= 1
+
+    if !stride.is_err()
+        every @ counted(stride.must())
+
+        if every < 1
+            return fail(
+                code: "stride",
+                msg: "`--stride` takes a whole number of variants from 1 up, and was given `" + stride.must() + "`"
+            )
+
+        # `bracket` and `paren` write three forms of each place in turn, so a
+        # stride that is a multiple of 3 judges one form of each place in
+        # every seed: defect 506 holds in its `O` form (panel 229's R3).
+        if every % 3 == 0
+            return fail(
+                code: "stride",
+                msg: "`--stride` " + stride.must() + " is a multiple of 3: `bracket` and `paren` write three forms of each place, so it would judge one form of each place in every seed; take one that is not"
+            )
+    from: i64 @= 0
+
+    if !offset.is_err()
+        from @ counted(offset.must())
+
+        if from < 0 || from >= every
+            return fail(
+                code: "offset",
+                msg: "`--offset` takes a whole number below the stride, " + every.to_str() + ", and was given `" + offset.must() + "`"
+            )
+    return ok(start(families, stride: every, offset: from))
+
+function said(got: Run?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# The number `text` spells in decimal, -1 when it spells none or one past a
+# million, which no run holds.
+function counted(text: str) -> i64
+    if text.len() == 0 || text.len() > 7
+        return -1
+    value: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] < '0' || text[at] > '9'
+            return -1
+        value @ value * 10 + (text[at] - '0').to_i64().must()
+
+    return value
+
+function start(families: [str], stride: i64, offset: i64) -> Run
     tallies: [Tally] @= []
 
     for family in families
         tallies @ tallies.push(Tally(family: family, generated: 0, judged: 0, parsing: 0, held: 0, guard: 0, reader: 0))
 
-    return Run(tallies: tallies, discards: [], failures: [], stride: stride)
+    return Run(tallies: tallies, discards: [], failures: [], stride: stride, offset: offset)
 
 # Every variant of `s` in the families `r` counts, counted, and the ones
 # its stride picks judged.
@@ -144,7 +200,7 @@ function probe_seed(@r: Run, s: seed.Seed)
             index = tallies[k].generated
             tallies[k].generated @ index + 1
 
-            if index % r.stride != 0
+            if index % r.stride != r.offset
                 continue
             tallies[k].judged @ tallies[k].judged + 1
 
@@ -167,7 +223,7 @@ function probe_seed(@r: Run, s: seed.Seed)
                         Failure(path: s.path, family: family, name: e.name, judge: "the reader", why: m.why)
                     )
 
-    r @ Run(tallies: tallies, discards: discards, failures: failures, stride: r.stride)
+    r @ Run(tallies: tallies, discards: discards, failures: failures, stride: r.stride, offset: r.offset)
 
 # `discards` with one more of `code` in `family`.
 function discarded(discards: [Discard], family: str, code: str) -> [Discard]
@@ -207,7 +263,7 @@ function reader_fails(text: str) -> bool
 
 # Every family over `seeds`, judged whole: the run and what it counted.
 function every_family(seeds: [str]) -> Run
-    r: Run @= start(FAMILIES, stride: 1)
+    r: Run @= start(FAMILIES, stride: 1, offset: 0)
 
     for text in seeds
         done = guard.checked(path: "t.hero", s: source.new_source(name: "t.hero", text: text))
@@ -261,3 +317,16 @@ test "every family holds over a comment after the parenthesis around a map's key
     assert r.failures.len() == 0
     assert parsing(r, family: "bracket") >= 42
     assert parsing(r, family: "paren") >= 9
+
+test "a stride that is a multiple of 3 is refused, and an offset below the stride divides a run"
+    families = ["bracket"]
+
+    for refused in ["3", "6", "9999999"]
+        assert asked(families, stride: ok(refused), offset: fail(code: "none", msg: "not given")).is_err()
+
+    taken = asked(families, stride: ok("100"), offset: ok("99"))
+    assert !taken.is_err()
+    assert taken.must().stride == 100
+    assert taken.must().offset == 99
+    assert asked(families, stride: ok("100"), offset: ok("100")).is_err()
+    assert asked(families, stride: ok("9999998"), offset: fail(code: "none", msg: "not given")).must().stride == 9999998

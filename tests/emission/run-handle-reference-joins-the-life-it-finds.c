@@ -254,7 +254,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("71d07e975853066a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("005248de731a2019", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_handlereferencejoinsthelifeitfinds_main();

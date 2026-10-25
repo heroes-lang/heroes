@@ -80,11 +80,14 @@ constant WALK: str
 #
 # **64 marks and 64 walks at batch 18's gate, 2026-10-10**, measured by this
 # suite on the round, past a quarter above both floors.
+#
+# **82 marks and 82 walks at M-rechecked-issues' gate, 2026-10-25**, measured
+# by this suite on the merged lane, past a quarter above both floors.
 constant LEAST_MARKS: i64
-    64
+    82
 
 constant LEAST_WALKS: i64
-    64
+    82
 
 function run_all(scratch: str) -> report.Report?
     r: report.Report @= report.empty()

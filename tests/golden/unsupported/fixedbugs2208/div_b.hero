@@ -1,0 +1,8 @@
+# A module of defect 2208's first case (2026-10-25, M-rechecked-issues): it
+# binds `K_DIV`, which `fixedbugs2208/div_a` binds too.
+
+extern "fixedbugs-2128-values.h"
+    constant K_DIV: i64  #~ ffi_constant_type
+
+function b() -> i64
+    return K_DIV

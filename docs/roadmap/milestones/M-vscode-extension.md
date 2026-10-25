@@ -40,4 +40,6 @@ through `lldb-dap` with Heroes' formatters (M-typed-inspection, 2026-10-13) and
 a `.vsix` that installs by hand, its version tied to `VERSION` (v0.4.0). What
 remains is the LSP client, the quick fixes from `certain` fixes, formatting on
 save and `heroes doctor` as the health check. The row moves from 75 to 84,
-after M-lsp-server and immediately before the gate.
+after M-lsp-server and immediately before the gate. **Row 85 since
+2026-10-18**, one further when M-readonly-lend entered the chain at row 68
+(`b5db7e8ff`), still after M-lsp-server and before the gate.

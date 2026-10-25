@@ -113,7 +113,7 @@ function spread(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i
     # A value no bracket of the page holds, whose printing would break a line
     # for a comment where no bracket is open (defect 107): a group inside the
     # author's innermost pair around it, or `fmt`'s own where it has none.
-    if !at.enclosed && inside && bare.needs_group(f, c, value: value, at: at)
+    if !at.enclosed && inside && bare.needs_group(@f, c, value: value, at: at)
         grouped = elements.group(c, value: value, paren: paren, split: false)
         return opened(@f, c, head: head, b: grouped, indent: indent, enclosed: false)
 

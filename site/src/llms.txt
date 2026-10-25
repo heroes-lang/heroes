@@ -61,8 +61,10 @@ output and twenty principles printed by `heroes this`.
 - `heroes check --json` writes schema {{jsonSchema}} to stderr, with stable
   snake_case error codes, source locations, notes and suggested fixes, each
   fix with the place it applies, and every answer names the files it read and
-  their SHA-256. `heroes check --apply` writes the certain fixes into the
-  program, on stdout or with `--in-place` into the file; with `--json` it
+  their SHA-256. It holds the program's holes too, each with what belongs in
+  it, and `"holes_complete"`, true only when that list is all of them.
+  `heroes check --apply` writes the certain fixes into the program, on
+  stdout or with `--in-place` into the file; with `--json` it
   prints that program inside a document of the same schema on stdout, with
   how many rounds wrote and the certain fixes it left in other modules, which
   a file named alone never writes. `heroes check <directory> --apply

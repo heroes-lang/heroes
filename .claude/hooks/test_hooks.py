@@ -30,6 +30,7 @@ temporary folder.
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -43,6 +44,7 @@ import guard_bash  # noqa: E402
 import marks  # noqa: E402
 import provenance  # noqa: E402
 import runs as what_runs  # noqa: E402
+import tagged  # noqa: E402
 
 FAKE = r"""#!/bin/sh
 here=$(cd "$(dirname "$0")" && pwd)
@@ -2469,6 +2471,91 @@ class TrackedAsks(unittest.TestCase):
                         "./heroes run tests/harness/main.hero -- ./heroes records"):
             self.assertFalse(self.matched("ask", command), command)
             self.assertTrue(self.matched("allow", command), command)
+
+
+class TaggedPush(unittest.TestCase):
+    """Defect 2198: a push that can carry an `m-*` tag is judged by
+    `records/tagged` with the tag placed, and goes through on a pass alone; a
+    branch's push is not judged."""
+
+    CARRY = ("git push origin main m-rechecked-issues", "git push origin --tags", "git push --follow-tags origin main",
+             "git push origin refs/tags/m-x", "git push origin +m-x", "git push origin m-x:refs/tags/m-x",
+             "git push origin tag m-x", "git push --mirror origin", "git push --repo=origin m-x",
+             "git push --repo origin m-x", "git push -o ci.skip origin m-x", "git push origin -- m-x",
+             "git -C . push origin main m-x")
+    BRANCH = ("git push origin main", "git push", "git push origin", "git push m-remote main", "git push origin main:main",
+              "git push origin v1.0.0", "git push -o m-x origin main", "git push --dry-run origin main",
+              "git push origin tag v1.0.0", "git push origin refs/heads/m-branch-is-a-branch-only-when-named-so:refs/heads/x")
+
+    def setUp(self):
+        self.top = fresh("hooks-2198-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+
+    def said(self, command, cwd=None):
+        return guard_bash.verdict(command, cwd or self.tree)
+
+    def test_which_pushes_can_carry_a_milestone_tag(self):
+        for command in self.CARRY:
+            words = command.split()
+            rest = words[words.index("push") + 1:]
+            self.assertTrue(tagged.carries_tag(rest), command)
+        for command in self.BRANCH:
+            words = command.split()
+            self.assertFalse(tagged.carries_tag(words[words.index("push") + 1:]), command)
+
+    def test_a_branch_push_asks_nothing(self):
+        for command in self.BRANCH:
+            self.assertIsNone(self.said(command), command)
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_tag_push_goes_through_on_a_pass_and_asks_the_tag_check_alone(self):
+        answer(self.tree, "records", 0, "  records: 1 passed, 0 failed\nharness: 1 passed, 0 failed\n")
+        for command in self.CARRY:
+            self.assertIsNone(self.said(command), command)
+        self.assertEqual(set(runs(self.tree)), {"records records/tagged"})
+        self.assertEqual(len(runs(self.tree)), len(self.CARRY))
+
+    def test_a_red_tag_check_refuses_with_its_own_words(self):
+        answer(self.tree, "records", 1, "FAIL records/tagged\n  m-x was placed over 1 open defect(s) that count against a tag:\n    2139\n  records: 0 passed, 1 failed\n")
+        said = self.said("git push origin main m-x")
+        self.assertIsNotNone(said)
+        self.assertIn("did not pass (exit 1)", said)
+        self.assertIn("m-x was placed over 1 open defect(s)", said)
+        self.assertIn("git tag -d", said)
+
+    def test_a_skip_is_not_a_pass(self):
+        answer(self.tree, "records", 0, "SKIP records/tagged\n  GitHub could not be asked, so this check judged nothing: offline\n  records: 0 passed, 0 failed\n")
+        said = self.said("git push origin --tags")
+        self.assertIsNotNone(said)
+        self.assertIn("GitHub could not be asked", said)
+
+    def test_a_harness_that_selects_nothing_refuses(self):
+        said = self.said("git push origin m-x")
+        self.assertIsNotNone(said)
+        self.assertIn("did not pass (exit 2)", said)
+
+    def test_a_check_that_does_not_answer_in_time_refuses(self):
+        with mock.patch.object(marks, "bounded", return_value=None):
+            said = self.said("git push origin m-x")
+        self.assertIsNotNone(said)
+        self.assertIn("did not answer within", said)
+
+    def test_a_tree_with_no_compiler_built_refuses(self):
+        bare = make_tree(os.path.join(self.top, "bare"), compiler=False, repo=True)
+        said = self.said("git push origin m-x", cwd=bare)
+        self.assertIsNotNone(said)
+        self.assertIn("has not built", said)
+
+    def test_a_push_outside_every_tree_is_not_judged(self):
+        elsewhere = fresh("hooks-2198-elsewhere-")
+        self.assertIsNone(self.said("git push origin m-x", cwd=elsewhere))
+
+    def test_the_word_is_the_harness_own(self):
+        suite = os.path.join(HOOKS, "..", "..", "tests", "harness", "suite_records.hero")
+        with open(suite, encoding="utf-8") as handle:
+            held = re.search(r'^constant TAG_CHECK: str\n    "([^"]+)"$', handle.read(), re.MULTILINE)
+        self.assertIsNotNone(held, "suite_records.hero no longer holds `constant TAG_CHECK: str`")
+        self.assertEqual(held.group(1), tagged.TAG_CHECK)
 
 
 if __name__ == "__main__":

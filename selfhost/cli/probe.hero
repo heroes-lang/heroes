@@ -87,17 +87,6 @@ function run(inv: argv.Invocation) -> cli_table.Exit
             io.eprint(text: "error: no family `" + named.must() + "`\n  the seven are: " + judge.FAMILIES.join(", "))
             return .failed_exit
         families @ [named.must()]
-    stride: i64 @= 1
-    given = argv.value_of(inv, spelling: "--stride")
-
-    if !given.is_err()
-        stride @ counted(given.must())
-
-        if stride < 1
-            io.eprint(
-                text: "error: `--stride` takes a whole number of variants from 1 up, and was given `" + given.must() + "`"
-            )
-            return .failed_exit
     paths: [str] @= FIXTURES
 
     if !inv.file.is_err()
@@ -109,7 +98,16 @@ function run(inv: argv.Invocation) -> cli_table.Exit
         return .failed_exit
     roots: [Root] @= found.must()
     single = !inv.file.is_err() && !process.is_directory(path: inv.file.must())
-    r: judge.Run @= judge.start(families, stride: stride)
+    asked = judge.asked(
+        families,
+        stride: argv.value_of(inv, spelling: "--stride"),
+        offset: argv.value_of(inv, spelling: "--offset")
+    )
+
+    if asked.is_err()
+        io.eprint(text: "error: " + judge.said(asked))
+        return .failed_exit
+    r: judge.Run @= asked.must()
     refused: i64 @= 0
 
     for k in range(from: 0, to: roots.len())
@@ -184,20 +182,6 @@ function gathered(paths: [str]) -> [Root]?
         return fail(code: "no_seed", msg: "no `.hero` file under " + paths.join(", "))
     return ok(out)
 
-# The number `text` spells in decimal, -1 when it spells none or one past a
-# million, which no run holds.
-function counted(text: str) -> i64
-    if text.len() == 0 || text.len() > 7
-        return -1
-    value: i64 @= 0
-
-    for at in range(from: 0, to: text.len())
-        if text[at] < '0' || text[at] > '9'
-            return -1
-        value @ value * 10 + (text[at] - '0').to_i64().must()
-
-    return value
-
 function why(got: [Root]?) -> str
     return match got
         .ok _  => ""
@@ -218,6 +202,9 @@ function report(roots: [Root], r: judge.Run, refused: i64) -> str
 
     if r.stride > 1
         stride @ ", one variant in " + r.stride.to_str() + " of each family judged"
+
+    if r.offset > 0
+        stride @ stride + ", at offset " + r.offset.to_str()
     rows: [str] @= [
         "probe: " + seeds(roots).to_str() + " seeds, and " + refused.to_str() + " files the parser refuses" + stride + "\n"
     ]
@@ -394,13 +381,13 @@ test "a family the probe does not make is named with the seven, and a path that 
     assert FIXTURES.len() == 13
 
 test "a stride is a whole number from 1 up"
-    assert counted("2") == 2
-    assert counted("1000000") == 1000000
-    assert counted("0") == 0
-    assert counted("-1") == -1
-    assert counted("x2") == -1
-    assert counted("") == -1
-    assert counted("10000000") == -1
+    assert judge.counted("2") == 2
+    assert judge.counted("1000000") == 1000000
+    assert judge.counted("0") == 0
+    assert judge.counted("-1") == -1
+    assert judge.counted("x2") == -1
+    assert judge.counted("") == -1
+    assert judge.counted("10000000") == -1
     zero = argv.Invocation(
         tag: .probe_cmd,
         file: ok("tests/golden/surface-fixtures/nonascii110"),

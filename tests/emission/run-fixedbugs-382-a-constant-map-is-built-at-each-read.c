@@ -353,7 +353,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("433a946077e5ae7a", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("51bc5ea612acc82a", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     h_fixedbugs382aconstantmapisbuiltateachread_main();

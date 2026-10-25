@@ -39,8 +39,9 @@
 # `printf("%d\n", "seven")` built and printed a pointer's low bits at exit 0.
 # Kept, panel 204's 182 Mac headers read the same 10 refusals and 0 raw
 # warnings header by header, measured that morning beside the landing. The
-# repair was written at 2067ec87 on a branch never merged and landed with
-# defect 2034, 2026-10-12, which found it unmerged.
+# repair was written on a lane's branch never merged, `2067ec87`, a commit
+# no clone and no page of GitHub holds, and landed at 475cfc18d with defect
+# 2034, 2026-10-13, which found it unmerged.
 #
 # **Kept as a group, it refused what C defines** (defect 2036, 2026-10-13):
 # a pragma on a group reaches each of its parts, so a header's

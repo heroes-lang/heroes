@@ -1,0 +1,17 @@
+# FIXED, DEFECT 2208, 2026-10-25, M-rechecked-issues.
+#
+# SYMPTOM: two modules that each bind `K_DIV`, a value C leaves undefined,
+# were told `ffi_constant_type` twice, both at the first module's binding,
+# and never at the second's, with no refusal anywhere.
+#
+# CAUSE: the value check placed a finding by its constant's NAME
+# (`ffi_lookup.declaration`, the first group declaring it), where the
+# accessor it read holds its own declaration (`cli/value_told.hero`).
+#
+# FIX: the finding is placed at the accessor's own declaration
+# (`ffi_lookup.declared_at`), so each module is told at its own line.
+use fixedbugs2208/div_a
+use fixedbugs2208/div_b
+
+function main()
+    print(div_a.a() + div_b.b())

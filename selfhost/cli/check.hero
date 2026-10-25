@@ -28,6 +28,8 @@ use cli/io
 use cli/check_json
 use cli/certain
 use cli/apply_answer
+use cli/holes_json
+use check/hole_report
 use library_source
 
 function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
@@ -66,17 +68,21 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     if !stop_c.is_err()
         return stop_c.must()
 
+    # Every hole's report, once, for the text and the documents alike (panel
+    # 228's R3); every stage was quiet, so the list is whole (R1).
+    reported = hole_report.reports(parsed.tree, out, c, s, parsed.decls)
+
     # `--apply`'s artifact is the program with every certain fix applied, and a
     # file no stage speaks of has none to apply: it is handed back as it is
     # (`cli/apply_answer.hero`, defects 141 and 371).
     if argv.has(inv, spelling: "--apply")
-        return apply_answer.hand_back_clean(s, inv: inv)
+        return apply_answer.hand_back_clean(s, inv: inv, holes: holes_json.whole(reported))
 
     # A clean program's answer is a document too (panel 193's R3), where it
     # was no bytes at all, which no JSON reader takes.
     if argv.has(inv, spelling: "--json")
         none: [diag.Diagnostic] = []
-        io.eprint_raw(text: check_json.json(none, s))
+        io.eprint_raw(text: check_json.json(none, s, holes: holes_json.whole(reported)))
 
     if argv.has(inv, spelling: "--dump-scopes")
         io.print_artifact(text: scopes.dump_scopes(out, s, parsed.decls))
@@ -84,7 +90,7 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     # §4.16: holes are output, not diagnostics. The program is fine;
     # it is unfinished, and the compiler says what belongs in the gaps.
     if c.holes.len() > 0
-        io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))
+        io.print_artifact(text: holes.text_of(reported))
     return .ok_exit
 
 # Print a stage's diagnostics in the form the flags asked for, and say
@@ -125,7 +131,7 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invo
         return ok(apply_answer.hand_back(s, settled: settled.must(), inv: inv, own: apply_answer.in_root(kept, s: s)))
 
     if argv.has(inv, spelling: "--json")
-        io.eprint_raw(text: check_json.json(kept, s))
+        io.eprint_raw(text: check_json.json(kept, s, holes: holes_json.unknown()))
     else
         if argv.has(inv, spelling: "--brief")
             for d in kept
@@ -396,11 +402,11 @@ test "the json schema leads with its version and escapes its strings"
     s = source.new_source(name: "t.hero", text: text)
     parsed = parse.parse_source(s)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    got = check_json.json(out.diagnostics, s)
+    got = check_json.json(out.diagnostics, s, holes: holes_json.unknown())
     assert has_text(text: got, needle: "{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n")
     assert has_text(text: got, needle: "\"code\": \"unused_binding\"")
     assert has_text(text: got, needle: "\"file\": \"t.hero\"")
-    assert has_text(text: got, needle: "  ]\n}\n")
+    assert has_text(text: got, needle: "  ],\n  \"holes\": [],\n  \"holes_complete\": false\n}\n")
 
 # Panel 193's R8: the help says the schema the writer writes and the stream
 # it writes to, held to `check_json.SCHEMA` so the two cannot part: stderr
