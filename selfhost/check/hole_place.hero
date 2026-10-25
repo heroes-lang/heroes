@@ -156,6 +156,9 @@ function tail_place(held: {i64: Holder}, c: state.Checked, owner: i64, id: i64) 
 
     # The `if` or `match` joined to no type, most often because this hole is
     # one of its branches: another branch's value says what each must be.
+    # ORDER: ascending expression id, the order the parser made the branches
+    # in: the first other branch with a value type is the one the report
+    # names, the same in every build.
     for other in sort(keys(held))
         if other != id
             match held[other].must()

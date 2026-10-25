@@ -240,6 +240,8 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
     generic_names: [str] = []
     module_calls: {str: {str: str}} @= {}
 
+    # ORDER: none — each module's entry is written once, from its own name
+    # alone, so no entry reads another.
     for module in sort(keys(out_of.module_uses.at))
         module_calls[module] @ render.calls_of(out_of, module: module)
 

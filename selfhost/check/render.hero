@@ -62,6 +62,9 @@ function calls_of(r: resolved.Resolved, module: str) -> {str: str}
     if !bound.is_err()
         uses = bound.must()
 
+        # ORDER: none — a file names a module by one `use` alone, a second
+        # refused as `used_twice` and never recorded, so each module's entry
+        # is written once.
         for binding in sort(keys(uses))
             calls[uses[binding].must()] @ binding
     return calls
