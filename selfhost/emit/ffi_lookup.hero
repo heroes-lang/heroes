@@ -84,30 +84,46 @@ record Declared
 # fabricate a type for a misspelled tag. The disagreement §4.19 exists to hear
 # was already spoken; one comparison was throwing it away.
 function declaration(s: source.Source, decls: [ast.Decl], name: str) -> Declared?
-    for decl in decls
-        named = source.span_text(s, decl.name) == name
+    for index in range(from: 0, to: decls.len())
+        if bound_as(s, decl: decls[index], name: name)
+            found = declared_at(s, decls, index: index)
 
-        match decl.kind
-            .function_decl fd =>
-                if named && !fd.value.header.is_err()
-                    return ok(
-                        Declared(span: decl.span, header: emit_externs.unquoted(s, span: fd.value.header.must()), is_constant: false)
-                    )
-            .constant_decl k =>
-                if named && !k.header.is_err()
-                    return ok(
-                        Declared(span: decl.span, header: emit_externs.unquoted(s, span: k.header.must()), is_constant: true)
-                    )
-            .record_decl rec =>
-                by_tag = !rec.tag.is_err() && source.span_text(s, rec.tag.must()) == name
-
-                if (named || by_tag) && !rec.header.is_err()
-                    return ok(
-                        Declared(span: decl.span, header: emit_externs.unquoted(s, span: rec.header.must()), is_constant: false)
-                    )
-            .variant_decl | .test_decl => continue
+            if !found.is_err()
+                return found
 
     return fail(code: "none", msg: "no group declares this name")
+
+# Whether `decl` is bound by `name`, a record by its tag too.
+function bound_as(s: source.Source, decl: ast.Decl, name: str) -> bool
+    named = source.span_text(s, decl.name) == name
+
+    match decl.kind
+        .record_decl rec => return named || !rec.tag.is_err() && source.span_text(s, rec.tag.must()) == name
+        .function_decl | .constant_decl => return named
+        .variant_decl | .test_decl => return false
+
+# The group declaration at `index` as `declaration` tells one, none where no
+# group holds it. A reader that holds its declaration asks here and never by
+# name: two modules may bind one C name, and the first by name is the
+# other's (defect 2208).
+function declared_at(s: source.Source, decls: [ast.Decl], index: i64) -> Declared?
+    decl = decls[index]
+    header: token.Span? @= fail(code: "none", msg: "no header")
+    is_constant: bool @= false
+
+    match decl.kind
+        .function_decl fd => header @ fd.value.header
+        .constant_decl k =>
+            header @ k.header
+            is_constant @ true
+        .record_decl rec           => header @ rec.header
+        .variant_decl | .test_decl => return fail(code: "none", msg: "no group declares this name")
+
+    if header.is_err()
+        return fail(code: "none", msg: "no group declares this name")
+    return ok(
+        Declared(span: decl.span, header: emit_externs.unquoted(s, span: header.must()), is_constant: is_constant)
+    )
 
 # The span of the NAME alone, which is what a fix replaces — the
 # declaration's own span covers the whole signature.

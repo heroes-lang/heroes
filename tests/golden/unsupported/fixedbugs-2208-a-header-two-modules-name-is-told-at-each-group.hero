@@ -1,0 +1,20 @@
+# FIXED, DEFECT 2208, 2026-10-25, M-rechecked-issues (its second site).
+#
+# SYMPTOM: a header clang refuses on its own, named by a group here and by
+# one in `fixedbugs2208/opened`, was told `ffi_header_refused` once, at the
+# first group of the program, the second module's group silent.
+#
+# CAUSE: whose header a file is was asked of the whole program, the first
+# group naming it (`cli/group_file.hero`'s `group_of`), though clang names
+# the unit it compiled at the head of its stack.
+#
+# FIX: the group is asked first among the declarations of the module whose
+# unit clang compiled (`group_file.unit_group`), so each unit's refusal is
+# told at its own group, defect 2143 having every refused unit read.
+use fixedbugs2208/opened
+
+extern "fixedbugs-2143-open-attribute.h"  #~ ffi_header_refused
+    constant K_ONE: i64
+
+function main()
+    print(K_ONE + opened.one())
