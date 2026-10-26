@@ -129,3 +129,9 @@ compiler's own tests read 1,763 and 0 there. Re-measured at that gate: the
 full net 32 suites, 9,430 passed and 0 failed; the compiler's own 1,763 and the
 net's own 428; the 673 emissions and 12 `emit` goldens whose key of the
 sources moved with the runtime's bytes blessed, that line alone.
+
+**And the tag waits, 2026-10-27.** Placed on `3ac16f3dd`, the tag was refused
+by `records/tagged` over decision 2228, R6's door, the one open decision that
+is not a sitting's ratification, and taken down. It goes on the commit that
+applies the author's answer, put to them with its recommendation, the
+language's door.
