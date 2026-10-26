@@ -309,3 +309,12 @@ merge was agreed with them first.
 
 *Pending*: https://github.com/heroes-lang/heroes/issues/2227 (the sitting) and
 https://github.com/heroes-lang/heroes/issues/2228 (R6's door).
+
+**RATIFIED, 2026-10-26**, R1 to R7 as written above, with step 9's lift of R7's limit on an unended
+lease, which the author's instruction of the same day asked for and
+https://github.com/heroes-lang/heroes/issues/2227 records: the author answering in conversation
+that evening, after the batch's push, meant as *I have read the panel; what it decided is fine by
+me*. R4 and R5 stand as written; the spec-warden's W5 and W4, the counts of measurement 052's
+sealed turn-1 answers, stay the author's to count, and reopen R4's fallback and R5 only where they
+cross the thresholds written there. Recorded as a reading (CLAUDE.md § 4). The author may
+overturn it. R6's door is https://github.com/heroes-lang/heroes/issues/2228's own question.
