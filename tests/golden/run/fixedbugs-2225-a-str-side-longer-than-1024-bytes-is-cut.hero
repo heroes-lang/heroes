@@ -1,0 +1,8 @@
+# Defect 2225, panel 230's R3, 2026-10-26: a `str` side is written at most 1,024
+# bytes long, then ` ... N more bytes`, where the lldb formatter cuts a `str`
+# (`editors/lldb/heroes_lldb.py`, `TEXT_BYTES`), so a side of a megabyte writes a
+# line and not a megabyte. 600 copies of `ab` are 1,200 bytes: 176 left out.
+
+function main()
+    s = repeat("ab", to_u64(600).must())
+    assert s == "ab"

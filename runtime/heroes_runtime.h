@@ -105,7 +105,7 @@ typedef __UINTPTR_TYPE__ uintptr_t;
 #  define HERO_FLT_EVAL_METHOD 2
 #endif
 
-#define HERO_RUNTIME_ABI 30
+#define HERO_RUNTIME_ABI 31
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -469,12 +469,20 @@ _Noreturn void hero_panic_must(HeroFailure f);
  * a side has no rendering (a record, an array). */
 _Noreturn void hero_panic_assert(HeroStr text);
 _Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right);
+/* The same where the two sides are `str` values, handed over as they are: the
+ * report writes each quoted, in the specification's escapes, so a side's line
+ * feed can never pass for a line of the report (panel 230's R3, defect 2225).
+ * `hero_panic_assert_sides` keeps its shape for every side `print` renders. */
+_Noreturn void hero_panic_assert_str_sides(HeroStr text, HeroStr left, HeroStr right);
 /* A `match` built with `--permissive` that reached a case no arm names (panel 226):
  * the case's index and the variant's cases joined by `,`, or the value as `print`
  * renders it. The parameters are named with words the guard already keeps, so a
  * group's macro named `tag` reaches no prototype here and no program's guard grows. */
 _Noreturn void hero_panic_unmatched_case(int64_t index, HeroStr text);
 _Noreturn void hero_panic_unmatched_value(HeroStr text);
+/* The same for a `str` value, written quoted as a side is (panel 230's R3, defect
+ * 2226): the value is the program's, and `%s` once let it write a line of its own. */
+_Noreturn void hero_panic_unmatched_str(HeroStr text);
 
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *

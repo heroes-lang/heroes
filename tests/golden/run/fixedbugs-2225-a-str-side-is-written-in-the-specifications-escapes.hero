@@ -1,0 +1,7 @@
+# Defect 2225, panel 230's R3, 2026-10-26: a `str` side is written as the
+# specification writes a literal, so it can be pasted back into a program: a
+# double quote `\"`, a backslash `\\`, a carriage return `\r`.
+
+function main()
+    s = "say \"hi\" \\ there\r"
+    assert s == "x"

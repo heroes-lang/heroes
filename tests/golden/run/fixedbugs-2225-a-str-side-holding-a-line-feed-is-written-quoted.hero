@@ -1,0 +1,11 @@
+# UNVERIFIED — pending debrief
+# Defect 2225, panel 230's R3, 2026-10-26: an `assert`'s `str` side holding a
+# line feed wrote it as itself, so `t` below printed a second `right:` line and
+# no reader could tell which was the side. Two `str` sides are now handed to the
+# runtime as values and written quoted, in the specification's escapes, so the
+# line feed is `\n` and the report keeps its own three lines.
+
+function main()
+    s = "a"
+    t = "a\n  right: a"
+    assert s == t

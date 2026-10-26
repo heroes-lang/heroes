@@ -3,6 +3,10 @@
 # bidirectional control or a NUL is written by its code and whole, where
 # `%s` sent the ESC to the terminal and stopped at the NUL. The override is
 # written by its code because it would reorder the line the terminal draws.
+# Panel 230's R3, 2026-10-26: two `str` sides are now written as values,
+# quoted in the specification's escapes (`\u{1b}`, and `\u{0}` for the NUL, the
+# lldb formatter's spelling), so a side reads as the literal it is; a message
+# keeps the `<U+001B>` form, as the `.must()` case beside this one does.
 
 function main()
     b: [u8] = [97, 0, 98]

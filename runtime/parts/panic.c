@@ -69,13 +69,9 @@ _Noreturn void hero_panic_unmatched_case(int64_t index, HeroStr text) {
     hero_abort();
 }
 
-/* The same for a `match` on an integer or a string: the value, rendered as
- * `print` renders it. */
-_Noreturn void hero_panic_unmatched_value(HeroStr text) {
-    fflush(stdout);
-    fprintf(stderr, "panic: this match has no arm for %s\n", text.ptr ? text.ptr : "this value");
-    hero_abort();
-}
+/* The same for a `match` on an integer or a string, `hero_panic_unmatched_value`
+ * and `hero_panic_unmatched_str`, live in `parts/failure.c` since 2026-10-26,
+ * beside the printer that writes a program's value (panel 230's R3, defect 2226). */
 
 void hero_print_int(int64_t v) { printf("%lld", (long long)v); }
 /* See `hero_uint_to_str`: `u64` above 2^63 prints negative through the signed one. */

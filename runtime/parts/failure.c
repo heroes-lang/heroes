@@ -107,29 +107,44 @@ HeroFailure hero_failure_not_text(void) {
     return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
 }
 
-/* -- the one printer of a failure's line (panel 192's R7, defect 355) ---------
+/* -- the one printer of a failure's report (panel 192's R7, defect 355; panel 230's R3) --
  *
- * A failure's line holds the PROGRAM's texts, a `.must()`'s code and message
- * and an `assert`'s expression and sides, and it reaches a terminal. Two things
- * were wrong with writing them by `%s`, each measured by panel 192:
+ * A report holds three kinds of text, and each is written its own way:
  *
- * - **by length**: `%s`, and `%.*s` too, stop at a NUL, and a `str` may hold
- *   one (panel 192's R1), so a message holding `a`, NUL, `b` printed `a`;
- * - **by code**: a control character went to the terminal as itself, so a
- *   message holding ESC `[2J` cleared the screen of whoever read it.
+ * - **the runtime's own words**, `panic: `, `\n  left:  `, written as they are,
+ *   line feeds included, since they are the report's lines;
+ * - **a program's message**, a `.must()`'s code and message or an `assert`'s
+ *   source text: every character a line cannot show written by its code between
+ *   angle brackets, `<U+001B>`, the form the compiler's diagnostics write program
+ *   text in (`selfhost/shown_char.hero`, `visible`). **The line feed and the tab
+ *   included since panel 230's R3**: panel 192's R7 left both as themselves, and
+ *   a line feed is the one character that lets a program's text impersonate a
+ *   line of the report, a second `panic:` or a forged `right:` (defect 2225);
+ * - **a program's `str` value**, an `assert`'s side or an unmatched value of the
+ *   control arm: quoted, as the specification writes a literal, `\n` `\t` `\r`
+ *   `\\` `\"`, and `\u{1b}` for any other character a line cannot show, `\u{0}`
+ *   for a NUL (the lldb formatter's spelling, `editors/lldb/heroes_lldb.py`), at
+ *   most TEXT_BYTES of it, then ` ... N more bytes`, as that formatter cuts.
  *
- * So each piece is written by its length, and every character a line cannot
- * show is written by its code between angle brackets, `<U+001B>`, the form a
- * compiler's diagnostic writes it in (`selfhost/shown_char.hero`, `visible`):
- * a control character but the line feed and the tab, one of the twelve
- * bidirectional controls, which reorder the line a terminal draws, and U+2028
- * and U+2029. A `str` is well-formed UTF-8, so a sequence is read whole. The
- * line is built first and written in one `fwrite`, so it stays one write, as
- * the `fprintf` it replaces was. */
-static int64_t hero_failure_unshowable(const unsigned char *p, int64_t left, int64_t *width) {
+ * So a value can be pasted back into a program as a literal, a message reads as
+ * the compiler writes program text, and neither can pass for a line of the
+ * report. Each piece is read by its length, never to a NUL (panel 192's R1).
+ *
+ * **Written from a fixed buffer on the stack, never allocating** (panel 230's
+ * critic, finding 6): an index, an overflow or a division abort allocates
+ * nothing, and its report must not start to on its failing path, where an
+ * exhausted heap would otherwise put `out of memory` in place of the cause. A
+ * report longer than the buffer leaves in more than one write; a short one, in
+ * one, as the `fprintf` this replaced did. */
+
+/* The code of a character a line cannot show, or -1; `*width` its length in
+ * bytes. A control character (the line feed and the tab included), DEL, a C1
+ * control, one of the twelve bidirectional controls, U+2028 and U+2029. A `str` is
+ * well-formed UTF-8, so a sequence is read whole. */
+static int64_t hero_report_unshowable(const unsigned char *p, int64_t left, int64_t *width) {
     unsigned char b = p[0];
     *width = 1;
-    if (b < 0x80) return (b < 0x20 && b != '\n' && b != '\t') || b == 0x7f ? (int64_t)b : -1;
+    if (b < 0x80) return b < 0x20 || b == 0x7f ? (int64_t)b : -1;
     if (b == 0xc2 && left >= 2) {
         *width = 2;
         return p[1] >= 0x80 && p[1] < 0xa0 ? (int64_t)p[1] : -1;
@@ -150,51 +165,102 @@ static int64_t hero_failure_unshowable(const unsigned char *p, int64_t left, int
     return -1;
 }
 
-/* Writes the pieces into `line`, or only counts them where `line` is NULL. */
-static size_t hero_failure_shown(const HeroStr *pieces, int count, char *line) {
-    size_t at = 0;
-    for (int i = 0; i < count; i++) {
-        const unsigned char *p = (const unsigned char *)pieces[i].ptr;
-        int64_t k = 0;
-        while (k < pieces[i].len) {
-            int64_t width = 1;
-            int64_t code = hero_failure_unshowable(p + k, pieces[i].len - k, &width);
-            if (code >= 0) {
-                char name[16];
-                int n = snprintf(name, sizeof name, "<U+%04llX>", (unsigned long long)code);
-                if (line != NULL) memcpy(line + at, name, (size_t)n);
-                at += (size_t)n;
-            } else {
-                if (line != NULL) memcpy(line + at, p + k, (size_t)width);
-                at += (size_t)width;
-            }
-            k += width;
-        }
+#define HERO_REPORT_BUFFER 1024
+#define HERO_REPORT_TEXT_BYTES 1024
+
+typedef struct {
+    char bytes[HERO_REPORT_BUFFER];
+    size_t used;
+} HeroReport;
+
+static void hero_report_flush(HeroReport *r) {
+    if (r->used > 0) fwrite(r->bytes, 1, r->used, stderr);
+    r->used = 0;
+}
+
+static void hero_report_put(HeroReport *r, const char *p, size_t n) {
+    while (n > 0) {
+        if (r->used == HERO_REPORT_BUFFER) hero_report_flush(r);
+        size_t room = HERO_REPORT_BUFFER - r->used;
+        size_t take = n < room ? n : room;
+        memcpy(r->bytes + r->used, p, take);
+        r->used += take;
+        p += take;
+        n -= take;
     }
-    return at;
 }
 
-static void hero_failure_write(const HeroStr *pieces, int count) {
-    size_t total = hero_failure_shown(pieces, count, NULL);
-    char *line = hero_alloc(total + 1);
-    size_t wrote = hero_failure_shown(pieces, count, line);
-    fwrite(line, 1, wrote, stderr);
-    hero_release(line);
+/* The runtime's own words, a literal: `sizeof`, never a typed number. */
+#define HERO_REPORT_OWN(r, text) hero_report_put((r), (text), sizeof(text) - 1)
+
+/* A program's message: every character a line cannot show by its code. */
+static void hero_report_message(HeroReport *r, HeroStr s) {
+    const unsigned char *p = (const unsigned char *)s.ptr;
+    int64_t k = 0;
+    while (k < s.len) {
+        int64_t width = 1;
+        int64_t code = hero_report_unshowable(p + k, s.len - k, &width);
+        if (code >= 0) {
+            char name[16];
+            int n = snprintf(name, sizeof name, "<U+%04llX>", (unsigned long long)code);
+            hero_report_put(r, name, (size_t)n);
+        } else {
+            hero_report_put(r, (const char *)p + k, (size_t)width);
+        }
+        k += width;
+    }
 }
 
-/* A text of the runtime's own, a piece beside the program's. */
-#define HERO_FAILURE_TEXT(text) ((HeroStr){(text), (int64_t)(sizeof(text) - 1)})
+/* A program's `str` value, quoted in the specification's escapes and cut where
+ * the lldb formatter cuts, a character never split by the cut. */
+static void hero_report_value(HeroReport *r, HeroStr s) {
+    const unsigned char *p = (const unsigned char *)s.ptr;
+    HERO_REPORT_OWN(r, "\"");
+    int64_t k = 0;
+    while (k < s.len) {
+        int64_t width = 1;
+        int64_t code = hero_report_unshowable(p + k, s.len - k, &width);
+        if (k + width > HERO_REPORT_TEXT_BYTES) break;
+        if (code == '\n') {
+            HERO_REPORT_OWN(r, "\\n");
+        } else if (code == '\t') {
+            HERO_REPORT_OWN(r, "\\t");
+        } else if (code == '\r') {
+            HERO_REPORT_OWN(r, "\\r");
+        } else if (code >= 0) {
+            char name[16];
+            int n = snprintf(name, sizeof name, "\\u{%llx}", (unsigned long long)code);
+            hero_report_put(r, name, (size_t)n);
+        } else if (p[k] == '"') {
+            HERO_REPORT_OWN(r, "\\\"");
+        } else if (p[k] == '\\') {
+            HERO_REPORT_OWN(r, "\\\\");
+        } else {
+            hero_report_put(r, (const char *)p + k, (size_t)width);
+        }
+        k += width;
+    }
+    HERO_REPORT_OWN(r, "\"");
+    if (k < s.len) {
+        char more[48];
+        int n = snprintf(more, sizeof more, " ... %lld more bytes", (long long)(s.len - k));
+        hero_report_put(r, more, (size_t)n);
+    }
+}
 
 _Noreturn void hero_panic_must(HeroFailure f) {
-    /* Built by hand rather than through `hero_panic`: `code` and `msg` come
-     * from the program, so they go through the printer above, read as every
+    /* `code` and `msg` come from the program, so they are messages, read as every
      * reader reads a str (defect 462). */
     hero_str_require(f.code);
     hero_str_require(f.msg);
     fflush(stdout);
-    HeroStr pieces[5] = {HERO_FAILURE_TEXT("panic: .must() on an error: "), f.code,
-                         HERO_FAILURE_TEXT(": "), f.msg, HERO_FAILURE_TEXT("\n")};
-    hero_failure_write(pieces, 5);
+    HeroReport r = {.used = 0};
+    HERO_REPORT_OWN(&r, "panic: .must() on an error: ");
+    hero_report_message(&r, f.code);
+    HERO_REPORT_OWN(&r, ": ");
+    hero_report_message(&r, f.msg);
+    HERO_REPORT_OWN(&r, "\n");
+    hero_report_flush(&r);
     hero_abort();
 }
 
@@ -203,9 +269,9 @@ _Noreturn void hero_panic_must(HeroFailure f) {
  * "An `assert` failure shows the source expression and both sides." Both halves
  * matter and the second is the one a bare `assert failed` loses: `dist2(3, 4)
  * == 25` tells the reader what was claimed, and `26 != 25` tells them what
- * happened. Two entry points rather than optional arguments, because C has no
- * optional arguments and a NULL `HeroStr` is the one non-value every entry point
- * here rejects.
+ * happened. Separate entry points rather than optional arguments, because C has
+ * no optional arguments and a NULL `HeroStr` is the one non-value every entry
+ * point here rejects.
  *
  * It is a PANIC, not a return: a test that fails stops. `heroes test` runs each
  * test in its own process for exactly that reason, so one failure does not hide
@@ -213,18 +279,77 @@ _Noreturn void hero_panic_must(HeroFailure f) {
 _Noreturn void hero_panic_assert(HeroStr text) {
     hero_str_require(text);
     fflush(stdout);
-    HeroStr pieces[3] = {HERO_FAILURE_TEXT("assert failed: "), text, HERO_FAILURE_TEXT("\n")};
-    hero_failure_write(pieces, 3);
+    HeroReport r = {.used = 0};
+    HERO_REPORT_OWN(&r, "assert failed: ");
+    hero_report_message(&r, text);
+    HERO_REPORT_OWN(&r, "\n");
+    hero_report_flush(&r);
     hero_abort();
 }
 
+/* The sides as `print` renders them: a number or a `bool`, and, from a compiler
+ * older than panel 230's R3, a `str` side too, which is then written as a message
+ * and so still cannot forge a line. */
 _Noreturn void hero_panic_assert_sides(HeroStr text, HeroStr left, HeroStr right) {
     hero_str_require(text);
     hero_str_require(left);
     hero_str_require(right);
     fflush(stdout);
-    HeroStr pieces[7] = {HERO_FAILURE_TEXT("assert failed: "), text, HERO_FAILURE_TEXT("\n  left:  "),
-                         left, HERO_FAILURE_TEXT("\n  right: "), right, HERO_FAILURE_TEXT("\n")};
-    hero_failure_write(pieces, 7);
+    HeroReport r = {.used = 0};
+    HERO_REPORT_OWN(&r, "assert failed: ");
+    hero_report_message(&r, text);
+    HERO_REPORT_OWN(&r, "\n  left:  ");
+    hero_report_message(&r, left);
+    HERO_REPORT_OWN(&r, "\n  right: ");
+    hero_report_message(&r, right);
+    HERO_REPORT_OWN(&r, "\n");
+    hero_report_flush(&r);
+    hero_abort();
+}
+
+_Noreturn void hero_panic_assert_str_sides(HeroStr text, HeroStr left, HeroStr right) {
+    hero_str_require(text);
+    hero_str_require(left);
+    hero_str_require(right);
+    fflush(stdout);
+    HeroReport r = {.used = 0};
+    HERO_REPORT_OWN(&r, "assert failed: ");
+    hero_report_message(&r, text);
+    HERO_REPORT_OWN(&r, "\n  left:  ");
+    hero_report_value(&r, left);
+    HERO_REPORT_OWN(&r, "\n  right: ");
+    hero_report_value(&r, right);
+    HERO_REPORT_OWN(&r, "\n");
+    hero_report_flush(&r);
+    hero_abort();
+}
+
+/* -- the control arm's unmatched value (panel 226's R1; panel 230's R3, defect 2226)
+ *
+ * A `match` on an integer or a string that no arm took, in a program built with
+ * `--permissive`: the value rendered as `print` renders it. Moved here from
+ * `parts/panic.c` on 2026-10-26, where it wrote the value by `%s`: a value holding
+ * a line feed printed a line of its own, an ESC reached the terminal as itself,
+ * and a NUL stopped the text. An integer's digits are a message; a `str` is a
+ * value, quoted. */
+_Noreturn void hero_panic_unmatched_value(HeroStr text) {
+    hero_str_require(text);
+    fflush(stdout);
+    HeroReport r = {.used = 0};
+    HERO_REPORT_OWN(&r, "panic: this match has no arm for ");
+    hero_report_message(&r, text);
+    HERO_REPORT_OWN(&r, "\n");
+    hero_report_flush(&r);
+    hero_abort();
+}
+
+_Noreturn void hero_panic_unmatched_str(HeroStr text) {
+    hero_str_require(text);
+    fflush(stdout);
+    HeroReport r = {.used = 0};
+    HERO_REPORT_OWN(&r, "panic: this match has no arm for ");
+    hero_report_value(&r, text);
+    HERO_REPORT_OWN(&r, "\n");
+    hero_report_flush(&r);
     hero_abort();
 }

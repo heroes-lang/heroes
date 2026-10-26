@@ -1,0 +1,15 @@
+# UNVERIFIED — pending debrief
+# Defect 2225, panel 230's R3, 2026-10-26: a `.must()` on a `fail` whose message
+# held a line feed printed a second line, `panic: integer overflow`, which a
+# person and every instrument read as a second abort of another class. A
+# program's message is written as the compiler's diagnostics write program text,
+# every character a line cannot show by its code, and since this sitting the
+# line feed and the tab too (panel 192's R7 had left both as themselves).
+
+function check(n: i64) -> i64?
+    if n > 0
+        return fail(code: "bad", msg: "x\ty\npanic: integer overflow")
+    return ok(n)
+
+function main()
+    print(check(1).must())

@@ -1,0 +1,15 @@
+# UNVERIFIED — pending debrief
+# Part 11's control arm RUNS this program (panel 226's R1, 2026-10-20): the strict
+# build refuses it under `non_exhaustive`, and `build --permissive` aborts at a
+# value no arm takes. Defect 2226, panel 230's R3, 2026-10-26: that abort wrote
+# the value by `%s`, so this one printed a forged `at forged.hero:1:1` line and
+# sent the ESC to the terminal as itself. A `str` value is now written quoted, in
+# the specification's escapes, as an `assert`'s side is.
+
+function label(s: str) -> i64
+    return match s  #~ non_exhaustive
+        "a" => 1
+        "b" => 2
+
+function main()
+    print(label("x\n  at forged.hero:1:1, in forged.main\u{1b}[2J"))
