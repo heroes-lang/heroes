@@ -49,7 +49,10 @@ function designator(p: instances.Held, c: state.Checked, s: source.Source, decls
 
             if found.is_err()
                 return fail(code: "no_function", msg: "a Heroes function the program does not hold")
-            return ok(signature.instance_name(p.program.functions[found.must()], c, s, decls))
+
+            # A function of the library stands through its twin, whose type is
+            # the one the program wrote (panel 230's R1).
+            return ok(signature.as_value(p.program.functions[found.must()], c, s, decls))
         .extern_fn e  => return ok(source.span_text(s, decls[e.decl].name))
         .builtin_fn _ => return fail(code: "builtin", msg: "a built-in is expanded, never named")
         .indirect _   => return fail(code: "indirect", msg: "the address of an address")

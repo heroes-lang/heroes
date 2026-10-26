@@ -1,0 +1,20 @@
+# M-panic-location, panel 230's R1: a function of the library is handed its
+# caller's place as a last C parameter, so where it stands as a value it is
+# reached through a twin whose parameters are the ones the program wrote, and
+# which hands on the place of its own declaration. Each use below runs through
+# one of the two: a call, a value applied, a generic instance as a value.
+
+function apply(f: (function(from: i64, to: i64) -> [i64])) -> i64
+    return f(from: 0, to: 3).len()
+
+function double(n: i64) -> i64
+    return n * 2
+
+function over(xs: [i64], g: (function(xs: [i64], f: (function(i64) -> i64)) -> [i64])) -> i64
+    return g(xs: xs, f: double).len()
+
+function main()
+    print(range(from: 2, to: 5).len())
+    print(apply(f: range))
+    print(over(xs: [1, 2, 3, 4], g: map))
+    print(map(range(from: 1, to: 4), double)[2])

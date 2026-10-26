@@ -35,10 +35,47 @@ use module/paths
 use token
 
 # The four arguments, `"file", "function", line, column`, for the site at
-# `offset` inside `f`.
+# `offset` inside `f`; inside the library's own Heroes, the place its caller
+# handed it, which is the program's call into the library (`in_library`).
 function of(s: source.Source, f: containers.Function, offset: i64) -> str
+    if in_library(s, f)
+        return CALLER + "->path, " + CALLER + "->name, " + CALLER + "->line, " + CALLER + "->column"
+    return literals(s, f, offset: offset)
+
+# The four as literals, the site's own.
+function literals(s: source.Source, f: containers.Function, offset: i64) -> str
     at = source.locate(s, offset)
     return c_text.literal(file_of(s, offset: offset)) + ", " + c_text.literal(function_of(s, f)) + ", " + at.line.to_str() + ", " + at.col.to_str()
+
+# **The library names its caller's place** (panel 230's R1, the critic's finding
+# 11): an abort inside the library's own Heroes printed a line of `<heroes
+# library>`, true and useless, no reader can open it. So each function of the
+# library is handed its caller's place as a last C parameter, `hero_caller`, and
+# every place inside it is that one: a call from the program hands its site's
+# record, a call from the library hands its own `hero_caller` on, and a function
+# of the library used as a value is reached through a twin that hands the
+# place of its declaration, the one place it has (`emit/signature.hero`).
+# `#[track_caller]`'s shape, for the library alone and with no surface.
+constant CALLER: str
+    "hero_caller"
+
+# Whether `f` is a function of the library's own Heroes, a fact of the file that
+# holds it.
+function in_library(s: source.Source, f: containers.Function) -> bool
+    a_function: bool @= false
+
+    match f.kind
+        .function_kind                             => a_function @ true
+        .constant_kind | .extern_kind | .test_kind => a_function @ false
+
+    return a_function && source.is_library(s, f.span.start)
+
+# The place a call into the library hands over: the site's record from the
+# program, `hero_caller` from the library.
+function passed(s: source.Source, f: containers.Function) -> str
+    if in_library(s, f)
+        return CALLER
+    return "&" + HERE
 
 # **Kind 2's record** (panel 230's R1): a check the runtime makes on every call
 # is handed its place by a pointer to one record per site, `static const` in
@@ -56,7 +93,13 @@ function around(s: source.Source, f: containers.Function, offset: i64, statement
 # its counts: an extern call's block declares one whether or not a check of the
 # call reads it, and an unread static is `-Wunused-variable` on a correct
 # program, measured on the compiler's own build.
+#
+# Inside the library it is a copy of the record the caller handed, so every
+# `&hero_here` of a block reads the program's call; the copy lives as long as
+# the block, which holds every use of it.
 function declared(s: source.Source, f: containers.Function, offset: i64) -> str
+    if in_library(s, f)
+        return nodebug.MARK + "__attribute__((unused)) const HeroPlace " + HERE + " = *" + CALLER + ";"
     return nodebug.MARK + "__attribute__((unused)) static const HeroPlace " + HERE + " = {" + of(s, f, offset: offset) + "};"
 
 # The record's name inside its block.
@@ -159,6 +202,21 @@ test "a check the runtime makes is handed its site's record, declared in a block
     f = named(name: "main", kind: .function_kind, start: s.files[0].start)
     call = "t1 = hero_str_slice_at(t0, t2, t3, &hero_here);"
     assert around(s, f, offset: s.files[0].start + 20, statement: call) == "{ HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {\"main.hero\", \"main.main\", 2, 5}; " + call + " }"
+
+test "a function of the library hands on its caller's place, and a program's writes its own"
+    s = program("/home/u/proj/main.hero")
+    mine = named(name: "main", kind: .function_kind, start: s.files[0].start)
+    library = named(name: "exit", kind: .function_kind, start: s.files[2].start)
+    assert !in_library(s, mine)
+    assert in_library(s, library)
+    assert of(s, library, offset: s.files[2].start) == "hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column"
+    assert literals(s, library, offset: s.files[2].start) == "\"<heroes library>\", \"library.exit\", 1, 1"
+    assert passed(s, mine) == "&hero_here"
+    assert passed(s, library) == "hero_caller"
+
+    # A block inside the library reads the caller's record through a copy, so
+    # every `&hero_here` a check writes names the program's call.
+    assert declared(s, library, offset: s.files[2].start) == "HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller;"
 
 # No literal writes a NUL (`nul_in_string`), so the title is built from bytes, as
 # a program would have to build one.

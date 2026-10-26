@@ -1,0 +1,23 @@
+# M-panic-location, panel 230's R1, the library's caller place (the critic's
+# finding 11): an argument that is not UTF-8 stops `args()`, a function of the
+# library's own Heroes, and the report names the program's call into it, never a
+# line of `<heroes library>`, in words that name `args_checked()` rather than a
+# runtime function. A Heroes `str` cannot hold the bytes, so the program runs
+# itself with them through a header of its own and leaves with its child's
+# status; the child's report is the one checked.
+
+extern "place-an-argument-that-is-not-text-names-the-program-s-call.h"
+    function spawn_self_unreadable(program: cstr lent) -> i64
+
+extern "hero_os.h"
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+
+function main()
+    if args_checked().len() > 0
+        print(args().len())
+        return
+    status: i64 @= 0
+    marks: i64 @= 0
+    itself = hero_exe_path_shown(status: @status, marks: @marks)
+    code = spawn_self_unreadable(program: itself.cstr())
+    exit(code: to_u8(code).default(1))

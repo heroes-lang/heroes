@@ -20,6 +20,8 @@ use emit/mangle
 use emit/synth
 use emit/ctype
 use emit/writer
+use emit/nodebug
+use emit/stop_place
 use token
 use check/table
 use parse
@@ -71,24 +73,96 @@ function render_instance(c: state.Checked, s: source.Source, decls: [ast.Decl], 
 function signature(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
     name = instance_name(f, c, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)
+    params: [str] @= plain_params(f, c, names)
+
+    # A function of the library's own Heroes is handed its caller's place last
+    # (panel 230's R1, `emit/stop_place.hero`'s `CALLER`).
+    if stop_place.in_library(s, f)
+        params @ params.push("const HeroPlace *" + stop_place.CALLER)
+    return local_of(f) + result + " " + name + "(" + listed(params) + ")"
+
+function plain_params(f: containers.Function, c: state.Checked, names: ctype.Names) -> [str]
     params: [str] @= []
 
     for slot_id in f.params
         params @ params.push(one_param(f, c, names, slot_id: slot_id))
 
-    list: str @= "void"
+    return params
 
-    if params.len() > 0
-        list @ params.join(", ")
+function listed(params: [str]) -> str
+    if params.len() == 0
+        return "void"
+    return params.join(", ")
 
-    # An INSTANCE is TU-local (panel 093 R2): under one .c per module a
-    # copy is emitted static in every unit that uses it, and the fused
-    # unit defines the macro empty — one printer for both paths.
-    local: str @= ""
-
+# An INSTANCE is TU-local (panel 093 R2): under one .c per module a copy is
+# emitted static in every unit that uses it, and the fused unit defines the
+# macro empty — one printer for both paths.
+function local_of(f: containers.Function) -> str
     if f.instance.len() > 0
-        local @ "HERO_TU_LOCAL "
-    return local + result + " " + name + "(" + list + ")"
+        return "HERO_TU_LOCAL "
+    return ""
+
+# **A function of the library standing as a value** (`emit/func_ref.hero`) or
+# handed to C (`emit/callback_thunk.hero`) is reached through this twin, whose
+# parameters are the function's own, so its address has the function type the
+# program wrote; it hands on the place of the function's own declaration, the
+# one place a call through a value has (panel 230's R1). Written beside every
+# function of the library a unit defines and marked `unused`, an unused static
+# being a warning.
+function value_name(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    return "hero_value_" + instance_name(f, c, s, decls)
+
+# Whether `f` is handed its caller's place, the question a writer of its
+# prototype, its body or its address asks here.
+function takes_caller(s: source.Source, f: containers.Function) -> bool
+    return stop_place.in_library(s, f)
+
+# The name a function's address is taken by: its twin's for the library's.
+function as_value(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
+    if stop_place.in_library(s, f)
+        return value_name(f, c, s, decls)
+    return instance_name(f, c, s, decls)
+
+function value_header(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
+    result = ctype.c_result(names, c: c, ty: f.result)
+    return local_of(f) + "__attribute__((unused)) " + result + " " + value_name(f, c, s, decls) + "(" + listed(plain_params(f, c, names)) + ")"
+
+function value_prototype(@w: writer.Writer, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    writer.at_generated(@w)
+    writer.line(@w, text: value_header(f, c, names, s, decls) + ";")
+
+function value_twin(@w: writer.Writer, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    writer.at_generated(@w)
+    writer.line(@w, text: value_header(f, c, names, s, decls) + " {")
+    writer.line(
+        @w,
+        text: "    " + nodebug.MARK + "static const HeroPlace " + stop_place.HERE + " = {" + stop_place.literals(s, f, offset: f.span.start) + "};"
+    )
+    forwarded: [str] @= []
+
+    for slot_id in f.params
+        forwarded @ forwarded.push(argument_of(f, slot_id: slot_id))
+
+    call = instance_name(f, c, s, decls) + "(" + forwarded.push("&" + stop_place.HERE).join(", ") + ")"
+
+    if ctype.c_result(names, c: c, ty: f.result) == "void"
+        writer.line(@w, text: "    " + call + ";")
+    else
+        writer.line(@w, text: "    return " + call + ";")
+    writer.line(@w, text: "}")
+
+# A parameter as the twin hands it on: a `@` one is the pointer it arrived as.
+function argument_of(f: containers.Function, slot_id: i64) -> str
+    declared = f.slots[slot_id]
+    by_pointer: bool @= false
+
+    match declared.kind
+        .param_slot ps                               => by_pointer @ ps.mutable
+        .local_slot | .synthetic_slot | .return_slot => by_pointer @ false
+
+    if by_pointer
+        return mangle.out_param(index: slot_id, name: declared.name)
+    return mangle.slot(index: slot_id, name: declared.name)
 
 function one_param(f: containers.Function, c: state.Checked, names: ctype.Names, slot_id: i64) -> str
     declared = f.slots[slot_id]
@@ -155,6 +229,24 @@ test "the signature spells the pair rule, and an instance carries its hash"
     monod.instance @ [int_id]
     named = instance_name(monod, c, s, parsed.decls)
     assert named == "h_t_dist_" + mangle.instance(render_instance(c, s, parsed.decls, bound: [int_id]))
+
+    # A function of the library is handed its caller's place last, and its twin,
+    # the address a value takes, hands on its declaration's own (panel 230's R1).
+    ls = source.with_library(
+        name: "t.hero",
+        user: text,
+        library: "function dist(a: i64, @b: i64) -> i64\n    return a\n"
+    )
+    library: containers.Function @= f
+    library.span @ token.Span(start: ls.files[1].start, end: ls.files[1].start + 1)
+    assert takes_caller(ls, library)
+    assert !takes_caller(s, f)
+    assert signature(library, c, names, ls, parsed.decls) == "int64_t h_library_dist(int64_t h0_a, int64_t *ph1_b, const HeroPlace *hero_caller)"
+    assert as_value(library, c, ls, parsed.decls) == "hero_value_h_library_dist"
+    assert as_value(f, c, s, parsed.decls) == "h_t_dist"
+    twin: writer.Writer @= writer.new_writer("t")
+    value_twin(@twin, library, c, names, ls, parsed.decls)
+    assert writer.finish(twin) == "#line 2 \"t.c\"\n__attribute__((unused)) int64_t hero_value_h_library_dist(int64_t h0_a, int64_t *ph1_b) {\n    HERO_NODEBUG static const HeroPlace hero_here = {\"<heroes library>\", \"library.dist\", 1, 1};\n    return h_library_dist(h0_a, ph1_b, &hero_here);\n}\n"
 
     # A test block is named by index, never by title.
     tester: containers.Function @= f

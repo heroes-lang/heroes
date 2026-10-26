@@ -59,10 +59,12 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             c,
             s,
             decls,
+            f,
             callee: h.decl,
             instance: instance,
             assign: assign,
-            arguments: arguments
+            arguments: arguments,
+            site: site
         )
         .builtin_fn bt =>
             builtin_name = inventory.name_of(bt.at)

@@ -38,22 +38,35 @@ use ast
 use source
 use check/state
 use ir/instances
+use ir/containers
 use emit/signature
+use emit/stop_place
 use emit/writer
 use library_source
 use parse
 
 # `callee` is the declaration the call names and `instance` the type
 # arguments it names it at; `assign` is the target and its ` = `, or empty
-# where the result is discarded.
-function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: i64, instance: [i64], assign: str, arguments: [str])
+# where the result is discarded. `f` is the function the call stands in and
+# `site` where: a function of the library is handed the place of the program's
+# call into it, the site's record, or from the library its own caller's
+# (panel 230's R1, `emit/stop_place.hero`).
+function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, callee: i64, instance: [i64], assign: str, arguments: [str], site: i64)
     found = instances.function_at(p, decl: callee, instance: instance)
 
     if found.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* no instance for this call — compiler bug */")
         return
-    named = signature.instance_name(p.program.functions[found.must()], c, s, decls)
-    writer.line(@w, text: "    " + assign + named + "(" + arguments.join(", ") + ");")
+    called = p.program.functions[found.must()]
+    named = signature.instance_name(called, c, s, decls)
+
+    if !signature.takes_caller(s, called)
+        writer.line(@w, text: "    " + assign + named + "(" + arguments.join(", ") + ");")
+    else if stop_place.in_library(s, f)
+        writer.line(@w, text: "    " + assign + named + "(" + arguments.push(stop_place.passed(s, f)).join(", ") + ");")
+    else
+        call = assign + named + "(" + arguments.push(stop_place.passed(s, f)).join(", ") + ");"
+        writer.line(@w, text: "    " + stop_place.around(s, f, offset: site, statement: call))
     after(@w, s, decls, decl: callee)
 
 # The line after a call of declaration `decl`: where it is the library's own

@@ -75,7 +75,7 @@ function thunk_name(real: str) -> str
 function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
     if guarded_decls[f.decl].is_err()
         return
-    real = signature.instance_name(f, c, s, decls)
+    real = signature.as_value(f, c, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)
     forwarded: [str] @= []
 
@@ -121,7 +121,7 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
 # The thunk's signature: the function's own result and parameter list, spelled
 # by the same printer the function's signature uses, under the thunk's name.
 function header(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
-    real = signature.instance_name(f, c, s, decls)
+    real = signature.as_value(f, c, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)
     params: [str] @= []
 
@@ -167,6 +167,11 @@ function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked
         if !is_ordinary(f)
             continue
         signature.prototype(@w, f, c, names, s, decls)
+
+        # A function of the library is handed to C through its twin, whose
+        # parameters are the ones C passes (panel 230's R1).
+        if signature.takes_caller(s, f)
+            signature.value_prototype(@w, f, c, names, s, decls)
         writer.line(@w, text: header(f, c, names, s, decls) + ";")
 
     writer.line(@w, text: "__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {")
@@ -176,7 +181,7 @@ function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked
 
         if !is_ordinary(f)
             continue
-        real = signature.instance_name(f, c, s, decls)
+        real = signature.as_value(f, c, s, decls)
         writer.line(
             @w,
             text: "    if (f == (void (*)(void))" + real + ") return (void (*)(void))" + thunk_name(real) + ";"
