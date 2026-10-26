@@ -17,7 +17,7 @@ preamble and its items).
 | **Current milestone** | **M-panic-location**, row 72, **OPEN** since 2026-10-26 ([its page](docs/roadmap/milestones/M-panic-location.md)): a panic names the `.hero` file, line and function, a failed `assert` on a record shows both sides, and what a program that handles its own failure tells the shell (issue 1001), one sitting on the three, in one lane; none was open from M-rechecked-issues' close on 2026-10-25 until then |
 | **Next** | M-generated-programs, row 73: programs nobody wrote, a generator that composes valid Heroes and knows the answer before the compiler is asked |
 | **Last closed** | **M-rechecked-issues**, 2026-10-25 ([070](docs/records/journal/070-rechecked-issues.md)): every issue open at its start run again against the tree and given a dated comment, 15 of the 57 closed with the commit or the reason, 3 re-homed; the formatter's probe, which could not end (defect 2139), ends: the formatter asked a chain's every part again at every level above it, and asking each once, panel 229's R1, the seed it named was judged whole, 84,027 variants held; panel 228's hole in every `check --json` document, ratified, and panel 229's run split across processes, provisional · before it **M-thesis-harness**, 2026-10-24 ([069](docs/records/journal/069-thesis-harness.md)): metric 2 ran for the first time, on forty held-out tasks the author wrote and sealed; the primary read +0.0 points with no discordant pair, inconclusive and published so ([052](docs/measurements/052-the-first-held-out-run-the-primary-inconclusive-at-zero-points-with-no-discordant-pair-the-strict-arm-paying-at-turn-one-and-level-by-turn-three-and-no-model-writing-a-variant.md)) · before it **M-witnessed-seed** ([068](docs/records/journal/068-witnessed-seed.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **71** of 91 · **71** tags matching `m*`, the legacy `m0`-`m8` included; `m-rechecked-issues` placed 2026-10-25 over a clean list, no `blocking` or `systemic` defect, panel 229's ratification the one decision open ([070](docs/records/journal/070-rechecked-issues.md)) |
+| Milestones closed | **71** of 92 · **71** tags matching `m*`, the legacy `m0`-`m8` included; `m-rechecked-issues` placed 2026-10-25 over a clean list, no `blocking` or `systemic` defect, panel 229's ratification the one decision open ([070](docs/records/journal/070-rechecked-issues.md)) |
 | The compiler | **177,905** lines of Heroes in **684** modules (`find selfhost -name '*.hero'`) · the seed **271,387** lines of C, 27,000,911 bytes, refreshed by the release `v0.5.0` on 2026-10-25 (`63137e422`, its fixpoint over two generations) and before it unchanged from `m-witnessed-seed` at 263,383 lines and 26,240,524 bytes, in panel 219's s4 shape, refreshed only when the two-stage build goes red and at each release (M-bounded-seed's rhythm), the compiler built in two stages and stage 2 judging |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. On both, gcc builds the seed too, and the compiler it makes must emit the C the compiler clang makes emits (M-witnessed-seed). Windows is the one the author starts by hand |
 | The spec | **7854** on the vendored ranks and **10,297** on the reader's own (`heroes measure spec/heroes-spec.md`, 2026-10-24), against the ceiling below, the claim in the opening line giving 2 back that day; until then **7856** and **10,299** (2026-10-21), panel 227's built-ins sentence spending 13 and the consolidation block 251 of its 1,500, and before them **7846** and **10,286** (2026-10-18), and before them **7703** and **10,108** (2026-10-17), and before them **7655** and **10,048**, against a ceiling of **16384**, raised from 10240 by author decision on 2026-10-14 with a budget of 1,500 for the consolidation block (`heroes measure spec/heroes-spec.md`, 2026-10-13). Panel 210's landing in batch 21 spent the 20 above M-inferred-cell's 10,024: an `@` parameter nothing writes or ends refused, and `@_` refused; the claim in the opening line, by author instruction, spent 6 more on 2026-10-12, gave 2 back on 2026-10-13, when it named LLMs, and 2 more on 2026-10-24, when it became *a language for the age of agents* |
@@ -44,7 +44,7 @@ issue when it ends.
 ## The chain
 
 One table, one row per milestone, **closed first and scheduled after**: rows 1–71
-are done, in the order they closed, row 72 is open, and rows 73–91 are
+are done, in the order they closed, row 72 is open, and rows 73–92 are
 what is next, in the order they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -110,11 +110,15 @@ opened at 70 on 2026-10-20, opening no other row; then 1–69 done, 70 open
 and 71–91 until it closed on 2026-10-24, opening no other row and restating
 neither this sentence nor § Where we are's *Next*. **The OPENING of
 M-rechecked-issues on 2026-10-25 found it**, the table 91 long by a count over
-it, 70 rows `done` and 21 `scheduled` before it opened at 71. Then 1–70 done,
-71 open and 72–91 until it closed that day, opening no other row and restating
-§ Where we are but not this sentence; **the OPENING of M-panic-location on
-2026-10-26 found it**, the table 91 long by a count over it, 71 rows `done` and
-20 `scheduled` before it opened at 72. `warrant` is why a milestone exists: **v1** (the self-hosting
+it, 70 rows `done` and 21 `scheduled` before it opened at 71. Then 1–70 done, 71 open and 72–91
+until M-rechecked-issues closed on 2026-10-25, opening no row and restating § Where we are but not
+this sentence; **the OPENING of M-panic-location on 2026-10-26 found it** in its lane, the table 91
+long by a count over it, 71 rows `done` and 20 `scheduled` before it opened at 72; and **the ENTRY
+of row 82 the same day found it** on the trunk, still reading *row 71 is open*: M-standalone-compiler
+entered at 82 by the author's instruction, the ten scheduled rows after it each moved one down, and
+the table is 92 long by a count over it, 71 rows `done` and 21 `scheduled`. The two met when the
+lane merged the trunk, the same day: 1–71 done, 72 open and 73–92 next, the table 92 long, 71 rows
+`done`, one `**OPEN**` and 20 `scheduled`. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -204,16 +208,17 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 79 | **M-doc-generator** | scheduled | — | — | `heroes doc`, the one direction Part 6's literate-source row promises · scheduled, no warrant |
 | 80 | **M-compared-languages** | scheduled | — | — | the same tasks written by a model in Heroes, Go, Rust, C and Zig, scored on hidden tests, turns and silent failures, the prediction registered before the first run · scheduled, no warrant |
 | 81 | **M-deployable-binary** | scheduled | — | — | what the machine that RUNS a Heroes program needs, on the three platforms, and which `-O` a shipped artifact carries |
-| 82 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
-| 83 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
-| 84 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
-| 85 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
-| 86 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
-| 87 | **M-launch-posts** | scheduled | — | — | the first posts, each with the numbers its command produced, after the first hour a stranger spends was tried · scheduled, no warrant |
-| 88 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
-| 89 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
-| 90 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
-| 91 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
+| 82 | **M-standalone-compiler** | scheduled | — | — | `heroes` needing nothing else installed: a C compiler and a linker inside it, and what each platform's C library needs beside it · scheduled, no warrant |
+| 83 | **M-install-channels** | scheduled | — | — | a Homebrew tap, winget, a Nix flake, a Docker image, all built from the seed and pinned to a `v*` release tag; the version scheme itself was decided ahead, 2026-09-07 |
+| 84 | **M-online-compiler** | scheduled | — | — | the compiler reached without installing anything: the site's visitor writes Heroes and gets its answer · scheduled, no warrant |
+| 85 | **M-lsp-server** | scheduled | — | — | `heroes lsp` |
+| 86 | **M-vscode-extension** | scheduled | — | — | the extension, complete |
+| 87 | **M-publication-gate** | scheduled | — | — | the last gate before anything goes outward · CLAUDE.md §14 |
+| 88 | **M-launch-posts** | scheduled | — | — | the first posts, each with the numbers its command produced, after the first hour a stranger spends was tried · scheduled, no warrant |
+| 89 | **M-microcontroller-verdict** | scheduled | — | — | the ruling on a Heroes program running on a microcontroller under an RTOS, RISC-V first; the two facts a 32-bit build refuses today are its brief · **§1.12**, Part 2 |
+| 90 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
+| 91 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
+| 92 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**

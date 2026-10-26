@@ -43,3 +43,8 @@ between. One channel joins the four: an agent's, a plugin for Claude Code
 holding a skill with the specification and a hook that runs
 `heroes check --brief` after each write. The site already serves
 `site/src/llms.txt`.
+
+**2026-10-26.** M-standalone-compiler entered the chain at row 82, immediately
+before this row, which is 83 since. Its delivery would make *a binary on its
+own would be a decoy* above stop being true, so the shape of the channels is
+read again when that row closes.
