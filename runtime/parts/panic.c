@@ -42,6 +42,13 @@ _Noreturn void hero_panic(const char *msg) {
     hero_abort();
 }
 _Noreturn void hero_panic_overflow(void) { hero_panic("integer overflow"); }
+
+/* A check the runtime makes, stopping the program (panel 230's R1, kind 2):
+ * `hero_panic`'s line, and beneath it the place `where` names, the program's
+ * site; NULL names none and is `hero_panic` itself, every old entry point's way
+ * in. Written in `parts/place.c`, beside the report's buffer, and declared here
+ * so that every part included before that one reaches it. */
+_Noreturn static void hero_panic_where(const char *msg, const HeroPlace *where);
 _Noreturn void hero_unreachable(void) {
     hero_panic("entered unreachable code — this is a compiler bug, please report it");
 }

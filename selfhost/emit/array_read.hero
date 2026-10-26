@@ -60,13 +60,14 @@ function length(value: str) -> str
 # builds the place, never read back off the text. Where it is not, the
 # runtime's call stays: the one spelling both walks had before, now written
 # once (`emit/places.hero`, `emit/element_store.hero`). Over a pure base the
-# failing branch names its place, as a read's does; the runtime's call names
-# none, its check being inside it, so it is the sitting's kind 2 and takes its
-# place when that kind does (panel 230's R1; 4 such sites in the seed, read
-# 2026-10-26).
+# failing branch names its place, as a read's does. The runtime's call checks
+# inside itself, the sitting's kind 2, and stands inside an expression, which
+# can declare no record, so it is handed the four arguments a failing branch
+# takes, `hero_array_at_mut_at` (panel 230's R1; 4 such sites in the seed,
+# read 2026-10-26).
 function place(spelling: str, base: str, index: str, pure: bool, where: str) -> str
     if !pure
-        return "(*(" + spelling + " *)hero_array_at_mut(" + base + ", " + index + "))"
+        return "(*(" + spelling + " *)hero_array_at_mut_at(" + base + ", " + index + ", " + where + "))"
     checked = "(" + base + " == NULL || " + index + " < 0 || " + index + " >= " + base + "->len)"
     sized = "(" + base + "->elem->size != sizeof(" + spelling + ") ? hero_unreachable() : (void)0)"
     return "(*((void)(" + checked + " ? hero_panic_index_at(" + base + ", " + index + ", " + where + ") : (void)0), (void)" + sized + ", (" + spelling + " *)(void *)(" + base + " + 1) + " + index + "))"
@@ -83,4 +84,4 @@ test "an element and a length are read in place, every failing read handed to th
 test "an element's place is read in place over a call-free base, and by the runtime's call otherwise (defect 491)"
     assert place(spelling: "int64_t", base: "h0_xs", index: "t1", pure: true, where: "P") == "(*((void)((h0_xs == NULL || t1 < 0 || t1 >= h0_xs->len) ? hero_panic_index_at(h0_xs, t1, P) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t1))"
     assert place(spelling: "h_t_Row", base: "(*ph0_s).f_rows", index: "t2", pure: true, where: "P") == "(*((void)(((*ph0_s).f_rows == NULL || t2 < 0 || t2 >= (*ph0_s).f_rows->len) ? hero_panic_index_at((*ph0_s).f_rows, t2, P) : (void)0), (void)((*ph0_s).f_rows->elem->size != sizeof(h_t_Row) ? hero_unreachable() : (void)0), (h_t_Row *)(void *)((*ph0_s).f_rows + 1) + t2))"
-    assert place(spelling: "h_t_Row", base: "h0_xs", index: "t3", pure: false, where: "P") == "(*(h_t_Row *)hero_array_at_mut(h0_xs, t3))"
+    assert place(spelling: "h_t_Row", base: "h0_xs", index: "t3", pure: false, where: "P") == "(*(h_t_Row *)hero_array_at_mut_at(h0_xs, t3, P))"

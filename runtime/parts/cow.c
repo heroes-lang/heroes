@@ -64,6 +64,16 @@ void *hero_array_at_mut(HeroArrayHeader *a, int64_t index) {
     return hero_array_data(a) + (size_t)index * a->elem->size;
 }
 
+/* The same with the place, its four as a failing branch takes them: the
+ * program's C calls it inside an expression, which can declare no record
+ * (panel 230's R1, `emit/array_read.hero`). */
+void *hero_array_at_mut_at(HeroArrayHeader *a, int64_t index, const char *file, const char *function, int64_t line,
+                           int64_t column) {
+    hero_array_require(a);
+    if (index < 0 || index >= a->len) hero_panic_at("array index out of range", file, function, line, column);
+    return hero_array_data(a) + (size_t)index * a->elem->size;
+}
+
 /* The place store (heroes_runtime.h carries the contract; panels 037/088).
  * Growth doubles from the existing capacity — Rust, libc++ and Swift double;
  * folly's 1.5 exists to reuse freed memory, which a refcounted block regains

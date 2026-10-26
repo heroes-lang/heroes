@@ -341,9 +341,9 @@ bool hero_array_eq(const HeroArrayHeader *a, const HeroArrayHeader *b) {
  * to whatever comes next, and when that next thing is a length passed to C —
  * §1.11's whole point — the mismatch is silent. Go, Rust's indexing form and Zig
  * all abort; Python clamps, and nobody has ever documented what that cost. */
-HeroArrayHeader *hero_array_slice(const HeroArrayHeader *a, int64_t from, int64_t to) {
+HeroArrayHeader *hero_array_slice_at(const HeroArrayHeader *a, int64_t from, int64_t to, const HeroPlace *where) {
     hero_array_require(a);
-    if (from < 0 || to < from || to > a->len) hero_panic("array slice out of range");
+    if (from < 0 || to < from || to > a->len) hero_panic_where("array slice out of range", where);
     int64_t n = to - from;
     HeroArrayHeader *b = hero_array_new(a->elem, n);
     const unsigned char *src = hero_array_data_const(a);
@@ -354,6 +354,12 @@ HeroArrayHeader *hero_array_slice(const HeroArrayHeader *a, int64_t from, int64_
     }
     b->len = n;
     return b;
+}
+
+/* The body is `hero_array_slice_at`'s, which names the program's place (panel
+ * 230's R1, kind 2); NULL names none. */
+HeroArrayHeader *hero_array_slice(const HeroArrayHeader *a, int64_t from, int64_t to) {
+    return hero_array_slice_at(a, from, to, NULL);
 }
 
 /* One descriptor for every `[T]`: these four reach the element type through the

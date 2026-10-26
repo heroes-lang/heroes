@@ -1,0 +1,9 @@
+# M-panic-location, panel 230's R1, kind 2: a sort that meets a nan stops the
+# program at the place where `sort(ys)` begins. The nan is looked for before the
+# sort, with the place; the sort's own comparison refuses the same arrays.
+
+function main()
+    zero = 0.0
+    print(sort([2.0, 1.0])[0])
+    ys = [2.0, zero / zero]
+    print(sort(ys)[0])

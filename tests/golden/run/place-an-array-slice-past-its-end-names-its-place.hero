@@ -1,0 +1,7 @@
+# M-panic-location, panel 230's R1, kind 2: a slice past an array's end is
+# refused inside the runtime, at the place where `xs.slice(...)` begins.
+
+function main()
+    xs = [1, 2, 3]
+    print(xs.slice(from: 0, to: 2).len())
+    print(xs.slice(from: 2, to: 5).len())

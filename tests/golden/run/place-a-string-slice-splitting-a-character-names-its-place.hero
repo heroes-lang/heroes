@@ -1,0 +1,7 @@
+# M-panic-location, panel 230's R1, kind 2: a slice that splits a character is
+# refused inside the runtime, at the place where `word.slice(...)` begins.
+
+function main()
+    word = "caffè"
+    print(word.slice(from: 0, to: 4))
+    print(word.slice(from: 0, to: 5))

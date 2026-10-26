@@ -37,6 +37,7 @@ use emit/callback_thunk
 use emit/printing
 use emit/lend_type
 use emit/nodebug
+use emit/stop_place
 use token
 use parse
 use resolve
@@ -122,6 +123,20 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
                         written @ written.push(text)
                     at @ at + 1
 
+                # A check the runtime makes inside the call is handed the
+                # site's record, through the entry point's `_at` twin (panel
+                # 230's R1, kind 2).
+                if builtins.placed(entry)
+                    at_site = builtins.called(
+                        callee: entry + "_at",
+                        arguments: written.push("&" + stop_place.HERE),
+                        wanted: !target.is_err()
+                    )
+                    writer.line(
+                        @w,
+                        text: "    " + stop_place.around(s, f, offset: site, statement: assign + at_site + ";")
+                    )
+                    return
                 called_as = builtins.called(callee: entry, arguments: written, wanted: !target.is_err())
                 writer.line(@w, text: "    " + assign + called_as + ";")
                 return

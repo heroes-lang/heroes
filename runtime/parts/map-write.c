@@ -103,7 +103,7 @@ static HeroMapHeader *hero_map_grown(HeroMapHeader *m) {
     const unsigned char *states = hero_map_states_const(m);
     for (int64_t i = 0; i < m->cap; i++) {
         if (states[i] == 0) continue;
-        hero_map_put(b, hero_map_key_at_const(m, i), hero_map_val_at_const(m, i));
+        hero_map_put_at(b, hero_map_key_at_const(m, i), hero_map_val_at_const(m, i), NULL);
     }
     return b;
 }
@@ -131,20 +131,20 @@ static void hero_map_unshare(HeroMapHeader **slot) {
     const unsigned char *states = hero_map_states_const(m);
     for (int64_t i = 0; i < m->cap; i++) {
         if (states[i] == 0) continue;
-        hero_map_put(copy, hero_map_key_at_const(m, i), hero_map_val_at_const(m, i));
+        hero_map_put_at(copy, hero_map_key_at_const(m, i), hero_map_val_at_const(m, i), NULL);
     }
     hero_map_decref(m);
     *slot = copy;
 }
 
-void hero_map_set(HeroMapHeader **slot, const void *key, const void *value) {
+void hero_map_set_at(HeroMapHeader **slot, const void *key, const void *value, const HeroPlace *where) {
     if (slot == NULL) hero_panic("store into no map — a compiler bug");
     if (value == NULL) hero_panic("store of no value — a compiler bug");
     hero_map_require(*slot);
     hero_map_unshare(slot);
     HeroMapHeader *m = *slot;
     unsigned char *states = hero_map_states(m);
-    int64_t at = hero_map_slot_of(m, key);
+    int64_t at = hero_map_slot_where(m, key, where);
     for (int64_t probe = 0; probe < m->cap; probe++) {
         int64_t i = (at + probe) & (m->cap - 1);
         if (states[i] == 0) {
@@ -155,7 +155,7 @@ void hero_map_set(HeroMapHeader **slot, const void *key, const void *value) {
                 *slot = hero_map_grown(m);
                 /* `m` is still alive here, so `key` and `value` are still
                  * readable even if they point into it. Released after. */
-                hero_map_set(slot, key, value);
+                hero_map_set_at(slot, key, value, where);
                 hero_map_decref(m);
                 return;
             }
@@ -182,3 +182,7 @@ void hero_map_set(HeroMapHeader **slot, const void *key, const void *value) {
     }
     hero_panic("map is full — this is a compiler bug, please report it");
 }
+
+/* `m[k] @ v` from a caller that names no place; the body is `hero_map_set_at`'s,
+ * whose record a key not equal to itself stops at (panel 230's R1, kind 2). */
+void hero_map_set(HeroMapHeader **slot, const void *key, const void *value) { hero_map_set_at(slot, key, value, NULL); }

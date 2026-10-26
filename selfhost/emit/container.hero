@@ -36,6 +36,7 @@ use emit/descriptors
 use emit/storageless
 use emit/array_read
 use emit/nodebug
+use emit/stop_place
 use parse
 use resolve
 use checker
@@ -114,8 +115,10 @@ function read_element(c: state.Checked, s: source.Source, decls: [ast.Decl], nam
     )
 
 # t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 2); plus one put per
-# pair — the arguments alternate key, value, both in by address.
-function build_map(c: state.Checked, names: ctype.Names, result: i64, arguments: [str], into: str) -> [str]?
+# pair — the arguments alternate key, value, both in by address. A key not
+# equal to itself, a nan, stops the program at the literal's place (panel
+# 230's R1, kind 2): the puts share the site's record, in one block.
+function build_map(c: state.Checked, names: ctype.Names, s: source.Source, f: containers.Function, result: i64, arguments: [str], into: str, site: i64) -> [str]?
     key: i64 @= 0 - 1
     value_ty: i64 @= 0 - 1
 
@@ -139,14 +142,21 @@ function build_map(c: state.Checked, names: ctype.Names, result: i64, arguments:
         into + " = hero_map_new(" + key_desc.must() + ", " + value_desc.must() + ", " + pairs.to_str() + ");"
     ]
     walk: i64 @= 0
+    puts: [str] @= []
 
     while walk + 1 < arguments.len()
-        lines @ lines.push("hero_map_put(" + into + ", &" + arguments[walk] + ", &" + arguments[walk + 1] + ");")
+        puts @ puts.push(
+            "hero_map_put_at(" + into + ", &" + arguments[walk] + ", &" + arguments[walk + 1] + ", &" + stop_place.HERE + ");"
+        )
         walk @ walk + 2
 
+    if puts.len() > 0
+        lines @ lines.push(stop_place.around(s, f, offset: site, statement: puts.join(" ")))
     return ok(lines)
 
-# m[k], which is NOT xs[i]: it yields a V? and cannot abort. The
+# m[k], which is NOT xs[i]: it yields a V?, and a key that is missing is
+# its `err`, never an abort; a key not equal to itself, a nan, stops the
+# program, at `site` since panel 230's R1 (kind 2, the site's record). The
 # runtime hands back the value's address or NULL — it cannot build the
 # option, that struct is generated per payload type — so the wrapping
 # is here, and the found value is COPIED through its descriptor: the
@@ -162,7 +172,7 @@ function build_map(c: state.Checked, names: ctype.Names, result: i64, arguments:
 # name. This was the one such site in the emitter, 132 in the seed and 83 in
 # the blessed corpus at `ee547b62`; `tests/harness/suite_wholes.hero` pins
 # zero.
-function map_get(c: state.Checked, names: ctype.Names, f: containers.Function, map_value: i64, key: i64, result: i64, into: str) -> [str]?
+function map_get(c: state.Checked, names: ctype.Names, s: source.Source, f: containers.Function, map_value: i64, key: i64, result: i64, into: str, site: i64) -> [str]?
     value_ty: i64 @= 0 - 1
 
     match table.get(c.types, containers.value_type(f, map_value))
@@ -174,9 +184,9 @@ function map_get(c: state.Checked, names: ctype.Names, f: containers.Function, m
     if value_ty < 0
         return fail(code: "none", msg: "not a map")
     option = ctype.option_of(names, ty: result)
-    lines: [str] @= ["{"]
+    lines: [str] @= ["{", "  " + stop_place.declared(s, f, offset: site)]
     lines @ lines.push(
-        "  " + nodebug.MARK + "const void *found = hero_map_find(" + mangle.value(map_value) + ", &" + mangle.value(key) + ");"
+        "  " + nodebug.MARK + "const void *found = hero_map_find_at(" + mangle.value(map_value) + ", &" + mangle.value(key) + ", &" + stop_place.HERE + ");"
     )
     lines @ lines.push("  if (found == NULL) {")
     lines @ lines.push("    " + into + " = (" + option + "){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};")

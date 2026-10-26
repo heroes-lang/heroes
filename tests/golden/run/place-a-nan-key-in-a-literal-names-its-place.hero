@@ -1,0 +1,12 @@
+# M-panic-location, panel 230's R1, kind 2: a map literal holding a key not equal
+# to itself, a nan, stops the program at the place where the literal begins. A
+# float key is refused where it is written (`float_map_key`); through a type
+# parameter it cannot be, and the runtime is what stops it.
+
+function single<K>(k: K) -> {K: i64}
+    return {k: 1}
+
+function main()
+    zero = 0.0
+    print(single(k: 1.0).len())
+    print(single(k: zero / zero).len())

@@ -88,6 +88,13 @@ _Noreturn void hero_panic_overflow_at(const char *file, const char *function, in
     hero_panic_at("integer overflow", file, function, line, column);
 }
 
+/* Kind 2's funnel, declared in `parts/panic.c`: the record's four, or, for an
+ * old entry point's NULL, `hero_panic` as it always was. */
+_Noreturn static void hero_panic_where(const char *msg, const HeroPlace *where) {
+    if (where == NULL) hero_panic(msg);
+    hero_panic_at(msg, where->path, where->name, where->line, where->column);
+}
+
 /* The failing branch of an array's element read or written in the program's C
  * (`emit/array_read.hero`, `emit/element_store.hero`). NULL or a released block
  * is the compiler's own mistake, and `hero_array_require` says so in the words it

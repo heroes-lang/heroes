@@ -29,6 +29,7 @@
 use source
 use ir/containers
 use emit/c_text
+use emit/nodebug
 use module/names as module_names
 use module/paths
 use token
@@ -38,6 +39,25 @@ use token
 function of(s: source.Source, f: containers.Function, offset: i64) -> str
     at = source.locate(s, offset)
     return c_text.literal(file_of(s, offset: offset)) + ", " + c_text.literal(function_of(s, f)) + ", " + at.line.to_str() + ", " + at.col.to_str()
+
+# **Kind 2's record** (panel 230's R1): a check the runtime makes on every call
+# is handed its place by a pointer to one record per site, `static const` in
+# the program's C, so the path that does not abort pays one argument and the
+# four are read only where the check fails. `statement` is the call, which
+# takes `&hero_here`; the block keeps the name the site's own, and the record
+# is kept from the debugger as every name the emitter invents is (panel 213's
+# R1). Where the call stands inside an expression, which can declare no
+# record, the call takes `of`'s four arguments instead.
+function around(s: source.Source, f: containers.Function, offset: i64, statement: str) -> str
+    return "{ " + declared(s, f, offset: offset) + " " + statement + " }"
+
+# The record's declaration alone, for a block the caller writes itself.
+function declared(s: source.Source, f: containers.Function, offset: i64) -> str
+    return nodebug.MARK + "static const HeroPlace " + HERE + " = {" + of(s, f, offset: offset) + "};"
+
+# The record's name inside its block.
+constant HERE: str
+    "hero_here"
 
 # The file that holds `offset`, as the program's modules name it.
 function file_of(s: source.Source, offset: i64) -> str
@@ -129,6 +149,12 @@ test "the four arguments are the file, the function, the line and the column, ea
 
     # `print` stands at the second line's fifth column.
     assert of(s, f, offset: s.files[0].start + 20) == "\"main.hero\", \"main.main\", 2, 5"
+
+test "a check the runtime makes is handed its site's record, declared in a block of its own"
+    s = program("/home/u/proj/main.hero")
+    f = named(name: "main", kind: .function_kind, start: s.files[0].start)
+    call = "t1 = hero_str_slice_at(t0, t2, t3, &hero_here);"
+    assert around(s, f, offset: s.files[0].start + 20, statement: call) == "{ HERO_NODEBUG static const HeroPlace hero_here = {\"main.hero\", \"main.main\", 2, 5}; " + call + " }"
 
 # No literal writes a NUL (`nul_in_string`), so the title is built from bytes, as
 # a program would have to build one.

@@ -266,50 +266,30 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 access.string_byte(@w, s, f, base: ix.base, index: ix.at, target: target, site: site)
             else
                 access.element(@w, c, s, decls, names, f, base: ix.base, index: ix.at, target: target, site: site)
-        .construct con =>
-            match con.shape
-                .record_shape | .case_shape => construct.record_or_case(
-                    @w,
-                    c,
-                    names,
-                    s,
-                    decls,
-                    f,
-                    ty: inst.ty,
-                    shape: con.shape,
-                    run: con.arguments,
-                    target: target,
-                    span: inst.span
-                )
-                .array_shape => construct.array(@w, c, names, f, ty: inst.ty, run: con.arguments, target: target)
-                .map_shape => construct.map_literal(
-                    @w,
-                    c,
-                    names,
-                    f,
-                    ty: inst.ty,
-                    run: con.arguments,
-                    target: target
-                )
-                .ok_shape | .fail_shape | .err_shape => construct.option(
-                    @w,
-                    names,
-                    f,
-                    ty: inst.ty,
-                    shape: con.shape,
-                    run: con.arguments,
-                    target: target
-                )
+        .construct con => construct.emit(
+            @w,
+            c,
+            names,
+            s,
+            decls,
+            f,
+            inst: inst,
+            shape: con.shape,
+            run: con.arguments,
+            target: target
+        )
         .map_get mg =>
             if !target.is_err()
                 lines = container.map_get(
                     c,
                     names,
+                    s,
                     f,
                     map_value: mg.map,
                     key: mg.key,
                     result: inst.ty,
-                    into: target.must()
+                    into: target.must(),
+                    site: site
                 )
 
                 if lines.is_err()

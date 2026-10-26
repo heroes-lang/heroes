@@ -1,0 +1,8 @@
+# M-panic-location, panel 230's R1, kind 2: a slice past a string's end is
+# refused inside the runtime, which is handed the site's record, so the report
+# names where `word.slice(...)` begins.
+
+function main()
+    word = "abc"
+    print(word.slice(from: 1, to: 3))
+    print(word.slice(from: 1, to: 9))

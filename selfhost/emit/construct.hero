@@ -32,6 +32,48 @@ use resolve
 use checker
 
 # Every argument as a C name. An @ place arrives by address (§4.8).
+# The construct op as C, by the shape it builds: a record or a case, an array,
+# a map, an option. It stood in `emit/inst.hero` until 2026-10-26, when that
+# dispatcher reached its decided 350 lines as the map's literal took the site
+# its key's check names (panel 230's R1), and the shape is this module's
+# question.
+function emit(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, inst: ir.Inst, shape: ir.Shape, run: ir.Run, target: str?)
+    match shape
+        .record_shape | .case_shape => record_or_case(
+            @w,
+            c,
+            names,
+            s,
+            decls,
+            f,
+            ty: inst.ty,
+            shape: shape,
+            run: run,
+            target: target,
+            span: inst.span
+        )
+        .array_shape => array(@w, c, names, f, ty: inst.ty, run: run, target: target)
+        .map_shape => map_literal(
+            @w,
+            c,
+            names,
+            s,
+            f,
+            ty: inst.ty,
+            run: run,
+            target: target,
+            site: inst.span.start
+        )
+        .ok_shape | .fail_shape | .err_shape => option(
+            @w,
+            names,
+            f,
+            ty: inst.ty,
+            shape: shape,
+            run: run,
+            target: target
+        )
+
 function argument_names(f: containers.Function, run: ir.Run) -> [str]
     out: [str] @= []
 
@@ -147,11 +189,21 @@ function array(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: conta
     for line in lines.must()
         writer.line(@w, text: "    " + line)
 
-# A map literal, for the same reason: one statement per entry.
-function map_literal(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, ty: i64, run: ir.Run, target: str?)
+# A map literal, for the same reason: one statement per entry. `site` is the
+# literal's, the place a key not equal to itself names (panel 230's R1).
+function map_literal(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, f: containers.Function, ty: i64, run: ir.Run, target: str?, site: i64)
     if target.is_err()
         return
-    lines = container.build_map(c, names, result: ty, arguments: argument_names(f, run: run), into: target.must())
+    lines = container.build_map(
+        c,
+        names,
+        s,
+        f,
+        result: ty,
+        arguments: argument_names(f, run: run),
+        into: target.must(),
+        site: site
+    )
 
     if lines.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* not a map */")

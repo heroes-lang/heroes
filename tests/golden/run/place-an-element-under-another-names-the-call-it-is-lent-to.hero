@@ -1,0 +1,14 @@
+# M-panic-location, panel 230's R1: an element lent by `@` whose array is itself
+# an element, past its end, names the call it is lent to. The second step's
+# array is reached through a call, so its check stands inside the runtime, and
+# inside an expression, where the four are handed as arguments.
+
+function bump(@x: i64, by: i64)
+    x @ x + by
+
+function main()
+    g: [[i64]] @= [[1, 2], [3]]
+    bump(x: @g[0][1], by: 10)
+    print(g[0][1])
+    bump(x: @g[1][1], by: 10)
+    print("unreached")

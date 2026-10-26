@@ -248,12 +248,12 @@ void *hero_slot_escape(void *slot) { return slot; }
  * subtraction that went negative rather than here. Go's `strings.Repeat` takes a
  * signed count and oh-my-posh #4135 is the shipped crash that follows from it —
  * from a renderer's padding subtraction, which is what `repeat(" ", col)` is. */
-HeroStr hero_str_repeat(HeroStr s, uint64_t n) {
+HeroStr hero_str_repeat_at(HeroStr s, uint64_t n, const HeroPlace *where) {
     hero_str_require(s);
     /* Either side empty is the empty string, and asking first is what makes the
      * division below safe as well as cheap. */
     if (n == 0 || s.len == 0) return hero_str_empty();
-    if (n > (uint64_t)(INT64_MAX / s.len)) hero_panic("string length overflow");
+    if (n > (uint64_t)(INT64_MAX / s.len)) hero_panic_where("string length overflow", where);
     int64_t len = s.len * (int64_t)n;
     HeroStr r = hero_str_alloc(len);
     char *w = (char *)(void *)(uintptr_t)r.ptr;
@@ -261,6 +261,11 @@ HeroStr hero_str_repeat(HeroStr s, uint64_t n) {
     if (hero_str_holds_nul(s)) hero_str_mark_nul(r);
     return r;
 }
+
+/* The count is the program's, so its refusal is the program's own and names its
+ * place (panel 230's R1, kind 2), the body being `hero_str_repeat_at`'s; this
+ * one names none. */
+HeroStr hero_str_repeat(HeroStr s, uint64_t n) { return hero_str_repeat_at(s, n, NULL); }
 
 HeroStr hero_str_concat(HeroStr a, HeroStr b) {
     hero_str_require(a);
@@ -320,11 +325,15 @@ static bool hero_str_boundary(HeroStr s, int64_t at) {
  * points at the cause one line earlier, and `chars` stays total over whatever
  * bytes exist (panel 027 R4). `s[i]` remains the byte-level escape hatch: a
  * program that means to walk bytes says so, and says it per byte. */
-HeroStr hero_str_slice(HeroStr s, int64_t from, int64_t to) {
+/* The body is the `_at` twin's, the place its two refusals name last (panel
+ * 230's R1, kind 2): the program's C hands it the site's record, and
+ * `hero_str_slice` below NULL, which names none. The body stands in the twin so
+ * that a program's call pays one argument and no second call. */
+HeroStr hero_str_slice_at(HeroStr s, int64_t from, int64_t to, const HeroPlace *where) {
     hero_str_require(s);
-    if (from < 0 || to < from || to > s.len) hero_panic("string slice out of range");
+    if (from < 0 || to < from || to > s.len) hero_panic_where("string slice out of range", where);
     if (!hero_str_boundary(s, from) || !hero_str_boundary(s, to)) {
-        hero_panic("string slice splits a character");
+        hero_panic_where("string slice splits a character", where);
     }
     if (to == from) return hero_str_empty();
     HeroStr r = hero_str_alloc(to - from);
@@ -332,6 +341,8 @@ HeroStr hero_str_slice(HeroStr s, int64_t from, int64_t to) {
     if (hero_str_holds_nul(s) && memchr(r.ptr, 0, (size_t)(to - from)) != NULL) hero_str_mark_nul(r);
     return r;
 }
+
+HeroStr hero_str_slice(HeroStr s, int64_t from, int64_t to) { return hero_str_slice_at(s, from, to, NULL); }
 
 void hero_print_str(HeroStr s) {
     hero_str_require(s);
@@ -650,25 +661,32 @@ const char *hero_str_held(HeroStr s) {
  * write stays inside this runtime's own block. So the line says what was SEEN,
  * that the mark is gone, and names the causes as causes; panel 173 R1's rule,
  * *no path prints a sentence measured false*, is the standard. */
-void hero_held_release(const char **slot) {
+void hero_held_release_at(const char **slot, const HeroPlace *where) {
     if (slot == NULL) {
         hero_panic("release with no cell — this is a compiler bug, please report it");
     }
     const char *p = *slot;
     if (p == NULL) {
-        hero_panic("end_lease of a lease that is already over — every `.lease()` "
-                   "owes exactly one `end_lease`, and this cell has had its one");
+        hero_panic_where("end_lease of a lease that is already over — every `.lease()` "
+                         "owes exactly one `end_lease`, and this cell has had its one",
+                         where);
     }
     HeroHeldHeader *h =
         (HeroHeldHeader *)(void *)((char *)(void *)(uintptr_t)p - sizeof(HeroHeldHeader));
     if (h->magic != HERO_HELD_MAGIC) {
-        hero_panic("end_lease found a lease whose block has lost its mark: the bytes "
+        hero_panic_where("end_lease found a lease whose block has lost its mark: the bytes "
                    "just before what C was lent were overwritten, or the block was freed. "
                    "Two things do this: a C function that writes before the pointer it "
                    "is handed, or frees what it is handed, which no word can declare; or "
-                   "a compiler bug, which is worth reporting");
+                   "a compiler bug, which is worth reporting",
+                         where);
     }
     h->magic = 0;
     *slot = NULL;
     hero_release_held(h);
 }
+
+/* The two refusals a program reaches name the `end_lease` that met them, the
+ * body being `hero_held_release_at`'s (panel 230's R1, kind 2); the cell with no
+ * slot is the compiler's, and names none, and so does this caller. */
+void hero_held_release(const char **slot) { hero_held_release_at(slot, NULL); }

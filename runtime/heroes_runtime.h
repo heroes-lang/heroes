@@ -493,6 +493,21 @@ _Noreturn void hero_panic_unmatched_str(HeroStr text);
  * are unnamed here, as `hero_panic_unmatched_case`'s note above keeps its words,
  * so no word of these prototypes reaches the guard. */
 _Noreturn void hero_panic_at(const char *msg, const char *, const char *, int64_t, int64_t);
+
+/* WHERE A CHECK THE RUNTIME MAKES STANDS IN THE PROGRAM (panel 230's R1, kind 2).
+ * One record per site, `static const` in the program's C, its address handed to
+ * the entry point on every call and read only where the check fails, so the path
+ * that does not abort pays one pointer argument. The four as `hero_panic_at`'s:
+ * the file as the program's modules name it, the function as a caller names it,
+ * the line and the column. Each `_at` below is an old entry point's twin, the
+ * old one's body and words with the place beneath, the old one unchanged beside
+ * it. */
+typedef struct {
+    const char *path;
+    const char *name;
+    int64_t line;
+    int64_t column;
+} HeroPlace;
 _Noreturn void hero_panic_overflow_at(const char *, const char *, int64_t, int64_t);
 _Noreturn void hero_panic_byte_at(HeroStr s, int64_t index, const char *, const char *, int64_t, int64_t);
 _Noreturn void hero_panic_must_at(HeroFailure f, const char *, const char *, int64_t, int64_t);
@@ -505,6 +520,9 @@ _Noreturn void hero_panic_unmatched_case_at(int64_t index, HeroStr text, const c
                                             int64_t);
 _Noreturn void hero_panic_unmatched_value_at(HeroStr text, const char *, const char *, int64_t, int64_t);
 _Noreturn void hero_panic_unmatched_str_at(HeroStr text, const char *, const char *, int64_t, int64_t);
+HeroStr hero_str_slice_at(HeroStr s, int64_t from, int64_t to, const HeroPlace *where);
+HeroStr hero_str_repeat_at(HeroStr s, uint64_t n, const HeroPlace *where);
+void hero_held_release_at(const char **slot, const HeroPlace *where);
 
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *
@@ -652,6 +670,12 @@ const void *hero_array_at(const HeroArrayHeader *a, int64_t index);
  * four unnamed parameters as `hero_panic_at`'s above). */
 _Noreturn void hero_panic_index_at(const HeroArrayHeader *a, int64_t index, const char *, const char *, int64_t,
                                    int64_t);
+HeroArrayHeader *hero_array_slice_at(const HeroArrayHeader *a, int64_t from, int64_t to, const HeroPlace *where);
+HeroArrayHeader *hero_array_sort_at(const HeroArrayHeader *a, const HeroPlace *where);
+/* An element's place over a base that holds a call, where the program's C reads
+ * it inside an expression, which can declare no record: the four as
+ * `hero_panic_at`'s, unnamed for the same reason. */
+void *hero_array_at_mut_at(HeroArrayHeader *a, int64_t index, const char *, const char *, int64_t, int64_t);
 
 HeroStr hero_str_try_from_array(const HeroArrayHeader *a, int64_t *status);
 
@@ -837,6 +861,9 @@ int64_t hero_map_len(const HeroMapHeader *m);
  * constructor is borrowed. A duplicate key replaces the VALUE, since `{"a": 1,
  * "a": 2}` has to mean something and the later entry is what a reader expects. */
 void hero_map_put(HeroMapHeader *m, const void *key, const void *value);
+/* The same at a literal's place, which a key not equal to itself names (panel
+ * 230's R1, kind 2). */
+void hero_map_put_at(HeroMapHeader *m, const void *key, const void *value, const HeroPlace *where);
 
 /* `keys(m) -> [K]` — a fresh array of the keys, in an order the spec declines to
  * promise (panel 026). Iteration is this composed with the `for` and `sort` that
@@ -856,11 +883,13 @@ HeroArrayHeader *hero_map_keys(const HeroMapHeader *m);
  * the same reason every mutation primitive does: growth replaces the block, and a
  * caller cannot forget to store a result that does not exist. */
 void hero_map_set(HeroMapHeader **slot, const void *key, const void *value);
+void hero_map_set_at(HeroMapHeader **slot, const void *key, const void *value, const HeroPlace *where);
 
 /* The value, or NULL when the key is absent. NULL rather than a `T?` because the
  * runtime cannot build one: the option struct is generated per payload type, so
  * wrapping is the emitter's job. */
 const void *hero_map_find(const HeroMapHeader *m, const void *key);
+const void *hero_map_find_at(const HeroMapHeader *m, const void *key, const HeroPlace *where);
 
 /* Order-independent by construction: same length, and every entry of `a` found in
  * `b` with an equal value. Spec line 58 requires exactly that — "a map's insertion

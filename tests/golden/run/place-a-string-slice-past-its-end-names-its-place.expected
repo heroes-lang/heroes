@@ -1,0 +1,2 @@
+bc
+!panic:   at place-a-string-slice-past-its-end-names-its-place.hero:8:11, in place-a-string-slice-past-its-end-names-its-place.main

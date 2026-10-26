@@ -225,3 +225,28 @@ HeroArrayHeader *hero_array_sort(const HeroArrayHeader *a) {
     hero_sort_elems(dst, b->len, size, cmp);
     return b;
 }
+
+/* `sort` at the program's site (panel 230's R1, kind 2). The nan its comparison
+ * refuses is looked for first, with the place, and the sort then runs as it
+ * always did, its own refusal kept behind as an invariant. They refuse the same
+ * arrays: with two elements or more, a bottom-up merge compares every element
+ * at least once (at the first width, or as the first of a right-hand run, which
+ * a merge always compares), and a comparison meeting a nan refuses; with fewer
+ * it compares nothing and refuses nothing, and so does this. The look is one
+ * pass, before the copy allocates, and only over `f32` and `f64`. */
+HeroArrayHeader *hero_array_sort_at(const HeroArrayHeader *a, const HeroPlace *where) {
+    hero_array_require(a);
+    if (a->len >= 2 && a->elem == &hero_desc_f64) {
+        const double *v = (const double *)(const void *)hero_array_data_const(a);
+        for (int64_t i = 0; i < a->len; i++) {
+            if (v[i] != v[i]) hero_panic_where("sort of an f64 array containing nan", where);
+        }
+    }
+    if (a->len >= 2 && a->elem == &hero_desc_f32) {
+        const float *v = (const float *)(const void *)hero_array_data_const(a);
+        for (int64_t i = 0; i < a->len; i++) {
+            if (v[i] != v[i]) hero_panic_where("sort of an f32 array containing nan", where);
+        }
+    }
+    return hero_array_sort(a);
+}

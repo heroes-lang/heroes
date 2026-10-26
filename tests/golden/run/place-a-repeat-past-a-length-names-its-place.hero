@@ -1,0 +1,8 @@
+# M-panic-location, panel 230's R1, kind 2: a count no string length can hold is
+# refused inside the runtime, the count being the program's, at the place
+# where `repeat(...)` begins.
+
+function main()
+    print(repeat("ab", to_u64(3).must()))
+    huge = to_u64(9223372036854775807).must()
+    print(repeat("ab", huge).len())

@@ -1,0 +1,8 @@
+# M-panic-location, panel 230's R1, kind 2: a lease ended a second time is
+# refused inside the runtime, at the place of the `end_lease` that met it.
+
+function main()
+    c @= "abc".lease()
+    end_lease(@c)
+    print("ended once")
+    end_lease(@c)

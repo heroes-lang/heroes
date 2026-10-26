@@ -128,7 +128,7 @@ function write(c: state.Checked, names: ctype.Names, s: source.Source, decls: [a
                     if !last
                         return fail(code: "none", msg: "a map step must end the walk")
                     lines @ lines.push(
-                        "hero_map_set(&(" + lvalue + "), &" + mangle.value(ix.value) + ", &" + mangle.value(value) + ");"
+                        stop_place.around(s, f, offset: site, statement: "hero_map_set_at(&(" + lvalue + "), &" + mangle.value(ix.value) + ", &" + mangle.value(value) + ", &" + stop_place.HERE + ");")
                     )
                     return ok(lines)
 
@@ -300,7 +300,7 @@ test "a place three array steps deep reads its first step in place and asks the 
     )
     at = "\"t.hero\", \"t.t\", 2, 5"
     first = "(*((void)((h0_g == NULL || t1 < 0 || t1 >= h0_g->len) ? hero_panic_index_at(h0_g, t1, " + at + ") : (void)0), (void)(h0_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h0_g + 1) + t1))"
-    second = "(*(HeroArrayHeader * *)hero_array_at_mut(" + first + ", t2))"
+    second = "(*(HeroArrayHeader * *)hero_array_at_mut_at(" + first + ", t2, " + at + "))"
     assert lines.must() == ["hero_array_unshare(&(h0_g));", "hero_array_unshare(&(" + first + "));", "{", "  HERO_NODEBUG HeroArrayHeader **hero_slot = &(" + second + ");", "  if (*hero_slot == NULL || t3 < 0 || t3 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t3, " + at + ");", "  hero_array_set(hero_slot, t3, &t4);", "}"]
 
 test "defect 097: a fixed-array element is written in place, through the read's own guard"

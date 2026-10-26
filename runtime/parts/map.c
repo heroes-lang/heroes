@@ -93,8 +93,8 @@ __attribute__((always_inline)) static inline void hero_map_require(const HeroMap
  * It aborts rather than inventing an order, exactly as `sort` does one file
  * over, and for the reason written there: a wrong answer with no error is what
  * the M-selfhost-fixpoint fixpoint cannot have. */
-static int64_t hero_map_slot_of(const HeroMapHeader *m, const void *key) {
-    if (!m->key->eq(key, key)) hero_panic("a map key that is not equal to itself (nan)");
+static int64_t hero_map_slot_where(const HeroMapHeader *m, const void *key, const HeroPlace *where) {
+    if (!m->key->eq(key, key)) hero_panic_where("a map key that is not equal to itself (nan)", where);
     uint64_t h = m->key->hash(key) ^ HERO_MAP_SEED;
     return (int64_t)(h & (uint64_t)(m->cap - 1));
 }
@@ -195,10 +195,14 @@ int64_t hero_map_len(const HeroMapHeader *m) {
     return m->len;
 }
 
-void hero_map_put(HeroMapHeader *m, const void *key, const void *value) {
+/* The three that reach a key's slot hold their bodies in the `_at` twins, which
+ * take the place its refusal names (panel 230's R1, kind 2): the site's record
+ * from the program's C, NULL from the old entry points and from the runtime's
+ * own re-inserts and lookups, whose keys stand in a map already. */
+void hero_map_put_at(HeroMapHeader *m, const void *key, const void *value, const HeroPlace *where) {
     hero_map_require(m);
     unsigned char *states = hero_map_states(m);
-    int64_t at = hero_map_slot_of(m, key);
+    int64_t at = hero_map_slot_where(m, key, where);
     for (int64_t probe = 0; probe < m->cap; probe++) {
         int64_t i = (at + probe) & (m->cap - 1);
         if (states[i] == 0) {
@@ -227,10 +231,12 @@ void hero_map_put(HeroMapHeader *m, const void *key, const void *value) {
     hero_panic("map is full — this is a compiler bug, please report it");
 }
 
-const void *hero_map_find(const HeroMapHeader *m, const void *key) {
+void hero_map_put(HeroMapHeader *m, const void *key, const void *value) { hero_map_put_at(m, key, value, NULL); }
+
+const void *hero_map_find_at(const HeroMapHeader *m, const void *key, const HeroPlace *where) {
     hero_map_require(m);
     const unsigned char *states = hero_map_states_const(m);
-    int64_t at = hero_map_slot_of(m, key);
+    int64_t at = hero_map_slot_where(m, key, where);
     for (int64_t probe = 0; probe < m->cap; probe++) {
         int64_t i = (at + probe) & (m->cap - 1);
         /* An empty bucket ends the probe: with no deletion there are no tombstones,
@@ -242,6 +248,8 @@ const void *hero_map_find(const HeroMapHeader *m, const void *key) {
     }
     return NULL;
 }
+
+const void *hero_map_find(const HeroMapHeader *m, const void *key) { return hero_map_find_at(m, key, NULL); }
 
 /* Contents and nothing else — `hero_array_eq`'s rule, deleted here for the same
  * reason on the same day (panel 069).
@@ -258,7 +266,7 @@ bool hero_map_eq(const HeroMapHeader *a, const HeroMapHeader *b) {
     const unsigned char *states = hero_map_states_const(a);
     for (int64_t i = 0; i < a->cap; i++) {
         if (states[i] == 0) continue;
-        const void *found = hero_map_find(b, hero_map_key_at_const(a, i));
+        const void *found = hero_map_find_at(b, hero_map_key_at_const(a, i), NULL);
         if (found == NULL) return false;
         if (!a->val->eq(hero_map_val_at_const(a, i), found)) return false;
     }
