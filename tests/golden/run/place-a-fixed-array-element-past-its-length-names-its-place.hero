@@ -1,0 +1,15 @@
+# M-panic-location, panel 230's R1: a fixed array's element read past its
+# length names where `n.a[at]` begins. The header is the one beside
+# `abort-a-fixed-array-element-written-past-its-length`, shared.
+
+extern "abort-a-fixed-array-element-written-past-its-length.h"
+    record Nums tag nums
+        a: i64[4]
+        after: i64
+
+function main()
+    n = Nums(a: [1, 2, 3, 4], after: 99)
+    at: i64 @= 3
+    print(n.a[at])
+    at @ at + 1
+    print(n.a[at])

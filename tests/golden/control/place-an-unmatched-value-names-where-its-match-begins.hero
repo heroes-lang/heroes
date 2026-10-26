@@ -1,0 +1,13 @@
+# M-panic-location, panel 230's R1: Part 11's control arm RUNS this program
+# (panel 226's R1): the strict build refuses it under `non_exhaustive`, and
+# `build --permissive` aborts at a value no arm takes, beneath which the place
+# where the `match` begins, in the function that holds it.
+
+function label(n: i64) -> str
+    return match n  #~ non_exhaustive
+        1 => "one"
+        2 => "two"
+
+function main()
+    print(label(1))
+    print(label(3))

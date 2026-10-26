@@ -1,0 +1,9 @@
+# M-panic-location, panel 230's R1: a string's byte read past its end names
+# where `word[at]` begins, beneath `string index out of range`.
+
+function main()
+    word = "abc"
+    at: i64 @= 2
+    print(word[at])
+    at @ at + 1
+    print(word[at])

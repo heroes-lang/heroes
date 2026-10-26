@@ -676,10 +676,12 @@ constant SLOW_APPENDS: [str]
 # be there, or the entry is stale and the check says so. `lvalue` is a C
 # lvalue, and every index step wraps the whole of it in a call, so each step
 # rebuilds it whatever the spelling and pieces would be joined at every one.
-# It grows by a field's name per step of one place's path.
+# It grows by a field's name per step of one place's path. It named
+# `emit/container.hero` until 2026-10-26, when the store's walk left that file
+# for `emit/element_store.hero` (panel 230's R1) and the growth went with it.
 constant GROWTH_ALLOWED: [str]
     [
-        "selfhost/emit/container.hero lvalue"
+        "selfhost/emit/element_store.hero lvalue"
     ]
 
 # `only` narrows the walk to the modules whose path holds it, which is how the
@@ -1199,7 +1201,7 @@ test "fixedbugs: a narrowed layout walk that selects no module records nothing (
 # one more each since defect 483, the module's writes to a stream's tokens.
 test "fixedbugs: a narrowed layout walk asks the module's appends, growths and budget (defect 215)"
     scratch = shell.own_scratch()
-    allowed = run_all(scratch: scratch, only: "selfhost/emit/container.hero")
+    allowed = run_all(scratch: scratch, only: "selfhost/emit/element_store.hero")
     assert !allowed.is_err()
     assert allowed.must().passed == 4
     assert allowed.must().failed == 0

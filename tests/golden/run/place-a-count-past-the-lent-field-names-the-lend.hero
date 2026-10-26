@@ -1,0 +1,16 @@
+# M-panic-location, panel 230's R1: a count read at run time past the field lent
+# to C names the lend's place, where `h.buf.ptr()` begins. The header is defect
+# 395's.
+
+extern "fixedbugs-395-units.h"
+    record Held tag held
+        buf: u8[16]
+        after: i64
+    function fill_ints(a: ptr counted_by n lent, n: u64) -> i64
+
+function at_run_time(k: u64) -> u64
+    return k * 4
+
+function main()
+    h: Held @= Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    print(fill_ints(a: h.buf.ptr(), n: at_run_time(k: 4)))

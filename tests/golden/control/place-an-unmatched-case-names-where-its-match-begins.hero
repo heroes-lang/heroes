@@ -1,0 +1,16 @@
+# M-panic-location, panel 230's R1: Part 11's control arm RUNS this program
+# (panel 226's R1): the strict build refuses it under `non_exhaustive`, and
+# `build --permissive` aborts at the case no arm names, beneath which the place
+# where the `match` begins, in the function that holds it.
+
+variant Shape
+    dot
+    line
+
+function name(s: Shape) -> str
+    return match s  #~ non_exhaustive
+        .dot => "dot"
+
+function main()
+    print(name(.dot))
+    print(name(.line))

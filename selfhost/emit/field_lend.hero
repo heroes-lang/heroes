@@ -68,19 +68,22 @@ use source
 # `.field` is one step off it, so `s.inner.nsap` resolves as far as it needs to.
 # Anything else is not a place and fails, which `check/lending.hero` has already
 # refused at the source — this is the second witness, not the first.
-function lent_place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64) -> str?
+#
+# `site` is the instruction the lend is spelled for, the place an element's
+# bound names (panel 230's R1).
+function lent_place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64, site: i64) -> str?
     for blk in f.blocks
         for inst in blk.insts
             if !inst.dest.is_err() && inst.dest.must() == value
                 match inst.op
-                    .load ld => return ok(aggregate.place(c, s, decls, f, at: ld.place))
+                    .load ld => return ok(aggregate.place(c, s, decls, f, at: ld.place, site: site))
                     .field fl =>
                         owner = containers.value_type(f, fl.base)
                         found = aggregate.field(c, s, decls, owner: owner, index: fl.at)
 
                         if found.is_err()
                             return fail(code: "none", msg: "not a field of this type")
-                        base = lent_place(c, s, decls, f, value: fl.base)?
+                        base = lent_place(c, s, decls, f, value: fl.base, site: site)?
                         return ok(base + "." + found.must().member)
                     .lit | .store | .push_owned | .unary | .binary | .cast => return fail(
                         code: "none",
@@ -223,14 +226,14 @@ function lent_operand(f: containers.Function, run: ir.Run) -> i64?
 
     return fail(code: "none", msg: "unreached")
 
-# Emit `into = ptr(value)`, cast as the root decides.
-function lent(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, into: str)
+# Emit `into = ptr(value)`, cast as the root decides; `site` is the call's.
+function lent(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, into: str, site: i64)
     source_value = lent_operand(f, run: run)
 
     if source_value.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* ptr lost its argument */")
         return
-    place = lent_place(c, s, decls, f, value: source_value.must())
+    place = lent_place(c, s, decls, f, value: source_value.must(), site: site)
 
     # The checker admitted only a field of a named binding here, so a miss means
     # the two passes disagree and it is loud rather than a guess

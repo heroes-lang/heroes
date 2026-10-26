@@ -80,6 +80,36 @@ record Toolchain
     # the link runs, which `link_flags.target_words` asks (defect 593).
     target: str
 
+# Where the runtime is, when it is not ./runtime — the REAL environment
+# variable, the same channel the bootstrap reads and the same one
+# --help names.
+#
+# It used to read a one-line FILE called HEROES_RUNTIME, on the note
+# "the language has no getenv". That note was false: getenv is one
+# `extern "stdlib.h"` away, exactly like the `system` this compiler
+# already calls, and §1.11 says so — everything comes from C. What the
+# file spelling cost was a DIAGNOSTIC THAT LIED: `locate_toolchain`
+# says "set HEROES_RUNTIME=<dir>", which every reader takes for an
+# environment variable, and under the port that route did nothing
+# (panel 085 R8, measured both ways).
+#
+# A value that is not UTF-8 is a failure that names it (defect 243), never
+# the unset hint it was read as: the search then went on to `./runtime`
+# without a word, or told the author to set what was set.
+#
+# It stood in `main.hero` until 2026-10-26, which passed §11's 300 lines
+# when panel 230's R4 gave the compiler its own way out; where the runtime
+# is was always this module's question, `locate_toolchain`'s first place.
+function runtime_hint() -> str?
+    hint = process.env(name: "HEROES_RUNTIME")
+
+    if hint.is_err()
+        return fail(
+            code: "not_text",
+            msg: "`HEROES_RUNTIME` is set, and its value, `" + process.env_written(name: "HEROES_RUNTIME") + "`, is not UTF-8, so this compiler cannot look in the directory it names"
+        )
+    return hint
+
 # Locate the runtime, or say the places it looked. The search is why
 # the ABI stamp exists: a decoy runtime/ compiled with zero warnings
 # under -Weverything and printed 0x1e where 30 was expected; the stamp

@@ -1,0 +1,9 @@
+# M-panic-location, panel 230's R1: a shift count outside 0..63 names where
+# `1 << n` begins.
+
+function bit(n: i64) -> i64
+    return 1 << n
+
+function main()
+    print(bit(n: 63))
+    print(bit(n: 64))

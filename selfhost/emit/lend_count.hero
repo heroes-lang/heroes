@@ -126,12 +126,13 @@ record Count
     value: i64
 
 # The count at an argument: a value's temporary, or the cell an `@` names,
-# read as the place it is. `value` is the IR value, -1 for a cell.
-function count_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, arg: ir.Arg) -> Count
+# read as the place it is. `value` is the IR value, -1 for a cell. `site` is
+# the call's, the place an element's bound names (panel 230's R1).
+function count_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, arg: ir.Arg, site: i64) -> Count
     match arg
         .value_arg v => return Count(text: mangle.value(v.value), ty: containers.value_type(f, v.value), value: v.value)
         .inout_arg io => return Count(
-            text: aggregate.place(c, s, decls, f, at: io.place),
+            text: aggregate.place(c, s, decls, f, at: io.place, site: site),
             ty: place_type(c, s, decls, f, at: io.place),
             value: 0 - 1
         )

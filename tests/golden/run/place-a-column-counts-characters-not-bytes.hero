@@ -1,0 +1,8 @@
+# UNVERIFIED — pending debrief
+# M-panic-location, panel 230's R1: the column counts characters, as every
+# diagnostic does, never bytes: three characters of two bytes each stand before
+# the division on its line, so it begins at column 18, where bytes would say 21.
+
+function main()
+    d = 0
+    print("ééé", 10 / d)

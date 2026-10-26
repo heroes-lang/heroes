@@ -1,0 +1,138 @@
+# Where an abort stopped the program, as the four C arguments every `_at` entry
+# point of the runtime takes last (panel 230's R1; `runtime/parts/place.c`;
+# design.md §1.12, §4.17). The report reads them beneath its first line:
+# `  at shop.hero:12:15, in shop.total`.
+#
+# **The file is named as the program's modules name it**, never by the path the
+# build was invoked with (the sitting's finding 6; Swift's SE-0274 took the
+# full path out of `#file` because it reveals the machine, bloats the binary and
+# makes two builds of one program differ): the root by its own file name, a
+# `use`d module by its module and `.hero`, the spelling its `use` line gives,
+# `/` on every platform, and the library as `<heroes library>`, the name its
+# `#line`s already give it. Each is read from the file entry in hand.
+#
+# **The line and the column are the site's**, counted as every diagnostic
+# counts them (`source.locate`, binary searches and never a walk of the line,
+# defects 228 and 372); the site is the start of the expression whose
+# evaluation stopped the program, an `assert`'s asserted expression included.
+#
+# **The function is `<module>.<name>`**, the module as a caller binds it
+# (`module_names.binding_of`) and the name an instance keeps from its template
+# (`ir/mono.hero`); a `test` block is `test "<title>"`, its IR name being its
+# title as written, quotes included (`ir/lower.hero`).
+#
+# Read on the failing branch alone: four literals, so the path that does not
+# abort computes nothing and no record exists for a site that never fires (the
+# sitting measured +3.29% of the seed's bytes, against +7.4% and 416 KiB
+# rebased at load for a record per site).
+
+use source
+use ir/containers
+use emit/c_text
+use module/names as module_names
+use module/paths
+use token
+
+# The four arguments, `"file", "function", line, column`, for the site at
+# `offset` inside `f`.
+function of(s: source.Source, f: containers.Function, offset: i64) -> str
+    at = source.locate(s, offset)
+    return c_text.literal(file_of(s, offset: offset)) + ", " + c_text.literal(function_of(s, f)) + ", " + at.line.to_str() + ", " + at.col.to_str()
+
+# The file that holds `offset`, as the program's modules name it.
+function file_of(s: source.Source, offset: i64) -> str
+    entry = source.file_at(s, offset)
+
+    if entry.is_library
+        return source.LIBRARY_FILE
+
+    if source.is_root(s, offset)
+        return entry.name.slice(from: paths.directory_text(entry.name).len(), to: entry.name.len())
+    return entry.module + ".hero"
+
+# The function as a caller names it.
+function function_of(s: source.Source, f: containers.Function) -> str
+    a_test: bool @= false
+
+    match f.kind
+        .test_kind                                     => a_test @ true
+        .function_kind | .constant_kind | .extern_kind => a_test @ false
+
+    if a_test
+        return without_nul("test " + f.name)
+    return module_names.binding_of(source.module_at(s, f.span.start)) + "." + f.name
+
+# A test's title is the one text here a program writes freely, and the runtime
+# reads each of the four up to its first NUL, so a NUL is written as the report
+# would write it, `<U+0000>` (`hero_report_message`); every other character goes
+# through as it is, and the report writes it.
+function without_nul(text: str) -> str
+    parts: [str] @= []
+    plain: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == 0
+            parts @ parts.push(text.slice(from: plain, to: at)).push("<U+0000>")
+            plain @ at + 1
+        at @ at + 1
+
+    if plain == 0
+        return text
+    return parts.push(text.slice(from: plain, to: text.len())).join("")
+
+## Tests
+
+function program(root: str) -> source.Source
+    inputs: [source.InputFile] = [
+        source.user_file(name: root, text: "function main()\n    print(1)\n")
+        source.InputFile(name: "check/state.hero", module: "check/state", text: "function tag() -> i64\n    return 1\n", is_library: false)
+        source.InputFile(name: source.LIBRARY_FILE, module: source.LIBRARY_MODULE, text: "function exit(code: u8)\n", is_library: true)
+    ]
+    return source.from_files(inputs)
+
+function named(name: str, kind: containers.FnKind, start: i64) -> containers.Function
+    return containers.Function(
+        name: name,
+        decl: 0,
+        kind: kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [],
+        arguments: [],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: token.Span(start: start, end: start + 1)
+    )
+
+test "the root is named by its file, a used module by its use line, the library by its own name"
+    for root in ["/home/u/proj/main.hero", "proj/main.hero", "main.hero", "C:\\proj\\main.hero"]
+        s = program(root)
+        assert file_of(s, offset: s.files[0].start) == "main.hero"
+        assert file_of(s, offset: s.files[1].start) == "check/state.hero"
+        assert file_of(s, offset: s.files[2].start) == "<heroes library>"
+
+test "a function is named as its caller binds the module, a test by its title"
+    s = program("/home/u/proj/main.hero")
+    assert function_of(s, named(name: "main", kind: .function_kind, start: s.files[0].start)) == "main.main"
+    assert function_of(s, named(name: "tag", kind: .function_kind, start: s.files[1].start)) == "state.tag"
+    assert function_of(s, named(name: "\"a title\"", kind: .test_kind, start: s.files[0].start)) == "test \"a title\""
+
+test "the four arguments are the file, the function, the line and the column, each a C literal"
+    s = program("/home/u/proj/main.hero")
+    f = named(name: "main", kind: .function_kind, start: s.files[0].start)
+
+    # `print` stands at the second line's fifth column.
+    assert of(s, f, offset: s.files[0].start + 20) == "\"main.hero\", \"main.main\", 2, 5"
+
+# No literal writes a NUL (`nul_in_string`), so the title is built from bytes, as
+# a program would have to build one.
+test "a NUL is written as the report writes it, and a text holding none is handed back"
+    bytes: [u8] = [97, 0, 98, 0]
+    assert without_nul(bytes.validated_bytes().must()) == "a<U+0000>b<U+0000>"
+    assert without_nul("test \"plain\"") == "test \"plain\""

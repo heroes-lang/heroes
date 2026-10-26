@@ -24,8 +24,9 @@ use checker
 # Guarded together, reported apart (panel 035's owed message): saying
 # "integer overflow" for `%` was false; the remainder is 0 and overflows
 # nothing, and what has no representation is the quotient on the way. So
-# `%` aborts where `/` does at every width, and says why.
-function guard(c: state.Checked, ty: i64, l: str, r: str, op: ir.BinaryOp) -> str
+# `%` aborts where `/` does at every width, and says why. `where` is the place
+# the abort names, the four arguments `emit/stop_place.hero` writes (panel 230's R1).
+function guard(c: state.Checked, ty: i64, l: str, r: str, op: ir.BinaryOp, where: str) -> str
     kind: widths.IntKind @= .i64
 
     match table.get(c.types, ty)
@@ -50,15 +51,15 @@ function guard(c: state.Checked, ty: i64, l: str, r: str, op: ir.BinaryOp) -> st
         .i64                     => smallest @ smallest
         .u8 | .u16 | .u32 | .u64 => return ""
 
-    abort_call: str @= "hero_panic_overflow()"
+    abort_call: str @= "hero_panic_overflow_at(" + where + ")"
 
     if op == .rem
         width = widths.int_name(kind)
-        abort_call @ "hero_panic(\"`%` by -1 at the smallest " + width + ": the remainder is 0, but the quotient it is the rest of has no " + width + "\")"
+        abort_call @ "hero_panic_at(\"`%` by -1 at the smallest " + width + ": the remainder is 0, but the quotient it is the rest of has no " + width + "\", " + where + ")"
 
         # The text `i64` has carried since panel 035, kept byte for byte.
         if kind == .i64
-            abort_call @ "hero_panic(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\")"
+            abort_call @ "hero_panic_at(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\", " + where + ")"
     return "    if (" + l + " == " + smallest + " && " + r + " == " + minus_one + ") " + abort_call + ";"
 
 ## Tests
@@ -72,9 +73,9 @@ test "each signed width is guarded at its own smallest value, and no unsigned on
     i8 = table.intern(@c.types, .int_ty(kind: .i8))
     u8 = table.intern(@c.types, .int_ty(kind: .u8))
     i64 = table.intern(@c.types, .int_ty(kind: .i64))
-    assert guard(c, ty: i8, l: "t1", r: "t2", op: .div) == "    if (t1 == INT8_MIN && t2 == INT8_C(-1)) hero_panic_overflow();"
-    assert guard(c, ty: u8, l: "t1", r: "t2", op: .div) == ""
-    assert guard(c, ty: u8, l: "t1", r: "t2", op: .rem) == ""
-    assert guard(c, ty: i64, l: "t1", r: "t2", op: .div) == "    if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_overflow();"
-    narrow = guard(c, ty: i8, l: "t1", r: "t2", op: .rem)
-    assert narrow == "    if (t1 == INT8_MIN && t2 == INT8_C(-1)) hero_panic(\"`%` by -1 at the smallest i8: the remainder is 0, but the quotient it is the rest of has no i8\");"
+    assert guard(c, ty: i8, l: "t1", r: "t2", op: .div, where: "P") == "    if (t1 == INT8_MIN && t2 == INT8_C(-1)) hero_panic_overflow_at(P);"
+    assert guard(c, ty: u8, l: "t1", r: "t2", op: .div, where: "P") == ""
+    assert guard(c, ty: u8, l: "t1", r: "t2", op: .rem, where: "P") == ""
+    assert guard(c, ty: i64, l: "t1", r: "t2", op: .div, where: "P") == "    if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_overflow_at(P);"
+    narrow = guard(c, ty: i8, l: "t1", r: "t2", op: .rem, where: "P")
+    assert narrow == "    if (t1 == INT8_MIN && t2 == INT8_C(-1)) hero_panic_at(\"`%` by -1 at the smallest i8: the remainder is 0, but the quotient it is the rest of has no i8\", P);"

@@ -22,6 +22,7 @@ use ir
 use ir/containers
 use emit/mangle
 use emit/array_read
+use emit/stop_place
 use emit/ctype
 use emit/writer
 
@@ -129,10 +130,11 @@ constant NOT_AN_LVALUE: str
 # this reading asks it with no names of its own, which the two readers that
 # hold none need, `emit/lend_count.hero` and `emit/lend_extent.hero`: they
 # spell the record or the count cell an extern is lent, whose element types
-# are C's own and spelled from the declarations alone.
-function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str
+# are C's own and spelled from the declarations alone. `site` is where the
+# instruction stands, the place an element's bound names (`emit/stop_place.hero`).
+function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place, site: i64) -> str
     none: ctype.Names? = fail(code: "none", msg: "no names: read from the declarations where an element needs them")
-    return reached(c, none, s, decls, f, at: at).lvalue
+    return reached(c, none, s, decls, f, at: at, site: site).lvalue
 
 # A place reached for an `@` argument: its C lvalue, and the unshare each
 # array step owes before anything may write through it, outermost first.
@@ -158,7 +160,10 @@ record Reached
 # is spelled from them alone. An element whose C type is named from the
 # whole program, a `T?` or a function, is spelled only with the caller's
 # names, and without them the place is `NOT_AN_LVALUE`.
-function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> Reached
+#
+# **Each bound names `site`**, the instruction the place is reached for (panel
+# 230's R1), its four arguments written once, at the first element.
+function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place, site: i64) -> Reached
     # The lvalue so far, as pieces joined where a step wraps it, so a long
     # path is not copied whole at every field (defect 105).
     parts: [str] @= [slot_lvalue(f, at.root)]
@@ -170,6 +175,7 @@ function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls:
     # (defect 491): an element step over such a base is read in place, over
     # any other the runtime's call stays (`emit/array_read.hero`'s `place`).
     pure: bool @= true
+    where: str @= ""
 
     for step in containers.steps_of(f, at.path)
         match step
@@ -184,9 +190,12 @@ function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls:
                 index = mangle.value(ix.value)
                 so_far = parts.join("")
 
+                if where == ""
+                    where @ stop_place.of(s, f, offset: site)
+
                 match table.get(c.types, ty)
                     .fixed x =>
-                        parts @ [subscript(base: so_far, index: index, length: x.length)]
+                        parts @ [subscript(base: so_far, index: index, length: x.length, where: where)]
                         ty @ x.element
                         pure @ false
                     .array arr =>
@@ -197,7 +206,9 @@ function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls:
                         if spelled.is_err()
                             return Reached(lvalue: so_far + NOT_AN_LVALUE, unshares: unshares)
                         unshares @ unshares.push("hero_array_unshare(&(" + so_far + "));")
-                        parts @ [array_read.place(spelling: spelled.must(), base: so_far, index: index, pure: pure)]
+                        parts @ [
+                            array_read.place(spelling: spelled.must(), base: so_far, index: index, pure: pure, where: where)
+                        ]
                         ty @ arr.element
                         pure @ false
                     # A map's element is a `V?`, which the checker refuses
@@ -242,17 +253,19 @@ function element_c_type(c: state.Checked, names: ctype.Names, ty: i64) -> str?
 # (panel 062) because -Warray-bounds was measured not to fire on an opaque
 # index, and unsigned so one test catches both ends. It lived in
 # `emit/storageless.hero` until panel 196's R1 gave a place an element, and
-# that module reads this one, so this one could not read it.
-function subscript(base: str, index: str, length: i64) -> str
-    return base + "[((uint64_t)(" + index + ") >= UINT64_C(" + length.to_str() + ") ? (hero_panic(\"index out of range for a fixed array\"), (int64_t)0) : (" + index + "))]"
+# that module reads this one, so this one could not read it. `where` is the
+# place the abort names, the four arguments `emit/stop_place.hero` writes (panel
+# 230's R1).
+function subscript(base: str, index: str, length: i64, where: str) -> str
+    return base + "[((uint64_t)(" + index + ") >= UINT64_C(" + length.to_str() + ") ? (hero_panic_at(\"index out of range for a fixed array\", " + where + "), (int64_t)0) : (" + index + "))]"
 
 # An `@` argument as the call hands it over: the unshares its array steps
 # owe, written here, then the place's own address (panel 196's R1). The
 # caller writes the call after this, so every argument is computed before
 # the unshares and nothing the call reads was taken from the block they make
-# the array's own.
-function argument(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str
-    lent = reached(c, ok(names), s, decls, f, at: at)
+# the array's own. `site` is the call's, the place an element's bound names.
+function argument(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place, site: i64) -> str
+    lent = reached(c, ok(names), s, decls, f, at: at, site: site)
 
     for line in lent.unshares
         writer.line(@w, text: "    " + line)

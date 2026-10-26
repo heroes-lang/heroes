@@ -7,13 +7,15 @@
 # runs each), and a `for` over an array reads its length and an element at
 # every step.
 #
-# THE ABORT IS STILL THE RUNTIME'S. A NULL slot, or an index outside
-# [0, len), is handed to `hero_array_at` or `hero_array_len` itself, which
-# aborts in its own words and with its own exit code, so a program reading
-# out of range prints what it always printed. `hero_unreachable()` after
-# that call is never reached; it is there so clang sees the branch end,
-# rather than reasoning about the read after it from a premise about the
-# call.
+# THE ABORT IS THE RUNTIME'S, AND NAMES ITS PLACE since panel 230's R1
+# (2026-10-26). A NULL slot, or an index outside [0, len), is handed to
+# `hero_panic_index_at` with the place the program read at (`emit/stop_place.hero`),
+# which writes the words `hero_array_at` always wrote, with its exit code, and
+# the place beneath them; a NULL slot is the compiler's mistake and is said as
+# it always was, with no place. Until that day the branch called
+# `hero_array_at` itself and then `hero_unreachable()`, so clang saw it end; the
+# new entry point is `_Noreturn`, which says the same. A length's NULL is the
+# compiler's alone, and `hero_array_len` keeps it.
 #
 # THE ELEMENT IS READ AT `sizeof` OF ITS C TYPE, and the descriptor is
 # asked to agree first: every write already copies `elem->size` bytes out
@@ -28,13 +30,14 @@
 # evaluates nothing twice.
 
 # `xs[i]`: `spelling` is the element's C type, `base` and `index` the two
-# temporaries. `{spelling} const *`, not `const {spelling} *`: the two
-# differ exactly when the element is itself a pointer.
-function element(spelling: str, base: str, index: str) -> str
+# temporaries, `where` the place's four arguments. `{spelling} const *`, not
+# `const {spelling} *`: the two differ exactly when the element is itself a
+# pointer.
+function element(spelling: str, base: str, index: str, where: str) -> str
     checked = "(" + base + " == NULL || " + index + " < 0 || " + index + " >= " + base + "->len)"
     sized = "(" + base + "->elem->size != sizeof(" + spelling + ") ? hero_unreachable() : (void)0)"
     read = "((" + spelling + " const *)(const void *)(" + base + " + 1))[" + index + "]"
-    return "((void)(" + checked + " ? ((void)hero_array_at(" + base + ", " + index + "), hero_unreachable()) : (void)0), (void)" + sized + ", " + read + ")"
+    return "((void)(" + checked + " ? hero_panic_index_at(" + base + ", " + index + ", " + where + ") : (void)0), (void)" + sized + ", " + read + ")"
 
 # `xs.len()`, `len(xs)` and the length a `for` reads at every step, where
 # a value is wanted; `value` is a temporary.
@@ -56,24 +59,28 @@ function length(value: str) -> str
 # fields alone, which no call can be in, and is a fact the walk carries as it
 # builds the place, never read back off the text. Where it is not, the
 # runtime's call stays: the one spelling both walks had before, now written
-# once (`emit/places.hero`, `emit/container.hero`).
-function place(spelling: str, base: str, index: str, pure: bool) -> str
+# once (`emit/places.hero`, `emit/element_store.hero`). Over a pure base the
+# failing branch names its place, as a read's does; the runtime's call names
+# none, its check being inside it, so it is the sitting's kind 2 and takes its
+# place when that kind does (panel 230's R1; 4 such sites in the seed, read
+# 2026-10-26).
+function place(spelling: str, base: str, index: str, pure: bool, where: str) -> str
     if !pure
         return "(*(" + spelling + " *)hero_array_at_mut(" + base + ", " + index + "))"
     checked = "(" + base + " == NULL || " + index + " < 0 || " + index + " >= " + base + "->len)"
     sized = "(" + base + "->elem->size != sizeof(" + spelling + ") ? hero_unreachable() : (void)0)"
-    return "(*((void)(" + checked + " ? ((void)hero_array_at_mut(" + base + ", " + index + "), hero_unreachable()) : (void)0), (void)" + sized + ", (" + spelling + " *)(void *)(" + base + " + 1) + " + index + "))"
+    return "(*((void)(" + checked + " ? hero_panic_index_at(" + base + ", " + index + ", " + where + ") : (void)0), (void)" + sized + ", (" + spelling + " *)(void *)(" + base + " + 1) + " + index + "))"
 
 ## Tests
 
-test "an element and a length are read in place, every failing read handed to the runtime"
-    assert element(spelling: "int64_t", base: "t0", index: "t1") == "((void)((t0 == NULL || t1 < 0 || t1 >= t0->len) ? ((void)hero_array_at(t0, t1), hero_unreachable()) : (void)0), (void)(t0->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"
-    assert element(spelling: "char *", base: "t2", index: "t3") == "((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(char *) ? hero_unreachable() : (void)0), ((char * const *)(const void *)(t2 + 1))[t3])"
+test "an element and a length are read in place, every failing read handed to the runtime with its place"
+    assert element(spelling: "int64_t", base: "t0", index: "t1", where: "P") == "((void)((t0 == NULL || t1 < 0 || t1 >= t0->len) ? hero_panic_index_at(t0, t1, P) : (void)0), (void)(t0->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"
+    assert element(spelling: "char *", base: "t2", index: "t3", where: "P") == "((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? hero_panic_index_at(t2, t3, P) : (void)0), (void)(t2->elem->size != sizeof(char *) ? hero_unreachable() : (void)0), ((char * const *)(const void *)(t2 + 1))[t3])"
     assert length("t4") == "((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len)"
 
 # Defect 491's spelling: an element's place in place where the base holds no
 # call, the runtime's call, as it was, where it does.
 test "an element's place is read in place over a call-free base, and by the runtime's call otherwise (defect 491)"
-    assert place(spelling: "int64_t", base: "h0_xs", index: "t1", pure: true) == "(*((void)((h0_xs == NULL || t1 < 0 || t1 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t1), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t1))"
-    assert place(spelling: "h_t_Row", base: "(*ph0_s).f_rows", index: "t2", pure: true) == "(*((void)(((*ph0_s).f_rows == NULL || t2 < 0 || t2 >= (*ph0_s).f_rows->len) ? ((void)hero_array_at_mut((*ph0_s).f_rows, t2), hero_unreachable()) : (void)0), (void)((*ph0_s).f_rows->elem->size != sizeof(h_t_Row) ? hero_unreachable() : (void)0), (h_t_Row *)(void *)((*ph0_s).f_rows + 1) + t2))"
-    assert place(spelling: "h_t_Row", base: "h0_xs", index: "t3", pure: false) == "(*(h_t_Row *)hero_array_at_mut(h0_xs, t3))"
+    assert place(spelling: "int64_t", base: "h0_xs", index: "t1", pure: true, where: "P") == "(*((void)((h0_xs == NULL || t1 < 0 || t1 >= h0_xs->len) ? hero_panic_index_at(h0_xs, t1, P) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t1))"
+    assert place(spelling: "h_t_Row", base: "(*ph0_s).f_rows", index: "t2", pure: true, where: "P") == "(*((void)(((*ph0_s).f_rows == NULL || t2 < 0 || t2 >= (*ph0_s).f_rows->len) ? hero_panic_index_at((*ph0_s).f_rows, t2, P) : (void)0), (void)((*ph0_s).f_rows->elem->size != sizeof(h_t_Row) ? hero_unreachable() : (void)0), (h_t_Row *)(void *)((*ph0_s).f_rows + 1) + t2))"
+    assert place(spelling: "h_t_Row", base: "h0_xs", index: "t3", pure: false, where: "P") == "(*(h_t_Row *)hero_array_at_mut(h0_xs, t3))"

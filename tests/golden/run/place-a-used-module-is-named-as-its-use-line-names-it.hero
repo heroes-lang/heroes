@@ -1,0 +1,10 @@
+# UNVERIFIED — pending debrief
+# M-panic-location, panel 230's R1: an abort in a module the root uses names its
+# file as the program's `use` line names it, `placemodule/ratio.hero` from the
+# root's directory, never by the path the build was invoked with, and its
+# function as a caller writes it, `ratio.percent`, the module's last part.
+use placemodule/ratio
+
+function main()
+    print(ratio.percent(part: 1, whole: 4))
+    print(ratio.percent(part: 1, whole: 0))

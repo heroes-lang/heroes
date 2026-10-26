@@ -1,0 +1,11 @@
+# M-panic-location, panel 230's R1: `.must()` on an error names where the
+# expression it ends begins, `prices[item]`, its receiver, not the `.must`.
+
+function price(prices: {str: i64}, item: str) -> i64
+    return prices[item].must()
+
+function main()
+    prices: {str: i64} @= {}
+    prices["apple"] @ 30
+    print(price(prices: prices, item: "apple"))
+    print(price(prices: prices, item: "pear"))

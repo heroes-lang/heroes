@@ -1,0 +1,12 @@
+# M-panic-location, panel 230's R1: an element written past the end of an array
+# names where `xs[at]` begins. The bound is asked in the program's C before
+# `hero_array_set`, whose own check stays behind it as an invariant.
+
+function main()
+    xs: [i64] @= [1, 2, 3]
+    at: i64 @= 2
+    xs[at] @ 7
+    print(xs[at])
+    at @ at + 1
+    xs[at] @ 8
+    print("unreached")

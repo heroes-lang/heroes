@@ -1,0 +1,11 @@
+# M-panic-location, panel 230's R1: an overflow names, beneath the line it
+# always wrote, the file as the program's modules name it, the line, the column
+# where `a + b` begins, and the function as a caller names it, `<module>.<name>`,
+# the module being the root, named by its file's stem.
+
+function total(a: i64, b: i64) -> i64
+    return a + b
+
+function main()
+    print("before")
+    print(total(a: 9223372036854775807, b: 1))

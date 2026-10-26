@@ -305,6 +305,22 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
     if !strings.contains(text: said.must().err, needle: "assert failed: (1 == 1) == (1 == 2)")
         wrong @ wrong.push("    the brackets the author typed are not kept")
 
+    # **And where, since panel 230's R1**: beneath the head line, the file as the
+    # program's modules name it (the case is built from a path under the
+    # scratch folder, which the report never names), the line, the column
+    # where the asserted expression begins, and the test by its title; the
+    # sides after it.
+    if !strings.contains(text: said.must().err, needle: "assert failed: twice(2) == 5\n  at failing.hero:8:12, in test \"fails\"\n  left:  4\n  right: 5\n")
+        wrong @ wrong.push(
+            "    the failing test's place is not its file, line, column and title, between the head and the sides"
+        )
+
+    if !strings.contains(text: said.must().err, needle: "\n  at failing.hero:11:12, in test \"brackets\"\n")
+        wrong @ wrong.push("    the place is not where the asserted expression begins, its first bracket")
+
+    if strings.contains(text: said.must().err, needle: scratch)
+        wrong @ wrong.push("    the report names the path the build was invoked with")
+
     # **The aggregate case, pinned at TODAY's behaviour by panel 117.** The
     # expression is shown and the sides are not, which is defect 016. This row
     # is written to GO RED the day that changes, because the spec sentence

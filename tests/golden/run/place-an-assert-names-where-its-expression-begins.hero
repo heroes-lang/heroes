@@ -1,0 +1,7 @@
+# M-panic-location, panel 230's R1: a failed `assert` names where the asserted
+# expression begins, never the keyword, between its head line and its sides.
+
+function main()
+    a = 2 + 2
+    print(a)
+    assert a == 5

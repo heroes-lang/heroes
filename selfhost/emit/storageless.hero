@@ -113,7 +113,7 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
 # cover today" — was true only because no test covered it, which is CLAUDE.md
 # §11's premise that expires in silence while the sentence around it still reads
 # as correct.
-function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, index: i64) -> str?
+function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, index: i64, where: str) -> str?
     length: i64 @= 0 - 1
 
     match table.get(c.types, containers.value_type(f, base))
@@ -131,8 +131,9 @@ function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: conta
         base_text @ rendered.must()
 
     # The bound is checked by the one spelling a read, a write and a lend of
-    # `n.a[i]` share, `places.subscript` (defect 097; panel 196's R1).
-    return ok(places.subscript(base: base_text, index: mangle.value(index), length: length))
+    # `n.a[i]` share, `places.subscript` (defect 097; panel 196's R1), and its
+    # abort names `where` (panel 230's R1).
+    return ok(places.subscript(base: base_text, index: mangle.value(index), length: length, where: where))
 
 ## Tests
 

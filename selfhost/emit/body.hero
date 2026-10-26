@@ -233,9 +233,12 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
         text: got,
         needle: "#line 1 \"t.hero\"\nint64_t h_t_add(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:\n"
     )
+
+    # The overflow names its place: `a + b` begins at the second line's twelfth
+    # column, in `add` of the module `t` (panel 230's R1).
     assert strings.holds(
         text: got,
-        needle: "\n    t1 = h0_a; t2 = h1_b; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow(); return t3;\n"
+        needle: "\n    t1 = h0_a; t2 = h1_b; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at(\"t.hero\", \"t.add\", 2, 12); return t3;\n"
     )
 
     # Deterministic: the same input prints the same bytes.

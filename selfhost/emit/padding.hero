@@ -79,13 +79,14 @@ record Nested
 
 # The zeroing lines before an `extern` call, for each group record, or fixed
 # array of them, the call lends through `@`. An array lent through `@` is
-# zeroed in its buffer instead (`buffer_lines`).
-function zero(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run)
+# zeroed in its buffer instead (`buffer_lines`). `site` is the call's, the place
+# an element's bound names (panel 230's R1).
+function zero(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, site: i64)
     for arg in containers.args_of(f, run)
         match arg
             .inout_arg io =>
                 ty = lend_count.place_type(c, s, decls, f, at: io.place)
-                address = "&" + aggregate.place(c, s, decls, f, at: io.place)
+                address = "&" + aggregate.place(c, s, decls, f, at: io.place, site: site)
 
                 for line in of_place(c, names, s, decls, ty: ty, address: address)
                     writer.line(@w, text: "    " + line)

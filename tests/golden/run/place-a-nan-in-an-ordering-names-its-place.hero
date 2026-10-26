@@ -1,0 +1,10 @@
+# M-panic-location, panel 230's R1: a nan on either side of an ordering names
+# where `a < b` begins.
+
+function less(a: f64, b: f64) -> bool
+    return a < b
+
+function main()
+    zero = 0.0
+    print(less(a: 1.0, b: 2.0))
+    print(less(a: zero / zero, b: 2.0))

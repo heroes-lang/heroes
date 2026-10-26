@@ -57,7 +57,10 @@ use emit/mangle
 # absent for that reason too: `check/acquiring.hero` refuses `consumes` and
 # `transfers` on a cell (`cell_cannot_end`), so C writes it and nothing here
 # ends a life read from it.
-function places_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run) -> [str?]
+#
+# `site` is the call's: no place here holds an element's bound (`lvalue`), and
+# the walk that spells one is still handed the place it would name.
+function places_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, site: i64) -> [str?]
     given = containers.args_of(f, run)
     written: [str] @= []
 
@@ -73,7 +76,7 @@ function places_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: con
     for arg in given
         match arg
             .value_arg v =>
-                place = place_of(c, s, decls, f, value: v.value)
+                place = place_of(c, s, decls, f, value: v.value, site: site)
                 key = key_of(c, f, value: v.value)
 
                 if !place.is_err() && !key.is_err() && rewritten(writes, key: key.must())
@@ -184,32 +187,32 @@ function key_of(c: state.Checked, f: containers.Function, value: i64) -> str?
 
 # A place whose path ends in an index is not an lvalue the C names (its
 # `aggregate.place` spelling says so in capitals), so it is absent here.
-function lvalue(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str?
+function lvalue(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place, site: i64) -> str?
     for step in containers.steps_of(f, at.path)
         match step
             .index_step => return fail(code: "none", msg: "an element behind copy-on-write is not a place")
             .field_step => continue
 
-    return ok(aggregate.place(c, s, decls, f, at: at))
+    return ok(aggregate.place(c, s, decls, f, at: at, site: site))
 
-function place_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64) -> str?
+function place_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64, site: i64) -> str?
     for blk in f.blocks
         for inst in blk.insts
             if !inst.dest.is_err() && inst.dest.must() == value
                 match inst.op
-                    .load ld => return lvalue(c, s, decls, f, at: ld.place)
+                    .load ld => return lvalue(c, s, decls, f, at: ld.place, site: site)
                     .field fl =>
                         owner = containers.value_type(f, fl.base)
                         found = aggregate.field(c, s, decls, owner: owner, index: fl.at)
 
                         if found.is_err()
                             return fail(code: "none", msg: "not a field of this type")
-                        base = place_of(c, s, decls, f, value: fl.base)?
+                        base = place_of(c, s, decls, f, value: fl.base, site: site)?
                         return ok(base + "." + found.must().member)
                     .index ix =>
                         if !is_fixed(c, f, value: ix.base)
                             return fail(code: "none", msg: "an element behind copy-on-write is not a place")
-                        base = place_of(c, s, decls, f, value: ix.base)?
+                        base = place_of(c, s, decls, f, value: ix.base, site: site)?
                         return ok(base + "[" + mangle.value(ix.at) + "]")
                     .lit | .store | .push_owned | .unary | .binary | .cast => return fail(
                         code: "none",

@@ -58,6 +58,7 @@ use emit/ctype
 use emit/aggregate
 use emit/field_lend
 use emit/lend_count
+use emit/stop_place
 
 # The contract between this writer and `emit/ffi_extent.hero`'s reader: one
 # string each, one home (CLAUDE.md §11). None is a prefix of another.
@@ -95,7 +96,8 @@ record Lent
 # The checks before one extern call, one per lend at a counted parameter: the
 # count a sibling carries, or the extent the declaration states (panel 196's
 # R5), which `lend_count.stated_text` reads and which never names a sibling.
-function assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64)
+# `site` is the call's, the place a lent element's bound names (panel 230's R1).
+function assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64, site: i64)
     counted = lend_count.counted_siblings(s, decls, decl: decl)
     given = containers.args_of(f, run)
     index: i64 @= 0
@@ -108,14 +110,14 @@ function assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
         if buffer
             _ = 0
         else if index < counted.len() && counted[index] >= 0 && counted[index] < given.len()
-            lent = lent_by(c, s, decls, f, arg: arg, run: run)
+            lent = lent_by(c, s, decls, f, arg: arg, run: run, site: site)
 
             if !lent.is_err()
-                for text in checks(c, names, s, decls, f, lent: lent.must(), count: given[counted[index]], decl: decl, pointer: index, at: counted[index])
+                for text in checks(c, names, s, decls, f, lent: lent.must(), count: given[counted[index]], decl: decl, pointer: index, at: counted[index], site: site)
                     writer.line(@w, text: "    " + text)
         else if index < counted.len()
             stated = lend_count.stated_text(s, decls, decl: decl, index: index)
-            lent = lent_by(c, s, decls, f, arg: arg, run: run)
+            lent = lent_by(c, s, decls, f, arg: arg, run: run, site: site)
 
             if !stated.is_err() && !lent.is_err()
                 for text in stated_checks(names, s, decls, lent: lent.must(), decl: decl, pointer: index, stated: stated.must())
@@ -158,22 +160,24 @@ function stated_checks(names: ctype.Names, s: source.Source, decls: [ast.Decl], 
 # field a `ptr()` takes the address of, or the record an `@` names. A `ptr`
 # value that is not a lend — `nullptr`, an address C gave — is the program's
 # word and nothing here can measure it.
-function lent_by(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, arg: ir.Arg, run: ir.Run) -> Lent?
+function lent_by(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, arg: ir.Arg, run: ir.Run, site: i64) -> Lent?
     match arg
         .value_arg v =>
             lend = field_lend.lend_of(f, value: v.value)?
-            place = field_lend.lent_place(c, s, decls, f, value: lend.operand)?
+            place = field_lend.lent_place(c, s, decls, f, value: lend.operand, site: site)?
             length = lend_count.fixed_length(c, f, value: lend.operand)?
             return ok(Lent(place: place, length: length, whole: false, span: lend.span))
         .inout_arg io =>
             at = lend_count.call_span(f, run: run)?
-            return ok(Lent(place: aggregate.place(c, s, decls, f, at: io.place), length: 0, whole: true, span: at))
+            return ok(
+                Lent(place: aggregate.place(c, s, decls, f, at: io.place, site: site), length: 0, whole: true, span: at)
+            )
 
     return fail(code: "none", msg: "unreached")
 
 # The lines for one lend: two assertions where the count is a constant, one
 # compare where it is not, and the loud line where no unit was read.
-function checks(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, lent: Lent, count: ir.Arg, decl: i64, pointer: i64, at: i64) -> [str]
+function checks(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, lent: Lent, count: ir.Arg, decl: i64, pointer: i64, at: i64, site: i64) -> [str]
     params = lend_count.param_names(s, decls, decl: decl)
     callee = source.span_text(s, decls[decl].name)
 
@@ -186,7 +190,7 @@ function checks(c: state.Checked, names: ctype.Names, s: source.Source, decls: [
             "_Static_assert(0, \"" + UNASKED_MARKER + callee + " " + params[pointer] + ": the pointee check read no unit for this counted parameter\");"
         ]
     unit = "sizeof(*(" + header.must() + ")0)"
-    n = lend_count.count_of(c, s, decls, f, arg: count)
+    n = lend_count.count_of(c, s, decls, f, arg: count, site: site)
     spelled = ctype.c_type(names, c: c, ty: n.ty)
     folded = constant_count(c, s, decls, f, n: n)
 
@@ -206,7 +210,7 @@ function checks(c: state.Checked, names: ctype.Names, s: source.Source, decls: [
                 header: header.must()
             )
     return [
-        compared(c, s, lent: lent, n: n, unit: unit, callee: callee, pointer: params[pointer], count: params[at], header: header.must())
+        compared(c, s, f, lent: lent, n: n, unit: unit, callee: callee, pointer: params[pointer], count: params[at], header: header.must())
     ]
 
 # The constant text of a count, or absent: a cell is never one.
@@ -250,9 +254,16 @@ function asserted(c: state.Checked, lent: Lent, n: lend_count.Count, text: str, 
 # one compare, about 2 instructions a call at `-O2` (lane b12-ffi13's
 # measurement for panel 194), the shape `guard_arguments`' null-`cstr` panic
 # takes one boundary over.
-function compared(c: state.Checked, s: source.Source, lent: Lent, n: lend_count.Count, unit: str, callee: str, pointer: str, count: str, header: str) -> str
-    where = source.source_line(s, lent.span.start)
-    at = where.file + ":" + where.line.to_str() + ": `" + callee + "` was given "
+#
+# **The place is the report's second line since panel 230's R1**, the lend's
+# start as the program's modules name its file (`emit/stop_place.hero`). The
+# message opened with `<file>:<line>: ` until 2026-10-26, the file the path the
+# build was invoked with, which the sitting's rule for a place refuses (it
+# names the machine and makes two builds of one program differ); the same
+# line and the column are now the second line's, and the message keeps the
+# words after them.
+function compared(c: state.Checked, s: source.Source, f: containers.Function, lent: Lent, n: lend_count.Count, unit: str, callee: str, pointer: str, count: str, header: str) -> str
+    at = "`" + callee + "` was given "
     from = "read from `" + count + "` at run time"
     bytes: str @= at + "an extent past the " + lent.length.to_str() + " bytes of the field lent to it, " + from
     units: str @= bytes + " and counted in what the header's `" + header + "` points at"
@@ -264,4 +275,4 @@ function compared(c: state.Checked, s: source.Source, lent: Lent, n: lend_count.
 
     if lend_count.signed_int(c, n.ty)
         low @ n.text + " < 0 || "
-    return "if (" + low + "(uint64_t)(" + n.text + ") > (uint64_t)(sizeof(" + lent.place + ") / " + unit + ")) hero_panic(" + unit + " == 1 ? " + lend_count.quoted(bytes) + " : " + lend_count.quoted(units) + ");"
+    return "if (" + low + "(uint64_t)(" + n.text + ") > (uint64_t)(sizeof(" + lent.place + ") / " + unit + ")) hero_panic_at(" + unit + " == 1 ? " + lend_count.quoted(bytes) + " : " + lend_count.quoted(units) + ", " + stop_place.of(s, f, offset: lent.span.start) + ");"

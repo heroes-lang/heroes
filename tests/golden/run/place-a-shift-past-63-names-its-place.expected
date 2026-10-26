@@ -1,0 +1,2 @@
+-9223372036854775808
+!panic:   at place-a-shift-past-63-names-its-place.hero:5:12, in place-a-shift-past-63-names-its-place.bit

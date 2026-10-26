@@ -1,0 +1,10 @@
+# M-panic-location, panel 230's R1: an abort inside a generic function names
+# it as the program wrote it, `first`, whichever instance stopped.
+
+function first<T>(xs: [T]) -> T
+    return xs[0]
+
+function main()
+    print(first(xs: [1, 2]))
+    empty: [str] = []
+    print(first(xs: empty))

@@ -1,0 +1,9 @@
+# M-panic-location, panel 230's R1: a division by zero names where `total /
+# count` begins, in the function the program wrote it in.
+
+function mean(total: i64, count: i64) -> i64
+    return total / count
+
+function main()
+    print(mean(total: 10, count: 2))
+    print(mean(total: 10, count: 0))

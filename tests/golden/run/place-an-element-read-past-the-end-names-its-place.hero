@@ -1,0 +1,9 @@
+# M-panic-location, panel 230's R1: an element read past the end of an array
+# names where `xs[at]` begins, beneath `array index out of range`.
+
+function main()
+    xs = [10, 20, 30]
+    at: i64 @= 2
+    print(xs[at])
+    at @ at + 1
+    print(xs[at])

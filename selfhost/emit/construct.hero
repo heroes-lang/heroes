@@ -66,7 +66,9 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
                     rendered @ rendered.push(mangle.value(v.value))
                 else
                     rendered @ rendered.push(inner.must())
-            .inout_arg io => rendered @ rendered.push("&" + aggregate.place(c, s, decls, f, at: io.place))
+            .inout_arg io => rendered @ rendered.push(
+                "&" + aggregate.place(c, s, decls, f, at: io.place, site: span.start)
+            )
 
     match shape
         .record_shape rs =>

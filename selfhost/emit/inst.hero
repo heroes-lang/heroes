@@ -33,6 +33,7 @@ use emit/func_ref
 use emit/abort
 use emit/construct
 use emit/container
+use emit/element_store
 use emit/aggregate
 use emit/padding
 use emit/places
@@ -71,6 +72,11 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
         writer.at_generated(@w)
     else
         writer.at_span(@w, s, offset: inst.span.start)
+
+    # Where the instruction stands, the place an abort it can raise names
+    # (panel 230's R1, `emit/stop_place.hero`); read by the writers that can
+    # abort, on their failing branch alone.
+    site = inst.span.start
 
     # A temporary nobody reads gets no declaration and no assignment,
     # for the ops where that is safe.
@@ -130,7 +136,7 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                     cast @ "(void *)"
                 writer.line(
                     @w,
-                    text: "    " + byte_copy.assignment(w, c, decls, ty: inst.ty, target: target.must(), value: cast + aggregate.place(c, s, decls, f, at: ld.place))
+                    text: "    " + byte_copy.assignment(w, c, decls, ty: inst.ty, target: target.must(), value: cast + aggregate.place(c, s, decls, f, at: ld.place, site: site))
                 )
         .store st =>
             # A store whose place ends in an index is copy-on-write, and
@@ -143,7 +149,7 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                     .field_step => continue
 
             if has_index
-                lines = container.write_element(c, names, s, decls, f, at: st.place, value: st.value)
+                lines = element_store.write(c, names, s, decls, f, at: st.place, value: st.value, site: site)
 
                 # Every place the checker accepts is written since defect 097,
                 # whose `n.a[0] @ 9` reached this line, passed `check` and died
@@ -161,13 +167,13 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 if !ctype.is_unit(c, ty: containers.value_type(f, st.value))
                     writer.line(
                         @w,
-                        text: "    " + byte_copy.assignment(w, c, decls, ty: containers.value_type(f, st.value), target: aggregate.place(c, s, decls, f, at: st.place), value: mangle.value(st.value))
+                        text: "    " + byte_copy.assignment(w, c, decls, ty: containers.value_type(f, st.value), target: aggregate.place(c, s, decls, f, at: st.place, site: site), value: mangle.value(st.value))
                     )
 
                     # A group record written whole is its padding written zero
                     # again, as at a lend: C may read the place through an
                     # address it kept (defect 2112, `emit/padding.hero`).
-                    for line in padding.of_place(c, names, s, decls, ty: containers.value_type(f, st.value), address: "&" + aggregate.place(c, s, decls, f, at: st.place))
+                    for line in padding.of_place(c, names, s, decls, ty: containers.value_type(f, st.value), address: "&" + aggregate.place(c, s, decls, f, at: st.place, site: site))
                         writer.line(@w, text: "    " + line)
         # Housekeeping the author did not write. Dispatched by TYPE: a
         # str owns one block, so the runtime counts it; an aggregate
@@ -182,7 +188,7 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
             # a call, a copy of every element, a decref and a store.
             writer.line(
                 @w,
-                text: "    hero_array_push_owned(&" + aggregate.place(c, s, decls, f, at: pg.place) + ", &" + mangle.value(pg.value) + ");"
+                text: "    hero_array_push_owned(&" + aggregate.place(c, s, decls, f, at: pg.place, site: site) + ", &" + mangle.value(pg.value) + ");"
             )
         .incref rc => reference(@w, c, names, f, value: rc.value, keep: true)
         .decref rc => reference(@w, c, names, f, value: rc.value, keep: false)
@@ -194,16 +200,27 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
         # hands it over by its address (`emit/release.hero` says why).
 
         .decref_slot ds => release.slot(@w, c, names, ty: f.slots[ds.slot].ty, name: places.slot_lvalue(f, ds.slot))
-        .unary u        => operator.unary(@w, f, c, op: u.op, operand: u.operand, target: target)
+        .unary u => operator.unary(
+            @w,
+            s,
+            f,
+            c,
+            op: u.op,
+            operand: u.operand,
+            target: target,
+            site: site
+        )
         .binary bin => operator.binary(
             @w,
+            s,
             c,
             names,
             f,
             op: bin.op,
             left: bin.left,
             right: bin.right,
-            target: target
+            target: target,
+            site: site
         )
         .call cl =>
             rendered: [str] @= []
@@ -214,7 +231,9 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                     # A place, not a value: the callee gets its own address,
                     # an element's after its array is unshared (panel 196's R1).
 
-                    .inout_arg io => rendered @ rendered.push(places.argument(@w, c, names, s, decls, f, at: io.place))
+                    .inout_arg io => rendered @ rendered.push(
+                        places.argument(@w, c, names, s, decls, f, at: io.place, site: site)
+                    )
 
             ops.call(
                 @w,
@@ -228,7 +247,8 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 run: cl.arguments,
                 arguments: rendered,
                 target: target,
-                instance: instances.named_at(f, c, at: inst.span.end)
+                instance: instances.named_at(f, c, at: inst.span.end),
+                site: site
             )
         .len_of ln => access.len_read(@w, c, f, value: ln.value, target: target)
         .index ix =>
@@ -243,9 +263,9 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 .case_ty | .failure | .generic | .error                    => is_str @ is_str
 
             if is_str
-                access.string_byte(@w, base: ix.base, index: ix.at, target: target)
+                access.string_byte(@w, s, f, base: ix.base, index: ix.at, target: target, site: site)
             else
-                access.element(@w, c, s, decls, names, f, base: ix.base, index: ix.at, target: target)
+                access.element(@w, c, s, decls, names, f, base: ix.base, index: ix.at, target: target, site: site)
         .construct con =>
             match con.shape
                 .record_shape | .case_shape => construct.record_or_case(
@@ -299,10 +319,10 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                         writer.line(@w, text: "    " + line)
         .abort_op ab =>
             match ab.why
-                .must_abort            => abort.must_stop(@w, f, run: ab.arguments)
-                .assert_abort          => abort.assert_stop(@w, c, f, run: ab.arguments)
-                .unmatched_case_abort  => abort.unmatched_case_stop(@w, f, run: ab.arguments)
-                .unmatched_value_abort => abort.unmatched_value_stop(@w, c, f, run: ab.arguments)
+                .must_abort            => abort.must_stop(@w, s, f, run: ab.arguments, site: site)
+                .assert_abort          => abort.assert_stop(@w, c, s, f, run: ab.arguments, site: site)
+                .unmatched_case_abort  => abort.unmatched_case_stop(@w, s, f, run: ab.arguments, site: site)
+                .unmatched_value_abort => abort.unmatched_value_stop(@w, c, s, f, run: ab.arguments, site: site)
         .tag_of tg => access.tag_read(@w, c, f, base: tg.value, target: target)
         .payload pl => access.payload_read(
             @w,

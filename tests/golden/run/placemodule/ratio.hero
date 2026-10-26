@@ -1,0 +1,5 @@
+# The module `place-a-used-module-is-named-as-its-use-line-names-it` uses; its
+# division by zero is the abort that case names.
+
+function percent(part: i64, whole: i64) -> i64
+    return 100 * part / whole

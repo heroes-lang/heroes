@@ -59,8 +59,9 @@ record Buffer
     # elements are a group's records (panel 215's R1).
     pad: [str]
 
-# Every buffer one extern call lends, in argument order.
-function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64) -> [Buffer]
+# Every buffer one extern call lends, in argument order; `site` is the call's,
+# the place an element's bound names (panel 230's R1).
+function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64, site: i64) -> [Buffer]
     out: [Buffer] @= []
     given = containers.args_of(f, run)
     params = lend_count.param_names(s, decls, decl: decl)
@@ -84,7 +85,7 @@ function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
                         extent: "hero_lend_e" + tag
                     )
                     out @ out.push(
-                        Buffer(index: index, name: "hero_lend_b" + tag, extent_name: "hero_lend_e" + tag, extent: extent_text(c, s, decls, f, given: given, decl: decl, index: index), place: aggregate.place(c, s, decls, f, at: io.place), callee: callee, param: params[index], check: pointee_check(c, names, s, decls, decl: decl, index: index, element: element.must()), pad: pad)
+                        Buffer(index: index, name: "hero_lend_b" + tag, extent_name: "hero_lend_e" + tag, extent: extent_text(c, s, decls, f, given: given, decl: decl, index: index, site: site), place: aggregate.place(c, s, decls, f, at: io.place, site: site), callee: callee, param: params[index], check: pointee_check(c, names, s, decls, decl: decl, index: index, element: element.must()), pad: pad)
                     )
                 .value_arg => index @ index
         index @ index + 1
@@ -92,7 +93,7 @@ function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
     return out
 
 # The extent as an `int64_t` C expression.
-function extent_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, given: [ir.Arg], decl: i64, index: i64) -> str
+function extent_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, given: [ir.Arg], decl: i64, index: i64, site: i64) -> str
     names = lend_count.quoted(source.span_text(s, decls[decl].name)) + ", " + lend_count.quoted(lend_count.param_names(s, decls, decl: decl)[index])
     stated = lend_count.stated_text(s, decls, decl: decl, index: index)
 
@@ -104,7 +105,7 @@ function extent_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: c
 
     if index >= counted.len() || counted[index] < 0 || counted[index] >= given.len()
         return "hero_lend_count_u64((uint64_t)0 - 1, " + names + ")"
-    n = lend_count.count_of(c, s, decls, f, arg: given[counted[index]])
+    n = lend_count.count_of(c, s, decls, f, arg: given[counted[index]], site: site)
 
     if lend_count.signed_int(c, n.ty)
         return "(int64_t)(" + n.text + ")"

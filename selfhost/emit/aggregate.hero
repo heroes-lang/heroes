@@ -59,9 +59,10 @@ function case_names(names: ctype.Names, s: source.Source, decls: [ast.Decl], dec
     return fail(code: "none", msg: "unreached")
 
 # A place as a C lvalue, read from the declarations alone: `emit/places.hero`
-# spells it, and the readers that hold no names ask it here.
-function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> str
-    return places.place(c, s, decls, f, at: at)
+# spells it, and the readers that hold no names ask it here. `site` is where
+# the instruction stands, the place an element's bound names (panel 230's R1).
+function place(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place, site: i64) -> str
+    return places.place(c, s, decls, f, at: at, site: site)
 
 # t3 = (h_m_Point){.f_x = t1, .f_y = t2};
 function construct(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str]) -> str?
@@ -310,7 +311,7 @@ test "designated construction, a walked place, and the failure's fixed pair"
         instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
-    spot = place(got.c, got.s, got.decls, f, at: ir.Place(root: 0, path: ir.Run(start: 0, length: 2)))
+    spot = place(got.c, got.s, got.decls, f, at: ir.Place(root: 0, path: ir.Run(start: 0, length: 2)), site: 0)
     assert spot == "h0_l.f_start_at.f_x"
     failure_read = field(got.c, got.s, got.decls, owner: table.failure_ty(got.c.types), index: 1)
     assert failure_read.must().member == "msg"

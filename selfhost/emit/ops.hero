@@ -43,8 +43,9 @@ use resolve
 use checker
 
 # `p` is the program held with its index, built once per program
-# (`instances.Held`, defect 492): every lookup below reads it.
-function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, instance: [i64])
+# (`instances.Held`, defect 492): every lookup below reads it. `site` is where
+# the call stands, the place a check before it names (panel 230's R1).
+function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, instance: [i64], site: i64)
     assign: str @= ""
 
     if !target.is_err()
@@ -96,7 +97,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             # over: it is a cast rendered at the use site, because a fixed array
             # has no C storage for a temporary to live in (panel 164).
             if builtin_name == "ptr" && !target.is_err()
-                field_lend.lent(@w, c, s, decls, f, run: run, into: target.must())
+                field_lend.lent(@w, c, s, decls, f, run: run, into: target.must(), site: site)
                 return
 
             in_emitted: bool @= false
@@ -151,17 +152,17 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             # which reaches here as a macro NAME rather than as a literal.
             # Written before the call rather than folded into it because a
             # `_Static_assert` is a declaration and the call is a statement.
-            lend_extent.assertions(@w, c, names, s, decls, f, run: run, decl: e.decl)
+            lend_extent.assertions(@w, c, names, s, decls, f, run: run, decl: e.decl, site: site)
             lend_local.label(@w, c, s, decls, f, run: run, decl: e.decl)
 
             # The bytes no C member holds, in every group record the call lends,
             # written zero in place (panel 215's R1, `emit/padding.hero`).
-            padding.zero(@w, c, names, s, decls, f, run: run)
+            padding.zero(@w, c, names, s, decls, f, run: run, site: site)
 
             # An array lent through `@` crosses as a buffer the runtime places
             # against a page nothing may touch (panel 196's R4,
             # `emit/lend_buffer.hero`): taken here, given back after the call.
-            held = lend_buffer.buffers(c, names, s, decls, f, run: run, decl: e.decl)
+            held = lend_buffer.buffers(c, names, s, decls, f, run: run, decl: e.decl, site: site)
             buffered = lend_buffer.before(@w, held, arguments: arguments)
 
             # A `cstr` lent to a pointer the check read crosses cast (defect 427).
@@ -175,7 +176,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             # call leaves there (panel 177's item 1); and a Heroes function
             # handed to C goes as its thunk (item 2), through the table
             # `emit/callback_thunk.hero` writes once per unit.
-            places = handle_place.places_of(c, s, decls, f, run: run)
+            places = handle_place.places_of(c, s, decls, f, run: run, site: site)
             crossed = callback_thunk.crossings(p, c, names, decl: e.decl, arguments: guarded)
 
             # The result half of the const cast: sqlite3_column_blob
@@ -359,7 +360,8 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         run: ir.Run(start: 0, length: 0),
         arguments: ["t1"],
         target: ok("t2"),
-        instance: empty_instance
+        instance: empty_instance,
+        site: 0
     )
     call(
         @w,
@@ -373,7 +375,8 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         run: ir.Run(start: 0, length: 0),
         arguments: ["t3", "t4"],
         target: ok("t5"),
-        instance: empty_instance
+        instance: empty_instance,
+        site: 0
     )
     got = writer.finish(w)
     assert got == "    t2 = h_t_double_it(t1);\n    t5 = (const char *)strstr(hero_cstr_nonnull(t3), hero_cstr_nonnull(t4));\n"

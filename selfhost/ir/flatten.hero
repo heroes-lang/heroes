@@ -930,7 +930,10 @@ function lower_assert(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: s
                 operands @ operands.push(.value_arg(value: loaded))
 
     run = build.args_run(@b, operands)
-    build.emit_void(@b, op: .abort_op(why: .assert_abort, arguments: run), ty: build.unit_ty(b), span: span)
+
+    # The report names where the expression it quotes begins (panel 230's R1).
+    quoted = a.exprs[asserted].span
+    build.emit_void(@b, op: .abort_op(why: .assert_abort, arguments: run), ty: build.unit_ty(b), span: quoted)
     build.terminate(@b, .unreachable)
     build.switch_to(@b, target: good)
 

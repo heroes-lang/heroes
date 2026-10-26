@@ -198,7 +198,7 @@ function command(_: i64) -> i64
         .this_cmd    => hero_exit(code: cli_table.exit_code(doctor.run_this()))
         .grammar_cmd => hero_exit(code: cli_table.exit_code(grammar.run()))
         .doctor_cmd => hero_exit(
-            code: cli_table.exit_code(doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint()))
+            code: cli_table.exit_code(doctor.run_doctor(build_dir: "build", runtime_hint: toolchain.runtime_hint()))
         )
         .measure_cmd => hero_exit(code: cli_table.exit_code(measure.run(inv)))
         .mutate_cmd  => hero_exit(code: cli_table.exit_code(mutate.run(inv)))
@@ -270,7 +270,7 @@ function arg_written(index: i64) -> str
 # located: a missing runtime is the tool being unable to run, which is
 # exit 2 whatever the verb.
 function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_table.Exit
-    hint = runtime_hint()
+    hint = toolchain.runtime_hint()
 
     if hint.is_err()
         io.eprint(
@@ -293,32 +293,6 @@ function compiling(path: str, s: source.Source, inv: argv.Invocation) -> cli_tab
         .grammar_cmd | .probe_cmd => return .ok_exit
 
     return .ok_exit
-
-# Where the runtime is, when it is not ./runtime — the REAL environment
-# variable, the same channel the bootstrap reads and the same one
-# --help names.
-#
-# It used to read a one-line FILE called HEROES_RUNTIME, on the note
-# "the language has no getenv". That note was false: getenv is one
-# `extern "stdlib.h"` away, exactly like the `system` this compiler
-# already calls, and §1.11 says so — everything comes from C. What the
-# file spelling cost was a DIAGNOSTIC THAT LIED: `locate_toolchain`
-# says "set HEROES_RUNTIME=<dir>", which every reader takes for an
-# environment variable, and under the port that route did nothing
-# (panel 085 R8, measured both ways).
-#
-# A value that is not UTF-8 is a failure that names it (defect 243), never
-# the unset hint it was read as: the search then went on to `./runtime`
-# without a word, or told the author to set what was set.
-function runtime_hint() -> str?
-    hint = process.env(name: "HEROES_RUNTIME")
-
-    if hint.is_err()
-        return fail(
-            code: "not_text",
-            msg: "`HEROES_RUNTIME` is set, and its value, `" + process.env_written(name: "HEROES_RUNTIME") + "`, is not UTF-8, so this compiler cannot look in the directory it names"
-        )
-    return hint
 
 function message_of(failed: argv.Invocation?) -> str
     match failed

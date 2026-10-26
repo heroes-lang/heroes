@@ -484,6 +484,28 @@ _Noreturn void hero_panic_unmatched_value(HeroStr text);
  * 2226): the value is the program's, and `%s` once let it write a line of its own. */
 _Noreturn void hero_panic_unmatched_str(HeroStr text);
 
+/* WHERE A STOP HAPPENED (panel 230's R1; `parts/place.c`). Each entry point is an
+ * old one with the place added last, beneath the line the old one writes:
+ * `  at <file>:<line>:<column>, in <function>`. The four are literals the emitter
+ * writes on the failing branch alone, in this order: the file as the program's
+ * modules name it, the function as a caller names it, the line and the column.
+ * Added BESIDE the old names, never in their place (design.md §4.20), and the four
+ * are unnamed here, as `hero_panic_unmatched_case`'s note above keeps its words,
+ * so no word of these prototypes reaches the guard. */
+_Noreturn void hero_panic_at(const char *msg, const char *, const char *, int64_t, int64_t);
+_Noreturn void hero_panic_overflow_at(const char *, const char *, int64_t, int64_t);
+_Noreturn void hero_panic_byte_at(HeroStr s, int64_t index, const char *, const char *, int64_t, int64_t);
+_Noreturn void hero_panic_must_at(HeroFailure f, const char *, const char *, int64_t, int64_t);
+_Noreturn void hero_panic_assert_at(HeroStr text, const char *, const char *, int64_t, int64_t);
+_Noreturn void hero_panic_assert_sides_at(HeroStr text, HeroStr left, HeroStr right, const char *, const char *,
+                                          int64_t, int64_t);
+_Noreturn void hero_panic_assert_str_sides_at(HeroStr text, HeroStr left, HeroStr right, const char *,
+                                              const char *, int64_t, int64_t);
+_Noreturn void hero_panic_unmatched_case_at(int64_t index, HeroStr text, const char *, const char *, int64_t,
+                                            int64_t);
+_Noreturn void hero_panic_unmatched_value_at(HeroStr text, const char *, const char *, int64_t, int64_t);
+_Noreturn void hero_panic_unmatched_str_at(HeroStr text, const char *, const char *, int64_t, int64_t);
+
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *
  * C has no copy constructors, no destructors and no generic comparison, while
@@ -624,6 +646,12 @@ int64_t hero_array_len(const HeroArrayHeader *a);
 /* Read one element. Aborts out of range (spec § 10 Strings, arrays, maps) — never reads
  * arbitrary memory, which is the guarantee §4.9 states. */
 const void *hero_array_at(const HeroArrayHeader *a, int64_t index);
+
+/* The same abort with the place the program read or wrote the element at, from
+ * the failing branch the emitter writes (panel 230's R1, `parts/place.c`; the
+ * four unnamed parameters as `hero_panic_at`'s above). */
+_Noreturn void hero_panic_index_at(const HeroArrayHeader *a, int64_t index, const char *, const char *, int64_t,
+                                   int64_t);
 
 HeroStr hero_str_try_from_array(const HeroArrayHeader *a, int64_t *status);
 

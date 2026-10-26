@@ -193,6 +193,10 @@
 /* The failure side of `T?`, and `.must()`'s abort. */
 #include "parts/failure.c"
 
+/* Where a stop happened: the old aborts with the place added (panel 230's R1).
+ * Needs the report's fixed buffer from `failure.c`, `[T]` and `str`. */
+#include "parts/place.c"
+
 /* `{K: V}`: the representation and everything that reads it. */
 #include "parts/map.c"
 
