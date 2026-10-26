@@ -113,3 +113,7 @@ may name keeps one more input: a listing of what a program reaches through its
 entered (`docs/roadmap/scheduling.md`); this sitting is its one caller. The
 seed is 1,400,548 lines at `612e686d8`, not 733,838. This row moves from 78 to
 82.
+
+**Renumbered 2026-10-26.** The sentence above did not follow M-readonly-lend's
+entry at row 68 on 2026-10-18, which made this row 83; M-standalone-compiler's
+entry at row 82 makes it 84.

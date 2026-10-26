@@ -482,6 +482,21 @@ changes no language (https://github.com/heroes-lang/heroes/issues/820). § The
 chain holds 91 rows with no gap, by a count over the table and by
 `site/src/lib/chain.ts`, which refuses a gap at build time.
 
+**2026-10-26, M-standalone-compiler entered at row 82, by the author's
+instruction**, meant as: *search for a C compiler to embed in the Heroes
+compiler, compatible with Windows, Mac and Linux, so that Heroes is a single
+executable; then we evaluate it and work out what we must do*. The research
+of that session is the row's page. The author's two answers the same day:
+*everything, as Zig does*, for what must disappear from the machine, and the
+row with a measured probe of clang embedded, for how to go on. It goes
+immediately before M-install-channels because its delivery reverses that
+row's premise, that a prebuilt binary is a decoy while `heroes` without clang
+compiles nothing; the ten scheduled rows from M-install-channels on each move
+one down, their order kept. No sitting: a scheduling changes no language
+(https://github.com/heroes-lang/heroes/issues/820), and the row's opening
+convenes one. § The chain holds 92 rows with no gap, by a count over the
+table and by `site/src/lib/chain.ts`, which refuses a gap at build time.
+
 ---
 
 **What used to stand under the ROADMAP lives in `docs/roadmap/`** since
