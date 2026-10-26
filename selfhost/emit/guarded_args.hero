@@ -29,7 +29,12 @@ use emit/extern_probe
 # excluded: §4.8 makes it a pointer parameter, so the argument is the
 # address of a local, never null — a guard that cannot fail is read as
 # protection that is there (author decision 2026-08-15).
-function guard_arguments(p: instances.Held, c: state.Checked, decls: [ast.Decl], decl: i64, arguments: [str]) -> [str]
+#
+# `where` is the call's place, the four arguments `emit/stop_place.hero` writes:
+# a null `cstr` names the call it was handed to (panel 230's R1, kind 2), and the
+# guard stands inside the call's arguments, an expression, which can declare no
+# record.
+function guard_arguments(p: instances.Held, c: state.Checked, decls: [ast.Decl], decl: i64, arguments: [str], where: str) -> [str]
     declared = instances.last_of(p, decl: decl)
 
     if declared.is_err()
@@ -60,7 +65,7 @@ function guard_arguments(p: instances.Held, c: state.Checked, decls: [ast.Decl],
                 .local_slot | .synthetic_slot | .return_slot => is_out @ is_out
 
         if is_cstr && !is_out
-            out @ out.push("hero_cstr_nonnull(" + argument + ")")
+            out @ out.push("hero_cstr_nonnull_at(" + argument + ", " + where + ")")
         else if cast
             out @ out.push("(void *)" + argument)
         else if is_cstr && is_out && freer.owned_parameter(decls, at: decl, index: index)

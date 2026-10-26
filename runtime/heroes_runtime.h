@@ -523,6 +523,11 @@ _Noreturn void hero_panic_unmatched_str_at(HeroStr text, const char *, const cha
 HeroStr hero_str_slice_at(HeroStr s, int64_t from, int64_t to, const HeroPlace *where);
 HeroStr hero_str_repeat_at(HeroStr s, uint64_t n, const HeroPlace *where);
 void hero_held_release_at(const char **slot, const HeroPlace *where);
+const char *hero_str_lend_at(HeroStr s, const HeroPlace *where);
+const char *hero_str_held_at(HeroStr s, const HeroPlace *where);
+/* A `cstr` crossing into C inside a call's arguments, an expression: the four as
+ * `hero_panic_at`'s, unnamed for the same reason. */
+const char *hero_cstr_nonnull_at(const char *p, const char *, const char *, int64_t, int64_t);
 
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *

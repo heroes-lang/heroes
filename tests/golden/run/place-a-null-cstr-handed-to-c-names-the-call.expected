@@ -1,0 +1,2 @@
+before
+!panic:   at place-a-null-cstr-handed-to-c-names-the-call.hero:13:8, in place-a-null-cstr-handed-to-c-names-the-call.main

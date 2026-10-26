@@ -184,7 +184,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             guarded = lend_type.cast_lends(
                 names.lend_units,
                 name: extern_name,
-                arguments: guarded_args.guard_arguments(p, c, decls, decl: e.decl, arguments: buffered)
+                arguments: guarded_args.guard_arguments(p, c, decls, decl: e.decl, arguments: buffered, where: stop_place.of(s, f, offset: site))
             )
 
             # Where each argument was read from, for the poison a consuming
@@ -394,4 +394,8 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         site: 0
     )
     got = writer.finish(w)
-    assert got == "    t2 = h_t_double_it(t1);\n    t5 = (const char *)strstr(hero_cstr_nonnull(t3), hero_cstr_nonnull(t4));\n"
+
+    # Each `cstr` crossing is guarded with the call's place, the site `0` of
+    # `main` in `t.hero`, the first line's first column (panel 230's R1).
+    at = "\"t.hero\", \"t.main\", 1, 1"
+    assert got == "    t2 = h_t_double_it(t1);\n    t5 = (const char *)strstr(hero_cstr_nonnull_at(t3, " + at + "), hero_cstr_nonnull_at(t4, " + at + "));\n"

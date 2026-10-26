@@ -1,0 +1,14 @@
+# M-panic-location, panel 230's R1, kind 2: a null `cstr` handed back to C names
+# the call it was handed to, where the second `strstr(...)` begins. The check
+# stands inside the call's arguments, an expression, which can declare no record,
+# so it takes the four a failing branch takes. The null is `abort-null-cstr-into-c`'s.
+
+extern "string.h"
+    function strstr(haystack: cstr lent, needle: cstr lent) -> cstr
+
+function main()
+    print("before")
+    absent = strstr(haystack: "abc".cstr(), needle: "zzz".cstr())
+
+    if strstr(haystack: absent, needle: "y".cstr()) == nullptr
+        print("unreachable")

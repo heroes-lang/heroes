@@ -1,0 +1,13 @@
+# M-panic-location, panel 230's R1, kind 2: `.cstr()` on a `str` holding a NUL is
+# refused before C reads a shorter string, at the place where `held.cstr()`
+# begins.
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+function main()
+    clean = "abc"
+    print(strlen(s: clean.cstr()))
+    bytes: [u8] = [97, 0, 98]
+    held = bytes.validated_bytes().must()
+    print(strlen(s: held.cstr()))

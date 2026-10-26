@@ -208,7 +208,8 @@ function entry(name: str, f: containers.Function, c: state.Checked, run: ir.Run)
 # own operation (panel 230's R1, kind 2): each has a twin, its name and `_at`,
 # taking the site's record last (`emit/stop_place.hero`'s `around`), which the
 # call writes in their place. A slice out of range or splitting a character, a
-# sort meeting a nan, a repeat past a length, a lease ended twice.
+# sort meeting a nan, a repeat past a length, a lease ended twice, a lease taken
+# of a `str` holding a NUL.
 constant PLACED: [str]
     [
         "hero_str_slice"
@@ -216,6 +217,7 @@ constant PLACED: [str]
         "hero_array_sort"
         "hero_str_repeat"
         "hero_held_release"
+        "hero_str_held"
     ]
 
 function placed(callee: str) -> bool

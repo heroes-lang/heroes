@@ -1,0 +1,2 @@
+3
+!panic:   at place-a-cstr-of-a-str-holding-a-nul-names-its-place.hero:13:21, in place-a-cstr-of-a-str-holding-a-nul-names-its-place.main

@@ -42,6 +42,7 @@ use emit/unread
 use emit/writer
 use emit/byte_copy
 use emit/release
+use emit/stop_place
 use token
 use check/contextual
 use parse
@@ -330,11 +331,13 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
 
         .cast ca =>
             match ca.kind
+                # A `str` holding a NUL is refused at its `.cstr()`, whose
+                # site's record the lend is handed (panel 230's R1, kind 2).
                 .str_to_cstr =>
                     if !target.is_err()
                         writer.line(
                             @w,
-                            text: "    " + target.must() + " = hero_str_lend(" + mangle.value(ca.operand) + ");"
+                            text: "    " + stop_place.around(s, f, offset: site, statement: target.must() + " = hero_str_lend_at(" + mangle.value(ca.operand) + ", &" + stop_place.HERE + ");")
                         )
                 # The bytes are the program's now; the cast says so to C.
 

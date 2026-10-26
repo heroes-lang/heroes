@@ -1,0 +1,16 @@
+# M-panic-location, panel 230's R1, kind 2: `.lease()` of a `str` holding a NUL is
+# refused before C is handed a copy it would read short, at the place where
+# `held.lease()` begins.
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+function main()
+    clean @= "abc".lease()
+    print(strlen(s: clean))
+    end_lease(@clean)
+    bytes: [u8] = [97, 0, 98]
+    held = bytes.validated_bytes().must()
+    c @= held.lease()
+    print(strlen(s: c))
+    end_lease(@c)

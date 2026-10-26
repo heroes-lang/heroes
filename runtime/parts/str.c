@@ -562,6 +562,15 @@ const char *hero_cstr_nonnull(const char *p) {
     return p;
 }
 
+/* The same at the call's place (panel 230's R1, kind 2): the program's C writes
+ * it inside the call's arguments, an expression, which can declare no record,
+ * so it takes the four a failing branch takes. */
+const char *hero_cstr_nonnull_at(const char *p, const char *file, const char *function, int64_t line,
+                                 int64_t column) {
+    if (p == NULL) hero_panic_at("a null `cstr` was passed to a C function", file, function, line, column);
+    return p;
+}
+
 HeroStr hero_str_from_cstr(const char *p) {
     if (p == NULL) hero_panic("hero_str_from_cstr: NULL pointer from C");
     return hero_str_from_bytes(p, (int64_t)strlen(p));
@@ -589,7 +598,7 @@ const char *hero_str_cstr(HeroStr s) {
  *
  * The byte is found only on the way to the abort, for the message; its index
  * is the one `s[i]` reads. */
-static _Noreturn void hero_str_refuse_nul(HeroStr s, const char *what) {
+static _Noreturn void hero_str_refuse_nul(HeroStr s, const char *what, const HeroPlace *where) {
     const char *zero = memchr(s.ptr, 0, (size_t)s.len);
     char message[320];
     snprintf(message, sizeof message,
@@ -597,14 +606,18 @@ static _Noreturn void hero_str_refuse_nul(HeroStr s, const char *what) {
              "string only to its first NUL, so it would read a shorter string than the "
              "program holds",
              what, (long long)(zero == NULL ? -1 : zero - s.ptr), (long long)s.len);
-    hero_panic(message);
+    hero_panic_where(message, where);
 }
 
-const char *hero_str_lend(HeroStr s) {
+/* The body is the `_at` twin's, whose record names the `.cstr()` that met the NUL
+ * (panel 230's R1, kind 2); NULL names none. */
+const char *hero_str_lend_at(HeroStr s, const HeroPlace *where) {
     hero_str_require(s);
-    if (hero_str_holds_nul(s)) hero_str_refuse_nul(s, "`.cstr()` lends to C");
+    if (hero_str_holds_nul(s)) hero_str_refuse_nul(s, "`.cstr()` lends to C", where);
     return s.ptr;
 }
+
+const char *hero_str_lend(HeroStr s) { return hero_str_lend_at(s, NULL); }
 
 /* -- the held buffer: §4.19's fourth case, panel 124 -------------------------
  *
@@ -620,9 +633,11 @@ const char *hero_str_lend(HeroStr s) {
  * §4.20 says a str's bytes "may be shared with other values", which is the
  * sentence `ffi_writable_parameter` already cites, so the pin is a corruption
  * class and panel 124 R3 refuses it before it can be written. */
-const char *hero_str_held(HeroStr s) {
+/* The body is the `_at` twin's, whose record names the `.lease()` that met the
+ * NUL (panel 230's R1, kind 2); `hero_str_held` below hands it NULL. */
+const char *hero_str_held_at(HeroStr s, const HeroPlace *where) {
     hero_str_require(s);
-    if (hero_str_holds_nul(s)) hero_str_refuse_nul(s, "`.lease()` copies for C");
+    if (hero_str_holds_nul(s)) hero_str_refuse_nul(s, "`.lease()` copies for C", where);
     HeroHeldHeader *h = hero_alloc_held(sizeof(HeroHeldHeader) + (size_t)s.len + 1);
     h->magic = HERO_HELD_MAGIC;
     h->len = s.len;
@@ -631,6 +646,8 @@ const char *hero_str_held(HeroStr s) {
     b[s.len] = '\0'; /* §4.20's NUL, kept by the runtime rather than by a caller */
     return b;
 }
+
+const char *hero_str_held(HeroStr s) { return hero_str_held_at(s, NULL); }
 
 /* The release the program writes, and it takes the CELL and not the pointer.
  *
