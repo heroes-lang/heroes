@@ -85,6 +85,23 @@ jobs:
     permissions:
       contents: read
       security-events: write
+    # **No overlay database where the build is traced** (defect 2223). On the
+    # default branch the action asks for an overlay-base database, the base of
+    # the incremental analysis it runs on a pull request, and with
+    # `build-mode: manual` it cannot build one: from 2026-10-22 to 25 each of
+    # the c-cpp leg's twelve runs read *Cannot build an overlay-base database
+    # because build-mode is set to "manual" instead of "none"*, a warning, and
+    # fell back to the full database this file wants. `none` says so before the
+    # action asks (its `src/config-utils.ts`, lines 730 to 743, at the v4.38.3
+    # pinned below), and the empty string the other three legs get is a value
+    # the action ignores, so they keep the overlay analysis their `none` build
+    # allows. The variable is read from the action's source, not its README;
+    # an action that stopped reading it would bring the warning back, the loud
+    # direction. The custom repository property `github-codeql-disable-overlay`
+    # does the same from the organisation's settings, outside this file, and
+    # for every language at once.
+    env:
+      CODEQL_OVERLAY_DATABASE_MODE: ${{ matrix.build-mode == 'manual' && 'none' || '' }}
     strategy:
       fail-fast: false
       matrix:
