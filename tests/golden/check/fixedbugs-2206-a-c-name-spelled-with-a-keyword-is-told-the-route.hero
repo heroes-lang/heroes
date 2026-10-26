@@ -1,0 +1,15 @@
+# fixedbugs, defect 2206, 2026-10-26: a C function or constant whose name is a
+# keyword of Heroes was told `expected the C function's name, found `match``,
+# with `sqrt` for the shape to write: the header's own name called no name, and
+# neither the keyword nor the way past it said. The message names the keyword
+# and the route that reaches the symbol today, a second name in a header of the
+# program's own that includes the group's, which `run/fixedbugs-2206-*` runs.
+# A member named by no word at all keeps the message it had.
+
+extern "fixedbugs-2206-a-c-name-spelled-with-a-keyword-is-told-the-route.h"
+    function match(x: i32) -> i32  #~ expected_name
+    constant test: i64  #~ expected_name
+    function 3(x: i32) -> i32  #~ expected_name
+
+function main()
+    print(1)

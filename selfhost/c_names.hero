@@ -1,0 +1,52 @@
+# What a word Heroes reserves says where an `extern` group names a C symbol
+# (design.md §4.19 and §4.17; spec § 13). The name is the header's, never the
+# program's to choose, and no group can bind one spelled with a keyword of
+# Heroes (issue 1), so *expected the C function's name* would call the
+# header's own name no name: what a signature says there names the keyword and
+# the one route that reaches the symbol today, a second name in a header of
+# the program's own that includes the group's, bound from that header (defect
+# 2206). Both routes ran on 2026-10-26, the `static inline` caller and the
+# `#define`, and `run/fixedbugs-2206-*` runs them still.
+#
+# Text from a token and its source alone, reading no parse: `parse/group.hero`
+# asks it of the token where a signature's name should stand, and a message
+# about a C name is not the parser's to hold against the lines its directory
+# is granted (`BUDGETS` in `tests/harness/suite_layout.hero`).
+
+use token
+use describe
+use keywords
+
+## The message
+
+# What `expected_name` says of `t`, the token of `text` standing where a
+# signature's name should: `header` is the group's header as written, and
+# `is_constant` whether the signature is a `constant`.
+function unnamed(t: token.Token, text: str, header: token.Span, is_constant: bool) -> str
+    word = text.slice(from: t.span.start, to: t.span.end)
+
+    if keywords.keyword(word).is_err()
+        if is_constant
+            return "expected the C constant's name, found " + describe.found(t, text) + " — `constant SQLITE_OK: i64`"
+        return "expected the C function's name, found " + describe.found(t, text) + " — `function sqrt(x: f64) -> f64`"
+    own = " in a header of the program's own that includes " + text.slice(from: header.start, to: header.end)
+    again = "kw_" + word
+
+    if is_constant
+        return "`" + word + "` is a keyword of Heroes, so no `extern` group binds a C constant by that name — name it again" + own + ", `#define " + again + " " + word + "`, and bind `constant " + again + "` from that header"
+    return "`" + word + "` is a keyword of Heroes, so no `extern` group binds a C function by that name — call it" + own + ", `static inline int " + again + "(int x) { return " + word + "(x); }` with the C function's own types, and bind `function " + again + "` from that header"
+
+## Tests
+
+test "a keyword where a C name stands is named, with the route past it"
+    text = "\"lib.h\" match test 3"
+    header = token.Span(start: 0, end: 7)
+    f = unnamed(token.Token(kind: .kw_match, span: token.Span(start: 8, end: 13)), text, header, is_constant: false)
+    assert f == "`match` is a keyword of Heroes, so no `extern` group binds a C function by that name — call it in a header of the program's own that includes \"lib.h\", `static inline int kw_match(int x) { return match(x); }` with the C function's own types, and bind `function kw_match` from that header"
+    k = unnamed(token.Token(kind: .kw_test, span: token.Span(start: 14, end: 18)), text, header, is_constant: true)
+    assert k == "`test` is a keyword of Heroes, so no `extern` group binds a C constant by that name — name it again in a header of the program's own that includes \"lib.h\", `#define kw_test test`, and bind `constant kw_test` from that header"
+
+    # A token that is no keyword keeps the message it had, named as every
+    # "found" names it.
+    n = unnamed(token.Token(kind: .int_lit, span: token.Span(start: 19, end: 20)), text, header, is_constant: false)
+    assert n == "expected the C function's name, found a number (`3`) — `function sqrt(x: f64) -> f64`"

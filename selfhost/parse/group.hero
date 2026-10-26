@@ -25,6 +25,7 @@
 use token
 use diag
 use cursor
+use c_names
 use doc_comments
 use ast
 use parse/tails
@@ -159,10 +160,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
 
             if !cursor.at(c, .ident)
                 if !cursor.at_reported_error(c)
-                    message: str @= "expected the C function's name, found " + cursor.found(c, text) + " — `function sqrt(x: f64) -> f64`"
-
-                    if is_constant
-                        message @ "expected the C constant's name, found " + cursor.found(c, text) + " — `constant SQLITE_OK: i64`"
+                    message = c_names.unnamed(c.tokens[c.pos], text, tails.linkage_header(linkage).must(), is_constant)
                     cursor.error(@c, code: "expected_name", message: message, span: cursor.current_span(c))
                 cursor.skip_line(@c)
                 continue

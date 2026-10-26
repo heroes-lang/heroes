@@ -1,0 +1,14 @@
+# fixedbugs, defect 2206, 2026-10-26: the route `expected_name` names for a C
+# symbol spelled with a keyword of Heroes, run. No group can bind `match` or
+# `test` by those names, so the program's own header gives each a second one, a
+# `static inline` caller for the function and a `#define` for the constant, and
+# the group binds the second names; one header plays the library's part and the
+# program's here. If this stops printing 42 and 7, the message is a lie.
+
+extern "fixedbugs-2206-the-route-past-a-keyword-runs.h"
+    function kw_match(x: i32) -> i32
+    constant kw_test: i64
+
+function main()
+    print(kw_match(x: 41))
+    print(kw_test)

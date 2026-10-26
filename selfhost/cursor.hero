@@ -286,11 +286,7 @@ function push_span(@spans: [token.Span], s: token.Span)
 # carries information show it; punctuation and keywords are their own text
 # already, and layout tokens have none at all.
 function found(c: Cursor, text: str) -> str
-    t = c.tokens[c.pos]
-
-    if describe.carries_text(t.kind)
-        return describe.describe(t.kind) + " (`" + slice_of(text, t.span) + "`)"
-    return describe.describe(t.kind)
+    return describe.found(c.tokens[c.pos], text)
 
 test "a comment never rests under the cursor but is kept"
     tokens: [token.Token] = [

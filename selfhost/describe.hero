@@ -93,6 +93,15 @@ function describe(kind: token.TokenKind) -> str
 function carries_text(kind: token.TokenKind) -> bool
     return kind == .ident || kind == .int_lit || kind == .float_lit || kind == .str_lit || kind == .char_lit || kind == .error
 
+# How "found …" names the token `t` of `text`: its name, and its own text beside
+# it where that text carries what the name does not. One spelling for the
+# cursor's token (`cursor.found`) and for a token read without a cursor
+# (`c_names.unnamed`).
+function found(t: token.Token, text: str) -> str
+    if carries_text(t.kind)
+        return describe(t.kind) + " (`" + text.slice(from: t.span.start, to: t.span.end) + "`)"
+    return describe(t.kind)
+
 test "the three invisible tokens are named in prose"
     assert describe(.terminator) == "end of line"
     assert describe(.indent) == "an indented block"
