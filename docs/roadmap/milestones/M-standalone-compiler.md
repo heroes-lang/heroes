@@ -109,8 +109,11 @@ free that day. It asks four things: the size of a binary that carries clang and
 lld for AArch64 and X86; whether clang's driver runs inside another program as
 `zig cc` runs it; which runtime libraries the sanitizers need and where they
 must stand on the disk; and what each platform still needs beside the binary.
-Its numbers go to `docs/measurements/`, and the sitting reads them. **Read the
-same day from the archives' own listings**, each streamed and none written to
+Its numbers are measurement 055, and the sitting reads them: **run the same
+day**, one binary of 191,569,360 bytes holding clang and lld, linked from the
+release, stood in for this Mac's toolchain with `heroes` untouched, the
+compiler's own C identical byte for byte and the compiler it built passing its
+1,750 tests. **Read the same day from the archives' own listings**, each streamed and none written to
 the disk: LLVM 23.1.4's release for macOS arm64, Linux x86-64, Linux arm64 and
 Windows x86-64 each carries clang's 90 static libraries, lld's 6 (ELF, COFF and
 MachO among them) and LLVM's 147 to 222, so no LLVM is built on any of the four
