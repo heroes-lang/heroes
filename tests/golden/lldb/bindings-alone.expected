@@ -9,7 +9,7 @@
 !shows: (int64_t) h2_total = 24
 !shows: (int64_t) h5_k = 3
 !shows: (h_bindingsalone_Step) h6_step = {
-!shows: (h_bindingsalone_Step_c_num) h8_v = (f_v = 12)
+!shows: (h_bindingsalone_0Step_c_num) h8_v = (f_v = 12)
 > up
 !at: bindings-alone.hero:32
 > frame variable

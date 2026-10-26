@@ -228,7 +228,7 @@ test "the signature spells the pair rule, and an instance carries its hash"
     monod: containers.Function @= f
     monod.instance @ [int_id]
     named = instance_name(monod, c, s, parsed.decls)
-    assert named == "h_t_dist_" + mangle.instance(render_instance(c, s, parsed.decls, bound: [int_id]))
+    assert named == "h_t_0dist_" + mangle.instance(render_instance(c, s, parsed.decls, bound: [int_id]))
 
     # A function of the library is handed its caller's place last, and its twin,
     # the address a value takes, hands on its declaration's own (panel 230's R1).
@@ -254,4 +254,4 @@ test "the signature spells the pair rule, and an instance carries its hash"
     tester.decl @ 3
     empty_params: [i64] = []
     tester.params @ empty_params
-    assert instance_name(tester, c, s, parsed.decls) == "h_t_test3"
+    assert instance_name(tester, c, s, parsed.decls) == "h_t_0test3"

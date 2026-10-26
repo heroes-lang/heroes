@@ -121,16 +121,18 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
     for decl in decls
         # Each type is named in its OWN module, never the root's: two
         # modules may each declare Point, and they are two C structs.
-        name = mangle.ty_name(
-            module: source.component_at(s, decl.name.start),
-            name: source.span_text(s, decl.name)
-        )
+        home = source.component_at(s, decl.name.start)
+        spelled = source.span_text(s, decl.name)
+        name = mangle.ty_name(module: home, name: spelled)
+
+        # Its functions, descriptor, payloads and tags: invented (defect 2234).
+        companion = mangle.invented(module: home, name: spelled)
 
         match decl.kind
             .record_decl rec =>
                 if rec.partial
                     partial_decls[index] @ true
-                satellites[index] @ name
+                satellites[index] @ companion
 
                 # A group's record IS the header's struct, so its C type
                 # name is the one the author wrote, unmangled — and with
@@ -154,12 +156,12 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
                 else
                     aggregates[index] @ name
             .variant_decl v =>
-                satellites[index] @ name
+                satellites[index] @ companion
                 at: i64 @= 0
 
                 for one_case in v.cases
                     cases[case_key(decl: index, at: at)] @ mangle.case_type(
-                        ty: name,
+                        ty: companion,
                         case_name: source.span_text(s, one_case.name)
                     )
                     at @ at + 1
@@ -460,7 +462,7 @@ test "a group's record keeps the header's spelling, satellites stay ours"
     text = "extern \"m.h\"\n    record Color\n        r: i64\n\nrecord Point\n    x: i64\n\nfunction f(p: Point, c: Color) -> i64\n    return p.x + c.r\n"
     names = named_up(text)
     assert of(names, decl: 0) == "Color"
-    assert satellite(names, decl: 0) == "h_t_Color"
+    assert satellite(names, decl: 0) == "h_t_0Color"
     assert of(names, decl: 1) == "h_t_Point"
     both = aggregate(names, decl: 0)
     assert both.foreign

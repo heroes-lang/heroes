@@ -121,7 +121,7 @@ function construct_case(c: state.Checked, names: ctype.Names, s: source.Source, 
 
     if both.is_err()
         return fail(code: "none", msg: "not a case")
-    tag_text = ".tag = " + mangle.tag_of(ty: both.must().holder, case_name: both.must().case_name)
+    tag_text = ".tag = " + mangle.tag_of(ty: ctype.satellite(names, decl: decl), case_name: both.must().case_name)
 
     match decls[decl].kind
         .variant_decl v =>
@@ -321,9 +321,9 @@ test "a case writes its tag alone when bare, and the payload member when not"
         "variant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    _ = t\n"
     )
     bare = construct_case(got.c, got.names, got.s, got.decls, decl: 0, at: 1, arguments: [])
-    assert bare.must() == "(h_t_Tok){.tag = h_t_Tok_tag_plus}"
+    assert bare.must() == "(h_t_Tok){.tag = h_t_0Tok_tag_plus}"
     carrying = construct_case(got.c, got.names, got.s, got.decls, decl: 0, at: 0, arguments: ["t1"])
-    assert carrying.must() == "(h_t_Tok){.tag = h_t_Tok_tag_word, .as.c_word = {.f_text = t1}}"
+    assert carrying.must() == "(h_t_Tok){.tag = h_t_0Tok_tag_word, .as.c_word = {.f_text = t1}}"
     tok = table.lookup(got.c.types, .named(decl: 0)).must()
     f = containers.Function(
         name: "t",
@@ -346,6 +346,6 @@ test "a case writes its tag alone when bare, and the payload member when not"
     assert read.must() == "t0.as.c_word"
     assert tag(base: 4) == "t4.tag"
     same = equality(got.c, got.names, ty: tok, left: 1, right: 2)
-    assert same.must() == "h_t_Tok_eq(&t1, &t2)"
+    assert same.must() == "h_t_0Tok_eq(&t1, &t2)"
     kept = retain(got.c, got.names, ty: tok, value: 7, keep: true)
-    assert kept.must() == "h_t_Tok_retain(&t7)"
+    assert kept.must() == "h_t_0Tok_retain(&t7)"

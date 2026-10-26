@@ -198,14 +198,18 @@ function option(@w: writer.Writer, c: state.Checked, names: ctype.Names, name: s
 # either way.
 function variant_definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, name: str)
     cases = cases_of(decls, decl: decl)
-    tag = mangle.tag_type(name)
+
+    # The tag and the payloads are named beside the type, in the module's
+    # invented namespace (defect 2234); the type keeps the author's name.
+    companion = ctype.satellite(names, decl: decl)
+    tag = mangle.tag_type(companion)
     writer.line(@w, text: "typedef enum " + tag + " {")
     at: i64 @= 0
 
     for one_case in cases
         writer.line(
             @w,
-            text: "    " + mangle.tag_of(ty: name, case_name: source.span_text(s, one_case.name)) + " = " + at.to_str() + ","
+            text: "    " + mangle.tag_of(ty: companion, case_name: source.span_text(s, one_case.name)) + " = " + at.to_str() + ","
         )
         at @ at + 1
 
@@ -214,7 +218,7 @@ function variant_definition(@w: writer.Writer, c: state.Checked, names: ctype.Na
 
     for one_case in cases
         if one_case.fields.len() > 0
-            payload = mangle.case_type(ty: name, case_name: source.span_text(s, one_case.name))
+            payload = mangle.case_type(ty: companion, case_name: source.span_text(s, one_case.name))
             writer.line(@w, text: "typedef struct " + payload + " {")
 
             for field in one_case.fields
@@ -239,7 +243,7 @@ function variant_definition(@w: writer.Writer, c: state.Checked, names: ctype.Na
                 case_name = source.span_text(s, one_case.name)
                 writer.line(
                     @w,
-                    text: "        " + mangle.case_type(ty: name, case_name: case_name) + " " + mangle.case_member(case_name) + ";"
+                    text: "        " + mangle.case_type(ty: companion, case_name: case_name) + " " + mangle.case_member(case_name) + ";"
                 )
 
         writer.line(@w, text: "    } as;")
@@ -283,7 +287,7 @@ test "a variant is enum, payload structs, and a union that skips bare cases"
     w: writer.Writer @= writer.new_writer("t")
     declared(@w, got.c, got.names, got.s, got.decls, decl: 0)
     text = writer.finish(w)
-    assert text == "#line 2 \"t.c\"\ntypedef enum h_t_Tok_tag {\n    h_t_Tok_tag_word = 0,\n    h_t_Tok_tag_plus = 1,\n} h_t_Tok_tag;\n\ntypedef struct h_t_Tok_c_word {\n    HeroStr f_text;\n} h_t_Tok_c_word;\n\ntypedef struct h_t_Tok {\n    h_t_Tok_tag tag;\n    union {\n        h_t_Tok_c_word c_word;\n    } as;\n} h_t_Tok;\n\n"
+    assert text == "#line 2 \"t.c\"\ntypedef enum h_t_0Tok_tag {\n    h_t_0Tok_tag_word = 0,\n    h_t_0Tok_tag_plus = 1,\n} h_t_0Tok_tag;\n\ntypedef struct h_t_0Tok_c_word {\n    HeroStr f_text;\n} h_t_0Tok_c_word;\n\ntypedef struct h_t_Tok {\n    h_t_0Tok_tag tag;\n    union {\n        h_t_0Tok_c_word c_word;\n    } as;\n} h_t_Tok;\n\n"
 
 test "an all-bare variant has no union, and a group's record no definition"
     got = ready(

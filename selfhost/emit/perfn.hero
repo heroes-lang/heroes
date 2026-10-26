@@ -268,7 +268,7 @@ test "payloads come before their variant, and every option gets four functions"
     protos = writer.finish(w)
     assert strings.holds(
         text: protos,
-        needle: "HERO_TU_LOCAL bool h_t_Tok_c_word_eq(const h_t_Tok_c_word *a, const h_t_Tok_c_word *b);"
+        needle: "HERO_TU_LOCAL bool h_t_0Tok_c_word_eq(const h_t_0Tok_c_word *a, const h_t_0Tok_c_word *b);"
     )
     assert strings.holds(text: protos, needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);")
     bw: writer.Writer @= writer.new_writer("t")
@@ -287,11 +287,11 @@ test "payloads come before their variant, and every option gets four functions"
     # last slice ran past the end and the test aborted, exactly as spec § 10
     # Strings, arrays, maps promises.
     while scan < body_text.len()
-        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL bool h_t_Tok_c_word_eq(const h")
+        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL bool h_t_0Tok_c_word_eq(const h")
             if payload_at < 0
                 payload_at @ scan
 
-        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL bool h_t_Tok_eq(const")
+        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL bool h_t_0Tok_eq(const")
             if outer_at < 0
                 outer_at @ scan
         scan @ scan + 1

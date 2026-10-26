@@ -216,6 +216,6 @@ test "widths get their own descriptors, and an aggregate hashes by its function"
     assert pointer(c, names, ty: table.str_ty(c.types)).must() == "&hero_desc_str"
     assert pointer(c, names, ty: table.unit_ty(c.types)).is_err()
     point = table.lookup(c.types, .named(decl: 0)).must()
-    assert pointer(c, names, ty: point).must() == "&h_t_Point_desc"
-    assert hash_call(c, names, ty: point, place: "&v->f_p").must() == "h_t_Point_hash(&v->f_p)"
+    assert pointer(c, names, ty: point).must() == "&h_t_0Point_desc"
+    assert hash_call(c, names, ty: point, place: "&v->f_p").must() == "h_t_0Point_hash(&v->f_p)"
     assert hash_call(c, names, ty: table.int_ty_id(c.types), place: "&v->f_n").must() == "(&hero_desc_int)->hash(&v->f_n)"

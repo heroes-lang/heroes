@@ -38,10 +38,10 @@
 > frame variable h3_good
 !shows: tag = 7
 > expression -- h3_good.tag = 0
-> expression -- h4_t.tag = (h_formatterstepsaside_Token_tag)9
+> expression -- h4_t.tag = (h_formatterstepsaside_0Token_tag)9
 > frame variable h4_t
-!shows: tag = h_formatterstepsaside_Token_tag_plus | 0x8
-> expression -- h4_t.tag = (h_formatterstepsaside_Token_tag)0
+!shows: tag = h_formatterstepsaside_0Token_tag_plus | 0x8
+> expression -- h4_t.tag = (h_formatterstepsaside_0Token_tag)0
 > frame variable h0_names h1_ages h2_name h3_good h4_t
 !shows: (HeroArrayHeader *) h0_names = ["ada", "grace"]
 !shows: (HeroMapHeader *) h1_ages = {"ada": 36, "grace": 85}

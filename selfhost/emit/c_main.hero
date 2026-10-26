@@ -176,13 +176,13 @@ test "the shim calls the mangled main and gates leaks on the way out"
     runner = writer.finish(tw)
     assert has(text: runner, needle: "int main(int argc, char **argv) {")
     assert has(text: runner, needle: "    case 0:")
-    assert has(text: runner, needle: "        h_t_test1();")
+    assert has(text: runner, needle: "        h_t_0test1();")
     assert has(text: runner, needle: "        hero_panic(\"no test with that index — this is a compiler bug\");")
 
     # A module named as its C component hands the walk nothing, and a test,
     # whose C name is its index, always hands its title.
     assert !has(text: got, needle: "hero_stack_spell")
-    assert has(text: runner, needle: "    hero_stack_spell(\"h_t_test1\\ttest \\\"one\\\"\\n\");")
+    assert has(text: runner, needle: "    hero_stack_spell(\"h_t_0test1\\ttest \\\"one\\\"\\n\");")
 
 test "the walk is handed the spellings that differ from the C, and no other"
     text = "function main()\n    print(1)\n\ntest \"one\"\n    assert 1 == 1\n"
@@ -198,12 +198,12 @@ test "the walk is handed the spellings that differ from the C, and no other"
             .test_kind                                     => tests @ tests.push(f)
             .function_kind | .constant_kind | .extern_kind => continue
 
-    assert spellings(s, tests: tests) == "threaddeep\tthread_deep\nh_threaddeep_test1\ttest \"one\"\n"
+    assert spellings(s, tests: tests) == "threaddeep\tthread_deep\nh_threaddeep_0test1\ttest \"one\"\n"
     tw: writer.Writer @= writer.new_writer("t")
     test_shim(@tw, low.program, s, sources: "0123456789abcdef")
     assert has(
         text: writer.finish(tw),
-        needle: "    hero_stack_spell(\"threaddeep\\tthread_deep\\nh_threaddeep_test1\\ttest \\\"one\\\"\\n\");"
+        needle: "    hero_stack_spell(\"threaddeep\\tthread_deep\\nh_threaddeep_0test1\\ttest \\\"one\\\"\\n\");"
     )
     w: writer.Writer @= writer.new_writer("t")
     shim(@w, low.program.functions[0], s, sources: "0123456789abcdef")

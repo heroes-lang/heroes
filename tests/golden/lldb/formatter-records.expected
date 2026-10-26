@@ -9,7 +9,7 @@
 !shows: (h_formatterrecords_Token) h2_w = .word(text: "hi", at: Point(x: 1, y: 1))
 !shows: (h_formatterrecords_Token) h3_pl = .plus
 !shows: (h_formatterrecords_Light) h4_light = .green
-!shows: (h_formatterrecords_Token_c_word) h8_wd = .word(text: "hi", at: Point(x: 1, y: 1))
+!shows: (h_formatterrecords_0Token_c_word) h8_wd = .word(text: "hi", at: Point(x: 1, y: 1))
 > frame variable h1_room.corner.x h8_wd.text h2_w.at
 !shows: (int64_t) h1_room.corner.x = 9
 !shows: (HeroStr) h8_wd.text = "hi"

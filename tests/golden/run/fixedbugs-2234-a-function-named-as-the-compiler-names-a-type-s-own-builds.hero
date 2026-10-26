@@ -1,0 +1,22 @@
+# Defect 2234, 2026-10-26 (M-panic-location): a function named as the compiler
+# named a type's own functions was refused by clang at exit 2, a correct
+# program `heroes check` passed. `Point_eq` beside a compared `record Point`
+# met the record's equality, `Point_desc` beside an array of them its
+# descriptor, each clang's `conflicting types` or `redefinition`. What the
+# compiler invents in a module's namespace now begins with a digit after it,
+# which no author's name does (`emit/mangle.hero`, `invented`); a test block's
+# name is the third shape, held by the compiler's own tests.
+
+record Point
+    x: i64
+
+function Point_eq(n: i64) -> i64
+    return n + 1
+
+function Point_desc() -> i64
+    return 7
+
+function main()
+    points = [Point(x: 1), Point(x: 2)]
+    print(points[0] == points[1])
+    print(Point_eq(n: 1) + Point_desc() + points.len())

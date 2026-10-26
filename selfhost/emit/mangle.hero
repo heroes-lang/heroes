@@ -84,17 +84,37 @@ function function_name(module: str, name: str) -> str
         return "h_" + source.LIBRARY_MODULE + "_" + name
     return "h_" + module + "_" + name
 
+# THE NAMES THIS COMPILER INVENTS inside a module's namespace begin with a
+# digit after `h_<module>_` (defect 2234): a type's own functions and its
+# descriptor, a variant's payloads and tags, a test block, a generic
+# instance. A function or a type an author declares begins there with a
+# letter or `_`, which every identifier does, so the two can never meet,
+# whatever either is called. Until 2026-10-26 they shared the namespace, and
+# `function Point_eq` beside a compared `record Point` was clang's
+# *conflicting types* at exit 2, a correct program refused; `test1` beside a
+# test block and `Point_desc` beside a descriptor the same. The option, the
+# function type, the thunk and the renderer were already `h_0...`, outside
+# every module.
+constant INVENTED: str
+    "0"
+
+function invented(module: str, name: str) -> str
+    return "h_" + module + "_" + INVENTED + name
+
 # The same, for one monomorphised instance: the base name plus the hash
-# of what it was instantiated at.
+# of what it was instantiated at, in the invented namespace of the module
+# `function_name` gives it.
 function instance_of(module: str, name: str, rendered: str) -> str
-    return function_name(module: module, name: name) + "_" + instance(rendered)
+    if !inventory.index_of(name).is_err()
+        return invented(module: source.LIBRARY_MODULE, name: name + "_" + instance(rendered))
+    return invented(module: module, name: name + "_" + instance(rendered))
 
 # One test block, by its position in the file. BY INDEX, NOT BY TITLE:
 # a title is a string literal — spaces, leading digits, any UTF-8 —
 # and sanitising it would need a second escape scheme that still would
 # not be injective. The index is already unique and stable.
 function test_name(module: str, index: i64) -> str
-    return "h_" + module + "_test" + index.to_str()
+    return invented(module: module, name: "test" + index.to_str())
 
 # A record or variant type, as a C struct tag and typedef name. Same
 # scheme as a function, deliberately in the same namespace: C has one
@@ -235,10 +255,10 @@ test "names collide with nothing: library capture, sanitised slots, foreign fiel
     # A header's field is spelled as the header spells it.
     assert field("default") == "f_default"
     assert field_of(foreign: true, name: "r") == "r"
-    assert tag_of(ty: "h_m_Tok", case_name: "plus") == "h_m_Tok_tag_plus"
-    assert case_type(ty: "h_m_Tok", case_name: "word") == "h_m_Tok_c_word"
+    assert tag_of(ty: "h_m_0Tok", case_name: "plus") == "h_m_0Tok_tag_plus"
+    assert case_type(ty: "h_m_0Tok", case_name: "word") == "h_m_0Tok_c_word"
     assert out_param(index: 0, name: "l") == "ph0_l"
-    assert test_name(module: "geom", index: 2) == "h_geom_test2"
+    assert test_name(module: "geom", index: 2) == "h_geom_0test2"
     assert constant_block(owner: "h_geom_K", held: 5) == "hero_constant_h_geom_K_5"
     assert constant_block(owner: "h_geom_K_3", held: 5) != constant_block(owner: "h_geom_K", held: 35)
 

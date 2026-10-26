@@ -1,8 +1,8 @@
 > command script import editors/lldb/heroes_lldb.py
-> breakpoint set --file formatter-containers.hero --line 42
-!resolved: formatter-containers.hero:42
+> breakpoint set --file formatter-containers.hero --line 43
+!resolved: formatter-containers.hero:43
 > run
-!stop: breakpoint at formatter-containers.hero:42
+!stop: breakpoint at formatter-containers.hero:43
 > frame variable h0_names h1_empty h2_grid h3_points h4_toks h5_ages h6_groups
 !shows: (HeroArrayHeader *) h0_names = ["ada", "grace"]
 !shows: (HeroArrayHeader *) h1_empty = []

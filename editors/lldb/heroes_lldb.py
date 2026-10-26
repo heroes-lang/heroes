@@ -190,6 +190,10 @@ EMITTED_RE = re.compile(EMITTED)
 OPTION_RE = re.compile(r"^h_0opt_[0-9a-f]+$")
 FUNCTION_TYPE_RE = re.compile(r"^h_0fn_[0-9a-f]+$")
 MODULE_RE = re.compile(r"^h_([A-Za-z][A-Za-z0-9]*)_(.+)$")
+# A name the compiler invented beside a declared type, its descriptor, its
+# variant's tag and payloads: a digit after the module, where an author's name
+# never has one (selfhost/emit/mangle.hero's `invented`, defect 2234).
+COMPANION_RE = re.compile(r"^h_([A-Za-z][A-Za-z0-9]*)_0(.+)$")
 FUNCTION_RE = re.compile(r"^h_([A-Za-z][A-Za-z0-9]*)_([A-Za-z_][A-Za-z0-9_]*)$")
 
 # The characters a string writes by their code (selfhost/raw_chars.hero): the
@@ -459,14 +463,15 @@ def option_shaped(canonical):
 
 def variant_cases(proc, sbtype):
     """A variant's cases by tag value, `{value: case}`, or None where the type
-    is not one: every enumerator of its `tag` named `<type>_tag_<case>`."""
+    is not one: every enumerator of its `tag` named `<companion>_tag_<case>`,
+    the type's companion being `h_m_0T` for `h_m_T`."""
     name = type_name(sbtype)
     canonical = sbtype.GetCanonicalType()
     tag = canonical.GetFieldAtIndex(0).GetType().GetCanonicalType()
     if tag.GetTypeClass() != lldb.eTypeClassEnumeration:
         return None
     members = tag.GetEnumMembers()
-    prefix = name + "_tag_"
+    prefix = companion_of(name) + "_tag_"
     cases = {}
     for i in range(members.GetSize()):
         one = members.GetTypeEnumMemberAtIndex(i)
@@ -477,13 +482,13 @@ def variant_cases(proc, sbtype):
 
 
 def case_parent(proc, name):
-    """The variant `h_m_T` whose case `c` is the type `h_m_T_c_c`, or None. A
-    record named `T_c_c` in the same module would be the same C name, which
-    clang refuses, so a variant with that case settles it."""
+    """The companion `h_m_0T` of the variant `h_m_T` whose case `c` is the type
+    `h_m_0T_c_c`, or None. No record's name begins with the digit, so a
+    variant with that case settles it."""
     at = name.rfind("_c_")
     while at > 0:
         parent, case = name[:at], name[at + 3:]
-        found = proc.find(parent)
+        found = proc.find(type_of_companion(parent))
         if found.IsValid() and found.GetCanonicalType().GetTypeClass() == lldb.eTypeClassStruct:
             fields = field_names(found)
             if fields and fields[0] == "tag":
@@ -492,6 +497,19 @@ def case_parent(proc, name):
                     return parent
         at = name.rfind("_c_", 0, at)
     return None
+
+
+def type_of_companion(name):
+    """`h_m_Point` for `h_m_0Point`: the type a name invented beside it belongs
+    to; any other name as it is."""
+    got = COMPANION_RE.match(name)
+    return "h_%s_%s" % (got.group(1), got.group(2)) if got else name
+
+
+def companion_of(name):
+    """`h_m_0Point` for `h_m_Point`, where the compiler names its companions."""
+    got = MODULE_RE.match(name)
+    return "h_%s_0%s" % (got.group(1), got.group(2)) if got else name
 
 
 def bare(name):
@@ -838,7 +856,7 @@ def element_type(proc, value, desc_address):
     elif named == FUNC_DESC:
         sbtype = proc.find(FUNC)
     elif named.endswith("_desc") and EMITTED_RE.match(named[:-len("_desc")]):
-        sbtype = proc.find(named[:-len("_desc")])
+        sbtype = proc.find(type_of_companion(named[:-len("_desc")]))
     else:
         raise Unread("descriptor " + named)
     if not sbtype.IsValid():

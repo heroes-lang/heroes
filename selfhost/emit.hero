@@ -424,7 +424,7 @@ test "a descriptor copies its element as bytes, never by an assignment of the st
     # A record's and an option's, each counted, so the retain follows.
     assert has(
         text: got.c,
-        needle: "__builtin_memmove(dst, src, sizeof(h_t_Box));\n    h_t_Box_retain((const h_t_Box *)dst);"
+        needle: "__builtin_memmove(dst, src, sizeof(h_t_Box));\n    h_t_0Box_retain((const h_t_Box *)dst);"
     )
     assert has(
         text: got.c,

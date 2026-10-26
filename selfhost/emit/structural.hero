@@ -379,11 +379,11 @@ test "eq short-circuits per field and hash mixes the same fields"
     w: writer.Writer @= writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0))
     eq_text = writer.finish(w)
-    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_Person_eq(const h_t_Person *a, const h_t_Person *b) {\n    if (!(hero_str_eq(a->f_name, b->f_name))) return false;\n    if (!(a->f_age == b->f_age)) return false;\n    return true;\n}\n\n"
+    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Person_eq(const h_t_Person *a, const h_t_Person *b) {\n    if (!(hero_str_eq(a->f_name, b->f_name))) return false;\n    if (!(a->f_age == b->f_age)) return false;\n    return true;\n}\n\n"
     hw: writer.Writer @= writer.new_writer("t")
     hash_body(@hw, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0))
     hash_text = writer.finish(hw)
-    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_Person_hash(const void *elem) {\n    const h_t_Person *v = elem;\n    uint64_t h = UINT64_C(0xcbf29ce484222325);\n    h = (h ^ (&hero_desc_str)->hash(&v->f_name)) * UINT64_C(0x100000001b3);\n    h = (h ^ (&hero_desc_int)->hash(&v->f_age)) * UINT64_C(0x100000001b3);\n    return h;\n}\n\n"
+    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Person_hash(const void *elem) {\n    const h_t_Person *v = elem;\n    uint64_t h = UINT64_C(0xcbf29ce484222325);\n    h = (h ^ (&hero_desc_str)->hash(&v->f_name)) * UINT64_C(0x100000001b3);\n    h = (h ^ (&hero_desc_int)->hash(&v->f_age)) * UINT64_C(0x100000001b3);\n    return h;\n}\n\n"
 
 test "a variant compares tags first and mixes the tag into the hash"
     got = ready("variant Coin\n    heads\n    tails\n\nfunction main()\n    c: Coin = .heads\n    _ = c\n")
@@ -391,11 +391,11 @@ test "a variant compares tags first and mixes the tag into the hash"
     w: writer.Writer @= writer.new_writer("t")
     variant_equality_body(@w, got.names, got.s, got.decls, decl: 0, at: at)
     eq_text = writer.finish(w)
-    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_Coin_eq(const h_t_Coin *a, const h_t_Coin *b) {\n    if (a->tag != b->tag) return false;\n    switch (a->tag) {\n        case h_t_Coin_tag_heads: return true;\n        case h_t_Coin_tag_tails: return true;\n    }\n    hero_unreachable();\n}\n\n"
+    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Coin_eq(const h_t_Coin *a, const h_t_Coin *b) {\n    if (a->tag != b->tag) return false;\n    switch (a->tag) {\n        case h_t_0Coin_tag_heads: return true;\n        case h_t_0Coin_tag_tails: return true;\n    }\n    hero_unreachable();\n}\n\n"
     hw: writer.Writer @= writer.new_writer("t")
     variant_hash_body(@hw, got.names, got.s, got.decls, decl: 0, at: at)
     hash_text = writer.finish(hw)
-    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_Coin_hash(const void *elem) {\n    const h_t_Coin *v = elem;\n    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)\n        * UINT64_C(0x100000001b3);\n    switch (v->tag) {\n        case h_t_Coin_tag_heads: return h;\n        case h_t_Coin_tag_tails: return h;\n    }\n    hero_unreachable();\n}\n\n"
+    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Coin_hash(const void *elem) {\n    const h_t_Coin *v = elem;\n    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)\n        * UINT64_C(0x100000001b3);\n    switch (v->tag) {\n        case h_t_0Coin_tag_heads: return h;\n        case h_t_0Coin_tag_tails: return h;\n    }\n    hero_unreachable();\n}\n\n"
 
 test "a fixed member unrolls elementwise, and a partial record aborts loudly"
     got = ready(
@@ -405,12 +405,12 @@ test "a fixed member unrolls elementwise, and a partial record aborts loudly"
     w: writer.Writer @= writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: vec, fields: types.fields_of(got.decls, decl: 0))
     text = writer.finish(w)
-    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_Vec2_eq(const Vec2 *a, const Vec2 *b) {\n    if (!((a->cells[0] == b->cells[0] && a->cells[1] == b->cells[1]))) return false;\n    return true;\n}\n\n"
+    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Vec2_eq(const Vec2 *a, const Vec2 *b) {\n    if (!((a->cells[0] == b->cells[0] && a->cells[1] == b->cells[1]))) return false;\n    return true;\n}\n\n"
     font = ctype.aggregate(got.names, decl: 1)
     fw: writer.Writer @= writer.new_writer("t")
     equality_body(@fw, got.c, got.names, got.s, at: font, fields: types.fields_of(got.decls, decl: 1))
     font_text = writer.finish(fw)
-    assert font_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_Font_eq(const Font *a, const Font *b) {\n    hero_panic(\"h_t_Font_eq: a partial record has no structural equality\");\n}\n\n"
+    assert font_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Font_eq(const Font *a, const Font *b) {\n    hero_panic(\"h_t_0Font_eq: a partial record has no structural equality\");\n}\n\n"
 
 # Defect 452's case: a line holding characters above ASCII, the needle
 # absent, after them and before them; the slicing search split the first one

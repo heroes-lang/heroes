@@ -364,7 +364,13 @@ static void hero_stack_say_heroes_name(const char *sym) {
                 hero_stack_say_n(rest, n);
             }
             hero_stack_say(".");
-            hero_stack_say(us + 1);
+            /* A name the compiler invented beside a type, a test or an
+             * instance begins with a digit after the module (defect 2234),
+             * which no author's name does: told without it, as the source
+             * spells what it belongs to. */
+            const char *named = us + 1;
+            if (named[0] >= '0' && named[0] <= '9' && named[1] != '\0') named++;
+            hero_stack_say(named);
             return;
         }
     }

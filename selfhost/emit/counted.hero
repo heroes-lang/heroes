@@ -202,7 +202,7 @@ test "ownership is the declaration's fact, and the walk is one line per counted 
     at = ctype.aggregate(got.names, decl: 0)
     reference_body(@w, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0), keep: false)
     text = writer.finish(w)
-    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_Person_release(h_t_Person *v) {\n    hero_str_decref(v->f_name);\n}\n\n"
+    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_0Person_release(h_t_Person *v) {\n    hero_str_decref(v->f_name);\n}\n\n"
 
 test "a variant switches on the tag and touches only the counted case"
     got = ready(
@@ -215,7 +215,7 @@ test "a variant switches on the tag and touches only the counted case"
     at = ctype.aggregate(got.names, decl: 0)
     variant_reference_body(@w, got.c, got.names, got.s, got.decls, decl: 0, at: at, keep: true)
     text = writer.finish(w)
-    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_Tok_retain(const h_t_Tok *v) {\n    switch (v->tag) {\n        case h_t_Tok_tag_word: h_t_Tok_c_word_retain(&v->as.c_word); break;\n        default: break;\n    }\n}\n\n"
+    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_0Tok_retain(const h_t_Tok *v) {\n    switch (v->tag) {\n        case h_t_0Tok_tag_word: h_t_0Tok_c_word_retain(&v->as.c_word); break;\n        default: break;\n    }\n}\n\n"
 
 test "the D3 repair: a payload nobody destructures still answers from its fields"
     # .word is BUILT but never matched, so Ty.case may be uninterned —
