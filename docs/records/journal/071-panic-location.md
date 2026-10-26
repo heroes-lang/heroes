@@ -107,3 +107,25 @@ without a place, removed after the release whose seed knows the new ones, on
 M-compatibility-promise (https://github.com/heroes-lang/heroes/issues/2237);
 and the decisions 2210 (panel 229) and 2228 (R6's door, `hero_os.h`), put to
 the author with their recommendations at the close.
+
+**Added at the tag, 2026-10-27.** The tag was refused over defect 2206, filed
+`adjacent` on 2026-10-25 and counting as `blocking` at this, its second tag;
+asked, the author chose to repair it. `expected_name` names a keyword standing
+in a C function's or constant's name, with the route past it, a second name in
+a header of the program's own, both routes run before the message names them
+(`1e0493f64`). Written inside `parse/` the message took that directory 17
+lines past the 8,737 panel 187's R9 grants, so it lives in
+`selfhost/c_names.hero`, text from a token reading no parse, where defect
+2238's shapes, filed apart, will find it. **And the CI read the batch's
+push**: run 40401936020 on `e4ad8e14c` was red on Windows alone, the compiler
+unlinkable from its seed, since step 8 defined `hero_stack_spell` on POSIX
+alone while every `main` calls it; defect 2239, found by the session watching
+the CI. Repaired rather than reverted, since the seed refreshed at
+`80a888f39` writes the call into its own `main` (`c3996424f`), and run on the
+Windows box before the push, which the author started for it: the seed
+linked with the trunk's runtime read `lld-link: error:
+undefined symbol: hero_stack_spell`, with the repaired one it linked, and the
+compiler's own tests read 1,763 and 0 there. Re-measured at that gate: the
+full net 32 suites, 9,430 passed and 0 failed; the compiler's own 1,763 and the
+net's own 428; the 673 emissions and 12 `emit` goldens whose key of the
+sources moved with the runtime's bytes blessed, that line alone.
