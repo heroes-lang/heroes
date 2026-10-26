@@ -78,3 +78,18 @@ lane's stage 2 (`sources 413da33e7969760a`), so that the steps start from it:
   the author's instruction of that day to promote *what the language lacks for
   its end goal*, and not as a ruling on how a record is shown. How a side is
   shown is the sitting's question, against those refusals and their grounds.
+
+**What it delivers, narrowed 2026-10-26 by panel 230's R7** (provisional, author ratification
+pending, https://github.com/heroes-lang/heroes/issues/2227;
+`docs/panel/230-a-stop-says-where-and-what-it-held-a-report-cannot-be-forged-and-exit-takes-a-byte.md`).
+The page's *every panic names the `.hero` file, the line and the Heroes function, on the three
+platforms* is read against what the sitting measured. Every abort a program's own operation raises
+names its file (as the program's modules name it), line, column and function, the library's
+included, which names the program's call into it; a fault the runtime catches (a stack exhausted, a
+null pointer read through inside C) names the function it stopped in where the platform can tell,
+and on Windows names the failure alone, as today; a lease or a handle nobody ended names no
+acquisition. A failed `assert` on any value shows both sides, and no program's text can forge a line
+of a report (defects 2225 and 2226). `exit(code: u8)` closes defect 2224. `main -> ()?` is not taken
+(issue 1001), and whether a program may bind `hero_os.h` is the author's
+(https://github.com/heroes-lang/heroes/issues/2228). No sentence of the specification promises the
+place; § 12 says *both sides of a comparison*.

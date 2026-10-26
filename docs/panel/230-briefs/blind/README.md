@@ -169,6 +169,34 @@ M1, refused `main_returns` on today's compiler and 4 of 4 on the prototype); eve
 sitting's evidence at the synthesis, and a change after the first session is written beneath this
 section with its date.
 
+**Changed after the first session, 2026-10-26 12:30**: `run_one.sh` gained `< /dev/null` on the
+`claude` line, its digest now `4a9dc9ed134ac97e3bf5d2bc1ce819149e03c5c5411491103cfa3d729410b8fa`.
+Session 1 (Sonnet 5.5, 0.0524 USD, 22.4 s) wrote *no stdin data received in 3s, proceeding without
+it* on its stderr; nothing a session reads or answers moves, and sessions 4 and after ran with it.
+**And a flaw of the design, read in session 4's answer and recorded rather than repaired**, the
+items being fixed once a session has run: `shipping.hero`'s header comment says the customers table
+*keys each one by "c" and that number*, so its mistake is visible from the comment in both variants.
+
+**The first run, and what it left, 2026-10-26 12:29 to 12:36**: 84 sessions, **32 answered** (family
+P 21, family M 11), for 1.0938 USD in all (the result events' `total_cost_usd`, summed). **42
+sessions** (P 27, M 15) were refused by the API from 12:33:38 on, *You have reached your specified
+API usage limits. You will regain access on 2026-11-01*, a cap set on the account and not the
+author's 12 USD; the same cap refused `heroes measure --refresh`. **10 family M sessions** (Sonnet
+5.5) were refused by its safeguards, category `reasoning_extraction`, *restrictions on reverse
+engineering or duplicating model outputs*: the brief's `choice_points` section, the shape this
+procedure had already met once (`.claude/skills/panel/SKILL.md`, the first wording of panel 184);
+three more sessions were stopped once and answered on the retry the CLI makes. No family P session
+(Haiku 5.5) that reached the model was refused. **The author's answer of that day**: the account's
+cap raised by the author, and the lost sessions run again (`heroes measure --refresh` answered
+10,297 afterwards).
+
+**So, written before the second run**: `brief-m.md` loses its `choice_points` section (its digest now
+`be1935dede61d20b16649dd7996d210ea24748aa459e4490ad777b6d1f87d241`), and **all 36 family M sessions
+run again** with it, in the same folders and cells, so that every family M cell reads one brief; the
+first run's 11 family M answers are kept beside the others (`build/b230-out/first/`) and **not
+scored**. Family P keeps its brief: its **27** lost sessions run again in their folders, and its 21
+answered ones stand. The scoring rules above are unchanged.
+
 **The seat's report** is the experiment's result, written by the coordinator in
 `docs/panel/230-reports/llm-ergonomist.md` from `scores.tsv` joined with the key, every number with
 its command.
