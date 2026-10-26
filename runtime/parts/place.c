@@ -95,6 +95,15 @@ _Noreturn static void hero_panic_where(const char *msg, const HeroPlace *where) 
     hero_panic_at(msg, where->path, where->name, where->line, where->column);
 }
 
+/* Declared in `parts/panic.c`: the place's line after a report another part
+ * wrote, from the fixed buffer, and nothing for NULL. */
+static void hero_place_line(const HeroPlace *where) {
+    if (where == NULL) return;
+    HeroReport r = {.used = 0};
+    hero_report_place(&r, where->path, where->name, where->line, where->column);
+    hero_report_flush(&r);
+}
+
 /* The failing branch of an array's element read or written in the program's C
  * (`emit/array_read.hero`, `emit/element_store.hero`). NULL or a released block
  * is the compiler's own mistake, and `hero_array_require` says so in the words it

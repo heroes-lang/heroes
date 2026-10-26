@@ -51,9 +51,13 @@ function of(s: source.Source, f: containers.Function, offset: i64) -> str
 function around(s: source.Source, f: containers.Function, offset: i64, statement: str) -> str
     return "{ " + declared(s, f, offset: offset) + " " + statement + " }"
 
-# The record's declaration alone, for a block the caller writes itself.
+# The record's declaration alone, for a block the caller writes itself. Marked
+# `unused`, which says *it may go unread*, as `emit/padding_tables.hero` marks
+# its counts: an extern call's block declares one whether or not a check of the
+# call reads it, and an unread static is `-Wunused-variable` on a correct
+# program, measured on the compiler's own build.
 function declared(s: source.Source, f: containers.Function, offset: i64) -> str
-    return nodebug.MARK + "static const HeroPlace " + HERE + " = {" + of(s, f, offset: offset) + "};"
+    return nodebug.MARK + "__attribute__((unused)) static const HeroPlace " + HERE + " = {" + of(s, f, offset: offset) + "};"
 
 # The record's name inside its block.
 constant HERE: str
@@ -154,7 +158,7 @@ test "a check the runtime makes is handed its site's record, declared in a block
     s = program("/home/u/proj/main.hero")
     f = named(name: "main", kind: .function_kind, start: s.files[0].start)
     call = "t1 = hero_str_slice_at(t0, t2, t3, &hero_here);"
-    assert around(s, f, offset: s.files[0].start + 20, statement: call) == "{ HERO_NODEBUG static const HeroPlace hero_here = {\"main.hero\", \"main.main\", 2, 5}; " + call + " }"
+    assert around(s, f, offset: s.files[0].start + 20, statement: call) == "{ HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {\"main.hero\", \"main.main\", 2, 5}; " + call + " }"
 
 # No literal writes a NUL (`nul_in_string`), so the title is built from bytes, as
 # a program would have to build one.

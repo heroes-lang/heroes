@@ -525,9 +525,13 @@ HeroStr hero_str_repeat_at(HeroStr s, uint64_t n, const HeroPlace *where);
 void hero_held_release_at(const char **slot, const HeroPlace *where);
 const char *hero_str_lend_at(HeroStr s, const HeroPlace *where);
 const char *hero_str_held_at(HeroStr s, const HeroPlace *where);
-/* A `cstr` crossing into C inside a call's arguments, an expression: the four as
- * `hero_panic_at`'s, unnamed for the same reason. */
-const char *hero_cstr_nonnull_at(const char *p, const char *, const char *, int64_t, int64_t);
+const char *hero_cstr_nonnull_at(const char *p, const HeroPlace *where);
+/* A handle crossing into C, given back or handed on, at the call's place: the
+ * record last, unnamed, `where` being the crossing's own words. */
+void hero_handle_alive_at(const void *handle, const char *where, const HeroPlace *);
+uint64_t hero_handle_ending_at(const void *handle, const char *by, const char *pays, const HeroPlace *);
+uint64_t hero_handle_transferring_at(const void *handle, const char *into, const HeroPlace *);
+void hero_handle_retained_at(const void *handle, const char *releasers, int ends_here, const HeroPlace *);
 
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *
@@ -803,6 +807,11 @@ void hero_array_push_owned(HeroArrayHeader **slot, const void *value);
 void *hero_lend_take(const HeroArrayHeader *from, int64_t, const char *, const char *);
 HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *, int64_t);
 int64_t hero_lend_count_u64(uint64_t, const char *, const char *);
+/* The three with the call's record last, which a refusal the program's count
+ * caused, or a give-back C moved, names (panel 230's R1, kind 2). */
+void *hero_lend_take_at(const HeroArrayHeader *from, int64_t, const char *, const char *, const HeroPlace *where);
+HeroArrayHeader *hero_lend_give_at(HeroArrayHeader *a, const void *, int64_t, const HeroPlace *where);
+int64_t hero_lend_count_u64_at(uint64_t, const char *, const char *, const HeroPlace *where);
 
 /* A local lent through `@` to an `extern` call, in place in a region of its
  * own for its function's life (panel 196's R7): taken in the prologue, zeroed,

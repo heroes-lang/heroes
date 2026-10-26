@@ -229,11 +229,14 @@ static int hero_lend_reopen(char *p, size_t room) {
 }
 
 /* A message naming the call, for the refusals before C runs. */
-static _Noreturn void hero_lend_refuse(const char *callee, const char *param, const char *why, int64_t value) {
+/* `where` is the call's place, which a refusal the program's count caused names
+ * (panel 230's R1, kind 2); NULL names none. */
+static _Noreturn void hero_lend_refuse(const char *callee, const char *param, const char *why, int64_t value,
+                                       const HeroPlace *where) {
     char msg[512];
     snprintf(msg, sizeof msg, "`%s` of `%s` was to be lent a buffer of %lld elements, and %s",
              param, callee, (long long)value, why);
-    hero_panic(msg);
+    hero_panic_where(msg, where);
 }
 
 /* WHAT A GIVE-BACK AT THE WRONG ADDRESS SAYS. The address of a buffer or a
@@ -244,14 +247,14 @@ static _Noreturn void hero_lend_refuse(const char *callee, const char *param, co
  * (SHA-256's 32 bytes through one byte of a 16-byte record, its last 16 on
  * the pointer to a guarded local). So the sentence names that first and the
  * compiler second, and claims neither: it read one wrong address. */
-static _Noreturn void hero_lend_misplaced(const char *what) {
+static _Noreturn void hero_lend_misplaced(const char *what, const HeroPlace *where) {
     char msg[640];
     snprintf(msg, sizeof msg,
              "%s lent to C was given back at an address its region does not hold: what held the address in this "
              "function's frame was written over, by C writing past a field or an element it was lent, which "
              "is the binding's word (§ 13), or by a fault of this compiler",
              what);
-    hero_panic(msg);
+    hero_panic_where(msg, where);
 }
 
 /* Room for one more region in the table, mapped and doubled by a copy. */
@@ -331,7 +334,8 @@ static void hero_lend_audit_given(const char *when) {
 }
 
 /* The region at the next depth, holding at least `bytes` before its guard. */
-static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const char *param, int64_t extent) {
+static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const char *param, int64_t extent,
+                                      const HeroPlace *where) {
     if (hero_lend_depth >= hero_lend_cap) hero_lend_grow_table();
     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth];
     hero_lend_audit(r, "found when the next lend at its depth took its memory");
@@ -342,10 +346,10 @@ static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const ch
         r->base = NULL;
         r->room = 0;
         char *base = hero_lend_map(room + page);
-        if (base == NULL) hero_lend_refuse(callee, param, "the system refused the memory for it", extent);
+        if (base == NULL) hero_lend_refuse(callee, param, "the system refused the memory for it", extent, where);
         if (hero_lend_seal(base + room, page) != 0) {
             hero_lend_unmap(base, room + page);
-            hero_lend_refuse(callee, param, "the system refused to seal the page after it", extent);
+            hero_lend_refuse(callee, param, "the system refused to seal the page after it", extent, where);
         }
         r->base = base;
         r->room = room;
@@ -353,7 +357,7 @@ static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const ch
         r->open = 1;
     } else if (!r->open) {
         if (hero_lend_reopen(r->base, r->room) != 0) {
-            hero_lend_refuse(callee, param, "the system refused to open its memory again", extent);
+            hero_lend_refuse(callee, param, "the system refused to open its memory again", extent, where);
         }
         r->open = 1;
     }
@@ -406,26 +410,36 @@ static void hero_lend_retire(HeroLendRegion *r) {
     r->summed = 1;
 }
 
-int64_t hero_lend_count_u64(uint64_t n, const char *callee, const char *param) {
+int64_t hero_lend_count_u64_at(uint64_t n, const char *callee, const char *param, const HeroPlace *where) {
     if (n > (uint64_t)INT64_MAX) {
         char msg[512];
         snprintf(msg, sizeof msg,
                  "`%s` of `%s` was to be lent a buffer of %llu elements, more than this runtime can count",
                  param, callee, (unsigned long long)n);
-        hero_panic(msg);
+        hero_panic_where(msg, where);
     }
     return (int64_t)n;
 }
 
-void *hero_lend_take(const HeroArrayHeader *from, int64_t extent, const char *callee, const char *param) {
+int64_t hero_lend_count_u64(uint64_t n, const char *callee, const char *param) {
+    return hero_lend_count_u64_at(n, callee, param, NULL);
+}
+
+/* The take, the give and the count hold their bodies in the `_at` twins, which
+ * the program's C hands its call's record (panel 230's R1, kind 2); the old
+ * names hand them NULL, which names no place. */
+void *hero_lend_take_at(const HeroArrayHeader *from, int64_t extent, const char *callee, const char *param,
+                        const HeroPlace *where) {
     hero_array_require(from);
-    if (extent < 0) hero_lend_refuse(callee, param, "an extent is a number of elements, never below zero", extent);
+    if (extent < 0) {
+        hero_lend_refuse(callee, param, "an extent is a number of elements, never below zero", extent, where);
+    }
     size_t size = from->elem->size;
     size_t bytes = 0;
     if (__builtin_mul_overflow((size_t)extent, size, &bytes) || bytes > SIZE_MAX / 2) {
-        hero_lend_refuse(callee, param, "that many bytes cannot be mapped", extent);
+        hero_lend_refuse(callee, param, "that many bytes cannot be mapped", extent, where);
     }
-    HeroLendRegion *r = hero_lend_push(bytes, callee, param, extent);
+    HeroLendRegion *r = hero_lend_push(bytes, callee, param, extent, where);
     char *buffer = r->base + r->room - bytes;
     int64_t kept = from->len < extent ? from->len : extent;
     size_t copied = (size_t)kept * size;
@@ -434,12 +448,16 @@ void *hero_lend_take(const HeroArrayHeader *from, int64_t extent, const char *ca
     return buffer;
 }
 
-HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *buffer, int64_t extent) {
+void *hero_lend_take(const HeroArrayHeader *from, int64_t extent, const char *callee, const char *param) {
+    return hero_lend_take_at(from, extent, callee, param, NULL);
+}
+
+HeroArrayHeader *hero_lend_give_at(HeroArrayHeader *a, const void *buffer, int64_t extent, const HeroPlace *where) {
     hero_array_require(a);
     if (hero_lend_depth < 1) hero_panic("a buffer lent to C was given back twice — this is a compiler bug, please report it");
     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
     size_t bytes = (size_t)extent * a->elem->size;
-    if (extent != r->extent || (const char *)buffer != r->base + r->room - bytes) hero_lend_misplaced("a buffer");
+    if (extent != r->extent || (const char *)buffer != r->base + r->room - bytes) hero_lend_misplaced("a buffer", where);
     HeroArrayHeader *fresh = hero_array_new(a->elem, extent);
     if (bytes > 0) memcpy(hero_array_data(fresh), buffer, bytes);
     fresh->len = extent;
@@ -447,6 +465,10 @@ HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *buffer, int64_t 
     hero_lend_depth -= 1;
     hero_lend_retire(r);
     return fresh;
+}
+
+HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *buffer, int64_t extent) {
+    return hero_lend_give_at(a, buffer, extent, NULL);
 }
 
 /* A LOCAL LENT TO C, IN PLACE (panel 196's R7). A binding lent whole through
@@ -459,7 +481,7 @@ HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *buffer, int64_t 
  * page. Zeroed, which is the value a refcounted slot starts at and the one the
  * frame would not have given any other. */
 void *hero_lend_local(size_t size, const char *owner, const char *name) {
-    HeroLendRegion *r = hero_lend_push(size, owner, name, 1);
+    HeroLendRegion *r = hero_lend_push(size, owner, name, 1, NULL);
     char *local = r->base + r->room - size;
     memset(local, 0, size);
     r->local = 1;
@@ -572,7 +594,9 @@ void hero_pad_clear(void *p, size_t size, size_t count, const size_t *masks, siz
 void hero_lend_local_give(void *local) {
     if (hero_lend_depth < 1) hero_panic("a local lent to C was given back twice — this is a compiler bug, please report it");
     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
-    if (!r->local || r->base + r->room - r->bytes != (char *)local) hero_lend_misplaced("a local");
+    /* At the function's one exit, where no call of the program stands: a place
+     * here would be the function's, which the message's owner already names. */
+    if (!r->local || r->base + r->room - r->bytes != (char *)local) hero_lend_misplaced("a local", NULL);
     hero_lend_depth -= 1;
     hero_lend_retire(r);
 }

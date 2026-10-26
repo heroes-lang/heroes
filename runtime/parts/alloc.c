@@ -211,7 +211,7 @@ int64_t hero_runtime_live(void) { return hero_live_blocks; }
  * sentence in two and no case can assert it — measured 2026-09-15, when three
  * shipped goldens went red on a message that was right. Last, the sentence a
  * case asserts is contiguous and the address a reader needs is still here. */
-static void hero_handle_report_stray(size_t strays, const void *first_stray) {
+static void hero_handle_report_stray(size_t strays, const void *first_stray, const HeroPlace *site) {
     fflush(stdout);
     fprintf(stderr, "panic: %llu C handle(s) given back that were never taken — "
                     "the set of live handles did not hold that address when a "
@@ -223,6 +223,7 @@ static void hero_handle_report_stray(size_t strays, const void *first_stray) {
                     "a call marked `transfers` handed it into another value, "
                     "which ends it from now on. The first is at %p\n",
             (unsigned long long)strays, first_stray);
+    hero_place_line(site);
     hero_abort();
 }
 
@@ -234,7 +235,7 @@ static void hero_handle_report_stray(size_t strays, const void *first_stray) {
  * rather than at the second `hero_handle_ended`, which under the first shape
  * of ABI 24 came after C had already freed twice (the landing review,
  * 2026-09-24). Panel 176 ruled it a message and a shim, not a word. */
-static void hero_handle_report_twice_in_one_call(const void *h, size_t held) {
+static void hero_handle_report_twice_in_one_call(const void *h, size_t held, const HeroPlace *site) {
     fflush(stdout);
     fprintf(stderr, "panic: one call takes the same C handle at two consuming positions, "
                     "and the handle holds %llu reference(s) — the library takes one "
@@ -243,6 +244,7 @@ static void hero_handle_report_twice_in_one_call(const void *h, size_t held) {
                     "consumes it once; or, for a reference-counted object, one more "
                     "`retains` before the call. The handle is at %p\n",
             (unsigned long long)held, h);
+    hero_place_line(site);
     hero_abort();
 }
 
@@ -398,7 +400,7 @@ void hero_runtime_check_leaks(void) {
      * unreachable. It stays because an emitter that stopped telling the set
      * before the call would otherwise turn a corruption into silence, and the
      * message is the same one, written once above. */
-    if (strays > 0) hero_handle_report_stray(strays, first_stray);
+    if (strays > 0) hero_handle_report_stray(strays, first_stray, NULL);
     if (live > 0) {
         fflush(stdout);
         fprintf(stderr, "panic: %llu C handle(s) never given back — every life a "
@@ -725,7 +727,7 @@ static int hero_dead_holds_locked(const void *h) {
  * the call, the cell, or the callback whose result it was, because the line
  * a runtime abort can name is the C's, not the author's. The address goes
  * last, for the stray report's reason. */
-static void hero_handle_report_poisoned(const char *where) {
+static void hero_handle_report_poisoned(const char *where, const HeroPlace *site) {
     fflush(stdout);
     fprintf(stderr, "panic: a dead C handle reached %s: a call marked `consumes` or `transfers` "
                     "ended this handle's life and emptied the binding, field or element it "
@@ -733,16 +735,18 @@ static void hero_handle_report_poisoned(const char *where) {
                     "Give a handle back once, after its last use; a handle that must outlive "
                     "one release holds a reference, which `retains` says\n",
             where);
+    hero_place_line(site);
     hero_abort();
 }
 
-static void hero_handle_report_remembered(const char *where, const void *h) {
+static void hero_handle_report_remembered(const char *where, const void *h, const HeroPlace *site) {
     fflush(stdout);
     fprintf(stderr, "panic: a C handle reached %s at an address a call marked `consumes` or "
                     "`transfers` ended, and nothing has handed that address out since: a "
                     "copy made before the ending call, which C would read or free after "
                     "the program gave it back. The handle is at %p\n",
             where, h);
+    hero_place_line(site);
     hero_abort();
 }
 
@@ -750,15 +754,20 @@ static void hero_handle_report_remembered(const char *where, const void *h) {
  * because the page's address is the one fact a dead value carries; then the
  * remembered addresses, under the lock. A NULL is C's own failure value and
  * crosses freely, as it does everywhere else in this file. */
-void hero_handle_alive(const void *h, const char *where) {
+/* The body is the `_at` twin's, whose record is the call's place (panel 230's
+ * R1, kind 2); the old name hands it NULL, as the callback's thunk does, which
+ * C called and no call of the program stands at. */
+void hero_handle_alive_at(const void *h, const char *where, const HeroPlace *site) {
     if (h == NULL) return;
     void *dead = atomic_load_explicit(&hero_handle_dead_page, memory_order_acquire);
-    if (dead != NULL && h == dead) hero_handle_report_poisoned(where);
+    if (dead != NULL && h == dead) hero_handle_report_poisoned(where, site);
     hero_handle_lock_take(&hero_handle_lock);
     int remembered = hero_dead_holds_locked(h);
     hero_handle_lock_drop(&hero_handle_lock);
-    if (remembered) hero_handle_report_remembered(where, h);
+    if (remembered) hero_handle_report_remembered(where, h, site);
 }
+
+void hero_handle_alive(const void *h, const char *where) { hero_handle_alive_at(h, where, NULL); }
 
 /* C HANDED THE ADDRESS BACK, whatever ended there before: a `borrows` result
  * or cell, or a handle C passes to a callback. The callback's clear runs in a
@@ -794,12 +803,13 @@ bool hero_handle_eq(const void *a, const void *b) {
  * four platforms, and the child was never waited for). Raised before C runs,
  * like the stray, and it says what the two declarations say and nothing about
  * why they disagree. */
-static void hero_handle_report_crossed(const void *h, const char *owed, const char *by) {
+static void hero_handle_report_crossed(const void *h, const char *owed, const char *by, const HeroPlace *site) {
     fflush(stdout);
     fprintf(stderr, "panic: a C handle was given back to `%s`, and the mark that began its "
                     "life names `%s` — the set names the calls that may end this "
                     "handle's life, and `%s` is not one of them. The handle is at %p\n",
             by, owed, by, h);
+    hero_place_line(site);
     hero_abort();
 }
 
@@ -849,20 +859,20 @@ void hero_handle_acquired(const void *h, const char *by) {
  * makes it after, and `hero_handle_kept` withdraws it when the call said it
  * failed. More announced than held is the one-call double release, stopped
  * before C. Called with the lock held; drops it before a report. */
-static void hero_handle_announce(size_t i, const void *h) {
+static void hero_handle_announce(size_t i, const void *h, const HeroPlace *site) {
     hero_handle_set[i].pending++;
     if (hero_handle_set[i].pending > hero_handle_set[i].n) {
         size_t held = hero_handle_set[i].n;
         hero_handle_set[i].pending--;
         hero_handle_lock_drop(&hero_handle_lock);
-        hero_handle_report_twice_in_one_call(h, held);
+        hero_handle_report_twice_in_one_call(h, held, site);
     }
 }
 
 /* The slot of a live address, or a stray report: the lock is held on return
  * and dropped before the report. Shared by the three calls that read a life
  * the program must already hold. */
-static size_t hero_handle_held(const void *h) {
+static size_t hero_handle_held(const void *h, const HeroPlace *site) {
     /* AN EMPTY SET HOLDS NOTHING, SO THIS IS A STRAY TOO, AND IT IS STOPPED LIKE
      * ONE (defect 086, 2026-09-24). The branch used to count and return, which
      * was right before defect 071 moved the report to the call; afterwards it
@@ -874,14 +884,14 @@ static size_t hero_handle_held(const void *h) {
         hero_handle_strays++;
         if (hero_handle_first_stray == NULL) hero_handle_first_stray = h;
         hero_handle_lock_drop(&hero_handle_lock);
-        hero_handle_report_stray(1, h);
+        hero_handle_report_stray(1, h, site);
     }
     size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
     if (hero_handle_set[i].h != h) {
         hero_handle_strays++;
         if (hero_handle_first_stray == NULL) hero_handle_first_stray = h;
         hero_handle_lock_drop(&hero_handle_lock);
-        hero_handle_report_stray(1, h);
+        hero_handle_report_stray(1, h, site);
     }
     return i;
 }
@@ -893,16 +903,16 @@ static size_t hero_handle_held(const void *h) {
  * conditional. The answer is the number of the life the end is announced
  * for, which the emitted C keeps in the call's own block and hands to the
  * other half (defect 098). */
-uint64_t hero_handle_ending(const void *h, const char *by, const char *pays) {
+uint64_t hero_handle_ending_at(const void *h, const char *by, const char *pays, const HeroPlace *site) {
     if (h == NULL) return 0;
     hero_handle_lock_take(&hero_handle_lock);
-    size_t i = hero_handle_held(h);
+    size_t i = hero_handle_held(h, site);
     const char *owed = hero_handle_set[i].by;
     if (owed != NULL && by != NULL && !hero_handle_named(owed, by) && !hero_handle_sets_share(owed, pays)) {
         hero_handle_lock_drop(&hero_handle_lock);
-        hero_handle_report_crossed(h, owed, by);
+        hero_handle_report_crossed(h, owed, by, site);
     }
-    hero_handle_announce(i, h);
+    hero_handle_announce(i, h, site);
     uint64_t life = hero_handle_set[i].life;
     hero_handle_lock_drop(&hero_handle_lock);
     return life;
@@ -912,13 +922,17 @@ uint64_t hero_handle_ending(const void *h, const char *by, const char *pays) {
  * life is no longer the set's: C replaced it, at this address, inside the call
  * that announced its end (defect 098). A NULL-handle announcement answered 0
  * and never reaches here. Called with the lock held. */
+uint64_t hero_handle_ending(const void *h, const char *by, const char *pays) {
+    return hero_handle_ending_at(h, by, pays, NULL);
+}
+
 static size_t hero_handle_of_life(const void *h, uint64_t life) {
     /* No life is numbered zero, and only a NULL handle's announcement answers
      * it, so a handle that reaches here with zero was never announced: an
      * emitter that stopped telling the set before the call. It is reported as
      * the stray it would have been, which is `hero_handle_held`'s own defence,
      * rather than passed in silence. */
-    if (life == 0) return hero_handle_held(h);
+    if (life == 0) return hero_handle_held(h, NULL);
     if (hero_handle_cap == 0) return hero_handle_cap;
     size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
     if (hero_handle_set[i].h != h || hero_handle_set[i].life != life) return hero_handle_cap;
@@ -944,26 +958,27 @@ void hero_handle_kept(const void *h, uint64_t life) {
  * name `into` — `fclose` relabelled as `transfers pclose` on a `popen` stream
  * is refused here, and so is a real `BIO_new_fp(BIO_CLOSE)` over a `popen`
  * stream, which C would end with `fclose` and leave a child unwaited. */
-static void hero_handle_report_misdirected(const void *h, const char *owed, const char *into) {
+static void hero_handle_report_misdirected(const void *h, const char *owed, const char *into, const HeroPlace *site) {
     fflush(stdout);
     fprintf(stderr, "panic: a C handle was handed into a value that will end it with `%s`, "
                     "and the mark that began its life names `%s` — the set names the "
                     "calls that may end this handle's life, and `%s` is not one of them. "
                     "The handle is at %p\n",
             into, owed, into, h);
+    hero_place_line(site);
     hero_abort();
 }
 
-uint64_t hero_handle_transferring(const void *h, const char *into) {
+uint64_t hero_handle_transferring_at(const void *h, const char *into, const HeroPlace *site) {
     if (h == NULL) return 0;
     hero_handle_lock_take(&hero_handle_lock);
-    size_t i = hero_handle_held(h);
+    size_t i = hero_handle_held(h, site);
     const char *owed = hero_handle_set[i].by;
     if (owed != NULL && into != NULL && !hero_handle_sets_share(owed, into)) {
         hero_handle_lock_drop(&hero_handle_lock);
-        hero_handle_report_misdirected(h, owed, into);
+        hero_handle_report_misdirected(h, owed, into, site);
     }
-    hero_handle_announce(i, h);
+    hero_handle_announce(i, h, site);
     uint64_t life = hero_handle_set[i].life;
     hero_handle_lock_drop(&hero_handle_lock);
     return life;
@@ -973,20 +988,23 @@ uint64_t hero_handle_transferring(const void *h, const char *into) {
  * address one more, and the reference must share a releaser with the life it
  * joins, which the set KEEPS; on an address the set does not hold, a first
  * life owed to the reference's own releasers. */
-static void hero_handle_report_joined_wrong(const void *h, const char *owed, const char *set) {
+uint64_t hero_handle_transferring(const void *h, const char *into) { return hero_handle_transferring_at(h, into, NULL); }
+
+static void hero_handle_report_joined_wrong(const void *h, const char *owed, const char *set, const HeroPlace *site) {
     fflush(stdout);
     fprintf(stderr, "panic: a reference marked `retains %s` was taken to a C handle whose "
                     "life a mark owed to `%s` — the two name no releaser in common, so one "
                     "of the two releases the program now owes would end the other's life "
                     "the wrong way. The handle is at %p\n",
             set, owed, h);
+    hero_place_line(site);
     hero_abort();
 }
 
 /* `ends_here` says whether the call taking this reference also ends or
  * transfers a handle of its own, which the emitter knows from the declaration
  * and the runtime cannot know from the address (defect 098). */
-void hero_handle_retained(const void *h, const char *releasers, int ends_here) {
+void hero_handle_retained_at(const void *h, const char *releasers, int ends_here, const HeroPlace *site) {
     if (h == NULL) return;
     hero_handle_lock_take(&hero_handle_lock);
     if (hero_handle_cap == 0 || (hero_handle_live + 1) * 2 > hero_handle_cap) hero_handle_grow();
@@ -1012,7 +1030,7 @@ void hero_handle_retained(const void *h, const char *releasers, int ends_here) {
         const char *owed = hero_handle_set[i].by;
         if (owed != NULL && releasers != NULL && !hero_handle_sets_share(owed, releasers)) {
             hero_handle_lock_drop(&hero_handle_lock);
-            hero_handle_report_joined_wrong(h, owed, releasers);
+            hero_handle_report_joined_wrong(h, owed, releasers, site);
         }
         hero_handle_set[i].n++;
     } else {
@@ -1026,6 +1044,10 @@ void hero_handle_retained(const void *h, const char *releasers, int ends_here) {
         hero_dead_clear_locked(h);
     }
     hero_handle_lock_drop(&hero_handle_lock);
+}
+
+void hero_handle_retained(const void *h, const char *releasers, int ends_here) {
+    hero_handle_retained_at(h, releasers, ends_here, NULL);
 }
 
 /* THE END, after the call: one reference fewer, the announcement made good,

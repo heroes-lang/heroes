@@ -37,6 +37,7 @@ use emit/lend_extent
 use emit/probe_params
 use emit/nodebug
 use emit/padding
+use emit/stop_place
 use widths
 
 # The contract between this writer and `emit/ffi_extent.hero`'s reader.
@@ -100,16 +101,16 @@ function extent_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: c
     if !stated.is_err()
         if stated.must().written.len() > 0 && stated.must().written[0] >= '0' && stated.must().written[0] <= '9'
             return "INT64_C(" + stated.must().c_text + ")"
-        return "hero_lend_count_u64((uint64_t)(" + stated.must().c_text + "), " + names + ")"
+        return "hero_lend_count_u64_at((uint64_t)(" + stated.must().c_text + "), " + names + ", &" + stop_place.HERE + ")"
     counted = lend_count.counted_siblings(s, decls, decl: decl)
 
     if index >= counted.len() || counted[index] < 0 || counted[index] >= given.len()
-        return "hero_lend_count_u64((uint64_t)0 - 1, " + names + ")"
+        return "hero_lend_count_u64_at((uint64_t)0 - 1, " + names + ", &" + stop_place.HERE + ")"
     n = lend_count.count_of(c, s, decls, f, arg: given[counted[index]], site: site)
 
     if lend_count.signed_int(c, n.ty)
         return "(int64_t)(" + n.text + ")"
-    return "hero_lend_count_u64((uint64_t)(" + n.text + "), " + names + ")"
+    return "hero_lend_count_u64_at((uint64_t)(" + n.text + "), " + names + ", &" + stop_place.HERE + ")"
 
 # The assertion that the header's pointer points at what the buffer holds.
 # Written only in forms C leaves unevaluated, `__typeof__` and
@@ -206,6 +207,11 @@ function decl_param_span(decls: [ast.Decl], decl: i64, index: i64) -> str
 
 # Before the call: a block opens, each buffer is taken in argument order, and
 # its argument becomes the buffer.
+#
+# The take, the count and the give-back each hand over the call's place, the
+# record the call's block declares (`emit/stop_place.hero`, `emit/ops.hero`), so
+# a refusal the program's count caused, or a give-back C moved, names the call
+# (panel 230's R1, kind 2).
 function before(@w: writer.Writer, held: [Buffer], arguments: [str]) -> [str]
     if held.len() == 0
         return arguments
@@ -218,7 +224,7 @@ function before(@w: writer.Writer, held: [Buffer], arguments: [str]) -> [str]
         writer.line(@w, text: "    " + nodebug.MARK + "int64_t " + b.extent_name + " = " + b.extent + ";")
         writer.line(
             @w,
-            text: "    " + nodebug.MARK + "void *" + b.name + " = hero_lend_take(" + b.place + ", " + b.extent_name + ", " + lend_count.quoted(b.callee) + ", " + lend_count.quoted(b.param) + ");"
+            text: "    " + nodebug.MARK + "void *" + b.name + " = hero_lend_take_at(" + b.place + ", " + b.extent_name + ", " + lend_count.quoted(b.callee) + ", " + lend_count.quoted(b.param) + ", &" + stop_place.HERE + ");"
         )
 
         for line in b.pad
@@ -240,7 +246,7 @@ function after(@w: writer.Writer, held: [Buffer])
         b = held[at]
         writer.line(
             @w,
-            text: "    " + b.place + " = hero_lend_give(" + b.place + ", " + b.name + ", " + b.extent_name + ");"
+            text: "    " + b.place + " = hero_lend_give_at(" + b.place + ", " + b.name + ", " + b.extent_name + ", &" + stop_place.HERE + ");"
         )
         at @ at - 1
 

@@ -46,6 +46,7 @@ use check/reaches
 use emit/writer
 use emit/handle_text
 use emit/nodebug
+use emit/stop_place
 use parse
 
 function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str])
@@ -86,8 +87,8 @@ function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decl
                                 ty: written.must(),
                                 value: handle_text.cell_of(arguments[at]),
                                 at: at,
-                                entry: "hero_handle_ending",
-                                tail: ", " + by
+                                entry: "hero_handle_ending_at",
+                                tail: ", " + by + ", &" + stop_place.HERE
                             )
 
                         # A transfer names where the life goes, and the handle's
@@ -102,8 +103,8 @@ function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decl
                                 ty: written.must(),
                                 value: handle_text.cell_of(arguments[at]),
                                 at: at,
-                                entry: "hero_handle_transferring",
-                                tail: ", " + handle_text.set_c(s, p.transfers.must())
+                                entry: "hero_handle_transferring_at",
+                                tail: ", " + handle_text.set_c(s, p.transfers.must()) + ", &" + stop_place.HERE
                             )
                 at @ at + 1
         .constant_decl | .record_decl | .variant_decl | .test_decl => return
@@ -161,7 +162,10 @@ function crossing(@w: writer.Writer, c: state.Checked, s: source.Source, decls: 
 
         if suffix != ""
             inside @ ", at `" + suffix + "`"
-        writer.line(@w, text: "    hero_handle_alive(" + value + suffix + ", \"" + where + inside + "\");")
+        writer.line(
+            @w,
+            text: "    hero_handle_alive_at(" + value + suffix + ", \"" + where + inside + "\", &" + stop_place.HERE + ");"
+        )
 
 # Who is giving the handle back, and what its own mark would let it pay. A
 # call that also ACQUIRES is a transfer of the old kind — `realloc`, `freopen` —

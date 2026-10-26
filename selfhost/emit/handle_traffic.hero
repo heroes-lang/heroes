@@ -26,6 +26,7 @@ use emit/writer
 use emit/handle_result
 use emit/handle_ends
 use emit/handle_text
+use emit/stop_place
 
 # WHICH VALUES each mark is about, because since panel 150 the runtime holds a
 # set of addresses and not a number: the two ends take the handles themselves.
@@ -90,8 +91,8 @@ function after_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls
                             decls,
                             ty: written.must(),
                             value: handle_text.cell_of(arguments[at]),
-                            entry: "hero_handle_retained",
-                            tail: ", " + handle_text.set_c(s, p.retains.must()) + ", " + ends_here
+                            entry: "hero_handle_retained_at",
+                            tail: ", " + handle_text.set_c(s, p.retains.must()) + ", " + ends_here + ", &" + stop_place.HERE
                         )
                 at @ at + 1
 
@@ -254,8 +255,8 @@ function retained_result(@w: writer.Writer, c: state.Checked, s: source.Source, 
         decls,
         fd: fd,
         target: target,
-        entry: "hero_handle_retained",
-        tail: ", " + handle_text.set_c(s, fd.retains_result.must()) + ", " + ends_here
+        entry: "hero_handle_retained_at",
+        tail: ", " + handle_text.set_c(s, fd.retains_result.must()) + ", " + ends_here + ", &" + stop_place.HERE
     )
 
 # A mark on the RESULT: the assignment target is the value, and a call whose

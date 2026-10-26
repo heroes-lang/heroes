@@ -160,6 +160,12 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
         .extern_fn e =>
             extern_name = source.span_text(s, decls[e.decl].name)
 
+            # The call's place, declared once at the top of a block that holds
+            # everything the call writes: each check the runtime makes for it
+            # hands over `&hero_here`, the cstr guards inside its arguments
+            # included (panel 230's R1, kind 2; `emit/stop_place.hero`).
+            writer.line(@w, text: "    { " + stop_place.declared(s, f, offset: site))
+
             # **The extent a lend crosses with, asserted in C before the call**
             # (panel 166's route C; defect 063). The number compared is the
             # header's own `sizeof` of the field, so it is right on a `partial`
@@ -184,7 +190,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             guarded = lend_type.cast_lends(
                 names.lend_units,
                 name: extern_name,
-                arguments: guarded_args.guard_arguments(p, c, decls, decl: e.decl, arguments: buffered, where: stop_place.of(s, f, offset: site))
+                arguments: guarded_args.guard_arguments(p, c, decls, decl: e.decl, arguments: buffered, where: "&" + stop_place.HERE)
             )
 
             # Where each argument was read from, for the poison a consuming
@@ -289,6 +295,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             if lives
                 writer.line(@w, text: "    }")
             lend_buffer.after(@w, held)
+            writer.line(@w, text: "    }")
 
 ## Tests
 
@@ -395,7 +402,9 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
     )
     got = writer.finish(w)
 
-    # Each `cstr` crossing is guarded with the call's place, the site `0` of
-    # `main` in `t.hero`, the first line's first column (panel 230's R1).
-    at = "\"t.hero\", \"t.main\", 1, 1"
-    assert got == "    t2 = h_t_double_it(t1);\n    t5 = (const char *)strstr(hero_cstr_nonnull_at(t3, " + at + "), hero_cstr_nonnull_at(t4, " + at + "));\n"
+    # The extern call stands in a block that declares its place, the site `0`
+    # of `main` in `t.hero`, the first line's first column, and each `cstr`
+    # crossing is guarded with it (panel 230's R1).
+    place = "    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {\"t.hero\", \"t.main\", 1, 1};\n"
+    guarded = "    t5 = (const char *)strstr(hero_cstr_nonnull_at(t3, &hero_here), hero_cstr_nonnull_at(t4, &hero_here));\n"
+    assert got == "    t2 = h_t_double_it(t1);\n" + place + guarded + "    }\n"

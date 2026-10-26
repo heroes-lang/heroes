@@ -49,6 +49,10 @@ _Noreturn void hero_panic_overflow(void) { hero_panic("integer overflow"); }
  * in. Written in `parts/place.c`, beside the report's buffer, and declared here
  * so that every part included before that one reaches it. */
 _Noreturn static void hero_panic_where(const char *msg, const HeroPlace *where);
+
+/* The place's line alone, for a report a part writes with its own words before
+ * it aborts (`parts/alloc.c`'s handle reports); NULL writes nothing. */
+static void hero_place_line(const HeroPlace *where);
 _Noreturn void hero_unreachable(void) {
     hero_panic("entered unreachable code — this is a compiler bug, please report it");
 }

@@ -1,0 +1,18 @@
+# M-panic-location, panel 230's R1, kind 2: a C handle given back that the
+# program never held names the call that gave it back. `g_open` is `borrows`, so
+# no life of the program's began, and the first `g_close` is refused before C,
+# at the place where it begins; the second is never reached. The header and the
+# program are `fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c`'s.
+
+extern "fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.h"
+    record G tag gg
+    function g_open() -> G borrows
+    function g_close(x: G consumes)
+
+function main()
+    a = g_open()
+    print("opened")
+    twice = a
+    g_close(x: a)
+    g_close(x: twice)
+    print("closed twice")

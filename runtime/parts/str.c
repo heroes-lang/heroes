@@ -562,12 +562,10 @@ const char *hero_cstr_nonnull(const char *p) {
     return p;
 }
 
-/* The same at the call's place (panel 230's R1, kind 2): the program's C writes
- * it inside the call's arguments, an expression, which can declare no record,
- * so it takes the four a failing branch takes. */
-const char *hero_cstr_nonnull_at(const char *p, const char *file, const char *function, int64_t line,
-                                 int64_t column) {
-    if (p == NULL) hero_panic_at("a null `cstr` was passed to a C function", file, function, line, column);
+/* The same at the call's place (panel 230's R1, kind 2): the record the call's
+ * block declares, which the arguments reach. */
+const char *hero_cstr_nonnull_at(const char *p, const HeroPlace *where) {
+    if (p == NULL) hero_panic_where("a null `cstr` was passed to a C function", where);
     return p;
 }
 

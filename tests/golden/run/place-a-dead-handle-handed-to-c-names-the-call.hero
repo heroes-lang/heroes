@@ -1,0 +1,19 @@
+# M-panic-location, panel 230's R1, kind 2: a dead C handle reaching C names the
+# call it reached, where `obj_add(...)` begins. The header and the program are
+# `dead-handle-at-a-consuming-position-after-its-life-ended`'s.
+
+extern "dead-handle-at-a-consuming-position-after-its-life-ended.h"
+    record Json tag Obj
+    function obj_new() -> Json acquires obj_delete
+    function obj_add(object: Json, string: cstr lent, item: Json consumes) -> i64
+    function obj_delete(item: Json consumes)
+    function one() -> i64
+
+function main()
+    a = obj_new()
+    b = obj_new()
+
+    if one() == 1
+        obj_delete(item: b)
+    _ = obj_add(object: a, string: "b".cstr(), item: b)
+    obj_delete(item: a)

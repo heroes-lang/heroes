@@ -1,0 +1,2 @@
+3 3 67
+!panic:   at place-a-buffer-of-a-negative-extent-names-the-call.hero:12:11, in place-a-buffer-of-a-negative-extent-names-the-call.main
