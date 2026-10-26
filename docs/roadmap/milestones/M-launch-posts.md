@@ -1,6 +1,6 @@
 # M-launch-posts — the first posts, each with the numbers its command produced
 
-**Scheduled 2026-10-14, at row 86 (87 since 2026-10-18), by the author's instruction**, immediately
+**Scheduled 2026-10-14, at row 86 (87 since 2026-10-18, 88 since 2026-10-26), by the author's instruction**, immediately
 after the gate: the author chose that the first posts follow it. It is the end
 the author named for the chain, meant as: *to reach a point where I can
 promote the language, with blog posts on the aggregators and on social

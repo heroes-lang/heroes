@@ -89,3 +89,6 @@ for the one rewrite of the history and put back the same (measurement 045
 **Renumbered 2026-10-18**: M-readonly-lend entered the chain at row 68 by
 panel 217's R6, so the two rows the correction of 2026-10-14 names moved one
 down, M-compatibility-promise to 74 and M-launch-posts to 87.
+
+**Renumbered 2026-10-26**: M-standalone-compiler entered the chain at row 82,
+so this row is 87 and M-launch-posts 88; M-compatibility-promise stays at 74.

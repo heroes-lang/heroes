@@ -42,7 +42,9 @@ remains is the LSP client, the quick fixes from `certain` fixes, formatting on
 save and `heroes doctor` as the health check. The row moves from 75 to 84,
 after M-lsp-server and immediately before the gate. **Row 85 since
 2026-10-18**, one further when M-readonly-lend entered the chain at row 68
-(`b5db7e8ff`), still after M-lsp-server and before the gate.
+(`b5db7e8ff`), still after M-lsp-server and before the gate. **Row 86 since
+2026-10-26**, one further again when M-standalone-compiler entered the chain
+at row 82.
 
 **A comparison read on 2026-10-25, offered by the session of that day for this
 row.** Goose's extension (github.com/aardappel/goose, [goose/vscode/README.md](https://github.com/aardappel/goose/blob/master/vscode/README.md))

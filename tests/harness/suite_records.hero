@@ -318,6 +318,9 @@ constant REFUSED: [str]
         "M-lent-parameter"
         "M-const-lend"
         "M-borrowed-places"
+        "M-embedded-clang"
+        "M-single-binary"
+        "M-bundled-toolchain"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -600,8 +603,13 @@ constant REFUSED: [str]
 # 217's R6, the read-only lend, `lent` on a parameter. `REFUSED` gains its three
 # runners-up, each refused in its `docs/roadmap/names.md` row:
 # `M-lent-parameter`, `M-const-lend` and `M-borrowed-places`.
+# **95 -> 96 on 2026-10-26**, `M-standalone-compiler`, entered at row 82 by
+# the author's instruction, `heroes` needing nothing else installed.
+# `REFUSED` gains its three runners-up, each refused in its
+# `docs/roadmap/names.md` row: `M-embedded-clang`, `M-single-binary` and
+# `M-bundled-toolchain`.
 constant ROWS: i64
-    95
+    96
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
