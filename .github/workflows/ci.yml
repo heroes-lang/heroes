@@ -143,6 +143,18 @@ on:
         options:
           - 'no'
           - 'yes'
+      # **The sealed suite's attestation, asked for** (author instruction
+      # 2026-10-26): the `thesis-attest` job at the end of this file runs on a
+      # release tag and when this says `yes`, and on no push to `main`. Its
+      # environment's reviewer is asked each time it runs, so pair it with
+      # `only` when the legs are not what is being asked.
+      attest:
+        description: 'Also attest the sealed held-out suite (its environment asks the reviewer; release tags always do)'
+        type: choice
+        default: 'no'
+        options:
+          - 'no'
+          - 'yes'
 
 # One run per ref: a second push cancels the first, because a red result about
 # code nobody has any more is a red result nobody reads.
@@ -1067,9 +1079,21 @@ jobs:
   # nothing attested, nothing failed. The key reaches openssl through the
   # environment (`-pass env:`), never a command line, as the instrument's own
   # `thesis_seal.hero` says.
+  #
+  # **When it runs, since 2026-10-26: on a release tag, and when asked** (the
+  # author's instruction that day, meant as: *I need that check rarely; make it
+  # rare, or manual*), by `workflow_dispatch` with `attest: yes`; never on a
+  # push to `main`. The environment's reviewer is the author, so every push
+  # held its run open until the author approved this job: of the ten runs
+  # read that day (two of the twelve listed answered HTTP 502), four ended
+  # `success` on an approval, two stood `waiting` and four were cancelled by
+  # the next push. A release tag keeps one attestation beside each release
+  # that a stranger can read, since this repository keeps a run's log for 90
+  # days (its `artifact-and-log-retention`, read that day). R10 names the job,
+  # its environment and what it prints, and not its trigger.
   thesis-attest:
     name: The sealed held-out suite holds what its README says
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.attest == 'yes')
     runs-on: ubuntu-latest
     # Four minutes on 2026-10-25.
     timeout-minutes: 30
