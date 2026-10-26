@@ -339,7 +339,11 @@ function ci(): { fixpointLinuxOnly: boolean; pushPlatforms: number } {
   const fallback = /\|\|\s*'(\[[^\n]*\])'\s*\n\s*\)\s*\}\}/.exec(text);
   if (fallback === null) throw new Error(`${CI_FILE}: no fallback matrix literal to read the push platforms from.`);
   const pushPlatforms = (fallback[1].match(/"name":/g) ?? []).length;
-  if (pushPlatforms < 3 || !/"os":"ubuntu-latest"/.test(fallback[1])) {
+  // Linux is any `ubuntu-` label, not `ubuntu-latest` alone: since 2026-10-26
+  // both Linux legs name their release, `ubuntu-26.04` and `ubuntu-26.04-arm`
+  // (defect 2229), and a check that knew Linux by one label's spelling read a
+  // matrix with two Linux legs as one with none.
+  if (pushPlatforms < 3 || !/"os":"ubuntu-[0-9a-z.-]+"/.test(fallback[1])) {
     throw new Error(`${CI_FILE}: the push matrix names ${pushPlatforms} platform(s) including Linux, and /project/ says a push runs on all of them.`);
   }
   return { fixpointLinuxOnly, pushPlatforms };

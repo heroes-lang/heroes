@@ -29,8 +29,15 @@
 #
 # No request is made. A test that reaches the network is a test that fails on a
 # train, and everything interesting here is settled before the first byte.
+#
+# **The group names `curl_bound.h`, beside this file, and not `curl/curl.h`**
+# (defect 2229, 2026-10-26). libcurl 8.18 makes `curl_easy_setopt` a macro whose
+# expansion holds a `_Pragma`, which changes how clang judges every line after
+# the call, so the compiler refuses to bind it (`ffi_macro_name`); the header
+# includes `curl/curl.h` and takes that macro off, as the refusal's note says,
+# and the name binds the function libcurl declares.
 
-extern "curl/curl.h" link "curl"
+extern "curl_bound.h" link "curl"
     # The three values this program drives libcurl with. Their numbers are in
     # `curl.h` and nowhere here, which is the whole point: `CURLOPT_URL` is
     # `CURLOPTTYPE_STRINGPOINT + 2`, and the arithmetic is libcurl's business.
