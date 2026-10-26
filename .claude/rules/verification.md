@@ -119,7 +119,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets; their temporary folders, made and removed by the tests themselves in the system's temporary directory, are the author's one exception (2026-10-09) to CLAUDE.md § Hard stops' *no file outside this repository's root*, since two tests ask how a file outside every tree is judged |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero`, which runs the issue program's own, `tests/harness/issues.hero`'s, inside it since defect 2064, and the thesis instrument's own, `tests/harness/thesis.hero`'s, since M-thesis-harness (2026-10-20), and `canonical`, plus what `tests/**` gets |
 | `tests/thesis/**` (the assistant's task suite, `tests/harness/thesis.hero`'s input) | **the net's own tests** (the instrument's end-to-end tests read the suite), `-- dry tests/thesis` in the strict and the control arm (every reference passes every case and every hand mutant ends as its opening lines say), `records` for its `.md`, `unseen`, plus what `tests/**` gets; a held-out archive under it is text the instrument alone opens |
-| a file the site's build reads, every path in `.github/workflows/deploy-site.yml`'s `paths:` (the build holds that list to its reads since 2026-10-24, `site/src/lib/triggers.ts`; until then this cell named the files `claims.ts` lists at its top), the lexer's own files among them since the build holds the site's colouring to `heroes lex` (`site/src/lib/lexed.ts`), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push; and `spec` for `site/README.md`, whose headings a `§` citation names |
+| a file the site's build reads, every path in `.github/workflows/deploy-site.yml`'s `paths:` (the build holds that list to its reads since 2026-10-24, `site/src/lib/triggers.ts`; until then this cell named the files `claims.ts` lists at its top), the lexer's own files among them since the build holds the site's colouring to `heroes lex` (`site/src/lib/lexed.ts`), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push, and where `site/package*.json` moved, also under the deploy's own Node and npm (below the table, 2026-10-26); and `spec` for `site/README.md`, whose headings a `§` citation names |
 
 **The paths a suite names have been read from the tree since 2026-10-08, and
 `tests/harness` was the first one found missing** (defect 486, lane
@@ -197,6 +197,20 @@ instrument and no suite of the net runs it, so a change to a file it reads goes
 through the site's build before the push, as a `selfhost/print/` change goes
 through the probe by hand (after the push since 2026-10-09, § The optimistic
 chain; panel 229's R4).
+
+**A change to the site's dependencies is built with the deploy's own Node and
+npm, and with this Mac's** (author instruction 2026-10-26). Defect 2221's first
+repair passed `npm ci`, the site's build and a `diff -r` against the trunk's
+site here, npm 11.20.0 on Node 26, and turned Deploy site red on the runner,
+npm 10.9.9 on Node 22.23.3 (run 40313532302): the two npms read an override
+nested under a package differently, and of four spellings tried that day two
+were refused by one npm and accepted by the other. So where `site/package.json`
+or `site/package-lock.json` moves, `npm ci` and `npm run build` run under the
+versions `deploy-site.yml`'s `setup-node` gives, read from its last run's
+*Environment details*, as `npx -p node@<version> -p npm@<version> -c '<command>'`
+(`node@22.23.3` and `npm@10.9.9` that day), and `npm ci` runs under this Mac's
+npm as well, since the next session here installs with it: the lock is one
+both accept.
 
 **`grammar` was missing from the spec row until 2026-09-16**, found by panel
 159's completeness critic while auditing the briefs that sitting was working
