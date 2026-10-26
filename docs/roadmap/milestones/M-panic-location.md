@@ -102,3 +102,9 @@ it, at most eight places and the rest counted (step 9). The sentence above that 
 acquisition is the sitting's narrowing as it was written; this one is what the milestone delivers,
 under the same ratification (https://github.com/heroes-lang/heroes/issues/2227). A fault the runtime
 catches while a lease is live still names no lease.
+
+**Ratified 2026-10-26** by the author's reading, R1 to R7 with step 9's lift of R7's lease limit
+(https://github.com/heroes-lang/heroes/issues/2227; the sitting's file, its verdict). **Closed the
+same evening**, [071](../../records/journal/071-panic-location.md): the batch's full net 9,419 and 0,
+pushed at `e4ad8e14c`; what it carried forward is https://github.com/heroes-lang/heroes/issues/2236
+and https://github.com/heroes-lang/heroes/issues/2237.
