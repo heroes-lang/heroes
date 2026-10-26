@@ -6,6 +6,9 @@
 # frame lists `ages`, `who`, `base` and `got`, four, and no `found`. `got` is
 # not yet written there, so its value is whatever the stack held and the
 # session names no value of it. The names are still the emitted C's.
+# Corrected 2026-10-26 (panel 230's R1, kind 2; M-panic-location step 6a): the
+# call is `hero_map_find_at`, the twin handed the lookup's place, so the
+# session breaks there; `hero_map_find` is no longer on the lookup's path.
 
 function age_of(ages: {str: i64}, who: str) -> i64
     base = 10

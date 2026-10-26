@@ -1,0 +1,20 @@
+# Defect 016's record shape (panel 230's R2, M-panic-location step 10): an `assert`
+# on two records wrote its expression and no side, until the sides were written as
+# the specification writes the values, in the lldb formatter's notation and
+# within its bounds. The line checked is the one that shows the shape.
+
+record Point
+    x: i64
+    y: i64
+
+record Named
+    label: str
+    at: Point
+    tags: [str]
+    weight: f64
+    open: bool
+
+function main()
+    a = Named(label: "a\n\"b\"", at: Point(x: 0, y: 0), tags: ["t", "u"], weight: 1.5, open: true)
+    b = Named(label: "a", at: Point(x: 0, y: 1), tags: [], weight: 2.0, open: false)
+    assert a == b

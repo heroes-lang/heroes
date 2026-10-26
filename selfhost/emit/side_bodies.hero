@@ -1,0 +1,212 @@
+# What a renderer of an `assert`'s side writes (panel 230's R2; design.md §4.18;
+# spec § 12): the prototype and the body of every renderer `emit/sides.hero`
+# says a unit writes, in the lldb formatter's notation, each value inside
+# another through the runtime's `hero_show_child`, between `hero_show_open` and
+# `hero_show_close`, which is where `runtime/parts/show.c` counts the bounds. A
+# record as its construction, a variant by its tag, a `T?` by its own, a
+# container through the runtime's walk; the names of what a body hands on to are
+# `emit/sides.hero`'s.
+
+use ast
+use source
+use check/table
+use check/state
+use emit/ctype
+use emit/mangle
+use emit/types
+use emit/c_text
+use emit/sides
+use emit/writer
+use cli/strings
+
+# Every renderer's prototype, before any body: a record's calls its fields'.
+function prototypes(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], listed: [i64])
+    for ty in listed
+        writer.at_generated(@w)
+        writer.line(
+            @w,
+            text: "HERO_TU_LOCAL void " + sides.name_of(c, s, decls, ty: ty) + "(HeroShow *o, const void *p);"
+        )
+
+    if listed.len() > 0
+        writer.blank(@w)
+
+function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], listed: [i64])
+    for ty in listed
+        writer.at_generated(@w)
+        writer.line(
+            @w,
+            text: "HERO_TU_LOCAL void " + sides.name_of(c, s, decls, ty: ty) + "(HeroShow *o, const void *p) {"
+        )
+
+        match table.get(c.types, ty)
+            .array a => writer.line(
+                @w,
+                text: "    hero_show_array(o, p, " + sides.renderer(c, names, s, decls, ty: a.element) + ");"
+            )
+            .map m => writer.line(
+                @w,
+                text: "    hero_show_map(o, p, " + sides.renderer(c, names, s, decls, ty: m.key) + ", " + sides.renderer(c, names, s, decls, ty: m.value) + ");"
+            )
+            .fallible o => option_body(@w, c, names, s, decls, ty: ty, payload: o.payload)
+            .named n =>
+                if types.is_variant(decls, decl: n.decl)
+                    variant_body(@w, c, names, s, decls, decl: n.decl)
+                else
+                    record_body(@w, c, names, s, decls, decl: n.decl)
+            .case_ty vc => case_body(@w, c, names, s, decls, decl: vc.decl, at: vc.at)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => unread(@w)
+            .fixed | .function_ty | .failure | .generic | .error => unread(@w)
+
+        writer.line(@w, text: "}")
+        writer.blank(@w)
+
+# A body for a type no list here holds, which `generated` keeps out of it.
+function unread(@w: writer.Writer)
+    writer.line(@w, text: "    (void)o;")
+    writer.line(@w, text: "    (void)p;")
+
+# A `T?` by its tag: `ok(v)`, `ok()` for a `()?`, or `fail` and its failure.
+function option_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, payload: i64)
+    writer.line(@w, text: "    const " + ctype.option_of(names, ty: ty) + " *v = p;")
+    writer.line(@w, text: "    if (v->tag == INT64_C(0)) {")
+
+    if ctype.c_type(names, c: c, ty: payload).is_err()
+        writer.line(@w, text: "        hero_show_text(o, \"ok()\");")
+    else
+        writer.line(@w, text: "        hero_show_text(o, \"ok(\");")
+        writer.line(@w, text: "        hero_show_open(o);")
+        writer.line(
+            @w,
+            text: "        hero_show_child(o, " + sides.renderer(c, names, s, decls, ty: payload) + ", &v->as.ok);"
+        )
+        writer.line(@w, text: "        hero_show_close(o);")
+        writer.line(@w, text: "        hero_show_text(o, \")\");")
+    writer.line(@w, text: "        return;")
+    writer.line(@w, text: "    }")
+    writer.line(@w, text: "    hero_show_text(o, \"fail\");")
+    writer.line(@w, text: "    hero_show_failure(o, &v->as.err);")
+
+# A record as its construction, `Point(x: 3, y: 4)`.
+function record_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64)
+    at = ctype.aggregate(names, decl: decl)
+    fields = types.fields_of(decls, decl: decl)
+
+    if fields.len() == 0
+        writer.line(@w, text: "    (void)p;")
+    else
+        writer.line(@w, text: "    const " + at.c_type + " *v = p;")
+    writer.line(@w, text: "    hero_show_text(o, " + c_text.literal(source.span_text(s, decls[decl].name) + "(") + ");")
+    members(@w, c, names, s, decls, fields, foreign: at.foreign, base: "v->")
+    writer.line(@w, text: "    hero_show_text(o, \")\");")
+
+# A variant by its tag: `.case`, or `.case(f: v)` from the case's payload.
+function variant_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64)
+    at = ctype.aggregate(names, decl: decl)
+    writer.line(@w, text: "    const " + at.c_type + " *v = p;")
+    writer.line(@w, text: "    switch (v->tag) {")
+
+    for one_case in types.cases_of(decls, decl: decl)
+        case_name = source.span_text(s, one_case.name)
+        writer.line(@w, text: "    case " + mangle.tag_of(ty: at.prefix, case_name: case_name) + ":")
+
+        if one_case.fields.len() == 0
+            writer.line(@w, text: "        hero_show_text(o, " + c_text.literal("." + case_name) + ");")
+        else
+            writer.line(@w, text: "        hero_show_text(o, " + c_text.literal("." + case_name + "(") + ");")
+            members(
+                @w,
+                c,
+                names,
+                s,
+                decls,
+                one_case.fields,
+                foreign: false,
+                base: "v->as." + mangle.case_member(case_name) + "."
+            )
+            writer.line(@w, text: "        hero_show_text(o, \")\");")
+        writer.line(@w, text: "        return;")
+
+    writer.line(@w, text: "    }")
+    writer.line(@w, text: "    hero_show_text(o, \"<?>\");")
+
+# A case's payload standing as a value: the case written as the variant would.
+function case_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: i64)
+    cases = types.cases_of(decls, decl: decl)
+    one_case = cases[at]
+    case_name = source.span_text(s, one_case.name)
+    writer.line(@w, text: "    const " + ctype.case_of(names, decl: decl, at: at) + " *v = p;")
+    writer.line(@w, text: "    hero_show_text(o, " + c_text.literal("." + case_name + "(") + ");")
+    members(@w, c, names, s, decls, one_case.fields, foreign: false, base: "v->")
+    writer.line(@w, text: "    hero_show_text(o, \")\");")
+
+# Fields as `x: 3, y: 4`, each a value one level inside, at `base` + its member.
+function members(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], fields: [ast.Field], foreign: bool, base: str)
+    writer.line(@w, text: "    hero_show_open(o);")
+    first: bool @= true
+
+    for field in fields
+        label = source.span_text(s, field.name)
+        gap: str @= ", "
+
+        if first
+            gap @ ""
+        writer.line(@w, text: "    hero_show_text(o, " + c_text.literal(gap + label + ": ") + ");")
+        place = base + mangle.field_of(foreign: foreign, name: label)
+        written = state.written_type(c, field.ty)
+
+        if written.is_err()
+            writer.line(@w, text: "    hero_show_text(o, \"<?>\");")
+        else
+            writer.line(
+                @w,
+                text: "    " + member(c, names, s, decls, ty: written.must(), place: place)
+            )
+        first @ false
+
+    writer.line(@w, text: "    hero_show_close(o);")
+
+# One member's statement: a fixed array walked where it stands, every other
+# member a value inside the record, by its address.
+function member(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, place: str) -> str
+    match table.get(c.types, ty)
+        .fixed fx =>
+            return "hero_show_fixed(o, " + place + ", INT64_C(" + fx.length.to_str() + "), sizeof " + place + "[0], " + sides.renderer(c, names, s, decls, ty: fx.element) + ");"
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return value_member(
+            c,
+            names,
+            s,
+            decls,
+            ty: ty,
+            place: place
+        )
+        .array | .map | .fallible | .function_ty | .named => return value_member(
+            c,
+            names,
+            s,
+            decls,
+            ty: ty,
+            place: place
+        )
+        .case_ty | .failure | .generic | .error => return value_member(c, names, s, decls, ty: ty, place: place)
+
+    return value_member(c, names, s, decls, ty: ty, place: place)
+
+function value_member(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, place: str) -> str
+    return "hero_show_child(o, " + sides.renderer(c, names, s, decls, ty: ty) + ", &" + place + ");"
+
+## Tests
+
+test "a record's renderer writes its construction, each field a value inside it"
+    one = sides.lowered(
+        "record Point\n    x: i64\n    label: str\n\nfunction main()\n    p = Point(x: 1, label: \"a\")\n    print(p.x)\n"
+    )
+    names = ctype.new_names(one.s, one.decls)
+    point = table.lookup(one.c.types, .named(decl: 0)).must()
+    w: writer.Writer @= writer.new_writer("t")
+    bodies(@w, one.c, names, one.s, one.decls, listed: [point])
+    got = writer.finish(w)
+    assert strings.holds(
+        text: got,
+        needle: "    const h_t_Point *v = p;\n    hero_show_text(o, \"Point(\");\n    hero_show_open(o);\n    hero_show_text(o, \"x: \");\n    hero_show_child(o, hero_show_i64, &v->f_x);\n    hero_show_text(o, \", label: \");\n    hero_show_child(o, hero_show_str, &v->f_label);\n    hero_show_close(o);\n    hero_show_text(o, \")\");\n}\n"
+    )

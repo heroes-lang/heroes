@@ -1,0 +1,240 @@
+# The two sides of a failed `assert`, each written as the specification writes
+# the value (panel 230's R2; design.md §4.18; spec § 12): the emitter's half, a
+# renderer for every type a unit's `assert`s compare that the runtime does not
+# own. `runtime/parts/show.c` holds the runtime's types, every walk and the
+# bounds, and says the notation, the lldb formatter's.
+#
+# **One renderer per type, each a `HeroShowFn`**, `(HeroShow *o, const void *p)`
+# with `p` the value's address: a record writes its construction, each field a
+# value inside it; a variant `.case(f: v)` or `.case` by its tag, and a case's
+# payload the same; a `T?` `ok(v)`, `ok()` or `fail` and its failure; `[T]` and
+# `{K: V}` hand the runtime's walk the renderers of what they hold; a fixed
+# array, which stands only as a member, is walked where the member is. A
+# handle, as a `ptr`, a `cstr` and a function value, is its address and never
+# read through. A group's record is written by its members as the header names
+# them, each by its address: no member is a bit-field, which `ffi_field_type`
+# refuses to bind.
+#
+# **Named `h_0show_<hash>`**, the hash of the type's content as a `T?`'s is
+# (`ctype.hero`): the digit after `h_` is a name no function of an author's can
+# take, which the names of a record's own functions are not (defect 2234), and
+# the content gives one type one name in every unit.
+#
+# **Only the types a unit's `assert`s compare**, in the functions the unit
+# defines, closed over what they hold: a program that compares no aggregate
+# carries no renderer (the compiler-engineer's reachable-only form). Each is
+# inside the unit's declared reach (`members.declared_reach`), so its C type is
+# complete where its body stands.
+#
+# **This file says WHICH renderers a unit writes and what each is called**;
+# `emit/side_bodies.hero` writes them, each body asking this file the names of
+# the renderers it hands on to.
+
+use ast
+use source
+use check/table
+use check/state
+use ir
+use ir/containers
+use emit/ctype
+use emit/mangle
+use emit/synth
+use emit/decls as emit_decls
+use emit/worklist
+use parse
+use resolve
+use checker
+use ir/lower
+use cli/strings
+
+# The renderer of a value of type `ty`, as C names it: the runtime's for a type
+# it owns, the unit's own for a type the program declares and for a container.
+function renderer(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64) -> str
+    match table.get(c.types, ty)
+        .int_ty ik =>
+            match ik.kind
+                .i8  => return "hero_show_i8"
+                .i16 => return "hero_show_i16"
+                .i32 => return "hero_show_i32"
+                .i64 => return "hero_show_i64"
+                .u8  => return "hero_show_u8"
+                .u16 => return "hero_show_u16"
+                .u32 => return "hero_show_u32"
+                .u64 => return "hero_show_u64"
+        .float_ty fk =>
+            match fk.kind
+                .f32 => return "hero_show_f32"
+                .f64 => return "hero_show_f64"
+        .bool                       => return "hero_show_bool"
+        .str                        => return "hero_show_str"
+        .ptr | .cstr | .function_ty => return "hero_show_pointer"
+        .unit                       => return "hero_show_unit"
+        .failure                    => return "hero_show_failure"
+        .named n =>
+            if !names.handle_decls[n.decl].is_err()
+                return "hero_show_pointer"
+            return name_of(c, s, decls, ty: ty)
+        .array | .map | .fallible | .case_ty => return name_of(c, s, decls, ty: ty)
+        .fixed                               => return ctype.compiler_bug("a fixed array stood as a value of its own")
+        .generic                             => return ctype.compiler_bug("a type parameter survived monomorphisation")
+        .error => return ctype.compiler_bug(
+            "a type the checker never resolved reached the emitter"
+        )
+
+    return ctype.compiler_bug("a type no renderer is written for")
+
+# A renderer this file writes: `h_0show_` and the hash of the type's content.
+function name_of(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
+    return "h_" + ctype.SYNTHETIC + "show_" + mangle.instance(synth.content_key(c, s, decls, ty: ty))
+
+# Whether this file writes the renderer of `ty`: a declared type but a handle, a
+# case's payload, and every container.
+function generated(c: state.Checked, names: ctype.Names, ty: i64) -> bool
+    match table.get(c.types, ty)
+        .named n                                                  => return names.handle_decls[n.decl].is_err()
+        .array | .map | .fallible | .case_ty                      => return true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .fixed | .function_ty | .failure | .generic | .error      => return false
+
+    return false
+
+# The types a renderer of `ty` hands on to: what it holds, and a fixed member's
+# element, which the member's walk writes.
+function held(c: state.Checked, decls: [ast.Decl], ty: i64) -> [i64]
+    match table.get(c.types, ty)
+        .named n                                                  => return field_types(c, decls, decl: n.decl)
+        .case_ty vc                                               => return field_types(c, decls, decl: vc.decl)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return table.contained(c.types, ty)
+        .array | .map | .fallible | .function_ty                  => return table.contained(c.types, ty)
+        .fixed | .failure | .generic | .error                     => return table.contained(c.types, ty)
+
+    return table.contained(c.types, ty)
+
+# A declaration's field types, a fixed member's element in its place.
+function field_types(c: state.Checked, decls: [ast.Decl], decl: i64) -> [i64]
+    out: [i64] @= []
+
+    for ty in synth.field_types(c, decls, decl: decl)
+        match table.get(c.types, ty)
+            .fixed fx                                                 => out @ out.push(fx.element)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => out @ out.push(ty)
+            .array | .map | .fallible | .function_ty | .named         => out @ out.push(ty)
+            .case_ty | .failure | .generic | .error                   => out @ out.push(ty)
+
+    return out
+
+# The types whose renderers a unit writes, ascending by id so every emission
+# writes them in one order: the side types of the `assert`s in the functions at
+# `at` the unit defines, and everything their renderers hand on to.
+function wanted(c: state.Checked, names: ctype.Names, decls: [ast.Decl], p: containers.Program, at: [i64], target: emit_decls.BuildTarget) -> [i64]
+    # ORDER: none — a worklist whose output is a SET, read below in ascending
+    # order, so the drain order reaches no byte of the C.
+    frontier: [i64] @= []
+    size: i64 @= 0
+
+    for k in at
+        f = p.functions[k]
+
+        if emit_decls.emitted(f, target: target)
+            for ty in compared(f)
+                worklist.put(@frontier, size: @size, value: ty)
+
+    seen: {i64: bool} @= {}
+
+    while size > 0
+        ty = worklist.take(frontier, size: @size)
+
+        if seen[ty].is_err()
+            seen[ty] @ true
+
+            for inner in held(c, decls, ty: ty)
+                worklist.put(@frontier, size: @size, value: inner)
+
+    out: [i64] @= []
+
+    for ty in sort(keys(seen))
+        if generated(c, names, ty: ty)
+            out @ out.push(ty)
+
+    return out
+
+# The type of each comparison an `assert` of `f` makes, its left side's.
+function compared(f: containers.Function) -> [i64]
+    out: [i64] @= []
+
+    for blk in f.blocks
+        for inst in blk.insts
+            match inst.op
+                .abort_op ab =>
+                    given = containers.args_of(f, ab.arguments)
+
+                    if is_assert(ab.why) && given.len() == 3
+                        match given[1]
+                            .value_arg v => out @ out.push(containers.value_type(f, v.value))
+                            .inout_arg   => continue
+                .lit | .load | .field | .payload | .tag_of | .len_of | .call => continue
+                .func_ref | .store | .push_owned | .unary | .binary | .cast  => continue
+                .index | .map_get | .copy_out | .construct                   => continue
+                .incref | .decref | .decref_slot | .hole | .missing          => continue
+
+    return out
+
+function is_assert(why: ir.AbortWhy) -> bool
+    match why
+        .assert_abort | .assert_equal_abort => return true
+        .must_abort | .unmatched_case_abort => return false
+        .unmatched_value_abort              => return false
+
+    return false
+
+## Tests
+
+record Lowered
+    c: state.Checked
+    s: source.Source
+    decls: [ast.Decl]
+    p: containers.Program
+
+function lowered(text: str) -> Lowered
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    return Lowered(c: c, s: s, decls: parsed.decls, p: low.program)
+
+# Every function of the program, by index.
+function all_of(p: containers.Program) -> [i64]
+    out: [i64] @= []
+
+    for k in range(from: 0, to: p.functions.len())
+        out @ out.push(k)
+
+    return out
+
+test "a type the runtime owns takes the runtime's renderer, one the program declares the unit's"
+    one = lowered("record Point\n    x: i64\n\nfunction main()\n    p = Point(x: 1)\n    print(p.x)\n")
+    names = ctype.new_names(one.s, one.decls)
+    assert renderer(one.c, names, one.s, one.decls, ty: table.int_ty_id(one.c.types)) == "hero_show_i64"
+    assert renderer(one.c, names, one.s, one.decls, ty: table.str_ty(one.c.types)) == "hero_show_str"
+    assert renderer(one.c, names, one.s, one.decls, ty: table.bool_ty(one.c.types)) == "hero_show_bool"
+    point = table.lookup(one.c.types, .named(decl: 0)).must()
+    shown = renderer(one.c, names, one.s, one.decls, ty: point)
+
+    # The digit after `h_` keeps it out of every name an author's function takes
+    # (defect 2234).
+    assert strings.holds(text: shown, needle: "h_0show_")
+    assert shown == name_of(one.c, one.s, one.decls, ty: point)
+
+test "a unit renders the types its asserts compare and what those hold, and nothing else"
+    text = "record Point\n    x: i64\n    y: i64\n\nrecord Unused\n    z: i64\n\nfunction main()\n    print(1)\n\ntest \"one\"\n    assert [Point(x: 1, y: 2)] == [Point(x: 1, y: 3)]\n"
+    one = lowered(text)
+    names = ctype.new_names(one.s, one.decls)
+    point = table.lookup(one.c.types, .named(decl: 0)).must()
+    points = table.lookup(one.c.types, .array(element: point)).must()
+    listed = wanted(one.c, names, one.decls, one.p, at: all_of(one.p), target: .tests_build)
+    assert listed == sort([point, points])
+
+    # A program build runs no test, so its unit renders nothing.
+    assert wanted(one.c, names, one.decls, one.p, at: all_of(one.p), target: .program_build).len() == 0

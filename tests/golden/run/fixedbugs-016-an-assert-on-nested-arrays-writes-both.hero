@@ -1,0 +1,9 @@
+# Defect 016's array shape (panel 230's R2, M-panic-location step 10): an `assert`
+# on two arrays of arrays wrote its expression and no side, until the sides were written as
+# the specification writes the values, in the lldb formatter's notation and
+# within its bounds. The line checked is the one that shows the shape.
+
+function main()
+    grid = [[1, 2], [3]]
+    other = [[1, 2], [3], []]
+    assert grid == other

@@ -1,0 +1,46 @@
+# M-panic-location step 10 (panel 230's R2): one corpus of values the lldb
+# formatter shows and a failed `assert` writes as a side, held to one notation
+# by `tests/harness/lldb_notation.hero`, which compiles each binding below again
+# as a test of its own, `assert v != v`, and holds its `left:` side to the line
+# this session pins, character for character. Not in it, written into the check:
+# a group's record, whose `cstr` lldb reads where a side writes an address, and
+# a `ptr`, a `cstr`, a function value and a handle, which a side writes as their
+# address. A map is in it since this step, its summary ordered by its entries'
+# text as a side orders it.
+
+record Point
+    x: i64
+    y: i64
+
+record Named
+    label: str
+    at: Point
+    tags: [str]
+    weight: f64
+    open: bool
+
+variant Shape
+    circle
+        r: f64
+    square
+        side: i64
+    none
+
+function main()
+    point = Point(x: 3, y: 4)
+    named = Named(label: "a\n\"b\"\tc\\", at: Point(x: 0, y: 1), tags: ["t", "u"], weight: 1.5, open: true)
+    circle: Shape = .circle(r: 2.5)
+    nothing: Shape = .none
+    words = ["ada", "grace\u{1b}[2J", ""]
+    grid = [[1, 2], [3], []]
+    ages = {"zeta": 1, "alpha": 2, "mid": 3}
+    groups = {"b": [Point(x: 1, y: 1)], "a": []}
+    some: i64? = ok(7)
+    missing: i64? = fail(code: "missing", msg: "no value\there")
+    big = range(from: 0, to: 40)
+    small: [u8] = [104, 105]
+    halves = [0.5, 2.25, 0.1, 1.0]
+    flags = [true, false]
+    print(point == point, named == named, circle == circle, nothing == nothing, words == words, grid == grid)
+    print(ages == ages, groups == groups, some == some, missing == missing, big == big, small == small)
+    print(halves == halves, flags == flags)

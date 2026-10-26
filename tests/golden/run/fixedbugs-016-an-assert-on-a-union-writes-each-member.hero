@@ -1,0 +1,15 @@
+# Defect 016's union shape (panel 230's R2, M-panic-location step 10): an `assert`
+# on two values of a header's union wrote its expression and no side, until the sides were written as
+# the specification writes the values, in the lldb formatter's notation and
+# within its bounds. The line checked is the one that shows the shape.
+# The header is `fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address`'s.
+
+extern "fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.h"
+    record Num
+        i: i32
+        u: u32
+
+function main()
+    a = Num(i: 1)
+    b = Num(i: 2)
+    assert a == b

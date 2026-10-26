@@ -540,6 +540,49 @@ uint64_t hero_handle_transferring_at(const void *handle, const char *into, const
 void hero_handle_acquired_at(const void *handle, const char *releasers, const HeroPlace *);
 void hero_handle_retained_at(const void *handle, const char *releasers, int ends_here, const HeroPlace *);
 
+/* -- an `assert`'s two sides (panel 230's R2, `parts/show.c`) -----------------
+ *
+ * A failed comparison shows both sides as the specification writes the values,
+ * in the lldb formatter's notation and within its bounds. `HeroShow` is a side's
+ * text so far, its shape the runtime's own; a `HeroShowFn` writes the value at
+ * the address it is handed, the one shape of every renderer, the runtime's below
+ * and the ones the emitter writes per type an `assert` compares
+ * (`emit/sides.hero`). A renderer writes a value inside another through
+ * `hero_show_child`, between `hero_show_open` and `hero_show_close`, which is
+ * where the bounds are counted. `hero_show_array` and `hero_show_map` take the
+ * address of the slot and the renderers of what it holds; `hero_show_fixed` the
+ * first element, the count, the size and the element's renderer. The entry point
+ * takes the type's renderer and the two addresses, writes the head line and the
+ * place before anything allocates, then the sides; its `int` asks for the line
+ * an `==` whose sides are written alike owes. Every parameter is unnamed, so no
+ * word of these prototypes reaches the guard but the names themselves. */
+typedef struct HeroShow HeroShow;
+typedef void (*HeroShowFn)(HeroShow *, const void *);
+void hero_show_text(HeroShow *, const char *);
+void hero_show_open(HeroShow *);
+void hero_show_close(HeroShow *);
+void hero_show_child(HeroShow *, HeroShowFn, const void *);
+void hero_show_i8(HeroShow *, const void *);
+void hero_show_i16(HeroShow *, const void *);
+void hero_show_i32(HeroShow *, const void *);
+void hero_show_i64(HeroShow *, const void *);
+void hero_show_u8(HeroShow *, const void *);
+void hero_show_u16(HeroShow *, const void *);
+void hero_show_u32(HeroShow *, const void *);
+void hero_show_u64(HeroShow *, const void *);
+void hero_show_f32(HeroShow *, const void *);
+void hero_show_f64(HeroShow *, const void *);
+void hero_show_bool(HeroShow *, const void *);
+void hero_show_str(HeroShow *, const void *);
+void hero_show_pointer(HeroShow *, const void *);
+void hero_show_unit(HeroShow *, const void *);
+void hero_show_failure(HeroShow *, const void *);
+void hero_show_array(HeroShow *, const void *, HeroShowFn);
+void hero_show_map(HeroShow *, const void *, HeroShowFn, HeroShowFn);
+void hero_show_fixed(HeroShow *, const void *, int64_t, size_t, HeroShowFn);
+_Noreturn void hero_panic_assert_shown_at(HeroStr, HeroShowFn, const void *, const void *, int, const char *,
+                                          const char *, int64_t, int64_t);
+
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
  *
  * C has no copy constructors, no destructors and no generic comparison, while

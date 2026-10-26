@@ -1,0 +1,22 @@
+> command script import editors/lldb/heroes_lldb.py
+> breakpoint set --file notation.hero --line 46
+!resolved: notation.hero:46
+> run
+!stop: breakpoint at notation.hero:46
+> frame variable h0_point h1_named h2_circle h3_nothing h4_words h5_grid h6_ages
+!shows: (h_notation_Point) h0_point = Point(x: 3, y: 4)
+!shows: (h_notation_Named) h1_named = Named(label: "a\n\"b\"\tc\\", at: Point(x: 0, y: 1), tags: ["t", "u"], weight: 1.5, open: true)
+!shows: (h_notation_Shape) h2_circle = .circle(r: 2.5)
+!shows: (h_notation_Shape) h3_nothing = .none
+!shows: (HeroArrayHeader *) h4_words = ["ada", "grace\u{1b}[2J", ""]
+!shows: (HeroArrayHeader *) h5_grid = [[1, 2], [3], []]
+!shows: (HeroMapHeader *) h6_ages = {"alpha": 2, "mid": 3, "zeta": 1}
+> frame variable h7_groups h8_some h9_missing h10_big h11_small h12_halves h13_flags
+!shows: (HeroMapHeader *) h7_groups = {"a": [], "b": [Point(x: 1, y: 1)]}
+!shows: (h_0opt_e201354) h8_some = ok(7)
+!shows: (h_0opt_e201354) h9_missing = fail(code: "missing", msg: "no value\there")
+!shows: (HeroArrayHeader *) h10_big = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, ... 24 more]
+!shows: (HeroArrayHeader *) h11_small = [104, 105]
+!shows: (HeroArrayHeader *) h12_halves = [0.5, 2.25, 0.1, 1.0]
+!shows: (HeroArrayHeader *) h13_flags = [true, false]
+> continue

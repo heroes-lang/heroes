@@ -6,6 +6,8 @@
 # elements, then `... N more`; the children are all there. A `u8` is a number,
 # a function value its name, and a constant's array its static block, whose
 # count is -1. A map shows in bucket order, the order `keys(m)` gives.
+# Corrected 2026-10-26 (panel 230's R2): a map's summary orders its entries by
+# their whole text, as a failed `assert` writes a side; its children keep it.
 
 constant PRIMES: [i64]
     [2, 3, 5, 7]

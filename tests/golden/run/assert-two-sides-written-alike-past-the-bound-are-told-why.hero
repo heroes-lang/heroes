@@ -1,0 +1,9 @@
+# Panel 230's R2 (M-panic-location step 10): two arrays that differ only past
+# the sixteen elements a side writes are written alike, and the report says
+# why, which an `==` alone is owed.
+
+function main()
+    xs = range(from: 0, to: 20)
+    ys: [i64] @= range(from: 0, to: 20)
+    ys[19] @ 99
+    assert xs == ys

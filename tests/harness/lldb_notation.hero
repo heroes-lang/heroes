@@ -1,0 +1,181 @@
+# One notation for a value, an `assert`'s side's and the lldb formatter's (panel
+# 230's R2): one corpus, `tests/golden/lldb/notation.hero`, which the `lldb`
+# suite's case of that name shows through `editors/lldb/heroes_lldb.py` under a
+# real lldb, the session pinning each value's line; and this check, which
+# compiles each binding of that corpus again as a test of its own, `assert v !=
+# v`, runs them, and holds each test's `left:` side to the line the session
+# pins, character for character. A side and a summary that drift apart go red
+# here, whichever of the two moved.
+#
+# **Two exemptions, written here because the sitting wrote them**: a group's
+# record, whose `cstr` lldb reads where a side writes an address and never
+# reads through (the ffi-pragmatist's veto), and with it every value a side
+# writes as an address, a `ptr`, a `cstr`, a function value, a handle, whose
+# number is the run's and never the corpus's. Neither is in the corpus. A map
+# was the third until this check landed, when the formatter's summary began to
+# order its entries by their text as a side does; it is in the corpus.
+#
+# It needs no debugger: the session is lldb's answer, judged by the `lldb`
+# suite where lldb runs, and read here as text, so the check runs on every leg.
+
+use report
+use shell
+use strings
+
+constant CORPUS: str
+    "tests/golden/lldb/notation"
+
+# A binding of the corpus's `main`: its name and its whole line.
+record Binding
+    name: str
+    line: str
+
+function held(@r: report.Report, scratch: str, compiler: str)
+    label = "lldb/notation: a failed assert's sides and the formatter write the corpus alike (panel 230's R2)"
+    program = read_file(CORPUS + ".hero")
+    session = read_file(CORPUS + ".expected")
+
+    if program.is_err() || session.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + CORPUS + ".hero or " + CORPUS + ".expected")
+        return
+    shown = summaries(session.must())
+    bound = bindings(program.must())
+
+    if bound.len() == 0
+        report.keep_failure(@r, label: label, detail: "  " + CORPUS + ".hero binds nothing in its `main`")
+        return
+    path = scratch + "/notation_sides.hero"
+    written = write_file(path: path, text: declarations(program.must()) + tests(bound))
+
+    if written.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write " + path)
+        return
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", path])
+
+    if ran.is_err()
+        report.keep_failure(@r, label: label, detail: "  `test " + path + "`: " + shell.refusal(ran))
+        return
+    sides = left_sides(ran.must().err)
+    wrong: [str] @= []
+
+    for one in bound
+        lldb_says = shown[one.name]
+        side = sides[one.name]
+
+        if lldb_says.is_err()
+            wrong @ wrong.push("  `" + one.name + "`: the session pins no line for it")
+        else if side.is_err()
+            wrong @ wrong.push("  `" + one.name + "`: its test wrote no `left:` side")
+        else if lldb_says.must() != side.must()
+            wrong @ wrong.push(
+                "  `" + one.name + "`:\n    the formatter: " + lldb_says.must() + "\n    the side:      " + side.must()
+            )
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: label,
+        detail: wrong.join("\n") + "\n  its stderr was:\n" + ran.must().err
+    )
+
+# What the session pins for each binding, by the name the author wrote:
+# `!shows: (<C type>) h<N>_<name> = <value>`.
+function summaries(session: str) -> {str: str}
+    out: {str: str} @= {}
+
+    for row in strings.lines(session)
+        if strings.starts_with(text: row, prefix: "!shows: (")
+            after = strings.split_text(text: row, separator: ") ")
+
+            if after.len() >= 2
+                rest = after.slice(from: 1, to: after.len()).join(") ")
+                parts = strings.split_text(text: rest, separator: " = ")
+
+                if parts.len() >= 2
+                    local = parts[0]
+                    under = strings.split_text(text: local, separator: "_")
+
+                    if under.len() >= 2 && strings.starts_with(text: local, prefix: "h")
+                        out[under.slice(from: 1, to: under.len()).join("_")] @ parts.slice(from: 1, to: parts.len()).join(
+                            " = "
+                        )
+
+    return out
+
+# The corpus's bindings: each line of `main` that binds a name, in order.
+function bindings(program: str) -> [Binding]
+    out: [Binding] @= []
+    inside: bool @= false
+
+    for row in strings.lines(program)
+        if row == "function main()"
+            inside @ true
+        else if inside && strings.starts_with(text: row, prefix: "    ") && !strings.starts_with(text: row, prefix: "     ")
+            head = strings.split_text(text: strings.trimmed(row), separator: " ")[0]
+            name = strings.split_text(text: head, separator: ":")[0]
+
+            if strings.contains(text: row, needle: " = ") && name != "print"
+                out @ out.push(Binding(name: name, line: row))
+
+    return out
+
+# Everything the corpus declares before its `main`.
+function declarations(program: str) -> str
+    kept: [str] @= []
+
+    for row in strings.lines(program)
+        if row == "function main()"
+            return kept.join("\n") + "\n"
+        kept @ kept.push(row)
+
+    return kept.join("\n") + "\n"
+
+# A test per binding, its value bound as `main` binds it and compared with itself
+# by `!=`, which fails with both sides written and no line about their likeness.
+function tests(bound: [Binding]) -> str
+    out: [str] @= []
+
+    for one in bound
+        out @ out.push("test \"" + one.name + "\"\n" + one.line + "\n    assert " + one.name + " != " + one.name + "\n")
+
+    return out.join("\n")
+
+# Each test's `left:` side, by the test's title: the line after the place line
+# that names the test.
+function left_sides(err: str) -> {str: str}
+    out: {str: str} @= {}
+    title: str @= ""
+
+    for row in strings.lines(err)
+        if strings.starts_with(text: row, prefix: "  at ") && strings.contains(text: row, needle: ", in test \"")
+            named = strings.split_text(text: row, separator: ", in test \"")
+            title @ strings.without_suffix(text: named[named.len() - 1], suffix: "\"")
+        else if title != "" && strings.starts_with(text: row, prefix: "  left:  ")
+            out[title] @ strings.without_prefix(text: row, prefix: "  left:  ")
+            title @ ""
+
+    return out
+
+## Tests
+
+test "the session's lines are read by the name the author wrote"
+    shown = summaries(
+        "!shows: (h_notation_Point) h0_point = Point(x: 3, y: 4)\n!shows: (HeroArrayHeader *) h12_two_words = [\"a = b\"]\n"
+    )
+    assert shown["point"].must() == "Point(x: 3, y: 4)"
+    assert shown["two_words"].must() == "[\"a = b\"]"
+
+test "the bindings are main's, and its print is not one"
+    bound = bindings(
+        "record P\n    x: i64\n\nfunction main()\n    p = P(x: 1)\n    some: i64? = ok(2)\n    print(p == p, some == some)\n"
+    )
+    assert bound.len() == 2
+    assert bound[0].name == "p"
+    assert bound[1].name == "some"
+    assert bound[1].line == "    some: i64? = ok(2)"
+
+test "a test's left side is found under the place line that names it"
+    err = "assert failed: p != p\n  at notation_sides.hero:5:12, in test \"p\"\n  left:  P(x: 1)\n  right: P(x: 1)\n"
+    assert left_sides(err)["p"].must() == "P(x: 1)"

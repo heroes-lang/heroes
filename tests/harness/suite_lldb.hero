@@ -49,6 +49,7 @@
 
 use cases
 use floors
+use lldb_notation
 use lldb_session
 use report
 use shell
@@ -89,6 +90,12 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
 
     if only == ""
         floors.check(@r, label: "lldb", found: found.len(), floor: LEAST, what: "cases in " + LLDB_DIR)
+
+    # One notation with an `assert`'s sides (panel 230's R2): read from the
+    # corpus case's session as text, so it needs no debugger and runs here
+    # whether lldb does or not.
+    if only == "" || strings.contains(text: "notation", needle: only)
+        lldb_notation.held(@r, scratch: scratch, compiler: compiler)
     absent = absence(
         said: shell.attempted(scratch: scratch, program: LLDB, words: [LLDB, "--version"]),
         windows: shell.exe_suffix() == ".exe"

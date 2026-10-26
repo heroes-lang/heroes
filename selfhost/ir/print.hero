@@ -305,6 +305,7 @@ function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: s
 
             match ab.why
                 .assert_abort          => word @ "assert"
+                .assert_equal_abort    => word @ "assert"
                 .must_abort            => word @ word
                 .unmatched_case_abort  => word @ "unmatched"
                 .unmatched_value_abort => word @ "unmatched"

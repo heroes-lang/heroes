@@ -1,0 +1,20 @@
+# Defect 016's group shape (panel 230's R2, M-panic-location step 10): an `assert`
+# on two records of a header's wrote its expression and no side, until the sides were written as
+# the specification writes the values, in the lldb formatter's notation and
+# within its bounds. The line checked is the one that shows the shape.
+# The fixed array is walked; the pointer and the C string are written as
+# their address and never read through (the ffi-pragmatist's veto), the null
+# one as `nullptr`. The address is the run's, so the line is checked up to it.
+
+extern "fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.h"
+    record Pair
+        id: i32
+        pair: f32[2]
+        raw: ptr
+        name: cstr
+    function pair_make(id: i32) -> Pair
+
+function main()
+    a = pair_make(id: 1)
+    b = pair_make(id: 2)
+    assert a == b

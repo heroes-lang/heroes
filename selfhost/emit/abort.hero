@@ -9,19 +9,31 @@
 # the panic call is housekeeping the author never wrote, and lldb must
 # not blame their line for it.
 
+use ast
 use check/state
 use ir
 use ir/containers
+use emit/ctype
 use emit/mangle
 use emit/builtins
 use emit/writer
 use emit/stop_place
+use emit/sides
 use token
 use check/table
 use source
 use parse
 use resolve
 use checker
+
+# Every stop an `.abort_op` names, by why the program stops.
+function stop(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, why: ir.AbortWhy, run: ir.Run, site: i64)
+    match why
+        .must_abort            => must_stop(@w, s, f, run: run, site: site)
+        .assert_abort          => assert_stop(@w, c, names, s, decls, f, run: run, site: site, equal: false)
+        .assert_equal_abort    => assert_stop(@w, c, names, s, decls, f, run: run, site: site, equal: true)
+        .unmatched_case_abort  => unmatched_case_stop(@w, s, f, run: run, site: site)
+        .unmatched_value_abort => unmatched_value_stop(@w, c, s, f, run: run, site: site)
 
 # .must() on an error. The failure travels with the abort, so the panic
 # names the code and msg the author wrote rather than only that a
@@ -121,16 +133,17 @@ function str_value(c: state.Checked, f: containers.Function, arg: ir.Arg) -> str
             return ""
         .inout_arg => return ""
 
-# assert (§4.18, spec § 12 Tests and holes: "shows the source expression and both
-# sides"). The IR carries three operands where the asserted expression
-# is a comparison and one where it is not, and each side is rendered
-# through the SAME to_str entry point print uses — so a side with no
-# rendering (a record, an array) falls back to the text alone rather
-# than inventing one. Discarding an unprintable side explicitly is what
-# keeps -Wunused-but-set-variable at zero, and the cast says
-# "deliberately" where silence would say "forgotten". `site` is the
-# asserted expression's start, the place the report names (panel 230's R1).
-function assert_stop(@w: writer.Writer, c: state.Checked, s: source.Source, f: containers.Function, run: ir.Run, site: i64)
+# assert (§4.18, spec § 12 Tests and holes: "shows the source expression, and
+# both sides of a comparison"). The IR carries three operands where the
+# asserted expression is a comparison and one where it is not. Since panel
+# 230's R2 every type `==` accepts has a renderer (`emit/sides.hero`), handed to
+# the runtime with the two sides' addresses, never their texts, so the report's
+# head line and place are written before a renderer runs: a `str` quoted, a
+# record as its construction, a container within the lldb formatter's bounds,
+# so no side's text can pass for a line of the report (panel 230's R3). `equal`
+# is an `==`'s, owed a line where its two sides are written alike. `site` is
+# the asserted expression's start, the place the report names (R1).
+function assert_stop(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, site: i64, equal: bool)
     writer.at_generated(@w)
     given = containers.args_of(f, run)
 
@@ -147,65 +160,44 @@ function assert_stop(@w: writer.Writer, c: state.Checked, s: source.Source, f: c
         writer.line(@w, text: "    hero_unreachable(); /* an assert with no text */")
         return
 
-    # Two `str` sides are handed over as they are: the runtime writes each
-    # quoted, in the specification's escapes, so a side's line feed can never
-    # pass for a line of the report (panel 230's R3, defect 2225).
     if given.len() == 3
-        left_text = str_value(c, f, given[1])
-        right_text = str_value(c, f, given[2])
+        left = side_of(c, f, given[1])
+        right = side_of(c, f, given[2])
 
-        if left_text != "" && right_text != ""
+        if left != "" && right != ""
+            alike: str @= "0"
+
+            if equal
+                alike @ "1"
+            show = sides.renderer(c, names, s, decls, ty: side_type(f, given[1]))
             writer.line(
                 @w,
-                text: "    hero_panic_assert_str_sides_at(" + text_name + ", " + left_text + ", " + right_text + ", " + stop_place.of(s, f, offset: site) + ");"
+                text: "    hero_panic_assert_shown_at(" + text_name + ", " + show + ", " + left + ", " + right + ", " + alike + ", " + stop_place.of(s, f, offset: site) + ");"
             )
             return
-    rendered: [str] @= []
-    at: i64 @= 0
-
-    for arg in given
-        if at > 0
-            match arg
-                .value_arg v =>
-                    entry = builtins.to_str_entry(table.get(c.types, containers.value_type(f, v.value)))
-
-                    if !entry.is_err()
-                        rendered @ rendered.push(entry.must() + "(" + mangle.value(v.value) + ")")
-                # NOT `continue`: it would skip this loop's own counter
-                # below. Harmless where the guard is only `> 0`, and
-                # a defect the day anyone reads the counter as a
-                # position — the class that cost four sites and the
-                # verifier on 2026-08-17.
-
-                .inout_arg => at @ at
-        at @ at + 1
-
-    if rendered.len() == 2
-        writer.line(
-            @w,
-            text: "    hero_panic_assert_sides_at(" + text_name + ", " + rendered[0] + ", " + rendered[1] + ", " + stop_place.of(s, f, offset: site) + ");"
-        )
-        return
-    walk: i64 @= 0
-
-    for arg in given
-        if walk > 0
-            match arg
-                .value_arg v => writer.line(@w, text: "    (void)" + mangle.value(v.value) + ";")
-                # NOT `continue`: it would skip this loop's own counter
-                # below. Harmless where the guard is only `> 0`, and
-                # a defect the day anyone reads the counter as a
-                # position — the class that cost four sites and the
-                # verifier on 2026-08-17.
-
-                .inout_arg => walk @ walk
-        walk @ walk + 1
 
     writer.line(@w, text: "    hero_panic_assert_at(" + text_name + ", " + stop_place.of(s, f, offset: site) + ");")
 
+# A side's address, as a renderer takes it: `NULL` for a unit, which no C value
+# holds, or "" where the side is no value.
+function side_of(c: state.Checked, f: containers.Function, arg: ir.Arg) -> str
+    match arg
+        .value_arg v =>
+            if containers.value_type(f, v.value) == table.unit_ty(c.types)
+                return "NULL"
+            return "&" + mangle.value(v.value)
+        .inout_arg => return ""
+
+function side_type(f: containers.Function, arg: ir.Arg) -> i64
+    match arg
+        .value_arg v => return containers.value_type(f, v.value)
+        .inout_arg   => return 0
+
+    return 0
+
 ## Tests
 
-test "a comparison carries both sides, an unprintable side is discarded aloud"
+test "a comparison hands the runtime its type's renderer and both sides' addresses (panel 230's R2)"
     text = "function main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
@@ -231,14 +223,16 @@ test "a comparison carries both sides, an unprintable side is discarded aloud"
         span: token.Span(start: 0, end: 1)
     )
     w: writer.Writer @= writer.new_writer("t")
-    assert_stop(@w, c, s, f, run: ir.Run(start: 0, length: 3), site: 20)
+    names = ctype.new_names(s, parsed.decls)
+    assert_stop(@w, c, names, s, parsed.decls, f, run: ir.Run(start: 0, length: 3), site: 20, equal: true)
     must_stop(@w, s, f, run: ir.Run(start: 0, length: 1), site: 20)
     got = writer.finish(w)
 
     # Both name the site, `print` at the second line's fifth column.
-    assert got == "#line 2 \"t.c\"\n    hero_panic_assert_sides_at(t0, hero_int_to_str(t1), hero_int_to_str(t2), \"t.hero\", \"t.t\", 2, 5);\n    hero_panic_must_at(t0, \"t.hero\", \"t.t\", 2, 5);\n"
+    # An `==`: its `1` asks for the line two sides written alike owe.
+    assert got == "#line 2 \"t.c\"\n    hero_panic_assert_shown_at(t0, hero_show_i64, &t1, &t2, 1, \"t.hero\", \"t.t\", 2, 5);\n    hero_panic_must_at(t0, \"t.hero\", \"t.t\", 2, 5);\n"
 
-test "two str sides and an unmatched str are handed over as values, never rendered (panel 230's R3)"
+test "two str sides are handed over by address and quoted by the runtime, an unmatched str as a value (panel 230's R2 and R3)"
     text = "function main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
@@ -263,7 +257,8 @@ test "two str sides and an unmatched str are handed over as values, never render
         span: token.Span(start: 0, end: 1)
     )
     w: writer.Writer @= writer.new_writer("t")
-    assert_stop(@w, c, s, f, run: ir.Run(start: 0, length: 3), site: 0)
+    names = ctype.new_names(s, parsed.decls)
+    assert_stop(@w, c, names, s, parsed.decls, f, run: ir.Run(start: 0, length: 3), site: 0, equal: false)
     unmatched_value_stop(@w, c, s, f, run: ir.Run(start: 1, length: 1), site: 0)
     got = writer.finish(w)
-    assert got == "#line 2 \"t.c\"\n    hero_panic_assert_str_sides_at(t0, t1, t2, \"t.hero\", \"t.t\", 1, 1);\n    hero_panic_unmatched_str_at(t1, \"t.hero\", \"t.t\", 1, 1);\n"
+    assert got == "#line 2 \"t.c\"\n    hero_panic_assert_shown_at(t0, hero_show_str, &t1, &t2, 0, \"t.hero\", \"t.t\", 1, 1);\n    hero_panic_unmatched_str_at(t1, \"t.hero\", \"t.t\", 1, 1);\n"

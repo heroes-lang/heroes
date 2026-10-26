@@ -211,42 +211,51 @@ static void hero_report_message(HeroReport *r, HeroStr s) {
     }
 }
 
+/* Where a quoted `str` is written: the report's fixed buffer below, a side's
+ * text in `parts/show.c`. One copy of the notation, two places it lands, so the
+ * report and an `assert`'s sides cannot come to quote one string two ways. */
+typedef void (*HeroQuoteSink)(void *sink, const char *p, size_t n);
+
 /* A program's `str` value, quoted in the specification's escapes and cut where
  * the lldb formatter cuts, a character never split by the cut. */
-static void hero_report_value(HeroReport *r, HeroStr s) {
+static void hero_quote_value(HeroStr s, HeroQuoteSink put, void *sink) {
     const unsigned char *p = (const unsigned char *)s.ptr;
-    HERO_REPORT_OWN(r, "\"");
+    put(sink, "\"", 1);
     int64_t k = 0;
     while (k < s.len) {
         int64_t width = 1;
         int64_t code = hero_report_unshowable(p + k, s.len - k, &width);
         if (k + width > HERO_REPORT_TEXT_BYTES) break;
         if (code == '\n') {
-            HERO_REPORT_OWN(r, "\\n");
+            put(sink, "\\n", 2);
         } else if (code == '\t') {
-            HERO_REPORT_OWN(r, "\\t");
+            put(sink, "\\t", 2);
         } else if (code == '\r') {
-            HERO_REPORT_OWN(r, "\\r");
+            put(sink, "\\r", 2);
         } else if (code >= 0) {
             char name[16];
             int n = snprintf(name, sizeof name, "\\u{%llx}", (unsigned long long)code);
-            hero_report_put(r, name, (size_t)n);
+            put(sink, name, (size_t)n);
         } else if (p[k] == '"') {
-            HERO_REPORT_OWN(r, "\\\"");
+            put(sink, "\\\"", 2);
         } else if (p[k] == '\\') {
-            HERO_REPORT_OWN(r, "\\\\");
+            put(sink, "\\\\", 2);
         } else {
-            hero_report_put(r, (const char *)p + k, (size_t)width);
+            put(sink, (const char *)p + k, (size_t)width);
         }
         k += width;
     }
-    HERO_REPORT_OWN(r, "\"");
+    put(sink, "\"", 1);
     if (k < s.len) {
         char more[48];
         int n = snprintf(more, sizeof more, " ... %lld more bytes", (long long)(s.len - k));
-        hero_report_put(r, more, (size_t)n);
+        put(sink, more, (size_t)n);
     }
 }
+
+static void hero_report_sink(void *sink, const char *p, size_t n) { hero_report_put((HeroReport *)sink, p, n); }
+
+static void hero_report_value(HeroReport *r, HeroStr s) { hero_quote_value(s, hero_report_sink, r); }
 
 _Noreturn void hero_panic_must(HeroFailure f) {
     /* `code` and `msg` come from the program, so they are messages, read as every

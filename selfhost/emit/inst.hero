@@ -298,13 +298,8 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 else
                     for line in lines.must()
                         writer.line(@w, text: "    " + line)
-        .abort_op ab =>
-            match ab.why
-                .must_abort            => abort.must_stop(@w, s, f, run: ab.arguments, site: site)
-                .assert_abort          => abort.assert_stop(@w, c, s, f, run: ab.arguments, site: site)
-                .unmatched_case_abort  => abort.unmatched_case_stop(@w, s, f, run: ab.arguments, site: site)
-                .unmatched_value_abort => abort.unmatched_value_stop(@w, c, s, f, run: ab.arguments, site: site)
-        .tag_of tg => access.tag_read(@w, c, f, base: tg.value, target: target)
+        .abort_op ab => abort.stop(@w, c, names, s, decls, f, why: ab.why, run: ab.arguments, site: site)
+        .tag_of tg   => access.tag_read(@w, c, f, base: tg.value, target: target)
         .payload pl => access.payload_read(
             @w,
             c,

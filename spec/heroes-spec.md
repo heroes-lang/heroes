@@ -342,8 +342,7 @@ test "3-4-5 triangle"
     assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25
 ```
 `test` blocks run only when asked for; ordinary builds ignore them. An
-`assert` failure shows the source expression, and both sides where `print`
-takes them; where a side is an aggregate it shows the expression alone.
+`assert` failure shows the source expression, and both sides of a comparison.
 
 `???` is a valid expression anywhere. It is not an error: the compiler
 reports what belongs there (the expected type, what is in scope). A program

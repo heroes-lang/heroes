@@ -1,0 +1,9 @@
+# Defect 016's `T?` shape (panel 230's R2, M-panic-location step 10): an `assert`
+# on two fallible values wrote its expression and no side, until the sides were written as
+# the specification writes the values, in the lldb formatter's notation and
+# within its bounds. The line checked is the one that shows the shape.
+
+function main()
+    a: i64? = ok(3)
+    b: i64? = fail(code: "nope", msg: "no value\there")
+    assert a == b

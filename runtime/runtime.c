@@ -204,6 +204,11 @@
  * the map shipped without, and the place store. Needs `[T]` for `keys`. */
 #include "parts/map-write.c"
 
+/* An `assert`'s two sides, written as the specification writes a value (panel
+ * 230's R2). Needs the report's buffer and quoting, the place, `[T]` and the
+ * map's buckets, so it comes after all four. */
+#include "parts/show.c"
+
 /* The code page a narrow name is read in on Windows, and the manifest that makes
  * it UTF-8 (panel 191, defect 238). Before `os.c`, whose `hero_args_set` asks it
  * first; empty elsewhere. */

@@ -1,0 +1,15 @@
+# Defect 016's number shapes (panel 230's R2, M-panic-location step 10): an `assert`
+# on a record of narrow numbers wrote its expression and no side, until the sides were written as
+# the specification writes the values, in the lldb formatter's notation and
+# within its bounds. The line checked is the one that shows the shape.
+
+record Narrow
+    a: i8
+    b: u16
+    c: f32
+    d: u64
+
+function main()
+    x = Narrow(a: -3, b: 65535, c: 0.25, d: 7)
+    y = Narrow(a: -3, b: 65535, c: 0.5, d: 7)
+    assert x == y

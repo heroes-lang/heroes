@@ -146,6 +146,23 @@ function comparison_op(op: ast.BinaryOp) -> ir.BinaryOp?
 
     return fail(code: "no", msg: "unreached")
 
+# Why a failed `assert` stops, as its report needs it (panel 230's R2): an `==`
+# whose two sides are written alike says why, which an ordering or an `!=` that
+# fails never needs, its sides alike or not by its own meaning.
+function assert_why(a: ast.Ast, asserted: i64) -> ir.AbortWhy
+    match a.exprs[asserted].kind
+        .binary bin =>
+            match bin.op
+                .eq                                        => return .assert_equal_abort
+                .ne | .lt | .le | .gt | .ge | .add | .sub  => return .assert_abort
+                .mul | .div | .rem | .and | .or | .bit_and => return .assert_abort
+                .bit_or | .bit_xor | .shl | .shr           => return .assert_abort
+        .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return .assert_abort
+        .name | .hole | .unary | .field | .field_name | .index | .call | .method       => return .assert_abort
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return .assert_abort
+
+    return .assert_abort
+
 # The two cases of a T?, in tag order (§4.6): a T? IS a built-in
 # variant, and nothing here needs to know it was built in.
 constant FALLIBLE_CASES: [str]

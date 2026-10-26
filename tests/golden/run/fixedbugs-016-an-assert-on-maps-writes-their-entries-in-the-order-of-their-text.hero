@@ -1,0 +1,10 @@
+# Defect 016's map shape (panel 230's R2, M-panic-location step 10): an `assert`
+# on two maps wrote its expression and no side, until the sides were written as
+# the specification writes the values, in the lldb formatter's notation and
+# within its bounds. The line checked is the one that shows the shape.
+# A map's entries stand in the order of their whole text, never the buckets'.
+
+function main()
+    ages = {"zeta": 1, "alpha": 2, "mid": 3}
+    one = {"alpha": 2}
+    assert ages == one

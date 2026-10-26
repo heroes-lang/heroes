@@ -1,0 +1,16 @@
+# Defect 016's variant shape (panel 230's R2, M-panic-location step 10): an `assert`
+# on two values of a variant wrote its expression and no side, until the sides were written as
+# the specification writes the values, in the lldb formatter's notation and
+# within its bounds. The line checked is the one that shows the shape.
+
+variant Shape
+    circle
+        r: f64
+    square
+        side: i64
+    none
+
+function main()
+    s: Shape = .circle(r: 2.5)
+    t: Shape = .square(side: 4)
+    assert s == t

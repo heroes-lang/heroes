@@ -26,8 +26,10 @@ WHAT IT SHOWS (spec § 2, § 3, § 6, § 9, § 10):
   cannot show; a NUL inside it as `\\u{0}`, the code escape's spelling of a
   character no literal may hold (spec § 2);
 - `[T]` as `[e0, e1, ...]` with children `[0]`, `[1]`, ...;
-- `{K: V}` as `{k: v, ...}` with children named by their keys, `["ada"]`,
-  in bucket order, the order `keys(m)` gives (spec § 10: no order);
+- `{K: V}` as `{k: v, ...}`, its entries in the order of their whole text, as
+  a failed `assert` writes a side (panel 230's R2), and its children named by
+  their keys, `["ada"]`, in bucket order, the order `keys(m)` gives (spec § 10:
+  no order);
 - `T?` as `ok(v)` or `fail(code: "...", msg: "...")`, the live arm alone;
 - a variant as `.case(field: v)`, or `.case` for a case with no fields, and a
   `match` arm's payload binding the same way;
@@ -111,6 +113,10 @@ SPAN = 1 << 40
 
 # Buckets of a map read to count its live entries against its `len`.
 SCAN = 1 << 16
+
+# Entries of a map a summary orders by their text: each is written once to be
+# ranked, so past this many the summary keeps the buckets' order and says so.
+SORTED = 1 << 10
 
 # How state bytes are read when a map's children are asked for.
 CHUNK = 1 << 16
@@ -759,15 +765,32 @@ def render_array(proc, value, budget, depth):
 
 
 def render_map(proc, value, budget, depth):
+    """`{k: v, ...}`, its entries IN THE ORDER OF THEIR WHOLE TEXT (panel 230's
+    R2), never the buckets' order, which is the hash's: each entry is written on
+    a budget of its own, so its text is the entry's alone; the SHOWN whose texts
+    come first are kept and written again, in order, on the summary's budget,
+    as `runtime/parts/show.c` writes an `assert`'s side. Two entries whose texts
+    are equal are interchangeable, so which of them is kept moves no character.
+    A map of more than SORTED entries is written in bucket order and says so:
+    ordering it would read every entry, which a summary must not, and it is the
+    one place the two notations part."""
     view = MapView(proc, value)
     if view.unassigned:
         return UNASSIGNED
-    items = []
-    for bucket in view.buckets(SHOWN):
-        items.append("%s: %s" % (show(view.key(bucket), budget, depth + 1), show(view.entry(bucket, "v"), budget, depth + 1)))
+    if view.length > SORTED:
+        items = [entry_text(view, bucket, budget, depth) for bucket in view.buckets(SHOWN)]
+        items.append("... %d more, in bucket order" % (view.length - len(items)))
+        return "{" + ", ".join(items) + "}"
+    ranked = sorted((entry_text(view, bucket, Budget(), depth).encode("utf-8"), bucket) for bucket in view.buckets(view.length))
+    items = [entry_text(view, bucket, budget, depth) for _, bucket in ranked[:SHOWN]]
     if view.length > len(items):
         items.append("... %d more" % (view.length - len(items)))
     return "{" + ", ".join(items) + "}"
+
+
+def entry_text(view, bucket, budget, depth):
+    """One entry, `k: v`, its key and its value two values inside the map."""
+    return "%s: %s" % (show(view.key(bucket), budget, depth + 1), show(view.entry(bucket, "v"), budget, depth + 1))
 
 
 def render_function(proc, value, budget, depth):

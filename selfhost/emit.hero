@@ -29,6 +29,8 @@ use emit/gate
 use emit/typeorder
 use emit/extern_probe
 use emit/perfn
+use emit/sides
+use emit/side_bodies
 use emit/descriptors
 use emit/signature
 use emit/body
@@ -242,6 +244,10 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     # that can mention one" and obeys the line above (panel 111 R4).
     extern_probe.extern_probes(@w, p, c, names, s, decls)
     perfn.prototypes(@w, c, names, decls, want: synth.everything())
+
+    # An `assert`'s sides, the renderers of the types they compare (panel 230's R2).
+    compared = sides.wanted(c, names, decls, p, at: shown, target: target)
+    side_bodies.prototypes(@w, c, s, decls, listed: compared)
     descriptors.definitions(
         @w,
         c,
@@ -281,6 +287,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
                 signature.value_twin(@w, p.functions[at], c, names, s, decls)
 
     perfn.bodies(@w, c, names, s, decls, want: synth.everything())
+    side_bodies.bodies(@w, c, names, s, decls, listed: compared)
 
     match target
         .program_build =>

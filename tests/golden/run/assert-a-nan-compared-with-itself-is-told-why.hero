@@ -1,0 +1,11 @@
+# Panel 230's R2 (M-panic-location step 10): a `nan` equals nothing, itself
+# included, so `x == x` fails with two sides written alike, and the report says
+# why.
+
+function nan_of() -> f64
+    zero: f64 = 0.0
+    return zero / zero
+
+function main()
+    x = nan_of()
+    assert x == x
