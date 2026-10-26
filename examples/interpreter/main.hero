@@ -60,7 +60,13 @@ function main()
     # `hero_runtime_check_leaks()` by design (`examples/README.md`), so this
     # program is not one of the corpus's leak witnesses, and `adventure/` is.
     if f.stopping
-        exit(f.code)
+        # A status is a byte (`exit(code: u8)`, defect 2224): a script's code past
+        # 255 cannot be obeyed, so it is said and the program fails.
+        match to_u8(f.code)
+            .ok code => exit(code)
+            .err _ =>
+                print("exit ", f.code, " is outside 0 to 255, the statuses a shell reads")
+                exit(1)
 
 # A parse refusal, as the one line a script author reads.
 function complaint(said: tree.Tree?) -> str

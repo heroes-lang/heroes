@@ -78,6 +78,11 @@ constant VERSION: str
 extern "hero_os.h"
     function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
     function hero_thread_join(handle: i64) -> i64
+    # The compiler's own way out, by a whole status: `heroes run` forwards its
+    # child's, 32 bits on Windows (`0xC0000409` for an abort), where the language's
+    # `exit(code: u8)` takes a byte (panel 230's R4, defect 2224). A literal status
+    # below still goes through `exit`, whose path the checker knows ends there.
+    function hero_exit(code: i64)
     # An argument as the shown read gives a file (`arg_written` below).
     function hero_args_shown(index: i64, @status: i64, @marks: i64) -> str
 
@@ -97,7 +102,7 @@ function main()
             text: "error: the operating system refused to start the thread this compiler runs every command on, with a stack of " + STACK_BYTES.to_str() + " bytes; its own reason is " + why.to_str()
         )
         exit(code: 2)
-    exit(code: hero_thread_join(handle: handle))
+    hero_exit(code: hero_thread_join(handle: handle))
 
 # The whole command, on the thread `main` starts: its answer is the exit code.
 function command(_: i64) -> i64
@@ -160,7 +165,7 @@ function command(_: i64) -> i64
             exit(code: 2)
 
         if process.is_directory(inv.file.default("")) && argv.has(inv, spelling: "--apply") && argv.has(inv, spelling: "--in-place")
-            exit(code: cli_table.exit_code(consensus.run(dir: inv.file.default(""), inv: inv)))
+            hero_exit(code: cli_table.exit_code(consensus.run(dir: inv.file.default(""), inv: inv)))
     reading: bool @= false
 
     # `fmt` reads THE FILE IT WAS NAMED and nothing else, where the other
@@ -190,14 +195,14 @@ function command(_: i64) -> i64
         .help_cmd =>
             print(help.help())
             exit(code: 0)
-        .this_cmd    => exit(code: cli_table.exit_code(doctor.run_this()))
-        .grammar_cmd => exit(code: cli_table.exit_code(grammar.run()))
-        .doctor_cmd => exit(
+        .this_cmd    => hero_exit(code: cli_table.exit_code(doctor.run_this()))
+        .grammar_cmd => hero_exit(code: cli_table.exit_code(grammar.run()))
+        .doctor_cmd => hero_exit(
             code: cli_table.exit_code(doctor.run_doctor(build_dir: "build", runtime_hint: runtime_hint()))
         )
-        .measure_cmd => exit(code: cli_table.exit_code(measure.run(inv)))
-        .mutate_cmd  => exit(code: cli_table.exit_code(mutate.run(inv)))
-        .probe_cmd   => exit(code: cli_table.exit_code(probe.run(inv)))
+        .measure_cmd => hero_exit(code: cli_table.exit_code(measure.run(inv)))
+        .mutate_cmd  => hero_exit(code: cli_table.exit_code(mutate.run(inv)))
+        .probe_cmd   => hero_exit(code: cli_table.exit_code(probe.run(inv)))
         # The seven that read a program fall through to the walk
         # below. The arm is a no-op MUTATION and not a print: a
         # `print("")` here put a blank line above every diagnostic and

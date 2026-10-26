@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-2224-an-exit-code-past-a-byte-is-refused.hero:12:20: error[int_out_of_range]: `256` does not fit a `u8`
+tests/golden/check/fixedbugs-2224-an-exit-code-past-a-byte-is-refused.hero:15:20: error[int_out_of_range]: `-1` does not fit a `u8`
+tests/golden/check/fixedbugs-2224-an-exit-code-past-a-byte-is-refused.hero:16:16: error[type_mismatch]: expected `u8`, found `i64`

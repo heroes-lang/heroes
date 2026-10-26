@@ -107,15 +107,17 @@ test "exactly one declaration is the library's exit, and `main` is not it (defec
 
 # The premise, where it can die: the library's `exit` is the one call of
 # `hero_exit` and no statement after it, so the claim written after a call of
-# it is what the runtime's `_Noreturn` already makes true.
+# it is what the runtime's `_Noreturn` already makes true. Since panel 230's
+# R4 (defect 2224) `exit` takes a byte and widens it inside the call's own
+# argument, which is evaluated before the call, so the premise is unchanged.
 test "the library's exit is a call of hero_exit alone (defect 507)"
     at: i64 @= 0
 
-    while at < library_source.LINES.len() && library_source.LINES[at] != "function exit(code: i64)"
+    while at < library_source.LINES.len() && library_source.LINES[at] != "function exit(code: u8)"
         at @ at + 1
 
     assert at + 1 < library_source.LINES.len()
-    assert library_source.LINES[at + 1] == "    hero_exit(code)"
+    assert library_source.LINES[at + 1] == "    hero_exit(to_i64(code).default(1))"
 
     # The next line, if any, opens no statement of `exit`'s body.
     if at + 2 < library_source.LINES.len()

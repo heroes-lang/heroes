@@ -59,7 +59,7 @@ function a_condition_that_holds(n: i64) -> i64  #~ missing_return
 record Hooks
     exit: (function(i64) -> ())
 
-function exits_by_a_method(n: i64) -> i64  #~ missing_return
+function exits_by_a_method(n: u8) -> i64  #~ missing_return
     if n > 0
         return 1
     n.exit()
@@ -106,3 +106,7 @@ constant LOOPS: i64
 constant ASSERTS_THEN_SEVEN: i64
     assert false  #~ no_value
     7
+
+# Since panel 230's R4, 2026-10-26 (defect 2224), `exit` takes a byte, so
+# `exits_by_a_method` takes `n: u8`: its `n.exit()` keeps asking only whether a
+# method's spelling ends a path, and no `type_mismatch` joins the case.

@@ -1,0 +1,11 @@
+# fixedbugs, defect 2224, panel 230's R4, 2026-10-26: `exit(code: u8)`, so the
+# shell reads the status the program asked for, every one of 0 to 255; a
+# computed status is converted first, and one that does not fit is the
+# program's own choice, here a failure, 1, rather than its low eight bits.
+
+function status(n: i64) -> u8
+    return to_u8(n).default(1)
+
+function main()
+    print("before")
+    exit(code: status(300))
