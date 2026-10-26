@@ -46,6 +46,14 @@
 # repository holds no code of, *CodeQL detected code written in C/C++, HTML,
 # Python, JavaScript/TypeScript and GitHub Actions, but not any written in
 # Rust*, exit 32: the scheduled run of that morning was red on it alone.
+# **Its configuration left GitHub on 2026-10-26** (defect 2222): code scanning
+# still held the category `/language:rust`, 36 analyses of 0 results, the last
+# of 2026-10-19, a configuration nothing would update again, and the author
+# deleted it from the Tool status page. Read over the API afterwards: the 36
+# still listed, and one more of that category at 12:26:28 UTC on the newest
+# commit, 0 results, no tool version and an empty environment, which no
+# workflow uploaded, none asking for Rust; that GitHub records a deleted
+# configuration this way is read off the API, not a documented fact.
 
 name: CodeQL
 
