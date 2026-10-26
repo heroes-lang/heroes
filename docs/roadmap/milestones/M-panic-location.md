@@ -93,3 +93,12 @@ of a report (defects 2225 and 2226). `exit(code: u8)` closes defect 2224. `main 
 (issue 1001), and whether a program may bind `hero_os.h` is the author's
 (https://github.com/heroes-lang/heroes/issues/2228). No sentence of the specification promises the
 place; § 12 says *both sides of a comparison*.
+
+**Widened the same day by the author's instruction**, meant as: *go on as far as you can, until I
+say stop, to cover almost everything*, given on the question of what the wide promise, every panic,
+would still need. A lease never ended and a C handle never given back name, at the program's end,
+where each was taken: a line per place beneath the report's own, the earliest first, how many beside
+it, at most eight places and the rest counted (step 9). The sentence above that says they name no
+acquisition is the sitting's narrowing as it was written; this one is what the milestone delivers,
+under the same ratification (https://github.com/heroes-lang/heroes/issues/2227). A fault the runtime
+catches while a lease is live still names no lease.

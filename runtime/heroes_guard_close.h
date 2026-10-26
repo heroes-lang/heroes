@@ -293,6 +293,7 @@
 #pragma pop_macro("hero_fs_why")
 #pragma pop_macro("hero_fs_writable")
 #pragma pop_macro("hero_handle_acquired")
+#pragma pop_macro("hero_handle_acquired_at")
 #pragma pop_macro("hero_handle_alive")
 #pragma pop_macro("hero_handle_alive_at")
 #pragma pop_macro("hero_handle_dead")

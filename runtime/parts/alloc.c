@@ -185,6 +185,10 @@ typedef struct {
      * the life it was announced for and never against the one that replaced
      * it. */
     uint64_t life;
+    /* WHERE THIS LIFE BEGAN, the call whose mark began it, named by the gate at
+     * exit when nothing ended it (M-panic-location step 9); kept by value,
+     * `parts/panic.c` says why. */
+    HeroPlace where;
 } hero_handle_entry;
 static hero_handle_entry *hero_handle_set = NULL;
 static size_t hero_handle_cap = 0;
@@ -197,6 +201,36 @@ static uint64_t hero_handle_lives = 0;
  * names the first one and the reader needs a number for the rest. */
 static size_t hero_handle_strays = 0;
 static const void *hero_handle_first_stray = NULL;
+
+/* THE LIVE LEASES, BY ADDRESS, AND WHERE EACH WAS TAKEN (M-panic-location step
+ * 9). `hero_live_held` counts them, and the gate and the fault handlers read
+ * that count; this table is what lets the gate say WHERE the ones never ended
+ * were taken. It is the runtime's own memory, beside the blocks and never in
+ * their header: a C function that writes before the pointer it was lent
+ * reaches the header (defect 076), and links kept there would be followed
+ * after C overwrote them, a corruption this runtime would commit itself. The
+ * handle set's shape under a lock of its own: open addressing, linear probing,
+ * NULL the empty slot, and a block's address is never NULL. */
+typedef struct {
+    const void *p;
+    HeroPlace where;
+    uint64_t order; /* `hero_lease_takings` when it was taken */
+} hero_lease_entry;
+static hero_handle_mutex hero_lease_lock = HERO_HANDLE_MUTEX_INIT;
+static hero_lease_entry *hero_lease_set = NULL;
+static size_t hero_lease_cap = 0;
+static size_t hero_lease_live = 0;
+static uint64_t hero_lease_takings = 0;
+
+/* The table's two passes, under its lock, for the gate at exit. */
+static void hero_lease_places(HeroPlaces *t) {
+    hero_handle_lock_take(&hero_lease_lock);
+    for (size_t i = 0; i < hero_lease_cap; i++)
+        if (hero_lease_set[i].p != NULL) hero_places_see(t, &hero_lease_set[i].where, hero_lease_set[i].order);
+    for (size_t i = 0; i < hero_lease_cap; i++)
+        if (hero_lease_set[i].p != NULL) hero_places_count(t, &hero_lease_set[i].where);
+    hero_handle_lock_drop(&hero_lease_lock);
+}
 
 int64_t hero_runtime_live(void) { return hero_live_blocks; }
 
@@ -314,11 +348,14 @@ void hero_runtime_check_leaks(void) {
      * them is the one leak that is not a bug in the language. */
     int64_t held = hero_live_held;
     if (held != 0) {
+        HeroPlaces taken = {.used = 0};
+        hero_lease_places(&taken);
         fflush(stdout);
         fprintf(stderr, "panic: %lld lease(s) never ended — every `.lease()` owes "
                         "one `end_lease`, and this program is missing that "
                         "many\n",
                 (long long)held);
+        hero_places_write(&taken, held > 0 ? (size_t)held : 0);
         hero_abort();
     }
     /* TWO DIRECTIONS, AND THEY ARE TWO DIFFERENT FAULTS. Positive is the
@@ -390,9 +427,22 @@ void hero_runtime_check_leaks(void) {
     const void *first_stray = hero_handle_first_stray;
     size_t live = hero_handle_live;
     const void *first_live = NULL;
+    uint64_t first_life = 0;
+    HeroPlaces taken = {.used = 0};
 
-    for (size_t i = 0; i < hero_handle_cap && first_live == NULL; i++)
-        if (hero_handle_set[i].h != NULL) first_live = hero_handle_set[i].h;
+    /* THE FIRST IS THE EARLIEST LIFE STILL STANDING, the one the first place
+     * beneath the report names (step 9). Until then it was the table's first
+     * slot, an order the addresses' hash made and no reader could use. */
+    for (size_t i = 0; i < hero_handle_cap; i++) {
+        if (hero_handle_set[i].h == NULL) continue;
+        if (first_live == NULL || hero_handle_set[i].life < first_life) {
+            first_live = hero_handle_set[i].h;
+            first_life = hero_handle_set[i].life;
+        }
+        hero_places_see(&taken, &hero_handle_set[i].where, hero_handle_set[i].life);
+    }
+    for (size_t i = 0; i < hero_handle_cap; i++)
+        if (hero_handle_set[i].h != NULL) hero_places_count(&taken, &hero_handle_set[i].where);
     hero_handle_lock_drop(&hero_handle_lock);
 
     /* DEFENCE IN DEPTH SINCE defect 071: `hero_handle_held` raises this at
@@ -407,6 +457,7 @@ void hero_runtime_check_leaks(void) {
                         "mark began, `acquires` or `retains`, owes one release, "
                         "and this program is missing that many. The first is at %p\n",
                 (unsigned long long)live, first_live);
+        hero_places_write(&taken, live);
         hero_abort();
     }
 }
@@ -447,15 +498,75 @@ static void hero_release_block(void *p) {
     free(p);
 }
 
+/* The lease table's home slot for `p`, by the handle set's hashing, whose
+ * comment says why, and the slot its probe ends on: `p`'s own or the empty one. */
+static size_t hero_lease_home(const void *p, size_t cap) {
+    return (size_t)(((uintptr_t)p * (uintptr_t)0x9E3779B97F4A7C15u) >> 32) & (cap - 1);
+}
+
+static size_t hero_lease_slot(const hero_lease_entry *table, size_t cap, const void *p) {
+    size_t i = hero_lease_home(p, cap);
+    while (table[i].p != NULL && table[i].p != p) i = (i + 1) & (cap - 1);
+    return i;
+}
+
+/* Grown at half full, never shrunk, the old table freed: one live allocation,
+ * weighed by no counter, as the handle set's is. Called with the lock held. */
+static void hero_lease_grow(void) {
+    size_t cap = hero_lease_cap == 0 ? (size_t)HERO_HANDLES_MIN : hero_lease_cap * 2;
+    hero_lease_entry *fresh = (hero_lease_entry *)hero_malloc_raw(cap * sizeof(hero_lease_entry));
+    for (size_t i = 0; i < cap; i++) fresh[i].p = NULL;
+    for (size_t i = 0; i < hero_lease_cap; i++)
+        if (hero_lease_set[i].p != NULL) fresh[hero_lease_slot(fresh, cap, hero_lease_set[i].p)] = hero_lease_set[i];
+    free(hero_lease_set);
+    hero_lease_set = fresh;
+    hero_lease_cap = cap;
+}
+
 /* A block the PROGRAM owns: bytes it held for C and will release itself. Its own
- * pair, for the reason the counter's comment gives — who is at fault at exit. */
-static void *hero_alloc_held(size_t size) {
+ * pair, for the reason the counter's comment gives — who is at fault at exit —
+ * and its place kept in the table, the `.lease()` that took it. An address the
+ * table already holds is a block C freed without `end_lease` and the allocator
+ * handed out again: the newer place takes the entry, and the gate tells the
+ * older lease, still on the counter, as one whose place was not kept. */
+static void *hero_alloc_held(size_t size, const HeroPlace *where) {
     void *p = hero_malloc_raw(size);
     atomic_fetch_add_explicit(&hero_live_held, 1, memory_order_relaxed);
+    hero_handle_lock_take(&hero_lease_lock);
+    if (hero_lease_cap == 0 || (hero_lease_live + 1) * 2 > hero_lease_cap) hero_lease_grow();
+    size_t i = hero_lease_slot(hero_lease_set, hero_lease_cap, p);
+    if (hero_lease_set[i].p == NULL) {
+        hero_lease_set[i].p = p;
+        hero_lease_live++;
+    }
+    hero_lease_set[i].where = hero_place_kept(where);
+    hero_lease_set[i].order = ++hero_lease_takings;
+    hero_handle_lock_drop(&hero_lease_lock);
     return p;
 }
 
+/* The block leaves the table by backward shift, the handle set's deletion and
+ * for its reason; an address the table does not hold leaves nothing. */
 static void hero_release_held(void *p) {
+    hero_handle_lock_take(&hero_lease_lock);
+    size_t hole = hero_lease_cap == 0 ? 0 : hero_lease_slot(hero_lease_set, hero_lease_cap, p);
+    if (hero_lease_cap > 0 && hero_lease_set[hole].p == p) {
+        hero_lease_set[hole].p = NULL;
+        size_t scan = (hole + 1) & (hero_lease_cap - 1);
+        while (hero_lease_set[scan].p != NULL) {
+            size_t home = hero_lease_home(hero_lease_set[scan].p, hero_lease_cap);
+            size_t from_hole = (scan - hole) & (hero_lease_cap - 1);
+            size_t from_home = (scan - home) & (hero_lease_cap - 1);
+            if (from_home >= from_hole) {
+                hero_lease_set[hole] = hero_lease_set[scan];
+                hero_lease_set[scan].p = NULL;
+                hole = scan;
+            }
+            scan = (scan + 1) & (hero_lease_cap - 1);
+        }
+        hero_lease_live--;
+    }
+    hero_handle_lock_drop(&hero_lease_lock);
     atomic_fetch_sub_explicit(&hero_live_held, 1, memory_order_relaxed);
     free(p);
 }
@@ -519,6 +630,9 @@ static void hero_handle_grow(void) {
     for (size_t i = 0; i < cap; i++) {
         fresh[i].h = NULL;
         fresh[i].by = NULL;
+        /* Every life sets its own place; an empty one is never garbage, so a
+         * later path that began a life and set none reads as no place kept. */
+        fresh[i].where = (HeroPlace){NULL, NULL, 0, 0};
     }
     for (size_t i = 0; i < hero_handle_cap; i++) {
         if (hero_handle_set[i].h != NULL)
@@ -813,7 +927,9 @@ static void hero_handle_report_crossed(const void *h, const char *owed, const ch
     hero_abort();
 }
 
-void hero_handle_acquired(const void *h, const char *by) {
+/* A life a mark began, `acquires` on a result or an `@` cell, at the place of
+ * the call that began it, which the gate at exit names if nothing ends it. */
+void hero_handle_acquired_at(const void *h, const char *by, const HeroPlace *site) {
     /* A producer that failed handed back nothing. Counting it is what killed the
      * correct failure path, and the failure path is the one C programs take. */
     if (h == NULL) return;
@@ -847,12 +963,16 @@ void hero_handle_acquired(const void *h, const char *by) {
     hero_handle_set[i].n = 1;
     hero_handle_set[i].pending = 0;
     hero_handle_set[i].life = ++hero_handle_lives;
+    hero_handle_set[i].where = hero_place_kept(site);
     /* C handed this address out again, so whatever ended there is over: a copy
      * of the old life at this address is now the new life's, and only
      * `--sanitize`'s quarantine can still tell them apart (panel 177's item 4). */
     hero_dead_clear_locked(h);
     hero_handle_lock_drop(&hero_handle_lock);
 }
+
+/* The old name, while a seed calls it: the life it begins keeps no place. */
+void hero_handle_acquired(const void *h, const char *by) { hero_handle_acquired_at(h, by, NULL); }
 
 /* An end the call has announced and not yet made: `hero_handle_ending` and
  * `hero_handle_transferring` count it here before C runs, `hero_handle_ended`
@@ -1026,6 +1146,7 @@ void hero_handle_retained_at(const void *h, const char *releasers, int ends_here
         hero_handle_set[i].n = 1;
         hero_handle_set[i].pending = 0;
         hero_handle_set[i].life = ++hero_handle_lives;
+        hero_handle_set[i].where = hero_place_kept(site);
     } else if (hero_handle_set[i].h == h) {
         const char *owed = hero_handle_set[i].by;
         if (owed != NULL && releasers != NULL && !hero_handle_sets_share(owed, releasers)) {
@@ -1039,6 +1160,7 @@ void hero_handle_retained_at(const void *h, const char *releasers, int ends_here
         hero_handle_set[i].n = 1;
         hero_handle_set[i].pending = 0;
         hero_handle_set[i].life = ++hero_handle_lives;
+        hero_handle_set[i].where = hero_place_kept(site);
         hero_handle_live++;
         /* A life begins on an address the set did not hold: C handed it out. */
         hero_dead_clear_locked(h);

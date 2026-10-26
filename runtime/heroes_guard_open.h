@@ -293,6 +293,7 @@
 #pragma push_macro("hero_fs_why")
 #pragma push_macro("hero_fs_writable")
 #pragma push_macro("hero_handle_acquired")
+#pragma push_macro("hero_handle_acquired_at")
 #pragma push_macro("hero_handle_alive")
 #pragma push_macro("hero_handle_alive_at")
 #pragma push_macro("hero_handle_dead")

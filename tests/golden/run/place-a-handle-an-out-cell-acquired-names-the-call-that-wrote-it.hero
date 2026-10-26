@@ -1,0 +1,17 @@
+# M-panic-location step 9: a life an `@` cell's mark began names the call that
+# wrote the cell. `node_swap` ends the node it is handed and writes the next
+# into `a`, at the same address, and nothing ends that one: the life the
+# report names is the swap's, never `node_new`'s, which ended inside the swap.
+# The header is `dead-handle-a-place-the-same-call-writes-is-not-poisoned`'s.
+
+extern "dead-handle-a-place-the-same-call-writes-is-not-poisoned.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_value(n: Node) -> i64
+    function node_swap(n: Node consumes, @out: Node acquires node_free)
+
+function main()
+    a: Node @= node_new()
+    node_swap(n: a, out: @a)
+    print("after the swap: ", node_value(n: a))

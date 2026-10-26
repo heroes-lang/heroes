@@ -1,0 +1,20 @@
+# M-panic-location step 9 (panel 230's R1, carried past its R7 by the author's
+# instruction of 2026-10-26): a lease never ended is told at the program's end,
+# where no operation of the program stands, so the report names where each was
+# taken, a line per place, the earliest first, how many beside it. Two leases
+# are taken at one `.lease()` inside a loop and one inside `keep`, and none is
+# ended; the line checked is the loop's, which counts its two as one place.
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+function keep(text: str) -> u64
+    c = text.lease()
+    return strlen(s: c)
+
+function main()
+    for word in ["ab", "cde"]
+        c = word.lease()
+        print(strlen(s: c))
+
+    print(keep(text: "fghi"))

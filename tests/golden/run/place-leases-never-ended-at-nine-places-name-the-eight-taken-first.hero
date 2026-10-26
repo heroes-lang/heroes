@@ -1,0 +1,25 @@
+# M-panic-location step 9: beneath a report of leases never ended stand the
+# eight places whose first lease was taken earliest, and what was taken past
+# them is counted. Eight places take one lease each, then a ninth takes three
+# inside a loop, last of all: its three are the ones counted, so a list that
+# kept any other eight would count one, and a list with no bound none.
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+function main()
+    a = "a".lease()
+    b = "bb".lease()
+    c = "ccc".lease()
+    d = "dddd".lease()
+    e = "eeeee".lease()
+    f = "ffffff".lease()
+    g = "ggggggg".lease()
+    h = "hhhhhhhh".lease()
+    total: u64 @= strlen(s: a) + strlen(s: b) + strlen(s: c) + strlen(s: d) + strlen(s: e) + strlen(s: f) + strlen(s: g) + strlen(s: h)
+
+    for word in ["x", "yy", "zzz"]
+        late = word.lease()
+        total @ total + strlen(s: late)
+
+    print(total)

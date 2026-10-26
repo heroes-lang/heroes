@@ -1,0 +1,17 @@
+# M-panic-location step 9: a C handle never given back is told at the program's
+# end, and beneath the report each place a life nothing ended began, the
+# earliest first. Two lives begin at two calls; the first is given back and the
+# second is not, so the line checked names the second's call. The header is
+# `abort-handle-never-given-back`'s.
+
+extern "abort-handle-never-given-back.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot acquires slot_close
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+function main()
+    a = slot_open(n: 7)
+    b = slot_open(n: 9)
+    print(slot_value(s: a) + slot_value(s: b))
+    slot_close(a)

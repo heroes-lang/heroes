@@ -190,8 +190,8 @@ function after_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls
                     decls,
                     fd: fd.value,
                     target: target,
-                    entry: "hero_handle_acquired",
-                    tail: ", " + handle_text.set_c(s, fd.value.acquires_result.must())
+                    entry: "hero_handle_acquired_at",
+                    tail: ", " + handle_text.set_c(s, fd.value.acquires_result.must()) + ", &" + stop_place.HERE
                 )
             at @ 0
 
@@ -207,8 +207,8 @@ function after_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls
                             decls,
                             ty: written.must(),
                             value: handle_text.cell_of(arguments[at]),
-                            entry: "hero_handle_acquired",
-                            tail: ", " + handle_text.set_c(s, p.acquires.must())
+                            entry: "hero_handle_acquired_at",
+                            tail: ", " + handle_text.set_c(s, p.acquires.must()) + ", &" + stop_place.HERE
                         )
                 at @ at + 1
 

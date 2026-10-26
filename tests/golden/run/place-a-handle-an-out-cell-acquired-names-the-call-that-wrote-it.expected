@@ -1,0 +1,2 @@
+after the swap: 2
+!panic:   1 taken at place-a-handle-an-out-cell-acquired-names-the-call-that-wrote-it.hero:16:5, in place-a-handle-an-out-cell-acquired-names-the-call-that-wrote-it.main

@@ -54,10 +54,10 @@ static void hero_report_decimal(HeroReport *r, int64_t v) {
     hero_report_put(r, digits + at, sizeof digits - at);
 }
 
-/* The report's second line: `  at <file>:<line>:<column>, in <function>`. */
-static void hero_report_place(HeroReport *r, const char *file, const char *function, int64_t line,
+/* A place's words, `<file>:<line>:<column>, in <function>`, wherever a line
+ * names one. */
+static void hero_report_where(HeroReport *r, const char *file, const char *function, int64_t line,
                               int64_t column) {
-    HERO_REPORT_OWN(r, "  at ");
     hero_report_message(r, hero_place_text(file));
     HERO_REPORT_OWN(r, ":");
     hero_report_decimal(r, line);
@@ -65,6 +65,13 @@ static void hero_report_place(HeroReport *r, const char *file, const char *funct
     hero_report_decimal(r, column);
     HERO_REPORT_OWN(r, ", in ");
     hero_report_message(r, hero_place_text(function));
+}
+
+/* The report's second line: `  at <file>:<line>:<column>, in <function>`. */
+static void hero_report_place(HeroReport *r, const char *file, const char *function, int64_t line,
+                              int64_t column) {
+    HERO_REPORT_OWN(r, "  at ");
+    hero_report_where(r, file, function, line, column);
     HERO_REPORT_OWN(r, "\n");
 }
 
@@ -101,6 +108,99 @@ static void hero_place_line(const HeroPlace *where) {
     if (where == NULL) return;
     HeroReport r = {.used = 0};
     hero_report_place(&r, where->path, where->name, where->line, where->column);
+    hero_report_flush(&r);
+}
+
+/* Two places are one site where their four agree: a record is written per
+ * site, so equal texts and numbers are one site, whichever copy of the record
+ * was handed in. */
+static bool hero_place_same(const HeroPlace *a, const HeroPlace *b) {
+    if (a->line != b->line || a->column != b->column) return false;
+    if ((a->path == NULL) != (b->path == NULL) || (a->name == NULL) != (b->name == NULL)) return false;
+    if (a->path != NULL && a->path != b->path && strcmp(a->path, b->path) != 0) return false;
+    return a->name == NULL || a->name == b->name || strcmp(a->name, b->name) == 0;
+}
+
+/* Declared in `parts/panic.c`, the first of the two passes over a table: it
+ * keeps the HERO_PLACES_SHOWN places whose first taking came earliest, a later
+ * place giving way to an earlier one. A place among the earliest never gives
+ * way once its earliest entry is seen, since that would take as many places
+ * taken before it as the list holds; so the pass ends holding exactly those,
+ * each with its earliest order, whatever order the table is walked in. An
+ * entry an old entry point gave no place is the second pass's to count. */
+static void hero_places_see(HeroPlaces *t, const HeroPlace *where, uint64_t order) {
+    if (where->path == NULL) return;
+    size_t latest = 0;
+    for (size_t k = 0; k < t->used; k++) {
+        if (hero_place_same(&t->shown[k].where, where)) {
+            if (order < t->shown[k].first) t->shown[k].first = order;
+            return;
+        }
+        if (t->shown[k].first > t->shown[latest].first) latest = k;
+    }
+    HeroPlaceTally fresh = {*where, order, 0};
+    if (t->used < HERO_PLACES_SHOWN) {
+        t->shown[t->used++] = fresh;
+    } else if (order < t->shown[latest].first) {
+        t->shown[latest] = fresh;
+    }
+}
+
+/* The second pass: how many entries each kept place holds, how many the table
+ * holds, and how many of those name no place. */
+static void hero_places_count(HeroPlaces *t, const HeroPlace *where) {
+    t->seen++;
+    if (where->path == NULL) {
+        t->unplaced++;
+        return;
+    }
+    for (size_t k = 0; k < t->used; k++) {
+        if (hero_place_same(&t->shown[k].where, where)) {
+            t->shown[k].count++;
+            return;
+        }
+    }
+}
+
+/* The lines beneath an exit report's own, from the fixed buffer: each kept
+ * place in the order its first was taken, how many were taken there; then the
+ * entries taken at places past the list; then the ones no place was kept for,
+ * an old entry point's and those `total`, the report's own count, holds past
+ * the table (a lease's block C freed and the allocator handed out again, whose
+ * entry the newer lease's took). */
+static void hero_places_write(HeroPlaces *t, size_t total) {
+    for (size_t k = 1; k < t->used; k++) {
+        HeroPlaceTally hold = t->shown[k];
+        size_t j = k;
+        while (j > 0 && t->shown[j - 1].first > hold.first) {
+            t->shown[j] = t->shown[j - 1];
+            j--;
+        }
+        t->shown[j] = hold;
+    }
+    HeroReport r = {.used = 0};
+    size_t listed = 0;
+    for (size_t k = 0; k < t->used; k++) {
+        const HeroPlace *w = &t->shown[k].where;
+        HERO_REPORT_OWN(&r, "  ");
+        hero_report_decimal(&r, (int64_t)t->shown[k].count);
+        HERO_REPORT_OWN(&r, " taken at ");
+        hero_report_where(&r, w->path, w->name, w->line, w->column);
+        HERO_REPORT_OWN(&r, "\n");
+        listed += t->shown[k].count;
+    }
+    size_t elsewhere = t->seen - t->unplaced - listed;
+    size_t none = t->unplaced + (total > t->seen ? total - t->seen : 0);
+    if (elsewhere > 0) {
+        HERO_REPORT_OWN(&r, "  ");
+        hero_report_decimal(&r, (int64_t)elsewhere);
+        HERO_REPORT_OWN(&r, " more, taken elsewhere\n");
+    }
+    if (none > 0) {
+        HERO_REPORT_OWN(&r, "  ");
+        hero_report_decimal(&r, (int64_t)none);
+        HERO_REPORT_OWN(&r, " more, taken where no place was kept\n");
+    }
     hero_report_flush(&r);
 }
 

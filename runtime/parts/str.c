@@ -636,7 +636,7 @@ const char *hero_str_lend(HeroStr s) { return hero_str_lend_at(s, NULL); }
 const char *hero_str_held_at(HeroStr s, const HeroPlace *where) {
     hero_str_require(s);
     if (hero_str_holds_nul(s)) hero_str_refuse_nul(s, "`.lease()` copies for C", where);
-    HeroHeldHeader *h = hero_alloc_held(sizeof(HeroHeldHeader) + (size_t)s.len + 1);
+    HeroHeldHeader *h = hero_alloc_held(sizeof(HeroHeldHeader) + (size_t)s.len + 1, where);
     h->magic = HERO_HELD_MAGIC;
     h->len = s.len;
     char *b = (char *)(void *)(h + 1);

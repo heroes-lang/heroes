@@ -53,6 +53,40 @@ _Noreturn static void hero_panic_where(const char *msg, const HeroPlace *where);
 /* The place's line alone, for a report a part writes with its own words before
  * it aborts (`parts/alloc.c`'s handle reports); NULL writes nothing. */
 static void hero_place_line(const HeroPlace *where);
+
+/* WHERE WHAT WAS NEVER GIVEN BACK WAS TAKEN (panel 230's R1, carried past its
+ * R7 by the author's instruction of 2026-10-26, M-panic-location step 9). A
+ * lease never ended and a C handle never given back are told at the program's
+ * end, where no operation of the program stands, so their report names where
+ * each was taken: a line per place, the earliest first, how many beside it.
+ * `parts/alloc.c` gathers them under the lock of the table that holds them, in
+ * two passes, and `parts/place.c` writes them; the type is here so that every
+ * part included before that one can hold it.
+ *
+ * A place is kept BY VALUE, never by its address: in the library's own Heroes
+ * the record a check's block holds is a copy of its caller's, on the stack
+ * (`emit/stop_place.hero`), and gone when the call returns, while its two
+ * texts are literals and live as long as the program. */
+#define HERO_PLACES_SHOWN 8
+typedef struct {
+    HeroPlace where;
+    uint64_t first; /* the order of the earliest taken there */
+    size_t count;
+} HeroPlaceTally;
+typedef struct {
+    HeroPlaceTally shown[HERO_PLACES_SHOWN];
+    size_t used;
+    size_t seen;     /* every entry the second pass met */
+    size_t unplaced; /* of those, the ones an old entry point gave no place */
+} HeroPlaces;
+
+static HeroPlace hero_place_kept(const HeroPlace *where) {
+    if (where == NULL) return (HeroPlace){NULL, NULL, 0, 0};
+    return *where;
+}
+static void hero_places_see(HeroPlaces *t, const HeroPlace *where, uint64_t order);
+static void hero_places_count(HeroPlaces *t, const HeroPlace *where);
+static void hero_places_write(HeroPlaces *t, size_t total);
 _Noreturn void hero_unreachable(void) {
     hero_panic("entered unreachable code — this is a compiler bug, please report it");
 }

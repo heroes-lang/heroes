@@ -535,6 +535,9 @@ const char *hero_cstr_nonnull_at(const char *p, const HeroPlace *where);
 void hero_handle_alive_at(const void *handle, const char *where, const HeroPlace *);
 uint64_t hero_handle_ending_at(const void *handle, const char *by, const char *pays, const HeroPlace *);
 uint64_t hero_handle_transferring_at(const void *handle, const char *into, const HeroPlace *);
+/* A life a mark begins keeps the call's place, which the gate at exit names
+ * when nothing ended it (M-panic-location step 9). */
+void hero_handle_acquired_at(const void *handle, const char *releasers, const HeroPlace *);
 void hero_handle_retained_at(const void *handle, const char *releasers, int ends_here, const HeroPlace *);
 
 /* -- the descriptor ABI (design.md §4.20, panels 021, 022) -------------------
