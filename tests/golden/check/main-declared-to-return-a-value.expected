@@ -1,0 +1,1 @@
+tests/golden/check/main-declared-to-return-a-value.hero:16:20: error[main_returns]: `main` produces nothing, and this one is declared `-> i64` — a program reports failure by what it prints, not by what it returns

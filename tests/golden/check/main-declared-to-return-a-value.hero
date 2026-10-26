@@ -1,0 +1,18 @@
+# M-panic-location step 11 (panel 230's R5; the first pass's finding 40):
+# `main_returns`, panel 035's guard, had no golden case of its own, only the
+# compiler's own tests (`check/decls.hero`). A `main` declared to return a
+# value is refused at the type it names: the value would have nowhere to go,
+# and a program says it failed by what it prints or by `exit(code:)`. Its
+# neighbours pass: `total` returns a value, as any function but `main` may.
+
+function total(xs: [i64]) -> i64
+    sum: i64 @= 0
+
+    for x in xs
+        sum @ sum + x
+
+    return sum
+
+function main() -> i64  #~ main_returns
+    print(total(xs: [1, 2, 3]))
+    return 0
